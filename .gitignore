@@ -13,7 +13,10 @@ __pycache__/
 .venv/
 
 # ── Data ──
-data/
+data/raw/
+data/processed/
+data/reports/
+# data/phenology_sources.yaml is curated reference data — tracked
 
 # ── Tests ──
 .pytest_cache/
