@@ -15,12 +15,12 @@ RUN apt-get update && \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Python deps
-COPY requirements.txt .
+COPY backend/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy application code
-COPY app/ app/
-COPY scripts/ scripts/
+# Copy application code (context is repo root)
+COPY backend/app/ app/
+COPY backend/scripts/ scripts/
 COPY data/ data/
 
 # Data directories (mounted as PV in K8s)
