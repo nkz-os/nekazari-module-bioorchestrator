@@ -1,0 +1,270 @@
+"""Graph Data Access Object — Neo4j query layer.
+
+All methods use the AsyncDriver and return plain dicts for JSON serialisation.
+Business logic lives in app/services/.
+
+Tenant model:
+  The knowledge graph stores global reference data (AGROVOC taxonomy, EPPO codes,
+  IUCN species, phenology parameters). This data is inherently multi-tenant-safe
+  because it describes biological reality, not tenant-specific state.
+
+  Tenant-scoped data (future Phase 2 features like custom DSS rules, user-created
+  crop rotation plans) must be linked to a :Tenant node via [:BELONGS_TO] and
+  filtered by tenant_id in every query. Methods accept an optional tenant_id
+  parameter that is ignored for global data but will be enforced when
+  tenant-scoped subgraphs are added.
+"""
+
+from __future__ import annotations
+
+from typing import Any
+
+from neo4j import AsyncDriver
+
+
+class GraphDAO:
+    def __init__(self, driver: AsyncDriver) -> None:
+        self._driver = driver
+
+    # ── Health ────────────────────────────────────────────────────────────────
+
+    async def health_check(self) -> dict:
+        """Verify Neo4j connectivity with a minimal query."""
+        try:
+            async with self._driver.session() as session:
+                result = await session.run("RETURN 1 AS alive")
+                record = await result.single()
+                return {"neo4j": "connected", "alive": record["alive"]}
+        except Exception as exc:
+            return {"neo4j": "error", "detail": str(exc)}
+
+    # ── Global stats (not tenant-filtered — counts all reference data) ────────
+
+    async def get_stats(self, tenant_id: str | None = None) -> dict[str, Any]:
+        """Return node count, relationship count, and per-label counts.
+
+        When tenant_id is provided and tenant-scoped subgraphs exist,
+        results are filtered to that tenant's view. For global reference
+        data this parameter is a no-op.
+        """
+        async with self._driver.session() as session:
+            totals_result = await session.run(
+                "MATCH (n) RETURN count(n) AS node_count "
+                "UNION ALL "
+                "MATCH ()-[r]->() RETURN count(r) AS node_count"
+            )
+            records = await totals_result.values()
+            node_count = records[0][0] if records else 0
+            rel_count = records[1][0] if len(records) > 1 else 0
+
+            label_result = await session.run(
+                "CALL db.labels() YIELD label "
+                "CALL apoc.cypher.run('MATCH (n:`' + label + '`) RETURN count(n) AS c', {}) "
+                "YIELD value "
+                "RETURN label, value.c AS count "
+                "ORDER BY count DESC LIMIT 30"
+            )
+            label_records = await label_result.data()
+            label_counts = {r["label"]: r["count"] for r in label_records}
+
+        return {
+            "node_count": node_count,
+            "relationship_count": rel_count,
+            "label_counts": label_counts,
+        }
+
+    # ── Lookup (global reference data) ────────────────────────────────────────
+
+    async def find_by_agrovoc_uri(self, uri: str) -> dict | None:
+        """Find a Resource node by its AGROVOC URI.
+
+        Returns the node properties or None if not found.
+        """
+        async with self._driver.session() as session:
+            result = await session.run(
+                "MATCH (r:Resource {uri: $uri}) RETURN r",
+                uri=uri,
+            )
+            record = await result.single()
+            if record is None:
+                return None
+            return dict(record["r"])
+
+    async def get_phenology_params(
+        self,
+        species: str,
+        stage: str | None = None,
+        cultivar: str | None = None,
+        management: str | None = None,
+        climate_zone: str | None = None,
+        lat: float | None = None,
+        lon: float | None = None,
+        tenant_id: str | None = None,
+    ) -> dict | None:
+        """Query phenology parameters with context-aware cascade matching.
+
+        Matching priority:
+          1. Exact: species + stage + cultivar + management
+          2. Management-only: species + stage + management (any cultivar)
+          3. Generic: species + stage (no cultivar, no management)
+          4. Species-only: any stage default
+
+        Returns a dict with:
+          - Core values: d1, d2, kc, mds_ref with confidence intervals
+          - Provenance: sourceDoi, sourceShort, sourceAuthor, sourceYear,
+                        sourceInstitution, sourceMethod, sourceConditions
+          - Context: species, scientificName, stage, stageDescription,
+                     cultivar, management, climateZone
+          - Stage detection: baseTemp, gddMin, gddMax (when available)
+          - Alternatives: list of {kc, sourceShort, sourceDoi, conditions}
+          - Match info: matchLevel (exact/management/generic/species_only)
+        """
+        async with self._driver.session() as session:
+            result = await session.run(
+                """
+                // ── Find species ────────────────────────────────────────
+                MATCH (s:Species)
+                WHERE s.name CONTAINS $species
+                   OR s.scientificName CONTAINS $species
+                   OR s.agrovocUri CONTAINS $species
+                WITH s
+                ORDER BY
+                    CASE WHEN s.name = $species THEN 0
+                         WHEN s.name CONTAINS $species THEN 1
+                         ELSE 2 END
+                LIMIT 1
+
+                // ── Find best-matching stage ─────────────────────────────
+                OPTIONAL MATCH (s)-[:HAS_STAGE]->(st:PhenologyStage)
+                WHERE $stage IS NULL OR st.name CONTAINS $stage
+
+                // ── Find best parameter by context cascade ───────────────
+                OPTIONAL MATCH (st)-[:HAS_PARAMETER]->(p:PhenologyParams)
+
+                // Score: exact context > management-only > generic default
+                WITH s, st, p
+                ORDER BY
+                    CASE WHEN p.cultivar = $cultivar
+                          AND p.management = $mgmt THEN 0
+                         WHEN p.management = $mgmt
+                          AND p.cultivar IS NULL THEN 1
+                         WHEN p.isDefault = true THEN 2
+                         ELSE 3 END
+                LIMIT 1
+
+                // ── Fetch alternatives ───────────────────────────────────
+                OPTIONAL MATCH (p)-[:HAS_ALTERNATIVE]->(alt:PhenologyAlternative)
+
+                // ── Return full provenance ────────────────────────────────
+                RETURN
+                    s.name AS species,
+                    s.scientificName AS scientific_name,
+                    s.agrovocUri AS agrovoc_uri,
+                    st.name AS stage,
+                    st.description AS stage_description,
+                    st.baseTemp AS stage_base_temp,
+                    st.gddMin AS stage_gdd_min,
+                    st.gddMax AS stage_gdd_max,
+                    p.kc AS kc,
+                    p.kcCiLow AS kc_ci_low,
+                    p.kcCiHigh AS kc_ci_high,
+                    p.d1 AS d1,
+                    p.d1CiLow AS d1_ci_low,
+                    p.d1CiHigh AS d1_ci_high,
+                    p.d2 AS d2,
+                    p.d2CiLow AS d2_ci_low,
+                    p.d2CiHigh AS d2_ci_high,
+                    p.mdsRef AS mds_ref,
+                    p.mdsRefCiLow AS mds_ref_ci_low,
+                    p.mdsRefCiHigh AS mds_ref_ci_high,
+                    p.cultivar AS cultivar,
+                    p.management AS management,
+                    p.climateZone AS climate_zone,
+                    p.isDefault AS is_default,
+                    p.sourceDoi AS source_doi,
+                    p.sourceShort AS source_short,
+                    p.sourceAuthor AS source_author,
+                    p.sourceYear AS source_year,
+                    p.sourceInstitution AS source_institution,
+                    p.sourceMethod AS source_method,
+                    p.sourceConditions AS source_conditions,
+                    CASE WHEN p.cultivar = $cultivar
+                          AND p.management = $mgmt THEN 'exact'
+                         WHEN p.management = $mgmt
+                          AND p.cultivar IS NULL THEN 'management'
+                         WHEN p.isDefault = true THEN 'generic'
+                         WHEN p IS NOT NULL THEN 'species_only'
+                         ELSE 'none' END AS match_level,
+                    collect(
+                        CASE WHEN alt IS NOT NULL THEN {
+                            kc: alt.kc,
+                            sourceShort: alt.sourceShort,
+                            sourceDoi: alt.sourceDoi,
+                            conditions: alt.conditions
+                        } END
+                    ) AS alternatives
+                """,
+                species=species,
+                stage=stage,
+                cultivar=cultivar,
+                mgmt=management,
+            )
+            record = await result.single()
+            if record is None or record["match_level"] == "none":
+                return None
+
+            # Filter nulls from alternatives collection
+            alts = [
+                a for a in (record["alternatives"] or [])
+                if a is not None and a.get("kc") is not None
+            ]
+
+            return {
+                "species": record["species"],
+                "scientific_name": record["scientific_name"],
+                "agrovoc_uri": record["agrovoc_uri"],
+                "stage": record["stage"],
+                "stage_description": record["stage_description"],
+                "stage_base_temp": record["stage_base_temp"],
+                "stage_gdd_min": record["stage_gdd_min"],
+                "stage_gdd_max": record["stage_gdd_max"],
+                "kc": record["kc"],
+                "kc_confidence_interval": (
+                    [record["kc_ci_low"], record["kc_ci_high"]]
+                    if record["kc_ci_low"] is not None
+                    else None
+                ),
+                "d1": record["d1"],
+                "d1_confidence_interval": (
+                    [record["d1_ci_low"], record["d1_ci_high"]]
+                    if record["d1_ci_low"] is not None
+                    else None
+                ),
+                "d2": record["d2"],
+                "d2_confidence_interval": (
+                    [record["d2_ci_low"], record["d2_ci_high"]]
+                    if record["d2_ci_low"] is not None
+                    else None
+                ),
+                "mds_ref": record["mds_ref"],
+                "mds_ref_confidence_interval": (
+                    [record["mds_ref_ci_low"], record["mds_ref_ci_high"]]
+                    if record["mds_ref_ci_low"] is not None
+                    else None
+                ),
+                "cultivar": record["cultivar"],
+                "management": record["management"],
+                "climate_zone": record["climate_zone"],
+                "is_default": record["is_default"],
+                "provenance": {
+                    "doi": record["source_doi"],
+                    "short": record["source_short"],
+                    "author": record["source_author"],
+                    "year": record["source_year"],
+                    "institution": record["source_institution"],
+                    "method": record["source_method"],
+                    "conditions": record["source_conditions"],
+                },
+                "alternatives": alts,
+                "match_level": record["match_level"],
+            }

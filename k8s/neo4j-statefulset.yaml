@@ -1,0 +1,125 @@
+# =============================================================================
+# BioOrchestrator — Neo4j Graph Database (StatefulSet)
+# =============================================================================
+# Image: Custom neo4j:5.26-community with n10s (neosemantics) plugin.
+# Build: docker build -t ghcr.io/nkz-os/bioorchestrator-neo4j:5.26 -f backend/neo4j/Dockerfile backend/neo4j/
+# Push:  docker push ghcr.io/nkz-os/bioorchestrator-neo4j:5.26
+# =============================================================================
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: bioorchestrator-neo4j
+  namespace: nekazari
+  labels:
+    app.kubernetes.io/name: bioorchestrator
+    app.kubernetes.io/component: neo4j
+    app.kubernetes.io/part-of: nekazari
+spec:
+  type: ClusterIP
+  clusterIP: None  # Headless for StatefulSet
+  ports:
+    - name: http
+      port: 7474
+      targetPort: 7474
+      protocol: TCP
+    - name: bolt
+      port: 7687
+      targetPort: 7687
+      protocol: TCP
+  selector:
+    app.kubernetes.io/name: bioorchestrator
+    app.kubernetes.io/component: neo4j
+
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: bioorchestrator-neo4j
+  namespace: nekazari
+  labels:
+    app.kubernetes.io/name: bioorchestrator
+    app.kubernetes.io/component: neo4j
+    app.kubernetes.io/part-of: nekazari
+spec:
+  serviceName: bioorchestrator-neo4j
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: bioorchestrator
+      app.kubernetes.io/component: neo4j
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: bioorchestrator
+        app.kubernetes.io/component: neo4j
+    spec:
+      containers:
+        - name: neo4j
+          image: ghcr.io/nkz-os/bioorchestrator-neo4j:5.26
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 7474
+              protocol: TCP
+            - name: bolt
+              containerPort: 7687
+              protocol: TCP
+          env:
+            - name: NEO4J_AUTH
+              valueFrom:
+                secretKeyRef:
+                  name: bioorchestrator-secrets
+                  key: neo4j-auth
+            - name: NEO4J_PLUGINS
+              value: '["apoc"]'
+            - name: NEO4J_dbms_security_procedures_unrestricted
+              value: "apoc.*,n10s.*"
+            - name: NEO4J_dbms_security_procedures_allowlist
+              value: "apoc.*,n10s.*"
+            # Memory tuning
+            - name: NEO4J_server_memory_heap_initial__size
+              value: "512m"
+            - name: NEO4J_server_memory_heap_max__size
+              value: "1g"
+            - name: NEO4J_server_memory_pagecache_size
+              value: "512m"
+          volumeMounts:
+            - name: neo4j-data
+              mountPath: /data
+          livenessProbe:
+            tcpSocket:
+              port: bolt
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            timeoutSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 15
+            timeoutSeconds: 5
+          resources:
+            requests:
+              cpu: 250m
+              memory: 1Gi
+            limits:
+              cpu: 1
+              memory: 2Gi
+          securityContext:
+            runAsNonRoot: false  # Neo4j 5.x needs root for internal setup, drops later
+            allowPrivilegeEscalation: false
+
+  volumeClaimTemplates:
+    - metadata:
+        name: neo4j-data
+        labels:
+          app.kubernetes.io/name: bioorchestrator
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 10Gi

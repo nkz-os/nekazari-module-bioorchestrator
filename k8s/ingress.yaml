@@ -1,0 +1,46 @@
+# =============================================================================
+# BioOrchestrator — Ingress (DEV / MANUAL APPLY ONLY)
+# =============================================================================
+# WARNING: Do NOT include this in ArgoCD.
+# Production routing for /api/bioorchestrator goes through the api-gateway
+# (see nkz/services/api-gateway/). This ingress is for development/testing
+# where a direct Traefik route is needed without the api-gateway.
+#
+# Apply manually:
+#   kubectl apply -f ingress.yaml -n nekazari
+#
+# Remove before enabling api-gateway routing to avoid host+path conflicts.
+# =============================================================================
+
+---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: bioorchestrator-strip-prefix
+  namespace: nekazari
+spec:
+  stripPrefix:
+    prefixes:
+      - /api/bioorchestrator
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: bioorchestrator-api-service
+  namespace: nekazari
+  annotations:
+    traefik.ingress.kubernetes.io/router.middlewares: nekazari-bioorchestrator-strip-prefix@kubernetescrd
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: nkz.robotika.cloud
+      http:
+        paths:
+          - path: /api/bioorchestrator
+            pathType: Prefix
+            backend:
+              service:
+                name: bioorchestrator-api-service
+                port:
+                  number: 8420

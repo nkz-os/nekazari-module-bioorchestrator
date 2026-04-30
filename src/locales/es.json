@@ -1,0 +1,76 @@
+{
+  "app": {
+    "title": "BioOrchestrator",
+    "subtitle": "Pipeline de biodiversidad multi-dominio — Agricultura · Ganadería · Silvicultura · Agroforestería",
+    "tabs": {
+      "sources": "Fuentes de datos",
+      "pipeline": "Pipeline",
+      "dadis": "Explorador DAD-IS"
+    }
+  },
+  "sources": {
+    "loading": "Cargando fuentes...",
+    "errorPrefix": "Error",
+    "summary": {
+      "total": "Total de fuentes",
+      "ready": "Listas",
+      "unavailable": "No disponibles"
+    },
+    "status": {
+      "ready": "✓ Lista",
+      "unavailable": "⊘ No disponible"
+    },
+    "warnings": {
+      "keyMissing": "🔑 Falta la clave",
+      "noDataFile": "📁 No hay fichero de datos"
+    }
+  },
+  "pipeline": {
+    "sourcesLabel": "Fuentes (separadas por comas, vacío = todas)",
+    "sourcesPlaceholder": "agrovoc, eppo, dadis, globaltreesearch...",
+    "limitLabel": "Límite por fuente",
+    "run": "▶ Ejecutar pipeline",
+    "running": "⏳ Ejecutando pipeline...",
+    "result": {
+      "ok": "✅ Pipeline completado",
+      "withErrors": "⚠️ Pipeline completado con errores",
+      "entitiesRaw": "Entidades (sin dedup)",
+      "entitiesDedup": "Entidades (dedup)",
+      "relationships": "Relaciones",
+      "crossrefs": "Referencias cruzadas",
+      "duration": "Duración",
+      "errorsTitle": "Errores:"
+    }
+  },
+  "dadis": {
+    "title": "Descubrimiento de razas DAD-IS",
+    "badge": "Integración API FAO",
+    "filters": {
+      "country": "País",
+      "allCountries": "Todos los países",
+      "species": "Especie",
+      "allSpecies": "Todas las especies",
+      "classification": "Clasificación",
+      "all": "Todas",
+      "local": "Local",
+      "transboundary": "Transfronteriza"
+    },
+    "search": "Buscar",
+    "searching": "Buscando...",
+    "loading": "Consultando la API de interoperabilidad DAD-IS...",
+    "table": {
+      "breedName": "Nombre de raza",
+      "speciesId": "ID de especie",
+      "country": "País",
+      "transboundary": "Transfronteriza"
+    },
+    "empty": {
+      "title": "No se han recuperado datos.",
+      "hint": "Selecciona filtros y busca para obtener datos reales desde DAD-IS."
+    },
+    "footer": "Mostrando {{count}} razas de DAD-IS",
+    "errors": {
+      "loadBreeds": "No se han podido cargar las razas desde DAD-IS."
+    }
+  }
+}

@@ -1,0 +1,27 @@
+# ── Env ──
+.env
+.env.*
+!.env.example
+
+# ── Node ──
+node_modules/
+dist/
+
+# ── Python ──
+__pycache__/
+*.pyc
+.venv/
+
+# ── Data ──
+data/
+
+# ── Tests ──
+.pytest_cache/
+*.egg-info/
+
+# ── Logs ──
+*.log
+
+# ── IDE ──
+.vscode/
+.idea/

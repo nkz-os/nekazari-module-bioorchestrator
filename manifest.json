@@ -1,0 +1,82 @@
+{
+    "id": "bioorchestrator",
+    "name": "nekazari-module-bioorchestrator",
+    "display_name": "BioOrchestrator",
+    "version": "0.1.0",
+    "description": "BioOrchestrator — Multi-domain biodiversity ETL pipeline for regenerative agriculture intelligence. Integrates 19 data sources across agriculture, livestock, forestry, and agroforestry.",
+    "short_description": "Biodiversity data pipeline for regenerative agriculture",
+    "icon": "sprout",
+    "author": {
+        "name": "nekazari-module-bioorchestrator",
+        "email": "",
+        "organization": "Nekazari"
+    },
+    "category": "analytics",
+    "module_type": "ADDON_FREE",
+    "required_plan_type": "basic",
+    "pricing_tier": "FREE",
+    "route_path": "/bioorchestrator",
+    "label": "BioOrchestrator",
+    "required_roles": [
+        "Farmer",
+        "TenantAdmin",
+        "PlatformAdmin"
+    ],
+    "navigation": {
+        "enabled": true,
+        "priority": 35,
+        "section": "modules"
+    },
+    "dependencies": {
+        "sdk_version": "^1.0.3",
+        "react_version": "^18.3.1",
+        "platform_version": "^2.0.0"
+    },
+    "permissions": {
+        "api_access": [
+            "/api/bioorchestrator/*"
+        ],
+        "storage_access": true,
+        "external_requests": [
+            "https://agrovoc.fao.org",
+            "https://api.eppo.int",
+            "https://api.iucnredlist.org",
+            "https://www.globallometree.org",
+            "https://dad.fao.org",
+            "https://us-central1-fao-dadis-dev.cloudfunctions.net"
+        ]
+    },
+    "build_config": {
+        "type": "iife",
+        "remote_entry_url": "/modules/bioorchestrator/nekazari-module.js"
+    },
+    "backend_config": {
+        "enabled": true,
+        "image": "ghcr.io/nkz-os/bioorchestrator-backend:0.1.0",
+        "port": 8420,
+        "health_check": "/healthz",
+        "env_secrets": [
+            "bioorchestrator-secrets"
+        ]
+    },
+    "slots": {
+        "context-panel": [
+            "SourcesStatus"
+        ],
+        "bottom-panel": [
+            "PipelineRunner"
+        ]
+    },
+    "metadata": {
+        "icon": "🌿",
+        "color": "#059669",
+        "features": [
+            "19 data source connectors",
+            "Multi-domain: agriculture, livestock, forestry, agroforestry",
+            "Inter-domain relationships (FodderSuitability, AgroforestryCompatibility)",
+            "Real-time data quality reports",
+            "AGROVOC/EPPO/IUCN integration"
+        ],
+        "screenshots": []
+    }
+}

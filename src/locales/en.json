@@ -1,0 +1,76 @@
+{
+  "app": {
+    "title": "BioOrchestrator",
+    "subtitle": "Multi-domain biodiversity pipeline — Agriculture · Livestock · Forestry · Agroforestry",
+    "tabs": {
+      "sources": "Data sources",
+      "pipeline": "Pipeline",
+      "dadis": "DAD-IS Explorer"
+    }
+  },
+  "sources": {
+    "loading": "Loading sources...",
+    "errorPrefix": "Error",
+    "summary": {
+      "total": "Total sources",
+      "ready": "Ready",
+      "unavailable": "Unavailable"
+    },
+    "status": {
+      "ready": "✓ Ready",
+      "unavailable": "⊘ Unavailable"
+    },
+    "warnings": {
+      "keyMissing": "🔑 Key missing",
+      "noDataFile": "📁 No data file"
+    }
+  },
+  "pipeline": {
+    "sourcesLabel": "Sources (comma-separated, empty = all)",
+    "sourcesPlaceholder": "agrovoc, eppo, dadis, globaltreesearch...",
+    "limitLabel": "Limit per source",
+    "run": "▶ Run pipeline",
+    "running": "⏳ Running pipeline...",
+    "result": {
+      "ok": "✅ Pipeline complete",
+      "withErrors": "⚠️ Pipeline complete with errors",
+      "entitiesRaw": "Entities (raw)",
+      "entitiesDedup": "Entities (dedup)",
+      "relationships": "Relationships",
+      "crossrefs": "Cross-refs",
+      "duration": "Duration",
+      "errorsTitle": "Errors:"
+    }
+  },
+  "dadis": {
+    "title": "DAD-IS Breed Discovery",
+    "badge": "FAO API Integ",
+    "filters": {
+      "country": "Country",
+      "allCountries": "All countries",
+      "species": "Species",
+      "allSpecies": "All species",
+      "classification": "Classification",
+      "all": "All",
+      "local": "Local",
+      "transboundary": "Transboundary"
+    },
+    "search": "Search",
+    "searching": "Searching...",
+    "loading": "Querying DAD-IS Interoperability API...",
+    "table": {
+      "breedName": "Breed name",
+      "speciesId": "Species ID",
+      "country": "Country",
+      "transboundary": "Transboundary"
+    },
+    "empty": {
+      "title": "No data retrieved.",
+      "hint": "Select filters and search to retrieve real data from DAD-IS."
+    },
+    "footer": "Showing {{count}} breeds from DAD-IS",
+    "errors": {
+      "loadBreeds": "Failed to load breeds from DAD-IS."
+    }
+  }
+}

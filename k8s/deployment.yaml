@@ -1,0 +1,84 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bioorchestrator-backend
+  namespace: nekazari
+  labels:
+    app.kubernetes.io/name: bioorchestrator
+    app.kubernetes.io/component: backend
+    app.kubernetes.io/part-of: nekazari
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: bioorchestrator
+      app.kubernetes.io/component: backend
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: bioorchestrator
+        app.kubernetes.io/component: backend
+    spec:
+      containers:
+        - name: backend
+          image: ghcr.io/nkz-os/bioorchestrator-backend:0.1.0
+          ports:
+            - containerPort: 8420
+              protocol: TCP
+          envFrom:
+            - secretRef:
+                name: bioorchestrator-secrets
+          env:
+            - name: NEO4J_URI
+              value: "bolt://bioorchestrator-neo4j:7687"
+            - name: AUTH_DISABLED
+              value: "false"
+            - name: AUTH_STRICT
+              value: "true"
+            - name: DADIS_API_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: bioorchestrator-secrets
+                  key: bioorchestrator-dadis-token
+            - name: DATA_DIR
+              value: "/data"
+            - name: LOG_LEVEL
+              value: "info"
+          volumeMounts:
+            - name: data
+              mountPath: /data
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8420
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: 8420
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: bioorchestrator-data
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: bioorchestrator-data
+  namespace: nekazari
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 2Gi
