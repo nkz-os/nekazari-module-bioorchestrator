@@ -57,11 +57,16 @@ async def phenology_params(
     ),
     lat: float | None = Query(
         default=None, ge=-90, le=90,
-        description="Latitude for geographic context matching (future: climate zone inference)",
+        description="Latitude for geographic context matching",
     ),
     lon: float | None = Query(
         default=None, ge=-180, le=180,
         description="Longitude for geographic context matching",
+    ),
+    gdd: float | None = Query(
+        default=None, ge=0,
+        description="Growing Degree Days accumulated since season start. "
+                    "If provided and stage is not given, auto-detects phenological stage.",
     ),
     tenant_id: str = Depends(_get_tenant_id),
 ):
@@ -90,6 +95,7 @@ async def phenology_params(
         management=management,
         lat=lat,
         lon=lon,
+        gdd=gdd,
         tenant_id=tenant_id or None,
     )
 

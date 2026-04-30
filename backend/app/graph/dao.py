@@ -99,6 +99,7 @@ class GraphDAO:
         climate_zone: str | None = None,
         lat: float | None = None,
         lon: float | None = None,
+        gdd: float | None = None,
         tenant_id: str | None = None,
     ) -> dict | None:
         """Query phenology parameters with context-aware cascade matching.
@@ -108,6 +109,10 @@ class GraphDAO:
           2. Management-only: species + stage + management (any cultivar)
           3. Generic: species + stage (no cultivar, no management)
           4. Species-only: any stage default
+
+        When GDD (Growing Degree Days) is provided and stage is not explicitly
+        given, auto-detects the phenological stage by matching GDD against
+        the [gddMin, gddMax] thresholds stored in PhenologyStage nodes.
 
         Returns a dict with:
           - Core values: d1, d2, kc, mds_ref with confidence intervals
@@ -135,8 +140,20 @@ class GraphDAO:
                 LIMIT 1
 
                 // ── Find best-matching stage ─────────────────────────────
+                // Priority: explicit stage name > GDD range match > any stage
                 OPTIONAL MATCH (s)-[:HAS_STAGE]->(st:PhenologyStage)
-                WHERE $stage IS NULL OR st.name CONTAINS $stage
+                WHERE $stage IS NOT NULL AND st.name CONTAINS $stage
+
+                // If no stage matched by name and GDD is provided, match by GDD range
+                WITH s, st, $gdd AS gdd
+                OPTIONAL MATCH (s)-[:HAS_STAGE]->(st_gdd:PhenologyStage)
+                WHERE st IS NULL
+                  AND gdd IS NOT NULL
+                  AND st_gdd.gddMin IS NOT NULL
+                  AND st_gdd.gddMax IS NOT NULL
+                  AND st_gdd.gddMin <= gdd
+                  AND st_gdd.gddMax > gdd
+                WITH s, COALESCE(st, st_gdd) AS st
 
                 // ── Find best parameter by context cascade ───────────────
                 OPTIONAL MATCH (st)-[:HAS_PARAMETER]->(p:PhenologyParams)
