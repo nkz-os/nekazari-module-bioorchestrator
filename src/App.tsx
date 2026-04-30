@@ -2,11 +2,12 @@ import React, { useState } from 'react';
 import { useTranslation } from '@nekazari/sdk';
 import SourcesDashboard from './components/SourcesDashboard';
 import PipelineRunner from './components/PipelineRunner';
+import PhenologyBrowser from './components/PhenologyBrowser';
 import { BreedDiscovery } from './components/DADIS/BreedDiscovery';
 import './styles.css';
 import './i18n';
 
-type Tab = 'sources' | 'pipeline' | 'dadis';
+type Tab = 'sources' | 'pipeline' | 'phenology' | 'dadis';
 
 const App: React.FC = () => {
     const [activeTab, setActiveTab] = useState<Tab>('sources');
@@ -39,6 +40,12 @@ const App: React.FC = () => {
                         ⚙️ {t('app.tabs.pipeline')}
                     </button>
                     <button
+                        className={`bio-tab px-4 py-2 font-medium border-b-2 ${activeTab === 'phenology' ? 'border-green-600 text-green-700' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
+                        onClick={() => setActiveTab('phenology')}
+                    >
+                        🔬 {t('app.tabs.phenology')}
+                    </button>
+                    <button
                         className={`bio-tab px-4 py-2 font-medium border-b-2 ${activeTab === 'dadis' ? 'border-green-600 text-green-700' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
                         onClick={() => setActiveTab('dadis')}
                     >
@@ -50,6 +57,7 @@ const App: React.FC = () => {
             <main className="bio-main min-h-[500px]">
                 {activeTab === 'sources' && <SourcesDashboard />}
                 {activeTab === 'pipeline' && <PipelineRunner />}
+                {activeTab === 'phenology' && <PhenologyBrowser />}
                 {activeTab === 'dadis' && <BreedDiscovery />}
             </main>
         </div>

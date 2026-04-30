@@ -5,6 +5,7 @@
     "tabs": {
       "sources": "Fuentes de datos",
       "pipeline": "Pipeline",
+      "phenology": "Fenología",
       "dadis": "Explorador DAD-IS"
     }
   },
@@ -71,6 +72,29 @@
     "footer": "Mostrando {{count}} razas de DAD-IS",
     "errors": {
       "loadBreeds": "No se han podido cargar las razas desde DAD-IS."
+    }
+  },
+  "phenology": {
+    "species": "Especie",
+    "stage": "Etapa",
+    "anyStage": "Cualquier etapa",
+    "cultivar": "Variedad",
+    "anyCultivar": "Cualquier variedad",
+    "management": "Riego",
+    "standardIrrigation": "Estándar (pleno/secano)",
+    "loading": "Cargando parámetros...",
+    "notFound": "No hay parámetros para esta selección",
+    "usingDefaults": "Usando parámetros genéricos — sin coincidencia exacta",
+    "parameter": "Parámetro",
+    "value": "Valor",
+    "ci": "Intervalo de confianza",
+    "source": "Fuente científica",
+    "alternatives": "Valores alternativos publicados",
+    "match": {
+      "exact": "Coincidencia exacta (variedad + manejo)",
+      "management": "Coincidencia por manejo",
+      "generic": "Valor genérico por defecto",
+      "species_only": "Solo especie (sin datos de etapa)"
     }
   }
 }

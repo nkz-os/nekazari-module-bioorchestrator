@@ -5,6 +5,7 @@
     "tabs": {
       "sources": "Data sources",
       "pipeline": "Pipeline",
+      "phenology": "Phenology",
       "dadis": "DAD-IS Explorer"
     }
   },
@@ -71,6 +72,29 @@
     "footer": "Showing {{count}} breeds from DAD-IS",
     "errors": {
       "loadBreeds": "Failed to load breeds from DAD-IS."
+    }
+  },
+  "phenology": {
+    "species": "Species",
+    "stage": "Stage",
+    "anyStage": "Any stage",
+    "cultivar": "Cultivar",
+    "anyCultivar": "Any cultivar",
+    "management": "Irrigation",
+    "standardIrrigation": "Standard (full/rainfed)",
+    "loading": "Loading parameters...",
+    "notFound": "No parameters found for this selection",
+    "usingDefaults": "Using default parameters — no exact match for this selection",
+    "parameter": "Parameter",
+    "value": "Value",
+    "ci": "Confidence Interval",
+    "source": "Scientific Source",
+    "alternatives": "Alternative Published Values",
+    "match": {
+      "exact": "Exact match (cultivar + management)",
+      "management": "Management match",
+      "generic": "Generic default",
+      "species_only": "Species only (no stage data)"
     }
   }
 }
