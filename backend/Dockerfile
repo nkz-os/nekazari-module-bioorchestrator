@@ -9,6 +9,8 @@ WORKDIR /app
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
         gcc \
+        git \
+        ca-certificates \
         libffi-dev \
     && rm -rf /var/lib/apt/lists/*
 
@@ -18,6 +20,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application code
 COPY app/ app/
+COPY scripts/ scripts/
+COPY data/ data/
 
 # Data directories (mounted as PV in K8s)
 RUN mkdir -p /data/raw /data/processed /data/reports

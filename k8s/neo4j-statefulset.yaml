@@ -80,11 +80,11 @@ spec:
               value: "apoc.*,n10s.*"
             # Memory tuning
             - name: NEO4J_server_memory_heap_initial__size
-              value: "512m"
+              value: "256m"
             - name: NEO4J_server_memory_heap_max__size
-              value: "1g"
-            - name: NEO4J_server_memory_pagecache_size
               value: "512m"
+            - name: NEO4J_server_memory_pagecache_size
+              value: "256m"
           volumeMounts:
             - name: neo4j-data
               mountPath: /data
@@ -103,11 +103,11 @@ spec:
             timeoutSeconds: 5
           resources:
             requests:
-              cpu: 250m
-              memory: 1Gi
+              cpu: 100m
+              memory: 512Mi
             limits:
-              cpu: 1
-              memory: 2Gi
+              cpu: 500m
+              memory: 1Gi
           securityContext:
             runAsNonRoot: false  # Neo4j 5.x needs root for internal setup, drops later
             allowPrivilegeEscalation: false
@@ -122,4 +122,4 @@ spec:
           - ReadWriteOnce
         resources:
           requests:
-            storage: 10Gi
+            storage: 3Gi

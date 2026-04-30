@@ -93,9 +93,9 @@ def seed(driver: Driver, data: dict[str, Any]) -> dict[str, int]:
                         MATCH (:Species {name: $sp_name})-[:HAS_STAGE]->
                               (st:PhenologyStage {name: $st_name})
                         MERGE (st)-[:HAS_PARAMETER]->(p:PhenologyParams {
-                            cultivar: $cultivar,
-                            management: $mgmt,
-                            climateZone: $climate_zone
+                            cultivar: COALESCE($cultivar, "__generic__"),
+                            management: COALESCE($mgmt, "__standard__"),
+                            climateZone: COALESCE($climate_zone, "__any__")
                         })
                         SET p.kc = $kc,
                             p.kcCiLow = $kc_ci_low,
