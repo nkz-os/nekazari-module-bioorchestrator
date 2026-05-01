@@ -95,6 +95,17 @@
       "management": "Management match",
       "generic": "Generic default",
       "species_only": "Species only (no stage data)"
+    },
+    "contribute": {
+      "button": "Contribute parameter",
+      "title": "Contribute phenology parameter",
+      "description": "Submit your research data for scientific review. Your contribution will be reviewed by an administrator before being merged into the main parameter set.",
+      "provenance": "Scientific provenance",
+      "author": "Author(s)",
+      "conditions": "Experimental conditions",
+      "cancel": "Cancel",
+      "submit": "Submit for review",
+      "success": "Parameter submitted for review. Thank you for your contribution."
     }
   }
 }

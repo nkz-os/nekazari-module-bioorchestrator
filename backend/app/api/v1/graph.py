@@ -106,3 +106,44 @@ async def phenology_params(
         raise HTTPException(status_code=404, detail=detail)
 
     return params
+
+
+@router.post("/phenology-params/contribute")
+async def contribute_phenology_params(
+    driver: DriverDep,
+    species: str = Query(..., description="Species name"),
+    stage: str = Query(..., description="Phenological stage"),
+    kc: float = Query(..., description="Crop coefficient"),
+    d1: float | None = Query(None, description="NWSB baseline"),
+    d2: float | None = Query(None, description="Max stress baseline"),
+    mds_ref: float | None = Query(None, description="Reference MDS (µm)"),
+    cultivar: str | None = Query(None, description="Cultivar/variety"),
+    management: str | None = Query(None, description="Irrigation management"),
+    doi: str | None = Query(None, description="DOI of the publication"),
+    author: str | None = Query(None, description="Author name(s)"),
+    conditions: str | None = Query(None, description="Experimental conditions"),
+    contact_email: str | None = Query(None, description="Contact email for review"),
+):
+    """Submit a contributed phenology parameter for scientific review.
+
+    Creates a PhenologyParams node with status='pending_review'.
+    An administrator can later approve and merge into the main parameter set.
+    """
+    dao = GraphDAO(driver)
+    result = await dao.contribute_phenology(
+        species=species,
+        stage=stage,
+        kc=kc,
+        d1=d1,
+        d2=d2,
+        mds_ref=mds_ref,
+        cultivar=cultivar,
+        management=management,
+        doi=doi,
+        author=author,
+        conditions=conditions,
+        contact_email=contact_email,
+    )
+    if result["status"] == "error":
+        raise HTTPException(status_code=500, detail=result.get("detail", "Unknown error"))
+    return result

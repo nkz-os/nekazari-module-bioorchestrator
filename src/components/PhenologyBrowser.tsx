@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useTranslation } from '@nekazari/sdk';
+import PhenologyContribute from './PhenologyContribute';
 
 interface PhenologyParams {
     species: string;
@@ -45,6 +46,7 @@ const PhenologyBrowser: React.FC = () => {
     const [data, setData] = useState<PhenologyParams | null>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [showContribute, setShowContribute] = useState(false);
 
     const fetchParams = useCallback(async () => {
         setLoading(true);
@@ -151,8 +153,16 @@ const PhenologyBrowser: React.FC = () => {
                 </div>
             </div>
 
+            <div className="pheno-contribute-bar">
+                <button className="pheno-contribute-btn" onClick={() => setShowContribute(true)}>
+                    📤 {t('phenology.contribute.button')}
+                </button>
+            </div>
+
             {loading && <div className="pheno-loading">{t('phenology.loading')}</div>}
             {error && <div className="pheno-error">{error}</div>}
+
+            {showContribute && <PhenologyContribute onClose={() => setShowContribute(false)} />}
 
             {data && (
                 <div className="pheno-result">

@@ -285,3 +285,66 @@ class GraphDAO:
                 "alternatives": alts,
                 "match_level": record["match_level"],
             }
+
+    async def contribute_phenology(
+        self,
+        species: str,
+        stage: str,
+        kc: float,
+        d1: float | None = None,
+        d2: float | None = None,
+        mds_ref: float | None = None,
+        cultivar: str | None = None,
+        management: str | None = None,
+        doi: str | None = None,
+        author: str | None = None,
+        conditions: str | None = None,
+        contact_email: str | None = None,
+    ) -> dict:
+        """Submit a contributed phenology parameter for review.
+
+        Creates nodes with status='pending_review'. An admin can later
+        approve and merge into the main parameter set.
+        """
+        async with self._driver.session() as session:
+            result = await session.run(
+                """
+                MERGE (s:Species {name: $species})
+                MERGE (s)-[:HAS_STAGE]->(st:PhenologyStage {name: $stage})
+                CREATE (st)-[:HAS_PARAMETER]->(p:PhenologyParams {
+                    kc: $kc,
+                    d1: $d1,
+                    d2: $d2,
+                    mdsRef: $mds_ref,
+                    cultivar: COALESCE($cultivar, '__contributed__'),
+                    management: COALESCE($management, '__contributed__'),
+                    climateZone: '__contributed__',
+                    isDefault: false,
+                    sourceDoi: $doi,
+                    sourceShort: 'Contributed: ' + COALESCE($author, 'anonymous'),
+                    sourceAuthor: $author,
+                    sourceYear: null,
+                    sourceConditions: $conditions,
+                    status: 'pending_review',
+                    contactEmail: $contact_email,
+                    submittedAt: datetime()
+                })
+                RETURN p.status AS status, p.sourceShort AS source
+                """,
+                species=species,
+                stage=stage,
+                kc=kc,
+                d1=d1,
+                d2=d2,
+                mds_ref=mds_ref,
+                cultivar=cultivar,
+                management=management,
+                doi=doi,
+                author=author,
+                conditions=conditions,
+                contact_email=contact_email,
+            )
+            record = await result.single()
+            if record is None:
+                return {"status": "error", "detail": "Failed to create"}
+            return {"status": record["status"], "source": record["source"]}

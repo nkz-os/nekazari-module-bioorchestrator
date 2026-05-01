@@ -95,6 +95,17 @@
       "management": "Coincidencia por manejo",
       "generic": "Valor genérico por defecto",
       "species_only": "Solo especie (sin datos de etapa)"
+    },
+    "contribute": {
+      "button": "Contribuir parámetro",
+      "title": "Contribuir parámetro fenológico",
+      "description": "Envía tus datos de investigación para revisión científica. Un administrador revisará tu contribución antes de incorporarla al conjunto de parámetros.",
+      "provenance": "Procedencia científica",
+      "author": "Autor(es)",
+      "conditions": "Condiciones del ensayo",
+      "cancel": "Cancelar",
+      "submit": "Enviar para revisión",
+      "success": "Parámetro enviado para revisión. Gracias por tu contribución."
     }
   }
 }
