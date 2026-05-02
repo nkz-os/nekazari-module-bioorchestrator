@@ -140,11 +140,51 @@ const RecommendationsPanel: React.FC<Props> = ({ parcelId, parcelName, cropType 
                 </div>
             )}
 
+            {/* Terrain */}
+            {lat != null && lon != null && <TerrainSection lat={lat} lon={lon} />}
+
+            {/* Climate */}
+            {lat != null && lon != null && <ClimateSection lat={lat} lon={lon} />}
+
             {/* Scenario */}
             <div className="rec-section">
                 <h4>🔮 Simular escenario</h4>
                 <ScenarioSimulator currentCrop={cropType} />
             </div>
+        </div>
+    );
+};
+
+const TerrainSection: React.FC<{ lat: number; lon: number }> = ({ lat, lon }) => {
+    const [data, setData] = useState<any>(null);
+    useEffect(() => {
+        fetch(`/api/bioorchestrator/api/graph/terrain?lat=${lat}&lon=${lon}`)
+            .then(r => r.ok ? r.json() : null).then(setData).catch(() => {});
+    }, [lat, lon]);
+    if (!data || data.error) return null;
+    return (
+        <div className="rec-section">
+            <h4>⛰️ Terreno (Copernicus DEM)</h4>
+            <table className="rec-table"><tbody>
+                {data.elevation_m != null && <tr><td>Altitud</td><td>{data.elevation_m} m</td></tr>}
+                {data.slope_degrees != null && <tr><td>Pendiente</td><td>{data.slope_degrees}°</td></tr>}
+            </tbody></table>
+            <p className="rec-source">📄 {data.source}</p>
+        </div>
+    );
+};
+
+const ClimateSection: React.FC<{ lat: number; lon: number }> = ({ lat, lon }) => {
+    const [data, setData] = useState<any>(null);
+    useEffect(() => {
+        fetch(`/api/bioorchestrator/api/graph/climate-reference?lat=${lat}&lon=${lon}`)
+            .then(r => r.ok ? r.json() : null).then(setData).catch(() => {});
+    }, [lat, lon]);
+    if (!data || data.error) return null;
+    return (
+        <div className="rec-section">
+            <h4>🌍 Climatología (ERA5-Land)</h4>
+            <p className="rec-source">📄 {data.source} {data.period_days ? `· ${data.period_days} días ref.` : ''}</p>
         </div>
     );
 };

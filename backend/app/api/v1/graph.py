@@ -314,6 +314,34 @@ async def pollinator_occurrences(lat: float = Query(...), lon: float = Query(...
         return {"pollinators": [], "error": str(e)}
 
 
+@router.get("/terrain")
+async def terrain_data(lat: float = Query(...), lon: float = Query(...)):
+    """Fetch elevation and slope from Copernicus DEM for a point."""
+    try:
+        from ikerketa.connectors.copernicus_dem import CopernicusDEMConnector
+        connector = CopernicusDEMConnector()
+        result = connector.fetch(lat=lat, lon=lon)
+        return result.entities[0] if result.entities else {"error": "No DEM data"}
+    except ImportError:
+        return {"error": "Copernicus DEM connector not available", "elevation_m": None}
+    except Exception as e:
+        return {"error": str(e)}
+
+
+@router.get("/climate-reference")
+async def climate_reference(lat: float = Query(...), lon: float = Query(...)):
+    """Fetch ERA5 climate reanalysis reference for a point."""
+    try:
+        from ikerketa.connectors.era5_climate import ERA5ClimateConnector
+        connector = ERA5ClimateConnector()
+        result = connector.fetch(lat=lat, lon=lon)
+        return result.entities[0] if result.entities else {"error": "No climate data"}
+    except ImportError:
+        return {"error": "ERA5 connector not available"}
+    except Exception as e:
+        return {"error": str(e)}
+
+
 @router.get("/recommendations/simulate")
 async def simulate_scenario(
     driver: DriverDep,
