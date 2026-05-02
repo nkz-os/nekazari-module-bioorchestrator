@@ -348,3 +348,112 @@ class GraphDAO:
             if record is None:
                 return {"status": "error", "detail": "Failed to create"}
             return {"status": record["status"], "source": record["source"]}
+
+    # ── Heat Tolerance ─────────────────────────────────────────────────────────
+
+    async def get_heat_tolerance(self, species: str) -> dict | None:
+        """Return heat/frost damage thresholds for a species."""
+        async with self._driver.session() as session:
+            result = await session.run(
+                """
+                MATCH (s:Species)-[:HAS_HEAT_TOLERANCE]->(h:CropHeatTolerance)
+                WHERE s.name = $species
+                RETURN h.heatDamageThresholdC AS heat_damage_c,
+                       h.frostDamageThresholdC AS frost_damage_c,
+                       h.heatAccumHours AS heat_accum_hours,
+                       h.sourceShort AS source_short,
+                       h.sourceDoi AS source_doi
+                LIMIT 1
+                """,
+                species=species,
+            )
+            record = await result.single()
+            if record is None:
+                return None
+            return dict(record)
+
+    # ── Nutrient Profile ──────────────────────────────────────────────────────
+
+    async def get_nutrient_profile(self, species: str, stage: str | None = None) -> dict | None:
+        """Return NPK uptake curve per phenological stage."""
+        async with self._driver.session() as session:
+            query = """
+                MATCH (s:Species {name: $species})-[:HAS_STAGE]->
+                      (st:PhenologyStage)-[:HAS_NUTRIENT_PROFILE]->(n:CropNutrientProfile)
+            """
+            params: dict = {"species": species}
+            if stage:
+                query += " WHERE st.name = $stage"
+                params["stage"] = stage
+            query += """
+                RETURN st.name AS stage, n.nitrogenUptake AS n_uptake,
+                       n.phosphorusUptake AS p_uptake, n.potassiumUptake AS k_uptake,
+                       n.sourceShort AS source_short, n.sourceDoi AS source_doi
+                ORDER BY st.name
+            """
+            result = await session.run(query, params)
+            records = await result.data()
+            return records if records else None
+
+    # ── Soil Suitability ──────────────────────────────────────────────────────
+
+    async def get_soil_suitability(self, species: str) -> dict | None:
+        """Return soil requirements for a crop species."""
+        async with self._driver.session() as session:
+            result = await session.run(
+                """
+                MATCH (s:Species {name: $species})-[:HAS_SOIL_SUITABILITY]->(ss:CropSoilSuitability)
+                RETURN ss.phMin AS ph_min, ss.phMax AS ph_max,
+                       ss.textures AS textures, ss.drainage AS drainage,
+                       ss.depthMinCm AS depth_min_cm,
+                       ss.salinityMaxDsM AS salinity_max_ds_m,
+                       ss.sourceShort AS source_short
+                LIMIT 1
+                """,
+                species=species,
+            )
+            record = await result.single()
+            if record is None:
+                return None
+            return dict(record)
+
+    # ── Rotation Constraints ──────────────────────────────────────────────────
+
+    async def get_rotation_constraints(self, crop: str) -> list[dict]:
+        """Return rotation constraints for a crop."""
+        async with self._driver.session() as session:
+            result = await session.run(
+                """
+                MATCH (rc:RotationConstraint)
+                WHERE rc.cropA = $crop
+                RETURN rc.cropB AS crop_b, rc.intervalYears AS interval_years,
+                       rc.reason AS reason, rc.sourceShort AS source_short
+                """,
+                crop=crop,
+            )
+            return [dict(r) for r in await result.data()]
+
+    async def recommend_next_crop(self, previous_crop: str, species: str | None = None) -> list[dict]:
+        """Suggest next crop based on rotation rules: exclude constrained crops."""
+        async with self._driver.session() as session:
+            # Get all constraints where previous_crop has restrictions
+            result = await session.run(
+                """
+                MATCH (rc:RotationConstraint {cropA: $crop})
+                RETURN rc.cropB AS restricted, rc.intervalYears AS years, rc.reason AS reason
+                """,
+                crop=previous_crop,
+            )
+            restricted = {r["restricted"] for r in await result.data()}
+
+            # Get all available species that are NOT restricted
+            result2 = await session.run(
+                """
+                MATCH (s:Species)
+                WHERE NOT s.name IN $restricted OR $restricted = []
+                RETURN s.name AS name, s.scientificName AS scientific_name
+                ORDER BY s.name
+                """,
+                restricted=list(restricted),
+            )
+            return [dict(r) for r in await result2.data()]

@@ -45,5 +45,9 @@ class Settings(BaseSettings):
     dadis_api_url: str = "https://us-central1-fao-dadis-dev.cloudfunctions.net/api/v1"
     dadis_api_token: str = ""
 
+    # ── IUCN Red List API ─────────────────────────────────────────────────────
+    iucn_api_url: str = "https://api.iucnredlist.org/api/v4"
+    iucn_api_token: str = ""
+
 
 settings = Settings()

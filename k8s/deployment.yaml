@@ -35,6 +35,8 @@ spec:
               value: "false"
             - name: AUTH_STRICT
               value: "true"
+            - name: DADIS_API_URL
+              value: "https://us-central1-fao-dadis-dev.cloudfunctions.net/api/v1"
             - name: DADIS_API_TOKEN
               valueFrom:
                 secretKeyRef:

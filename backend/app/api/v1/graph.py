@@ -147,3 +147,79 @@ async def contribute_phenology_params(
     if result["status"] == "error":
         raise HTTPException(status_code=500, detail=result.get("detail", "Unknown error"))
     return result
+
+
+# ── Heat Tolerance ────────────────────────────────────────────────────────────
+
+
+@router.get("/heat-tolerance")
+async def heat_tolerance(
+    driver: DriverDep,
+    species: str = Query(..., description="Species name"),
+):
+    """Return heat/frost damage thresholds for a species."""
+    dao = GraphDAO(driver)
+    data = await dao.get_heat_tolerance(species)
+    if data is None:
+        raise HTTPException(status_code=404, detail=f"No heat tolerance data for {species}")
+    return data
+
+
+# ── Nutrient Profile ──────────────────────────────────────────────────────────
+
+
+@router.get("/nutrient-profile")
+async def nutrient_profile(
+    driver: DriverDep,
+    species: str = Query(..., description="Species name"),
+    stage: str | None = Query(None, description="Phenological stage filter"),
+):
+    """Return NPK uptake curve per phenological stage."""
+    dao = GraphDAO(driver)
+    data = await dao.get_nutrient_profile(species, stage)
+    if data is None:
+        raise HTTPException(status_code=404, detail=f"No nutrient data for {species}")
+    return data
+
+
+# ── Soil Suitability ──────────────────────────────────────────────────────────
+
+
+@router.get("/soil-suitability")
+async def soil_suitability(
+    driver: DriverDep,
+    species: str = Query(..., description="Species name"),
+):
+    """Return soil requirements (pH, texture, drainage, depth, salinity)."""
+    dao = GraphDAO(driver)
+    data = await dao.get_soil_suitability(species)
+    if data is None:
+        raise HTTPException(status_code=404, detail=f"No soil data for {species}")
+    return data
+
+
+# ── Rotation Constraints ──────────────────────────────────────────────────────
+
+
+@router.get("/rotation-constraints")
+async def rotation_constraints(
+    driver: DriverDep,
+    crop: str = Query(..., description="Crop name to check rotation for"),
+):
+    """Return rotation constraints for a crop."""
+    dao = GraphDAO(driver)
+    return await dao.get_rotation_constraints(crop)
+
+
+# ── Recommendations ───────────────────────────────────────────────────────────
+
+
+@router.get("/recommendations/next-crop")
+async def recommend_next_crop(
+    driver: DriverDep,
+    previous_crop: str = Query(..., description="Previous crop grown on the parcel"),
+):
+    """Suggest next crop based on rotation rules, excluding constrained crops."""
+    dao = GraphDAO(driver)
+    crops = await dao.recommend_next_crop(previous_crop)
+    return {"previous_crop": previous_crop, "suggested_crops": crops}

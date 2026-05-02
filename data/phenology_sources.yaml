@@ -404,3 +404,225 @@ stage_detection:
         gdd_from_emergence: [0, 700]
       - name: stem_elongation
         gdd_from_emergence: [700, 1400]
+
+# =============================================================================
+# Crop Heat Tolerance — damage thresholds per species
+# =============================================================================
+
+crop_heat_tolerance:
+
+  olive:
+    heat_damage_threshold_c: 35.0
+    frost_damage_threshold_c: -5.0
+    heat_accum_hours: 6
+    source:
+      short: "Connor & Fereres 2005"
+      doi: "10.1016/j.scienta.2005.03.008"
+      author: "Connor, Fereres"
+      year: 2005
+      conditions: "Olea europaea, Mediterranean, field conditions"
+
+  almond:
+    heat_damage_threshold_c: 33.0
+    frost_damage_threshold_c: -2.0
+    heat_accum_hours: 4
+    source:
+      short: "Egea et al. 2011"
+      doi: "10.1016/j.agwat.2010.10.002"
+      author: "Egea, Nortes, González-Real, Baille"
+      year: 2011
+      conditions: "Prunus dulcis, SE Spain, RDI trial"
+
+  grapevine:
+    heat_damage_threshold_c: 32.0
+    frost_damage_threshold_c: -1.5
+    heat_accum_hours: 3
+    source:
+      short: "Schultz & Lebon 2005"
+      doi: "10.1111/j.1755-0238.2005.tb00016.x"
+      author: "Schultz, Lebon"
+      year: 2005
+      conditions: "Vitis vinifera, Bordeaux, field measurements"
+
+  wheat:
+    heat_damage_threshold_c: 30.0
+    frost_damage_threshold_c: -4.0
+    heat_accum_hours: 5
+    source:
+      short: "Porter & Gawith 1999"
+      doi: "10.1016/S1161-0301(98)00034-3"
+      author: "Porter, Gawith"
+      year: 1999
+      conditions: "Triticum aestivum, review of thresholds"
+
+# =============================================================================
+# Crop Nutrient Profiles — NPK uptake per phenological stage (kg/ha/day)
+# =============================================================================
+
+crop_nutrient_profiles:
+
+  olive:
+    nitrogen:
+      vegetative:    { uptake_kg_ha_day: 0.8,  total_kg_ha: 80  }
+      pit_hardening: { uptake_kg_ha_day: 0.5,  total_kg_ha: 50  }
+      fruit_growth:  { uptake_kg_ha_day: 0.3,  total_kg_ha: 30  }
+    phosphorus:
+      vegetative:    { uptake_kg_ha_day: 0.15, total_kg_ha: 15  }
+      pit_hardening: { uptake_kg_ha_day: 0.10, total_kg_ha: 10  }
+      fruit_growth:  { uptake_kg_ha_day: 0.08, total_kg_ha: 8   }
+    potassium:
+      vegetative:    { uptake_kg_ha_day: 1.0,  total_kg_ha: 100 }
+      pit_hardening: { uptake_kg_ha_day: 0.7,  total_kg_ha: 70  }
+      fruit_growth:  { uptake_kg_ha_day: 0.5,  total_kg_ha: 50  }
+    source:
+      short: "Fernández-Escobar et al. 2012"
+      doi: "10.1007/978-94-007-3473-3_8"
+      author: "Fernández-Escobar, García-Novelo, Restrepo-Díaz"
+      year: 2012
+      conditions: "Olea europaea, Córdoba, adult orchard"
+
+  almond:
+    nitrogen:
+      vegetative:    { uptake_kg_ha_day: 1.0,  total_kg_ha: 100 }
+      kernel_fill:   { uptake_kg_ha_day: 0.7,  total_kg_ha: 70  }
+    phosphorus:
+      vegetative:    { uptake_kg_ha_day: 0.20, total_kg_ha: 20  }
+      kernel_fill:   { uptake_kg_ha_day: 0.12, total_kg_ha: 12  }
+    potassium:
+      vegetative:    { uptake_kg_ha_day: 1.2,  total_kg_ha: 120 }
+      kernel_fill:   { uptake_kg_ha_day: 0.9,  total_kg_ha: 90  }
+    source:
+      short: "Muhammad et al. 2015"
+      author: "Muhammad, Sanden, Lampinen, Brown"
+      year: 2015
+      conditions: "Prunus dulcis, California, mature orchard"
+
+  grapevine:
+    nitrogen:
+      vegetative:    { uptake_kg_ha_day: 0.5,  total_kg_ha: 40  }
+      veraison:      { uptake_kg_ha_day: 0.3,  total_kg_ha: 20  }
+    phosphorus:
+      vegetative:    { uptake_kg_ha_day: 0.10, total_kg_ha: 8   }
+      veraison:      { uptake_kg_ha_day: 0.05, total_kg_ha: 4   }
+    potassium:
+      vegetative:    { uptake_kg_ha_day: 0.8,  total_kg_ha: 60  }
+      veraison:      { uptake_kg_ha_day: 0.6,  total_kg_ha: 40  }
+    source:
+      short: "Schreiner et al. 2006"
+      doi: "10.5344/ajev.2006.57.2.158"
+      author: "Schreiner, Scagel, Baham"
+      year: 2006
+      conditions: "Vitis vinifera, Oregon, Pinot Noir"
+
+  wheat:
+    nitrogen:
+      vegetative:       { uptake_kg_ha_day: 1.5,  total_kg_ha: 60  }
+      stem_elongation:  { uptake_kg_ha_day: 2.5,  total_kg_ha: 120 }
+    phosphorus:
+      vegetative:       { uptake_kg_ha_day: 0.3,  total_kg_ha: 12  }
+      stem_elongation:  { uptake_kg_ha_day: 0.4,  total_kg_ha: 20  }
+    potassium:
+      vegetative:       { uptake_kg_ha_day: 2.0,  total_kg_ha: 80  }
+      stem_elongation:  { uptake_kg_ha_day: 3.0,  total_kg_ha: 150 }
+    source:
+      short: "Zörb et al. 2014"
+      author: "Zörb, Senbayram, Peiter"
+      year: 2014
+      conditions: "Triticum aestivum, review of nutrient uptake"
+
+# =============================================================================
+# Crop Soil Suitability — requirements per species
+# =============================================================================
+
+crop_soil_suitability:
+
+  olive:
+    ph_min: 6.0
+    ph_max: 8.5
+    textures: [loam, sandy_loam, clay_loam]
+    drainage: [well, moderate]
+    depth_min_cm: 80
+    salinity_max_ds_m: 4.0
+    source:
+      short: "EcoCrop / FAO"
+      author: "FAO"
+      year: 1998
+      conditions: "Olea europaea, Mediterranean conditions"
+
+  almond:
+    ph_min: 6.0
+    ph_max: 7.8
+    textures: [sandy_loam, loam]
+    drainage: [well]
+    depth_min_cm: 100
+    salinity_max_ds_m: 2.5
+    source:
+      short: "EcoCrop / FAO"
+      author: "FAO"
+      conditions: "Prunus dulcis, temperate/warm conditions"
+
+  grapevine:
+    ph_min: 5.5
+    ph_max: 8.0
+    textures: [sandy_loam, loam, gravelly]
+    drainage: [well, excessive]
+    depth_min_cm: 60
+    salinity_max_ds_m: 2.0
+    source:
+      short: "FAO-56 wine grapes"
+      author: "Allen et al."
+      year: 1998
+
+  wheat:
+    ph_min: 6.0
+    ph_max: 8.0
+    textures: [loam, clay_loam, silt_loam]
+    drainage: [well, moderate]
+    depth_min_cm: 50
+    salinity_max_ds_m: 6.0
+    source:
+      short: "FAO-56 wheat"
+      author: "Allen et al."
+      year: 1998
+
+# =============================================================================
+# Rotation Constraints — crop rotation minimum intervals and reasons
+# =============================================================================
+
+rotation_constraints:
+
+  - crop_a: wheat
+    crop_b: wheat
+    interval_years: 2
+    reason: "Common root pathogens (Gaeumannomyces graminis — take-all)"
+    source_short: "FAO Crop Rotation Guidelines"
+
+  - crop_a: wheat
+    crop_b: sunflower
+    interval_years: 3
+    reason: "Shared soil-borne pathogens (Sclerotinia sclerotiorum)"
+    source_short: "FAO Crop Rotation Guidelines"
+
+  - crop_a: wheat
+    crop_b: legume
+    interval_years: 0
+    reason: "Beneficial: wheat consumes N, legume fixes N — complementary"
+    source_short: "FAO Crop Rotation Guidelines"
+
+  - crop_a: almond
+    crop_b: almond
+    interval_years: 0
+    reason: "Perennial tree crop — no rotation constraint"
+    source_short: "Standard practice"
+
+  - crop_a: olive
+    crop_b: olive
+    interval_years: 0
+    reason: "Perennial tree crop — no rotation constraint"
+    source_short: "Standard practice"
+
+  - crop_a: grapevine
+    crop_b: grapevine
+    interval_years: 0
+    reason: "Perennial vine — no rotation constraint"
+    source_short: "Standard practice"
