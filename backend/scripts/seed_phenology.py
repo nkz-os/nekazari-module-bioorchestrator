@@ -175,6 +175,101 @@ def seed(driver: Driver, data: dict[str, Any]) -> dict[str, int]:
                         )
                         counts["alternatives"] += 1
 
+        # ── Seed Heat Tolerance ────────────────────────────────────────
+        ht_data = data.get("crop_heat_tolerance", {})
+        for sp_name, ht in ht_data.items():
+            src = ht.get("source", {})
+            session.run(
+                """
+                MATCH (s:Species {name: $species})
+                MERGE (s)-[:HAS_HEAT_TOLERANCE]->(h:CropHeatTolerance {species: $species})
+                SET h.heatDamageThresholdC = $heat,
+                    h.frostDamageThresholdC = $frost,
+                    h.heatAccumHours = $hours,
+                    h.sourceShort = $src_short,
+                    h.sourceDoi = $src_doi,
+                    h.sourceAuthor = $src_author,
+                    h.sourceYear = $src_year,
+                    h.sourceConditions = $src_cond
+                """,
+                species=sp_name,
+                heat=ht.get("heat_damage_threshold_c"),
+                frost=ht.get("frost_damage_threshold_c"),
+                hours=ht.get("heat_accum_hours"),
+                src_short=src.get("short"),
+                src_doi=src.get("doi"),
+                src_author=src.get("author"),
+                src_year=src.get("year"),
+                src_cond=src.get("conditions"),
+            )
+            counts["params"] += 1
+
+        # ── Seed Nutrient Profiles ──────────────────────────────────────
+        np_data = data.get("crop_nutrient_profiles", {})
+        for sp_name, nutrients in np_data.items():
+            src = nutrients.get("source", {})
+            for element in ["nitrogen", "phosphorus", "potassium"]:
+                el_data = nutrients.get(element, {})
+                for stage_name, vals in el_data.items():
+                    if stage_name == "source":
+                        continue
+                    session.run(
+                        """
+                        MATCH (s:Species {name: $species})-[:HAS_STAGE]->(st:PhenologyStage {name: $stage})
+                        MERGE (st)-[:HAS_NUTRIENT_PROFILE]->(n:CropNutrientProfile {species: $species, stage: $stage, element: $el})
+                        SET n.uptakeKgHaDay = $uptake,
+                            n.totalKgHa = $total,
+                            n.sourceShort = $src_short,
+                            n.sourceDoi = $src_doi
+                        """,
+                        species=sp_name,
+                        stage=stage_name,
+                        el=element,
+                        uptake=vals.get("uptake_kg_ha_day"),
+                        total=vals.get("total_kg_ha"),
+                        src_short=src.get("short"),
+                        src_doi=src.get("doi"),
+                    )
+                    counts["params"] += 1
+
+        # ── Seed Soil Suitability ───────────────────────────────────────
+        ss_data = data.get("crop_soil_suitability", {})
+        for sp_name, ss in ss_data.items():
+            src = ss.get("source", {})
+            session.run(
+                """
+                MATCH (s:Species {name: $species})
+                MERGE (s)-[:HAS_SOIL_SUITABILITY]->(ssn:CropSoilSuitability {species: $species})
+                SET ssn.phMin = $ph_min, ssn.phMax = $ph_max,
+                    ssn.textures = $textures, ssn.drainage = $drainage,
+                    ssn.depthMinCm = $depth, ssn.salinityMaxDsM = $salinity,
+                    ssn.sourceShort = $src_short
+                """,
+                species=sp_name,
+                ph_min=ss.get("ph_min"), ph_max=ss.get("ph_max"),
+                textures=ss.get("textures", []), drainage=ss.get("drainage", []),
+                depth=ss.get("depth_min_cm"), salinity=ss.get("salinity_max_ds_m"),
+                src_short=src.get("short"),
+            )
+            counts["params"] += 1
+
+        # ── Seed Rotation Constraints ───────────────────────────────────
+        rc_data = data.get("rotation_constraints", [])
+        for rc in rc_data:
+            session.run(
+                """
+                MERGE (r:RotationConstraint {cropA: $crop_a, cropB: $crop_b})
+                SET r.intervalYears = $interval,
+                    r.reason = $reason,
+                    r.sourceShort = $src_short
+                """,
+                crop_a=rc.get("crop_a"), crop_b=rc.get("crop_b"),
+                interval=rc.get("interval_years"),
+                reason=rc.get("reason"),
+                src_short=rc.get("source_short"),
+            )
+            counts["params"] += 1
+
     return counts
 
 
