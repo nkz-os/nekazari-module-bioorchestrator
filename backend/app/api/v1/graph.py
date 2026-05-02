@@ -225,6 +225,95 @@ async def recommend_next_crop(
     return {"previous_crop": previous_crop, "suggested_crops": crops}
 
 
+# ── Soil Data (SoilGrids proxy) ──────────────────────────────────────────────
+
+
+@router.get("/soil-data")
+async def soil_data(
+    lat: float = Query(..., description="Latitude"),
+    lon: float = Query(..., description="Longitude"),
+):
+    """Fetch soil properties from SoilGrids 2.0 for a geographic point."""
+    try:
+        from ikerketa.connectors.soilgrids import SoilGridsConnector
+        connector = SoilGridsConnector()
+        result = connector.fetch(lat=lat, lon=lon)
+        if result.entities:
+            return result.entities[0]
+        return {"error": "No soil data for this location", "errors": result.errors}
+    except ImportError:
+        return {"error": "SoilGrids connector not available"}
+    except Exception as e:
+        return {"error": str(e)}
+
+
+# ── Protected Area Check (Natura 2000 proxy) ─────────────────────────────────
+
+
+@router.get("/protected-area-check")
+async def protected_area_check(
+    lat: float = Query(..., description="Latitude"),
+    lon: float = Query(..., description="Longitude"),
+):
+    """Check if a point is within a Natura 2000 protected area."""
+    try:
+        from ikerketa.connectors.natura2000 import Natura2000Connector
+        connector = Natura2000Connector()
+        result = connector.fetch(lat=lat, lon=lon)
+        if result.entities:
+            return result.entities[0] if len(result.entities) == 1 else result.entities
+        return {"in_protected_area": False}
+    except ImportError:
+        return {"error": "Natura 2000 connector not available"}
+    except Exception as e:
+        return {"error": str(e)}
+
+
+@router.get("/varieties")
+async def variety_catalogue(species: str = Query(..., description="Crop species")):
+    """Return CPVO registered varieties for a crop species."""
+    try:
+        from ikerketa.connectors.cpvo_varieties import CPVOVarietiesConnector
+        connector = CPVOVarietiesConnector()
+        result = connector.fetch()
+        varieties = [v for v in result.entities if species.lower() in (v.get("species", "")).lower()]
+        return {"varieties": varieties[:20]}
+    except ImportError:
+        return {"varieties": []}
+    except Exception as e:
+        return {"varieties": [], "error": str(e)}
+
+
+@router.get("/pesticides")
+async def pesticide_validation(crop: str = Query(..., description="Crop name")):
+    """Return authorized active substances for a crop from EU Pesticides DB."""
+    try:
+        from ikerketa.connectors.eu_pesticides import EUPesticidesConnector
+        connector = EUPesticidesConnector()
+        result = connector.fetch()
+        substances = [s for s in result.entities if crop.lower() in (s.get("crop", "")).lower()]
+        return {"substances": substances[:20]}
+    except ImportError:
+        return {"substances": []}
+    except Exception as e:
+        return {"substances": [], "error": str(e)}
+
+
+@router.get("/pollinators")
+async def pollinator_occurrences(lat: float = Query(...), lon: float = Query(...)):
+    """Return pollinator species near a location from GBIF."""
+    try:
+        from ikerketa.connectors.gbif_pollinators import GBIFPollinatorsConnector
+        connector = GBIFPollinatorsConnector()
+        result = connector.fetch(lat=lat, lon=lon)
+        species = list({e["species"]: e for e in result.entities}.values())
+        return {"pollinators": species[:10]}
+    except ImportError:
+        return {"pollinators": []}
+    except Exception as e:
+        return {"pollinators": [], "error": str(e)}
+
+
 @router.get("/recommendations/simulate")
 async def simulate_scenario(
     driver: DriverDep,
