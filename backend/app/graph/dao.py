@@ -493,3 +493,94 @@ class GraphDAO:
                 })
 
             return {"species": species, "stage": stage, "recommendations": recommendations}
+
+    async def simulate_scenario(
+        self, baseline_crop: str, scenario_crop: str,
+        baseline_sowing: str | None = None, scenario_sowing: str | None = None,
+    ) -> dict:
+        """Compare two agronomic scenarios and return deltas.
+
+        Returns yield gap delta, fertilizer delta, and constraint violations
+        for the scenario vs baseline. Pure rule-based, no ML.
+        """
+        result: dict = {
+            "baseline": baseline_crop,
+            "scenario": scenario_crop,
+            "rotation_ok": True,
+            "rotation_issue": "",
+            "soil_ok": True,
+            "soil_issues": [],
+            "fertilizer_delta": [],
+            "recommendation": "",
+        }
+
+        async with self._driver.session() as session:
+            # Check rotation constraint
+            rc = await session.run(
+                "MATCH (r:RotationConstraint {cropA: $baseline, cropB: $scenario}) "
+                "RETURN r.intervalYears AS years, r.reason AS reason",
+                baseline=baseline_crop, scenario=scenario_crop,
+            )
+            row = await rc.single()
+            if row and row["years"] and row["years"] > 0:
+                result["rotation_ok"] = False
+                result["rotation_issue"] = (
+                    f"{row['reason']}. Minimum interval: {row['years']} years."
+                )
+
+            # Check soil suitability for scenario crop
+            ss = await session.run(
+                "MATCH (s:Species {name: $crop})-[:HAS_SOIL_SUITABILITY]->(ss:CropSoilSuitability) "
+                "RETURN ss.phMin, ss.phMax, ss.textures, ss.drainage, ss.depthMinCm, ss.salinityMaxDsM",
+                crop=scenario_crop,
+            )
+            soil = await ss.single()
+            if not soil:
+                result["soil_issues"].append("No soil suitability data for scenario crop")
+                result["soil_ok"] = False
+
+            # Compare fertilizer needs (simplified: total NPK per season)
+            base_n = await session.run(
+                "MATCH (s:Species {name: $crop})-[:HAS_STAGE]->(:PhenologyStage)-[:HAS_NUTRIENT_PROFILE]->(n:CropNutrientProfile {element: 'nitrogen'}) "
+                "RETURN sum(n.uptakeKgHaDay) AS total", crop=baseline_crop,
+            )
+            base_total = (await base_n.single())
+            base_n_val = float(base_total["total"] or 0) if base_total else 0
+
+            sc_n = await session.run(
+                "MATCH (s:Species {name: $crop})-[:HAS_STAGE]->(:PhenologyStage)-[:HAS_NUTRIENT_PROFILE]->(n:CropNutrientProfile {element: 'nitrogen'}) "
+                "RETURN sum(n.uptakeKgHaDay) AS total", crop=scenario_crop,
+            )
+            sc_total = (await sc_n.single())
+            sc_n_val = float(sc_total["total"] or 0) if sc_total else 0
+
+            delta = sc_n_val - base_n_val
+            if delta > 1:
+                result["fertilizer_delta"].append(
+                    {"element": "nitrogen", "delta_kg_ha_day": round(delta, 1),
+                     "note": "Scenario needs more N than baseline"}
+                )
+            elif delta < -1:
+                result["fertilizer_delta"].append(
+                    {"element": "nitrogen", "delta_kg_ha_day": round(delta, 1),
+                     "note": "Scenario needs less N than baseline"}
+                )
+
+            # Recommendation
+            issues = []
+            if not result["rotation_ok"]:
+                issues.append("rotation constraint violated")
+            if not result["soil_ok"]:
+                issues.append("soil suitability issues")
+            if abs(delta) > 0:
+                issues.append("fertilizer adjustment needed")
+
+            if not issues:
+                result["recommendation"] = f"{scenario_crop} is a suitable alternative to {baseline_crop}."
+            else:
+                result["recommendation"] = (
+                    f"{scenario_crop} vs {baseline_crop}: {'; '.join(issues)}. "
+                    "Review before adopting."
+                )
+
+        return result

@@ -225,6 +225,17 @@ async def recommend_next_crop(
     return {"previous_crop": previous_crop, "suggested_crops": crops}
 
 
+@router.get("/recommendations/simulate")
+async def simulate_scenario(
+    driver: DriverDep,
+    baseline_crop: str = Query(..., description="Current crop"),
+    scenario_crop: str = Query(..., description="Proposed alternative crop"),
+):
+    """Compare two agronomic scenarios: rotation, soil, fertilizer delta."""
+    dao = GraphDAO(driver)
+    return await dao.simulate_scenario(baseline_crop, scenario_crop)
+
+
 @router.get("/recommendations/fertilizer")
 async def recommend_fertilizer(
     driver: DriverDep,

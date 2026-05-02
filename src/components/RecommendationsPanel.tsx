@@ -97,6 +97,12 @@ const RecommendationsPanel: React.FC<Props> = ({ parcelId, parcelName, cropType 
                 </div>
             )}
 
+            {/* Scenario Simulation */}
+            <div className="rec-section">
+                <h4>🔮 Simular escenario</h4>
+                <ScenarioSimulator currentCrop={cropType} />
+            </div>
+
             {/* Fertilizer */}
             {fertilizer.length > 0 && (
                 <div className="rec-section">
@@ -107,6 +113,62 @@ const RecommendationsPanel: React.FC<Props> = ({ parcelId, parcelName, cropType 
                             <span className="rec-fert-uptake">{f.uptake_kg_ha_day} kg/ha/día</span>
                             <span className={`rec-fert-status rec-fert-${f.status}`}>{f.action}</span>
                         </div>
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+};
+
+// ── Scenario Simulator sub-component ──────────────────────────────────────
+
+const SCENARIO_CROPS = ['wheat', 'sunflower', 'almond', 'olive', 'grapevine', 'legume'];
+
+const ScenarioSimulator: React.FC<{ currentCrop: string }> = ({ currentCrop }) => {
+    const [scenario, setScenario] = useState('');
+    const [result, setResult] = useState<any>(null);
+    const [loading, setLoading] = useState(false);
+
+    const runSimulation = async () => {
+        if (!scenario) return;
+        setLoading(true);
+        try {
+            const resp = await fetch(
+                `/api/bioorchestrator/api/graph/recommendations/simulate?baseline_crop=${currentCrop}&scenario_crop=${scenario}`
+            );
+            if (resp.ok) setResult(await resp.json());
+        } catch {} finally { setLoading(false); }
+    };
+
+    return (
+        <div className="rec-simulate">
+            <div className="rec-sim-controls">
+                <select value={scenario} onChange={e => setScenario(e.target.value)}>
+                    <option value="">Seleccionar alternativa...</option>
+                    {SCENARIO_CROPS.filter(c => c !== currentCrop).map(c => (
+                        <option key={c} value={c}>{c}</option>
+                    ))}
+                </select>
+                <button onClick={runSimulation} disabled={!scenario || loading}>
+                    {loading ? '...' : 'Comparar'}
+                </button>
+            </div>
+
+            {result && (
+                <div className="rec-sim-result">
+                    <p className="rec-sim-recommendation">
+                        {result.rotation_ok ? '✅' : '⚠️'} {result.recommendation}
+                    </p>
+                    {result.rotation_issue && (
+                        <p className="rec-sim-issue">🔄 {result.rotation_issue}</p>
+                    )}
+                    {result.soil_issues?.map((s: string, i: number) => (
+                        <p key={i} className="rec-sim-issue">🌍 {s}</p>
+                    ))}
+                    {result.fertilizer_delta?.map((f: any, i: number) => (
+                        <p key={i} className="rec-sim-delta">
+                            🧪 {f.element}: {f.delta_kg_ha_day > 0 ? '+' : ''}{f.delta_kg_ha_day} kg/ha/day — {f.note}
+                        </p>
                     ))}
                 </div>
             )}
