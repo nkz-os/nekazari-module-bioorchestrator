@@ -457,3 +457,39 @@ class GraphDAO:
                 restricted=list(restricted),
             )
             return [dict(r) for r in await result2.data()]
+
+    async def recommend_fertilizer(
+        self, species: str, stage: str, soil_n: float = 0, soil_p: float = 0, soil_k: float = 0
+    ) -> dict | None:
+        """Return NPK fertilizer needs based on soil levels and crop demand."""
+        async with self._driver.session() as session:
+            result = await session.run(
+                """
+                MATCH (s:Species {name: $species})-[:HAS_STAGE]->(st:PhenologyStage {name: $stage})
+                     -[:HAS_NUTRIENT_PROFILE]->(n:CropNutrientProfile)
+                RETURN n.element AS element, n.uptakeKgHaDay AS uptake
+                """,
+                species=species, stage=stage,
+            )
+            records = await result.data()
+            if not records:
+                return None
+
+            soil = {"nitrogen": soil_n, "phosphorus": soil_p, "potassium": soil_k}
+            recommendations = []
+            for r in records:
+                element = r["element"]
+                uptake = float(r["uptake"] or 0)
+                level = soil.get(element, 0)
+                if level < uptake * 0.5:
+                    status, action = "deficient", f"Increase {element}"
+                elif level < uptake:
+                    status, action = "adequate", f"Maintain {element}"
+                else:
+                    status, action = "sufficient", f"Sufficient {element}"
+                recommendations.append({
+                    "element": element, "uptake_kg_ha_day": uptake,
+                    "soil_level": level, "status": status, "action": action,
+                })
+
+            return {"species": species, "stage": stage, "recommendations": recommendations}

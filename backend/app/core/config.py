@@ -46,7 +46,7 @@ class Settings(BaseSettings):
     dadis_api_token: str = ""
 
     # ── IUCN Red List API ─────────────────────────────────────────────────────
-    iucn_api_url: str = "https://api.iucnredlist.org/api/v4"
+    iucn_api_url: str = "https://apiv3.iucnredlist.org/api/v4"
     iucn_api_token: str = ""
 
 

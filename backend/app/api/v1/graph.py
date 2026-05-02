@@ -223,3 +223,20 @@ async def recommend_next_crop(
     dao = GraphDAO(driver)
     crops = await dao.recommend_next_crop(previous_crop)
     return {"previous_crop": previous_crop, "suggested_crops": crops}
+
+
+@router.get("/recommendations/fertilizer")
+async def recommend_fertilizer(
+    driver: DriverDep,
+    species: str = Query(..., description="Crop species"),
+    stage: str = Query("vegetative", description="Phenological stage"),
+    soil_n: float = Query(0, description="Soil nitrogen level (kg/ha)"),
+    soil_p: float = Query(0, description="Soil phosphorus level (kg/ha)"),
+    soil_k: float = Query(0, description="Soil potassium level (kg/ha)"),
+):
+    """Return NPK fertilizer recommendations based on crop demand and soil levels."""
+    dao = GraphDAO(driver)
+    data = await dao.recommend_fertilizer(species, stage, soil_n, soil_p, soil_k)
+    if data is None:
+        raise HTTPException(status_code=404, detail=f"No nutrient data for {species}/{stage}")
+    return data

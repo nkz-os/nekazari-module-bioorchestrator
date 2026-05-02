@@ -8,6 +8,7 @@
 import App from './App';
 import SourceStatusWidget from './slots/SourceStatusWidget';
 import { PipelineRunner } from './slots/PipelineRunnerWidget';
+import RecommendationsPanel from './components/RecommendationsPanel';
 
 const moduleExport = {
     id: 'bioorchestrator',
@@ -18,6 +19,7 @@ const moduleExport = {
     slots: {
         'context-panel': {
             SourcesStatus: SourceStatusWidget,
+            Recommendations: RecommendationsPanel,
         },
         'bottom-panel': {
             PipelineRunner: PipelineRunner,
