@@ -258,16 +258,85 @@ const PhenologyBrowser: React.FC = () => {
                                     <span className="alt-kc">Kc = {alt.kc?.toFixed(2)}</span>
                                     {alt.sourceShort && <span className="alt-source"> — {alt.sourceShort}</span>}
                                     {alt.sourceDoi && (
-                                        <a href={`https://doi.org/${alt.sourceDoi}`} target="_blank" rel="noopener" className="alt-doi">
-                                            DOI
-                                        </a>
+                                        <a href={`https://doi.org/${alt.sourceDoi}`} target="_blank" rel="noopener" className="alt-doi">DOI</a>
                                     )}
                                 </div>
                             ))}
                         </div>
                     )}
+
+                    {/* Heat Tolerance */}
+                    <HeatToleranceSection species={species} t={t} />
+
+                    {/* Nutrient Profile */}
+                    <NutrientProfileSection species={species} stage={data.stage} t={t} />
                 </div>
             )}
+        </div>
+    );
+};
+
+// ── Heat Tolerance sub-component ──────────────────────────────────────────
+
+const HeatToleranceSection: React.FC<{ species: string; t: any }> = ({ species, t }) => {
+    const [data, setData] = useState<any>(null);
+
+    useEffect(() => {
+        fetch(`/api/bioorchestrator/api/graph/heat-tolerance?species=${species}`)
+            .then(r => r.ok ? r.json() : null)
+            .then(setData)
+            .catch(() => {});
+    }, [species]);
+
+    if (!data) return null;
+
+    return (
+        <div className="pheno-section">
+            <h4>🌡️ {t('phenology.thermal') || 'Thermal Tolerance'}</h4>
+            <table className="pheno-table">
+                <tbody>
+                    <tr><td>Daño por calor</td><td>&gt; {data.heat_damage_c}°C (foliar)</td></tr>
+                    <tr><td>Daño por helada</td><td>&lt; {data.frost_damage_c}°C (aire)</td></tr>
+                    <tr><td>Horas acumulación</td><td>{data.heat_accum_hours}h para alerta</td></tr>
+                </tbody>
+            </table>
+            {data.source_short && <p className="provenance-method">📄 {data.source_short}{data.source_doi ? ` · DOI: ${data.source_doi}` : ''}</p>}
+        </div>
+    );
+};
+
+// ── Nutrient Profile sub-component ────────────────────────────────────────
+
+const NutrientProfileSection: React.FC<{ species: string; stage?: string; t: any }> = ({ species, stage, t }) => {
+    const [data, setData] = useState<any[]>([]);
+
+    useEffect(() => {
+        const url = stage
+            ? `/api/bioorchestrator/api/graph/nutrient-profile?species=${species}&stage=${stage}`
+            : `/api/bioorchestrator/api/graph/nutrient-profile?species=${species}`;
+        fetch(url)
+            .then(r => r.ok ? r.json() : [])
+            .then(d => setData(Array.isArray(d) ? d : []))
+            .catch(() => {});
+    }, [species, stage]);
+
+    if (!data.length) return null;
+
+    return (
+        <div className="pheno-section">
+            <h4>🧪 {t('phenology.nutrients') || 'Nutrient Uptake'}</h4>
+            <table className="pheno-table">
+                <thead><tr><th>Nutriente</th><th>Etapa</th><th>kg/ha/día</th></tr></thead>
+                <tbody>
+                    {data.map((d: any, i: number) => (
+                        <tr key={i}>
+                            <td>{d.element?.toUpperCase()}</td>
+                            <td>{d.stage}</td>
+                            <td>{d.n_uptake || d.p_uptake || d.k_uptake || '—'}</td>
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
         </div>
     );
 };
