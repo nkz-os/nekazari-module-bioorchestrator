@@ -50,6 +50,11 @@
         "type": "iife",
         "remote_entry_url": "/modules/bioorchestrator/nekazari-module.js"
     },
+    "accent": {
+        "base": "#14B8A6",
+        "soft": "#CCFBF1",
+        "strong": "#0D9488"
+    },
     "backend_config": {
         "enabled": true,
         "image": "ghcr.io/nkz-os/bioorchestrator-backend:0.1.0",
@@ -61,11 +66,41 @@
     },
     "slots": {
         "context-panel": [
-            "SourcesStatus"
+            {
+                "id": "bioorchestrator-source-status",
+                "component": "SourceStatusWidget",
+                "priority": 20,
+                "tab": "Bio"
+            }
         ],
         "bottom-panel": [
-            "PipelineRunner"
+            {
+                "id": "bioorchestrator-pipeline-runner",
+                "component": "PipelineRunner",
+                "priority": 30
+            }
         ]
+    },
+    "surfaces": {
+        "web": {
+            "slots": {
+                "context-panel": [
+                    {
+                        "id": "bioorchestrator-source-status",
+                        "component": "SourceStatusWidget",
+                        "priority": 20,
+                        "tab": "Bio"
+                    }
+                ],
+                "bottom-panel": [
+                    {
+                        "id": "bioorchestrator-pipeline-runner",
+                        "component": "PipelineRunner",
+                        "priority": 30
+                    }
+                ]
+            }
+        }
     },
     "metadata": {
         "icon": "🌿",

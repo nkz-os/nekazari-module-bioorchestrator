@@ -4,7 +4,6 @@ import SourcesDashboard from './components/SourcesDashboard';
 import PipelineRunner from './components/PipelineRunner';
 import PhenologyBrowser from './components/PhenologyBrowser';
 import { BreedDiscovery } from './components/DADIS/BreedDiscovery';
-import './styles.css';
 import './i18n';
 
 type Tab = 'sources' | 'pipeline' | 'phenology' | 'dadis';
