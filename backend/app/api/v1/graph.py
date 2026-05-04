@@ -34,6 +34,21 @@ async def graph_stats(driver: DriverDep, tenant_id: str = Depends(_get_tenant_id
     return await dao.get_stats(tenant_id=tenant_id or None)
 
 
+@router.get("/species")
+async def list_species(driver: DriverDep):
+    """Return all available species with phenology availability status.
+
+    Each entry includes:
+      - name: common name
+      - scientific_name: binomial name
+      - stage_count: number of phenological stages defined
+      - params_count: number of parameter sets available
+      - has_phenology: true if at least one parameter set exists
+    """
+    dao = GraphDAO(driver)
+    return await dao.get_all_species()
+
+
 @router.get("/phenology-params")
 async def phenology_params(
     driver: DriverDep,

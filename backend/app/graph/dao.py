@@ -90,6 +90,29 @@ class GraphDAO:
                 return None
             return dict(record["r"])
 
+    async def get_all_species(self) -> list[dict]:
+        """Return all species in the knowledge graph with phenology availability."""
+        async with self._driver.session() as session:
+            result = await session.run("""
+                MATCH (s:Species)
+                OPTIONAL MATCH (s)-[:HAS_STAGE]->(st:PhenologyStage)-[:HAS_PARAMS]->(p:PhenologyParams)
+                RETURN s.name AS name,
+                       s.scientificName AS scientific_name,
+                       count(DISTINCT st) AS stage_count,
+                       count(DISTINCT p) AS params_count
+                ORDER BY s.name
+            """)
+            return [
+                {
+                    "name": record["name"],
+                    "scientific_name": record["scientific_name"],
+                    "stage_count": record["stage_count"],
+                    "params_count": record["params_count"],
+                    "has_phenology": record["params_count"] > 0,
+                }
+                async for record in result
+            ]
+
     async def get_phenology_params(
         self,
         species: str,

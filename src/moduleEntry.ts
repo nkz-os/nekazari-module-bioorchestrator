@@ -8,6 +8,7 @@
 import App from './App';
 import SourceStatusWidget from './slots/SourceStatusWidget';
 import { PipelineRunner } from './slots/PipelineRunnerWidget';
+import RecommendationsPanel from './components/RecommendationsPanel';
 
 const MODULE_ID = 'bioorchestrator';
 
@@ -42,6 +43,16 @@ const viewerSlots: ModuleViewerSlots = {
       component: 'SourceStatusWidget',
       priority: 20,
       localComponent: SourceStatusWidget,
+    },
+    {
+      id: 'bioorchestrator-recommendations',
+      moduleId: MODULE_ID,
+      component: 'RecommendationsPanel',
+      priority: 25,
+      localComponent: RecommendationsPanel,
+      showWhen: {
+        entityType: ['AgriParcel'],
+      },
     },
   ],
   'bottom-panel': [

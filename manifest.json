@@ -71,6 +71,12 @@
                 "component": "SourceStatusWidget",
                 "priority": 20,
                 "tab": "Bio"
+            },
+            {
+                "id": "bioorchestrator-recommendations",
+                "component": "RecommendationsPanel",
+                "priority": 25,
+                "tab": "Bio"
             }
         ],
         "bottom-panel": [
@@ -89,6 +95,12 @@
                         "id": "bioorchestrator-source-status",
                         "component": "SourceStatusWidget",
                         "priority": 20,
+                        "tab": "Bio"
+                    },
+                    {
+                        "id": "bioorchestrator-recommendations",
+                        "component": "RecommendationsPanel",
+                        "priority": 25,
                         "tab": "Bio"
                     }
                 ],

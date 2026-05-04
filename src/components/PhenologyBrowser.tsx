@@ -37,8 +37,17 @@ interface PhenologyParams {
     }>;
 }
 
+interface SpeciesInfo {
+    name: string;
+    scientific_name?: string;
+    stage_count: number;
+    params_count: number;
+    has_phenology: boolean;
+}
+
 const PhenologyBrowser: React.FC = () => {
     const { t } = useTranslation('bioorchestrator');
+    const [speciesList, setSpeciesList] = useState<SpeciesInfo[]>([]);
     const [species, setSpecies] = useState('olive');
     const [stage, setStage] = useState('');
     const [cultivar, setCultivar] = useState('');
@@ -47,6 +56,13 @@ const PhenologyBrowser: React.FC = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [showContribute, setShowContribute] = useState(false);
+
+    useEffect(() => {
+        fetch('/api/bioorchestrator/api/graph/species')
+            .then(r => r.ok ? r.json() : [])
+            .then(setSpeciesList)
+            .catch(() => {});
+    }, []);
 
     const fetchParams = useCallback(async () => {
         setLoading(true);
@@ -94,10 +110,19 @@ const PhenologyBrowser: React.FC = () => {
                 <div className="control-group">
                     <label>{t('phenology.species')}</label>
                     <select value={species} onChange={(e) => setSpecies(e.target.value)}>
-                        <option value="olive">Olive (Olea europaea)</option>
-                        <option value="almond">Almond (Prunus dulcis)</option>
-                        <option value="grapevine">Grapevine (Vitis vinifera)</option>
-                        <option value="wheat">Wheat (Triticum aestivum)</option>
+                        {speciesList.length > 0 ? speciesList.map(s => (
+                            <option key={s.name} value={s.name}>
+                                {s.scientific_name ? `${s.name} (${s.scientific_name})` : s.name}
+                                {!s.has_phenology ? ' *' : ''}
+                            </option>
+                        )) : (
+                            <>
+                                <option value="olive">Olive (Olea europaea)</option>
+                                <option value="almond">Almond (Prunus dulcis)</option>
+                                <option value="grapevine">Grapevine (Vitis vinifera)</option>
+                                <option value="wheat">Wheat (Triticum aestivum)</option>
+                            </>
+                        )}
                     </select>
                 </div>
 
