@@ -3,11 +3,14 @@
  * Uses NKZ API through the backend proxy avoiding CORS and auth issues.
  */
 
-// Access host-provided dependencies based on the platform architecture (IIFE context)
-const api = (window as any).__NKZ_SDK__?.api;
-
-if (!api) {
-    console.warn("[BioOrchestrator] NKZ SDK API not found. Calls will fail.");
+// Resolve SDK API lazily at call time — the host initialises __NKZ_SDK__
+// asynchronously and the IIFE bundle may load before it is ready.
+function getApi(): any {
+    const sdk = (window as any).__NKZ_SDK__;
+    if (!sdk?.api) {
+        throw new Error("[BioOrchestrator] NKZ SDK API not available");
+    }
+    return sdk.api;
 }
 
 export interface DadisBreed {
@@ -41,7 +44,7 @@ export const getBreeds = async (
     speciesIds?: number[]
 ): Promise<DadisBreed[]> => {
     try {
-        const response = await api.post('/bioorchestrator/v1/dadis/breeds', {
+        const response = await getApi().post('/bioorchestrator/api/dadis/breeds', {
             classification,
             countryIds: countryIds || [],
             speciesIds: speciesIds || []
@@ -58,7 +61,7 @@ export const getBreeds = async (
  */
 export const getBreedById = async (breedId: string, lang: string = 'en'): Promise<any> => {
     try {
-        const response = await api.get(`/bioorchestrator/v1/dadis/breeds/${breedId}?lang=${lang}`);
+        const response = await getApi().get(`/bioorchestrator/api/dadis/breeds/${breedId}?lang=${lang}`);
         return response.data;
     } catch (error) {
         console.error(`Error fetching breed ${breedId}:`, error);
@@ -71,7 +74,7 @@ export const getBreedById = async (breedId: string, lang: string = 'en'): Promis
  */
 export const getCountries = async (): Promise<DadisCountry[]> => {
     try {
-        const response = await api.get('/bioorchestrator/v1/dadis/countries');
+        const response = await getApi().get('/bioorchestrator/api/dadis/countries');
         return response.data;
     } catch (error) {
         console.error("Error fetching DAD-IS countries:", error);
@@ -84,7 +87,7 @@ export const getCountries = async (): Promise<DadisCountry[]> => {
  */
 export const getSpecies = async (): Promise<DadisSpecies[]> => {
     try {
-        const response = await api.get('/bioorchestrator/v1/dadis/species');
+        const response = await getApi().get('/bioorchestrator/api/dadis/species');
         return response.data;
     } catch (error) {
         console.error("Error fetching DAD-IS species:", error);

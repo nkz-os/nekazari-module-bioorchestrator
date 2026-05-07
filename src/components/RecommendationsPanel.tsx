@@ -24,7 +24,7 @@ const RecommendationsPanel: React.FC<Props> = ({ parcelId, parcelName, cropType 
             try {
                 const base = '/api/bioorchestrator/api/graph';
                 const fetches: Promise<any>[] = [
-                    fetch(`${base}/recommendations/next-crop?previous_crop=${cropType}`).then(r => r.json()),
+                    fetch(`${base}/recommendations/next-crop?previous_crop=${cropType}`).then(r => r.ok ? r.json() : null),
                     fetch(`${base}/soil-suitability?species=${cropType}`).then(r => r.ok ? r.json() : null),
                 ];
                 if (lat != null && lon != null) {
