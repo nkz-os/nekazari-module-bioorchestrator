@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useTranslation } from '@nekazari/sdk';
-import { Button, Input, Stack, Surface } from '@nekazari/ui-kit';
+import { Button, Input, Stack } from '@nekazari/ui-kit';
 import { CheckCircle, XCircle, X, Upload } from 'lucide-react';
 import { useBioApi } from '../services/api';
 
@@ -184,7 +184,7 @@ const PhenologyContribute: React.FC<Props> = ({ onClose }) => {
               </Grid2>
 
               {/* Provenance */}
-              <Surface variant="sunken" padding="stack">
+              <div className="bg-nkz-surface-sunken rounded-nkz-md p-nkz-stack">
                 <Stack gap="stack">
                   <h4 className="text-nkz-sm font-medium text-nkz-text-primary">
                     {t('phenology.contribute.provenance')}
@@ -226,7 +226,7 @@ const PhenologyContribute: React.FC<Props> = ({ onClose }) => {
                     />
                   </Field>
                 </Stack>
-              </Surface>
+              </div>
 
               {/* Error */}
               {result && result !== 'success' && (

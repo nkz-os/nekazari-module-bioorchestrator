@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useTranslation } from '@nekazari/sdk';
-import { Panel, Stack, Surface, Card, Badge, Spinner } from '@nekazari/ui-kit';
+import { Card, Badge, Stack, Spinner } from '@nekazari/ui-kit';
 import { Sprout, Thermometer, Beaker, BookOpen } from 'lucide-react';
 import { useBioApi } from '../services/api';
 import PhenologyContribute from './PhenologyContribute';
@@ -284,7 +284,7 @@ const PhenologyBrowser: React.FC = () => {
 
           {/* Provenance */}
           {data.provenance && (
-            <Surface variant="sunken" padding="stack">
+            <div className="bg-nkz-surface-sunken rounded-nkz-md p-nkz-stack">
               <Stack gap="tight">
                 <h4 className="text-nkz-xs font-semibold text-nkz-text-secondary uppercase tracking-wider">
                   {t('phenology.source')}
@@ -317,7 +317,7 @@ const PhenologyBrowser: React.FC = () => {
                   <p className="text-nkz-xs text-nkz-text-muted">{data.provenance.conditions}</p>
                 )}
               </Stack>
-            </Surface>
+            </div>
           )}
 
           {/* Alternatives */}

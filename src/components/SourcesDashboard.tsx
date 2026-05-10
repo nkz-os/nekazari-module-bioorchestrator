@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from '@nekazari/sdk';
-import { Panel, Card, Badge, Stack, Spinner } from '@nekazari/ui-kit';
-import { Activity, CheckCircle, AlertTriangle, Layers } from 'lucide-react';
+import { Card, Badge, Stack, Spinner } from '@nekazari/ui-kit';
+import { AlertTriangle, Layers } from 'lucide-react';
 import { useBioApi } from '../services/api';
 
 interface Source {
@@ -25,18 +25,18 @@ interface SourcesResponse {
 }
 
 const DOMAIN_META: Record<string, { label: string; icon: React.FC<{ className?: string }> }> = {
-  taxonomy: { label: 'Taxonomy', icon: Activity },
-  phytosanitary: { label: 'Phytosanitary', icon: AlertTriangle },
-  edaphoclimatic: { label: 'Edaphoclimatic', icon: Activity },
-  phenology: { label: 'Phenology', icon: Activity },
-  associations: { label: 'Associations', icon: Activity },
-  regulatory: { label: 'Regulatory', icon: AlertTriangle },
-  biocontrol: { label: 'Biocontrol', icon: Activity },
-  management_ontology: { label: 'Management', icon: Activity },
-  organic_inputs: { label: 'Organic Inputs', icon: Activity },
-  livestock: { label: 'Livestock', icon: Activity },
-  forestry: { label: 'Forestry', icon: Activity },
-  agroforestry: { label: 'Agroforestry', icon: Activity },
+  taxonomy: { label: 'Taxonomy', icon: Layers },
+  phytosanitary: { label: 'Phytosanitary', icon: Layers },
+  edaphoclimatic: { label: 'Edaphoclimatic', icon: Layers },
+  phenology: { label: 'Phenology', icon: Layers },
+  associations: { label: 'Associations', icon: Layers },
+  regulatory: { label: 'Regulatory', icon: Layers },
+  biocontrol: { label: 'Biocontrol', icon: Layers },
+  management_ontology: { label: 'Management', icon: Layers },
+  organic_inputs: { label: 'Organic Inputs', icon: Layers },
+  livestock: { label: 'Livestock', icon: Layers },
+  forestry: { label: 'Forestry', icon: Layers },
+  agroforestry: { label: 'Agroforestry', icon: Layers },
 };
 
 const SourcesDashboard: React.FC = () => {
@@ -82,7 +82,10 @@ const SourcesDashboard: React.FC = () => {
           { label: t('sources.summary.ready'), value: data.ready },
           { label: t('sources.summary.unavailable'), value: data.unavailable },
         ].map((m) => (
-          <div key={m.label} className="bg-nkz-surface border border-nkz-border rounded-nkz-md p-nkz-stack flex flex-col gap-nkz-tight">
+          <div
+            key={m.label}
+            className="bg-nkz-surface border border-nkz-border rounded-nkz-md p-nkz-stack flex flex-col gap-nkz-tight"
+          >
             <span className="text-nkz-xs text-nkz-text-secondary font-medium uppercase tracking-wider">
               {m.label}
             </span>
@@ -99,17 +102,19 @@ const SourcesDashboard: React.FC = () => {
         const Icon = meta.icon;
         const readyCount = sources.filter((s) => s.status === 'ready').length;
         return (
-          <Panel key={domain}>
-            <Panel.Header>
-              <Panel.Title>
-                <Icon className="w-4 h-4 text-nkz-accent-base" />
-                <span className="text-nkz-text-primary">{meta.label}</span>
+          <Card key={domain} padding="md">
+            <Stack gap="stack">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Icon className="w-4 h-4 text-nkz-accent-base" />
+                  <span className="text-nkz-md font-semibold text-nkz-text-primary">
+                    {meta.label}
+                  </span>
+                </div>
                 <Badge intent={readyCount === sources.length ? 'positive' : 'warning'}>
                   {readyCount}/{sources.length}
                 </Badge>
-              </Panel.Title>
-            </Panel.Header>
-            <Panel.Body>
+              </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-nkz-stack">
                 {sources.map((source) => (
                   <Card key={source.key} padding="md">
@@ -127,9 +132,7 @@ const SourcesDashboard: React.FC = () => {
                         </Badge>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className="text-nkz-xs text-nkz-text-muted">
-                          {source.type}
-                        </span>
+                        <span className="text-nkz-xs text-nkz-text-muted">{source.type}</span>
                         {source.credential_status === 'missing' && (
                           <Badge intent="negative">
                             {t('sources.warnings.keyMissing')}
@@ -157,8 +160,8 @@ const SourcesDashboard: React.FC = () => {
                   </Card>
                 ))}
               </div>
-            </Panel.Body>
-          </Panel>
+            </Stack>
+          </Card>
         );
       })}
     </Stack>
