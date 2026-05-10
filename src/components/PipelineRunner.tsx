@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useTranslation } from '@nekazari/sdk';
 import { SlotShell } from '@nekazari/viewer-kit';
-import { Button, Badge, Spinner, Stack, Input, ProgressBar } from '@nekazari/ui-kit';
+import { Button, Badge, Spinner, Stack, Input } from '@nekazari/ui-kit';
 import { Play, CheckCircle, XCircle } from 'lucide-react';
 import { useBioApi } from '../services/api';
 
@@ -170,7 +170,15 @@ const PipelineRunner: React.FC = () => {
                 {progress.step}/{progress.total}
               </span>
             </div>
-            <ProgressBar value={progressPct} size="sm" intent="default" />
+            <div className="w-full bg-nkz-surface-sunken rounded-nkz-full h-2">
+              <div
+                className="h-2 rounded-nkz-full transition-all duration-nkz-normal"
+                style={{
+                  width: `${progressPct}%`,
+                  background: bioAccent.base,
+                }}
+              />
+            </div>
           </div>
         )}
 

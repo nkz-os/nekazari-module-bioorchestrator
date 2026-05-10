@@ -1,12 +1,33 @@
 import React, { useState } from 'react';
 import { useTranslation } from '@nekazari/sdk';
-import { Button, Input, Stack, FormGrid, FormField, Surface } from '@nekazari/ui-kit';
+import { Button, Input, Stack, Surface } from '@nekazari/ui-kit';
 import { CheckCircle, XCircle, X, Upload } from 'lucide-react';
 import { useBioApi } from '../services/api';
 
-interface Props {
-  onClose: () => void;
-}
+interface Props { onClose: () => void; }
+
+// ── Inline field wrapper (replaces FormField) ───────────────────────────
+
+const Field: React.FC<{
+  label: string;
+  required?: boolean;
+  children: React.ReactNode;
+}> = ({ label, required, children }) => (
+  <div>
+    <label className="text-nkz-xs font-medium text-nkz-text-muted block mb-1">
+      {label}{required ? ' *' : ''}
+    </label>
+    {children}
+  </div>
+);
+
+// ── Inline form grid (replaces FormGrid) ───────────────────────────────
+
+const Grid2: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <div className="grid grid-cols-2 gap-nkz-stack">{children}</div>
+);
+
+// ── Main component ──────────────────────────────────────────────────────
 
 const PhenologyContribute: React.FC<Props> = ({ onClose }) => {
   const { t } = useTranslation('bioorchestrator');
@@ -42,8 +63,7 @@ const PhenologyContribute: React.FC<Props> = ({ onClose }) => {
       if (conditions) params.set('conditions', conditions);
       if (email) params.set('contact_email', email);
 
-      const data = await api.contributePhenology(params);
-      // If we get here, request succeeded (NKZClient throws on non-ok)
+      await api.contributePhenology(params);
       setResult('success');
       setTimeout(onClose, 2000);
     } catch (e: any) {
@@ -91,8 +111,8 @@ const PhenologyContribute: React.FC<Props> = ({ onClose }) => {
               </p>
 
               {/* Main parameters */}
-              <FormGrid columns={2}>
-                <FormField label={`${t('phenology.species')} *`} required>
+              <Grid2>
+                <Field label={t('phenology.species')} required>
                   <Input
                     value={species}
                     onChange={(e: any) => setSpecies(e.target.value)}
@@ -100,8 +120,8 @@ const PhenologyContribute: React.FC<Props> = ({ onClose }) => {
                     size="sm"
                     required
                   />
-                </FormField>
-                <FormField label={`${t('phenology.stage')} *`} required>
+                </Field>
+                <Field label={t('phenology.stage')} required>
                   <Input
                     value={stage}
                     onChange={(e: any) => setStage(e.target.value)}
@@ -109,16 +129,16 @@ const PhenologyContribute: React.FC<Props> = ({ onClose }) => {
                     size="sm"
                     required
                   />
-                </FormField>
-                <FormField label={t('phenology.cultivar')}>
+                </Field>
+                <Field label={t('phenology.cultivar')}>
                   <Input
                     value={cultivar}
                     onChange={(e: any) => setCultivar(e.target.value)}
                     placeholder="e.g. Picual, Arbequina"
                     size="sm"
                   />
-                </FormField>
-                <FormField label="Kc *" required>
+                </Field>
+                <Field label="Kc" required>
                   <Input
                     type="number"
                     step="0.01"
@@ -130,8 +150,8 @@ const PhenologyContribute: React.FC<Props> = ({ onClose }) => {
                     size="sm"
                     required
                   />
-                </FormField>
-                <FormField label="D1 (NWSB) °C">
+                </Field>
+                <Field label="D1 (NWSB) °C">
                   <Input
                     type="number"
                     step="0.1"
@@ -140,8 +160,8 @@ const PhenologyContribute: React.FC<Props> = ({ onClose }) => {
                     placeholder="2.0"
                     size="sm"
                   />
-                </FormField>
-                <FormField label="D2 (Max Stress) °C">
+                </Field>
+                <Field label="D2 (Max Stress) °C">
                   <Input
                     type="number"
                     step="0.1"
@@ -150,8 +170,8 @@ const PhenologyContribute: React.FC<Props> = ({ onClose }) => {
                     placeholder="8.0"
                     size="sm"
                   />
-                </FormField>
-                <FormField label="MDS Ref (µm)">
+                </Field>
+                <Field label="MDS Ref (µm)">
                   <Input
                     type="number"
                     step="1"
@@ -160,8 +180,8 @@ const PhenologyContribute: React.FC<Props> = ({ onClose }) => {
                     placeholder="150"
                     size="sm"
                   />
-                </FormField>
-              </FormGrid>
+                </Field>
+              </Grid2>
 
               {/* Provenance */}
               <Surface variant="sunken" padding="stack">
@@ -169,24 +189,24 @@ const PhenologyContribute: React.FC<Props> = ({ onClose }) => {
                   <h4 className="text-nkz-sm font-medium text-nkz-text-primary">
                     {t('phenology.contribute.provenance')}
                   </h4>
-                  <FormGrid columns={2}>
-                    <FormField label="DOI">
+                  <Grid2>
+                    <Field label="DOI">
                       <Input
                         value={doi}
                         onChange={(e: any) => setDoi(e.target.value)}
                         placeholder="10.1234/example"
                         size="sm"
                       />
-                    </FormField>
-                    <FormField label={t('phenology.contribute.author')}>
+                    </Field>
+                    <Field label={t('phenology.contribute.author')}>
                       <Input
                         value={author}
                         onChange={(e: any) => setAuthor(e.target.value)}
                         placeholder="e.g. Orgaz, Fereres"
                         size="sm"
                       />
-                    </FormField>
-                    <FormField label="Email">
+                    </Field>
+                    <Field label="Email">
                       <Input
                         type="email"
                         value={email}
@@ -194,9 +214,9 @@ const PhenologyContribute: React.FC<Props> = ({ onClose }) => {
                         placeholder="investigador@csic.es"
                         size="sm"
                       />
-                    </FormField>
-                  </FormGrid>
-                  <FormField label={t('phenology.contribute.conditions')}>
+                    </Field>
+                  </Grid2>
+                  <Field label={t('phenology.contribute.conditions')}>
                     <textarea
                       value={conditions}
                       onChange={(e) => setConditions(e.target.value)}
@@ -204,7 +224,7 @@ const PhenologyContribute: React.FC<Props> = ({ onClose }) => {
                       rows={3}
                       className="w-full rounded-nkz-md border border-nkz-border bg-nkz-surface px-nkz-stack py-nkz-tight text-nkz-sm text-nkz-text-primary placeholder:text-nkz-text-muted resize-y focus-visible:ring-2 focus-visible:ring-nkz-accent-base"
                     />
-                  </FormField>
+                  </Field>
                 </Stack>
               </Surface>
 

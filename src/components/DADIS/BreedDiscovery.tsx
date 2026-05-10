@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from '@nekazari/sdk';
 import {
-  Panel, Stack, Button, Input, Badge, Skeleton, EmptyState,
+  Panel, Stack, Button, Input, Badge, Spinner,
   Surface, IconButton, Card,
 } from '@nekazari/ui-kit';
 import { Search, Database, Globe, Settings, X, CheckCircle, ExternalLink } from 'lucide-react';
@@ -307,10 +307,9 @@ export const BreedDiscovery: React.FC = () => {
           {/* Filters */}
           {refLoading ? (
             <div className="flex gap-3">
-              <Skeleton variant="rect" width="180px" height="38px" />
-              <Skeleton variant="rect" width="180px" height="38px" />
-              <Skeleton variant="rect" width="180px" height="38px" />
-              <Skeleton variant="rect" width="120px" height="38px" />
+              <div className="flex items-center justify-center py-4 w-full">
+                <Spinner size="sm" />
+              </div>
             </div>
           ) : (
             <div className="flex gap-3 items-end flex-wrap">
@@ -381,8 +380,9 @@ export const BreedDiscovery: React.FC = () => {
           {/* Results */}
           {loading ? (
             <Stack gap="stack">
-              <Skeleton variant="rect" height="36px" />
-              <Skeleton variant="rect" height="300px" />
+              <div className="flex items-center justify-center py-nkz-section">
+                <Spinner size="md" />
+              </div>
             </Stack>
           ) : breeds.length > 0 ? (
             <div>
@@ -428,11 +428,11 @@ export const BreedDiscovery: React.FC = () => {
               </p>
             </div>
           ) : !error && !refLoading ? (
-            <EmptyState
-              icon={<Database className="w-8 h-8 text-nkz-text-muted" />}
-              title={t('dadis.empty.title')}
-              description={t('dadis.empty.hint')}
-            />
+            <div className="flex flex-col items-center justify-center py-nkz-section text-center">
+              <Database className="w-8 h-8 text-nkz-text-muted mb-nkz-stack" />
+              <p className="text-nkz-sm text-nkz-text-primary font-medium">{t('dadis.empty.title')}</p>
+              <p className="text-nkz-xs text-nkz-text-muted">{t('dadis.empty.hint')}</p>
+            </div>
           ) : null}
         </Stack>
       </Panel.Body>

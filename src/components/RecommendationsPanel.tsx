@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from '@nekazari/sdk';
-import { Stack, Card, Badge, Skeleton, Button, DetailGrid, DetailItem } from '@nekazari/ui-kit';
+import { Stack, Card, Badge, Button, Spinner } from '@nekazari/ui-kit';
 import {
   RefreshCw, Globe, Thermometer, MapPin, Sprout,
   Bug, Beaker, AlertTriangle, CheckCircle, XCircle,
@@ -82,11 +82,9 @@ const RecommendationsPanel: React.FC<Props> = ({ parcelId, parcelName, cropType 
 
   if (loading) {
     return (
-      <Stack gap="stack">
-        <Skeleton variant="rect" height="60px" />
-        <Skeleton variant="rect" height="80px" />
-        <Skeleton variant="rect" height="80px" />
-      </Stack>
+      <div className="flex items-center justify-center py-nkz-section">
+        <Spinner size="md" />
+      </div>
     );
   }
 
@@ -129,18 +127,17 @@ const RecommendationsPanel: React.FC<Props> = ({ parcelId, parcelName, cropType 
               <Beaker className="w-3.5 h-3.5 text-nkz-accent-base" />
               Real Soil (SoilGrids 2.0)
             </h4>
-            <DetailGrid columns={2}>
-              {realSoil.ph != null && <DetailItem label="pH" value={realSoil.ph} />}
+            <div className="bg-nkz-surface border border-nkz-border rounded-nkz-md p-nkz-stack divide-y divide-nkz-border text-nkz-sm">
+              {realSoil.ph != null && (
+                <div className="flex justify-between py-1"><span className="text-nkz-text-secondary">pH</span><span className="text-nkz-text-primary font-medium">{realSoil.ph}</span></div>
+              )}
               {realSoil.texture_class && (
-                <DetailItem
-                  label="Texture"
-                  value={`${realSoil.texture_class} (${realSoil.sand_pct}% sand, ${realSoil.clay_pct}% clay)`}
-                />
+                <div className="flex justify-between py-1"><span className="text-nkz-text-secondary">Texture</span><span className="text-nkz-text-primary font-medium">{realSoil.texture_class} ({realSoil.sand_pct}% sand, {realSoil.clay_pct}% clay)</span></div>
               )}
               {realSoil.cec_cmol_kg != null && (
-                <DetailItem label="CEC" value={<>{realSoil.cec_cmol_kg} cmol/kg</>} />
+                <div className="flex justify-between py-1"><span className="text-nkz-text-secondary">CEC</span><span className="text-nkz-text-primary font-medium">{realSoil.cec_cmol_kg} cmol/kg</span></div>
               )}
-            </DetailGrid>
+            </div>
             <p className="text-nkz-xs text-nkz-text-muted">{realSoil.source}</p>
           </Stack>
         </Card>
@@ -154,11 +151,11 @@ const RecommendationsPanel: React.FC<Props> = ({ parcelId, parcelName, cropType 
               <Globe className="w-3.5 h-3.5 text-nkz-accent-base" />
               Soil Requirements ({cropType})
             </h4>
-            <DetailGrid columns={2}>
-              <DetailItem label="pH" value={<>{soil.ph_min} – {soil.ph_max}</>} />
-              <DetailItem label="Texture" value={(soil.textures || []).join(', ')} />
-              <DetailItem label="Drainage" value={(soil.drainage || []).join(', ')} />
-            </DetailGrid>
+            <div className="bg-nkz-surface border border-nkz-border rounded-nkz-md p-nkz-stack divide-y divide-nkz-border text-nkz-sm">
+              <div className="flex justify-between py-1"><span className="text-nkz-text-secondary">pH</span><span className="text-nkz-text-primary font-medium">{soil.ph_min} – {soil.ph_max}</span></div>
+              <div className="flex justify-between py-1"><span className="text-nkz-text-secondary">Texture</span><span className="text-nkz-text-primary font-medium">{(soil.textures || []).join(', ')}</span></div>
+              <div className="flex justify-between py-1"><span className="text-nkz-text-secondary">Drainage</span><span className="text-nkz-text-primary font-medium">{(soil.drainage || []).join(', ')}</span></div>
+            </div>
           </Stack>
         </Card>
       )}
@@ -303,10 +300,10 @@ const TerrainSection: React.FC<{ lat: number; lon: number }> = ({ lat, lon }) =>
           <MapPin className="w-3.5 h-3.5 text-nkz-accent-base" />
           Terrain (Copernicus DEM)
         </h4>
-        <DetailGrid columns={2}>
-          {data.elevation_m != null && <DetailItem label="Elevation" value={<>{data.elevation_m} m</>} />}
-          {data.slope_degrees != null && <DetailItem label="Slope" value={<>{data.slope_degrees}&deg;</>} />}
-        </DetailGrid>
+        <div className="bg-nkz-surface border border-nkz-border rounded-nkz-md p-nkz-stack divide-y divide-nkz-border text-nkz-sm">
+          {data.elevation_m != null && <div className="flex justify-between py-1"><span className="text-nkz-text-secondary">Elevation</span><span className="text-nkz-text-primary font-medium">{data.elevation_m} m</span></div>}
+          {data.slope_degrees != null && <div className="flex justify-between py-1"><span className="text-nkz-text-secondary">Slope</span><span className="text-nkz-text-primary font-medium">{data.slope_degrees}&deg;</span></div>}
+        </div>
         <p className="text-nkz-xs text-nkz-text-muted">{data.source}</p>
       </Stack>
     </Card>

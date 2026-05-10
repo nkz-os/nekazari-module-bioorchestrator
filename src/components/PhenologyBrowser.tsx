@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useTranslation } from '@nekazari/sdk';
-import { Panel, Stack, Surface, DetailGrid, DetailItem, Card, Badge, Skeleton, EmptyState } from '@nekazari/ui-kit';
+import { Panel, Stack, Surface, Card, Badge, Spinner } from '@nekazari/ui-kit';
 import { Sprout, Thermometer, Beaker, BookOpen } from 'lucide-react';
 import { useBioApi } from '../services/api';
 import PhenologyContribute from './PhenologyContribute';
@@ -58,6 +58,27 @@ const MATCH_STYLES: Record<string, string> = {
 const FALLBACK_SPECIES = [
   'olive', 'almond', 'grapevine', 'wheat',
 ];
+
+// ── Inline detail grid (replaces DetailGrid/DetailItem) ─────────────────
+
+const DetailRow: React.FC<{ label: string; value: React.ReactNode }> = ({ label, value }) => (
+  <div className="flex items-baseline justify-between py-1">
+    <span className="text-nkz-xs text-nkz-text-secondary font-medium uppercase tracking-wider">
+      {label}
+    </span>
+    <span className="text-nkz-sm text-nkz-text-primary font-medium">
+      {value}
+    </span>
+  </div>
+);
+
+const DetailCard: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <div className="bg-nkz-surface border border-nkz-border rounded-nkz-md p-nkz-stack">
+    <div className="divide-y divide-nkz-border">{children}</div>
+  </div>
+);
+
+// ── Main component ──────────────────────────────────────────────────────
 
 const PhenologyBrowser: React.FC = () => {
   const { t } = useTranslation('bioorchestrator');
@@ -193,18 +214,16 @@ const PhenologyBrowser: React.FC = () => {
       </div>
 
       {loading && (
-        <Stack gap="stack">
-          <Skeleton variant="rect" height="48px" />
-          <Skeleton variant="rect" height="120px" />
-        </Stack>
+        <div className="flex items-center justify-center py-nkz-section">
+          <Spinner size="md" />
+        </div>
       )}
 
       {error && (
-        <EmptyState
-          icon={<Sprout className="w-8 h-8 text-nkz-text-muted" />}
-          title={error}
-          description=""
-        />
+        <div className="flex flex-col items-center justify-center py-nkz-section text-center">
+          <Sprout className="w-8 h-8 text-nkz-text-muted mb-nkz-stack" />
+          <p className="text-nkz-sm text-nkz-text-primary font-medium">{error}</p>
+        </div>
       )}
 
       {showContribute && <PhenologyContribute onClose={() => setShowContribute(false)} />}
@@ -232,36 +251,36 @@ const PhenologyBrowser: React.FC = () => {
           )}
 
           {/* Parameters */}
-          <DetailGrid columns={2}>
-            <DetailItem label="Kc" value={data.kc?.toFixed(2)} />
-            <DetailItem
-              label="CI"
+          <DetailCard>
+            <DetailRow label="Kc" value={data.kc?.toFixed(2)} />
+            <DetailRow
+              label={t('phenology.ci')}
               value={data.kc_confidence_interval
                 ? `${data.kc_confidence_interval[0]?.toFixed(2)} – ${data.kc_confidence_interval[1]?.toFixed(2)}`
                 : '—'}
             />
-            <DetailItem label="D1 (NWSB)" value={`${data.d1?.toFixed(1)}°C`} />
-            <DetailItem
-              label="CI"
+            <DetailRow label="D1 (NWSB)" value={<>{data.d1?.toFixed(1)}&deg;C</>} />
+            <DetailRow
+              label={t('phenology.ci')}
               value={data.d1_confidence_interval
                 ? `${data.d1_confidence_interval[0]?.toFixed(1)} – ${data.d1_confidence_interval[1]?.toFixed(1)}`
                 : '—'}
             />
-            <DetailItem label="D2 (Max Stress)" value={`${data.d2?.toFixed(1)}°C`} />
-            <DetailItem
-              label="CI"
+            <DetailRow label="D2 (Max Stress)" value={<>{data.d2?.toFixed(1)}&deg;C</>} />
+            <DetailRow
+              label={t('phenology.ci')}
               value={data.d2_confidence_interval
                 ? `${data.d2_confidence_interval[0]?.toFixed(1)} – ${data.d2_confidence_interval[1]?.toFixed(1)}`
                 : '—'}
             />
-            <DetailItem label="MDS Ref" value={`${data.mds_ref?.toFixed(0)}µm`} />
-            <DetailItem
-              label="CI"
+            <DetailRow label="MDS Ref" value={<>{data.mds_ref?.toFixed(0)}&micro;m</>} />
+            <DetailRow
+              label={t('phenology.ci')}
               value={data.mds_ref_confidence_interval
                 ? `${data.mds_ref_confidence_interval[0]?.toFixed(0)} – ${data.mds_ref_confidence_interval[1]?.toFixed(0)}`
                 : '—'}
             />
-          </DetailGrid>
+          </DetailCard>
 
           {/* Provenance */}
           {data.provenance && (
@@ -332,10 +351,7 @@ const PhenologyBrowser: React.FC = () => {
             </Stack>
           )}
 
-          {/* Heat Tolerance */}
           <HeatToleranceSection species={species} t={t} />
-
-          {/* Nutrient Profile */}
           <NutrientProfileSection species={species} stage={data.stage} t={t} />
         </Stack>
       )}
@@ -343,7 +359,7 @@ const PhenologyBrowser: React.FC = () => {
   );
 };
 
-// ── Heat Tolerance sub-component ──────────────────────────────────────────
+// ── Heat Tolerance ──────────────────────────────────────────────────────
 
 const HeatToleranceSection: React.FC<{ species: string; t: any }> = ({ species, t }) => {
   const api = useBioApi();
@@ -363,11 +379,11 @@ const HeatToleranceSection: React.FC<{ species: string; t: any }> = ({ species, 
         <Thermometer className="w-3.5 h-3.5 text-nkz-accent-base" />
         {t('phenology.thermal') || 'Thermal Tolerance'}
       </h4>
-      <DetailGrid columns={2}>
-        <DetailItem label="Heat damage" value={<>&gt; {data.heat_damage_c}&deg;C (foliar)</>} />
-        <DetailItem label="Frost damage" value={<>&lt; {data.frost_damage_c}&deg;C (air)</>} />
-        <DetailItem label="Accumulation" value={<>{data.heat_accum_hours}h to alert</>} />
-      </DetailGrid>
+      <DetailCard>
+        <DetailRow label="Heat damage" value={<>&gt; {data.heat_damage_c}&deg;C (foliar)</>} />
+        <DetailRow label="Frost damage" value={<>&lt; {data.frost_damage_c}&deg;C (air)</>} />
+        <DetailRow label="Accumulation" value={<>{data.heat_accum_hours}h to alert</>} />
+      </DetailCard>
       {data.source_short && (
         <p className="text-nkz-xs text-nkz-text-muted">
           {data.source_short}{data.source_doi ? ` · DOI: ${data.source_doi}` : ''}
@@ -377,7 +393,7 @@ const HeatToleranceSection: React.FC<{ species: string; t: any }> = ({ species, 
   );
 };
 
-// ── Nutrient Profile sub-component ────────────────────────────────────────
+// ── Nutrient Profile ────────────────────────────────────────────────────
 
 const NutrientProfileSection: React.FC<{ species: string; stage?: string; t: any }> = ({ species, stage, t }) => {
   const api = useBioApi();

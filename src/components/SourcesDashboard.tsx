@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from '@nekazari/sdk';
-import { Panel, MetricCard, MetricGrid, Card, Badge, Skeleton, EmptyState, Stack } from '@nekazari/ui-kit';
+import { Panel, Card, Badge, Stack, Spinner } from '@nekazari/ui-kit';
 import { Activity, CheckCircle, AlertTriangle, Layers } from 'lucide-react';
 import { useBioApi } from '../services/api';
 
@@ -55,21 +55,19 @@ const SourcesDashboard: React.FC = () => {
 
   if (loading) {
     return (
-      <Stack gap="stack">
-        <Skeleton variant="rect" height="80px" />
-        <Skeleton variant="rect" height="200px" />
-        <Skeleton variant="rect" height="200px" />
-      </Stack>
+      <div className="flex items-center justify-center py-nkz-section">
+        <Spinner size="md" />
+      </div>
     );
   }
 
   if (error) {
     return (
-      <EmptyState
-        icon={<AlertTriangle className="w-8 h-8 text-nkz-danger" />}
-        title={`${t('sources.errorPrefix')}: ${error}`}
-        description=""
-      />
+      <div className="flex flex-col items-center justify-center py-nkz-section text-center">
+        <AlertTriangle className="w-8 h-8 text-nkz-danger mb-nkz-stack" />
+        <p className="text-nkz-sm text-nkz-text-primary font-medium">{t('sources.errorPrefix')}</p>
+        <p className="text-nkz-xs text-nkz-text-muted">{error}</p>
+      </div>
     );
   }
 
@@ -78,20 +76,22 @@ const SourcesDashboard: React.FC = () => {
   return (
     <Stack gap="section">
       {/* Summary metrics */}
-      <MetricGrid columns={3}>
-        <MetricCard
-          label={t('sources.summary.total')}
-          value={data.total}
-        />
-        <MetricCard
-          label={t('sources.summary.ready')}
-          value={data.ready}
-        />
-        <MetricCard
-          label={t('sources.summary.unavailable')}
-          value={data.unavailable}
-        />
-      </MetricGrid>
+      <div className="grid grid-cols-3 gap-nkz-stack">
+        {[
+          { label: t('sources.summary.total'), value: data.total },
+          { label: t('sources.summary.ready'), value: data.ready },
+          { label: t('sources.summary.unavailable'), value: data.unavailable },
+        ].map((m) => (
+          <div key={m.label} className="bg-nkz-surface border border-nkz-border rounded-nkz-md p-nkz-stack flex flex-col gap-nkz-tight">
+            <span className="text-nkz-xs text-nkz-text-secondary font-medium uppercase tracking-wider">
+              {m.label}
+            </span>
+            <span className="text-nkz-2xl font-semibold text-nkz-text-primary">
+              {m.value}
+            </span>
+          </div>
+        ))}
+      </div>
 
       {/* Domain sections */}
       {Object.entries(data.by_domain).map(([domain, sources]) => {
