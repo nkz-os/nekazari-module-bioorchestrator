@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useTranslation } from '@nekazari/sdk';
-import { SlotShell } from '@nekazari/viewer-kit';
+import { Card } from '@nekazari/ui-kit';
 import { Activity, GitBranch, Sprout, Database } from 'lucide-react';
 import SourcesDashboard from './components/SourcesDashboard';
 import PipelineRunner from './components/PipelineRunner';
@@ -24,11 +24,12 @@ const App: React.FC = () => {
   const { t } = useTranslation('bioorchestrator');
 
   return (
-    <SlotShell
-      moduleId="bioorchestrator"
-      accent={bioAccent}
-      title={t('app.title')}
-    >
+    <Card padding="md">
+      <div className="flex items-center justify-between mb-4">
+        <h1 className="text-nkz-lg font-bold text-nkz-text-primary">{t('app.title')}</h1>
+        <p className="text-nkz-xs text-nkz-text-muted">{t('app.subtitle')}</p>
+      </div>
+
       <div className="flex border-b border-nkz-border mb-4">
         {TABS.map((tab) => {
           const Icon = tab.icon;
@@ -54,7 +55,7 @@ const App: React.FC = () => {
       {activeTab === 'pipeline' && <PipelineRunner />}
       {activeTab === 'phenology' && <PhenologyBrowser />}
       {activeTab === 'dadis' && <BreedDiscovery />}
-    </SlotShell>
+    </Card>
   );
 };
 

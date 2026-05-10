@@ -1,8 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useTranslation } from '@nekazari/sdk';
-import { SlotShell } from '@nekazari/viewer-kit';
-import { Button, Badge, Spinner, Stack, Input } from '@nekazari/ui-kit';
-import { Play, CheckCircle, XCircle } from 'lucide-react';
+import { Card, Button, Badge, Spinner, Stack, Input } from '@nekazari/ui-kit';
+import { Play, CheckCircle, XCircle, ChevronDown } from 'lucide-react';
 import { useBioApi } from '../services/api';
 
 const bioAccent = { base: '#14B8A6', soft: '#CCFBF1', strong: '#0D9488' };
@@ -111,13 +110,11 @@ const PipelineRunner: React.FC = () => {
     : 0;
 
   return (
-    <SlotShell
-      moduleId="bioorchestrator"
-      title={t('pipeline.title')}
-      icon={<Play className="w-4 h-4" />}
-      collapsible
-      accent={bioAccent}
-    >
+    <Card padding="md">
+      <div className="flex items-center gap-2 mb-4">
+        <Play className="w-4 h-4 text-nkz-accent-base" />
+        <span className="text-nkz-md font-semibold text-nkz-text-primary">{t('pipeline.title')}</span>
+      </div>
       <Stack gap="stack">
         {/* Controls */}
         <div className="flex gap-3 items-end flex-wrap">
@@ -301,7 +298,7 @@ const PipelineRunner: React.FC = () => {
           </div>
         )}
       </Stack>
-    </SlotShell>
+    </Card>
   );
 };
 
