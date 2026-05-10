@@ -1,7 +1,7 @@
 {
   "app": {
     "title": "BioOrchestrator",
-    "subtitle": "Pipeline de biodiversidad multi-dominio — Agricultura · Ganadería · Silvicultura · Agroforestería",
+    "subtitle": "Pipeline de biodiversidad multidominio — Agricultura · Ganadería · Forestal · Agroforestería",
     "tabs": {
       "sources": "Fuentes de datos",
       "pipeline": "Pipeline",
@@ -13,29 +13,30 @@
     "loading": "Cargando fuentes...",
     "errorPrefix": "Error",
     "summary": {
-      "total": "Total de fuentes",
+      "total": "Total fuentes",
       "ready": "Listas",
       "unavailable": "No disponibles"
     },
     "status": {
-      "ready": "✓ Lista",
-      "unavailable": "⊘ No disponible"
+      "ready": "Lista",
+      "unavailable": "No disponible"
     },
     "warnings": {
-      "keyMissing": "🔑 Falta la clave",
-      "noDataFile": "📁 No hay fichero de datos"
+      "keyMissing": "Falta clave",
+      "noDataFile": "Sin archivo de datos"
     }
   },
   "pipeline": {
     "sourcesLabel": "Fuentes (separadas por comas, vacío = todas)",
     "sourcesPlaceholder": "agrovoc, eppo, dadis, globaltreesearch...",
     "limitLabel": "Límite por fuente",
-    "run": "▶ Ejecutar pipeline",
-    "running": "⏳ Ejecutando pipeline...",
+    "run": "Ejecutar pipeline",
+    "running": "Ejecutando pipeline...",
+    "history": "Ejecuciones recientes",
     "result": {
-      "ok": "✅ Pipeline completado",
-      "withErrors": "⚠️ Pipeline completado con errores",
-      "entitiesRaw": "Entidades (sin dedup)",
+      "ok": "Pipeline completado",
+      "withErrors": "Pipeline completado con errores",
+      "entitiesRaw": "Entidades (bruto)",
       "entitiesDedup": "Entidades (dedup)",
       "relationships": "Relaciones",
       "crossrefs": "Referencias cruzadas",
@@ -44,7 +45,7 @@
     }
   },
   "dadis": {
-    "title": "Descubrimiento de razas DAD-IS",
+    "title": "DAD-IS Breed Discovery",
     "badge": "Integración API FAO",
     "filters": {
       "country": "País",
@@ -58,20 +59,45 @@
     },
     "search": "Buscar",
     "searching": "Buscando...",
-    "loading": "Consultando la API de interoperabilidad DAD-IS...",
+    "loading": "Consultando API de interoperabilidad DAD-IS...",
     "table": {
-      "breedName": "Nombre de raza",
-      "speciesId": "ID de especie",
+      "breedName": "Raza",
+      "speciesId": "ID Especie",
       "country": "País",
       "transboundary": "Transfronteriza"
     },
     "empty": {
-      "title": "No se han recuperado datos.",
-      "hint": "Selecciona filtros y busca para obtener datos reales desde DAD-IS."
+      "title": "Sin datos.",
+      "hint": "Selecciona filtros y busca para obtener datos reales de DAD-IS."
     },
     "footer": "Mostrando {{count}} razas de DAD-IS",
     "errors": {
-      "loadBreeds": "No se han podido cargar las razas desde DAD-IS."
+      "loadBreeds": "No se pudieron cargar las razas de DAD-IS."
+    },
+    "settings": {
+      "title": "Configuración API DAD-IS",
+      "description": "La API DAD-IS de la FAO no puede usarse con fines comerciales. Cada usuario debe proporcionar sus propias credenciales obtenidas directamente de la FAO.",
+      "requestAccess": "Solicitar acceso a la API de la FAO",
+      "apiUrl": "URL de la API",
+      "apiToken": "Token de la API",
+      "tokenPlaceholder": "Introduce tu token de la API DAD-IS...",
+      "save": "Guardar y conectar",
+      "update": "Actualizar credenciales",
+      "disconnect": "Desconectar",
+      "connected": "DAD-IS Conectado",
+      "configure": "Configurar API DAD-IS"
+    },
+    "fallback": {
+      "title": "Fuentes de datos disponibles (sin DAD-IS)",
+      "description": "BioOrchestrator integra múltiples fuentes de datos de biodiversidad a través de IkerKeta disponibles sin credenciales DAD-IS:",
+      "sources": {
+        "gbif": "Registros globales de ganado a través de datos mediados por GBIF",
+        "agrovoc": "Tesauro agrícola de la FAO — especies, razas y prácticas",
+        "eppo": "Organización europea de protección vegetal — datos de plagas y enfermedades",
+        "globaltreesearch": "Conservación Botánica Internacional — especies arbóreas",
+        "pesticides": "Comisión Europea — productos fitosanitarios autorizados",
+        "cpvo": "Oficina Comunitaria de Variedades Vegetales — variedades registradas"
+      }
     }
   },
   "phenology": {
@@ -81,15 +107,17 @@
     "cultivar": "Variedad",
     "anyCultivar": "Cualquier variedad",
     "management": "Riego",
-    "standardIrrigation": "Estándar (pleno/secano)",
+    "standardIrrigation": "Estándar (completo/secano)",
     "loading": "Cargando parámetros...",
-    "notFound": "No hay parámetros para esta selección",
-    "usingDefaults": "Usando parámetros genéricos — sin coincidencia exacta",
+    "notFound": "No se encontraron parámetros para esta selección",
+    "usingDefaults": "Usando parámetros por defecto — sin coincidencia exacta para esta selección",
     "parameter": "Parámetro",
     "value": "Valor",
     "ci": "Intervalo de confianza",
     "source": "Fuente científica",
     "alternatives": "Valores alternativos publicados",
+    "thermal": "Tolerancia térmica",
+    "nutrients": "Absorción de nutrientes",
     "match": {
       "exact": "Coincidencia exacta (variedad + manejo)",
       "management": "Coincidencia por manejo",
@@ -99,12 +127,13 @@
     "contribute": {
       "button": "Contribuir parámetro",
       "title": "Contribuir parámetro fenológico",
-      "description": "Envía tus datos de investigación para revisión científica. Un administrador revisará tu contribución antes de incorporarla al conjunto de parámetros.",
+      "description": "Envía tus datos de investigación para revisión científica. Tu contribución será revisada por un administrador antes de incorporarse al conjunto principal de parámetros.",
       "provenance": "Procedencia científica",
       "author": "Autor(es)",
-      "conditions": "Condiciones del ensayo",
+      "conditions": "Condiciones experimentales",
       "cancel": "Cancelar",
       "submit": "Enviar para revisión",
+      "submitting": "Enviando...",
       "success": "Parámetro enviado para revisión. Gracias por tu contribución."
     }
   }

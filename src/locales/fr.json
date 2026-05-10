@@ -1,11 +1,140 @@
 {
   "app": {
     "title": "BioOrchestrator",
-    "subtitle": "Pipeline de biodiversité multi-domaine — Agriculture · Élevage · Sylviculture · Agroforesterie",
-    "tabs": { "sources": "Sources de données", "pipeline": "Pipeline", "phenology": "Phénologie", "dadis": "Explorateur DAD-IS" }
+    "subtitle": "Pipeline de biodiversité multi-domaine — Agriculture · Élevage · Foresterie · Agroforesterie",
+    "tabs": {
+      "sources": "Sources de données",
+      "pipeline": "Pipeline",
+      "phenology": "Phénologie",
+      "dadis": "Explorateur DAD-IS"
+    }
   },
-  "sources": { "loading": "Chargement des sources...", "errorPrefix": "Erreur", "summary": { "total": "Total des sources", "ready": "Prêtes", "unavailable": "Indisponibles" }, "status": { "ready": "✓ Prête", "unavailable": "⊘ Indisponible" }, "warnings": { "keyMissing": "🔑 Clé manquante", "noDataFile": "📁 Pas de fichier de données" } },
-  "pipeline": { "sourcesLabel": "Sources (séparées par des virgules, vide = toutes)", "sourcesPlaceholder": "agrovoc, eppo, dadis, globaltreesearch...", "limitLabel": "Limite par source", "run": "▶ Lancer le pipeline", "running": "⏳ Exécution...", "result": { "ok": "✅ Pipeline terminé", "withErrors": "⚠️ Pipeline terminé avec erreurs", "entitiesRaw": "Entités (brut)", "entitiesDedup": "Entités (dédupliquées)", "relationships": "Relations", "crossrefs": "Références croisées", "duration": "Durée", "errorsTitle": "Erreurs:" } },
-  "dadis": { "title": "DAD-IS Breed Discovery", "badge": "FAO API Integ", "filters": { "country": "Pays", "allCountries": "Tous les pays", "species": "Espèce", "allSpecies": "Toutes", "classification": "Classification", "all": "Toutes", "local": "Locale", "transboundary": "Transfrontalière" }, "search": "Rechercher", "searching": "Recherche...", "loading": "Interrogation de l'API DAD-IS...", "table": { "breedName": "Race", "speciesId": "ID Espèce", "country": "Pays", "transboundary": "Transfrontalière" }, "empty": { "title": "Pas de données.", "hint": "Sélectionnez les filtres et recherchez pour obtenir des données réelles de DAD-IS." }, "footer": "Affichage de {{count}} races de DAD-IS", "errors": { "loadBreeds": "Impossible de charger les races depuis DAD-IS." } },
-  "phenology": { "species": "Espèce", "stage": "Stade", "anyStage": "Tout stade", "cultivar": "Variété", "anyCultivar": "Toute", "management": "Irrigation", "standardIrrigation": "Standard (plein/sec)", "loading": "Chargement des paramètres...", "notFound": "Pas de paramètres pour cette sélection", "usingDefaults": "Utilisation de paramètres génériques", "parameter": "Paramètre", "value": "Valeur", "ci": "Intervalle de confiance", "source": "Source scientifique", "alternatives": "Valeurs alternatives publiées", "match": { "exact": "Correspondance exacte", "management": "Par gestion", "generic": "Valeur générique", "species_only": "Espèce seulement" }, "contribute": { "button": "Contribuer un paramètre", "title": "Contribuer un paramètre phénologique", "description": "Soumettez vos données de recherche pour examen scientifique.", "provenance": "Provenance scientifique", "author": "Auteur(s)", "conditions": "Conditions expérimentales", "cancel": "Annuler", "submit": "Soumettre pour examen", "success": "Paramètre soumis pour examen. Merci." } }
+  "sources": {
+    "loading": "Chargement des sources...",
+    "errorPrefix": "Erreur",
+    "summary": {
+      "total": "Total sources",
+      "ready": "Prêtes",
+      "unavailable": "Indisponibles"
+    },
+    "status": {
+      "ready": "Prête",
+      "unavailable": "Indisponible"
+    },
+    "warnings": {
+      "keyMissing": "Clé manquante",
+      "noDataFile": "Pas de fichier de données"
+    }
+  },
+  "pipeline": {
+    "sourcesLabel": "Sources (séparées par des virgules, vide = tout)",
+    "sourcesPlaceholder": "agrovoc, eppo, dadis, globaltreesearch...",
+    "limitLabel": "Limite par source",
+    "run": "Exécuter le pipeline",
+    "running": "Exécution du pipeline...",
+    "history": "Exécutions récentes",
+    "result": {
+      "ok": "Pipeline terminé",
+      "withErrors": "Pipeline terminé avec erreurs",
+      "entitiesRaw": "Entités (brut)",
+      "entitiesDedup": "Entités (dedup)",
+      "relationships": "Relations",
+      "crossrefs": "Références croisées",
+      "duration": "Durée",
+      "errorsTitle": "Erreurs :"
+    }
+  },
+  "dadis": {
+    "title": "DAD-IS Breed Discovery",
+    "badge": "Intégration API FAO",
+    "filters": {
+      "country": "Pays",
+      "allCountries": "Tous les pays",
+      "species": "Espèce",
+      "allSpecies": "Toutes les espèces",
+      "classification": "Classification",
+      "all": "Toutes",
+      "local": "Locale",
+      "transboundary": "Transfrontalière"
+    },
+    "search": "Rechercher",
+    "searching": "Recherche...",
+    "loading": "Interrogation de l'API d'interopérabilité DAD-IS...",
+    "table": {
+      "breedName": "Race",
+      "speciesId": "ID Espèce",
+      "country": "Pays",
+      "transboundary": "Transfrontalière"
+    },
+    "empty": {
+      "title": "Aucune donnée.",
+      "hint": "Sélectionnez des filtres et lancez la recherche pour obtenir des données réelles de DAD-IS."
+    },
+    "footer": "Affichage de {{count}} races de DAD-IS",
+    "errors": {
+      "loadBreeds": "Impossible de charger les races depuis DAD-IS."
+    },
+    "settings": {
+      "title": "Configuration API DAD-IS",
+      "description": "L'API DAD-IS de la FAO ne peut pas être utilisée à des fins commerciales. Chaque utilisateur doit fournir ses propres identifiants obtenus directement auprès de la FAO.",
+      "requestAccess": "Demander l'accès à l'API de la FAO",
+      "apiUrl": "URL de l'API",
+      "apiToken": "Token de l'API",
+      "tokenPlaceholder": "Entrez votre token API DAD-IS...",
+      "save": "Enregistrer et connecter",
+      "update": "Mettre à jour les identifiants",
+      "disconnect": "Déconnecter",
+      "connected": "DAD-IS Connecté",
+      "configure": "Configurer l'API DAD-IS"
+    },
+    "fallback": {
+      "title": "Sources de données disponibles (sans DAD-IS)",
+      "description": "BioOrchestrator intègre de multiples sources de données de biodiversité via IkerKeta disponibles sans identifiants DAD-IS :",
+      "sources": {
+        "gbif": "Registres mondiaux d'élevage via les données médiées par GBIF",
+        "agrovoc": "Thésaurus agricole de la FAO — espèces, races et pratiques",
+        "eppo": "Organisation européenne de protection des plantes — données sur les ravageurs et maladies",
+        "globaltreesearch": "Conservation Botanique Internationale — espèces d'arbres",
+        "pesticides": "Commission européenne — produits phytosanitaires autorisés",
+        "cpvo": "Office communautaire des variétés végétales — variétés enregistrées"
+      }
+    }
+  },
+  "phenology": {
+    "species": "Espèce",
+    "stage": "Stade",
+    "anyStage": "Tout stade",
+    "cultivar": "Variété",
+    "anyCultivar": "Toute variété",
+    "management": "Irrigation",
+    "standardIrrigation": "Standard (plein/pluvial)",
+    "loading": "Chargement des paramètres...",
+    "notFound": "Aucun paramètre trouvé pour cette sélection",
+    "usingDefaults": "Utilisation des paramètres par défaut — aucune correspondance exacte pour cette sélection",
+    "parameter": "Paramètre",
+    "value": "Valeur",
+    "ci": "Intervalle de confiance",
+    "source": "Source scientifique",
+    "alternatives": "Valeurs alternatives publiées",
+    "thermal": "Tolérance thermique",
+    "nutrients": "Absorption des nutriments",
+    "match": {
+      "exact": "Correspondance exacte (variété + gestion)",
+      "management": "Correspondance par gestion",
+      "generic": "Valeur générique par défaut",
+      "species_only": "Espèce uniquement (pas de données de stade)"
+    },
+    "contribute": {
+      "button": "Contribuer un paramètre",
+      "title": "Contribuer un paramètre phénologique",
+      "description": "Soumettez vos données de recherche pour examen scientifique. Votre contribution sera examinée par un administrateur avant d'être intégrée à l'ensemble principal de paramètres.",
+      "provenance": "Provenance scientifique",
+      "author": "Auteur(s)",
+      "conditions": "Conditions expérimentales",
+      "cancel": "Annuler",
+      "submit": "Soumettre pour examen",
+      "submitting": "Envoi en cours...",
+      "success": "Paramètre soumis pour examen. Merci de votre contribution."
+    }
+  }
 }

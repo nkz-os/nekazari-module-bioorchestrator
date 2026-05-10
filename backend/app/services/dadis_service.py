@@ -31,18 +31,30 @@ class DadisClient:
     """Async client for DAD-IS Interoperability API.
 
     Creates a new httpx.AsyncClient per request for isolation.
-    For high-throughput scenarios, inject a shared client via lifespan.
+
+    Per-user credentials are passed via X-Dadis-Api-Url / X-Dadis-Api-Token
+    headers from the frontend. When absent, falls back to global settings
+    (which may be empty if the platform operator has not configured a
+    default DAD-IS token — FAO prohibits commercial use).
     """
 
-    def __init__(self) -> None:
-        self.base_url = settings.dadis_api_url.rstrip("/")
-        self.token = settings.dadis_api_token
+    def __init__(
+        self, *, api_url: str = "", api_token: str = ""
+    ) -> None:
+        self.api_url = api_url
+        self.api_token = api_token
+        self._base_url = (
+            api_url.rstrip("/")
+            if api_url
+            else settings.dadis_api_url.rstrip("/")
+        )
+        self._token = api_token or settings.dadis_api_token
 
     def _headers(self) -> dict[str, str]:
-        if not self.token:
+        if not self._token:
             logger.warning("DADIS_API_TOKEN is not set — requests may fail")
         return {
-            "Authorization": self.token,
+            "Authorization": self._token,
             "Content-Type": "application/json",
         }
 
@@ -50,7 +62,7 @@ class DadisClient:
         self, method: str, endpoint: str, **kwargs: Any
     ) -> Any:
         """Make an async HTTP request to DAD-IS with retry logic."""
-        url = f"{self.base_url}/{endpoint.lstrip('/')}"
+        url = f"{self._base_url}/{endpoint.lstrip('/')}"
         last_exc: Exception | None = None
 
         for attempt in range(1, MAX_RETRIES + 1):
@@ -128,7 +140,17 @@ class DadisClient:
         return await self._request("GET", "species")
 
 
-# Module-level instance — created per-request in API handlers.
-# In production, inject a shared client via lifespan for connection pooling.
-def get_dadis_client() -> DadisClient:
-    return DadisClient()
+from fastapi import Request
+
+
+def get_dadis_client(request: Request) -> DadisClient:
+    """FastAPI dependency that reads per-user DAD-IS credentials from request headers.
+
+    Frontend sends X-Dadis-Api-Url and X-Dadis-Api-Token when the user has
+    configured their own DAD-IS API credentials (FAO prohibits commercial use,
+    each user must bring their own key). Falls back to global settings.
+    """
+    return DadisClient(
+        api_url=request.headers.get("X-Dadis-Api-Url", ""),
+        api_token=request.headers.get("X-Dadis-Api-Token", ""),
+    )

@@ -18,23 +18,24 @@
       "unavailable": "Unavailable"
     },
     "status": {
-      "ready": "✓ Ready",
-      "unavailable": "⊘ Unavailable"
+      "ready": "Ready",
+      "unavailable": "Unavailable"
     },
     "warnings": {
-      "keyMissing": "🔑 Key missing",
-      "noDataFile": "📁 No data file"
+      "keyMissing": "Key missing",
+      "noDataFile": "No data file"
     }
   },
   "pipeline": {
     "sourcesLabel": "Sources (comma-separated, empty = all)",
     "sourcesPlaceholder": "agrovoc, eppo, dadis, globaltreesearch...",
     "limitLabel": "Limit per source",
-    "run": "▶ Run pipeline",
-    "running": "⏳ Running pipeline...",
+    "run": "Run pipeline",
+    "running": "Running pipeline...",
+    "history": "Recent Runs",
     "result": {
-      "ok": "✅ Pipeline complete",
-      "withErrors": "⚠️ Pipeline complete with errors",
+      "ok": "Pipeline complete",
+      "withErrors": "Pipeline complete with errors",
       "entitiesRaw": "Entities (raw)",
       "entitiesDedup": "Entities (dedup)",
       "relationships": "Relationships",
@@ -45,7 +46,7 @@
   },
   "dadis": {
     "title": "DAD-IS Breed Discovery",
-    "badge": "FAO API Integ",
+    "badge": "FAO API Integration",
     "filters": {
       "country": "Country",
       "allCountries": "All countries",
@@ -72,6 +73,31 @@
     "footer": "Showing {{count}} breeds from DAD-IS",
     "errors": {
       "loadBreeds": "Failed to load breeds from DAD-IS."
+    },
+    "settings": {
+      "title": "DAD-IS API Configuration",
+      "description": "The FAO DAD-IS API cannot be used for commercial purposes. Each user must provide their own API credentials obtained directly from FAO.",
+      "requestAccess": "Request API access from FAO",
+      "apiUrl": "API URL",
+      "apiToken": "API Token",
+      "tokenPlaceholder": "Enter your DAD-IS API token...",
+      "save": "Save & Connect",
+      "update": "Update Credentials",
+      "disconnect": "Disconnect",
+      "connected": "DAD-IS Connected",
+      "configure": "Configure DAD-IS API"
+    },
+    "fallback": {
+      "title": "Available Data Sources (without DAD-IS)",
+      "description": "The BioOrchestrator integrates multiple biodiversity data sources via IkerKeta that are available without DAD-IS credentials:",
+      "sources": {
+        "gbif": "Global livestock occurrence records via GBIF-mediated data",
+        "agrovoc": "FAO agricultural thesaurus — species, breeds, and practices",
+        "eppo": "European plant protection organisation — pest and disease data",
+        "globaltreesearch": "Botanic Gardens Conservation International — tree species",
+        "pesticides": "European Commission — authorised plant protection products",
+        "cpvo": "Community Plant Variety Office — registered crop varieties"
+      }
     }
   },
   "phenology": {
@@ -90,6 +116,8 @@
     "ci": "Confidence Interval",
     "source": "Scientific Source",
     "alternatives": "Alternative Published Values",
+    "thermal": "Thermal Tolerance",
+    "nutrients": "Nutrient Uptake",
     "match": {
       "exact": "Exact match (cultivar + management)",
       "management": "Management match",
@@ -105,6 +133,7 @@
       "conditions": "Experimental conditions",
       "cancel": "Cancel",
       "submit": "Submit for review",
+      "submitting": "Submitting...",
       "success": "Parameter submitted for review. Thank you for your contribution."
     }
   }

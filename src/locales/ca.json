@@ -1,11 +1,140 @@
 {
   "app": {
     "title": "BioOrchestrator",
-    "subtitle": "Pipeline de biodiversitat multi-domini — Agricultura · Ramaderia · Silvicultura · Agroforesteria",
-    "tabs": { "sources": "Fonts de dades", "pipeline": "Pipeline", "phenology": "Fenologia", "dadis": "Explorador DAD-IS" }
+    "subtitle": "Pipeline de biodiversitat multidomini — Agricultura · Ramaderia · Forestal · Agroforesteria",
+    "tabs": {
+      "sources": "Fonts de dades",
+      "pipeline": "Pipeline",
+      "phenology": "Fenologia",
+      "dadis": "Explorador DAD-IS"
+    }
   },
-  "sources": { "loading": "Carregant fonts...", "errorPrefix": "Error", "summary": { "total": "Total de fonts", "ready": "Preparades", "unavailable": "No disponibles" }, "status": { "ready": "✓ Preparada", "unavailable": "⊘ No disponible" }, "warnings": { "keyMissing": "🔑 Clau absent", "noDataFile": "📁 Sense fitxer de dades" } },
-  "pipeline": { "sourcesLabel": "Fonts (separades per coma, buit = totes)", "sourcesPlaceholder": "agrovoc, eppo, dadis, globaltreesearch...", "limitLabel": "Límit per font", "run": "▶ Executar pipeline", "running": "⏳ Executant...", "result": { "ok": "✅ Pipeline completat", "withErrors": "⚠️ Pipeline completat amb errors", "entitiesRaw": "Entitats (cru)", "entitiesDedup": "Entitats (dedup)", "relationships": "Relacions", "crossrefs": "Referències creuades", "duration": "Durada", "errorsTitle": "Errors:" } },
-  "dadis": { "title": "DAD-IS Breed Discovery", "badge": "FAO API Integ", "filters": { "country": "País", "allCountries": "Tots els països", "species": "Espècie", "allSpecies": "Totes", "classification": "Classificació", "all": "Totes", "local": "Local", "transboundary": "Transfronterera" }, "search": "Cercar", "searching": "Cercant...", "loading": "Consultant API DAD-IS...", "table": { "breedName": "Raça", "speciesId": "ID Espècie", "country": "País", "transboundary": "Transfronterera" }, "empty": { "title": "Sense dades.", "hint": "Selecciona filtres i cerca per obtenir dades reals de DAD-IS." }, "footer": "Mostrant {{count}} races de DAD-IS", "errors": { "loadBreeds": "No s'han pogut carregar les races de DAD-IS." } },
-  "phenology": { "species": "Espècie", "stage": "Etapa", "anyStage": "Qualsevol etapa", "cultivar": "Varietat", "anyCultivar": "Qualsevol", "management": "Reg", "standardIrrigation": "Estàndard (complet/secà)", "loading": "Carregant paràmetres...", "notFound": "Sense paràmetres per a aquesta selecció", "usingDefaults": "Usant paràmetres genèrics", "parameter": "Paràmetre", "value": "Valor", "ci": "Interval de confiança", "source": "Font científica", "alternatives": "Valors alternatius publicats", "match": { "exact": "Coincidència exacta", "management": "Per maneig", "generic": "Valor genèric", "species_only": "Només espècie" }, "contribute": { "button": "Contribuir paràmetre", "title": "Contribuir paràmetre fenològic", "description": "Envia les teves dades de recerca per a revisió científica.", "provenance": "Procedència científica", "author": "Autor(s)", "conditions": "Condicions de l'assaig", "cancel": "Cancel·lar", "submit": "Enviar per revisió", "success": "Paràmetre enviat per revisió. Gràcies." } }
+  "sources": {
+    "loading": "Carregant fonts...",
+    "errorPrefix": "Error",
+    "summary": {
+      "total": "Total fonts",
+      "ready": "Llestes",
+      "unavailable": "No disponibles"
+    },
+    "status": {
+      "ready": "Llesta",
+      "unavailable": "No disponible"
+    },
+    "warnings": {
+      "keyMissing": "Falta clau",
+      "noDataFile": "Sense fitxer de dades"
+    }
+  },
+  "pipeline": {
+    "sourcesLabel": "Fonts (separades per comes, buit = totes)",
+    "sourcesPlaceholder": "agrovoc, eppo, dadis, globaltreesearch...",
+    "limitLabel": "Límit per font",
+    "run": "Executar pipeline",
+    "running": "Executant pipeline...",
+    "history": "Execucions recents",
+    "result": {
+      "ok": "Pipeline completat",
+      "withErrors": "Pipeline completat amb errors",
+      "entitiesRaw": "Entitats (brut)",
+      "entitiesDedup": "Entitats (dedup)",
+      "relationships": "Relacions",
+      "crossrefs": "Referències creuades",
+      "duration": "Durada",
+      "errorsTitle": "Errors:"
+    }
+  },
+  "dadis": {
+    "title": "DAD-IS Breed Discovery",
+    "badge": "Integració API FAO",
+    "filters": {
+      "country": "País",
+      "allCountries": "Tots els països",
+      "species": "Espècie",
+      "allSpecies": "Totes les espècies",
+      "classification": "Classificació",
+      "all": "Totes",
+      "local": "Local",
+      "transboundary": "Transfronterera"
+    },
+    "search": "Cercar",
+    "searching": "Cercant...",
+    "loading": "Consultant API d'interoperabilitat DAD-IS...",
+    "table": {
+      "breedName": "Raça",
+      "speciesId": "ID Espècie",
+      "country": "País",
+      "transboundary": "Transfronterera"
+    },
+    "empty": {
+      "title": "Sense dades.",
+      "hint": "Selecciona filtres i cerca per obtenir dades reals de DAD-IS."
+    },
+    "footer": "Mostrant {{count}} races de DAD-IS",
+    "errors": {
+      "loadBreeds": "No s'han pogut carregar les races de DAD-IS."
+    },
+    "settings": {
+      "title": "Configuració API DAD-IS",
+      "description": "L'API DAD-IS de la FAO no es pot usar amb finalitats comercials. Cada usuari ha de proporcionar les seves pròpies credencials obtingudes directament de la FAO.",
+      "requestAccess": "Sol·licitar accés a l'API de la FAO",
+      "apiUrl": "URL de l'API",
+      "apiToken": "Token de l'API",
+      "tokenPlaceholder": "Introdueix el teu token de l'API DAD-IS...",
+      "save": "Desar i connectar",
+      "update": "Actualitzar credencials",
+      "disconnect": "Desconnectar",
+      "connected": "DAD-IS Connectat",
+      "configure": "Configurar API DAD-IS"
+    },
+    "fallback": {
+      "title": "Fonts de dades disponibles (sense DAD-IS)",
+      "description": "BioOrchestrator integra múltiples fonts de dades de biodiversitat a través d'IkerKeta disponibles sense credencials DAD-IS:",
+      "sources": {
+        "gbif": "Registres globals de ramaderia a través de dades mediades per GBIF",
+        "agrovoc": "Tesaurus agrícola de la FAO — espècies, races i pràctiques",
+        "eppo": "Organització europea de protecció vegetal — dades de plagues i malalties",
+        "globaltreesearch": "Conservació Botànica Internacional — espècies arbòries",
+        "pesticides": "Comissió Europea — productes fitosanitaris autoritzats",
+        "cpvo": "Oficina Comunitària de Varietats Vegetals — varietats registrades"
+      }
+    }
+  },
+  "phenology": {
+    "species": "Espècie",
+    "stage": "Etapa",
+    "anyStage": "Qualsevol etapa",
+    "cultivar": "Varietat",
+    "anyCultivar": "Qualsevol varietat",
+    "management": "Reg",
+    "standardIrrigation": "Estàndard (complet/secà)",
+    "loading": "Carregant paràmetres...",
+    "notFound": "No s'han trobat paràmetres per a aquesta selecció",
+    "usingDefaults": "Usant paràmetres per defecte — sense coincidència exacta per a aquesta selecció",
+    "parameter": "Paràmetre",
+    "value": "Valor",
+    "ci": "Interval de confiança",
+    "source": "Font científica",
+    "alternatives": "Valors alternatius publicats",
+    "thermal": "Tolerància tèrmica",
+    "nutrients": "Absorció de nutrients",
+    "match": {
+      "exact": "Coincidència exacta (varietat + maneig)",
+      "management": "Coincidència per maneig",
+      "generic": "Valor genèric per defecte",
+      "species_only": "Només espècie (sense dades d'etapa)"
+    },
+    "contribute": {
+      "button": "Contribuir paràmetre",
+      "title": "Contribuir paràmetre fenològic",
+      "description": "Envia les teves dades de recerca per a revisió científica. La teva contribució serà revisada per un administrador abans d'incorporar-se al conjunt principal de paràmetres.",
+      "provenance": "Procedència científica",
+      "author": "Autor(s)",
+      "conditions": "Condicions experimentals",
+      "cancel": "Cancel·lar",
+      "submit": "Enviar per a revisió",
+      "submitting": "Enviant...",
+      "success": "Paràmetre enviat per a revisió. Gràcies per la teva contribució."
+    }
+  }
 }

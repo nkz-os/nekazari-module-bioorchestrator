@@ -1,186 +1,441 @@
 import React, { useState, useEffect } from 'react';
-import { getBreeds, getCountries, getSpecies, DadisBreed, DadisCountry, DadisSpecies } from '../../api/dadisApi';
 import { useTranslation } from '@nekazari/sdk';
+import {
+  Panel, Stack, Button, Input, Badge, Skeleton, EmptyState,
+  Surface, IconButton, Card,
+} from '@nekazari/ui-kit';
+import { Search, Database, Globe, Settings, X, CheckCircle, ExternalLink } from 'lucide-react';
+import { useBioApi, getDadisCredentials, setDadisCredentials, clearDadisCredentials } from '../../services/api';
 
-// Use components from host UI kit if available, otherwise fallbacks
-const Card = (window as any).__NKZ_UI__?.Card || (({ children, className }: any) => <div className={`bg-white rounded-lg shadow p-4 ${className}`}>{children}</div>);
-const Button = (window as any).__NKZ_UI__?.Button || (({ children, onClick, disabled, className }: any) => <button onClick={onClick} disabled={disabled} className={`px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 ${className}`}>{children}</button>);
+interface DadisBreed {
+  breedName: string;
+  breedId: string;
+  speciesId: number;
+  countryISO3: string;
+  transboundaryId?: string;
+  lastModification?: string;
+}
+
+interface DadisCountry {
+  iso3: string;
+  name: string;
+}
+
+interface DadisSpecies {
+  id: number;
+  name: string;
+}
+
+const DADIS_DEFAULT_URL = 'https://us-central1-fao-dadis-dev.cloudfunctions.net/api/v1';
 
 export const BreedDiscovery: React.FC = () => {
-    const { t } = useTranslation('bioorchestrator');
-    const [breeds, setBreeds] = useState<DadisBreed[]>([]);
-    const [countries, setCountries] = useState<DadisCountry[]>([]);
-    const [species, setSpecies] = useState<DadisSpecies[]>([]);
+  const { t } = useTranslation('bioorchestrator');
+  const api = useBioApi();
 
-    const [loading, setLoading] = useState<boolean>(false);
-    const [error, setError] = useState<string | null>(null);
+  // DAD-IS credentials state
+  const [hasCredentials, setHasCredentials] = useState<boolean>(() => !!getDadisCredentials());
+  const [showSettings, setShowSettings] = useState(false);
+  const [settingsUrl, setSettingsUrl] = useState('');
+  const [settingsToken, setSettingsToken] = useState('');
 
-    // Filters
-    const [selectedCountry, setSelectedCountry] = useState<string>('');
-    const [selectedSpecies, setSelectedSpecies] = useState<number | ''>('');
-    const [classification, setClassification] = useState<'all' | 'local' | 'transboundary'>('all');
+  // Reference data
+  const [countries, setCountries] = useState<DadisCountry[]>([]);
+  const [species, setSpecies] = useState<DadisSpecies[]>([]);
+  const [refLoading, setRefLoading] = useState(false);
 
-    // Load initial reference data
-    useEffect(() => {
-        const loadReferenceData = async () => {
-            try {
-                const [c, s] = await Promise.all([
-                    getCountries(),
-                    getSpecies()
-                ]);
-                setCountries(c || []);
-                setSpecies(s || []);
-            } catch (err: any) {
-                console.error("Failed to load reference data", err);
-                // Don't show hard error here so UI remains usable for manual search
-            }
-        };
+  // Search
+  const [breeds, setBreeds] = useState<DadisBreed[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-        loadReferenceData();
-    }, []);
+  // Filters
+  const [selectedCountry, setSelectedCountry] = useState<string>('');
+  const [selectedSpecies, setSelectedSpecies] = useState<string>('');
+  const [classification, setClassification] = useState<'all' | 'local' | 'transboundary'>('all');
 
-    const handleSearch = async () => {
-        setLoading(true);
-        setError(null);
-        try {
-            const countryIds = selectedCountry ? [selectedCountry] : undefined;
-            const speciesIds = selectedSpecies !== '' ? [Number(selectedSpecies)] : undefined;
+  // Load reference data when credentials are available
+  useEffect(() => {
+    if (!hasCredentials) return;
+    setRefLoading(true);
+    Promise.all([
+      api.getDadisCountries().catch(() => []),
+      api.getDadisSpecies().catch(() => []),
+    ]).then(([c, s]) => {
+      setCountries(Array.isArray(c) ? c : []);
+      setSpecies(Array.isArray(s) ? s : []);
+    }).catch(() => {}).finally(() => setRefLoading(false));
+  }, [hasCredentials]);
 
-            const results = await getBreeds(classification, countryIds, speciesIds);
-            setBreeds(results || []);
-        } catch (err: any) {
-            setError(err.message || t('dadis.errors.loadBreeds'));
-            setBreeds([]);
-        } finally {
-            setLoading(false);
-        }
-    };
+  const handleSaveCredentials = () => {
+    if (settingsUrl.trim() && settingsToken.trim()) {
+      setDadisCredentials(settingsUrl.trim(), settingsToken.trim());
+      setHasCredentials(true);
+      setShowSettings(false);
+    }
+  };
 
+  const handleClearCredentials = () => {
+    clearDadisCredentials();
+    setHasCredentials(false);
+    setShowSettings(false);
+    setCountries([]);
+    setSpecies([]);
+    setBreeds([]);
+  };
+
+  const handleSearch = async () => {
+    if (!hasCredentials) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const countryIds = selectedCountry ? [selectedCountry] : undefined;
+      const speciesIds = selectedSpecies ? [Number(selectedSpecies)] : undefined;
+      const results = await api.getDadisBreeds(classification, countryIds, speciesIds);
+      setBreeds(Array.isArray(results) ? results : []);
+    } catch (err: any) {
+      setError(err.message || t('dadis.errors.loadBreeds'));
+      setBreeds([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ── No credentials: setup screen ──────────────────────────────────────
+  if (!hasCredentials) {
     return (
-        <Card className="flex flex-col h-full">
-            <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-semibold text-gray-800 flex items-center gap-2">
-                    <svg className="w-6 h-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
-                    </svg>
-                    {t('dadis.title')}
-                </h2>
-                <div className="text-xs font-mono bg-gray-100 text-gray-600 px-2 py-1 rounded">
-                    {t('dadis.badge')}
+      <Stack gap="section">
+        {/* Setup form */}
+        <Panel>
+          <Panel.Header>
+            <Panel.Title>
+              <Database className="w-4 h-4 text-nkz-accent-base" />
+              {t('dadis.title')}
+            </Panel.Title>
+          </Panel.Header>
+          <Panel.Body>
+            <Stack gap="stack">
+              <div className="flex items-start gap-3 rounded-nkz-md bg-nkz-warning-soft border border-nkz-warning p-nkz-stack">
+                <ExternalLink className="w-4 h-4 text-nkz-warning flex-shrink-0 mt-0.5" />
+                <div className="text-nkz-sm text-nkz-text-primary">
+                  <p className="font-medium mb-1">FAO DAD-IS API — Commercial Use Restriction</p>
+                  <p className="text-nkz-text-secondary">
+                    The FAO DAD-IS API cannot be used for commercial purposes under its current terms.
+                    Each user must provide their own API credentials obtained directly from FAO.
+                  </p>
+                  <a
+                    href="https://www.fao.org/dad-is/en/"
+                    target="_blank"
+                    rel="noopener"
+                    className="inline-flex items-center gap-1 text-nkz-accent-base text-nkz-xs mt-2 hover:underline"
+                  >
+                    Request API access <ExternalLink className="w-3 h-3" />
+                  </a>
                 </div>
-            </div>
+              </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">{t('dadis.filters.country')}</label>
-                    <select
-                        className="w-full border-gray-300 rounded-md shadow-sm text-sm p-2 border"
-                        value={selectedCountry}
-                        onChange={(e) => setSelectedCountry(e.target.value)}
-                    >
-                        <option value="">{t('dadis.filters.allCountries')}</option>
-                        {countries.map(c => (
-                            <option key={c.iso3 || c.name} value={c.iso3}>{c.name}</option>
-                        ))}
-                    </select>
-                </div>
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">{t('dadis.filters.species')}</label>
-                    <select
-                        className="w-full border-gray-300 rounded-md shadow-sm text-sm p-2 border"
-                        value={selectedSpecies}
-                        onChange={(e) => setSelectedSpecies(e.target.value ? Number(e.target.value) : '')}
-                    >
-                        <option value="">{t('dadis.filters.allSpecies')}</option>
-                        {species.map(s => (
-                            <option key={s.id} value={s.id}>{s.name || s.id}</option>
-                        ))}
-                    </select>
-                </div>
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">{t('dadis.filters.classification')}</label>
-                    <select
-                        className="w-full border-gray-300 rounded-md shadow-sm text-sm p-2 border"
-                        value={classification}
-                        onChange={(e) => setClassification(e.target.value as any)}
-                    >
-                        <option value="all">{t('dadis.filters.all')}</option>
-                        <option value="local">{t('dadis.filters.local')}</option>
-                        <option value="transboundary">{t('dadis.filters.transboundary')}</option>
-                    </select>
-                </div>
-                <div className="flex items-end">
-                    <Button
-                        onClick={handleSearch}
-                        disabled={loading}
-                        className="w-full flex justify-center items-center h-[38px]"
-                    >
-                        {loading ? t('dadis.searching') : t('dadis.search')}
-                    </Button>
-                </div>
-            </div>
-
-            {error && (
-                <div className="bg-red-50 text-red-600 p-3 rounded-md text-sm mb-4">
-                    {error}
-                </div>
-            )}
-
-            <div className="flex-1 overflow-auto border rounded-md min-h-[300px]">
-                {loading ? (
-                    <div className="flex items-center justify-center h-full text-gray-500">
-                        <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                        {t('dadis.loading')}
+              {showSettings ? (
+                <Surface variant="sunken" padding="stack">
+                  <Stack gap="stack">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-nkz-sm font-medium text-nkz-text-primary">
+                        DAD-IS API Configuration
+                      </h4>
+                      <IconButton
+                        aria-label="Close settings"
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => setShowSettings(false)}
+                      >
+                        <X className="w-4 h-4" />
+                      </IconButton>
                     </div>
-                ) : breeds.length > 0 ? (
-                    <table className="min-w-full divide-y divide-gray-200">
-                        <thead className="bg-gray-50 sticky top-0">
-                            <tr>
-                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('dadis.table.breedName')}</th>
-                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('dadis.table.speciesId')}</th>
-                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('dadis.table.country')}</th>
-                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('dadis.table.transboundary')}</th>
-                            </tr>
-                        </thead>
-                        <tbody className="bg-white divide-y divide-gray-200">
-                            {breeds.map((breed, idx) => (
-                                <tr key={`${breed.breedId}-${idx}`} className="hover:bg-gray-50 cursor-pointer">
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{breed.breedName}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                            {breed.speciesId}
-                                        </span>
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{breed.countryISO3}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                        {breed.transboundaryId ? (
-                                            <span className="text-purple-600 font-mono text-xs">{breed.transboundaryId}</span>
-                                        ) : (
-                                            <span className="text-gray-300">-</span>
-                                        )}
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                ) : (
-                    <div className="flex flex-col items-center justify-center h-full text-gray-400 p-8 text-center">
-                        <svg className="w-12 h-12 mb-2 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                        <p>{t('dadis.empty.title')}</p>
-                        <p className="text-xs mt-1">{t('dadis.empty.hint')}</p>
+                    <div>
+                      <label className="text-nkz-xs font-medium text-nkz-text-muted block mb-1">
+                        API URL
+                      </label>
+                      <Input
+                        value={settingsUrl}
+                        onChange={(e: any) => setSettingsUrl(e.target.value)}
+                        placeholder={DADIS_DEFAULT_URL}
+                        size="sm"
+                      />
                     </div>
-                )}
-            </div>
-            {breeds.length > 0 && (
-                <div className="mt-2 text-xs text-gray-500 text-right">
-                    {t('dadis.footer', { count: breeds.length })}
-                </div>
-            )}
-        </Card>
+                    <div>
+                      <label className="text-nkz-xs font-medium text-nkz-text-muted block mb-1">
+                        API Token
+                      </label>
+                      <Input
+                        type="password"
+                        value={settingsToken}
+                        onChange={(e: any) => setSettingsToken(e.target.value)}
+                        placeholder="Enter your DAD-IS API token..."
+                        size="sm"
+                      />
+                    </div>
+                    <div className="flex gap-2">
+                      <Button variant="primary" size="sm" onClick={handleSaveCredentials}>
+                        Save & Connect
+                      </Button>
+                    </div>
+                  </Stack>
+                </Surface>
+              ) : (
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => setShowSettings(true)}
+                  leadingIcon={<Settings className="w-4 h-4" />}
+                >
+                  Configure DAD-IS API
+                </Button>
+              )}
+            </Stack>
+          </Panel.Body>
+        </Panel>
+
+        {/* Fallback sources */}
+        <Panel>
+          <Panel.Header>
+            <Panel.Title>
+              <Globe className="w-4 h-4 text-nkz-accent-base" />
+              Available Data Sources (without DAD-IS)
+            </Panel.Title>
+          </Panel.Header>
+          <Panel.Body>
+            <Stack gap="stack">
+              <p className="text-nkz-sm text-nkz-text-secondary">
+                The BioOrchestrator integrates multiple biodiversity data sources via IkerKeta
+                that are available without DAD-IS credentials:
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-nkz-stack">
+                {[
+                  { name: 'GBIF Livestock', desc: 'Global livestock occurrence records via GBIF-mediated data' },
+                  { name: 'AGROVOC', desc: 'FAO agricultural thesaurus — species, breeds, and practices' },
+                  { name: 'EPPO', desc: 'European plant protection organisation — pest and disease data' },
+                  { name: 'GlobalTreeSearch', desc: 'Botanic Gardens Conservation International — tree species' },
+                  { name: 'EU Pesticides', desc: 'European Commission — authorised plant protection products' },
+                  { name: 'CPVO Varieties', desc: 'Community Plant Variety Office — registered crop varieties' },
+                ].map((src) => (
+                  <Card key={src.name} padding="sm">
+                    <div className="flex items-start gap-2">
+                      <CheckCircle className="w-3.5 h-3.5 text-nkz-success flex-shrink-0 mt-0.5" />
+                      <div>
+                        <p className="text-nkz-sm font-medium text-nkz-text-primary">{src.name}</p>
+                        <p className="text-nkz-xs text-nkz-text-muted">{src.desc}</p>
+                      </div>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            </Stack>
+          </Panel.Body>
+        </Panel>
+      </Stack>
     );
+  }
+
+  // ── Credentials available: search interface ───────────────────────────
+  return (
+    <Panel>
+      <Panel.Header>
+        <Panel.Title>
+          <Database className="w-4 h-4 text-nkz-accent-base" />
+          {t('dadis.title')}
+        </Panel.Title>
+        <Panel.Actions>
+          <Badge intent="positive">
+            <span className="flex items-center gap-1">
+              <CheckCircle className="w-3 h-3" />
+              DAD-IS Connected
+            </span>
+          </Badge>
+          <IconButton
+            aria-label="DAD-IS settings"
+            size="sm"
+            variant="ghost"
+            onClick={() => setShowSettings(!showSettings)}
+          >
+            {showSettings ? <X className="w-4 h-4" /> : <Settings className="w-4 h-4" />}
+          </IconButton>
+        </Panel.Actions>
+      </Panel.Header>
+
+      <Panel.Body>
+        <Stack gap="stack">
+          {/* Settings panel (collapsible) */}
+          {showSettings && (
+            <Surface variant="sunken" padding="stack">
+              <Stack gap="stack">
+                <h4 className="text-nkz-sm font-medium text-nkz-text-primary">
+                  DAD-IS API Configuration
+                </h4>
+                <div>
+                  <label className="text-nkz-xs font-medium text-nkz-text-muted block mb-1">
+                    API URL
+                  </label>
+                  <Input
+                    value={settingsUrl}
+                    onChange={(e: any) => setSettingsUrl(e.target.value)}
+                    placeholder={DADIS_DEFAULT_URL}
+                    size="sm"
+                  />
+                </div>
+                <div>
+                  <label className="text-nkz-xs font-medium text-nkz-text-muted block mb-1">
+                    API Token
+                  </label>
+                  <Input
+                    type="password"
+                    value={settingsToken}
+                    onChange={(e: any) => setSettingsToken(e.target.value)}
+                    placeholder="Enter new token..."
+                    size="sm"
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <Button variant="primary" size="sm" onClick={handleSaveCredentials}>
+                    Update Credentials
+                  </Button>
+                  <Button variant="danger" size="sm" onClick={handleClearCredentials}>
+                    Disconnect
+                  </Button>
+                </div>
+              </Stack>
+            </Surface>
+          )}
+
+          {/* Filters */}
+          {refLoading ? (
+            <div className="flex gap-3">
+              <Skeleton variant="rect" width="180px" height="38px" />
+              <Skeleton variant="rect" width="180px" height="38px" />
+              <Skeleton variant="rect" width="180px" height="38px" />
+              <Skeleton variant="rect" width="120px" height="38px" />
+            </div>
+          ) : (
+            <div className="flex gap-3 items-end flex-wrap">
+              <div className="min-w-[160px]">
+                <label className="text-nkz-xs font-medium text-nkz-text-muted block mb-1">
+                  {t('dadis.filters.country')}
+                </label>
+                <select
+                  className="w-full h-9 rounded-nkz-md border border-nkz-border bg-nkz-surface px-nkz-stack text-nkz-sm text-nkz-text-primary focus-visible:ring-2 focus-visible:ring-nkz-accent-base"
+                  value={selectedCountry}
+                  onChange={(e) => setSelectedCountry(e.target.value)}
+                >
+                  <option value="">{t('dadis.filters.allCountries')}</option>
+                  {countries.map((c) => (
+                    <option key={c.iso3 || c.name} value={c.iso3}>{c.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="min-w-[140px]">
+                <label className="text-nkz-xs font-medium text-nkz-text-muted block mb-1">
+                  {t('dadis.filters.species')}
+                </label>
+                <select
+                  className="w-full h-9 rounded-nkz-md border border-nkz-border bg-nkz-surface px-nkz-stack text-nkz-sm text-nkz-text-primary focus-visible:ring-2 focus-visible:ring-nkz-accent-base"
+                  value={selectedSpecies}
+                  onChange={(e) => setSelectedSpecies(e.target.value)}
+                >
+                  <option value="">{t('dadis.filters.allSpecies')}</option>
+                  {species.map((s) => (
+                    <option key={s.id} value={String(s.id)}>{s.name || s.id}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="min-w-[160px]">
+                <label className="text-nkz-xs font-medium text-nkz-text-muted block mb-1">
+                  {t('dadis.filters.classification')}
+                </label>
+                <select
+                  className="w-full h-9 rounded-nkz-md border border-nkz-border bg-nkz-surface px-nkz-stack text-nkz-sm text-nkz-text-primary focus-visible:ring-2 focus-visible:ring-nkz-accent-base"
+                  value={classification}
+                  onChange={(e) => setClassification(e.target.value as any)}
+                >
+                  <option value="all">{t('dadis.filters.all')}</option>
+                  <option value="local">{t('dadis.filters.local')}</option>
+                  <option value="transboundary">{t('dadis.filters.transboundary')}</option>
+                </select>
+              </div>
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={handleSearch}
+                disabled={loading}
+                leadingIcon={loading ? undefined : <Search className="w-4 h-4" />}
+                loading={loading}
+              >
+                {loading ? t('dadis.searching') : t('dadis.search')}
+              </Button>
+            </div>
+          )}
+
+          {/* Error */}
+          {error && (
+            <Badge intent="negative" className="flex items-center gap-2">
+              <span className="text-nkz-xs">{error}</span>
+            </Badge>
+          )}
+
+          {/* Results */}
+          {loading ? (
+            <Stack gap="stack">
+              <Skeleton variant="rect" height="36px" />
+              <Skeleton variant="rect" height="300px" />
+            </Stack>
+          ) : breeds.length > 0 ? (
+            <div>
+              <table className="w-full text-nkz-sm">
+                <thead>
+                  <tr className="text-left text-nkz-xs font-semibold text-nkz-text-secondary uppercase tracking-wider border-b border-nkz-border">
+                    <th className="px-nkz-stack py-nkz-inline">{t('dadis.table.breedName')}</th>
+                    <th className="px-nkz-stack py-nkz-inline">{t('dadis.table.speciesId')}</th>
+                    <th className="px-nkz-stack py-nkz-inline">{t('dadis.table.country')}</th>
+                    <th className="px-nkz-stack py-nkz-inline">{t('dadis.table.transboundary')}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {breeds.map((breed, idx) => (
+                    <tr
+                      key={`${breed.breedId}-${idx}`}
+                      className="border-b border-nkz-border transition-colors duration-nkz-fast hover:bg-nkz-surface-sunken cursor-pointer"
+                    >
+                      <td className="px-nkz-stack py-nkz-inline font-medium text-nkz-text-primary">
+                        {breed.breedName}
+                      </td>
+                      <td className="px-nkz-stack py-nkz-inline">
+                        <Badge intent="info">{breed.speciesId}</Badge>
+                      </td>
+                      <td className="px-nkz-stack py-nkz-inline text-nkz-text-muted">
+                        {breed.countryISO3}
+                      </td>
+                      <td className="px-nkz-stack py-nkz-inline">
+                        {breed.transboundaryId ? (
+                          <span className="font-mono text-nkz-xs text-nkz-accent-base">
+                            {breed.transboundaryId}
+                          </span>
+                        ) : (
+                          <span className="text-nkz-text-muted">—</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              <p className="text-nkz-xs text-nkz-text-muted text-right mt-2">
+                {t('dadis.footer', { count: breeds.length })}
+              </p>
+            </div>
+          ) : !error && !refLoading ? (
+            <EmptyState
+              icon={<Database className="w-8 h-8 text-nkz-text-muted" />}
+              title={t('dadis.empty.title')}
+              description={t('dadis.empty.hint')}
+            />
+          ) : null}
+        </Stack>
+      </Panel.Body>
+    </Panel>
+  );
 };

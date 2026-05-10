@@ -1,369 +1,426 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useTranslation } from '@nekazari/sdk';
+import { Panel, Stack, Surface, DetailGrid, DetailItem, Card, Badge, Skeleton, EmptyState } from '@nekazari/ui-kit';
+import { Sprout, Thermometer, Beaker, BookOpen } from 'lucide-react';
+import { useBioApi } from '../services/api';
 import PhenologyContribute from './PhenologyContribute';
 
 interface PhenologyParams {
-    species: string;
-    scientific_name?: string;
-    stage: string;
-    stage_description?: string;
+  species: string;
+  scientific_name?: string;
+  stage: string;
+  stage_description?: string;
+  kc: number;
+  kc_confidence_interval?: [number, number];
+  d1: number;
+  d1_confidence_interval?: [number, number];
+  d2: number;
+  d2_confidence_interval?: [number, number];
+  mds_ref: number;
+  mds_ref_confidence_interval?: [number, number];
+  cultivar?: string;
+  management?: string;
+  climate_zone?: string;
+  match_level: string;
+  is_default: boolean;
+  provenance?: {
+    doi?: string;
+    short?: string;
+    author?: string;
+    year?: number;
+    institution?: string;
+    method?: string;
+    conditions?: string;
+  };
+  alternatives?: Array<{
     kc: number;
-    kc_confidence_interval?: [number, number];
-    d1: number;
-    d1_confidence_interval?: [number, number];
-    d2: number;
-    d2_confidence_interval?: [number, number];
-    mds_ref: number;
-    mds_ref_confidence_interval?: [number, number];
-    cultivar?: string;
-    management?: string;
-    climate_zone?: string;
-    match_level: string;
-    is_default: boolean;
-    provenance?: {
-        doi?: string;
-        short?: string;
-        author?: string;
-        year?: number;
-        institution?: string;
-        method?: string;
-        conditions?: string;
-    };
-    alternatives?: Array<{
-        kc: number;
-        sourceShort?: string;
-        sourceDoi?: string;
-        conditions?: string;
-    }>;
+    sourceShort?: string;
+    sourceDoi?: string;
+    conditions?: string;
+  }>;
 }
 
 interface SpeciesInfo {
-    name: string;
-    scientific_name?: string;
-    stage_count: number;
-    params_count: number;
-    has_phenology: boolean;
+  name: string;
+  scientific_name?: string;
+  stage_count: number;
+  params_count: number;
+  has_phenology: boolean;
 }
 
+const MATCH_STYLES: Record<string, string> = {
+  exact: 'border-nkz-success bg-nkz-success-soft',
+  management: 'border-nkz-info bg-nkz-info-soft',
+  generic: 'border-nkz-warning bg-nkz-warning-soft',
+  species_only: 'border-nkz-danger bg-nkz-danger-soft',
+};
+
+const FALLBACK_SPECIES = [
+  'olive', 'almond', 'grapevine', 'wheat',
+];
+
 const PhenologyBrowser: React.FC = () => {
-    const { t } = useTranslation('bioorchestrator');
-    const [speciesList, setSpeciesList] = useState<SpeciesInfo[]>([]);
-    const [species, setSpecies] = useState('olive');
-    const [stage, setStage] = useState('');
-    const [cultivar, setCultivar] = useState('');
-    const [management, setManagement] = useState('');
-    const [data, setData] = useState<PhenologyParams | null>(null);
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
-    const [showContribute, setShowContribute] = useState(false);
+  const { t } = useTranslation('bioorchestrator');
+  const api = useBioApi();
+  const [speciesList, setSpeciesList] = useState<SpeciesInfo[]>([]);
+  const [species, setSpecies] = useState('olive');
+  const [stage, setStage] = useState('');
+  const [cultivar, setCultivar] = useState('');
+  const [management, setManagement] = useState('');
+  const [data, setData] = useState<PhenologyParams | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [showContribute, setShowContribute] = useState(false);
 
-    useEffect(() => {
-        fetch('/api/bioorchestrator/api/graph/species')
-            .then(r => r.ok ? r.json() : [])
-            .then(setSpeciesList)
-            .catch(() => {});
-    }, []);
+  useEffect(() => {
+    api.getSpecies()
+      .then(setSpeciesList)
+      .catch(() => {});
+  }, []);
 
-    const fetchParams = useCallback(async () => {
-        setLoading(true);
-        setError(null);
-        try {
-            const params = new URLSearchParams({ species });
-            if (stage) params.set('stage', stage);
-            if (cultivar) params.set('cultivar', cultivar);
-            if (management) params.set('management', management);
+  const fetchParams = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const params = new URLSearchParams({ species });
+      if (stage) params.set('stage', stage);
+      if (cultivar) params.set('cultivar', cultivar);
+      if (management) params.set('management', management);
 
-            const resp = await fetch(`/api/bioorchestrator/api/graph/phenology-params?${params}`);
-            if (resp.status === 404) {
-                setData(null);
-                setError(t('phenology.notFound'));
-            } else if (!resp.ok) {
-                throw new Error(`HTTP ${resp.status}`);
-            } else {
-                setData(await resp.json());
-            }
-        } catch (e: any) {
-            setError(e.message);
-            setData(null);
-        } finally {
-            setLoading(false);
-        }
-    }, [species, stage, cultivar, management, t]);
+      const result = await api.getPhenologyParams(params);
+      setData(result);
+    } catch (e: any) {
+      if (e.message?.includes('404')) {
+        setData(null);
+        setError(t('phenology.notFound'));
+      } else {
+        setError(e.message);
+        setData(null);
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, [species, stage, cultivar, management, t]);
 
-    useEffect(() => {
-        fetchParams();
-    }, [fetchParams]);
+  useEffect(() => {
+    fetchParams();
+  }, [fetchParams]);
 
-    const matchColor = (level: string) => {
-        switch (level) {
-            case 'exact': return '#16a34a';
-            case 'management': return '#0284c7';
-            case 'generic': return '#d97706';
-            case 'species_only': return '#dc2626';
-            default: return '#6b7280';
-        }
-    };
+  const matchBorderClass = data ? (MATCH_STYLES[data.match_level] || 'border-nkz-border bg-nkz-surface-sunken') : '';
 
-    return (
-        <div className="phenology-browser">
-            <div className="pheno-controls">
-                <div className="control-group">
-                    <label>{t('phenology.species')}</label>
-                    <select value={species} onChange={(e) => setSpecies(e.target.value)}>
-                        {speciesList.length > 0 ? speciesList.map(s => (
-                            <option key={s.name} value={s.name}>
-                                {s.scientific_name ? `${s.name} (${s.scientific_name})` : s.name}
-                                {!s.has_phenology ? ' *' : ''}
-                            </option>
-                        )) : (
-                            <>
-                                <option value="olive">Olive (Olea europaea)</option>
-                                <option value="almond">Almond (Prunus dulcis)</option>
-                                <option value="grapevine">Grapevine (Vitis vinifera)</option>
-                                <option value="wheat">Wheat (Triticum aestivum)</option>
-                            </>
-                        )}
-                    </select>
-                </div>
-
-                <div className="control-group">
-                    <label>{t('phenology.stage')}</label>
-                    <select value={stage} onChange={(e) => setStage(e.target.value)}>
-                        <option value="">{t('phenology.anyStage')}</option>
-                        {species === 'olive' && (
-                            <>
-                                <option value="vegetative">Vegetative</option>
-                                <option value="pit_hardening">Pit Hardening</option>
-                                <option value="fruit_growth">Fruit Growth</option>
-                            </>
-                        )}
-                        {species === 'almond' && (
-                            <>
-                                <option value="vegetative">Vegetative</option>
-                                <option value="kernel_fill">Kernel Fill</option>
-                            </>
-                        )}
-                        {species === 'grapevine' && (
-                            <>
-                                <option value="vegetative">Vegetative</option>
-                                <option value="veraison">Veraison</option>
-                            </>
-                        )}
-                        {species === 'wheat' && (
-                            <>
-                                <option value="vegetative">Vegetative</option>
-                                <option value="stem_elongation">Stem Elongation</option>
-                            </>
-                        )}
-                    </select>
-                </div>
-
-                <div className="control-group">
-                    <label>{t('phenology.cultivar')}</label>
-                    <select value={cultivar} onChange={(e) => setCultivar(e.target.value)}>
-                        <option value="">{t('phenology.anyCultivar')}</option>
-                        <option value="Picual">Picual</option>
-                        <option value="Nonpareil">Nonpareil</option>
-                        <option value="Tempranillo">Tempranillo</option>
-                    </select>
-                </div>
-
-                <div className="control-group">
-                    <label>{t('phenology.management')}</label>
-                    <select value={management} onChange={(e) => setManagement(e.target.value)}>
-                        <option value="">{t('phenology.standardIrrigation')}</option>
-                        <option value="deficit_irrigation">Deficit Irrigation</option>
-                        <option value="regulated_deficit_irrigation">Regulated Deficit (RDI)</option>
-                    </select>
-                </div>
-            </div>
-
-            <div className="pheno-contribute-bar">
-                <button className="pheno-contribute-btn" onClick={() => setShowContribute(true)}>
-                    📤 {t('phenology.contribute.button')}
-                </button>
-            </div>
-
-            {loading && <div className="pheno-loading">{t('phenology.loading')}</div>}
-            {error && <div className="pheno-error">{error}</div>}
-
-            {showContribute && <PhenologyContribute onClose={() => setShowContribute(false)} />}
-
-            {data && (
-                <div className="pheno-result">
-                    <div className="pheno-match" style={{ borderLeftColor: matchColor(data.match_level) }}>
-                        <span className="match-badge" style={{ background: matchColor(data.match_level) }}>
-                            {data.match_level.toUpperCase()}
-                        </span>
-                        <span className="match-text">
-                            {data.scientific_name && <em>{data.scientific_name}</em>}
-                            {data.stage && ` — ${data.stage}`}
-                            {data.stage_description && ` (${data.stage_description})`}
-                        </span>
-                    </div>
-
-                    {data.is_default && (
-                        <div className="pheno-warning">{t('phenology.usingDefaults')}</div>
-                    )}
-
-                    <table className="pheno-table">
-                        <thead>
-                            <tr>
-                                <th>{t('phenology.parameter')}</th>
-                                <th>{t('phenology.value')}</th>
-                                <th>{t('phenology.ci')}</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td className="param-name">Kc</td>
-                                <td className="param-value">{data.kc?.toFixed(2)}</td>
-                                <td className="param-ci">
-                                    {data.kc_confidence_interval
-                                        ? `${data.kc_confidence_interval[0]?.toFixed(2)} – ${data.kc_confidence_interval[1]?.toFixed(2)}`
-                                        : '—'}
-                                </td>
-                            </tr>
-                            <tr>
-                                <td className="param-name">D1 (NWSB)</td>
-                                <td className="param-value">{data.d1?.toFixed(1)}°C</td>
-                                <td className="param-ci">
-                                    {data.d1_confidence_interval
-                                        ? `${data.d1_confidence_interval[0]?.toFixed(1)} – ${data.d1_confidence_interval[1]?.toFixed(1)}`
-                                        : '—'}
-                                </td>
-                            </tr>
-                            <tr>
-                                <td className="param-name">D2 (Max Stress)</td>
-                                <td className="param-value">{data.d2?.toFixed(1)}°C</td>
-                                <td className="param-ci">
-                                    {data.d2_confidence_interval
-                                        ? `${data.d2_confidence_interval[0]?.toFixed(1)} – ${data.d2_confidence_interval[1]?.toFixed(1)}`
-                                        : '—'}
-                                </td>
-                            </tr>
-                            <tr>
-                                <td className="param-name">MDS Ref</td>
-                                <td className="param-value">{data.mds_ref?.toFixed(0)}µm</td>
-                                <td className="param-ci">
-                                    {data.mds_ref_confidence_interval
-                                        ? `${data.mds_ref_confidence_interval[0]?.toFixed(0)} – ${data.mds_ref_confidence_interval[1]?.toFixed(0)}`
-                                        : '—'}
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-
-                    {data.provenance && (
-                        <div className="pheno-provenance">
-                            <h4>{t('phenology.source')}</h4>
-                            <p>
-                                <strong>{data.provenance.short}</strong>
-                                {data.provenance.author && ` — ${data.provenance.author}`}
-                                {data.provenance.year && ` (${data.provenance.year})`}
-                            </p>
-                            {data.provenance.institution && <p>{data.provenance.institution}</p>}
-                            {data.provenance.doi && (
-                                <p>
-                                    DOI: <a href={`https://doi.org/${data.provenance.doi}`} target="_blank" rel="noopener">
-                                        {data.provenance.doi}
-                                    </a>
-                                </p>
-                            )}
-                            {data.provenance.method && <p className="provenance-method">{data.provenance.method}</p>}
-                            {data.provenance.conditions && <p className="provenance-conditions">{data.provenance.conditions}</p>}
-                        </div>
-                    )}
-
-                    {(data.alternatives || []).length > 0 && (
-                        <div className="pheno-alternatives">
-                            <h4>{t('phenology.alternatives')}</h4>
-                            {data.alternatives!.map((alt, i) => (
-                                <div key={i} className="alt-item">
-                                    <span className="alt-kc">Kc = {alt.kc?.toFixed(2)}</span>
-                                    {alt.sourceShort && <span className="alt-source"> — {alt.sourceShort}</span>}
-                                    {alt.sourceDoi && (
-                                        <a href={`https://doi.org/${alt.sourceDoi}`} target="_blank" rel="noopener" className="alt-doi">DOI</a>
-                                    )}
-                                </div>
-                            ))}
-                        </div>
-                    )}
-
-                    {/* Heat Tolerance */}
-                    <HeatToleranceSection species={species} t={t} />
-
-                    {/* Nutrient Profile */}
-                    <NutrientProfileSection species={species} stage={data.stage} t={t} />
-                </div>
-            )}
+  return (
+    <Stack gap="section">
+      {/* Controls */}
+      <div className="flex flex-wrap gap-3 items-end">
+        <div className="min-w-[160px]">
+          <label className="text-nkz-xs font-medium text-nkz-text-muted block mb-1">
+            {t('phenology.species')}
+          </label>
+          <select
+            className="w-full h-9 rounded-nkz-md border border-nkz-border bg-nkz-surface px-nkz-stack text-nkz-sm text-nkz-text-primary focus-visible:ring-2 focus-visible:ring-nkz-accent-base"
+            value={species}
+            onChange={(e) => setSpecies(e.target.value)}
+          >
+            {(speciesList.length > 0 ? speciesList : FALLBACK_SPECIES.map((n) => ({ name: n, scientific_name: undefined as string | undefined, stage_count: 0, params_count: 0, has_phenology: false }))).map((s) => (
+              <option key={s.name} value={s.name}>
+                {s.scientific_name ? `${s.name} (${s.scientific_name})` : s.name}
+                {!s.has_phenology ? ' *' : ''}
+              </option>
+            ))}
+          </select>
         </div>
-    );
+
+        <div className="min-w-[140px]">
+          <label className="text-nkz-xs font-medium text-nkz-text-muted block mb-1">
+            {t('phenology.stage')}
+          </label>
+          <select
+            className="w-full h-9 rounded-nkz-md border border-nkz-border bg-nkz-surface px-nkz-stack text-nkz-sm text-nkz-text-primary focus-visible:ring-2 focus-visible:ring-nkz-accent-base"
+            value={stage}
+            onChange={(e) => setStage(e.target.value)}
+          >
+            <option value="">{t('phenology.anyStage')}</option>
+            <option value="vegetative">Vegetative</option>
+            <option value="pit_hardening">Pit Hardening</option>
+            <option value="fruit_growth">Fruit Growth</option>
+            <option value="kernel_fill">Kernel Fill</option>
+            <option value="veraison">Veraison</option>
+            <option value="stem_elongation">Stem Elongation</option>
+          </select>
+        </div>
+
+        <div className="min-w-[140px]">
+          <label className="text-nkz-xs font-medium text-nkz-text-muted block mb-1">
+            {t('phenology.cultivar')}
+          </label>
+          <select
+            className="w-full h-9 rounded-nkz-md border border-nkz-border bg-nkz-surface px-nkz-stack text-nkz-sm text-nkz-text-primary focus-visible:ring-2 focus-visible:ring-nkz-accent-base"
+            value={cultivar}
+            onChange={(e) => setCultivar(e.target.value)}
+          >
+            <option value="">{t('phenology.anyCultivar')}</option>
+            <option value="Picual">Picual</option>
+            <option value="Nonpareil">Nonpareil</option>
+            <option value="Tempranillo">Tempranillo</option>
+          </select>
+        </div>
+
+        <div className="min-w-[160px]">
+          <label className="text-nkz-xs font-medium text-nkz-text-muted block mb-1">
+            {t('phenology.management')}
+          </label>
+          <select
+            className="w-full h-9 rounded-nkz-md border border-nkz-border bg-nkz-surface px-nkz-stack text-nkz-sm text-nkz-text-primary focus-visible:ring-2 focus-visible:ring-nkz-accent-base"
+            value={management}
+            onChange={(e) => setManagement(e.target.value)}
+          >
+            <option value="">{t('phenology.standardIrrigation')}</option>
+            <option value="deficit_irrigation">Deficit Irrigation</option>
+            <option value="regulated_deficit_irrigation">Regulated Deficit (RDI)</option>
+          </select>
+        </div>
+      </div>
+
+      {/* Contribute button */}
+      <div>
+        <button
+          className="inline-flex items-center gap-1.5 rounded-nkz-md border border-nkz-border bg-nkz-surface px-nkz-stack py-nkz-tight text-nkz-xs font-medium text-nkz-accent-base hover:bg-nkz-accent-soft transition-colors duration-nkz-fast"
+          onClick={() => setShowContribute(true)}
+        >
+          <BookOpen className="w-3.5 h-3.5" />
+          {t('phenology.contribute.button')}
+        </button>
+      </div>
+
+      {loading && (
+        <Stack gap="stack">
+          <Skeleton variant="rect" height="48px" />
+          <Skeleton variant="rect" height="120px" />
+        </Stack>
+      )}
+
+      {error && (
+        <EmptyState
+          icon={<Sprout className="w-8 h-8 text-nkz-text-muted" />}
+          title={error}
+          description=""
+        />
+      )}
+
+      {showContribute && <PhenologyContribute onClose={() => setShowContribute(false)} />}
+
+      {data && (
+        <Stack gap="section">
+          {/* Match banner */}
+          <div className={`rounded-nkz-md border-l-4 p-nkz-stack ${matchBorderClass}`}>
+            <div className="flex items-center gap-2">
+              <Badge intent={data.match_level === 'exact' ? 'positive' : data.match_level === 'generic' ? 'warning' : 'info'}>
+                {data.match_level.toUpperCase()}
+              </Badge>
+              <span className="text-nkz-sm text-nkz-text-primary">
+                {data.scientific_name && <em>{data.scientific_name}</em>}
+                {data.stage && ` — ${data.stage}`}
+                {data.stage_description && ` (${data.stage_description})`}
+              </span>
+            </div>
+          </div>
+
+          {data.is_default && (
+            <div className="text-nkz-xs text-nkz-text-muted bg-nkz-surface-sunken rounded-nkz-md p-nkz-inline">
+              {t('phenology.usingDefaults')}
+            </div>
+          )}
+
+          {/* Parameters */}
+          <DetailGrid columns={2}>
+            <DetailItem label="Kc" value={data.kc?.toFixed(2)} />
+            <DetailItem
+              label="CI"
+              value={data.kc_confidence_interval
+                ? `${data.kc_confidence_interval[0]?.toFixed(2)} – ${data.kc_confidence_interval[1]?.toFixed(2)}`
+                : '—'}
+            />
+            <DetailItem label="D1 (NWSB)" value={`${data.d1?.toFixed(1)}°C`} />
+            <DetailItem
+              label="CI"
+              value={data.d1_confidence_interval
+                ? `${data.d1_confidence_interval[0]?.toFixed(1)} – ${data.d1_confidence_interval[1]?.toFixed(1)}`
+                : '—'}
+            />
+            <DetailItem label="D2 (Max Stress)" value={`${data.d2?.toFixed(1)}°C`} />
+            <DetailItem
+              label="CI"
+              value={data.d2_confidence_interval
+                ? `${data.d2_confidence_interval[0]?.toFixed(1)} – ${data.d2_confidence_interval[1]?.toFixed(1)}`
+                : '—'}
+            />
+            <DetailItem label="MDS Ref" value={`${data.mds_ref?.toFixed(0)}µm`} />
+            <DetailItem
+              label="CI"
+              value={data.mds_ref_confidence_interval
+                ? `${data.mds_ref_confidence_interval[0]?.toFixed(0)} – ${data.mds_ref_confidence_interval[1]?.toFixed(0)}`
+                : '—'}
+            />
+          </DetailGrid>
+
+          {/* Provenance */}
+          {data.provenance && (
+            <Surface variant="sunken" padding="stack">
+              <Stack gap="tight">
+                <h4 className="text-nkz-xs font-semibold text-nkz-text-secondary uppercase tracking-wider">
+                  {t('phenology.source')}
+                </h4>
+                <p className="text-nkz-sm text-nkz-text-primary">
+                  <strong>{data.provenance.short}</strong>
+                  {data.provenance.author && ` — ${data.provenance.author}`}
+                  {data.provenance.year && ` (${data.provenance.year})`}
+                </p>
+                {data.provenance.institution && (
+                  <p className="text-nkz-xs text-nkz-text-secondary">{data.provenance.institution}</p>
+                )}
+                {data.provenance.doi && (
+                  <p className="text-nkz-xs">
+                    DOI:{' '}
+                    <a
+                      href={`https://doi.org/${data.provenance.doi}`}
+                      target="_blank"
+                      rel="noopener"
+                      className="text-nkz-accent-base hover:underline"
+                    >
+                      {data.provenance.doi}
+                    </a>
+                  </p>
+                )}
+                {data.provenance.method && (
+                  <p className="text-nkz-xs text-nkz-text-muted">{data.provenance.method}</p>
+                )}
+                {data.provenance.conditions && (
+                  <p className="text-nkz-xs text-nkz-text-muted">{data.provenance.conditions}</p>
+                )}
+              </Stack>
+            </Surface>
+          )}
+
+          {/* Alternatives */}
+          {(data.alternatives || []).length > 0 && (
+            <Stack gap="tight">
+              <h4 className="text-nkz-xs font-semibold text-nkz-text-secondary uppercase tracking-wider">
+                {t('phenology.alternatives')}
+              </h4>
+              {data.alternatives!.map((alt, i) => (
+                <Card key={i} padding="sm">
+                  <div className="flex items-center gap-2 text-nkz-sm">
+                    <span className="font-medium text-nkz-text-primary">
+                      Kc = {alt.kc?.toFixed(2)}
+                    </span>
+                    {alt.sourceShort && (
+                      <span className="text-nkz-text-muted">— {alt.sourceShort}</span>
+                    )}
+                    {alt.sourceDoi && (
+                      <a
+                        href={`https://doi.org/${alt.sourceDoi}`}
+                        target="_blank"
+                        rel="noopener"
+                        className="text-nkz-accent-base text-nkz-xs hover:underline"
+                      >
+                        DOI
+                      </a>
+                    )}
+                  </div>
+                </Card>
+              ))}
+            </Stack>
+          )}
+
+          {/* Heat Tolerance */}
+          <HeatToleranceSection species={species} t={t} />
+
+          {/* Nutrient Profile */}
+          <NutrientProfileSection species={species} stage={data.stage} t={t} />
+        </Stack>
+      )}
+    </Stack>
+  );
 };
 
 // ── Heat Tolerance sub-component ──────────────────────────────────────────
 
 const HeatToleranceSection: React.FC<{ species: string; t: any }> = ({ species, t }) => {
-    const [data, setData] = useState<any>(null);
+  const api = useBioApi();
+  const [data, setData] = useState<any>(null);
 
-    useEffect(() => {
-        fetch(`/api/bioorchestrator/api/graph/heat-tolerance?species=${species}`)
-            .then(r => r.ok ? r.json() : null)
-            .then(setData)
-            .catch(() => {});
-    }, [species]);
+  useEffect(() => {
+    api.getHeatTolerance(species)
+      .then(setData)
+      .catch(() => {});
+  }, [species]);
 
-    if (!data) return null;
+  if (!data) return null;
 
-    return (
-        <div className="pheno-section">
-            <h4>🌡️ {t('phenology.thermal') || 'Thermal Tolerance'}</h4>
-            <table className="pheno-table">
-                <tbody>
-                    <tr><td>Daño por calor</td><td>&gt; {data.heat_damage_c}°C (foliar)</td></tr>
-                    <tr><td>Daño por helada</td><td>&lt; {data.frost_damage_c}°C (aire)</td></tr>
-                    <tr><td>Horas acumulación</td><td>{data.heat_accum_hours}h para alerta</td></tr>
-                </tbody>
-            </table>
-            {data.source_short && <p className="provenance-method">📄 {data.source_short}{data.source_doi ? ` · DOI: ${data.source_doi}` : ''}</p>}
-        </div>
-    );
+  return (
+    <Stack gap="tight">
+      <h4 className="text-nkz-xs font-semibold text-nkz-text-secondary uppercase tracking-wider flex items-center gap-1.5">
+        <Thermometer className="w-3.5 h-3.5 text-nkz-accent-base" />
+        {t('phenology.thermal') || 'Thermal Tolerance'}
+      </h4>
+      <DetailGrid columns={2}>
+        <DetailItem label="Heat damage" value={<>&gt; {data.heat_damage_c}&deg;C (foliar)</>} />
+        <DetailItem label="Frost damage" value={<>&lt; {data.frost_damage_c}&deg;C (air)</>} />
+        <DetailItem label="Accumulation" value={<>{data.heat_accum_hours}h to alert</>} />
+      </DetailGrid>
+      {data.source_short && (
+        <p className="text-nkz-xs text-nkz-text-muted">
+          {data.source_short}{data.source_doi ? ` · DOI: ${data.source_doi}` : ''}
+        </p>
+      )}
+    </Stack>
+  );
 };
 
 // ── Nutrient Profile sub-component ────────────────────────────────────────
 
 const NutrientProfileSection: React.FC<{ species: string; stage?: string; t: any }> = ({ species, stage, t }) => {
-    const [data, setData] = useState<any[]>([]);
+  const api = useBioApi();
+  const [data, setData] = useState<any[]>([]);
 
-    useEffect(() => {
-        const url = stage
-            ? `/api/bioorchestrator/api/graph/nutrient-profile?species=${species}&stage=${stage}`
-            : `/api/bioorchestrator/api/graph/nutrient-profile?species=${species}`;
-        fetch(url)
-            .then(r => r.ok ? r.json() : [])
-            .then(d => setData(Array.isArray(d) ? d : []))
-            .catch(() => {});
-    }, [species, stage]);
+  useEffect(() => {
+    api.getNutrientProfile(species, stage)
+      .then((d: any) => setData(Array.isArray(d) ? d : []))
+      .catch(() => {});
+  }, [species, stage]);
 
-    if (!data.length) return null;
+  if (!data.length) return null;
 
-    return (
-        <div className="pheno-section">
-            <h4>🧪 {t('phenology.nutrients') || 'Nutrient Uptake'}</h4>
-            <table className="pheno-table">
-                <thead><tr><th>Nutriente</th><th>Etapa</th><th>kg/ha/día</th></tr></thead>
-                <tbody>
-                    {data.map((d: any, i: number) => (
-                        <tr key={i}>
-                            <td>{d.element?.toUpperCase()}</td>
-                            <td>{d.stage}</td>
-                            <td>{d.n_uptake || d.p_uptake || d.k_uptake || '—'}</td>
-                        </tr>
-                    ))}
-                </tbody>
-            </table>
-        </div>
-    );
+  return (
+    <Stack gap="tight">
+      <h4 className="text-nkz-xs font-semibold text-nkz-text-secondary uppercase tracking-wider flex items-center gap-1.5">
+        <Beaker className="w-3.5 h-3.5 text-nkz-accent-base" />
+        {t('phenology.nutrients') || 'Nutrient Uptake'}
+      </h4>
+      <table className="w-full text-nkz-xs">
+        <thead>
+          <tr className="text-nkz-text-muted text-left">
+            <th className="pb-1 pr-2">Nutrient</th>
+            <th className="pb-1 pr-2">Stage</th>
+            <th className="pb-1">kg/ha/day</th>
+          </tr>
+        </thead>
+        <tbody>
+          {data.map((d: any, i: number) => (
+            <tr key={i} className="border-t border-nkz-border">
+              <td className="py-1 pr-2 text-nkz-text-primary font-medium">
+                {d.element?.toUpperCase()}
+              </td>
+              <td className="py-1 pr-2 text-nkz-text-muted">{d.stage}</td>
+              <td className="py-1 text-nkz-text-primary">
+                {d.n_uptake || d.p_uptake || d.k_uptake || '—'}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </Stack>
+  );
 };
 
 export default PhenologyBrowser;
