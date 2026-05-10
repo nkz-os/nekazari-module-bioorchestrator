@@ -55,7 +55,10 @@ function dadisHeaders(): Record<string, string> | undefined {
 // ── Hook ───────────────────────────────────────────────────────────────────
 
 export function useBioApi() {
-  const { getToken, tenantId } = useAuth();
+  // useAuth() may return a stub during host bootstrap — guard destructuring
+  const auth: any = useAuth() || {};
+  const getToken = auth.getToken || (() => undefined);
+  const tenantId: string = auth.tenantId || '';
   const client = new NKZClient({
     baseUrl: BASE,
     getToken,
