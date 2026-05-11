@@ -23,6 +23,11 @@ COPY backend/app/ app/
 COPY backend/scripts/ scripts/
 COPY data/ data/
 
+# Copy IkerKeta sources config to where the library expects it
+# (ikerketa/config.py resolves _PROJECT_ROOT from __file__, ending up at site-packages)
+COPY backend/sources.yaml /tmp/sources.yaml
+RUN python -c "import ikerketa.config as c; import os, shutil; d = c._PROJECT_ROOT / 'configs'; os.makedirs(d, exist_ok=True); shutil.copy('/tmp/sources.yaml', d / 'sources.yaml'); print('Config installed to', d)"
+
 # Data directories (mounted as PV in K8s)
 RUN mkdir -p /data/raw /data/processed /data/reports
 

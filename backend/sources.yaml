@@ -1,0 +1,254 @@
+sources:
+  agrovoc:
+    name: "AGROVOC FAO Thesaurus"
+    type: sparql
+    endpoint: "https://agrovoc.fao.org/sparql"
+    license: "CC BY IGO 3.0"
+    auth: none
+    priority: critical
+    domain: taxonomy
+    update_frequency: continuous
+    notes: "Backbone semántico universal. URIs estables, multilingüe (40+ idiomas)."
+
+  eppo:
+    name: "EPPO Global Database"
+    type: rest_api
+    base_url: "https://api.eppo.int/gd/v2"
+    license: "EPPO Open Data Licence"
+    auth: api_key_header
+    auth_header: "X-Api-Key"
+    auth_env_var: EPPO_API_TOKEN
+    priority: critical
+    domain: phytosanitary
+    update_frequency: monthly
+    rate_limit: "60 requests per 10-second sliding window"
+    notes: "API v2 (2026.01.20). EPPO Codes como clave secundaria indexada para el dominio fitosanitario europeo."
+
+  ecocrop:
+    name: "FAO EcoCrop (GAEZ v4)"
+    type: csv
+    sources:
+      - url: "https://zenodo.org/records/13319716"
+        format: csv
+      - url: "https://github.com/OpenCLIM/ecocrop"
+        format: csv
+    license: "Public Domain"
+    auth: none
+    priority: high
+    domain: edaphoclimatic
+    update_frequency: static
+    notes: "2500+ especies. Límites fisiológicos duros (temperatura, precipitación, suelo)."
+
+  usda_plants:
+    name: "USDA PLANTS Database"
+    type: csv_bulk
+    sources:
+      - url: "https://plants.usda.gov/downloads"
+        format: csv
+      - url: "https://fdc.nal.usda.gov/download-datasets"
+        format: json
+    license: "Public Domain"
+    auth: none
+    priority: high
+    domain: taxonomy
+    update_frequency: monthly
+    notes: "Alta resolución taxonómica. Símbolos USDA como clave de enriquecimiento."
+
+  uspest:
+    name: "USPEST.org (DDRP Models)"
+    type: tabular
+    base_url: "https://uspest.org"
+    api_url: "https://uspest.org/wea/"
+    license: "Open (Institutional)"
+    auth: none
+    auth_note: "API REST disponible bajo solicitud institucional. Actualmente usando datos tabulares públicos."
+    priority: high
+    domain: phenology
+    update_frequency: static
+    use_api: false # Switch a true cuando se obtenga acceso API
+    notes: "145+ modelos GDD validados. Umbrales Tbase/Tmax por especie y estadio."
+
+  usa_npn:
+    name: "USA National Phenology Network"
+    type: rest_api
+    base_url: "https://www.usanpn.org/data"
+    license: "Public Domain"
+    auth: none
+    priority: medium
+    domain: phenology
+    update_frequency: daily
+    notes: "Mapas diarios de GDD acumulados (AGDD). Complemento a USPEST para datos observacionales."
+
+  companion_planting:
+    name: "Companion Planting Datasets (GitHub)"
+    type: csv
+    sources:
+      - url: "https://github.com/alecsharpie/companion_planting_dataset"
+        format: csv
+      - url: "https://github.com/GenevieveMilliken/companion_plants"
+        format: csv
+    license: "MIT / CC BY-SA 4.0"
+    auth: none
+    priority: high
+    domain: associations
+    update_frequency: static
+    notes: "Matrices de compatibilidad curadas y limpiadas. Relaciones helps/hurts/attracts."
+
+  dg_sante:
+    name: "EU Pesticides Database (DG SANTE)"
+    type: rest_api
+    base_url: "https://developer.datalake.sante.service.ec.europa.eu/apis"
+    license: "EU Public Domain"
+    auth: api_key
+    auth_env_var: DG_SANTE_API_KEY
+    priority: critical
+    domain: regulatory
+    update_frequency: continuous
+    notes: "Sustancias activas, MRLs, conformidad orgánica. Filtrado regulatorio booleano."
+
+  cabi:
+    name: "CABI Crop Protection Compendium"
+    type: rdf_api
+    base_url: "https://www.cabidigitallibrary.org/product/QC"
+    license: "Commercial / Institutional Subscription"
+    auth: subscription
+    auth_env_var: CABI_API_KEY
+    priority: medium
+    domain: biocontrol
+    update_frequency: quarterly
+    enabled: false # Requiere licencia comercial. Stub con fixtures reales.
+    notes: "Enemigos naturales, datasheets. Deshabilitado hasta obtener acceso."
+
+  agroportal:
+    name: "AgroPortal (C3PO / CO / AgrO)"
+    type: owl_sparql
+    endpoint: "https://agroportal.lirmm.fr/sparql"
+    api_url: "https://data.agroportal.lirmm.fr"
+    license: "Open Source / CC"
+    auth: none
+    priority: high
+    domain: management_ontology
+    update_frequency: quarterly
+    notes: "C3PO modela gestión de parcelas, rotación, intervenciones temporales."
+
+  fibl:
+    name: "FiBL European Input List"
+    type: local_csv
+    file_path: "data/raw/fibl_manual_export.csv"
+    license: "FiBL Proprietary"
+    auth: none
+    priority: medium
+    domain: organic_inputs
+    update_frequency: manual
+    enabled: true
+    notes: "Sin API abierta. CSV mantenido por equipo agronómico. Validación Pydantic estricta."
+
+  # ── Livestock (ganadería) ──────────────────────────────────
+
+  dadis:
+    name: "FAO DAD-IS (Domestic Animal Diversity)"
+    type: rest_api
+    base_url: "https://dad.fao.org/api"
+    license: "CC BY IGO 3.0"
+    auth: none
+    credential_env_var: ""
+    data_file: "data/raw/dadis.csv"
+    priority: high
+    domain: livestock
+    update_frequency: real_time
+    notes: "15k+ razas, 40 especies. REST API pendiente aprobación FAO. CSV local mientras tanto."
+
+  wahis:
+    name: "WOAH/WAHIS (Animal Health)"
+    type: csv
+    sources:
+      - url: "https://www.kaggle.com/datasets/woah-wahis"
+        format: csv
+    license: "Open Data"
+    auth: none
+    data_file: "data/raw/wahis.csv"
+    priority: high
+    domain: livestock
+    update_frequency: continuous
+    notes: "Notificaciones oficiales enfermedades animales 2005-2025. Kaggle export."
+
+  feedipedia:
+    name: "Feedipedia (INRAE/CIRAD/FAO)"
+    type: local_csv
+    file_path: "data/raw/feedipedia.csv"
+    license: "Open Access"
+    auth: none
+    data_file: "data/raw/feedipedia.csv"
+    priority: high
+    domain: livestock
+    update_frequency: manual
+    notes: "1400+ recursos de alimentación animal. Sin API pública — curación manual."
+
+  # ── Forestry (silvicultura) ────────────────────────────────
+
+  globaltreesearch:
+    name: "GlobalTreeSearch (BGCI)"
+    type: dwc_archive
+    base_url: "https://tools.bgci.org/global_tree_search.php"
+    license: "BGCI Data User Agreement"
+    auth: registration
+    data_file: "data/raw/globaltreesearch.csv"
+    priority: high
+    domain: forestry
+    update_frequency: annual
+    notes: "60k+ especies arbóreas. DwC-A con país distribución y estado IUCN."
+
+  euforgen:
+    name: "EUFORGEN/EUFGIS"
+    type: csv
+    base_url: "https://www.euforgen.org"
+    license: "Open Access"
+    auth: none
+    data_file: "data/raw/euforgen.csv"
+    priority: medium
+    domain: forestry
+    update_frequency: annual
+    notes: "Recursos genéticos forestales europeos. Distribución de 45 especies arbóreas."
+
+    priority: medium
+    domain: forestry
+    update_frequency: annual
+    notes: "API REST v3. API key pendiente registro usuario. Estado conservación especies."
+
+  # ── Agroforestry (agroforestería) ──────────────────────────
+
+  agroforestree:
+    name: "ICRAF Agroforestree Database"
+    type: local_csv
+    base_url: "https://apps.worldagroforestry.org/treedb2"
+    license: "Open Access"
+    auth: none
+    data_file: "data/raw/agroforestree.csv"
+    priority: high
+    domain: agroforestry
+    update_frequency: manual
+    notes: "800+ especies agroforestales. Servicios ecosistémicos, fijación N, uso forrajero."
+
+  forages:
+    name: "CIAT/ILRI Tropical Forages"
+    type: local_csv
+    base_url: "https://www.tropicalforages.info"
+    license: "Open Access"
+    auth: none
+    data_file: "data/raw/forages.csv"
+    priority: high
+    domain: agroforestry
+    update_frequency: manual
+    notes: "172 especies pratenses tropicales. Tolerancia pastoreo, proteína cruda."
+
+  globallometree:
+    name: "GlobAllomeTree (FAO/CIRAD)"
+    type: rest_api
+    base_url: "https://www.globallometree.org"
+    license: "Open Access (registration required)"
+    auth: registration
+    data_file: "data/raw/globallometree.csv"
+    priority: high
+    domain: agroforestry
+    update_frequency: quarterly
+    notes: "12k+ ecuaciones alométricas. REST API con Swagger. Cálculo secuestro de carbono."
