@@ -10,150 +10,68 @@
  * IkerKeta's existing livestock/GBIF connectors.
  */
 
-import { NKZClient, useAuth } from '@nekazari/sdk';
-
 const BASE = '/api/bioorchestrator';
 
 // ── DAD-IS per-user credentials (localStorage) ──────────────────────────────
 
-interface DadisCredentials {
-  apiUrl: string;
-  apiToken: string;
-}
-
+interface DadisCredentials { apiUrl: string; apiToken: string; }
 const DADIS_STORAGE_KEY = 'bioorchestrator.dadis.credentials';
 
 export function getDadisCredentials(): DadisCredentials | null {
-  try {
-    const raw = localStorage.getItem(DADIS_STORAGE_KEY);
-    if (!raw) return null;
-    const creds = JSON.parse(raw);
-    if (creds.apiUrl && creds.apiToken) return creds;
-    return null;
-  } catch {
-    return null;
-  }
+  try { const raw = localStorage.getItem(DADIS_STORAGE_KEY); if (!raw) return null; const creds = JSON.parse(raw); if (creds.apiUrl && creds.apiToken) return creds; return null; } catch { return null; }
 }
+export function setDadisCredentials(apiUrl: string, apiToken: string): void { localStorage.setItem(DADIS_STORAGE_KEY, JSON.stringify({ apiUrl, apiToken })); }
+export function clearDadisCredentials(): void { localStorage.removeItem(DADIS_STORAGE_KEY); }
 
-export function setDadisCredentials(apiUrl: string, apiToken: string): void {
-  localStorage.setItem(DADIS_STORAGE_KEY, JSON.stringify({ apiUrl, apiToken }));
-}
-
-export function clearDadisCredentials(): void {
-  localStorage.removeItem(DADIS_STORAGE_KEY);
-}
-
-function dadisHeaders(): Record<string, string> | undefined {
+function dadisHeaders(): Record<string, string> {
   const creds = getDadisCredentials();
-  if (!creds) return undefined;
-  return {
-    'X-Dadis-Api-Url': creds.apiUrl,
-    'X-Dadis-Api-Token': creds.apiToken,
-  };
+  if (!creds) return {};
+  return { 'X-Dadis-Api-Url': creds.apiUrl, 'X-Dadis-Api-Token': creds.apiToken };
 }
 
-// ── Hook ───────────────────────────────────────────────────────────────────
+// ── Simple fetch wrapper (httpOnly cookie auth, same as original code) ──────
+
+async function get(path: string, extraHeaders?: Record<string, string>): Promise<any> {
+  const headers: Record<string, string> = { ...extraHeaders };
+  const resp = await fetch(`${BASE}${path}`, { headers, credentials: 'include' });
+  if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+  const ct = resp.headers.get('content-type') || '';
+  return ct.includes('application/json') ? resp.json() : resp.text();
+}
+
+async function post(path: string, body?: any, extraHeaders?: Record<string, string>): Promise<any> {
+  const headers: Record<string, string> = { 'Content-Type': 'application/json', ...extraHeaders };
+  const resp = await fetch(`${BASE}${path}`, { method: 'POST', headers, body: body ? JSON.stringify(body) : undefined, credentials: 'include' });
+  if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+  const ct = resp.headers.get('content-type') || '';
+  return ct.includes('application/json') ? resp.json() : resp.text();
+}
+
+// ── Hook (no useAuth — relies on httpOnly cookie) ───────────────────────────
 
 export function useBioApi() {
-  // useAuth() may return a stub during host bootstrap — guard destructuring
-  const auth: any = useAuth() || {};
-  const getToken = auth.getToken || (() => undefined);
-  const tenantId: string = auth.tenantId || '';
-  const client = new NKZClient({
-    baseUrl: BASE,
-    getToken,
-    getTenantId: () => tenantId,
-  });
-
   return {
-    // ── Sources ──────────────────────────────────────────────────────────
-    getSources: () => client.get('/api/v1/sources'),
-
-    // ── Pipeline ─────────────────────────────────────────────────────────
-    runPipeline: (body: { sources?: string[]; limit?: number }) =>
-      client.post('/api/pipeline/run', body),
-
-    getPipelineHistory: (limit = 5) =>
-      client.get(`/api/pipeline/history?limit=${limit}`),
-
-    // ── Graph / Phenology ────────────────────────────────────────────────
-    getSpecies: () => client.get('/api/graph/species'),
-
-    getPhenologyParams: (params: URLSearchParams) =>
-      client.get(`/api/graph/phenology-params?${params.toString()}`),
-
-    contributePhenology: (params: URLSearchParams) =>
-      client.post(`/api/graph/phenology-params/contribute?${params.toString()}`),
-
-    getHeatTolerance: (species: string) =>
-      client.get(`/api/graph/heat-tolerance?species=${encodeURIComponent(species)}`),
-
-    getNutrientProfile: (species: string, stage?: string) => {
-      const url = stage
-        ? `/api/graph/nutrient-profile?species=${encodeURIComponent(species)}&stage=${encodeURIComponent(stage)}`
-        : `/api/graph/nutrient-profile?species=${encodeURIComponent(species)}`;
-      return client.get(url);
-    },
-
-    // ── Recommendations ──────────────────────────────────────────────────
-    getNextCrop: (cropType: string) =>
-      client.get(`/api/graph/recommendations/next-crop?previous_crop=${encodeURIComponent(cropType)}`),
-
-    getSoilSuitability: (species: string) =>
-      client.get(`/api/graph/soil-suitability?species=${encodeURIComponent(species)}`),
-
-    getSoilData: (lat: number, lon: number) =>
-      client.get(`/api/graph/soil-data?lat=${lat}&lon=${lon}`),
-
-    getProtectedArea: (lat: number, lon: number) =>
-      client.get(`/api/graph/protected-area-check?lat=${lat}&lon=${lon}`),
-
-    getVarieties: (species: string) =>
-      client.get(`/api/graph/varieties?species=${encodeURIComponent(species)}`),
-
-    getPesticides: (crop: string) =>
-      client.get(`/api/graph/pesticides?crop=${encodeURIComponent(crop)}`),
-
-    getPollinators: (lat: number, lon: number) =>
-      client.get(`/api/graph/pollinators?lat=${lat}&lon=${lon}`),
-
-    getTerrain: (lat: number, lon: number) =>
-      client.get(`/api/graph/terrain?lat=${lat}&lon=${lon}`),
-
-    getClimateReference: (lat: number, lon: number) =>
-      client.get(`/api/graph/climate-reference?lat=${lat}&lon=${lon}`),
-
-    simulateCrop: (baseline: string, scenario: string) =>
-      client.get(
-        `/api/graph/recommendations/simulate?baseline_crop=${encodeURIComponent(baseline)}&scenario_crop=${encodeURIComponent(scenario)}`,
-      ),
-
-    // ── DAD-IS (per-user credentials) ────────────────────────────────────
-    getDadisCountries: () =>
-      client.get('/api/dadis/countries', { headers: dadisHeaders() } as any),
-
-    getDadisSpecies: () =>
-      client.get('/api/dadis/species', { headers: dadisHeaders() } as any),
-
-    getDadisBreeds: (
-      classification: string = 'all',
-      countryIds?: string[],
-      speciesIds?: number[],
-    ) =>
-      client.post(
-        '/api/dadis/breeds',
-        {
-          classification,
-          countryIds: countryIds || [],
-          speciesIds: speciesIds || [],
-        },
-        { headers: dadisHeaders() } as any,
-      ),
-
-    getDadisBreedById: (breedId: string, lang: string = 'en') =>
-      client.get(
-        `/api/dadis/breeds/${encodeURIComponent(breedId)}?lang=${lang}`,
-        { headers: dadisHeaders() } as any,
-      ),
+    getSources: () => get('/api/v1/sources'),
+    runPipeline: (body: any) => post('/api/pipeline/run', body),
+    getPipelineHistory: (limit = 5) => get(`/api/pipeline/history?limit=${limit}`),
+    getSpecies: () => get('/api/graph/species'),
+    getPhenologyParams: (params: URLSearchParams) => get(`/api/graph/phenology-params?${params.toString()}`),
+    contributePhenology: (params: URLSearchParams) => post(`/api/graph/phenology-params/contribute?${params.toString()}`),
+    getHeatTolerance: (species: string) => get(`/api/graph/heat-tolerance?species=${encodeURIComponent(species)}`),
+    getNutrientProfile: (species: string, stage?: string) => get(`/api/graph/nutrient-profile?species=${encodeURIComponent(species)}${stage ? `&stage=${encodeURIComponent(stage)}` : ''}`),
+    getNextCrop: (crop: string) => get(`/api/graph/recommendations/next-crop?previous_crop=${encodeURIComponent(crop)}`),
+    getSoilSuitability: (species: string) => get(`/api/graph/soil-suitability?species=${encodeURIComponent(species)}`),
+    getSoilData: (lat: number, lon: number) => get(`/api/graph/soil-data?lat=${lat}&lon=${lon}`),
+    getProtectedArea: (lat: number, lon: number) => get(`/api/graph/protected-area-check?lat=${lat}&lon=${lon}`),
+    getVarieties: (species: string) => get(`/api/graph/varieties?species=${encodeURIComponent(species)}`),
+    getPesticides: (crop: string) => get(`/api/graph/pesticides?crop=${encodeURIComponent(crop)}`),
+    getPollinators: (lat: number, lon: number) => get(`/api/graph/pollinators?lat=${lat}&lon=${lon}`),
+    getTerrain: (lat: number, lon: number) => get(`/api/graph/terrain?lat=${lat}&lon=${lon}`),
+    getClimateReference: (lat: number, lon: number) => get(`/api/graph/climate-reference?lat=${lat}&lon=${lon}`),
+    simulateCrop: (baseline: string, scenario: string) => get(`/api/graph/recommendations/simulate?baseline_crop=${encodeURIComponent(baseline)}&scenario_crop=${encodeURIComponent(scenario)}`),
+    getDadisCountries: () => get('/api/dadis/countries', dadisHeaders()),
+    getDadisSpecies: () => get('/api/dadis/species', dadisHeaders()),
+    getDadisBreeds: (classification = 'all', countryIds?: string[], speciesIds?: number[]) => post('/api/dadis/breeds', { classification, countryIds: countryIds || [], speciesIds: speciesIds || [] }, dadisHeaders()),
+    getDadisBreedById: (breedId: string, lang = 'en') => get(`/api/dadis/breeds/${encodeURIComponent(breedId)}?lang=${lang}`, dadisHeaders()),
   };
 }
