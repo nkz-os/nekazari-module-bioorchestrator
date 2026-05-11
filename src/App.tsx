@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useTranslation } from '@nekazari/sdk';
-import { Card } from '@nekazari/ui-kit';
+import { SlotShell } from '@nekazari/viewer-kit';
+import { Tabs } from '@nekazari/ui-kit';
 import { Activity, GitBranch, Sprout, Database } from 'lucide-react';
 import SourcesDashboard from './components/SourcesDashboard';
 import PipelineRunner from './components/PipelineRunner';
@@ -24,38 +25,27 @@ const App: React.FC = () => {
   const { t } = useTranslation('bioorchestrator');
 
   return (
-    <Card padding="md">
-      <div className="flex items-center justify-between mb-4">
-        <h1 className="text-nkz-lg font-bold text-nkz-text-primary">{t('app.title')}</h1>
-        <p className="text-nkz-xs text-nkz-text-muted">{t('app.subtitle')}</p>
-      </div>
-
-      <div className="flex border-b border-nkz-border mb-4">
-        {TABS.map((tab) => {
-          const Icon = tab.icon;
-          const isActive = activeTab === tab.id;
-          return (
-            <button
-              key={tab.id}
-              className={`flex items-center gap-1.5 px-nkz-stack py-nkz-inline text-nkz-sm font-medium border-b-2 transition-colors duration-nkz-fast ${
-                isActive
-                  ? 'text-nkz-accent-base border-nkz-accent-base'
-                  : 'border-transparent text-nkz-text-muted hover:text-nkz-text-primary'
-              }`}
-              onClick={() => setActiveTab(tab.id)}
-            >
-              <Icon className="w-4 h-4" />
-              {t(`app.tabs.${tab.id}`)}
-            </button>
-          );
-        })}
-      </div>
-
-      {activeTab === 'sources' && <SourcesDashboard />}
-      {activeTab === 'pipeline' && <PipelineRunner />}
-      {activeTab === 'phenology' && <PhenologyBrowser />}
-      {activeTab === 'dadis' && <BreedDiscovery />}
-    </Card>
+    <SlotShell moduleId="bioorchestrator" accent={bioAccent} title={t('app.title')}>
+      <Tabs.Root value={activeTab} onValueChange={(v) => setActiveTab(v as TabId)}>
+        <Tabs.List>
+          {TABS.map((tab) => {
+            const Icon = tab.icon;
+            return (
+              <Tabs.Trigger key={tab.id} value={tab.id}>
+                <span className="flex items-center gap-1.5">
+                  <Icon className="w-4 h-4" />
+                  {t(`app.tabs.${tab.id}`)}
+                </span>
+              </Tabs.Trigger>
+            );
+          })}
+        </Tabs.List>
+        <Tabs.Content value="sources"><SourcesDashboard /></Tabs.Content>
+        <Tabs.Content value="pipeline"><PipelineRunner /></Tabs.Content>
+        <Tabs.Content value="phenology"><PhenologyBrowser /></Tabs.Content>
+        <Tabs.Content value="dadis"><BreedDiscovery /></Tabs.Content>
+      </Tabs.Root>
+    </SlotShell>
   );
 };
 
