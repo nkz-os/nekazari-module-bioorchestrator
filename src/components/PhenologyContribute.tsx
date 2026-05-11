@@ -38,16 +38,16 @@ const PhenologyContribute: React.FC<Props> = ({ onClose }) => {
       <div className="w-full max-w-lg mx-4 max-h-[90vh] overflow-auto bg-nkz-surface rounded-nkz-xl shadow-nkz-lg" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between px-nkz-stack py-nkz-inline border-b border-nkz-border">
           <h3 className="text-nkz-md font-semibold text-nkz-text-primary">{t('phenology.contribute.title')}</h3>
-          <button onClick={onClose} className="w-7 h-7 inline-flex items-center justify-center rounded-nkz-md text-nkz-text-muted hover:bg-nkz-surface-sunken transition-colors duration-nkz-fast"><X className="w-4 h-4" /></button>
+          <button onClick={onClose} className="w-7 h-7 inline-flex items-center justify-center rounded-nkz-md text-nkz-text-muted hover:bg-nkz-surface-sunken"><X className="w-4 h-4" /></button>
         </div>
         {result === 'success' ? (
-          <div className="p-nkz-section text-center"><CheckCircle className="w-10 h-10 text-nkz-success mx-auto mb-nkz-stack" /><p className="text-nkz-base text-nkz-text-primary font-medium">{t('phenology.contribute.success')}</p></div>
+          <div className="p-nkz-section text-center"><CheckCircle className="w-10 h-10 text-nkz-success mx-auto mb-nkz-stack" /><p className="text-nkz-base font-medium">{t('phenology.contribute.success')}</p></div>
         ) : (
           <form onSubmit={handleSubmit} className="p-nkz-stack">
             <Stack gap="stack">
               <p className="text-nkz-sm text-nkz-text-secondary">{t('phenology.contribute.description')}</p>
               <FormGrid columns={2}>
-                <FormField label={t('phenology.species')} required><Input value={species} onChange={(e: any) => setSpecies(e.target.value)} placeholder="e.g. olive, almond" size="sm" required /></FormField>
+                <FormField label={t('phenology.species')} required><Input value={species} onChange={(e: any) => setSpecies(e.target.value)} placeholder="e.g. olive" size="sm" required /></FormField>
                 <FormField label={t('phenology.stage')} required><Input value={stage} onChange={(e: any) => setStage(e.target.value)} placeholder="e.g. vegetative" size="sm" required /></FormField>
                 <FormField label={t('phenology.cultivar')}><Input value={cultivar} onChange={(e: any) => setCultivar(e.target.value)} placeholder="e.g. Picual" size="sm" /></FormField>
                 <FormField label="Kc" required><Input type="number" step="0.01" min={0} max={2} value={kc} onChange={(e: any) => setKc(e.target.value)} placeholder="0.85" size="sm" required /></FormField>
@@ -57,21 +57,21 @@ const PhenologyContribute: React.FC<Props> = ({ onClose }) => {
               </FormGrid>
               <Surface variant="sunken" padding="stack">
                 <Stack gap="stack">
-                  <h4 className="text-nkz-sm font-medium text-nkz-text-primary">{t('phenology.contribute.provenance')}</h4>
+                  <h4 className="text-nkz-sm font-medium">{t('phenology.contribute.provenance')}</h4>
                   <FormGrid columns={2}>
                     <FormField label="DOI"><Input value={doi} onChange={(e: any) => setDoi(e.target.value)} placeholder="10.1234/example" size="sm" /></FormField>
-                    <FormField label={t('phenology.contribute.author')}><Input value={author} onChange={(e: any) => setAuthor(e.target.value)} placeholder="e.g. Orgaz, Fereres" size="sm" /></FormField>
-                    <FormField label="Email"><Input type="email" value={email} onChange={(e: any) => setEmail(e.target.value)} placeholder="investigador@csic.es" size="sm" /></FormField>
+                    <FormField label={t('phenology.contribute.author')}><Input value={author} onChange={(e: any) => setAuthor(e.target.value)} placeholder="e.g. Orgaz" size="sm" /></FormField>
+                    <FormField label="Email"><Input type="email" value={email} onChange={(e: any) => setEmail(e.target.value)} placeholder="email@example.com" size="sm" /></FormField>
                   </FormGrid>
                   <FormField label={t('phenology.contribute.conditions')}>
                     <textarea value={conditions} onChange={(e) => setConditions(e.target.value)} rows={3} className="w-full rounded-nkz-md border border-nkz-border bg-nkz-surface px-nkz-stack py-nkz-tight text-nkz-sm resize-y" />
                   </FormField>
                 </Stack>
               </Surface>
-              {result && <div className="flex items-center gap-2 text-nkz-sm text-nkz-danger bg-nkz-danger-soft rounded-nkz-md px-nkz-stack py-nkz-inline border border-nkz-danger"><XCircle className="w-4 h-4 flex-shrink-0" />{result}</div>}
+              {result && <div className="flex items-center gap-2 text-nkz-sm text-nkz-danger bg-nkz-danger-soft rounded-nkz-md px-nkz-stack py-nkz-inline border border-nkz-danger"><XCircle className="w-4 h-4" />{result}</div>}
               <div className="flex justify-end gap-2">
                 <Button variant="ghost" size="sm" onClick={onClose} type="button">{t('phenology.contribute.cancel')}</Button>
-                <Button variant="primary" size="sm" type="submit" disabled={submitting} leadingIcon={submitting ? undefined : <Upload className="w-4 h-4" />} loading={submitting}>{submitting ? t('phenology.contribute.submitting') || '...' : t('phenology.contribute.submit')}</Button>
+                <Button variant="primary" size="sm" type="submit" disabled={submitting} leadingIcon={<Upload className="w-4 h-4" />} loading={submitting}>{submitting ? '...' : t('phenology.contribute.submit')}</Button>
               </div>
             </Stack>
           </form>

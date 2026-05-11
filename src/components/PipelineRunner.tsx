@@ -4,8 +4,6 @@ import { Card, Button, Badge, Spinner, Stack, Input, ProgressBar } from '@nekaza
 import { Play, CheckCircle, XCircle } from 'lucide-react';
 import { useBioApi } from '../services/api';
 
-const bioAccent = { base: '#14B8A6', soft: '#CCFBF1', strong: '#0D9488' };
-
 interface PipelineResult { success: boolean; entities_before_dedup: number; entities_after_dedup: number; relationships: number; crossref_matches: number; duration_seconds: number; errors: string[]; }
 interface ProgressEvent { run_id: string; step: number; total: number; connector: string; status: string; timestamp: string; }
 interface HistoryEntry { run_id: string; success: boolean; entities: number; relationships: number; duration_seconds: number; sources: string[]; errors: number; timestamp: string; }
@@ -25,7 +23,6 @@ const PipelineRunner: React.FC = () => {
   useEffect(() => {
     api.getPipelineHistory(5).then((data: any) => setHistory(data?.history || [])).catch(() => {});
   }, []);
-
   useEffect(() => () => { if (eventSourceRef.current) eventSourceRef.current.close(); }, []);
 
   const handleRun = async () => {
@@ -45,7 +42,7 @@ const PipelineRunner: React.FC = () => {
     }
   };
 
-  const progressPct = progress && progress.total > 0 ? Math.round((progress.step / progress.total) * 100) : 0;
+  const pct = progress && progress.total > 0 ? Math.round((progress.step / progress.total) * 100) : 0;
 
   return (
     <Card padding="md">
@@ -74,51 +71,26 @@ const PipelineRunner: React.FC = () => {
               <span className="text-nkz-text-muted">{progress.connector}: {progress.status}</span>
               <span className="text-nkz-text-muted">{progress.step}/{progress.total}</span>
             </div>
-            <ProgressBar value={progressPct} size="sm" />
+            <ProgressBar value={pct} size="sm" />
           </div>
         )}
 
-        {error && <Badge intent="negative" className="flex items-center gap-2"><span className="text-nkz-xs">{error}</span></Badge>}
+        {error && <Badge intent="negative">{error}</Badge>}
 
         {result && (
           <div className={`bg-nkz-surface-sunken rounded-nkz-md p-nkz-stack border ${result.success ? 'border-nkz-success' : 'border-nkz-danger'}`}>
-            <h3 className="text-nkz-sm font-semibold text-nkz-text-primary flex items-center gap-2">
+            <h3 className="text-nkz-sm font-semibold flex items-center gap-2">
               {result.success ? <CheckCircle className="w-4 h-4 text-nkz-success" /> : <XCircle className="w-4 h-4 text-nkz-danger" />}
               {result.success ? t('pipeline.result.ok') : t('pipeline.result.withErrors')}
             </h3>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-2">
-              {[
-                [t('pipeline.result.entitiesRaw'), result.entities_before_dedup],
-                [t('pipeline.result.entitiesDedup'), result.entities_after_dedup],
-                [t('pipeline.result.relationships'), result.relationships],
-                [t('pipeline.result.crossrefs'), result.crossref_matches],
-                [t('pipeline.result.duration'), `${result.duration_seconds}s`],
-              ].map(([label, value]) => (
-                <div key={label} className="text-center p-nkz-inline bg-nkz-surface rounded-nkz-md">
-                  <span className="block text-nkz-lg font-bold text-nkz-accent-base">{value}</span>
-                  <span className="text-nkz-xs text-nkz-text-muted">{label}</span>
+              {[[t('pipeline.result.entitiesRaw'), result.entities_before_dedup], [t('pipeline.result.entitiesDedup'), result.entities_after_dedup], [t('pipeline.result.relationships'), result.relationships], [t('pipeline.result.crossrefs'), result.crossref_matches], [t('pipeline.result.duration'), `${result.duration_seconds}s`]].map(([l, v]) => (
+                <div key={l} className="text-center p-nkz-inline bg-nkz-surface rounded-nkz-md">
+                  <span className="block text-nkz-lg font-bold text-nkz-accent-base">{v}</span>
+                  <span className="text-nkz-xs text-nkz-text-muted">{l}</span>
                 </div>
               ))}
             </div>
-          </div>
-        )}
-
-        {history.length > 0 && (
-          <div className="bg-nkz-surface-sunken rounded-nkz-md p-nkz-inline">
-            <h4 className="text-nkz-xs font-semibold text-nkz-text-primary mb-2">{t('pipeline.history') || 'Recent Runs'}</h4>
-            <table className="w-full text-nkz-xs">
-              <thead><tr className="text-nkz-text-muted text-left"><th className="pb-1 pr-2">Run</th><th className="pb-1 pr-2">Status</th><th className="pb-1 pr-2">Entities</th><th className="pb-1">Duration</th></tr></thead>
-              <tbody>
-                {history.map((h, i) => (
-                  <tr key={i} className="border-t border-nkz-border">
-                    <td className="py-1 pr-2 text-nkz-text-muted">{h.timestamp ? new Date(h.timestamp).toLocaleString() : h.run_id}</td>
-                    <td className="py-1 pr-2">{h.success ? <CheckCircle className="w-3.5 h-3.5 text-nkz-success inline" /> : <XCircle className="w-3.5 h-3.5 text-nkz-danger inline" />}</td>
-                    <td className="py-1 pr-2 text-nkz-text-primary">{h.entities}</td>
-                    <td className="py-1 text-nkz-text-muted">{h.duration_seconds}s</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
           </div>
         )}
       </Stack>

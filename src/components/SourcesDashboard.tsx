@@ -1,18 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from '@nekazari/sdk';
-import { Panel, MetricCard, MetricGrid, Card, Badge, Skeleton, EmptyState, Stack } from '@nekazari/ui-kit';
-import { AlertTriangle, Layers } from 'lucide-react';
+import { Card, Badge, Stack, Spinner, Panel, MetricCard, MetricGrid, Skeleton, EmptyState } from '@nekazari/ui-kit';
+import { AlertTriangle } from 'lucide-react';
 import { useBioApi } from '../services/api';
 
-interface Source {
-  key: string; name: string; domain: string; enabled: boolean;
-  type: string; credential_status: string; data_available: boolean; status: string;
-  outputs: Array<{ format: string; size_bytes: number; modified: string }>;
-}
-interface SourcesResponse {
-  total: number; ready: number; unavailable: number;
-  by_domain: Record<string, Source[]>; sources: Source[];
-}
+interface Source { key: string; name: string; domain: string; type: string; status: string; credential_status: string; data_available: boolean; outputs: Array<{ format: string; size_bytes: number }>; }
+interface SourcesResponse { total: number; ready: number; unavailable: number; by_domain: Record<string, Source[]>; sources: Source[]; }
 
 const SourcesDashboard: React.FC = () => {
   const { t } = useTranslation('bioorchestrator');
@@ -29,6 +22,8 @@ const SourcesDashboard: React.FC = () => {
   if (error) return <EmptyState icon={<AlertTriangle className="w-8 h-8 text-nkz-danger" />} title={`${t('sources.errorPrefix')}: ${error}`} />;
   if (!data) return null;
 
+  const domains = data.by_domain || {};
+
   return (
     <Stack gap="section">
       <MetricGrid columns={3}>
@@ -37,14 +32,14 @@ const SourcesDashboard: React.FC = () => {
         <MetricCard label={t('sources.summary.unavailable')} value={data.unavailable ?? 0} />
       </MetricGrid>
 
-      {Object.entries(data.by_domain || {}).map(([domain, sources]) => {
+      {Object.keys(domains).map((domain) => {
+        const sources = domains[domain] || [];
         const readyCount = sources.filter((s: Source) => s.status === 'ready').length;
         return (
           <Panel key={domain}>
             <Panel.Header>
               <Panel.Title>
-                <Layers className="w-4 h-4 text-nkz-accent-base" />
-                <span className="text-nkz-text-primary">{domain}</span>
+                {domain}
                 <Badge intent={readyCount === sources.length ? 'positive' : 'warning'}>{readyCount}/{sources.length}</Badge>
               </Panel.Title>
             </Panel.Header>
