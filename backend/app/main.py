@@ -77,10 +77,10 @@ app.add_middleware(NKZAuthMiddleware)
 from app.api import router as api_router  # noqa: E402
 app.include_router(api_router, prefix="/api")
 
-# Mount IkerKeta API under /api/v1
+# Mount IkerKeta API at root — its routes already start with /api/v1/
 try:
     from ikerketa.api import app as ikerketa_api
-    app.mount("/api/v1", ikerketa_api)
+    app.mount("/", ikerketa_api)
 except ImportError:
     print("[bioorchestrator] ikerketa.api not available — running without data endpoints")
 
