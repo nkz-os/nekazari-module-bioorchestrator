@@ -24,19 +24,19 @@ interface SourcesResponse {
   sources: Source[];
 }
 
-const DOMAIN_META: Record<string, { label: string; icon: React.FC<{ className?: string }> }> = {
-  taxonomy: { label: 'Taxonomy', icon: Layers },
-  phytosanitary: { label: 'Phytosanitary', icon: Layers },
-  edaphoclimatic: { label: 'Edaphoclimatic', icon: Layers },
-  phenology: { label: 'Phenology', icon: Layers },
-  associations: { label: 'Associations', icon: Layers },
-  regulatory: { label: 'Regulatory', icon: Layers },
-  biocontrol: { label: 'Biocontrol', icon: Layers },
-  management_ontology: { label: 'Management', icon: Layers },
-  organic_inputs: { label: 'Organic Inputs', icon: Layers },
-  livestock: { label: 'Livestock', icon: Layers },
-  forestry: { label: 'Forestry', icon: Layers },
-  agroforestry: { label: 'Agroforestry', icon: Layers },
+const DOMAIN_META: Record<string, { label: string }> = {
+  taxonomy: { label: 'Taxonomy' },
+  phytosanitary: { label: 'Phytosanitary' },
+  edaphoclimatic: { label: 'Edaphoclimatic' },
+  phenology: { label: 'Phenology' },
+  associations: { label: 'Associations' },
+  regulatory: { label: 'Regulatory' },
+  biocontrol: { label: 'Biocontrol' },
+  management_ontology: { label: 'Management' },
+  organic_inputs: { label: 'Organic Inputs' },
+  livestock: { label: 'Livestock' },
+  forestry: { label: 'Forestry' },
+  agroforestry: { label: 'Agroforestry' },
 };
 
 const SourcesDashboard: React.FC = () => {
@@ -54,117 +54,66 @@ const SourcesDashboard: React.FC = () => {
   }, []);
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center py-nkz-section">
-        <Spinner size="md" />
-      </div>
+    return React.createElement('div', { className: 'flex items-center justify-center py-nkz-section' },
+      React.createElement(Spinner, { size: 'md' })
     );
   }
 
   if (error) {
-    return (
-      <div className="flex flex-col items-center justify-center py-nkz-section text-center">
-        <AlertTriangle className="w-8 h-8 text-nkz-danger mb-nkz-stack" />
-        <p className="text-nkz-sm text-nkz-text-primary font-medium">{t('sources.errorPrefix')}</p>
-        <p className="text-nkz-xs text-nkz-text-muted">{error}</p>
-      </div>
+    return React.createElement('div', { className: 'flex flex-col items-center justify-center py-nkz-section' },
+      React.createElement(AlertTriangle, { className: 'w-8 h-8 text-nkz-danger mb-nkz-stack' }),
+      React.createElement('p', { className: 'text-nkz-sm text-nkz-text-primary font-medium' }, t('sources.errorPrefix')),
+      React.createElement('p', { className: 'text-nkz-xs text-nkz-text-muted' }, error)
     );
   }
 
   if (!data) return null;
 
-  return (
-    <Stack gap="section">
-      {/* Summary metrics */}
-      <div className="grid grid-cols-3 gap-nkz-stack">
-        {[
-          { label: t('sources.summary.total'), value: data.total },
-          { label: t('sources.summary.ready'), value: data.ready },
-          { label: t('sources.summary.unavailable'), value: data.unavailable },
-        ].map((m) => (
-          <div
-            key={m.label}
-            className="bg-nkz-surface border border-nkz-border rounded-nkz-md p-nkz-stack flex flex-col gap-nkz-tight"
-          >
-            <span className="text-nkz-xs text-nkz-text-secondary font-medium uppercase tracking-wider">
-              {m.label}
-            </span>
-            <span className="text-nkz-2xl font-semibold text-nkz-text-primary">
-              {m.value}
-            </span>
-          </div>
-        ))}
-      </div>
-
-      {/* Domain sections */}
-      {Object.entries(data.by_domain).map(([domain, sources]) => {
-        const meta = DOMAIN_META[domain] || { label: domain, icon: Layers };
-        const Icon = meta.icon;
-        const readyCount = sources.filter((s) => s.status === 'ready').length;
-        return (
-          <Card key={domain} padding="md">
-            <Stack gap="stack">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Icon className="w-4 h-4 text-nkz-accent-base" />
-                  <span className="text-nkz-md font-semibold text-nkz-text-primary">
-                    {meta.label}
-                  </span>
-                </div>
-                <Badge intent={readyCount === sources.length ? 'positive' : 'warning'}>
-                  {readyCount}/{sources.length}
-                </Badge>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-nkz-stack">
-                {sources.map((source) => (
-                  <Card key={source.key} padding="md">
-                    <Stack gap="tight">
-                      <div className="flex items-center justify-between">
-                        <span className="text-nkz-sm font-medium text-nkz-text-primary">
-                          {source.name}
-                        </span>
-                        <Badge
-                          intent={source.status === 'ready' ? 'positive' : 'warning'}
-                        >
-                          {source.status === 'ready'
-                            ? t('sources.status.ready')
-                            : t('sources.status.unavailable')}
-                        </Badge>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-nkz-xs text-nkz-text-muted">{source.type}</span>
-                        {source.credential_status === 'missing' && (
-                          <Badge intent="negative">
-                            {t('sources.warnings.keyMissing')}
-                          </Badge>
-                        )}
-                        {!source.data_available && (
-                          <Badge intent="warning">
-                            {t('sources.warnings.noDataFile')}
-                          </Badge>
-                        )}
-                      </div>
-                      {source.outputs.length > 0 && (
-                        <div className="flex flex-wrap gap-1">
-                          {source.outputs.map((o, i) => (
-                            <span
-                              key={i}
-                              className="inline-flex items-center rounded-nkz-full bg-nkz-surface-sunken px-2 py-0.5 text-nkz-2xs text-nkz-text-muted"
-                            >
-                              {o.format} · {(o.size_bytes / 1024).toFixed(0)}K
-                            </span>
-                          ))}
-                        </div>
-                      )}
-                    </Stack>
-                  </Card>
-                ))}
-              </div>
-            </Stack>
-          </Card>
-        );
-      })}
-    </Stack>
+  return React.createElement(Stack, { gap: 'section' },
+    // Summary
+    React.createElement('div', { className: 'grid grid-cols-3 gap-nkz-stack' },
+      [
+        { label: t('sources.summary.total'), value: data.total ?? 0 },
+        { label: t('sources.summary.ready'), value: data.ready ?? 0 },
+        { label: t('sources.summary.unavailable'), value: data.unavailable ?? 0 },
+      ].map((m) =>
+        React.createElement('div', { key: m.label, className: 'bg-nkz-surface border border-nkz-border rounded-nkz-md p-nkz-stack' },
+          React.createElement('span', { className: 'text-nkz-xs text-nkz-text-secondary font-medium uppercase tracking-wider' }, m.label),
+          React.createElement('span', { className: 'text-nkz-2xl font-semibold text-nkz-text-primary block mt-1' }, String(m.value))
+        )
+      )
+    ),
+    // Domain sections
+    ...Object.entries(data.by_domain || {}).map(([domain, sources]) => {
+      const meta = DOMAIN_META[domain] || { label: domain };
+      return React.createElement(Card, { key: domain, padding: 'md' },
+        React.createElement(Stack, { gap: 'stack' },
+          React.createElement('div', { className: 'flex items-center justify-between' },
+            React.createElement('span', { className: 'text-nkz-md font-semibold text-nkz-text-primary' }, meta.label),
+            React.createElement(Badge, { intent: sources.every((s) => s.status === 'ready') ? 'positive' : 'warning' },
+              `${sources.filter((s) => s.status === 'ready').length}/${sources.length}`
+            )
+          ),
+          React.createElement('div', { className: 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-nkz-stack' },
+            ...sources.map((source) =>
+              React.createElement(Card, { key: source.key, padding: 'md' },
+                React.createElement(Stack, { gap: 'tight' },
+                  React.createElement('div', { className: 'flex items-center justify-between' },
+                    React.createElement('span', { className: 'text-nkz-sm font-medium text-nkz-text-primary' }, source.name),
+                    React.createElement(Badge, { intent: source.status === 'ready' ? 'positive' : 'warning' },
+                      source.status === 'ready' ? t('sources.status.ready') : t('sources.status.unavailable')
+                    )
+                  ),
+                  React.createElement('div', { className: 'flex items-center gap-2' },
+                    React.createElement('span', { className: 'text-nkz-xs text-nkz-text-muted' }, source.type)
+                  )
+                )
+              )
+            )
+          )
+        )
+      );
+    })
   );
 };
 
