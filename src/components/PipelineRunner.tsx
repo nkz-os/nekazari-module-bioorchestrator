@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useTranslation } from '@nekazari/sdk';
-import { SlotShell } from '@nekazari/viewer-kit';
-import { Button, Badge, Spinner, Stack, Input, ProgressBar } from '@nekazari/ui-kit';
+import { Card, Button, Badge, Spinner, Stack, Input, ProgressBar } from '@nekazari/ui-kit';
 import { Play, CheckCircle, XCircle } from 'lucide-react';
 import { useBioApi } from '../services/api';
 
@@ -49,7 +48,11 @@ const PipelineRunner: React.FC = () => {
   const progressPct = progress && progress.total > 0 ? Math.round((progress.step / progress.total) * 100) : 0;
 
   return (
-    <SlotShell moduleId="bioorchestrator" title={t('pipeline.title')} icon={<Play className="w-4 h-4" />} collapsible accent={bioAccent}>
+    <Card padding="md">
+      <div className="flex items-center gap-2 mb-4">
+        <Play className="w-4 h-4 text-nkz-accent-base" />
+        <span className="text-nkz-md font-semibold text-nkz-text-primary">{t('pipeline.title')}</span>
+      </div>
       <Stack gap="stack">
         <div className="flex gap-3 items-end flex-wrap">
           <div className="flex-1 min-w-[200px]">
@@ -119,7 +122,7 @@ const PipelineRunner: React.FC = () => {
           </div>
         )}
       </Stack>
-    </SlotShell>
+    </Card>
   );
 };
 

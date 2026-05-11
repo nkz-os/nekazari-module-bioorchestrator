@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useTranslation } from '@nekazari/sdk';
-import { SlotShell } from '@nekazari/viewer-kit';
-import { Tabs } from '@nekazari/ui-kit';
+import { Card, Tabs } from '@nekazari/ui-kit';
 import { Activity, GitBranch, Sprout, Database } from 'lucide-react';
 import SourcesDashboard from './components/SourcesDashboard';
 import PipelineRunner from './components/PipelineRunner';
@@ -25,7 +24,10 @@ const App: React.FC = () => {
   const { t } = useTranslation('bioorchestrator');
 
   return (
-    <SlotShell moduleId="bioorchestrator" accent={bioAccent} title={t('app.title')}>
+    <Card padding="md">
+      <div className="flex items-center gap-2 mb-4">
+        <h1 className="text-nkz-lg font-bold text-nkz-text-primary">{t('app.title')}</h1>
+      </div>
       <Tabs.Root value={activeTab} onValueChange={(v) => setActiveTab(v as TabId)}>
         <Tabs.List>
           {TABS.map((tab) => {
@@ -45,7 +47,7 @@ const App: React.FC = () => {
         <Tabs.Content value="phenology"><PhenologyBrowser /></Tabs.Content>
         <Tabs.Content value="dadis"><BreedDiscovery /></Tabs.Content>
       </Tabs.Root>
-    </SlotShell>
+    </Card>
   );
 };
 
