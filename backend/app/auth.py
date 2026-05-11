@@ -94,5 +94,5 @@ class NKZAuthMiddleware(BaseHTTPMiddleware):
             token,
             signing_key.key,
             algorithms=["RS256"],
-            audience=os.getenv("KEYCLOAK_CLIENT_ID", "nekazari-frontend"),
+            options={"verify_aud": False},
         )
