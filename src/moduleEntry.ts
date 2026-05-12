@@ -1,3 +1,4 @@
+import { defineModule } from "@nekazari/module-kit";
 /**
  * NKZ Module Entry Point — IIFE bundle export.
  *
