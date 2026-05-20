@@ -34,7 +34,7 @@ metadata:
 spec:
   ingressClassName: traefik
   rules:
-    - host: nkz.robotika.cloud
+    - host: YOUR_DOMAIN
       http:
         paths:
           - path: /api/bioorchestrator
