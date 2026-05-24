@@ -2,9 +2,12 @@
 
 from __future__ import annotations
 
+import os
 from typing import Annotated
 
+import httpx
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from fastapi.responses import JSONResponse
 from neo4j import AsyncDriver
 
 from app.core.dependencies import get_neo4j_driver
@@ -243,23 +246,45 @@ async def recommend_next_crop(
 # ── Soil Data (SoilGrids proxy) ──────────────────────────────────────────────
 
 
-@router.get("/soil-data")
+@router.get("/soil-data", deprecated=True)
 async def soil_data(
     lat: float = Query(..., description="Latitude"),
     lon: float = Query(..., description="Longitude"),
-):
-    """Fetch soil properties from SoilGrids 2.0 for a geographic point."""
-    try:
-        from ikerketa.connectors.soilgrids import SoilGridsConnector
-        connector = SoilGridsConnector()
-        result = connector.fetch(lat=lat, lon=lon)
-        if result.entities:
-            return result.entities[0]
-        return {"error": "No soil data for this location", "errors": result.errors}
-    except ImportError:
-        return {"error": "SoilGrids connector not available"}
-    except Exception as e:
-        return {"error": str(e)}
+) -> JSONResponse:
+    """DEPRECATED — proxies to soil module via NGSI-LD AgriSoilExtended query.
+
+    The canonical path is `GET /ngsi-ld/v1/entities?type=AgriSoilExtended` on the
+    Orion-LD broker (served by `nkz-module-soil` as part of Phase 1 of the data fabric).
+
+    This endpoint will be removed in July 2026. Migrate to the capability-driven
+    AgriSoilExtended query endpoint.
+    """
+    orion = os.environ.get("ORION_BASE_URL", "http://orion-ld-service:1026")
+    context = os.environ.get("CONTEXT_URL", "http://api-gateway-service:5000/ngsi-ld-context.json")
+
+    async with httpx.AsyncClient(timeout=10) as c:
+        r = await c.get(
+            f"{orion}/ngsi-ld/v1/entities",
+            params={
+                "type": "AgriSoilExtended",
+                "georel": "near;maxDistance==5000",
+                "geometry": "Point",
+                "coordinates": f"[{lon},{lat}]",
+            },
+            headers={
+                "Accept": "application/json",
+                "Link": f'<{context}>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"',
+            },
+        )
+    payload = r.json() if r.status_code == 200 else []
+    return JSONResponse(
+        content={"agriSoilExtended": payload},
+        headers={
+            "Sunset": "Wed, 01 Jul 2026 00:00:00 GMT",
+            "Deprecation": "true",
+            "Link": '</api/capability/parcel/{parcelId}>; rel="successor-version"',
+        },
+    )
 
 
 # ── Protected Area Check (Natura 2000 proxy) ─────────────────────────────────

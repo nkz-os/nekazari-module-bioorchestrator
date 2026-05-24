@@ -1,6 +1,7 @@
 from fastapi import APIRouter
 
 from app.api.v1.graph import router as graph_router
+from app.api.v1.capability import router as capability_router
 from app.api.dadis import router as dadis_router
 
 # IUCN router removed: IUCN Red List API license prohibits commercial use.
@@ -10,4 +11,5 @@ from app.api.dadis import router as dadis_router
 
 router = APIRouter()
 router.include_router(graph_router, prefix="/graph", tags=["graph"])
+router.include_router(capability_router, prefix="/capability", tags=["capability"])
 router.include_router(dadis_router, prefix="/dadis", tags=["dadis"])
