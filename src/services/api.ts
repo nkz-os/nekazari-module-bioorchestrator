@@ -166,5 +166,59 @@ export function useBioApi() {
     getDadisSpecies: () => get('/api/dadis/species', dadisHeaders()),
     getDadisBreeds: (classification = 'all', countryIds?: string[], speciesIds?: number[]) => post('/api/dadis/breeds', { classification, countryIds: countryIds || [], speciesIds: speciesIds || [] }, dadisHeaders()),
     getDadisBreedById: (breedId: string, lang = 'en') => get(`/api/dadis/breeds/${encodeURIComponent(breedId)}?lang=${lang}`, dadisHeaders()),
+    getParcelVegetation: (parcelId: string, index = 'ndvi', period = '3m'): Promise<VegetationData> =>
+      get(`/api/parcel/${encodeURIComponent(parcelId)}/vegetation?index=${index}&period=${period}`),
+    getParcelSoil: (parcelId: string): Promise<SoilData> =>
+      get(`/api/parcel/${encodeURIComponent(parcelId)}/soil`),
   };
+}
+
+// ── Parcel Data Types ───────────────────────────────────────────────────────
+
+export interface VegetationObservation {
+  date: string;
+  value: number;
+}
+
+export interface VegetationTrend {
+  direction: 'up' | 'down' | 'stable';
+  delta: number;
+  label: string;
+}
+
+export interface VegetationData {
+  available: boolean;
+  index: string;
+  period: string;
+  observations: VegetationObservation[];
+  current: number | null;
+  trend: VegetationTrend | null;
+  count: number;
+  source?: string;
+  processor?: string;
+  message?: string;
+}
+
+export interface SoilHorizon {
+  depthFrom: number;
+  depthTo: number;
+  sand?: number;
+  silt?: number;
+  clay?: number;
+  organicCarbon?: number;
+  ph?: number;
+  cec?: number;
+  availableWaterCapacity?: number;
+  fieldCapacity?: number;
+  wiltingPoint?: number;
+  usdaTextureClass?: string;
+}
+
+export interface SoilData {
+  available: boolean;
+  entityId?: string;
+  horizons: SoilHorizon[];
+  hydrologicGroup?: string;
+  source?: string;
+  message?: string;
 }
