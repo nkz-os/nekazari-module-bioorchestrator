@@ -209,7 +209,6 @@ async def npk_summary(
 async def derive_thermal(
     species_filter: str | None = Query(None),
     user: dict = Depends(get_current_user),
-    dao: GraphDAO = Depends(get_dao),
 ):
     """Trigger thermal limits derivation for species with EcoCrop temp data."""
     import subprocess
