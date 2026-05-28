@@ -196,5 +196,89 @@
       "yieldUnavailable": "La estimación de rendimiento no está disponible hasta completar los datos faltantes.",
       "contribute": "Contribuir datos"
     }
+  },
+  "thermal": {
+    "title": "Tolerancia Térmica",
+    "subtitle": "Límites de daño por estrés térmico (calor y helada) para cada cultivo. Datos derivados automáticamente de EcoCrop o publicados en literatura científica.",
+    "columns": {
+      "species": "Especie",
+      "heatThreshold": "Umbral calor",
+      "frostThreshold": "Umbral helada",
+      "accumHours": "Acum. (h)",
+      "source": "Fuente"
+    },
+    "empty": "No hay umbrales térmicos para esta especie. Si EcoCrop tiene datos de temperatura, los umbrales se pueden derivar automáticamente.",
+    "deriveAction": "Ejecutar derivación para todas",
+    "count": "{{shown}} de {{total}} especies con datos térmicos",
+    "pendingDerivation": "{{count}} especies de EcoCrop tienen temperaturas pero no se han derivado umbrales aún.",
+    "derivedSource": "EcoCrop GAEZ v4 (derivado)",
+    "publishedSource": "Publicado"
+  },
+  "npk": {
+    "title": "Perfil de Absorción de Nutrientes (NPK)",
+    "subtitle": "Tasas de absorción de nitrógeno, fósforo y potasio por etapa fenológica. Datos de literatura científica revisada por pares.",
+    "selectSpecies": "Especie",
+    "columns": {
+      "stage": "Etapa",
+      "n": "N (kg/ha/día)",
+      "p": "P (kg/ha/día)",
+      "k": "K (kg/ha/día)",
+      "source": "Fuente"
+    },
+    "totalRow": "N total: {{n}} kg/ha  P total: {{p}} kg/ha  K total: {{k}} kg/ha (temporada completa)",
+    "empty": "No hay perfil de absorción NPK para esta especie.",
+    "contributeAction": "Contribuir con DOI",
+    "disclaimer": "Las tasas de absorción son orientativas. Los valores reales dependen del manejo, suelo, clima y densidad de plantación.",
+    "countSpecies": "{{count}} especies con datos NPK, {{total}} sin datos"
+  },
+  "soil": {
+    "title": "Requisitos Edáficos",
+    "subtitle": "Condiciones de suelo óptimas para cada cultivo. Datos de EcoCrop GAEZ v4 (FAO).",
+    "columns": {
+      "species": "Especie",
+      "phMin": "pH min",
+      "phMax": "pH max",
+      "textures": "Texturas",
+      "drainage": "Drenaje",
+      "depthMin": "Prof. min",
+      "salinityMax": "Sal. max"
+    },
+    "empty": "No hay requisitos edáficos para esta especie.",
+    "allPresent": "Todos los cultivos del catálogo tienen requisitos edáficos de EcoCrop.",
+    "count": "{{shown}} de {{total}} especies"
+  },
+  "rotation": {
+    "title": "Restricciones de Rotación",
+    "subtitle": "Intervalos mínimos entre cultivos para prevenir patógenos del suelo y agotamiento. Datos de guías FAO y literatura fitopatológica.",
+    "columns": {
+      "cropA": "Desde",
+      "cropB": "Hasta",
+      "interval": "Intervalo",
+      "reason": "Motivo / Fuente"
+    },
+    "perennial": "Cultivo perenne, sin restricción",
+    "empty": "No hay restricciones de rotación registradas para este cultivo. Si no se conocen restricciones, se asume rotación libre.",
+    "contributeAction": "Contribuir regla de rotación",
+    "lowCoverage": "Solo {{count}} reglas de rotación registradas. La mayoría de cultivos no tienen datos."
+  },
+  "panel": {
+    "noCrop": "Esta parcela no tiene un cultivo asignado. Asigna uno para ver recomendaciones agronómicas.",
+    "assignCrop": "Asignar cultivo",
+    "cropNotInCatalog": "El cultivo '{{crop}}' no está en el catálogo. Los datos agronómicos no están disponibles.",
+    "addToCatalog": "Añadir al catálogo",
+    "dataAvailability": "Disponibilidad de datos",
+    "complete": "{{n}}/{{total}} completos",
+    "none": "No hay datos agronómicos para este cultivo. Sin ellos no se pueden generar recomendaciones.",
+    "partial": "Faltan {{n}} tipos de datos. Las recomendaciones pueden ser incompletas.",
+    "allComplete": "Todos los datos disponibles.",
+    "agronomicConditions": "Condiciones Agronómicas",
+    "soilAndEnvironment": "Suelo y Entorno",
+    "rotationAndCrop": "Rotación y Cultivo",
+    "scenarioSimulator": "Simulador de Escenarios",
+    "compareAction": "Comparar",
+    "scenarioIncomplete": "Ambos cultivos tienen datos incompletos. La comparativa puede no ser concluyente.",
+    "sectionError": "No se pudieron cargar los datos de {{section}}.",
+    "retry": "Reintentar",
+    "deprecatedSoilNote": "Dato deprecado — próximamente desde módulo Soil"
   }
 }
