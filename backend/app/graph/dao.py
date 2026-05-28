@@ -607,3 +607,114 @@ class GraphDAO:
                 )
 
         return result
+
+    # ── AgriCrop Catalog (Orion-LD integration) ───────────────────────────────
+
+    async def merge_agri_crop(self, entity: dict) -> None:
+        """MERGE an AgriCrop from Orion-LD into Neo4j. Idempotent."""
+        async with self._driver.session() as session:
+            await session.run("""
+                MERGE (c:AgriCrop {uri: $uri})
+                SET c.name = $name,
+                    c.scientificName = $scientificName,
+                    c.dataProvider = $provider,
+                    c.updatedAt = datetime()
+            """,
+                uri=entity.get("id"),
+                name=self._extract_value(entity, "name"),
+                scientificName=self._extract_value(entity, "scientificName"),
+                provider=self._extract_value(entity, "dataProvider"),
+            )
+
+            # Sync hasSubCrop relationships
+            sub_crops = entity.get("hasSubCrop", {})
+            if isinstance(sub_crops, dict) and sub_crops.get("type") == "Relationship":
+                variety_uris = sub_crops.get("object", [])
+                if isinstance(variety_uris, str):
+                    variety_uris = [variety_uris]
+                for var_uri in variety_uris:
+                    await session.run("""
+                        MERGE (v:AgriCropVariety {uri: $var_uri})
+                        WITH v
+                        MATCH (c:AgriCrop {uri: $uri})
+                        MERGE (c)-[:HAS_VARIETY]->(v)
+                    """, uri=entity.get("id"), var_uri=var_uri)
+
+            # Sync Kc values -> PhenologyParams (default)
+            kc_ini = self._extract_value(entity, "kcIni")
+            if kc_ini is not None:
+                await session.run("""
+                    MATCH (c:AgriCrop {uri: $uri})
+                    MERGE (c)-[r:HAS_PARAMETER]->(p:PhenologyParams {isDefault: true})
+                    SET p.kc = $kc_ini,
+                        p.kcMid = $kc_mid,
+                        p.kcEnd = $kc_end,
+                        p.sourceShort = $source,
+                        p.updatedAt = datetime()
+                """,
+                    uri=entity.get("id"),
+                    kc_ini=float(kc_ini),
+                    kc_mid=float(self._extract_value(entity, "kcMid") or kc_ini),
+                    kc_end=float(self._extract_value(entity, "kcEnd") or kc_ini),
+                    source=self._extract_value(entity, "kcSource") or "Unknown",
+                )
+
+            # Sync heat tolerance
+            heat = self._extract_value(entity, "heatDamageThresholdC")
+            frost = self._extract_value(entity, "frostDamageThresholdC")
+            if heat is not None or frost is not None:
+                await session.run("""
+                    MATCH (c:AgriCrop {uri: $uri})
+                    MERGE (c)-[:HAS_HEAT_TOLERANCE]->(ht:CropHeatTolerance)
+                    SET ht.heatDamageThresholdC = $heat,
+                        ht.frostDamageThresholdC = $frost,
+                        ht.sourceType = $source_type,
+                        ht.updatedAt = datetime()
+                """,
+                    uri=entity.get("id"),
+                    heat=float(heat) if heat else None,
+                    frost=float(frost) if frost else None,
+                    source_type=self._extract_value(entity, "thermalSource") or "derived_from_ecocrop",
+                )
+
+    async def get_crop_catalog(self, source: str | None = None,
+                                search: str | None = None) -> list[dict]:
+        """List AgriCrop entities from Neo4j with variety counts."""
+        query = """
+            MATCH (c:AgriCrop)
+            WHERE c.uri CONTAINS ':AgriCrop:' AND NOT c.uri CONTAINS ':AgriCrop:.*:'
+        """
+        if search:
+            query += " AND (toLower(c.name) CONTAINS toLower($search) OR toLower(c.scientificName) CONTAINS toLower($search))"
+        query += """
+            OPTIONAL MATCH (c)-[:HAS_VARIETY]->(v:AgriCropVariety)
+            OPTIONAL MATCH (c)-[:HAS_PARAMETER]->(p:PhenologyParams)
+            OPTIONAL MATCH (c)-[:HAS_HEAT_TOLERANCE]->(ht:CropHeatTolerance)
+            RETURN c, count(DISTINCT v) as variety_count,
+                   count(DISTINCT p) > 0 as has_kc,
+                   count(DISTINCT ht) > 0 as has_thermal
+            ORDER BY c.name
+        """
+        async with self._driver.session() as session:
+            result = await session.run(query, search=search)
+            crops = []
+            async for record in result:
+                c = record["c"]
+                crops.append({
+                    "uri": c.get("uri"),
+                    "name": c.get("name"),
+                    "scientificName": c.get("scientificName"),
+                    "dataProvider": c.get("dataProvider"),
+                    "variety_count": record["variety_count"],
+                    "has_kc": record["has_kc"],
+                    "has_thermal": record["has_thermal"],
+                })
+            return crops
+
+    @staticmethod
+    def _extract_value(entity: dict, attr_name: str):
+        """Extract a scalar value from an NGSI-LD Property attribute."""
+        attr = entity.get(attr_name, {})
+        if isinstance(attr, dict):
+            return attr.get("value")
+        return attr
