@@ -44,4 +44,4 @@ EXPOSE 8420
 HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
   CMD python -c "import httpx; r=httpx.get('http://localhost:8420/healthz'); r.raise_for_status()"
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8420", "--workers", "2"]
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8420"]
