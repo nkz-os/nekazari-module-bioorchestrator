@@ -21,7 +21,7 @@ spec:
     spec:
       containers:
         - name: backend
-          image: ghcr.io/nkz-os/bioorchestrator-backend:0.1.5
+          image: ghcr.io/nkz-os/bioorchestrator-backend@sha256:cec5948da1e3a2b2da3eaf4c699685928399968092639d460e822b489dc4c4e8
           imagePullPolicy: Always
           ports:
             - containerPort: 8420
