@@ -15,5 +15,3 @@ async def handle_sync_agri_crop(entity: dict):
         await sync_single_agri_crop(dao, entity)
     except Exception as e:
         logger.error(f"Sync failed for {entity.get('id')}: {e}")
-    finally:
-        await driver.close()
