@@ -3,10 +3,15 @@
     "title": "BioOrchestrator",
     "subtitle": "Pipeline de biodiversidad multidominio — Agricultura · Ganadería · Forestal · Agroforestería",
     "tabs": {
-      "sources": "Fuentes de datos",
-      "pipeline": "Pipeline",
+      "catalog": "Catálogo",
       "phenology": "Fenología",
-      "dadis": "Explorador DAD-IS"
+      "thermal": "Térmica",
+      "npk": "NPK",
+      "soil": "Suelo",
+      "rotation": "Rotación",
+      "pipeline": "Pipeline",
+      "dadis": "DAD-IS",
+      "sources": "Fuentes"
     }
   },
   "sources": {

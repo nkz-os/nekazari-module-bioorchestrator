@@ -14,7 +14,7 @@ export default function CropCatalog({ onSelectCrop }: CropCatalogProps) {
   const [crops, setCrops] = useState<CropItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [source, setSource] = useState<string>('');
+  const [source, setSource] = useState('');
   const [search, setSearch] = useState('');
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
@@ -44,30 +44,35 @@ export default function CropCatalog({ onSelectCrop }: CropCatalogProps) {
     });
   };
 
-  if (loading) return <Skeleton count={8} />;
-  if (error) return <EmptyState icon={<Leaf />} title={error} variant="error" />;
+  if (loading) return (
+    <Stack gap="tight">
+      {Array.from({ length: 8 }).map((_, i) => (
+        <Skeleton key={i} width="100%" height="36px" />
+      ))}
+    </Stack>
+  );
+  if (error) return <EmptyState icon={<Leaf />} title={error} />;
   if (!crops.length) return <EmptyState icon={<Leaf />} title={t('catalog.tree.noData')} />;
 
   return (
-    <Stack gap="md">
-      <Stack direction="row" gap="sm">
+    <Stack gap="stack">
+      <div className="flex gap-2">
         <Input
           placeholder={t('catalog.search')}
           value={search}
           onChange={e => setSearch(e.target.value)}
-          icon={<Search size={16} />}
-          className="flex-1"
+          prefix={<Search size={16} />}
         />
         <Select
           value={source}
-          onChange={e => setSource(e.target.value)}
+          onValueChange={setSource}
           options={[
             { value: '', label: t('catalog.sources.ecocrop') + ' + ' + t('catalog.sources.cpvo') },
             { value: 'ecocrop', label: t('catalog.sources.ecocrop') },
             { value: 'cpvo', label: t('catalog.sources.cpvo') },
           ]}
         />
-      </Stack>
+      </div>
 
       <Card>
         {crops.map(crop => (
@@ -84,14 +89,13 @@ export default function CropCatalog({ onSelectCrop }: CropCatalogProps) {
               <Leaf size={16} className="text-nkz-success" />
               <span className="flex-1">{crop.name} <small className="text-nkz-text-muted">({crop.scientificName})</small></span>
               {crop.variety_count > 0 && (
-                <Badge variant="info">{t('catalog.tree.varieties', { count: crop.variety_count })}</Badge>
+                <Badge intent="info">{t('catalog.tree.varieties', { count: crop.variety_count })}</Badge>
               )}
-              <Badge variant={crop.has_kc ? 'success' : 'muted'} size="sm">Kc {crop.has_kc ? '✓' : '✗'}</Badge>
-              <Badge variant={crop.has_thermal ? 'success' : 'muted'} size="sm">{t('catalog.detail.thermal')} {crop.has_thermal ? '✓' : '✗'}</Badge>
+              <Badge intent={crop.has_kc ? 'positive' : 'default'}>Kc {crop.has_kc ? '✓' : '✗'}</Badge>
+              <Badge intent={crop.has_thermal ? 'positive' : 'default'}>{t('catalog.detail.thermal')} {crop.has_thermal ? '✓' : '✗'}</Badge>
             </div>
             {expanded.has(crop.uri) && crop.variety_count > 0 && (
-              <div className="ml-6 text-nkz-text-muted text-sm">
-              </div>
+              <div className="ml-6 text-nkz-text-muted text-sm" />
             )}
           </div>
         ))}

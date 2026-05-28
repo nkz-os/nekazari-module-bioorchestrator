@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Stack, Card, Button, Input, Textarea, Select } from '@nekazari/ui-kit';
+import { Stack, Card, Button, Input } from '@nekazari/ui-kit';
 import { useCropApi } from '../services/api';
 
 interface Props {
@@ -11,6 +11,9 @@ interface Props {
 }
 
 const STAGES = ['vegetative', 'flowering', 'fruit_development', 'maturity', 'harvest'];
+
+const selectCls = "w-full h-9 rounded-nkz-md border border-nkz-border bg-nkz-surface px-nkz-stack text-nkz-sm text-nkz-text-primary focus-visible:ring-2 focus-visible:ring-nkz-accent-base";
+const labelCls = "text-nkz-xs font-medium text-nkz-text-muted block mb-1";
 
 export default function ContributeWizard({ cropId, cropName, onClose, onSuccess }: Props) {
   const { t } = useTranslation('bioorchestrator');
@@ -31,7 +34,8 @@ export default function ContributeWizard({ cropId, cropName, onClose, onSuccess 
     conditions: '',
   });
 
-  const update = (field: string, value: string) => setForm(f => ({ ...f, [field]: value }));
+  const update = (field: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
+    setForm(f => ({ ...f, [field]: e.target.value }));
 
   const handleSubmit = async () => {
     if (!form.doi) return;
@@ -57,7 +61,7 @@ export default function ContributeWizard({ cropId, cropName, onClose, onSuccess 
       });
       setSuccess(true);
       setTimeout(onSuccess, 2000);
-    } catch (e) {
+    } catch {
       // Error state handled by SDK
     } finally {
       setSubmitting(false);
@@ -65,50 +69,49 @@ export default function ContributeWizard({ cropId, cropName, onClose, onSuccess 
   };
 
   if (success) {
-    return <Card><p className="text-nkz-success">{t('catalog.contribute.success')}</p></Card>;
+    return <Card padding="md"><p className="text-nkz-success">{t('catalog.contribute.success')}</p></Card>;
   }
 
   return (
-    <Stack gap="md">
-      <h3>{t('catalog.contribute.title')} — {cropName}</h3>
+    <Stack gap="stack">
+      <h3 className="text-nkz-md font-semibold">{t('catalog.contribute.title')} — {cropName}</h3>
 
-      <Select
-        label={t('catalog.contribute.stage')}
-        value={form.stage}
-        onChange={e => update('stage', e.target.value)}
-        options={STAGES.map(s => ({ value: s, label: s }))}
-      />
+      <div>
+        <label className={labelCls}>{t('catalog.contribute.stage')}</label>
+        <select className={selectCls} value={form.stage} onChange={update('stage')}>
+          <option value="">{t('phenology.anyStage')}</option>
+          {STAGES.map(s => <option key={s} value={s}>{s}</option>)}
+        </select>
+      </div>
 
-      <Input label={t('catalog.contribute.kc')} type="number" step="0.01"
-             value={form.kc} onChange={e => update('kc', e.target.value)} />
-      <Input label={t('catalog.contribute.d1')} type="number" step="0.1"
-             value={form.d1} onChange={e => update('d1', e.target.value)} />
-      <Input label={t('catalog.contribute.d2')} type="number" step="0.1"
-             value={form.d2} onChange={e => update('d2', e.target.value)} />
-      <Input label={t('catalog.contribute.mds')} type="number" step="1"
-             value={form.mds} onChange={e => update('mds', e.target.value)} />
+      <div><label className={labelCls}>{t('catalog.contribute.kc')}</label><Input type="number" step="0.01" value={form.kc} onChange={update('kc')} /></div>
+      <div><label className={labelCls}>{t('catalog.contribute.d1')}</label><Input type="number" step="0.1"  value={form.d1} onChange={update('d1')} /></div>
+      <div><label className={labelCls}>{t('catalog.contribute.d2')}</label><Input type="number" step="0.1"  value={form.d2} onChange={update('d2')} /></div>
+      <div><label className={labelCls}>{t('catalog.contribute.mds')}</label><Input type="number" step="1"    value={form.mds} onChange={update('mds')} /></div>
 
-      <hr />
-      <h4>Provenance</h4>
-      <Input label={t('catalog.contribute.doi')} required
-             value={form.doi} onChange={e => update('doi', e.target.value)} />
-      <Input label={t('catalog.contribute.author')}
-             value={form.author} onChange={e => update('author', e.target.value)} />
-      <Input label={t('catalog.contribute.year')} type="number"
-             value={form.year} onChange={e => update('year', e.target.value)} />
-      <Input label={t('catalog.contribute.institution')}
-             value={form.institution} onChange={e => update('institution', e.target.value)} />
-      <Input label={t('catalog.contribute.method')}
-             value={form.method} onChange={e => update('method', e.target.value)} />
-      <Textarea label={t('catalog.contribute.conditions')}
-                value={form.conditions} onChange={e => update('conditions', e.target.value)} />
+      <hr className="border-nkz-border" />
+      <h4 className="text-nkz-sm font-semibold">Provenance</h4>
+      <div><label className={labelCls}>{t('catalog.contribute.doi')}</label><Input required value={form.doi} onChange={update('doi')} /></div>
+      <div><label className={labelCls}>{t('catalog.contribute.author')}</label><Input value={form.author} onChange={update('author')} /></div>
+      <div><label className={labelCls}>{t('catalog.contribute.year')}</label><Input type="number" value={form.year} onChange={update('year')} /></div>
+      <div><label className={labelCls}>{t('catalog.contribute.institution')}</label><Input value={form.institution} onChange={update('institution')} /></div>
+      <div><label className={labelCls}>{t('catalog.contribute.method')}</label><Input value={form.method} onChange={update('method')} /></div>
+      <div>
+        <label className={labelCls}>{t('catalog.contribute.conditions')}</label>
+        <textarea
+          className="w-full h-24 rounded-nkz-md border border-nkz-border bg-nkz-surface px-nkz-stack py-nkz-inline text-nkz-sm text-nkz-text-primary focus-visible:ring-2 focus-visible:ring-nkz-accent-base placeholder:text-nkz-text-muted resize-y"
+          value={form.conditions}
+          onChange={update('conditions')}
+          rows={3}
+        />
+      </div>
 
-      <Stack direction="row" gap="sm">
+      <div className="flex gap-2">
         <Button onClick={handleSubmit} loading={submitting} disabled={!form.doi}>
           {t('catalog.contribute.submit')}
         </Button>
         <Button variant="ghost" onClick={onClose}>{t('catalog.contribute.cancel')}</Button>
-      </Stack>
+      </div>
     </Stack>
   );
 }

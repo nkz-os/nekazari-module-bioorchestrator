@@ -59,7 +59,7 @@ const App: React.FC = () => {
               onClick={() => handleTabChange(tab.id)}
             >
               <Icon className="w-4 h-4" />
-              {t(`app.tabs.${tab.id}`, tab.id)}
+              {t(`app.tabs.${tab.id}`)}
             </button>
           );
         })}
