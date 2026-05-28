@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Stack, Card, Badge, Button, DetailGrid, DetailItem, Skeleton } from '@nekazari/ui-kit';
-import { RefreshCw, Globe, Thermometer, MapPin, Sprout, Bug, Beaker, AlertTriangle, CheckCircle } from 'lucide-react';
-import { useBioApi } from '../services/api';
+import { RefreshCw, Globe, Thermometer, MapPin, Sprout, Bug, Beaker, AlertTriangle, CheckCircle, XCircle } from 'lucide-react';
+import { useBioApi, useCropApi } from '../services/api';
 
 interface RecCrop { name: string; scientific_name?: string; }
 interface SoilData { ph_min: number; ph_max: number; textures: string[]; drainage: string[]; depth_min_cm: number; salinity_max_ds_m: number; source_short?: string; }
@@ -20,6 +20,26 @@ const RecommendationsPanel: React.FC<Props> = ({ parcelId, parcelName, cropType 
   const [pesticides, setPesticides] = useState<any[]>([]);
   const [pollinators, setPollinators] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [dataGaps, setDataGaps] = useState<string[]>([]);
+  const [dataAvail, setDataAvail] = useState<Record<string, boolean>>({});
+  const { getCropDetail } = useCropApi();
+
+  useEffect(() => {
+    if (!cropType) return;
+    getCropDetail(`urn:ngsi-ld:AgriCrop:${cropType.replace(/ /g, '_')}`)
+      .then(detail => {
+        if (detail?.data_available) {
+          setDataAvail(detail.data_available);
+          const gaps: string[] = [];
+          if (!detail.data_available.kc) gaps.push('kc');
+          if (!detail.data_available.d1_d2) gaps.push('d1_d2');
+          if (!detail.data_available.thermal) gaps.push('thermal');
+          if (!detail.data_available.npk) gaps.push('npk');
+          setDataGaps(gaps);
+        }
+      })
+      .catch(() => { /* crop not in catalog yet */ });
+  }, [cropType]);
 
   useEffect(() => {
     let cancelled = false;
@@ -67,6 +87,24 @@ const RecommendationsPanel: React.FC<Props> = ({ parcelId, parcelName, cropType 
       {lat != null && lon != null && <TerrainSection lat={lat} lon={lon} />}
       {lat != null && lon != null && <ClimateSection lat={lat} lon={lon} />}
 
+      <Card padding="md">
+        <Stack gap="xs">
+          <h4 className="text-nkz-xs font-semibold text-nkz-text-secondary uppercase tracking-wider">
+            Crop Data — {cropType || '—'}
+          </h4>
+          <DataRow label="Kc" available={dataAvail.kc} />
+          <DataRow label="Thermal" available={dataAvail.thermal} />
+          <DataRow label="NPK" available={dataAvail.npk} />
+          <DataRow label="Rotation" available={dataAvail.rotation} />
+          {dataGaps.length > 0 && (
+            <div className="text-nkz-warning text-sm mt-2">
+              <AlertTriangle size={14} className="inline mr-1" />
+              Incomplete data. Yield estimation is unavailable until missing data is completed.
+            </div>
+          )}
+        </Stack>
+      </Card>
+
       <Card padding="md"><Stack gap="stack"><h4 className="text-nkz-xs font-semibold text-nkz-text-secondary uppercase tracking-wider flex items-center gap-1.5"><Beaker className="w-3.5 h-3.5 text-nkz-accent-base" />Simulate Scenario</h4><ScenarioSimulator currentCrop={cropType} /></Stack></Card>
     </Stack>
   );
@@ -91,5 +129,18 @@ const ScenarioSimulator: React.FC<{ currentCrop: string }> = ({ currentCrop }) =
   const run = async () => { if (!scenario) return; setLoading(true); try { setResult(await api.simulateCrop(currentCrop, scenario)); } catch {} finally { setLoading(false); } };
   return <Stack gap="stack"><div className="flex gap-2 items-center"><select className="h-9 rounded-nkz-md border border-nkz-border bg-nkz-surface px-nkz-stack text-nkz-sm" value={scenario} onChange={(e) => setScenario(e.target.value)}><option value="">Alternative...</option>{SCENARIO_CROPS.filter((c) => c !== currentCrop).map((c) => <option key={c} value={c}>{c}</option>)}</select><Button variant="secondary" size="sm" onClick={run} disabled={!scenario || loading} loading={loading}>Compare</Button></div>{result && <div className="rounded-nkz-md bg-nkz-surface-sunken p-nkz-stack text-nkz-sm"><div className="flex items-center gap-1.5 mb-1">{result.rotation_ok ? <CheckCircle className="w-4 h-4 text-nkz-success" /> : <AlertTriangle className="w-4 h-4 text-nkz-warning" />}<span className="font-medium">{result.recommendation}</span></div></div>}</Stack>;
 };
+
+function DataRow({ label, available }: { label: string; available?: boolean }) {
+  return (
+    <div className="flex justify-between items-center py-1">
+      <span>{label}</span>
+      {available ? (
+        <CheckCircle size={14} className="text-nkz-success" />
+      ) : (
+        <XCircle size={14} className="text-nkz-text-muted" />
+      )}
+    </div>
+  );
+}
 
 export default RecommendationsPanel;
