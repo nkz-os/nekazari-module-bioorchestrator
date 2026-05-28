@@ -268,7 +268,6 @@ async def protected_area_check(
 @router.get("/varieties")
 async def variety_catalogue(
     species: str = Query(..., description="Crop species scientific name"),
-    driver: DriverDep | None = None,
 ):
     """Return varieties for a species from Orion-LD via hasSubCrop."""
     from app.ingestion.uri import agri_crop_uri
@@ -297,21 +296,7 @@ async def variety_catalogue(
         else:
             variety_uris = uris
 
-    # Fetch variety details from Neo4j or Orion-LD
-    varieties = []
-    if driver:
-        dao = GraphDAO(driver)
-        for var_uri in variety_uris:
-            async with dao._driver.session() as session:
-                result = await session.run(
-                    "MATCH (v:AgriCropVariety {uri: $uri}) RETURN v",
-                    uri=var_uri)
-                record = await result.single()
-                if record:
-                    v = record["v"]
-                    varieties.append({"uri": v.get("uri"), "name": v.get("name")})
-
-    return {"varieties": varieties}
+    return {"varieties": [{"uri": u} for u in variety_uris]}
 
 
 @router.get("/pesticides")
