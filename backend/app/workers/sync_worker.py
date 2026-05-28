@@ -9,7 +9,7 @@ logger = logging.getLogger("bioorchestrator.sync")
 
 async def handle_sync_agri_crop(entity: dict):
     """Background handler: sync a single AgriCrop from Orion-LD to Neo4j."""
-    driver = await get_driver()
+    driver = get_driver()
     dao = GraphDAO(driver)
     try:
         await sync_single_agri_crop(dao, entity)
