@@ -38,6 +38,10 @@ class Settings(BaseSettings):
     def allowed_origins(self) -> list[str]:
         return [o.strip() for o in self.cors_origins.split(",") if o.strip()]
 
+    # ── Orion-LD ──────────────────────────────────────────────────────────────
+    orion_ld_url: str = "http://orion-ld-service:1026"
+    context_url: str = "http://api-gateway-service:5000/ngsi-ld-context.json"
+
     # ── IkerKeta data paths ───────────────────────────────────────────────────
     ikerketa_data_dir: Path = Path("./data/processed")
 

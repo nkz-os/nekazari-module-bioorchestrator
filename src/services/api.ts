@@ -47,6 +47,77 @@ async function post(path: string, body?: any, extraHeaders?: Record<string, stri
   return ct.includes('application/json') ? resp.json() : resp.text();
 }
 
+// ── Crop Catalog Types ────────────────────────────────────────────────────
+
+export interface CropItem {
+  uri: string;
+  name: string;
+  scientificName: string;
+  dataProvider: string;
+  variety_count: number;
+  has_kc: boolean;
+  has_thermal: boolean;
+  has_npk?: boolean;
+  has_rotation?: boolean;
+}
+
+export interface CropDetail {
+  uri: string;
+  name: string;
+  scientificName: string;
+  dataProvider: string;
+  data_available: {
+    kc: boolean;
+    d1_d2: boolean;
+    mds: boolean;
+    thermal: boolean;
+    soil_suitability: boolean;
+    npk: boolean;
+  };
+  varieties: { uri: string; name: string }[];
+  phenology: Record<string, any>[];
+  heat_tolerance: Record<string, any>[];
+  soil_suitability: Record<string, any>[];
+  nutrient_profile: Record<string, any>[];
+}
+
+// ── Crop Catalog API functions ──────────────────────────────────────────────
+
+export function useCropApi() {
+  async function getCatalog(params?: {
+    source?: string;
+    q?: string;
+    parent?: string;
+  }): Promise<{ crops: CropItem[]; total: number }> {
+    const searchParams = new URLSearchParams();
+    if (params?.source) searchParams.set('source', params.source);
+    if (params?.q) searchParams.set('q', params.q);
+    if (params?.parent) searchParams.set('parent', params.parent);
+    const qs = searchParams.toString();
+    return get(`/api/crop/catalog${qs ? `?${qs}` : ''}`);
+  }
+
+  async function getCropDetail(cropId: string): Promise<CropDetail> {
+    return get(`/api/crop/catalog/${encodeURIComponent(cropId)}`);
+  }
+
+  async function triggerIngest(source: string, speciesFilter?: string): Promise<any> {
+    const params = new URLSearchParams({ source });
+    if (speciesFilter) params.set('species_filter', speciesFilter);
+    return post(`/api/crop/catalog/ingest?${params}`);
+  }
+
+  async function contributeParameter(body: {
+    crop_id: string;
+    params: Record<string, number>;
+    provenance: { doi: string; author?: string; year?: number; institution?: string; method?: string; conditions?: string };
+  }): Promise<any> {
+    return post('/api/crop/catalog/contribute', body);
+  }
+
+  return { getCatalog, getCropDetail, triggerIngest, contributeParameter };
+}
+
 // ── Hook (no useAuth — relies on httpOnly cookie) ───────────────────────────
 
 export function useBioApi() {

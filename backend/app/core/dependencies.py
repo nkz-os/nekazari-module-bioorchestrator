@@ -44,3 +44,15 @@ async def close_driver() -> None:
 async def get_neo4j_driver() -> AsyncGenerator[AsyncDriver, None]:
     """FastAPI dependency: yields the Neo4j AsyncDriver per request."""
     yield get_driver()
+
+
+def get_dao() -> "GraphDAO":
+    """FastAPI dependency: returns GraphDAO wrapping the active Neo4j driver."""
+    from app.graph.dao import GraphDAO
+    return GraphDAO(get_driver())
+
+
+async def get_current_user() -> dict:
+    """Extract user info from api-gateway headers. Placeholder for JWT validation."""
+    return {"sub": "system", "roles": ["admin"]}
+

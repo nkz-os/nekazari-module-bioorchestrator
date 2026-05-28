@@ -39,17 +39,10 @@ async def graph_stats(driver: DriverDep, tenant_id: str = Depends(_get_tenant_id
 
 @router.get("/species")
 async def list_species(driver: DriverDep):
-    """Return all available species with phenology availability status.
-
-    Each entry includes:
-      - name: common name
-      - scientific_name: binomial name
-      - stage_count: number of phenological stages defined
-      - params_count: number of parameter sets available
-      - has_phenology: true if at least one parameter set exists
-    """
+    """List all species with variety counts and data availability."""
     dao = GraphDAO(driver)
-    return await dao.get_all_species()
+    crops = await dao.get_crop_catalog()
+    return {"species": crops, "total": len(crops)}
 
 
 @router.get("/phenology-params")
@@ -122,6 +115,13 @@ async def phenology_params(
         if stage:
             detail += f" stage={stage}"
         raise HTTPException(status_code=404, detail=detail)
+
+    params["dataAvailable"] = {
+        "kc": params.get("kc") is not None,
+        "d1": params.get("d1") is not None,
+        "d2": params.get("d2") is not None,
+        "mds": params.get("mds_ref") is not None,
+    }
 
     return params
 
@@ -243,50 +243,6 @@ async def recommend_next_crop(
     return {"previous_crop": previous_crop, "suggested_crops": crops}
 
 
-# ── Soil Data (SoilGrids proxy) ──────────────────────────────────────────────
-
-
-@router.get("/soil-data", deprecated=True)
-async def soil_data(
-    lat: float = Query(..., description="Latitude"),
-    lon: float = Query(..., description="Longitude"),
-) -> JSONResponse:
-    """DEPRECATED — proxies to soil module via NGSI-LD AgriSoilExtended query.
-
-    The canonical path is `GET /ngsi-ld/v1/entities?type=AgriSoilExtended` on the
-    Orion-LD broker (served by `nkz-module-soil` as part of Phase 1 of the data fabric).
-
-    This endpoint will be removed in July 2026. Migrate to the capability-driven
-    AgriSoilExtended query endpoint.
-    """
-    orion = os.environ.get("ORION_BASE_URL", "http://orion-ld-service:1026")
-    context = os.environ.get("CONTEXT_URL", "http://api-gateway-service:5000/ngsi-ld-context.json")
-
-    async with httpx.AsyncClient(timeout=10) as c:
-        r = await c.get(
-            f"{orion}/ngsi-ld/v1/entities",
-            params={
-                "type": "AgriSoilExtended",
-                "georel": "near;maxDistance==5000",
-                "geometry": "Point",
-                "coordinates": f"[{lon},{lat}]",
-            },
-            headers={
-                "Accept": "application/json",
-                "Link": f'<{context}>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"',
-            },
-        )
-    payload = r.json() if r.status_code == 200 else []
-    return JSONResponse(
-        content={"agriSoilExtended": payload},
-        headers={
-            "Sunset": "Wed, 01 Jul 2026 00:00:00 GMT",
-            "Deprecation": "true",
-            "Link": '</api/capability/parcel/{parcelId}>; rel="successor-version"',
-        },
-    )
-
-
 # ── Protected Area Check (Natura 2000 proxy) ─────────────────────────────────
 
 
@@ -310,18 +266,37 @@ async def protected_area_check(
 
 
 @router.get("/varieties")
-async def variety_catalogue(species: str = Query(..., description="Crop species")):
-    """Return CPVO registered varieties for a crop species."""
+async def variety_catalogue(
+    species: str = Query(..., description="Crop species scientific name"),
+):
+    """Return varieties for a species from Orion-LD via hasSubCrop."""
+    from app.ingestion.uri import agri_crop_uri
+    from app.ingestion.orion import OrionIngestionClient
+
+    orion = OrionIngestionClient()
+    parent_uri = agri_crop_uri(species)
+
     try:
-        from ikerketa.connectors.cpvo_varieties import CPVOVarietiesConnector
-        connector = CPVOVarietiesConnector()
-        result = connector.fetch()
-        varieties = [v for v in result.entities if species.lower() in (v.get("species", "")).lower()]
-        return {"varieties": varieties[:20]}
-    except ImportError:
-        return {"varieties": []}
-    except Exception as e:
-        return {"varieties": [], "error": str(e)}
+        async with httpx.AsyncClient(timeout=30) as client:
+            resp = await client.get(
+                f"{orion.base}/ngsi-ld/v1/entities/{parent_uri}",
+                headers={"Accept": "application/ld+json"},
+            )
+            resp.raise_for_status()
+            parent = resp.json()
+    except Exception:
+        return {"varieties": [], "error": "Parent species not found in catalog"}
+
+    sub_crop = parent.get("hasSubCrop", {})
+    variety_uris = []
+    if isinstance(sub_crop, dict) and sub_crop.get("type") == "Relationship":
+        uris = sub_crop.get("object", [])
+        if isinstance(uris, str):
+            variety_uris = [uris]
+        else:
+            variety_uris = uris
+
+    return {"varieties": [{"uri": u} for u in variety_uris]}
 
 
 @router.get("/pesticides")
@@ -390,7 +365,36 @@ async def simulate_scenario(
 ):
     """Compare two agronomic scenarios: rotation, soil, fertilizer delta."""
     dao = GraphDAO(driver)
-    return await dao.simulate_scenario(baseline_crop, scenario_crop)
+    result = await dao.simulate_scenario(baseline_crop, scenario_crop)
+    result["baseline_data_gaps"] = await _compute_data_gaps(dao, baseline_crop)
+    result["scenario_data_gaps"] = await _compute_data_gaps(dao, scenario_crop)
+    return result
+
+
+async def _compute_data_gaps(dao: GraphDAO, crop_name: str) -> list[str]:
+    """Return list of missing data types for a crop."""
+    gaps = []
+    async with dao._driver.session() as session:
+        result = await session.run("""
+            MATCH (c:AgriCrop)
+            WHERE toLower(c.name) CONTAINS toLower($name)
+               OR toLower(c.scientificName) CONTAINS toLower($name)
+            OPTIONAL MATCH (c)-[:HAS_PARAMETER]->(p:PhenologyParams)
+            OPTIONAL MATCH (c)-[:HAS_HEAT_TOLERANCE]->(ht:CropHeatTolerance)
+            OPTIONAL MATCH (c)-[:HAS_NUTRIENT_PROFILE]->(np:CropNutrientProfile)
+            RETURN count(DISTINCT p) > 0 as has_phenology,
+                   count(DISTINCT ht) > 0 as has_thermal,
+                   count(DISTINCT np) > 0 as has_npk
+        """, name=crop_name)
+        record = await result.single()
+        if record:
+            if not record["has_phenology"]:
+                gaps.extend(["d1", "d2", "mds"])
+            if not record["has_thermal"]:
+                gaps.append("thermal")
+            if not record["has_npk"]:
+                gaps.append("npk")
+    return gaps
 
 
 @router.get("/recommendations/fertilizer")
