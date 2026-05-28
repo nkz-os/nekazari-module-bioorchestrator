@@ -84,6 +84,17 @@ async def lifespan(app: FastAPI):
     except Exception as exc:
         print(f"[bioorchestrator] WARNING: Neo4j unavailable on startup: {exc}")
 
+    # Background tasks — non-blocking, fire-and-forget
+    try:
+        from app.workers.queue import background_queue
+        from app.workers.sync_worker import handle_sync_agri_crop
+        background_queue.register("sync_agri_crop", handle_sync_agri_crop)
+        asyncio.create_task(background_queue.run_loop())
+        asyncio.create_task(_create_orion_subscription())
+        print("[bioorchestrator] background tasks started")
+    except Exception as exc:
+        print(f"[bioorchestrator] WARNING: background tasks init failed: {exc}")
+
     yield
 
     await close_driver()
