@@ -135,7 +135,11 @@
       "submit": "Enviar para revisión",
       "submitting": "Enviando...",
       "success": "Parámetro enviado para revisión. Gracias por tu contribución."
-    }
+    },
+    "genericSource": "FAO-56 (genérico)",
+    "paramAvailable": "disponible",
+    "paramMissing": "faltante",
+    "usingDefaultsDetail": "Usando valores FAO-56 genéricos para {{params}}. No hay datos específicos de cultivar para esta especie."
   },
   "catalog": {
     "title": "Catálogo de Cultivos",

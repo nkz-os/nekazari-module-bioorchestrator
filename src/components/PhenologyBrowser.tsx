@@ -59,11 +59,19 @@ const PhenologyBrowser: React.FC = () => {
 
   const speciesOptions = speciesList.length > 0 ? speciesList : FALLBACK.map((n) => ({ name: n, scientific_name: undefined, stage_count: 0, params_count: 0, has_phenology: false }));
   const ml = data?.match_level || '';
+  const paramAvailable = data ? {
+    kc: data.kc != null && !isNaN(data.kc),
+    d1: data.d1 != null && !isNaN(data.d1),
+    d2: data.d2 != null && !isNaN(data.d2),
+    mds: data.mds_ref != null && !isNaN(data.mds_ref),
+  } : { kc: false, d1: false, d2: false, mds: false };
+  const genericForLabel = data?.is_default ? ['Kc','D1','D2','MDS'].filter((_, i) => [paramAvailable.kc, paramAvailable.d1, paramAvailable.d2, paramAvailable.mds][i]).join(', ') : '';
+  const sourceLabel = data?.is_default ? t('phenology.genericSource') : (data?.provenance?.short || '');
 
   return (
     <Stack gap="section">
       <div className="flex flex-wrap gap-3 items-end">
-        <div className="min-w-[160px]"><label className="text-nkz-xs font-medium text-nkz-text-muted block mb-1">{t('phenology.species')}</label><select className={selectCls} value={species} onChange={(e) => setSpecies(e.target.value)}>{speciesOptions.map((s: any) => <option key={s.name} value={s.name}>{s.scientific_name ? `${s.name} (${s.scientific_name})` : s.name}{!s.has_phenology ? ' *' : ''}</option>)}</select></div>
+        <div className="min-w-[160px]"><label className="text-nkz-xs font-medium text-nkz-text-muted block mb-1">{t('phenology.species')}</label><select className={selectCls} value={species} onChange={(e) => setSpecies(e.target.value)}>{speciesOptions.map((s: any) => <option key={s.name} value={s.name}>{s.scientific_name ? `${s.name} (${s.scientific_name})` : s.name}{s.has_phenology ? ` — ${s.params_count} params` : ' — no data'}</option>)}</select></div>
         <div className="min-w-[140px]"><label className="text-nkz-xs font-medium text-nkz-text-muted block mb-1">{t('phenology.stage')}</label><select className={selectCls} value={stage} onChange={(e) => setStage(e.target.value)}><option value="">{t('phenology.anyStage')}</option>{STAGES.map((s) => <option key={s} value={s}>{s}</option>)}</select></div>
         <div className="min-w-[140px]"><label className="text-nkz-xs font-medium text-nkz-text-muted block mb-1">{t('phenology.cultivar')}</label><select className={selectCls} value={cultivar} onChange={(e) => setCultivar(e.target.value)}><option value="">{t('phenology.anyCultivar')}</option>{CULTIVARS.map((c) => <option key={c} value={c}>{c}</option>)}</select></div>
         <div className="min-w-[160px]"><label className="text-nkz-xs font-medium text-nkz-text-muted block mb-1">{t('phenology.management')}</label><select className={selectCls} value={management} onChange={(e) => setManagement(e.target.value)}>{MGMT.map((m) => <option key={m} value={m}>{MGMT_LABELS[m] || m || t('phenology.standardIrrigation')}</option>)}</select></div>
@@ -83,16 +91,16 @@ const PhenologyBrowser: React.FC = () => {
               <span className="text-nkz-sm text-nkz-text-primary">{data.scientific_name && <em>{data.scientific_name}</em>}{data.stage && ` — ${data.stage}`}</span>
             </div>
           </div>
-          {data.is_default && <div className="text-nkz-xs text-nkz-text-muted bg-nkz-surface-sunken rounded-nkz-md p-nkz-inline">{t('phenology.usingDefaults')}</div>}
+          {data.is_default && <div className="text-nkz-xs text-nkz-text-muted bg-nkz-surface-sunken rounded-nkz-md p-nkz-inline">{t('phenology.usingDefaultsDetail', { params: genericForLabel })}</div>}
 
           <Panel>
             <Panel.Header><Panel.Title><Sprout className="w-4 h-4 text-nkz-accent-base" />Parameters</Panel.Title></Panel.Header>
             <Panel.Body>
               <DetailGrid columns={2}>
-                <DetailItem label="Kc" value={data.kc?.toFixed(2) || '—'} />
-                <DetailItem label="D1 (NWSB)" value={data.d1 != null ? `${data.d1?.toFixed(1)}°C` : '—'} />
-                <DetailItem label="D2 (Max Stress)" value={data.d2 != null ? `${data.d2?.toFixed(1)}°C` : '—'} />
-                <DetailItem label="MDS Ref" value={data.mds_ref != null ? `${data.mds_ref?.toFixed(0)}µm` : '—'} />
+                <DetailItem label="Kc" value={<>{data.kc?.toFixed(2) || '—'} <Badge intent={paramAvailable.kc ? 'positive' : 'default'}>{paramAvailable.kc ? '✓' : '✗'}</Badge>{sourceLabel && <span className="text-nkz-text-muted text-nkz-xs ml-1">{sourceLabel}</span>}</>} />
+                <DetailItem label="D1 (NWSB)" value={<>{data.d1 != null ? `${data.d1?.toFixed(1)}°C` : '—'} <Badge intent={paramAvailable.d1 ? 'positive' : 'default'}>{paramAvailable.d1 ? '✓' : '✗'}</Badge>{sourceLabel && <span className="text-nkz-text-muted text-nkz-xs ml-1">{sourceLabel}</span>}</>} />
+                <DetailItem label="D2 (Max Stress)" value={<>{data.d2 != null ? `${data.d2?.toFixed(1)}°C` : '—'} <Badge intent={paramAvailable.d2 ? 'positive' : 'default'}>{paramAvailable.d2 ? '✓' : '✗'}</Badge>{sourceLabel && <span className="text-nkz-text-muted text-nkz-xs ml-1">{sourceLabel}</span>}</>} />
+                <DetailItem label="MDS Ref" value={<>{data.mds_ref != null ? `${data.mds_ref?.toFixed(0)}µm` : '—'} <Badge intent={paramAvailable.mds ? 'positive' : 'default'}>{paramAvailable.mds ? '✓' : '✗'}</Badge>{sourceLabel && <span className="text-nkz-text-muted text-nkz-xs ml-1">{sourceLabel}</span>}</>} />
               </DetailGrid>
             </Panel.Body>
           </Panel>

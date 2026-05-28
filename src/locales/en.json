@@ -135,7 +135,11 @@
       "submit": "Submit for review",
       "submitting": "Submitting...",
       "success": "Parameter submitted for review. Thank you for your contribution."
-    }
+    },
+    "genericSource": "FAO-56 (generic)",
+    "paramAvailable": "available",
+    "paramMissing": "missing",
+    "usingDefaultsDetail": "Using generic FAO-56 values for {{params}}. No cultivar-specific data for this species."
   },
   "catalog": {
     "title": "Crop Catalog",
