@@ -170,8 +170,8 @@ async def thermal_summary(
         result = await session.run("""
             MATCH (c:AgriCrop)
             OPTIONAL MATCH (c)-[:HAS_HEAT_TOLERANCE]->(ht:CropHeatTolerance)
-            RETURN count(c) as total,
-                   count(ht) as with_thermal
+            RETURN count(DISTINCT c) as total,
+                   count(DISTINCT ht) as with_thermal
         """)
         record = await result.single()
         total = record["total"]
@@ -207,19 +207,22 @@ async def npk_summary(
 
 @router.post("/derive-thermal")
 async def derive_thermal(
-    species_filter: str | None = Query(None),
     user: dict = Depends(get_current_user),
 ):
-    """Trigger thermal limits derivation for species with EcoCrop temp data."""
+    """Trigger thermal limits derivation for all species with EcoCrop temp data.
+
+    Runs derive_thermal_limits.py as a background subprocess.
+    Requires technician/admin role.
+    """
     import subprocess
     import sys
     from pathlib import Path
 
     script = Path(__file__).parent.parent.parent.parent / "scripts" / "derive_thermal_limits.py"
-    cmd = [sys.executable, str(script)]
-    if species_filter:
-        cmd.extend(["--species", species_filter])
-
-    subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    subprocess.Popen(
+        [sys.executable, str(script)],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
 
     return {"status": "started", "message": "Thermal derivation running in background"}
