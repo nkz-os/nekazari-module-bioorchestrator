@@ -49,6 +49,36 @@ class OrionIngestionClient:
             resp.raise_for_status()
             return resp.json()
 
+    async def query_by_relationship(
+        self, entity_type: str, rel_name: str, target_id: str, limit: int = 1
+    ) -> list[dict]:
+        """Query entities by relationship target (e.g. refAgriParcel=={parcel_id})."""
+        async with httpx.AsyncClient(timeout=15) as client:
+            resp = await client.get(
+                f"{self.base}/ngsi-ld/v1/entities",
+                params={
+                    "type": entity_type,
+                    "q": f'{rel_name}=="{target_id}"',
+                    "limit": limit,
+                },
+                headers={"Accept": "application/ld+json"},
+            )
+            resp.raise_for_status()
+            data = resp.json()
+            return data if isinstance(data, list) else [data]
+
+    async def get_entity(self, entity_id: str) -> dict | None:
+        """Get a single NGSI-LD entity by id."""
+        async with httpx.AsyncClient(timeout=10) as client:
+            resp = await client.get(
+                f"{self.base}/ngsi-ld/v1/entities/{entity_id}",
+                headers={"Accept": "application/ld+json"},
+            )
+            if resp.status_code == 404:
+                return None
+            resp.raise_for_status()
+            return resp.json()
+
     async def patch_entity(self, entity_id: str, attributes: dict) -> None:
         """Patch specific attributes on an existing entity."""
         async with httpx.AsyncClient(timeout=30) as client:

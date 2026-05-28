@@ -98,6 +98,15 @@ async def lifespan(app: FastAPI):
     except Exception as exc:
         print(f"[bioorchestrator] WARNING: Neo4j unavailable on startup: {exc}")
 
+    # Seed external capability registrations (best-effort)
+    try:
+        from app.graph.capability_dao import CapabilityDao
+        from app.services.capability_loader import seed_external_capabilities
+        seeded = await seed_external_capabilities(CapabilityDao())
+        print(f"[bioorchestrator] Seeded {seeded} external capabilities")
+    except Exception as exc:
+        print(f"[bioorchestrator] WARNING: capability seed failed: {exc}")
+
     # Schedule background tasks after uvicorn binds (don't block startup)
     loop = asyncio.get_running_loop()
     loop.call_soon(lambda: asyncio.ensure_future(_start_background_tasks()))
@@ -130,12 +139,14 @@ app.add_middleware(NKZAuthMiddleware)
 from app.api import router as api_router  # noqa: E402
 app.include_router(api_router, prefix="/api")
 
-# Catalog and NGSI-LD notify routers
+# Catalog, NGSI-LD notify, and parcel data routers
 from app.api.v1.catalog import router as catalog_router  # noqa: E402
 from app.api.v1.notify import router as notify_router  # noqa: E402
+from app.api.v1.parcel_data import router as parcel_data_router  # noqa: E402
 
 app.include_router(catalog_router, prefix="/api/crop")
 app.include_router(notify_router, prefix="/api/ngsi-ld")
+app.include_router(parcel_data_router, prefix="/api")
 
 # Register IkerKeta API routes directly on the main app
 # (don't use app.mount() — it double-prefixes and / mount kills healthz)

@@ -284,5 +284,44 @@
     "sectionError": "No se pudieron cargar los datos de {{section}}.",
     "retry": "Reintentar",
     "deprecatedSoilNote": "Dato deprecado — próximamente desde módulo Soil"
+  },
+  "vegetation": {
+    "title": "Índices de Vegetación",
+    "selectIndex": "Índice",
+    "selectPeriod": "Periodo",
+    "periods": {
+      "1m": "Último mes",
+      "3m": "Últimos 3 meses",
+      "6m": "Últimos 6 meses",
+      "1y": "Último año",
+      "season": "Temporada actual"
+    },
+    "current": "Actual",
+    "trend": "Tendencia",
+    "source": "Sentinel-2 L2A (ESA Copernicus)",
+    "processor": "Procesado por vegetation-health",
+    "noEntity": "El módulo vegetation-health no ha procesado esta parcela todavía.",
+    "noDataInPeriod": "Sin imágenes disponibles en el periodo seleccionado. Prueba un periodo más amplio.",
+    "lowCount": "Solo {{count}} imágenes disponibles. La tendencia puede no ser representativa — posible nubosidad.",
+    "imageCount": "{{count}} imágenes"
+  },
+  "soilPanel": {
+    "title": "Datos de Suelo",
+    "horizons": "{{count}} horizontes",
+    "texture": "Textura",
+    "sand": "Arena",
+    "silt": "Limo",
+    "clay": "Arcilla",
+    "organicMatter": "MO",
+    "ph": "pH",
+    "cec": "CIC",
+    "awc": "AWC",
+    "fc": "CC",
+    "pwp": "PMP",
+    "usdaClass": "Clase USDA",
+    "hydroGroup": "Grupo hidrológico",
+    "source": "SoilGrids 2.0 + LUCAS 2018",
+    "noEntity": "El módulo soil no ha procesado esta parcela. Los datos de suelo requieren definir horizontes y seleccionar proveedores de datos.",
+    "depthColumn": "{{from}}–{{to}} cm"
   }
 }

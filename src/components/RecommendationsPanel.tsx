@@ -6,10 +6,11 @@ import {
   AlertTriangle, CheckCircle, XCircle, ChevronDown, ChevronRight, Info,
 } from 'lucide-react';
 import { useBioApi, useCropApi } from '../services/api';
+import type { VegetationData, SoilData as ParcelSoilData, SoilHorizon } from '../services/api';
 import ContextEmptyState from './shared/ContextEmptyState';
 
 interface RecCrop { name: string; scientific_name?: string; }
-interface SoilData { ph_min: number; ph_max: number; textures: string[]; drainage: string[]; depth_min_cm: number; salinity_max_ds_m: number; source_short?: string; }
+interface CropSoilReq { ph_min: number; ph_max: number; textures: string[]; drainage: string[]; depth_min_cm: number; salinity_max_ds_m: number; source_short?: string; }
 interface Props { parcelId?: string; parcelName?: string; cropType?: string; lat?: number; lon?: number; }
 
 const PESTICIDE_INTENT: Record<string, 'positive' | 'negative' | 'warning'> = { approved: 'positive', not_approved: 'negative', withdrawn: 'warning' };
@@ -19,7 +20,7 @@ const RecommendationsPanel: React.FC<Props> = ({ parcelId, parcelName, cropType,
   const { t } = useTranslation('bioorchestrator');
   const api = useBioApi();
   const [nextCrops, setNextCrops] = useState<RecCrop[]>([]);
-  const [soil, setSoil] = useState<SoilData | null>(null);
+  const [soil, setSoil] = useState<CropSoilReq | null>(null);
   const [realSoil, setRealSoil] = useState<any>(null);
   const [protectedArea, setProtectedArea] = useState<any>(null);
   const [varieties, setVarieties] = useState<any[]>([]);
@@ -30,6 +31,37 @@ const RecommendationsPanel: React.FC<Props> = ({ parcelId, parcelName, cropType,
   const [dataAvail, setDataAvail] = useState<Record<string, boolean>>({});
   const [cropNotFound, setCropNotFound] = useState(false);
   const { getCropDetail } = useCropApi();
+
+  // ── Vegetation / Soil (Plan C) ──────────────────────────────────────────
+  const [vegIndex, setVegIndex] = useState('ndvi');
+  const [vegPeriod, setVegPeriod] = useState('3m');
+  const [vegData, setVegData] = useState<VegetationData | null>(null);
+  const [vegLoading, setVegLoading] = useState(false);
+
+  const [parcelSoil, setParcelSoil] = useState<ParcelSoilData | null>(null);
+  const [soilLoading, setSoilLoading] = useState(false);
+
+  useEffect(() => {
+    if (!parcelId) return;
+    let cancelled = false;
+    setVegLoading(true);
+    api.getParcelVegetation(parcelId, vegIndex, vegPeriod)
+      .then(d => { if (!cancelled) setVegData(d); })
+      .catch(() => { if (!cancelled) setVegData(null); })
+      .finally(() => { if (!cancelled) setVegLoading(false); });
+    return () => { cancelled = true; };
+  }, [parcelId, vegIndex, vegPeriod]);
+
+  useEffect(() => {
+    if (!parcelId) return;
+    let cancelled = false;
+    setSoilLoading(true);
+    api.getParcelSoil(parcelId)
+      .then(d => { if (!cancelled) setParcelSoil(d); })
+      .catch(() => { if (!cancelled) setParcelSoil(null); })
+      .finally(() => { if (!cancelled) setSoilLoading(false); });
+    return () => { cancelled = true; };
+  }, [parcelId]);
 
   useEffect(() => {
     if (!cropType) return;
@@ -135,19 +167,84 @@ const RecommendationsPanel: React.FC<Props> = ({ parcelId, parcelName, cropType,
       {/* Section 2: Soil & Environment */}
       <CollapsibleSection title={t('panel.soilAndEnvironment')}>
         <Stack gap="stack">
-          {realSoil && !realSoil.error && (
-            <Card padding="md"><Stack gap="tight"><h4 className="text-nkz-xs font-semibold text-nkz-text-secondary uppercase tracking-wider flex items-center gap-1.5"><Beaker className="w-3.5 h-3.5 text-nkz-accent-base" />Real Soil (SoilGrids 2.0)</h4><DetailGrid columns={2}>{realSoil.ph != null && <DetailItem label="pH" value={realSoil.ph} />}{realSoil.texture_class && <DetailItem label="Texture" value={`${realSoil.texture_class} (${realSoil.sand_pct}% sand)`} />}{realSoil.cec_cmol_kg != null && <DetailItem label="CEC" value={<>{realSoil.cec_cmol_kg} cmol/kg</>} />}</DetailGrid><p className="text-nkz-xs text-nkz-text-muted">{realSoil.source}</p></Stack></Card>
+          {/* New soil data from soil-module (replaces deprecated SoilGrids proxy) */}
+          {parcelId && parcelSoil?.available && (
+            <Card padding="md"><Stack gap="tight">
+              <h4 className="text-nkz-xs font-semibold text-nkz-text-secondary uppercase tracking-wider flex items-center gap-1.5"><Beaker className="w-3.5 h-3.5 text-nkz-accent-base" />{t('soilPanel.title')}</h4>
+              <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${Math.min(parcelSoil.horizons.length, 3)}, 1fr)` }}>
+                {parcelSoil.horizons.slice(0, 3).map((h: SoilHorizon, i: number) => (
+                  <div key={i} className="border border-nkz-border rounded-nkz-md p-2 text-nkz-sm">
+                    <div className="font-medium text-nkz-text-muted mb-1">{t('soilPanel.depthColumn', { from: h.depthFrom, to: h.depthTo })}</div>
+                    {h.usdaTextureClass && <div className="mb-1">{h.usdaTextureClass}</div>}
+                    {h.sand != null && <div>{t('soilPanel.sand')}: {h.sand.toFixed(0)}%</div>}
+                    {h.silt != null && <div>{t('soilPanel.silt')}: {h.silt.toFixed(0)}%</div>}
+                    {h.clay != null && <div>{t('soilPanel.clay')}: {h.clay.toFixed(0)}%</div>}
+                    {h.organicCarbon != null && <div>{t('soilPanel.organicMatter')}: {(h.organicCarbon * 1.724).toFixed(1)}%</div>}
+                    {h.ph != null && <div>{t('soilPanel.ph')}: {h.ph.toFixed(1)}</div>}
+                    {h.cec != null && <div>{t('soilPanel.cec')}: {h.cec.toFixed(1)}</div>}
+                    <div className="mt-1 text-nkz-text-muted text-xs">
+                      {h.availableWaterCapacity != null && <div>{t('soilPanel.awc')}: {h.availableWaterCapacity.toFixed(2)}</div>}
+                      {h.fieldCapacity != null && <div>{t('soilPanel.fc')}: {h.fieldCapacity.toFixed(2)}</div>}
+                      {h.wiltingPoint != null && <div>{t('soilPanel.pwp')}: {h.wiltingPoint.toFixed(2)}</div>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {parcelSoil.hydrologicGroup && <p className="text-nkz-text-muted text-xs">{t('soilPanel.hydroGroup')}: {parcelSoil.hydrologicGroup}</p>}
+              <p className="text-nkz-text-muted text-xs">{parcelSoil.source || t('soilPanel.source')}</p>
+            </Stack></Card>
           )}
           {soil && <Card padding="md"><Stack gap="tight"><h4 className="text-nkz-xs font-semibold text-nkz-text-secondary uppercase tracking-wider flex items-center gap-1.5"><Globe className="w-3.5 h-3.5 text-nkz-accent-base" />Soil Requirements ({cropType})</h4><DetailGrid columns={2}><DetailItem label="pH" value={<>{soil.ph_min} – {soil.ph_max}</>} /><DetailItem label="Texture" value={(soil.textures || []).join(', ')} /><DetailItem label="Drainage" value={(soil.drainage || []).join(', ')} /></DetailGrid></Stack></Card>}
           {protectedArea?.in_protected_area && <Card padding="md"><Stack gap="tight"><h4 className="text-nkz-xs font-semibold text-nkz-text-secondary uppercase tracking-wider flex items-center gap-1.5"><MapPin className="w-3.5 h-3.5 text-nkz-success" />Protected Area</h4><p className="text-nkz-sm font-medium">{protectedArea.site_name} ({protectedArea.site_code})</p></Stack></Card>}
           {lat != null && lon != null && <TerrainSection lat={lat} lon={lon} />}
           {lat != null && lon != null && <ClimateSection lat={lat} lon={lon} />}
-          <div className="text-nkz-text-muted text-xs mt-2">
-            <Info size={10} className="inline mr-1" />
-            {t('panel.deprecatedSoilNote')}
-          </div>
         </Stack>
       </CollapsibleSection>
+
+      {/* Vegetation Indices (Plan C) */}
+      {parcelId && (
+        <CollapsibleSection title={t('vegetation.title')} loading={vegLoading}>
+          {!vegData?.available ? (
+            <p className="text-nkz-sm text-nkz-text-muted">{vegData?.message || t('vegetation.noEntity')}</p>
+          ) : (
+            <Stack gap="tight">
+              <div className="flex gap-2">
+                <select className="h-8 rounded-nkz-md border border-nkz-border bg-nkz-surface text-nkz-sm" value={vegIndex} onChange={e => setVegIndex(e.target.value)}>
+                  <option value="ndvi">NDVI</option>
+                  <option value="evi">EVI</option>
+                  <option value="savi">SAVI</option>
+                  <option value="gndvi">GNDVI</option>
+                  <option value="ndre">NDRE</option>
+                  <option value="ndwi">NDWI</option>
+                </select>
+                <select className="h-8 rounded-nkz-md border border-nkz-border bg-nkz-surface text-nkz-sm" value={vegPeriod} onChange={e => setVegPeriod(e.target.value)}>
+                  <option value="1m">{t('vegetation.periods.1m')}</option>
+                  <option value="3m">{t('vegetation.periods.3m')}</option>
+                  <option value="6m">{t('vegetation.periods.6m')}</option>
+                  <option value="1y">{t('vegetation.periods.1y')}</option>
+                  <option value="season">{t('vegetation.periods.season')}</option>
+                </select>
+              </div>
+              {vegData.observations.length > 0 && (
+                <Sparkline data={vegData.observations} width={280} height={70} />
+              )}
+              {vegData.current != null && (
+                <DetailGrid columns={2}>
+                  <DetailItem label={t('vegetation.current')} value={vegData.current.toFixed(4)} />
+                  <DetailItem label={t('vegetation.trend')} value={vegData.trend?.label || '—'} />
+                </DetailGrid>
+              )}
+              {vegData.count > 0 && vegData.count < 5 && (
+                <div className="text-nkz-warning text-xs">
+                  <AlertTriangle size={12} className="inline mr-1" />
+                  {t('vegetation.lowCount', { count: vegData.count })}
+                </div>
+              )}
+              <p className="text-nkz-text-muted text-xs">{t('vegetation.source')} · {t('vegetation.processor')}</p>
+            </Stack>
+          )}
+        </CollapsibleSection>
+      )}
 
       {/* Section 3: Rotation & Crop */}
       <CollapsibleSection title={t('panel.rotationAndCrop')}>
@@ -251,6 +348,24 @@ function CollapsibleSection({ title, defaultOpen = false, children, loading, err
         </div>
       )}
     </Card>
+  );
+}
+
+function Sparkline({ data, width, height }: { data: { value: number }[]; width: number; height: number }) {
+  if (data.length < 2) return null;
+  const min = Math.min(...data.map(d => d.value));
+  const max = Math.max(...data.map(d => d.value));
+  const range = max - min || 1;
+  const padding = 4;
+  const points = data.map((d, i) => {
+    const x = padding + (i / (data.length - 1)) * (width - 2 * padding);
+    const y = height - padding - ((d.value - min) / range) * (height - 2 * padding);
+    return `${x},${y}`;
+  }).join(' ');
+  return (
+    <svg width={width} height={height} className="text-nkz-success">
+      <polyline points={points} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
   );
 }
 

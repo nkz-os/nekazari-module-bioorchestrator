@@ -284,5 +284,44 @@
     "sectionError": "Could not load {{section}} data.",
     "retry": "Retry",
     "deprecatedSoilNote": "Deprecated data — coming soon from Soil module"
+  },
+  "vegetation": {
+    "title": "Vegetation Indices",
+    "selectIndex": "Index",
+    "selectPeriod": "Period",
+    "periods": {
+      "1m": "Last month",
+      "3m": "Last 3 months",
+      "6m": "Last 6 months",
+      "1y": "Last year",
+      "season": "Current season"
+    },
+    "current": "Current",
+    "trend": "Trend",
+    "source": "Sentinel-2 L2A (ESA Copernicus)",
+    "processor": "Processed by vegetation-health",
+    "noEntity": "The vegetation-health module has not processed this parcel yet.",
+    "noDataInPeriod": "No images available in the selected period. Try a wider range.",
+    "lowCount": "Only {{count}} images available. Trend may not be representative — possible cloud cover.",
+    "imageCount": "{{count}} images"
+  },
+  "soilPanel": {
+    "title": "Soil Data",
+    "horizons": "{{count}} horizons",
+    "texture": "Texture",
+    "sand": "Sand",
+    "silt": "Silt",
+    "clay": "Clay",
+    "organicMatter": "OM",
+    "ph": "pH",
+    "cec": "CEC",
+    "awc": "AWC",
+    "fc": "FC",
+    "pwp": "PWP",
+    "usdaClass": "USDA Class",
+    "hydroGroup": "Hydrologic Group",
+    "source": "SoilGrids 2.0 + LUCAS 2018",
+    "noEntity": "The soil module has not processed this parcel. Soil data requires defining horizons and selecting data providers.",
+    "depthColumn": "{{from}}–{{to}} cm"
   }
 }
