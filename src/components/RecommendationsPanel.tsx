@@ -88,7 +88,7 @@ const RecommendationsPanel: React.FC<Props> = ({ parcelId, parcelName, cropType 
       {lat != null && lon != null && <ClimateSection lat={lat} lon={lon} />}
 
       <Card padding="md">
-        <Stack gap="xs">
+        <Stack gap="tight">
           <h4 className="text-nkz-xs font-semibold text-nkz-text-secondary uppercase tracking-wider">
             Crop Data — {cropType || '—'}
           </h4>
