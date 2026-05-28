@@ -84,13 +84,6 @@ async def lifespan(app: FastAPI):
     except Exception as exc:
         print(f"[bioorchestrator] WARNING: Neo4j unavailable on startup: {exc}")
 
-    try:
-        background_queue.register("sync_agri_crop", handle_sync_agri_crop)
-        asyncio.create_task(background_queue.run_loop())
-        asyncio.create_task(_create_orion_subscription())
-    except Exception as exc:
-        print(f"[bioorchestrator] WARNING: background tasks init failed: {exc}")
-
     yield
 
     await close_driver()
@@ -122,8 +115,6 @@ app.include_router(api_router, prefix="/api")
 # Catalog and NGSI-LD notify routers
 from app.api.v1.catalog import router as catalog_router  # noqa: E402
 from app.api.v1.notify import router as notify_router  # noqa: E402
-from app.workers.queue import background_queue  # noqa: E402
-from app.workers.sync_worker import handle_sync_agri_crop  # noqa: E402
 
 app.include_router(catalog_router, prefix="/api/crop")
 app.include_router(notify_router, prefix="/api/ngsi-ld")
