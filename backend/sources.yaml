@@ -119,6 +119,16 @@ sources:
     enabled: false # Requiere licencia comercial. Stub con fixtures reales.
     notes: "Enemigos naturales, datasheets. Deshabilitado hasta obtener acceso."
 
+  cpvo_varieties:
+    name: "CPVO (Community Plant Variety Office)"
+    type: rest_api
+    description: "CPVO — registered crop varieties in the EU"
+    license: "Public data (EU)"
+    update_frequency: quarterly
+    domain: agricultural
+    entity_types:
+      - AgriCrop
+
   agroportal:
     name: "AgroPortal (C3PO / CO / AgrO)"
     type: owl_sparql

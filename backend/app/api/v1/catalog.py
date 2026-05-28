@@ -1,0 +1,161 @@
+"""Crop catalog API — species/varieties from Orion-LD + Neo4j."""
+from fastapi import APIRouter, Query, Depends, HTTPException
+from app.graph.dao import GraphDAO
+from app.ingestion.orion import OrionIngestionClient
+from app.ingestion.ecocrop_ingester import EcoCropIngester
+from app.ingestion.variety_ingester import VarietyIngester
+from app.core.dependencies import get_dao, get_current_user
+
+router = APIRouter(prefix="/catalog", tags=["crop-catalog"])
+
+
+@router.get("")
+async def list_crops(
+    source: str | None = Query(None, description="Data source: ecocrop, cpvo"),
+    q: str | None = Query(None, description="Search by name"),
+    parent: str | None = Query(None, description="Parent species URI for varieties"),
+    dao: GraphDAO = Depends(get_dao),
+):
+    """List species and/or varieties from the catalog."""
+    crops = await dao.get_crop_catalog(source=source, search=q)
+    return {"crops": crops, "total": len(crops)}
+
+
+@router.get("/{crop_id:path}")
+async def get_crop_detail(
+    crop_id: str,
+    dao: GraphDAO = Depends(get_dao),
+):
+    """Get full detail for a species or variety.
+
+    Aggregates Orion-LD entity data + Neo4j graph enrichment
+    (phenology params, heat tolerance, NPK profiles, rotation constraints).
+    """
+    orion = OrionIngestionClient()
+
+    async with dao._driver.session() as session:
+        result = await session.run("""
+            MATCH (c:AgriCrop {uri: $uri})
+            OPTIONAL MATCH (c)-[:HAS_VARIETY]->(v:AgriCropVariety)
+            OPTIONAL MATCH (c)-[:HAS_PARAMETER]->(p:PhenologyParams)
+            OPTIONAL MATCH (c)-[:HAS_HEAT_TOLERANCE]->(ht:CropHeatTolerance)
+            OPTIONAL MATCH (c)-[:HAS_SOIL_SUITABILITY]->(ss:CropSoilSuitability)
+            OPTIONAL MATCH (c)-[:HAS_NUTRIENT_PROFILE]->(np:CropNutrientProfile)
+            RETURN c, collect(DISTINCT v) as varieties,
+                   collect(DISTINCT p) as params,
+                   collect(DISTINCT ht) as heat,
+                   collect(DISTINCT ss) as soil,
+                   collect(DISTINCT np) as nutrients
+        """, uri=crop_id)
+        record = await result.single()
+        if not record:
+            raise HTTPException(status_code=404, detail="Crop not found")
+
+        c = record["c"]
+        varieties = record["varieties"]
+        params = record["params"]
+        heat = record["heat"]
+        soil = record["soil"]
+        nutrients = record["nutrients"]
+
+    return {
+        "uri": c.get("uri"),
+        "name": c.get("name"),
+        "scientificName": c.get("scientificName"),
+        "dataProvider": c.get("dataProvider"),
+        "data_available": {
+            "kc": len(params) > 0 and any(p.get("kc") for p in params),
+            "d1_d2": len(params) > 0 and any(p.get("d1") for p in params),
+            "mds": len(params) > 0 and any(p.get("mdsRef") for p in params),
+            "thermal": len(heat) > 0,
+            "soil_suitability": len(soil) > 0,
+            "npk": len(nutrients) > 0,
+        },
+        "varieties": [{"uri": v.get("uri"), "name": v.get("name")} for v in varieties],
+        "phenology": [dict(p) for p in params],
+        "heat_tolerance": [dict(h) for h in heat],
+        "soil_suitability": [dict(s) for s in soil],
+        "nutrient_profile": [dict(n) for n in nutrients],
+    }
+
+
+@router.post("/ingest")
+async def trigger_ingestion(
+    source: str = Query(..., description="ecocrop or cpvo"),
+    species_filter: str | None = Query(None),
+    user: dict = Depends(get_current_user),
+    dao: GraphDAO = Depends(get_dao),
+):
+    """Trigger ingestion from an external source. Requires technician/admin."""
+    orion = OrionIngestionClient()
+
+    if source == "ecocrop":
+        ingester = EcoCropIngester(orion)
+        filter_list = species_filter.split(",") if species_filter else None
+        result = await ingester.ingest(dao, species_filter=filter_list)
+    elif source == "cpvo":
+        ingester = VarietyIngester(orion)
+        result = await ingester.ingest(dao)
+    else:
+        raise HTTPException(status_code=400, detail=f"Unknown source: {source}")
+
+    return result
+
+
+@router.post("/contribute")
+async def contribute_parameter(
+    body: dict,
+    user: dict = Depends(get_current_user),
+    dao: GraphDAO = Depends(get_dao),
+):
+    """Contribute phenological/agronomic parameters for a crop.
+
+    Body: {crop_id, params: {kc?, d1?, d2?, mds?, npk?, rotation?}, provenance}
+    Requires technician/admin role.
+    """
+    crop_id = body.get("crop_id")
+    params = body.get("params", {})
+    provenance = body.get("provenance", {})
+
+    if not crop_id or not params:
+        raise HTTPException(status_code=400, detail="crop_id and params required")
+
+    async with dao._driver.session() as session:
+        await session.run("""
+            MATCH (c:AgriCrop {uri: $uri})
+            CREATE (p:PhenologyParams {
+                status: 'pending_review',
+                contributedBy: $user_id,
+                contributedAt: datetime(),
+                sourceDoi: $doi,
+                sourceAuthor: $author,
+                sourceYear: $year,
+                sourceInstitution: $institution,
+                sourceMethod: $method,
+                sourceConditions: $conditions
+            })
+            SET p += $params
+            CREATE (c)-[:HAS_PARAMETER]->(p)
+        """,
+            uri=crop_id,
+            user_id=user.get("sub", "unknown"),
+            doi=provenance.get("doi"),
+            author=provenance.get("author"),
+            year=provenance.get("year"),
+            institution=provenance.get("institution"),
+            method=provenance.get("method"),
+            conditions=provenance.get("conditions"),
+            params=params,
+        )
+
+    # Also PATCH to Orion-LD if Kc values provided
+    if any(k in params for k in ("kc", "kcIni", "kcMid", "kcEnd")):
+        orion = OrionIngestionClient()
+        orion_attrs = {}
+        for key in ("kcIni", "kcMid", "kcEnd"):
+            if key in params:
+                orion_attrs[key] = {"type": "Property", "value": params[key]}
+        if orion_attrs:
+            await orion.patch_entity(crop_id, orion_attrs)
+
+    return {"status": "submitted", "crop_id": crop_id}

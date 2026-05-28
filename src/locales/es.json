@@ -136,5 +136,65 @@
       "submitting": "Enviando...",
       "success": "Parámetro enviado para revisión. Gracias por tu contribución."
     }
+  },
+  "catalog": {
+    "title": "Catálogo de Cultivos",
+    "search": "Buscar especie o variedad...",
+    "source": "Fuente",
+    "sources": {
+      "ecocrop": "EcoCrop",
+      "cpvo": "CPVO"
+    },
+    "tree": {
+      "varieties": "{{count}} variedades",
+      "noData": "sin datos"
+    },
+    "detail": {
+      "kc": "Coeficiente de Cultivo (Kc)",
+      "thermal": "Tolerancia Térmica",
+      "soil": "Suelo",
+      "npk": "Perfil NPK",
+      "rotation": "Restricciones de Rotación",
+      "available": "disponible",
+      "missing": "sin datos",
+      "source": "Fuente",
+      "stage": "Etapa",
+      "value": "Valor",
+      "d1": "D1 (NWSB)",
+      "d2": "D2 (Max Stress)",
+      "mds": "MDS Ref",
+      "pending": "pendiente de datos",
+      "contribute": "Contribuir parámetro",
+      "contributeData": "Contribuir datos",
+      "viewInParcel": "Ver en parcela",
+      "heatDamage": "Daño por calor",
+      "frostDamage": "Daño por helada",
+      "heatAccumHours": "Horas de acumulación"
+    },
+    "contribute": {
+      "title": "Contribuir parámetro agronómico",
+      "species": "Especie",
+      "stage": "Etapa fenológica",
+      "cultivar": "Cultivar",
+      "kc": "Kc (coeficiente de cultivo)",
+      "d1": "D1 — NWSB baseline (°C)",
+      "d2": "D2 — Max stress baseline (°C)",
+      "mds": "MDS Ref (μm)",
+      "doi": "DOI (obligatorio)",
+      "author": "Autor",
+      "year": "Año",
+      "institution": "Institución",
+      "method": "Método",
+      "conditions": "Condiciones experimentales",
+      "submit": "Enviar para revisión",
+      "cancel": "Cancelar",
+      "success": "Parámetro enviado para revisión"
+    },
+    "dataGaps": {
+      "title": "Datos agronómicos",
+      "incomplete": "Datos incompletos",
+      "yieldUnavailable": "La estimación de rendimiento no está disponible hasta completar los datos faltantes.",
+      "contribute": "Contribuir datos"
+    }
   }
 }

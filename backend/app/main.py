@@ -29,6 +29,40 @@ from app.core.dependencies import close_driver, init_driver
 _ikerketa_available = False
 
 
+async def _create_orion_subscription():
+    """Create or update the NGSI-LD subscription for AgriCrop changes."""
+    import httpx
+    sub = {
+        "type": "Subscription",
+        "entities": [{"type": "AgriCrop"}],
+        "watchedAttributes": ["kcIni", "kcMid", "kcEnd", "hasSubCrop",
+                              "phMin", "phMax", "tempMinAbs", "tempMaxAbs",
+                              "heatDamageThresholdC", "frostDamageThresholdC"],
+        "notification": {
+            "endpoint": {
+                "uri": "http://bioorchestrator-service:8420/api/ngsi-ld/notify",
+                "accept": "application/json",
+            }
+        }
+    }
+    try:
+        async with httpx.AsyncClient(timeout=10) as client:
+            resp = await client.get(
+                f"{settings.orion_ld_url}/ngsi-ld/v1/subscriptions",
+                params={"type": "Subscription"},
+                headers={"Accept": "application/ld+json"},
+            )
+            existing = resp.json() if resp.status_code == 200 else []
+            if not existing:
+                await client.post(
+                    f"{settings.orion_ld_url}/ngsi-ld/v1/subscriptions",
+                    json=sub,
+                    headers={"Content-Type": "application/ld+json"},
+                )
+    except Exception:
+        pass  # Non-critical — sync works without subscription
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifecycle: Neo4j connection + IkerKeta availability."""
@@ -48,6 +82,16 @@ async def lifespan(app: FastAPI):
         print("[bioorchestrator] Neo4j connected")
     except Exception as exc:
         print(f"[bioorchestrator] WARNING: Neo4j unavailable on startup: {exc}")
+
+    # Register background task handlers
+    background_queue.register("sync_agri_crop", handle_sync_agri_crop)
+
+    # Start background worker loop
+    import asyncio
+    asyncio.create_task(background_queue.run_loop())
+
+    # Create Orion-LD subscription for AgriCrop changes (non-critical)
+    asyncio.create_task(_create_orion_subscription())
 
     yield
 
@@ -76,6 +120,15 @@ app.add_middleware(NKZAuthMiddleware)
 # Graph API router
 from app.api import router as api_router  # noqa: E402
 app.include_router(api_router, prefix="/api")
+
+# Catalog and NGSI-LD notify routers
+from app.api.v1.catalog import router as catalog_router  # noqa: E402
+from app.api.v1.notify import router as notify_router  # noqa: E402
+from app.workers.queue import background_queue  # noqa: E402
+from app.workers.sync_worker import handle_sync_agri_crop  # noqa: E402
+
+app.include_router(catalog_router, prefix="/api/crop")
+app.include_router(notify_router, prefix="/api/ngsi-ld")
 
 # Register IkerKeta API routes directly on the main app
 # (don't use app.mount() — it double-prefixes and / mount kills healthz)

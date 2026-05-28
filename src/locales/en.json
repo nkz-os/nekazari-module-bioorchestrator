@@ -136,5 +136,65 @@
       "submitting": "Submitting...",
       "success": "Parameter submitted for review. Thank you for your contribution."
     }
+  },
+  "catalog": {
+    "title": "Crop Catalog",
+    "search": "Search species or variety...",
+    "source": "Source",
+    "sources": {
+      "ecocrop": "EcoCrop",
+      "cpvo": "CPVO"
+    },
+    "tree": {
+      "varieties": "{{count}} varieties",
+      "noData": "no data"
+    },
+    "detail": {
+      "kc": "Crop Coefficient (Kc)",
+      "thermal": "Thermal Tolerance",
+      "soil": "Soil",
+      "npk": "NPK Profile",
+      "rotation": "Rotation Constraints",
+      "available": "available",
+      "missing": "no data",
+      "source": "Source",
+      "stage": "Stage",
+      "value": "Value",
+      "d1": "D1 (NWSB)",
+      "d2": "D2 (Max Stress)",
+      "mds": "MDS Ref",
+      "pending": "data pending",
+      "contribute": "Contribute parameter",
+      "contributeData": "Contribute data",
+      "viewInParcel": "View in parcel",
+      "heatDamage": "Heat damage",
+      "frostDamage": "Frost damage",
+      "heatAccumHours": "Accumulation hours"
+    },
+    "contribute": {
+      "title": "Contribute agronomic parameter",
+      "species": "Species",
+      "stage": "Phenological stage",
+      "cultivar": "Cultivar",
+      "kc": "Kc (crop coefficient)",
+      "d1": "D1 — NWSB baseline (°C)",
+      "d2": "D2 — Max stress baseline (°C)",
+      "mds": "MDS Ref (μm)",
+      "doi": "DOI (required)",
+      "author": "Author",
+      "year": "Year",
+      "institution": "Institution",
+      "method": "Method",
+      "conditions": "Experimental conditions",
+      "submit": "Submit for review",
+      "cancel": "Cancel",
+      "success": "Parameter submitted for review"
+    },
+    "dataGaps": {
+      "title": "Agronomic data",
+      "incomplete": "Incomplete data",
+      "yieldUnavailable": "Yield estimation is unavailable until missing data is completed.",
+      "contribute": "Contribute data"
+    }
   }
 }
