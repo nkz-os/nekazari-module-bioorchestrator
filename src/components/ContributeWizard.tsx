@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Stack, Card, Button, Input, Textarea, Select } from '@nekazari/ui-kit';
+import { Stack, Card, Button, Input, Select, FormField, FormGrid } from '@nekazari/ui-kit';
 import { useCropApi } from '../services/api';
 
 interface Props {
@@ -69,45 +69,60 @@ export default function ContributeWizard({ cropId, cropName, onClose, onSuccess 
   }
 
   return (
-    <Stack gap="md">
+    <Stack gap="section">
       <h3>{t('catalog.contribute.title')} — {cropName}</h3>
 
-      <Select
-        label={t('catalog.contribute.stage')}
-        value={form.stage}
-        onChange={e => update('stage', e.target.value)}
-        options={STAGES.map(s => ({ value: s, label: s }))}
-      />
+      <FormField label={t('catalog.contribute.stage')}>
+        <Select
+          value={form.stage}
+          onValueChange={(v: string) => update('stage', v)}
+          options={STAGES.map(s => ({ value: s, label: s }))}
+        />
+      </FormField>
 
-      <Input label={t('catalog.contribute.kc')} type="number" step="0.01"
-             value={form.kc} onChange={e => update('kc', e.target.value)} />
-      <Input label={t('catalog.contribute.d1')} type="number" step="0.1"
-             value={form.d1} onChange={e => update('d1', e.target.value)} />
-      <Input label={t('catalog.contribute.d2')} type="number" step="0.1"
-             value={form.d2} onChange={e => update('d2', e.target.value)} />
-      <Input label={t('catalog.contribute.mds')} type="number" step="1"
-             value={form.mds} onChange={e => update('mds', e.target.value)} />
+      <FormGrid columns={2}>
+        <FormField label={t('catalog.contribute.kc')}>
+          <Input type="number" step="0.01" min={0} max={2} value={form.kc} onChange={e => update('kc', e.target.value)} size="sm" />
+        </FormField>
+        <FormField label={t('catalog.contribute.d1')}>
+          <Input type="number" step="0.1" value={form.d1} onChange={e => update('d1', e.target.value)} size="sm" />
+        </FormField>
+        <FormField label={t('catalog.contribute.d2')}>
+          <Input type="number" step="0.1" value={form.d2} onChange={e => update('d2', e.target.value)} size="sm" />
+        </FormField>
+        <FormField label={t('catalog.contribute.mds')}>
+          <Input type="number" step="1" value={form.mds} onChange={e => update('mds', e.target.value)} size="sm" />
+        </FormField>
+      </FormGrid>
 
       <hr />
       <h4>Provenance</h4>
-      <Input label={t('catalog.contribute.doi')} required
-             value={form.doi} onChange={e => update('doi', e.target.value)} />
-      <Input label={t('catalog.contribute.author')}
-             value={form.author} onChange={e => update('author', e.target.value)} />
-      <Input label={t('catalog.contribute.year')} type="number"
-             value={form.year} onChange={e => update('year', e.target.value)} />
-      <Input label={t('catalog.contribute.institution')}
-             value={form.institution} onChange={e => update('institution', e.target.value)} />
-      <Input label={t('catalog.contribute.method')}
-             value={form.method} onChange={e => update('method', e.target.value)} />
-      <Textarea label={t('catalog.contribute.conditions')}
-                value={form.conditions} onChange={e => update('conditions', e.target.value)} />
+      <FormGrid columns={2}>
+        <FormField label={t('catalog.contribute.doi')} required>
+          <Input value={form.doi} onChange={e => update('doi', e.target.value)} size="sm" required />
+        </FormField>
+        <FormField label={t('catalog.contribute.author')}>
+          <Input value={form.author} onChange={e => update('author', e.target.value)} size="sm" />
+        </FormField>
+        <FormField label={t('catalog.contribute.year')}>
+          <Input type="number" value={form.year} onChange={e => update('year', e.target.value)} size="sm" />
+        </FormField>
+        <FormField label={t('catalog.contribute.institution')}>
+          <Input value={form.institution} onChange={e => update('institution', e.target.value)} size="sm" />
+        </FormField>
+        <FormField label={t('catalog.contribute.method')}>
+          <Input value={form.method} onChange={e => update('method', e.target.value)} size="sm" />
+        </FormField>
+      </FormGrid>
+      <FormField label={t('catalog.contribute.conditions')}>
+        <textarea className="h-24 w-full rounded-nkz-md border border-nkz-border bg-nkz-surface px-3 py-2 text-nkz-sm" value={form.conditions} onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => update('conditions', e.target.value)} />
+      </FormField>
 
-      <Stack direction="row" gap="sm">
-        <Button onClick={handleSubmit} loading={submitting} disabled={!form.doi}>
+      <Stack gap="tight">
+        <Button variant="primary" size="sm" onClick={handleSubmit} loading={submitting} disabled={!form.doi}>
           {t('catalog.contribute.submit')}
         </Button>
-        <Button variant="ghost" onClick={onClose}>{t('catalog.contribute.cancel')}</Button>
+        <Button variant="ghost" size="sm" onClick={onClose}>{t('catalog.contribute.cancel')}</Button>
       </Stack>
     </Stack>
   );

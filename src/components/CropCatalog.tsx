@@ -44,23 +44,21 @@ export default function CropCatalog({ onSelectCrop }: CropCatalogProps) {
     });
   };
 
-  if (loading) return <Skeleton count={8} />;
-  if (error) return <EmptyState icon={<Leaf />} title={error} variant="error" />;
+  if (loading) return <Skeleton />;
+  if (error) return <EmptyState icon={<Leaf />} title={error} />;
   if (!crops.length) return <EmptyState icon={<Leaf />} title={t('catalog.tree.noData')} />;
 
   return (
-    <Stack gap="md">
-      <Stack direction="row" gap="sm">
+    <Stack gap="section">
+      <Stack gap="tight">
         <Input
           placeholder={t('catalog.search')}
           value={search}
           onChange={e => setSearch(e.target.value)}
-          icon={<Search size={16} />}
-          className="flex-1"
         />
         <Select
           value={source}
-          onChange={e => setSource(e.target.value)}
+          onValueChange={(v: string) => setSource(v)}
           options={[
             { value: '', label: t('catalog.sources.ecocrop') + ' + ' + t('catalog.sources.cpvo') },
             { value: 'ecocrop', label: t('catalog.sources.ecocrop') },
@@ -84,14 +82,13 @@ export default function CropCatalog({ onSelectCrop }: CropCatalogProps) {
               <Leaf size={16} className="text-nkz-success" />
               <span className="flex-1">{crop.name} <small className="text-nkz-text-muted">({crop.scientificName})</small></span>
               {crop.variety_count > 0 && (
-                <Badge variant="info">{t('catalog.tree.varieties', { count: crop.variety_count })}</Badge>
+                <Badge intent="info">{t('catalog.tree.varieties', { count: crop.variety_count })}</Badge>
               )}
-              <Badge variant={crop.has_kc ? 'success' : 'muted'} size="sm">Kc {crop.has_kc ? '✓' : '✗'}</Badge>
-              <Badge variant={crop.has_thermal ? 'success' : 'muted'} size="sm">{t('catalog.detail.thermal')} {crop.has_thermal ? '✓' : '✗'}</Badge>
+              <Badge intent={crop.has_kc ? 'positive' : 'default'}>{crop.has_kc ? 'Kc ✓' : 'Kc ✗'}</Badge>
+              <Badge intent={crop.has_thermal ? 'positive' : 'default'}>{t('catalog.detail.thermal')} {crop.has_thermal ? '✓' : '✗'}</Badge>
             </div>
             {expanded.has(crop.uri) && crop.variety_count > 0 && (
-              <div className="ml-6 text-nkz-text-muted text-sm">
-              </div>
+              <div className="ml-6 text-nkz-text-muted text-sm" />
             )}
           </div>
         ))}
