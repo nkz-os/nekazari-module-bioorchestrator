@@ -64,6 +64,20 @@ async def _create_orion_subscription():
         pass  # Non-critical — sync works without subscription
 
 
+async def _start_background_tasks():
+    """Initialize background workers after uvicorn has bound its socket."""
+    await asyncio.sleep(2)  # Give uvicorn a moment to complete startup
+    try:
+        from app.workers.queue import background_queue
+        from app.workers.sync_worker import handle_sync_agri_crop
+        background_queue.register("sync_agri_crop", handle_sync_agri_crop)
+        asyncio.create_task(background_queue.run_loop())
+        asyncio.create_task(_create_orion_subscription())
+        print("[bioorchestrator] background tasks started")
+    except Exception as exc:
+        print(f"[bioorchestrator] WARNING: background tasks init failed: {exc}")
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifecycle: Neo4j connection + IkerKeta availability."""
@@ -84,16 +98,9 @@ async def lifespan(app: FastAPI):
     except Exception as exc:
         print(f"[bioorchestrator] WARNING: Neo4j unavailable on startup: {exc}")
 
-    # Background tasks — non-blocking, fire-and-forget
-    try:
-        from app.workers.queue import background_queue
-        from app.workers.sync_worker import handle_sync_agri_crop
-        background_queue.register("sync_agri_crop", handle_sync_agri_crop)
-        asyncio.create_task(background_queue.run_loop())
-        asyncio.create_task(_create_orion_subscription())
-        print("[bioorchestrator] background tasks started")
-    except Exception as exc:
-        print(f"[bioorchestrator] WARNING: background tasks init failed: {exc}")
+    # Schedule background tasks after uvicorn binds (don't block startup)
+    loop = asyncio.get_running_loop()
+    loop.call_soon(lambda: asyncio.ensure_future(_start_background_tasks()))
 
     yield
 
