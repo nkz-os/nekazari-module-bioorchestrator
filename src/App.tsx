@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useTranslation } from '@nekazari/sdk';
 import { Card, Button } from '@nekazari/ui-kit';
-import { Activity, GitBranch, Sprout, Database, Leaf } from 'lucide-react';
+import { Activity, GitBranch, Sprout, Database, Leaf, Thermometer, Droplets, RefreshCw } from 'lucide-react';
 import SourcesDashboard from './components/SourcesDashboard';
 import PipelineRunner from './components/PipelineRunner';
 import PhenologyBrowser from './components/PhenologyBrowser';
@@ -9,15 +9,23 @@ import { BreedDiscovery } from './components/DADIS/BreedDiscovery';
 import CropCatalog from './components/CropCatalog';
 import CropDetail from './components/CropDetail';
 import ContributeWizard from './components/ContributeWizard';
+import ThermalTolerance from './components/ThermalTolerance';
+import NutrientProfile from './components/NutrientProfile';
+import SoilSuitability from './components/SoilSuitability';
+import RotationConstraints from './components/RotationConstraints';
 import type { CropItem } from './services/api';
 import './i18n';
 
 const TABS = [
   { id: 'catalog', icon: Leaf },
-  { id: 'sources', icon: Activity },
-  { id: 'pipeline', icon: GitBranch },
   { id: 'phenology', icon: Sprout },
+  { id: 'thermal', icon: Thermometer },
+  { id: 'npk', icon: Droplets },
+  { id: 'soil', icon: Sprout },
+  { id: 'rotation', icon: RefreshCw },
+  { id: 'pipeline', icon: GitBranch },
   { id: 'dadis', icon: Database },
+  { id: 'sources', icon: Activity },
 ] as const;
 type TabId = (typeof TABS)[number]['id'];
 
@@ -40,7 +48,7 @@ const App: React.FC = () => {
       <div className="flex items-center justify-between mb-4">
         <h1 className="text-nkz-lg font-bold text-nkz-text-primary">{t('app.title')}</h1>
       </div>
-      <div className="flex border-b border-nkz-border mb-4">
+      <div className="flex flex-wrap border-b border-nkz-border mb-4">
         {TABS.map((tab) => {
           const Icon = tab.icon;
           const isActive = active === tab.id;
@@ -79,10 +87,14 @@ const App: React.FC = () => {
         />
       )}
 
-      {active === 'sources' && <SourcesDashboard />}
-      {active === 'pipeline' && <PipelineRunner />}
       {active === 'phenology' && <PhenologyBrowser />}
+      {active === 'thermal' && <ThermalTolerance />}
+      {active === 'npk' && <NutrientProfile />}
+      {active === 'soil' && <SoilSuitability />}
+      {active === 'rotation' && <RotationConstraints />}
+      {active === 'pipeline' && <PipelineRunner />}
       {active === 'dadis' && <BreedDiscovery />}
+      {active === 'sources' && <SourcesDashboard />}
     </Card>
   );
 };

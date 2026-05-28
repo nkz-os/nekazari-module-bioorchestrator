@@ -130,7 +130,6 @@ const RecommendationsPanel: React.FC<Props> = ({ parcelId, parcelName, cropType,
             <div className="text-nkz-success text-sm"><CheckCircle size={14} className="inline mr-1" />{t('panel.allComplete')}</div>
           )}
         </Stack>
-        </Stack>
       </Card>
 
       {/* Section 2: Soil & Environment */}
