@@ -61,6 +61,7 @@ class BackgroundQueue:
                 await self.process_one()
             except Exception:
                 await asyncio.sleep(1)
+            await asyncio.sleep(0.1)  # Yield to event loop, prevent CPU starvation
 
 
 # Singleton
