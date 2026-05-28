@@ -159,3 +159,70 @@ async def contribute_parameter(
             await orion.patch_entity(crop_id, orion_attrs)
 
     return {"status": "submitted", "crop_id": crop_id}
+
+
+@router.get("/thermal-summary")
+async def thermal_summary(
+    dao: GraphDAO = Depends(get_dao),
+):
+    """Return count of species with/without thermal data."""
+    async with dao._driver.session() as session:
+        result = await session.run("""
+            MATCH (c:AgriCrop)
+            OPTIONAL MATCH (c)-[:HAS_HEAT_TOLERANCE]->(ht:CropHeatTolerance)
+            RETURN count(DISTINCT c) as total,
+                   count(DISTINCT ht) as with_thermal
+        """)
+        record = await result.single()
+        total = record["total"]
+        with_thermal = record["with_thermal"]
+        return {
+            "total_species": total,
+            "with_thermal": with_thermal,
+            "without_thermal": total - with_thermal,
+        }
+
+
+@router.get("/npk-summary")
+async def npk_summary(
+    dao: GraphDAO = Depends(get_dao),
+):
+    """Return count of species with/without NPK data."""
+    async with dao._driver.session() as session:
+        result = await session.run("""
+            MATCH (c:AgriCrop)
+            OPTIONAL MATCH (c)-[:HAS_NUTRIENT_PROFILE]->(np:CropNutrientProfile)
+            RETURN count(DISTINCT c) as total_species,
+                   count(DISTINCT CASE WHEN np IS NOT NULL THEN c END) as with_npk
+        """)
+        record = await result.single()
+        total = record["total_species"]
+        with_npk = record["with_npk"]
+        return {
+            "total_species": total,
+            "with_npk": with_npk,
+            "without_npk": total - with_npk,
+        }
+
+
+@router.post("/derive-thermal")
+async def derive_thermal(
+    user: dict = Depends(get_current_user),
+):
+    """Trigger thermal limits derivation for all species with EcoCrop temp data.
+
+    Runs derive_thermal_limits.py as a background subprocess.
+    Requires technician/admin role.
+    """
+    import subprocess
+    import sys
+    from pathlib import Path
+
+    script = Path(__file__).parent.parent.parent.parent / "scripts" / "derive_thermal_limits.py"
+    subprocess.Popen(
+        [sys.executable, str(script)],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+
+    return {"status": "started", "message": "Thermal derivation running in background"}

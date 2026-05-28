@@ -115,7 +115,27 @@ export function useCropApi() {
     return post('/api/crop/catalog/contribute', body);
   }
 
-  return { getCatalog, getCropDetail, triggerIngest, contributeParameter };
+  async function getThermalSummary(): Promise<{
+    total_species: number;
+    with_thermal: number;
+    without_thermal: number;
+  }> {
+    return get('/api/crop/catalog/thermal-summary');
+  }
+
+  async function getNpkSummary(): Promise<{
+    total_species: number;
+    with_npk: number;
+    without_npk: number;
+  }> {
+    return get('/api/crop/catalog/npk-summary');
+  }
+
+  async function triggerDeriveThermal(): Promise<{ status: string; message: string }> {
+    return post('/api/crop/catalog/derive-thermal');
+  }
+
+  return { getCatalog, getCropDetail, triggerIngest, contributeParameter, getThermalSummary, getNpkSummary, triggerDeriveThermal };
 }
 
 // ── Hook (no useAuth — relies on httpOnly cookie) ───────────────────────────
@@ -139,6 +159,8 @@ export function useBioApi() {
     getPollinators: (lat: number, lon: number) => get(`/api/graph/pollinators?lat=${lat}&lon=${lon}`),
     getTerrain: (lat: number, lon: number) => get(`/api/graph/terrain?lat=${lat}&lon=${lon}`),
     getClimateReference: (lat: number, lon: number) => get(`/api/graph/climate-reference?lat=${lat}&lon=${lon}`),
+    getRotationConstraints: (crop: string) => get(`/api/graph/rotation-constraints?crop=${encodeURIComponent(crop)}`),
+    getGraphSpecies: () => get('/api/graph/species'),
     simulateCrop: (baseline: string, scenario: string) => get(`/api/graph/recommendations/simulate?baseline_crop=${encodeURIComponent(baseline)}&scenario_crop=${encodeURIComponent(scenario)}`),
     getDadisCountries: () => get('/api/dadis/countries', dadisHeaders()),
     getDadisSpecies: () => get('/api/dadis/species', dadisHeaders()),

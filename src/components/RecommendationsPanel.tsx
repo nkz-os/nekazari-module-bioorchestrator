@@ -1,7 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { Stack, Card, Badge, Button, DetailGrid, DetailItem, Skeleton } from '@nekazari/ui-kit';
-import { RefreshCw, Globe, Thermometer, MapPin, Sprout, Bug, Beaker, AlertTriangle, CheckCircle, XCircle } from 'lucide-react';
+import { useTranslation } from '@nekazari/sdk';
+import {
+  RefreshCw, Globe, Thermometer, MapPin, Sprout, Bug, Beaker,
+  AlertTriangle, CheckCircle, XCircle, ChevronDown, ChevronRight, Info,
+} from 'lucide-react';
 import { useBioApi, useCropApi } from '../services/api';
+import ContextEmptyState from './shared/ContextEmptyState';
 
 interface RecCrop { name: string; scientific_name?: string; }
 interface SoilData { ph_min: number; ph_max: number; textures: string[]; drainage: string[]; depth_min_cm: number; salinity_max_ds_m: number; source_short?: string; }
@@ -10,7 +15,8 @@ interface Props { parcelId?: string; parcelName?: string; cropType?: string; lat
 const PESTICIDE_INTENT: Record<string, 'positive' | 'negative' | 'warning'> = { approved: 'positive', not_approved: 'negative', withdrawn: 'warning' };
 const SCENARIO_CROPS = ['wheat', 'sunflower', 'almond', 'olive', 'grapevine', 'legume'];
 
-const RecommendationsPanel: React.FC<Props> = ({ parcelId, parcelName, cropType = 'olive', lat, lon }) => {
+const RecommendationsPanel: React.FC<Props> = ({ parcelId, parcelName, cropType, lat, lon }) => {
+  const { t } = useTranslation('bioorchestrator');
   const api = useBioApi();
   const [nextCrops, setNextCrops] = useState<RecCrop[]>([]);
   const [soil, setSoil] = useState<SoilData | null>(null);
@@ -22,10 +28,12 @@ const RecommendationsPanel: React.FC<Props> = ({ parcelId, parcelName, cropType 
   const [loading, setLoading] = useState(true);
   const [dataGaps, setDataGaps] = useState<string[]>([]);
   const [dataAvail, setDataAvail] = useState<Record<string, boolean>>({});
+  const [cropNotFound, setCropNotFound] = useState(false);
   const { getCropDetail } = useCropApi();
 
   useEffect(() => {
     if (!cropType) return;
+    setCropNotFound(false);
     getCropDetail(`urn:ngsi-ld:AgriCrop:${cropType.replace(/ /g, '_')}`)
       .then(detail => {
         if (detail?.data_available) {
@@ -38,21 +46,23 @@ const RecommendationsPanel: React.FC<Props> = ({ parcelId, parcelName, cropType 
           setDataGaps(gaps);
         }
       })
-      .catch(() => { /* crop not in catalog yet */ });
+      .catch(() => { setCropNotFound(true); });
   }, [cropType]);
 
   useEffect(() => {
+    const crop = cropType;
+    if (!crop) return;
     let cancelled = false;
     (async () => {
       setLoading(true);
       const safe = async <T,>(fn: () => Promise<T>): Promise<T | null> => { try { return await fn(); } catch { return null; } };
-      const nc = await safe(() => api.getNextCrop(cropType));
-      const s = await safe(() => api.getSoilSuitability(cropType));
+      const nc = await safe(() => api.getNextCrop(crop));
+      const s = await safe(() => api.getSoilSuitability(crop));
       if (!cancelled) { setNextCrops(nc?.suggested_crops || []); if (s) setSoil(s); }
       if (lat != null && lon != null && !cancelled) {
         const [rs, pa, vars, pests, polls] = await Promise.all([
           safe(() => api.getSoilData(lat, lon)), safe(() => api.getProtectedArea(lat, lon)),
-          safe(() => api.getVarieties(cropType)), safe(() => api.getPesticides(cropType)), safe(() => api.getPollinators(lat, lon)),
+          safe(() => api.getVarieties(crop)), safe(() => api.getPesticides(crop)), safe(() => api.getPollinators(lat, lon)),
         ]);
         if (!cancelled) { if (rs) setRealSoil(rs); if (pa) setProtectedArea(pa); if (vars) setVarieties(vars.varieties || []); if (pests) setPesticides(pests.substances || []); if (polls) setPollinators(polls.pollinators || []); }
       }
@@ -61,51 +71,98 @@ const RecommendationsPanel: React.FC<Props> = ({ parcelId, parcelName, cropType 
     return () => { cancelled = true; };
   }, [cropType, lat, lon]);
 
+  // No-crop state
+  if (!cropType) {
+    return (
+      <ContextEmptyState
+        message={t('panel.noCrop')}
+        actionLabel={t('panel.assignCrop')}
+        variant="warning"
+      />
+    );
+  }
+
   if (loading) return <Stack gap="stack"><Skeleton variant="rect" height="60px" /><Skeleton variant="rect" height="80px" /><Skeleton variant="rect" height="80px" /></Stack>;
+
+  // Crop not in catalog
+  if (cropNotFound) {
+    return (
+      <ContextEmptyState
+        message={t('panel.cropNotInCatalog', { crop: cropType })}
+        actionLabel={t('panel.addToCatalog')}
+        variant="warning"
+      />
+    );
+  }
+
+  const dataKeys = ['kc', 'd1_d2', 'thermal', 'soil_suitability', 'npk', 'rotation'] as const;
+  const completedCount = dataKeys.filter(k => dataAvail[k]).length;
 
   return (
     <Stack gap="stack">
       <div className="flex items-center gap-2"><RefreshCw className="w-4 h-4 text-nkz-accent-base" /><h3 className="text-nkz-md font-semibold text-nkz-text-primary">Recommendations</h3></div>
       {parcelName && <p className="text-nkz-sm text-nkz-text-secondary">{parcelName}</p>}
 
-      <Card padding="md"><Stack gap="tight"><h4 className="text-nkz-xs font-semibold text-nkz-text-secondary uppercase tracking-wider flex items-center gap-1.5"><RefreshCw className="w-3.5 h-3.5 text-nkz-accent-base" />Rotation</h4><p className="text-nkz-sm">Current: <strong>{cropType}</strong></p>{nextCrops.length > 0 ? <div className="flex flex-wrap gap-1.5">{nextCrops.map((c) => <Badge key={c.name} intent="info">{c.scientific_name || c.name}</Badge>)}</div> : <p className="text-nkz-xs text-nkz-text-muted">No rotation restrictions.</p>}</Stack></Card>
-
-      {realSoil && !realSoil.error && (
-        <Card padding="md"><Stack gap="tight"><h4 className="text-nkz-xs font-semibold text-nkz-text-secondary uppercase tracking-wider flex items-center gap-1.5"><Beaker className="w-3.5 h-3.5 text-nkz-accent-base" />Real Soil (SoilGrids 2.0)</h4><DetailGrid columns={2}>{realSoil.ph != null && <DetailItem label="pH" value={realSoil.ph} />}{realSoil.texture_class && <DetailItem label="Texture" value={`${realSoil.texture_class} (${realSoil.sand_pct}% sand)`} />}{realSoil.cec_cmol_kg != null && <DetailItem label="CEC" value={<>{realSoil.cec_cmol_kg} cmol/kg</>} />}</DetailGrid><p className="text-nkz-xs text-nkz-text-muted">{realSoil.source}</p></Stack></Card>
-      )}
-
-      {soil && <Card padding="md"><Stack gap="tight"><h4 className="text-nkz-xs font-semibold text-nkz-text-secondary uppercase tracking-wider flex items-center gap-1.5"><Globe className="w-3.5 h-3.5 text-nkz-accent-base" />Soil Requirements ({cropType})</h4><DetailGrid columns={2}><DetailItem label="pH" value={<>{soil.ph_min} – {soil.ph_max}</>} /><DetailItem label="Texture" value={(soil.textures || []).join(', ')} /><DetailItem label="Drainage" value={(soil.drainage || []).join(', ')} /></DetailGrid></Stack></Card>}
-
-      {protectedArea?.in_protected_area && <Card padding="md"><Stack gap="tight"><h4 className="text-nkz-xs font-semibold text-nkz-text-secondary uppercase tracking-wider flex items-center gap-1.5"><MapPin className="w-3.5 h-3.5 text-nkz-success" />Protected Area</h4><p className="text-nkz-sm font-medium">{protectedArea.site_name} ({protectedArea.site_code})</p></Stack></Card>}
-
-      {varieties.length > 0 && <Card padding="md"><Stack gap="tight"><h4 className="text-nkz-xs font-semibold text-nkz-text-secondary uppercase tracking-wider flex items-center gap-1.5"><Sprout className="w-3.5 h-3.5 text-nkz-accent-base" />Registered Varieties (CPVO)</h4><div className="flex flex-wrap gap-1.5">{varieties.slice(0, 6).map((v: any, i: number) => <Badge key={i} intent="default">{v.variety_name || v.denomination}</Badge>)}</div></Stack></Card>}
-
-      {pesticides.length > 0 && <Card padding="md"><Stack gap="tight"><h4 className="text-nkz-xs font-semibold text-nkz-text-secondary uppercase tracking-wider flex items-center gap-1.5"><Bug className="w-3.5 h-3.5 text-nkz-accent-base" />Authorised Pesticides (EU)</h4>{pesticides.slice(0, 5).map((p: any, i: number) => <div key={i} className="flex items-center justify-between text-nkz-sm"><Badge intent={PESTICIDE_INTENT[p.status] || 'default'}>{p.status}</Badge><span className="text-nkz-text-primary">{p.substance}</span></div>)}</Stack></Card>}
-
-      {pollinators.length > 0 && <Card padding="md"><Stack gap="tight"><h4 className="text-nkz-xs font-semibold text-nkz-text-secondary uppercase tracking-wider flex items-center gap-1.5"><Sprout className="w-3.5 h-3.5 text-nkz-accent-base" />Pollinators (GBIF)</h4>{pollinators.slice(0, 5).map((p: any, i: number) => <div key={i} className="flex items-center justify-between text-nkz-sm"><span>{p.species}</span><span className="text-nkz-xs text-nkz-text-muted">{p.record_count} records</span></div>)}</Stack></Card>}
-
-      {lat != null && lon != null && <TerrainSection lat={lat} lon={lon} />}
-      {lat != null && lon != null && <ClimateSection lat={lat} lon={lon} />}
-
+      {/* Section 1: Data Availability — always expanded */}
       <Card padding="md">
-        <Stack gap="tight">
-          <h4 className="text-nkz-xs font-semibold text-nkz-text-secondary uppercase tracking-wider">
-            Crop Data — {cropType || '—'}
-          </h4>
-          <DataRow label="Kc" available={dataAvail.kc} />
-          <DataRow label="Thermal" available={dataAvail.thermal} />
-          <DataRow label="NPK" available={dataAvail.npk} />
-          <DataRow label="Rotation" available={dataAvail.rotation} />
-          {dataGaps.length > 0 && (
-            <div className="text-nkz-warning text-sm mt-2">
-              <AlertTriangle size={14} className="inline mr-1" />
-              Incomplete data. Yield estimation is unavailable until missing data is completed.
-            </div>
+        <Stack gap="stack">
+          <div className="flex justify-between items-center">
+            <h4 className="text-nkz-xs font-semibold text-nkz-text-secondary uppercase tracking-wider">{t('panel.dataAvailability')}</h4>
+            <Badge intent={completedCount === dataKeys.length ? 'positive' : completedCount === 0 ? 'negative' : 'warning'}>
+              {t('panel.complete', { n: completedCount, total: dataKeys.length })}
+            </Badge>
+          </div>
+          <Stack gap="tight">
+            <DataRow label="Kc" available={dataAvail.kc} />
+            <DataRow label="D1/D2" available={dataAvail.d1_d2} />
+            <DataRow label={t('thermal.title')} available={dataAvail.thermal} />
+            <DataRow label={t('soil.title')} available={dataAvail.soil_suitability} />
+            <DataRow label={t('npk.title')} available={dataAvail.npk} />
+            <DataRow label={t('rotation.title')} available={dataAvail.rotation} />
+          </Stack>
+          {completedCount === 0 && (
+            <div className="text-nkz-warning text-sm"><AlertTriangle size={14} className="inline mr-1" />{t('panel.none')}</div>
+          )}
+          {completedCount > 0 && completedCount < dataKeys.length && (
+            <div className="text-nkz-warning text-sm"><AlertTriangle size={14} className="inline mr-1" />{t('panel.partial', { n: dataKeys.length - completedCount })}</div>
+          )}
+          {completedCount === dataKeys.length && (
+            <div className="text-nkz-success text-sm"><CheckCircle size={14} className="inline mr-1" />{t('panel.allComplete')}</div>
           )}
         </Stack>
       </Card>
 
-      <Card padding="md"><Stack gap="stack"><h4 className="text-nkz-xs font-semibold text-nkz-text-secondary uppercase tracking-wider flex items-center gap-1.5"><Beaker className="w-3.5 h-3.5 text-nkz-accent-base" />Simulate Scenario</h4><ScenarioSimulator currentCrop={cropType} /></Stack></Card>
+      {/* Section 2: Soil & Environment */}
+      <CollapsibleSection title={t('panel.soilAndEnvironment')}>
+        <Stack gap="stack">
+          {realSoil && !realSoil.error && (
+            <Card padding="md"><Stack gap="tight"><h4 className="text-nkz-xs font-semibold text-nkz-text-secondary uppercase tracking-wider flex items-center gap-1.5"><Beaker className="w-3.5 h-3.5 text-nkz-accent-base" />Real Soil (SoilGrids 2.0)</h4><DetailGrid columns={2}>{realSoil.ph != null && <DetailItem label="pH" value={realSoil.ph} />}{realSoil.texture_class && <DetailItem label="Texture" value={`${realSoil.texture_class} (${realSoil.sand_pct}% sand)`} />}{realSoil.cec_cmol_kg != null && <DetailItem label="CEC" value={<>{realSoil.cec_cmol_kg} cmol/kg</>} />}</DetailGrid><p className="text-nkz-xs text-nkz-text-muted">{realSoil.source}</p></Stack></Card>
+          )}
+          {soil && <Card padding="md"><Stack gap="tight"><h4 className="text-nkz-xs font-semibold text-nkz-text-secondary uppercase tracking-wider flex items-center gap-1.5"><Globe className="w-3.5 h-3.5 text-nkz-accent-base" />Soil Requirements ({cropType})</h4><DetailGrid columns={2}><DetailItem label="pH" value={<>{soil.ph_min} – {soil.ph_max}</>} /><DetailItem label="Texture" value={(soil.textures || []).join(', ')} /><DetailItem label="Drainage" value={(soil.drainage || []).join(', ')} /></DetailGrid></Stack></Card>}
+          {protectedArea?.in_protected_area && <Card padding="md"><Stack gap="tight"><h4 className="text-nkz-xs font-semibold text-nkz-text-secondary uppercase tracking-wider flex items-center gap-1.5"><MapPin className="w-3.5 h-3.5 text-nkz-success" />Protected Area</h4><p className="text-nkz-sm font-medium">{protectedArea.site_name} ({protectedArea.site_code})</p></Stack></Card>}
+          {lat != null && lon != null && <TerrainSection lat={lat} lon={lon} />}
+          {lat != null && lon != null && <ClimateSection lat={lat} lon={lon} />}
+          <div className="text-nkz-text-muted text-xs mt-2">
+            <Info size={10} className="inline mr-1" />
+            {t('panel.deprecatedSoilNote')}
+          </div>
+        </Stack>
+      </CollapsibleSection>
+
+      {/* Section 3: Rotation & Crop */}
+      <CollapsibleSection title={t('panel.rotationAndCrop')}>
+        <Stack gap="stack">
+          <Card padding="md"><Stack gap="tight"><h4 className="text-nkz-xs font-semibold text-nkz-text-secondary uppercase tracking-wider flex items-center gap-1.5"><RefreshCw className="w-3.5 h-3.5 text-nkz-accent-base" />Rotation</h4><p className="text-nkz-sm">Current: <strong>{cropType}</strong></p>{nextCrops.length > 0 ? <div className="flex flex-wrap gap-1.5">{nextCrops.map((c) => <Badge key={c.name} intent="info">{c.scientific_name || c.name}</Badge>)}</div> : <p className="text-nkz-xs text-nkz-text-muted">No rotation restrictions.</p>}</Stack></Card>
+          {varieties.length > 0 && <Card padding="md"><Stack gap="tight"><h4 className="text-nkz-xs font-semibold text-nkz-text-secondary uppercase tracking-wider flex items-center gap-1.5"><Sprout className="w-3.5 h-3.5 text-nkz-accent-base" />Registered Varieties (CPVO)</h4><div className="flex flex-wrap gap-1.5">{varieties.slice(0, 6).map((v: any, i: number) => <Badge key={i} intent="default">{v.variety_name || v.denomination}</Badge>)}</div></Stack></Card>}
+          {pesticides.length > 0 && <Card padding="md"><Stack gap="tight"><h4 className="text-nkz-xs font-semibold text-nkz-text-secondary uppercase tracking-wider flex items-center gap-1.5"><Bug className="w-3.5 h-3.5 text-nkz-accent-base" />Authorised Pesticides (EU)</h4>{pesticides.slice(0, 5).map((p: any, i: number) => <div key={i} className="flex items-center justify-between text-nkz-sm"><Badge intent={PESTICIDE_INTENT[p.status] || 'default'}>{p.status}</Badge><span className="text-nkz-text-primary">{p.substance}</span></div>)}</Stack></Card>}
+          {pollinators.length > 0 && <Card padding="md"><Stack gap="tight"><h4 className="text-nkz-xs font-semibold text-nkz-text-secondary uppercase tracking-wider flex items-center gap-1.5"><Sprout className="w-3.5 h-3.5 text-nkz-accent-base" />Pollinators (GBIF)</h4>{pollinators.slice(0, 5).map((p: any, i: number) => <div key={i} className="flex items-center justify-between text-nkz-sm"><span>{p.species}</span><span className="text-nkz-xs text-nkz-text-muted">{p.record_count} records</span></div>)}</Stack></Card>}
+        </Stack>
+      </CollapsibleSection>
+
+      {/* Section 4: Scenario Simulator */}
+      <CollapsibleSection title={t('panel.scenarioSimulator')}>
+        <ScenarioSimulator currentCrop={cropType} />
+      </CollapsibleSection>
     </Stack>
   );
 };
@@ -125,9 +182,40 @@ const ClimateSection: React.FC<{ lat: number; lon: number }> = ({ lat, lon }) =>
 };
 
 const ScenarioSimulator: React.FC<{ currentCrop: string }> = ({ currentCrop }) => {
+  const { t } = useTranslation('bioorchestrator');
   const api = useBioApi(); const [scenario, setScenario] = useState(''); const [result, setResult] = useState<any>(null); const [loading, setLoading] = useState(false);
   const run = async () => { if (!scenario) return; setLoading(true); try { setResult(await api.simulateCrop(currentCrop, scenario)); } catch {} finally { setLoading(false); } };
-  return <Stack gap="stack"><div className="flex gap-2 items-center"><select className="h-9 rounded-nkz-md border border-nkz-border bg-nkz-surface px-nkz-stack text-nkz-sm" value={scenario} onChange={(e) => setScenario(e.target.value)}><option value="">Alternative...</option>{SCENARIO_CROPS.filter((c) => c !== currentCrop).map((c) => <option key={c} value={c}>{c}</option>)}</select><Button variant="secondary" size="sm" onClick={run} disabled={!scenario || loading} loading={loading}>Compare</Button></div>{result && <div className="rounded-nkz-md bg-nkz-surface-sunken p-nkz-stack text-nkz-sm"><div className="flex items-center gap-1.5 mb-1">{result.rotation_ok ? <CheckCircle className="w-4 h-4 text-nkz-success" /> : <AlertTriangle className="w-4 h-4 text-nkz-warning" />}<span className="font-medium">{result.recommendation}</span></div></div>}</Stack>;
+  return (
+    <Stack gap="stack">
+      <div className="flex gap-2 items-center">
+        <select className="h-9 rounded-nkz-md border border-nkz-border bg-nkz-surface px-nkz-stack text-nkz-sm" value={scenario} onChange={(e) => setScenario(e.target.value)}>
+          <option value="">Alternative...</option>
+          {SCENARIO_CROPS.filter((c) => c !== currentCrop).map((c) => <option key={c} value={c}>{c}</option>)}
+        </select>
+        <Button variant="secondary" size="sm" onClick={run} disabled={!scenario || loading} loading={loading}>{t('panel.compareAction')}</Button>
+      </div>
+      {result && (
+        <div className="rounded-nkz-md bg-nkz-surface-sunken p-nkz-stack text-nkz-sm">
+          <div className="flex items-center gap-1.5 mb-1">
+            {result.rotation_ok ? <CheckCircle className="w-4 h-4 text-nkz-success" /> : <AlertTriangle className="w-4 h-4 text-nkz-warning" />}
+            <span className="font-medium">{result.recommendation}</span>
+          </div>
+          {(result.baseline_data_gaps?.length > 0 || result.scenario_data_gaps?.length > 0) && (
+            <div className="mt-2 pt-2 border-t border-nkz-border text-nkz-xs text-nkz-text-muted">
+              <div className="flex justify-between">
+                <span>{currentCrop}: {(result.baseline_data_gaps || []).join(', ') || '✓'}</span>
+                <span>{scenario}: {(result.scenario_data_gaps || []).join(', ') || '✓'}</span>
+              </div>
+              <div className="text-nkz-warning mt-1">
+                <AlertTriangle size={12} className="inline mr-1" />
+                {t('panel.scenarioIncomplete')}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </Stack>
+  );
 };
 
 function DataRow({ label, available }: { label: string; available?: boolean }) {
@@ -140,6 +228,29 @@ function DataRow({ label, available }: { label: string; available?: boolean }) {
         <XCircle size={14} className="text-nkz-text-muted" />
       )}
     </div>
+  );
+}
+
+function CollapsibleSection({ title, defaultOpen = false, children, loading, error, onRetry }: {
+  title: string; defaultOpen?: boolean; children: React.ReactNode;
+  loading?: boolean; error?: string | null; onRetry?: () => void;
+}) {
+  const { t } = useTranslation('bioorchestrator');
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <Card padding="md">
+      <div className="flex items-center gap-2 cursor-pointer select-none" onClick={() => setOpen(!open)}>
+        {open ? <ChevronDown size={16} className="text-nkz-text-muted" /> : <ChevronRight size={16} className="text-nkz-text-muted" />}
+        <h4 className="text-nkz-xs font-semibold text-nkz-text-secondary uppercase tracking-wider flex-1">{title}</h4>
+      </div>
+      {open && (
+        <div className="mt-3">
+          {loading ? <Skeleton variant="rect" height="60px" /> :
+           error ? <div className="text-nkz-error text-sm"><AlertTriangle size={14} className="inline mr-1" />{t('panel.sectionError', { section: title })}{onRetry && <Button variant="ghost" size="sm" onClick={onRetry} className="ml-2">{t('panel.retry')}</Button>}</div> :
+           children}
+        </div>
+      )}
+    </Card>
   );
 }
 
