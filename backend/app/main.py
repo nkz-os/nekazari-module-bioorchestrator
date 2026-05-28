@@ -12,6 +12,7 @@ In production (K8s):
 
 from __future__ import annotations
 
+import asyncio
 import json as _json
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
@@ -83,15 +84,12 @@ async def lifespan(app: FastAPI):
     except Exception as exc:
         print(f"[bioorchestrator] WARNING: Neo4j unavailable on startup: {exc}")
 
-    # Register background task handlers
-    background_queue.register("sync_agri_crop", handle_sync_agri_crop)
-
-    # Start background worker loop
-    import asyncio
-    asyncio.create_task(background_queue.run_loop())
-
-    # Create Orion-LD subscription for AgriCrop changes (non-critical)
-    asyncio.create_task(_create_orion_subscription())
+    try:
+        background_queue.register("sync_agri_crop", handle_sync_agri_crop)
+        asyncio.create_task(background_queue.run_loop())
+        asyncio.create_task(_create_orion_subscription())
+    except Exception as exc:
+        print(f"[bioorchestrator] WARNING: background tasks init failed: {exc}")
 
     yield
 
