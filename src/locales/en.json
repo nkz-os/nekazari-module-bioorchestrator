@@ -196,5 +196,89 @@
       "yieldUnavailable": "Yield estimation is unavailable until missing data is completed.",
       "contribute": "Contribute data"
     }
+  },
+  "thermal": {
+    "title": "Thermal Tolerance",
+    "subtitle": "Heat and frost stress damage limits for each crop. Data automatically derived from EcoCrop or published in scientific literature.",
+    "columns": {
+      "species": "Species",
+      "heatThreshold": "Heat threshold",
+      "frostThreshold": "Frost threshold",
+      "accumHours": "Accum. (h)",
+      "source": "Source"
+    },
+    "empty": "No thermal thresholds available for this species. If EcoCrop has temperature data, thresholds can be derived automatically.",
+    "deriveAction": "Run derivation for all",
+    "count": "{{shown}} of {{total}} species with thermal data",
+    "pendingDerivation": "{{count}} EcoCrop species have temperature data but thresholds haven't been derived yet.",
+    "derivedSource": "EcoCrop GAEZ v4 (derived)",
+    "publishedSource": "Published"
+  },
+  "npk": {
+    "title": "Nutrient Absorption Profile (NPK)",
+    "subtitle": "Nitrogen, phosphorus, and potassium absorption rates per phenological stage. Data from peer-reviewed scientific literature.",
+    "selectSpecies": "Species",
+    "columns": {
+      "stage": "Stage",
+      "n": "N (kg/ha/day)",
+      "p": "P (kg/ha/day)",
+      "k": "K (kg/ha/day)",
+      "source": "Source"
+    },
+    "totalRow": "Total N: {{n}} kg/ha  Total P: {{p}} kg/ha  Total K: {{k}} kg/ha (full season)",
+    "empty": "No NPK absorption profile for this species.",
+    "contributeAction": "Contribute with DOI",
+    "disclaimer": "Absorption rates are indicative. Actual values depend on management, soil, climate, and planting density.",
+    "countSpecies": "{{count}} species with NPK data, {{total}} without"
+  },
+  "soil": {
+    "title": "Soil Requirements",
+    "subtitle": "Optimal soil conditions for each crop. Data from EcoCrop GAEZ v4 (FAO).",
+    "columns": {
+      "species": "Species",
+      "phMin": "pH min",
+      "phMax": "pH max",
+      "textures": "Textures",
+      "drainage": "Drainage",
+      "depthMin": "Min. depth",
+      "salinityMax": "Max. salinity"
+    },
+    "empty": "No soil requirements available for this species.",
+    "allPresent": "All catalog crops have EcoCrop soil requirements.",
+    "count": "{{shown}} of {{total}} species"
+  },
+  "rotation": {
+    "title": "Rotation Constraints",
+    "subtitle": "Minimum intervals between crops to prevent soil pathogens and depletion. Data from FAO guidelines and phytopathological literature.",
+    "columns": {
+      "cropA": "From",
+      "cropB": "To",
+      "interval": "Interval",
+      "reason": "Reason / Source"
+    },
+    "perennial": "Perennial crop, no restriction",
+    "empty": "No rotation constraints registered for this crop. If no restrictions are known, free rotation is assumed.",
+    "contributeAction": "Contribute rotation rule",
+    "lowCoverage": "Only {{count}} rotation rules registered. Most crops lack data."
+  },
+  "panel": {
+    "noCrop": "This parcel has no crop assigned. Assign one to see agronomic recommendations.",
+    "assignCrop": "Assign crop",
+    "cropNotInCatalog": "The crop '{{crop}}' is not in the catalog. Agronomic data is not available.",
+    "addToCatalog": "Add to catalog",
+    "dataAvailability": "Data Availability",
+    "complete": "{{n}}/{{total}} complete",
+    "none": "No agronomic data for this crop. Recommendations cannot be generated without it.",
+    "partial": "Missing {{n}} data types. Recommendations may be incomplete.",
+    "allComplete": "All data available.",
+    "agronomicConditions": "Agronomic Conditions",
+    "soilAndEnvironment": "Soil & Environment",
+    "rotationAndCrop": "Rotation & Crop",
+    "scenarioSimulator": "Scenario Simulator",
+    "compareAction": "Compare",
+    "scenarioIncomplete": "Both crops have incomplete data. The comparison may be inconclusive.",
+    "sectionError": "Could not load {{section}} data.",
+    "retry": "Retry",
+    "deprecatedSoilNote": "Deprecated data — coming soon from Soil module"
   }
 }
