@@ -15,13 +15,10 @@ PERIOD_MAP = {
 
 
 def _connect():
-    """Build a psycopg2 connection from individual config values (no DSN in code)."""
+    """Connect to TimescaleDB. DSN comes from env var (K8s secret), empty default = local dev."""
     return psycopg2.connect(
-        host=settings.timescale_host,
-        port=settings.timescale_port,
-        user=settings.timescale_user,
-        password=settings.timescale_password,
-        dbname=settings.timescale_db,
+        settings.timescale_dsn if settings.timescale_dsn
+        else "postgresql://postgres@localhost:5432/telemetry",
         connect_timeout=10,
     )
 
