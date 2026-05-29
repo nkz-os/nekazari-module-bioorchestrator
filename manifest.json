@@ -4,6 +4,14 @@
     "display_name": "BioOrchestrator",
     "version": "0.1.0",
     "description": "BioOrchestrator — Multi-domain biodiversity ETL pipeline for regenerative agriculture intelligence. Integrates 19 data sources across agriculture, livestock, forestry, and agroforestry.",
+    "description_i18n": {
+        "es": "BioOrchestrator — Pipeline ETL de biodiversidad multidominio para inteligencia en agricultura regenerativa. Integra 19 fuentes de datos en agricultura, ganadería, silvicultura y agroforestería.",
+        "en": "BioOrchestrator — Multi-domain biodiversity ETL pipeline for regenerative agriculture intelligence. Integrates 19 data sources across agriculture, livestock, forestry, and agroforestry.",
+        "eu": "BioOrchestrator — Domeinu anitzeko biodibertsitate ETL pipeline-a nekazaritza birsortzailerako adimenerako. 19 datu-iturri integratzen ditu nekazaritza, abeltzaintza, basogintza eta agroforesterian.",
+        "fr": "BioOrchestrator — Pipeline ETL de biodiversité multi-domaine pour l'intelligence en agriculture régénératrice. Intègre 19 sources de données dans l'agriculture, l'élevage, la sylviculture et l'agroforesterie.",
+        "pt": "BioOrchestrator — Pipeline ETL de biodiversidade multidomínio para inteligência em agricultura regenerativa. Integra 19 fontes de dados em agricultura, pecuária, silvicultura e agrofloresta.",
+        "ca": "BioOrchestrator — Pipeline ETL de biodiversitat multidomini per a intel·ligència en agricultura regenerativa. Integra 19 fonts de dades en agricultura, ramaderia, silvicultura i agroforesteria."
+    },
     "short_description": "Biodiversity data pipeline for regenerative agriculture",
     "icon": "sprout",
     "author": {
