@@ -12,7 +12,7 @@ logger = logging.getLogger("bioorchestrator.capability")
 
 EXTERNAL_CAPABILITY_URLS = [
     "https://raw.githubusercontent.com/nkz-os/nkz-module-soil/main/capabilities.yaml",
-    "https://raw.githubusercontent.com/nkz-os/nkz-module-vegetation-health/main/capabilities.yaml",
+    "https://raw.githubusercontent.com/nkz-os/vegetation-health-nkz/main/capabilities.yaml",
 ]
 
 
