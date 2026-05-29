@@ -45,19 +45,11 @@ spec:
                   key: bioorchestrator-dadis-token
             - name: DATA_DIR
               value: "/data"
-            - name: TIMESCALE_HOST
-              value: "timescaledb-service"
-            - name: TIMESCALE_PORT
-              value: "5432"
-            - name: TIMESCALE_USER
-              value: "postgres"
-            - name: TIMESCALE_DB
-              value: "telemetry"
-            - name: TIMESCALE_PASSWORD
+            - name: TIMESCALE_DSN
               valueFrom:
                 secretKeyRef:
-                  name: bioorchestrator-secrets
-                  key: bioorchestrator-timescale-password
+                  name: timescale-secret
+                  key: connection-string
             - name: LOG_LEVEL
               value: "info"
           volumeMounts:

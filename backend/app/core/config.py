@@ -43,11 +43,7 @@ class Settings(BaseSettings):
     context_url: str = "http://api-gateway-service:5000/ngsi-ld-context.json"
 
     # ── TimescaleDB ───────────────────────────────────────────────────────────
-    timescale_host: str = "localhost"
-    timescale_port: int = 5432
-    timescale_user: str = "postgres"
-    timescale_password: str = ""
-    timescale_db: str = "telemetry"
+    timescale_dsn: str = ""
 
     # ── IkerKeta data paths ───────────────────────────────────────────────────
     ikerketa_data_dir: Path = Path("./data/processed")
