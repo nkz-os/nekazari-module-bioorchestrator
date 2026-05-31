@@ -1,0 +1,235 @@
+{
+  "@context": {
+    "_comment": "BioOrchestrator JSON-LD @context — ICASA/AgMIP + QUDT + SOSA + AGROVOC + EPPO as primary ontologies. nkz: reserved for concepts without international equivalent.",
+
+    "xsd": "http://www.w3.org/2001/XMLSchema#",
+    "rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
+    "rdfs": "http://www.w3.org/2000/01/rdf-schema#",
+    "dc": "http://purl.org/dc/terms/",
+    "dct": "http://purl.org/dc/terms/",
+    "prov": "http://www.w3.org/ns/prov#",
+    "sosa": "http://www.w3.org/ns/sosa/",
+    "qudt": "http://qudt.org/schema/qudt/",
+    "unit": "http://qudt.org/vocab/unit/",
+    "quantitykind": "http://qudt.org/vocab/quantitykind/",
+    "agrovoc": "http://aims.fao.org/aos/agrovoc/",
+    "eppo": "https://gd.eppo.int/taxon/",
+    "wrb": "http://www.fao.org/soils-portal/soil-survey/soil-classification/wrb-reference/",
+    "nkz": "https://nkz.robotika.cloud/ngsi-ld/",
+
+    "_icasa_note": "ICASA variable codes (White et al. 2013, AgMIP harmonization) are embedded as rdfs:label annotations. No official ICASA RDF namespace exists — we mint under nkz:icasa/ when a URI is required for linking.",
+
+    "VarietyTrial": "nkz:VarietyTrial",
+    "ManagementTrial": "nkz:ManagementTrial",
+    "HarvestData": "nkz:HarvestData",
+    "TrialSite": "nkz:TrialSite",
+    "ArticleSource": "nkz:ArticleSource",
+
+    "crop_eppo": {
+      "@id": "nkz:cropSpeciesEPPO",
+      "@type": "@id"
+    },
+    "crop_scientific": {
+      "@id": "nkz:cropScientificName",
+      "@type": "xsd:string"
+    },
+    "variety": {
+      "@id": "nkz:cultivarName",
+      "@type": "xsd:string",
+      "rdfs:label": "ICASA cultivar_id"
+    },
+
+    "agroclimatic_zone": {
+      "@id": "nkz:agroclimaticZone",
+      "@type": "@id"
+    },
+    "year": {
+      "@id": "nkz:harvestYear",
+      "@type": "xsd:integer"
+    },
+    "yield_kg_ha": {
+      "@id": "nkz:yieldKgHa",
+      "@type": "xsd:float",
+      "rdfs:label": "ICASA YAMH — grain yield at harvest (kg/ha)"
+    },
+    "yield_relative_pct": {
+      "@id": "nkz:yieldRelativePct",
+      "@type": "xsd:float"
+    },
+    "quality_params": {
+      "@id": "nkz:qualityParameters",
+      "@container": "@json"
+    },
+    "disease_scores": {
+      "@id": "nkz:diseaseScores",
+      "@container": "@json"
+    },
+    "irrigation_regime": {
+      "@id": "nkz:irrigationRegime",
+      "@type": "@id",
+      "rdfs:label": "ICASA IRRC — irrigation regime code"
+    },
+    "trial_location": {
+      "@id": "nkz:trialSiteName",
+      "@type": "xsd:string"
+    },
+
+    "campaign": {
+      "@id": "nkz:croppingSeason",
+      "@type": "xsd:string"
+    },
+    "area_ha": {
+      "@id": "nkz:harvestedAreaHa",
+      "@type": "xsd:float",
+      "rdfs:label": "ICASA HAREA — harvested area (ha)"
+    },
+    "total_production_t": {
+      "@id": "nkz:totalProductionTonnes",
+      "@type": "xsd:float"
+    },
+    "avg_yield_kg_ha": {
+      "@id": "nkz:averageYieldKgHa",
+      "@type": "xsd:float"
+    },
+    "yield_vs_previous_pct": {
+      "@id": "nkz:yieldVsPreviousPct",
+      "@type": "xsd:float"
+    },
+
+    "experiment_type": {
+      "@id": "nkz:experimentType",
+      "@type": "@id"
+    },
+    "treatment": {
+      "@id": "nkz:treatmentName",
+      "@type": "xsd:string"
+    },
+    "treatment_description": {
+      "@id": "nkz:treatmentDescription",
+      "@type": "xsd:string"
+    },
+    "result_metric": {
+      "@id": "nkz:resultMetric",
+      "@type": "xsd:string"
+    },
+    "result_value": {
+      "@id": "qudt:value",
+      "@type": "xsd:float"
+    },
+    "result_unit": {
+      "@id": "qudt:unit",
+      "@type": "@id"
+    },
+    "control_value": {
+      "@id": "nkz:controlValue",
+      "@type": "xsd:float"
+    },
+    "control_unit": {
+      "@id": "nkz:controlUnit",
+      "@type": "@id"
+    },
+
+    "latitude": {
+      "@id": "sosa:hasLocation",
+      "@type": "xsd:float"
+    },
+    "longitude": {
+      "@id": "nkz:longitude",
+      "@type": "xsd:float"
+    },
+    "elevationM": {
+      "@id": "nkz:elevationM",
+      "@type": "xsd:float"
+    },
+    "climateClass": {
+      "@id": "nkz:koppenClimateClass",
+      "@type": "xsd:string"
+    },
+    "annualRainfallMm": {
+      "@id": "nkz:annualRainfallMm",
+      "@type": "xsd:float"
+    },
+    "annualET0Mm": {
+      "@id": "nkz:annualET0Mm",
+      "@type": "xsd:float"
+    },
+    "frostDaysPerYear": {
+      "@id": "nkz:frostDaysPerYear",
+      "@type": "xsd:integer"
+    },
+    "soilType": {
+      "@id": "nkz:soilTypeWRB",
+      "@type": "xsd:string"
+    },
+    "soilTexture": {
+      "@id": "nkz:soilTexture",
+      "@type": "xsd:string"
+    },
+    "soilPh": {
+      "@id": "nkz:soilPh",
+      "@type": "xsd:float",
+      "rdfs:label": "ICASA PH — soil pH"
+    },
+    "soilOrganicMatterPct": {
+      "@id": "nkz:soilOrganicMatterPct",
+      "@type": "xsd:float",
+      "rdfs:label": "ICASA OM% — soil organic matter (%)"
+    },
+    "photoperiodSummerHours": {
+      "@id": "nkz:photoperiodSummerHours",
+      "@type": "xsd:float"
+    },
+    "dataSource": {
+      "@id": "dc:source",
+      "@type": "xsd:string"
+    },
+
+    "page_in_issue": {
+      "@id": "dc:page",
+      "@type": "xsd:integer"
+    },
+    "table_number": {
+      "@id": "nkz:tableNumber",
+      "@type": "xsd:string"
+    },
+    "confidence": {
+      "@id": "nkz:extractionConfidence",
+      "@type": "xsd:string"
+    },
+    "metadata": {
+      "@id": "nkz:extractionMetadata",
+      "@container": "@json"
+    },
+
+    "TRIAL_AT": {
+      "@id": "nkz:trialSite",
+      "@type": "@id",
+      "rdfs:comment": "Links a trial observation to its TrialSite location"
+    },
+    "SOURCED_FROM": {
+      "@id": "dc:source",
+      "@type": "@id",
+      "rdfs:comment": "Links data to its bibliographic source (ArticleSource)"
+    },
+
+    "name": "nkz:siteName",
+    "municipality": "nkz:municipality",
+    "region": "nkz:region",
+
+    "source": "dc:source",
+    "issue_number": "nkz:issueNumber",
+    "issue_period": "nkz:issuePeriod",
+    "article_title": "dc:title",
+    "article_author": "dc:creator",
+    "topic": "nkz:articleTopic",
+    "extraction_model": "nkz:extractionModel",
+    "extraction_date": "dc:date",
+    "article_year": "dc:year",
+
+    "domain": {
+      "@id": "nkz:domain",
+      "@type": "xsd:string",
+      "rdfs:comment": "Domain classifier: agriculture, livestock, forestry, agroforestry"
+    }
+  }
+}
