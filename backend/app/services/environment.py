@@ -254,7 +254,7 @@ async def resolve_environment(
             if elev is not None:
                 profile["elevation_m"] = round(float(elev), 1)
         sources_used.append("elevation: Copernicus DEM GLO-30")
-    except (ImportError, Exception):
+    except (ImportError, TypeError, Exception):
         pass
 
     # ── Climate (ERA5 reanalysis) ───────────────────────────────────────
@@ -296,7 +296,7 @@ async def resolve_environment(
             )
 
         sources_used.append("climate: ERA5 reanalysis (via IkerKeta)")
-    except (ImportError, Exception):
+    except (ImportError, TypeError, Exception):
         pass
 
     # ── Soil (SoilGrids ISRIC) ──────────────────────────────────────────
@@ -323,7 +323,7 @@ async def resolve_environment(
                 profile["soil_organic_matter_pct"] = round(float(om), 1)
 
         sources_used.append("soil: SoilGrids ISRIC v2.0")
-    except (ImportError, Exception):
+    except (ImportError, TypeError, Exception):
         pass
 
     profile["data_source"] = "; ".join(sources_used)
