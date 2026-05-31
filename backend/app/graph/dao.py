@@ -1120,7 +1120,7 @@ class GraphDAO:
                 MATCH (vt:VarietyTrial)
                 WHERE vt.cropEppo IS NOT NULL
                 RETURN vt.cropEppo AS eppo_code,
-                       vt.cropScientific AS scientific_name,
+                       COALESCE(vt.cropScientific, '(unknown)') AS scientific_name,
                        count(DISTINCT vt.variety) AS variety_count,
                        count(*) AS trial_count,
                        min(vt.year) AS first_year,
