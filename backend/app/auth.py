@@ -15,8 +15,11 @@ from starlette.requests import Request
 from starlette.responses import JSONResponse
 
 
-# Endpoints that don't require auth
+# Endpoints that don't require auth — health probes, docs, and public reference data
 SKIP_AUTH_PATHS = {"/healthz", "/readyz", "/docs", "/openapi.json"}
+
+# Public reference data endpoints — global knowledge graph, no tenant-specific data
+SKIP_AUTH_PREFIXES = ["/api/graph/agriculture/", "/ngsi-ld/"]
 
 
 class NKZAuthMiddleware(BaseHTTPMiddleware):
@@ -27,9 +30,12 @@ class NKZAuthMiddleware(BaseHTTPMiddleware):
     """
 
     async def dispatch(self, request: Request, call_next: Callable):
-        # Skip auth for health checks
+        # Skip auth for health checks and public reference data
         if request.url.path in SKIP_AUTH_PATHS:
             return await call_next(request)
+        for prefix in SKIP_AUTH_PREFIXES:
+            if request.url.path.startswith(prefix):
+                return await call_next(request)
 
         # Development mode: skip auth
         if os.getenv("AUTH_DISABLED", "false").lower() == "true":
