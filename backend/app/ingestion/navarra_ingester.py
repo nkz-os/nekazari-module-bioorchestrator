@@ -67,20 +67,30 @@ def _merge_key_variety_trial(node: dict) -> str:
     return f"{crop}|{variety}|{location}|{irrigation}|{year}"
 
 def _merge_key_management_trial(node: dict) -> str:
-    """Unique key: experiment_type + crop + treatment + location + year."""
-    exp_type = str(node.get("experiment_type") or "unknown")
-    crop = str(node.get("crop_eppo") or "unknown")
-    treatment = (node.get("treatment") or "").strip().lower()
-    location = (node.get("trial_location") or "unknown").strip().lower()
-    year = str(node.get("year") or 0)
-    return f"{exp_type}|{crop}|{treatment}|{location}|{year}"
+    """Unique key: uses @id as tiebreaker when composite fields collide.
+    
+    The composite key (experiment_type + crop + treatment + metric + location + year)
+    can collide when fields are null/unknown across different records. The @id from
+    JSON-LD is always unique and serves as the definitive merge key.
+    """
+    exp_type = str(node.get("experiment_type") or "")
+    crop = str(node.get("crop_eppo") or "")
+    treatment = (node.get("treatment") or "").strip().lower()[:60]
+    metric = (node.get("result_metric") or "").strip().lower()[:40]
+    location = (node.get("trial_location") or "").strip().lower()[:40]
+    year = str(node.get("year") or "")
+    composite = f"{exp_type}|{crop}|{treatment}|{metric}|{location}|{year}"
+    # Append @id suffix to guarantee uniqueness even when composite fields are empty
+    uid = str(node.get("@id", ""))
+    return f"{composite}|{uid}"
 
 def _merge_key_harvest_data(node: dict) -> str:
     """Unique key: campaign + crop + zone."""
     campaign = str(node.get("campaign") or "")
-    crop = str(node.get("crop_eppo") or "unknown")
-    zone = str(node.get("agroclimatic_zone") or "unknown")
-    return f"{campaign}|{crop}|{zone}"
+    crop = str(node.get("crop_eppo") or "")
+    zone = str(node.get("agroclimatic_zone") or "")
+    uid = str(node.get("@id", ""))
+    return f"{campaign}|{crop}|{zone}|{uid}"
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
