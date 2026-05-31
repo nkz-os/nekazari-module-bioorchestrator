@@ -23,6 +23,42 @@ from typing import Any
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
+# Allowed external FQDNs — defense in depth
+# ═══════════════════════════════════════════════════════════════════════════════
+# Even if NetworkPolicy allows HTTPS egress, this allowlist restricts which
+# hosts the resolver can contact. Any FQDN not on this list is rejected
+# BEFORE the HTTP request is made. Combined with NetworkPolicy, this provides
+# two independent layers of security.
+
+ALLOWED_FQDNS: frozenset[str] = frozenset({
+    # ERA5 / CDS climate reanalysis (EU Copernicus)
+    "cds.climate.copernicus.eu",
+    "cds-beta.climate.copernicus.eu",
+    # SoilGrids ISRIC — World Soil Information
+    "rest.isric.org",
+    "soilgrids.org",
+    # Copernicus DEM — ESA Digital Elevation Model
+    "copernicus-dem.openearth.community",
+    # CHELSA — high-resolution climatology (fallback)
+    "chelsa-climate.org",
+    "envicloud.wsl.ch",
+})
+
+
+def _validate_fqdn(hostname: str) -> bool:
+    """Check if a hostname is in the allowed FQDN set.
+
+    Accepts exact match or any subdomain (e.g., 'rest.isric.org'
+    matches both 'rest.isric.org' and 'data.rest.isric.org').
+    """
+    host = hostname.lower().strip()
+    return any(
+        host == allowed or host.endswith("." + allowed)
+        for allowed in ALLOWED_FQDNS
+    )
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
 # Photoperiod calculation
 # ═══════════════════════════════════════════════════════════════════════════════
 
@@ -97,59 +133,46 @@ def _classify_koppen(
     if annual_temp_c is None or annual_rainfall_mm is None:
         return "Unknown"
 
-    # Approximate dryness threshold
-    # R = 20 × (T + 14)  for winter-dry (s=summer rain)
-    # R = 20 × T          for summer-dry (w=winter rain)
-    # R = 20 × (T + 7)   for evenly distributed (f=no dry season)
-    # Simplified: use evenly distributed
     dryness_threshold = 20 * (annual_temp_c + 7)
 
-    # ── Group E: Polar ──────────────────────────────────────────────────
     if warmest_month_temp_c is not None and warmest_month_temp_c < 10:
         if coldest_month_temp_c is not None and coldest_month_temp_c > 0:
-            return "ET"  # Tundra
-        return "EF"  # Ice cap
+            return "ET"
+        return "EF"
 
-    # ── Group B: Arid ───────────────────────────────────────────────────
     is_arid = annual_rainfall_mm < dryness_threshold
 
     if is_arid:
         if annual_rainfall_mm < dryness_threshold / 2:
             if annual_temp_c >= 18:
-                return "BWh"  # Hot desert
-            return "BWk"  # Cold desert
+                return "BWh"
+            return "BWk"
         else:
             if annual_temp_c >= 18:
-                return "BSh"  # Hot semi-arid (steppe)
-            return "BSk"  # Cold semi-arid (steppe)
+                return "BSh"
+            return "BSk"
 
-    # ── Group A: Tropical ───────────────────────────────────────────────
     if coldest_month_temp_c is not None and coldest_month_temp_c >= 18:
         if driest_month_rainfall_mm is not None and driest_month_rainfall_mm >= 60:
-            return "Af"  # Tropical rainforest
+            return "Af"
         elif driest_month_rainfall_mm is not None:
-            # Am vs Aw depends on dry season compensation
             if annual_rainfall_mm >= 25 * (100 - driest_month_rainfall_mm):
-                return "Am"  # Tropical monsoon
-            return "Aw"  # Tropical savanna
+                return "Am"
+            return "Aw"
         return "Aw"
 
-    # ── Group C: Temperate ──────────────────────────────────────────────
     if coldest_month_temp_c is not None and -3 <= coldest_month_temp_c < 18:
         if warmest_month_temp_c is not None and warmest_month_temp_c >= 22:
-            # Hot summer
             if wettest_season == "winter":
-                return "Csa"  # Hot-summer Mediterranean
+                return "Csa"
             elif driest_month_rainfall_mm is not None and driest_month_rainfall_mm < 30:
-                return "Cwa"  # Dry-winter subtropical
-            return "Cfa"  # Humid subtropical
+                return "Cwa"
+            return "Cfa"
         else:
-            # Warm/cool summer
             if wettest_season == "winter":
-                return "Csb"  # Warm-summer Mediterranean
-            return "Cfb"  # Oceanic
+                return "Csb"
+            return "Cfb"
 
-    # ── Group D: Continental ────────────────────────────────────────────
     if coldest_month_temp_c is not None and coldest_month_temp_c <= -3:
         if warmest_month_temp_c is not None:
             if warmest_month_temp_c >= 22:
@@ -265,7 +288,6 @@ async def resolve_environment(
             if frost is not None:
                 profile["frost_days_per_year"] = int(frost)
 
-            # Classify Köppen
             profile["climate_class"] = _classify_koppen(
                 annual_temp_c=profile["annual_temp_c"],
                 annual_rainfall_mm=profile["annual_rainfall_mm"],

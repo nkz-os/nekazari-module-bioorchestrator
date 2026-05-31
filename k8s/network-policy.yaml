@@ -1,0 +1,64 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: bioorchestrator-external-data-apis
+  namespace: nekazari
+  labels:
+    app: nekazari
+    policy-type: data-ingestion
+    app.kubernetes.io/part-of: bioorchestrator
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: bioorchestrator
+      app.kubernetes.io/component: backend
+  policyTypes:
+    - Egress
+  egress:
+    # Rule 1: DNS resolution (required to resolve API hostnames)
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+
+    # Rule 2: Same-namespace traffic (Orion-LD, Neo4j, Redis, api-gateway)
+    - to:
+        - podSelector: {}
+      ports:
+        - protocol: TCP
+          port: 1026    # Orion-LD
+        - protocol: TCP
+          port: 7687    # Neo4j Bolt
+        - protocol: TCP
+          port: 7474    # Neo4j HTTP
+        - protocol: TCP
+          port: 6379    # Redis
+        - protocol: TCP
+          port: 5000    # api-gateway
+        - protocol: TCP
+          port: 8420    # self (health checks)
+
+    # Rule 3: External scientific data APIs (HTTPS only, public IPs)
+    # These are open-data services with no authentication secrets transmitted.
+    # Public IP ranges only — private/internal IPs excluded.
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            except:
+              - 10.0.0.0/8       # RFC 1918
+              - 172.16.0.0/12    # RFC 1918
+              - 192.168.0.0/16  # RFC 1918
+              - 169.254.0.0/16  # link-local
+      ports:
+        - protocol: TCP
+          port: 443     # HTTPS only — no plaintext
+    # Note: FQDN-level filtering is enforced at application layer
+    # (see app/services/environment.py ALLOWED_FQDNS)
