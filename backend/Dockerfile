@@ -21,6 +21,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy application code (context is repo root)
 COPY backend/app/ app/
 COPY backend/scripts/ scripts/
+COPY backend/cypher_migrations/ cypher_migrations/
 COPY data/ data/
 
 # Copy IkerKeta sources config to where the library expects it
