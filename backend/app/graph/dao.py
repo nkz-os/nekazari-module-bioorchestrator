@@ -711,6 +711,427 @@ class GraphDAO:
                 })
             return crops
 
+    # ── Agriculture: Variety Trials ──────────────────────────────────────
+
+    async def get_variety_trials(
+        self,
+        crop: str | None = None,
+        climate_class: str | None = None,
+        soil_type: str | None = None,
+        soil_texture: str | None = None,
+        irrigation_regime: str | None = None,
+        min_yield_kg_ha: float | None = None,
+        min_rainfall_mm: float | None = None,
+        max_rainfall_mm: float | None = None,
+        limit: int = 50,
+    ) -> list[dict]:
+        """Ranked variety trial results with environmental filters.
+
+        Returns varieties sorted by yield (descending) with their TrialSite
+        environmental context. Supports filtering by crop, climate, soil,
+        irrigation regime, and rainfall range.
+
+        This is the primary endpoint for:
+          - "What wheat varieties perform best in BSk climate?"
+          - "Show me tomato trials on calcareous soils under rainfed conditions"
+        """
+        where_clauses = ["vt.yieldKgHa IS NOT NULL"]
+        params: dict[str, Any] = {"limit": limit}
+
+        if crop:
+            where_clauses.append("(vt.cropEppo = $crop OR vt.cropScientific CONTAINS $crop OR toLower(vt.variety) CONTAINS toLower($crop))")
+            params["crop"] = crop
+
+        if climate_class:
+            where_clauses.append("ts.climateClass = $climate")
+            params["climate"] = climate_class
+
+        if soil_type:
+            where_clauses.append("ts.soilType CONTAINS $soil")
+            params["soil"] = soil_type
+
+        if soil_texture:
+            where_clauses.append("ts.soilTexture CONTAINS $texture")
+            params["texture"] = soil_texture
+
+        if irrigation_regime:
+            where_clauses.append("vt.irrigationRegime CONTAINS $irrigation")
+            params["irrigation"] = irrigation_regime
+
+        if min_yield_kg_ha is not None:
+            where_clauses.append("vt.yieldKgHa >= $min_yield")
+            params["min_yield"] = min_yield_kg_ha
+
+        if min_rainfall_mm is not None:
+            where_clauses.append("ts.annualRainfallMm >= $min_rain")
+            params["min_rain"] = min_rainfall_mm
+
+        if max_rainfall_mm is not None:
+            where_clauses.append("ts.annualRainfallMm <= $max_rain")
+            params["max_rain"] = max_rainfall_mm
+
+        where_str = " AND ".join(where_clauses)
+
+        query = f"""
+            MATCH (vt:VarietyTrial)-[:TRIAL_AT]->(ts:TrialSite)
+            WHERE {where_str}
+            OPTIONAL MATCH (vt)-[:SOURCED_FROM]->(as_article:ArticleSource)
+            RETURN vt.cropEppo AS crop_eppo,
+                   vt.cropScientific AS crop_scientific,
+                   vt.variety AS variety,
+                   vt.yieldKgHa AS yield_kg_ha,
+                   vt.yieldRelativePct AS yield_relative_pct,
+                   vt.qualityParams AS quality_params,
+                   vt.diseaseScores AS disease_scores,
+                   vt.irrigationRegime AS irrigation_regime,
+                   vt.year AS year,
+                   vt.confidence AS confidence,
+                   vt.mergeKey AS trial_id,
+                   ts.name AS site_name,
+                   ts.climateClass AS climate_class,
+                   ts.soilType AS soil_type,
+                   ts.soilTexture AS soil_texture,
+                   ts.soilPh AS soil_ph,
+                   ts.annualRainfallMm AS annual_rainfall_mm,
+                   ts.elevationM AS elevation_m,
+                   ts.frostDaysPerYear AS frost_days,
+                   ts.photoperiodSummerHours AS photoperiod_hours,
+                   as_article.articleTitle AS source_title,
+                   as_article.issueNumber AS source_issue,
+                   as_article.year AS source_year
+            ORDER BY vt.yieldKgHa DESC
+            LIMIT $limit
+        """
+
+        async with self._driver.session() as session:
+            result = await session.run(query, params)
+            trials = []
+            async for record in result:
+                trials.append(dict(record))
+            return trials
+
+    async def get_similar_sites(
+        self,
+        reference_site: str | None = None,
+        lat: float | None = None,
+        lon: float | None = None,
+        climate_class: str | None = None,
+        soil_type: str | None = None,
+        rainfall_min: float | None = None,
+        rainfall_max: float | None = None,
+        limit: int = 10,
+    ) -> list[dict]:
+        """Find TrialSites environmentally similar to a reference.
+
+        Matching strategy (cascade):
+          1. Same Köppen climate class (exact match)
+          2. Similar soil type (WRB reference group)
+          3. Rainfall within ±200mm band
+          4. Elevation within ±300m
+
+        If a reference site name is given, its properties are used as filters.
+        Otherwise, explicit filters (climate_class, soil_type, rainfall range)
+        are used directly.
+
+        Returns sites ranked by environmental similarity score.
+        """
+        params: dict[str, Any] = {"limit": limit}
+
+        if reference_site:
+            # Look up the reference site first
+            async with self._driver.session() as session:
+                ref_result = await session.run(
+                    """
+                    MATCH (ts:TrialSite)
+                    WHERE toLower(ts.name) = toLower($name)
+                       OR toLower(ts.municipality) = toLower($name)
+                    RETURN ts.climateClass AS climate,
+                           ts.soilType AS soil,
+                           ts.annualRainfallMm AS rainfall,
+                           ts.elevationM AS elevation,
+                           ts.soilTexture AS texture,
+                           ts.name AS name
+                    LIMIT 1
+                    """,
+                    name=reference_site,
+                )
+                ref = await ref_result.single()
+                if not ref:
+                    return []
+
+                climate_class = ref["climate"]
+                soil_type = ref["soil"]
+                rainfall_min = (ref["rainfall"] or 500) - 200
+                rainfall_max = (ref["rainfall"] or 500) + 200
+
+        where_clauses = ["ts.name IS NOT NULL"]  # ensure site has data
+
+        if climate_class:
+            where_clauses.append("ts.climateClass = $climate")
+            params["climate"] = climate_class
+
+        if soil_type:
+            where_clauses.append("ts.soilType CONTAINS $soil")
+            params["soil"] = soil_type
+
+        if rainfall_min is not None:
+            where_clauses.append("ts.annualRainfallMm >= $rain_min")
+            params["rain_min"] = rainfall_min
+
+        if rainfall_max is not None:
+            where_clauses.append("ts.annualRainfallMm <= $rain_max")
+            params["rain_max"] = rainfall_max
+
+        where_str = " AND ".join(where_clauses)
+
+        query = f"""
+            MATCH (ts:TrialSite)
+            WHERE {where_str}
+            RETURN ts.name AS name,
+                   ts.municipality AS municipality,
+                   ts.agroclimaticZone AS agroclimatic_zone,
+                   ts.latitude AS latitude,
+                   ts.longitude AS longitude,
+                   ts.climateClass AS climate_class,
+                   ts.soilType AS soil_type,
+                   ts.soilTexture AS soil_texture,
+                   ts.soilPh AS soil_ph,
+                   ts.soilOrganicMatterPct AS soil_organic_matter_pct,
+                   ts.annualRainfallMm AS annual_rainfall_mm,
+                   ts.annualET0Mm AS annual_et0_mm,
+                   ts.frostDaysPerYear AS frost_days,
+                   ts.elevationM AS elevation_m,
+                   ts.photoperiodSummerHours AS photoperiod_hours
+            ORDER BY ts.name
+            LIMIT $limit
+        """
+
+        async with self._driver.session() as session:
+            result = await session.run(query, params)
+            sites = []
+            async for record in result:
+                sites.append(dict(record))
+            return sites
+
+    async def extrapolate_varieties(
+        self,
+        crop: str,
+        reference_site: str | None = None,
+        climate_class: str | None = None,
+        soil_type: str | None = None,
+        irrigation_regime: str | None = None,
+        rainfall_min: float | None = None,
+        rainfall_max: float | None = None,
+        top_n: int = 10,
+    ) -> dict:
+        """Extrapolate best varieties for a target environment.
+
+        This is the combined "killer endpoint" that:
+          1. Finds TrialSites similar to the target environment
+          2. Aggregates VarietyTrial results from those sites
+          3. Ranks varieties by mean yield (with min/max/stddev)
+          4. Returns per-site breakdown for transparency
+
+        The target environment can be specified either by:
+          - reference_site: name of a known TrialSite to emulate
+          - explicit climate/soil/rainfall filters
+
+        Returns:
+            {
+              "target_environment": {...},
+              "similar_sites": ["site1", "site2", ...],
+              "ranked_varieties": [
+                {
+                  "variety": "AUBUSSON",
+                  "mean_yield_kg_ha": 9121.0,
+                  "min_yield": 8500.0,
+                  "max_yield": 9800.0,
+                  "stddev_yield": 350.0,
+                  "trial_count": 5,
+                  "years": [2007, 2008, ...],
+                  "sites": ["Cadreita", "Olite"]
+                }, ...
+              ],
+              "data_quality": {"total_trials_analyzed": N, "unique_varieties": M}
+            }
+        """
+        # ── Step 1: resolve target environment ──────────────────────────
+        target_env: dict[str, Any] = {
+            "crop": crop,
+            "climate_class": climate_class,
+            "soil_type": soil_type,
+            "irrigation_regime": irrigation_regime,
+            "rainfall_min": rainfall_min,
+            "rainfall_max": rainfall_max,
+        }
+
+        if reference_site:
+            async with self._driver.session() as session:
+                ref_result = await session.run(
+                    """
+                    MATCH (ts:TrialSite)
+                    WHERE toLower(ts.name) = toLower($name)
+                       OR toLower(ts.municipality) = toLower($name)
+                    RETURN ts.climateClass AS climate,
+                           ts.soilType AS soil,
+                           ts.annualRainfallMm AS rainfall,
+                           ts.name AS name,
+                           ts.latitude AS lat,
+                           ts.longitude AS lon,
+                           ts.elevationM AS elevation
+                    LIMIT 1
+                    """,
+                    name=reference_site,
+                )
+                ref = await ref_result.single()
+                if not ref:
+                    return {"error": f"Reference site '{reference_site}' not found", "similar_sites": [], "ranked_varieties": []}
+
+                target_env["climate_class"] = ref["climate"]
+                target_env["soil_type"] = ref["soil"]
+                target_env["rainfall_min"] = (ref["rainfall"] or 500) - 200
+                target_env["rainfall_max"] = (ref["rainfall"] or 500) + 200
+                target_env["reference_site_name"] = ref["name"]
+                target_env["reference_lat"] = ref["lat"]
+                target_env["reference_lon"] = ref["lon"]
+                target_env["reference_elevation"] = ref["elevation"]
+
+        # ── Step 2: find similar sites ──────────────────────────────────
+        similar_sites_result = await self.get_similar_sites(
+            climate_class=target_env.get("climate_class"),
+            soil_type=target_env.get("soil_type"),
+            rainfall_min=target_env.get("rainfall_min"),
+            rainfall_max=target_env.get("rainfall_max"),
+            limit=50,
+        )
+        similar_site_names = [s["name"] for s in similar_sites_result]
+
+        if not similar_site_names:
+            return {
+                "target_environment": target_env,
+                "similar_sites": [],
+                "ranked_varieties": [],
+                "data_quality": {"total_trials_analyzed": 0, "unique_varieties": 0},
+            }
+
+        # ── Step 3: aggregate variety trials from similar sites ─────────
+        async with self._driver.session() as session:
+            result = await session.run(
+                """
+                MATCH (vt:VarietyTrial)-[:TRIAL_AT]->(ts:TrialSite)
+                WHERE ts.name IN $site_names
+                  AND vt.yieldKgHa IS NOT NULL
+                  AND (
+                      vt.cropEppo = $crop
+                      OR vt.cropScientific CONTAINS $crop
+                      OR toLower(vt.cropScientific) = toLower($crop)
+                  )
+                WITH vt.variety AS variety,
+                     vt.yieldKgHa AS yield_val,
+                     vt.year AS year,
+                     ts.name AS site_name,
+                     vt.irrigationRegime AS irrigation
+                ORDER BY variety, year
+                WITH variety,
+                     collect(DISTINCT year) AS years,
+                     collect(DISTINCT site_name) AS sites,
+                     avg(yield_val) AS mean_yield,
+                     min(yield_val) AS min_yield,
+                     max(yield_val) AS max_yield,
+                     stDev(yield_val) AS stddev_yield,
+                     count(*) AS trial_count
+                WHERE trial_count >= 1
+                RETURN variety,
+                       mean_yield,
+                       min_yield,
+                       max_yield,
+                       stddev_yield,
+                       trial_count,
+                       years,
+                       sites
+                ORDER BY mean_yield DESC
+                LIMIT $top_n
+                """,
+                site_names=similar_site_names,
+                crop=crop,
+                top_n=top_n,
+            )
+
+            ranked = []
+            async for record in result:
+                ranked.append({
+                    "variety": record["variety"],
+                    "mean_yield_kg_ha": round(record["mean_yield"], 1) if record["mean_yield"] else None,
+                    "min_yield_kg_ha": round(record["min_yield"], 1) if record["min_yield"] else None,
+                    "max_yield_kg_ha": round(record["max_yield"], 1) if record["max_yield"] else None,
+                    "stddev_yield_kg_ha": round(record["stddev_yield"], 1) if record["stddev_yield"] else None,
+                    "trial_count": record["trial_count"],
+                    "trial_years": sorted(record["years"]),
+                    "trial_sites": sorted(record["sites"]),
+                })
+
+        return {
+            "target_environment": target_env,
+            "similar_sites": [s["name"] for s in similar_sites_result],
+            "similar_sites_detail": similar_sites_result[:5],  # top 5 for brevity
+            "ranked_varieties": ranked,
+            "data_quality": {
+                "total_trials_analyzed": sum(v["trial_count"] for v in ranked),
+                "unique_varieties": len(ranked),
+                "similar_sites_count": len(similar_site_names),
+            },
+        }
+
+    async def get_trial_sites_summary(self) -> list[dict]:
+        """Return all TrialSites with trial count summaries."""
+        async with self._driver.session() as session:
+            result = await session.run("""
+                MATCH (ts:TrialSite)
+                OPTIONAL MATCH (vt:VarietyTrial)-[:TRIAL_AT]->(ts)
+                OPTIONAL MATCH (mt:ManagementTrial)-[:TRIAL_AT]->(ts)
+                WITH ts,
+                     count(DISTINCT vt) AS variety_trial_count,
+                     count(DISTINCT mt) AS mgmt_trial_count
+                RETURN ts.name AS name,
+                       ts.municipality AS municipality,
+                       ts.agroclimaticZone AS agroclimatic_zone,
+                       ts.climateClass AS climate_class,
+                       ts.soilType AS soil_type,
+                       ts.soilTexture AS soil_texture,
+                       ts.soilPh AS soil_ph,
+                       ts.annualRainfallMm AS annual_rainfall_mm,
+                       ts.elevationM AS elevation_m,
+                       ts.frostDaysPerYear AS frost_days,
+                       ts.latitude AS latitude,
+                       ts.longitude AS longitude,
+                       variety_trial_count,
+                       mgmt_trial_count
+                ORDER BY variety_trial_count DESC
+            """)
+            sites = []
+            async for record in result:
+                sites.append(dict(record))
+            return sites
+
+    async def get_available_crops(self) -> list[dict]:
+        """Return distinct crops available in VarietyTrial data with counts."""
+        async with self._driver.session() as session:
+            result = await session.run("""
+                MATCH (vt:VarietyTrial)
+                WHERE vt.cropEppo IS NOT NULL
+                RETURN vt.cropEppo AS eppo_code,
+                       vt.cropScientific AS scientific_name,
+                       count(DISTINCT vt.variety) AS variety_count,
+                       count(*) AS trial_count,
+                       min(vt.year) AS first_year,
+                       max(vt.year) AS last_year
+                ORDER BY trial_count DESC
+            """)
+            crops = []
+            async for record in result:
+                crops.append(dict(record))
+            return crops
+
     @staticmethod
     def _extract_value(entity: dict, attr_name: str):
         """Extract a scalar value from an NGSI-LD Property attribute."""

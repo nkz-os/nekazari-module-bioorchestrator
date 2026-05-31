@@ -64,6 +64,43 @@ async def _create_orion_subscription():
         pass  # Non-critical — sync works without subscription
 
 
+async def _run_cypher_migrations(driver):
+    """Execute pending Cypher migrations on startup (idempotent).
+
+    Reads all .cypher files from cypher_migrations/ in order.
+    Each statement uses IF NOT EXISTS or equivalent — safe to re-run.
+    """
+    from pathlib import Path
+    migrations_dir = Path(__file__).parent.parent / "cypher_migrations"
+    if not migrations_dir.exists():
+        print("[bioorchestrator] No cypher_migrations directory — skipping")
+        return 0
+
+    cypher_files = sorted(migrations_dir.glob("*.cypher"))
+    if not cypher_files:
+        return 0
+
+    executed = 0
+    async with driver.session() as session:
+        for cypher_file in cypher_files:
+            content = cypher_file.read_text()
+            statements = [s.strip() for s in content.split(";") if s.strip() and not s.strip().startswith("//")]
+            for stmt in statements:
+                # Only execute CREATE CONSTRAINT/INDEX statements (idempotent)
+                if not stmt.upper().startswith(("CREATE CONSTRAINT", "CREATE INDEX")):
+                    continue
+                try:
+                    await session.run(stmt)
+                    executed += 1
+                except Exception as exc:
+                    # Constraint already exists → ok
+                    if "already exists" in str(exc) or "AlreadyExists" in str(exc) or "equivalent" in str(exc):
+                        pass
+                    else:
+                        print(f"[bioorchestrator] WARNING: migration failed: {exc}")
+    return executed
+
+
 async def _start_background_tasks():
     """Initialize background workers after uvicorn has bound its socket."""
     await asyncio.sleep(2)  # Give uvicorn a moment to complete startup
@@ -95,6 +132,12 @@ async def lifespan(app: FastAPI):
     try:
         await init_driver()
         print("[bioorchestrator] Neo4j connected")
+        # Auto-run Cypher migrations (idempotent, safe to re-run)
+        from app.core.dependencies import get_neo4j_driver
+        driver = await anext(get_neo4j_driver())
+        migrated = await _run_cypher_migrations(driver)
+        if migrated:
+            print(f"[bioorchestrator] {migrated} Cypher constraints/indexes ensured")
     except Exception as exc:
         print(f"[bioorchestrator] WARNING: Neo4j unavailable on startup: {exc}")
 
@@ -313,3 +356,65 @@ async def pipeline_history(limit: int = Query(default=10, ge=1, le=50)):
         return {"history": history}
     except Exception:
         return {"history": []}
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# NGSI-LD @context endpoint — serves the BioOrchestrator JSON-LD context
+# ═══════════════════════════════════════════════════════════════════════════════
+
+@app.get("/ngsi-ld/bioorchestrator-context.jsonld")
+async def serve_context():
+    """Serve the BioOrchestrator JSON-LD @context.
+
+    This endpoint is required by n10s for RDF import and by any linked data
+    consumer that dereferences the @context URL found in JSON-LD documents.
+
+    Returns the context as application/ld+json.
+    """
+    import json as _json
+    from pathlib import Path
+    ctx_path = Path(__file__).parent / "graph" / "bioorchestrator-context.jsonld"
+    if not ctx_path.exists():
+        return JSONResponse(
+            status_code=404,
+            content={"error": "Context file not found"},
+        )
+    return JSONResponse(
+        content=_json.loads(ctx_path.read_text()),
+        media_type="application/ld+json",
+    )
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Navarra Agraria ingestion trigger — one-shot CLI endpoint
+# ═══════════════════════════════════════════════════════════════════════════════
+
+@app.post("/api/ingestion/navarra-agraria")
+async def ingest_navarra_agraria(
+    request: Request,
+    jsonld_path: str = Query(
+        default="/data/all_trials_enriched.jsonld",
+        description="Path to the JSON-LD file inside the container",
+    ),
+    dry_run: bool = Query(default=False, description="Validate without writing"),
+):
+    """Ingest Navarra Agraria trial data into the Neo4j knowledge graph.
+
+    This is a one-shot operation (idempotent via MERGE).
+    The JSON-LD file must be accessible inside the bioorchestrator pod
+    (e.g., mounted via ConfigMap or copied via kubectl cp).
+
+    Returns per-type counts of merged nodes and relationships.
+    """
+    try:
+        from app.ingestion.navarra_ingester import NavarraIngester
+        from app.core.dependencies import get_neo4j_driver
+
+        driver = await anext(get_neo4j_driver())
+        ingester = NavarraIngester(driver)
+        stats = await ingester.ingest(jsonld_path, dry_run=dry_run)
+        return {"status": "ok", "stats": stats}
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

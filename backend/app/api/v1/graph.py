@@ -412,3 +412,271 @@ async def recommend_fertilizer(
     if data is None:
         raise HTTPException(status_code=404, detail=f"No nutrient data for {species}/{stage}")
     return data
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Agriculture Domain — Variety Trials & Extrapolation
+# ═══════════════════════════════════════════════════════════════════════════════
+
+
+@router.get("/agriculture/variety-trials")
+async def agriculture_variety_trials(
+    driver: DriverDep,
+    crop: str | None = Query(
+        default=None,
+        description="Crop filter: EPPO code (e.g. 'TRZAX'), scientific name, or common name",
+    ),
+    climate_class: str | None = Query(
+        default=None,
+        description="Köppen climate class filter (e.g. 'BSk', 'Cfb')",
+    ),
+    soil_type: str | None = Query(
+        default=None,
+        description="WRB soil type filter (e.g. 'Calcisol', 'Fluvisol')",
+    ),
+    soil_texture: str | None = Query(
+        default=None,
+        description="Soil texture filter (e.g. 'franco-arcilloso')",
+    ),
+    irrigation_regime: str | None = Query(
+        default=None,
+        description="Irrigation regime filter (e.g. 'secano', 'regadío')",
+    ),
+    min_yield_kg_ha: float | None = Query(
+        default=None,
+        description="Minimum yield threshold (kg/ha)",
+    ),
+    min_rainfall_mm: float | None = Query(
+        default=None,
+        description="Minimum annual rainfall (mm)",
+    ),
+    max_rainfall_mm: float | None = Query(
+        default=None,
+        description="Maximum annual rainfall (mm)",
+    ),
+    limit: int = Query(default=50, le=200, description="Max results"),
+):
+    """Ranked variety trial results with environmental context.
+
+    Returns varieties sorted by yield (descending) with their TrialSite
+    environmental metadata (climate, soil, rainfall, elevation, frost days).
+
+    Example queries:
+      - /agriculture/variety-trials?crop=TRZAX&climate_class=BSk
+        → Best wheat varieties in semi-arid climates
+      - /agriculture/variety-trials?crop=LYPES&irrigation_regime=secano&min_yield_kg_ha=50000
+        → Rainfed tomato varieties exceeding 50 t/ha
+    """
+    dao = GraphDAO(driver)
+    trials = await dao.get_variety_trials(
+        crop=crop,
+        climate_class=climate_class,
+        soil_type=soil_type,
+        soil_texture=soil_texture,
+        irrigation_regime=irrigation_regime,
+        min_yield_kg_ha=min_yield_kg_ha,
+        min_rainfall_mm=min_rainfall_mm,
+        max_rainfall_mm=max_rainfall_mm,
+        limit=limit,
+    )
+    return {
+        "trials": trials,
+        "total": len(trials),
+        "filters_applied": {
+            k: v for k, v in {
+                "crop": crop,
+                "climate_class": climate_class,
+                "soil_type": soil_type,
+                "soil_texture": soil_texture,
+                "irrigation_regime": irrigation_regime,
+                "min_yield_kg_ha": min_yield_kg_ha,
+                "rainfall_range_mm": f"{min_rainfall_mm}-{max_rainfall_mm}" if min_rainfall_mm or max_rainfall_mm else None,
+            }.items() if v is not None
+        },
+    }
+
+
+@router.get("/agriculture/similar-sites")
+async def agriculture_similar_sites(
+    driver: DriverDep,
+    reference_site: str | None = Query(
+        default=None,
+        description="Name of a known TrialSite to use as environmental reference (e.g. 'Cadreita')",
+    ),
+    climate_class: str | None = Query(
+        default=None,
+        description="Köppen climate class (used if no reference_site given)",
+    ),
+    soil_type: str | None = Query(
+        default=None,
+        description="WRB soil type (used if no reference_site given)",
+    ),
+    rainfall_min: float | None = Query(
+        default=None,
+        description="Minimum annual rainfall in mm",
+    ),
+    rainfall_max: float | None = Query(
+        default=None,
+        description="Maximum annual rainfall in mm",
+    ),
+    limit: int = Query(default=20, le=50, description="Max results"),
+):
+    """Find TrialSites with similar environmental conditions.
+
+    If reference_site is provided, its climate/soil/rainfall are used as filters.
+    Otherwise, explicit filters must be given.
+
+    This is the building block for environmental extrapolation:
+      "Which trial locations have similar conditions to my farm?"
+    """
+    dao = GraphDAO(driver)
+    sites = await dao.get_similar_sites(
+        reference_site=reference_site,
+        climate_class=climate_class,
+        soil_type=soil_type,
+        rainfall_min=rainfall_min,
+        rainfall_max=rainfall_max,
+        limit=limit,
+    )
+    return {
+        "sites": sites,
+        "total": len(sites),
+        "reference": reference_site or {
+            "climate_class": climate_class,
+            "soil_type": soil_type,
+            "rainfall_range_mm": f"{rainfall_min}-{rainfall_max}",
+        },
+    }
+
+
+@router.get("/agriculture/extrapolate")
+async def agriculture_extrapolate(
+    driver: DriverDep,
+    crop: str = Query(
+        ...,
+        description="Crop to extrapolate: EPPO code (e.g. 'TRZAX'), scientific name, or common name",
+    ),
+    reference_site: str | None = Query(
+        default=None,
+        description="TrialSite name to use as target environment (e.g. 'Cadreita'). "
+                    "Cannot be combined with lat/lon.",
+    ),
+    lat: float | None = Query(
+        default=None, ge=-90, le=90,
+        description="Latitude of target location (WGS84). Auto-resolves climate/soil via ERA5 + SoilGrids.",
+    ),
+    lon: float | None = Query(
+        default=None, ge=-180, le=180,
+        description="Longitude of target location (WGS84). Must be paired with lat.",
+    ),
+    climate_class: str | None = Query(
+        default=None,
+        description="Köppen climate class of the target environment (manual override)",
+    ),
+    soil_type: str | None = Query(
+        default=None,
+        description="WRB soil type of the target environment (manual override)",
+    ),
+    irrigation_regime: str | None = Query(
+        default=None,
+        description="Irrigation regime: 'secano' or 'regadío'",
+    ),
+    rainfall_min: float | None = Query(
+        default=None,
+        description="Minimum annual rainfall of the target environment (mm)",
+    ),
+    rainfall_max: float | None = Query(
+        default=None,
+        description="Maximum annual rainfall of the target environment (mm)",
+    ),
+    top_n: int = Query(default=10, le=30, description="Number of top varieties to return"),
+):
+    """Extrapolate best crop varieties for a target environment.
+
+    Three ways to specify the target environment:
+
+    1. **By known TrialSite name** (fastest):
+       ?crop=TRZAX&reference_site=Cadreita
+       → Uses pre-enriched Cadreita data (BSk, Fluvisol calcáreo, ~400mm)
+
+    2. **By GPS coordinates** (dynamic — works anywhere on Earth):
+       ?crop=TRZAX&lat=38.88&lon=-6.97
+       → Resolves climate (ERA5), soil (SoilGrids), elevation (Copernicus DEM)
+         and photoperiod (astronomical) on-the-fly, then finds similar TrialSites
+
+    3. **By explicit environmental filters** (manual):
+       ?crop=TRZAX&climate_class=BSk&soil_type=Calcisol&rainfall_min=300&rainfall_max=500
+
+    Returns:
+      - target_environment: resolved environmental profile
+      - similar_sites: TrialSites with matching conditions
+      - ranked_varieties: best varieties by mean yield with stats
+    """
+    dao = GraphDAO(driver)
+
+    # ── Dynamic geolocation path ────────────────────────────────────────
+    if lat is not None and lon is not None:
+        if reference_site:
+            raise HTTPException(
+                status_code=400,
+                detail="Cannot specify both lat/lon and reference_site. Choose one.",
+            )
+
+        from app.services.environment import resolve_environment
+        env = await resolve_environment(lat, lon, use_ikers=True)
+
+        # Convert resolved environment to filters for the DAO
+        climate_class = env.get("climate_class")
+        soil_type = env.get("soil_type")
+
+        rainfall = env.get("annual_rainfall_mm")
+        if rainfall is not None:
+            rainfall_min = rainfall_min or (rainfall - 200)
+            rainfall_max = rainfall_max or (rainfall + 200)
+
+        # Store resolved env for response
+        resolved_env = env
+    elif reference_site:
+        resolved_env = None  # DAO will look it up
+    else:
+        resolved_env = None  # Explicit filters only
+
+    result = await dao.extrapolate_varieties(
+        crop=crop,
+        reference_site=reference_site,
+        climate_class=climate_class,
+        soil_type=soil_type,
+        irrigation_regime=irrigation_regime,
+        rainfall_min=rainfall_min,
+        rainfall_max=rainfall_max,
+        top_n=top_n,
+    )
+
+    if "error" in result:
+        raise HTTPException(status_code=404, detail=result["error"])
+
+    # Inject resolved environment if dynamic path was used
+    if resolved_env:
+        result["resolved_environment"] = resolved_env
+
+    return result
+
+
+@router.get("/agriculture/trial-sites")
+async def agriculture_trial_sites(
+    driver: DriverDep,
+):
+    """Return all TrialSites with trial count summaries."""
+    dao = GraphDAO(driver)
+    sites = await dao.get_trial_sites_summary()
+    return {"sites": sites, "total": len(sites)}
+
+
+@router.get("/agriculture/crops")
+async def agriculture_crops(
+    driver: DriverDep,
+):
+    """Return distinct crops available in VarietyTrial data with counts."""
+    dao = GraphDAO(driver)
+    crops = await dao.get_available_crops()
+    return {"crops": crops, "total": len(crops)}
