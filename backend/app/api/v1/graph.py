@@ -752,6 +752,32 @@ async def agriculture_regenerative_sequence(
     return result
 
 
+@router.get("/agriculture/crop-context")
+async def agriculture_crop_context(
+    driver: DriverDep,
+    request: Request,
+    parcel_id: str = Query(
+        ...,
+        description="AgriParcel URN (e.g. 'urn:ngsi-ld:AgriParcel:parcela-42')",
+    ),
+    gdd: float | None = Query(
+        default=None, ge=0,
+        description="Growing Degree Days accumulated for stage auto-detection",
+    ),
+):
+    """Return full calibrated agronomic context for a parcel."""
+    tenant_id = getattr(request.state, "tenant_id", "")
+    dao = GraphDAO(driver)
+    result = await dao.get_crop_context(
+        parcel_id=parcel_id,
+        tenant_id=tenant_id,
+        gdd=gdd,
+    )
+    if "error" in result:
+        raise HTTPException(status_code=404, detail=result["error"])
+    return result
+
+
 # ═══════════════════════════════════════════════════════════════════════════════
 # F4: Crop-Health Integration — Endpoints
 # ═══════════════════════════════════════════════════════════════════════════════

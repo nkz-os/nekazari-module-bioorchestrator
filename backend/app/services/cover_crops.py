@@ -4,9 +4,16 @@ Replaces hardcoded USDA/SARE tables with data from:
 - INTIA Navarra (low_input, BSk + Cfb)
 - JRC MARS Bulletins (conventional, GDD + frost tolerance)
 - Legumes Translated H2020 (unspecified, Csa + Cfb biomass/C/N/N fix)
+- IFAPA Andalusia scraped trials (conventional + organic, Csa + BSh)
+- ITACyL Castilla y León scraped trials (conventional, BSk)
 
-Data compiled 2026-06-02 in feat/european-cover-crop-data.
-See docs/data-sources/european-cover-crop-data.md for full matrix.
+Enrichment:
+At module load, scraped data from IFAPA (nkz-ifapa-scraper) and
+ITACyL (nkz-itacyl-scraper) JSON outputs is aggregated and used to
+update PROTEIN_CROPS biomass/grain yield values where field data
+exists. See get_trial_observations() and get_scraped_stats().
+
+Data compiled 2026-06-02.
 
 Usage:
     from app.services.cover_crops import lookup, select_cover_crops
@@ -16,6 +23,10 @@ Usage:
 
     candidates = select_cover_crops(climate_class="Csa", management="organic")
     # → list of suitable cover crops ranked by biomass
+
+    # Access raw trial observations:
+    trials = get_trial_observations(species_eppo="CIEAR", climate_class="Csa")
+    stats = get_scraped_stats("CIEAR", "Csa")
 """
 
 from __future__ import annotations
@@ -219,7 +230,7 @@ PROTEIN_CROPS: dict[str, dict[str, Any]] = {
         "type": "legume",
         "protein_content_pct": 24,
         "harvest_index": 0.40,
-        "eppo_search": "PIBSX",
+        "eppo_search": "PIBAR",
         "climates": {
             "Csa": {
                 "biomass_t_ha": {"value": 5.0, "min": 3.5, "max": 6.5, "source": "Legumes Translated PN#8"},
@@ -368,6 +379,270 @@ SOWING_WINDOWS: dict[str, dict[str, tuple[str, str]]] = {
     "Dfb": {"cover_crop_autumn": ("08-15", "09-10"), "protein_crop_spring": ("05-01", "05-20")},
     "BSh": {"cover_crop_autumn": ("10-15", "11-01"), "protein_crop_spring": ("03-15", "04-15")},
 }
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+#  Scraped trial data enrichment — IFAPA (Andalusia) + ITACyL (Castilla y León)
+# ═══════════════════════════════════════════════════════════════════════════
+
+import json as _json
+from pathlib import Path as _Path
+from collections import defaultdict as _defaultdict
+from statistics import mean as _mean, stdev as _stdev
+
+# Paths to scraped data JSON files (updated by IFAPA/ITACyL scrapers)
+_SCRAPED_DATA_PATHS = [
+    _Path("/home/g/Documents/nekazari/nkz-ifapa-scraper/data/output/ifapa_extracted.json"),
+    _Path("/home/g/Documents/nekazari/nkz-itacyl-scraper/data/output/itacyl_extracted.json"),
+]
+
+# Straw yield threshold: values above this are likely straw, not grain.
+# Crop-specific because lentil straw (3-8 t/ha) overlaps with grain (0.5-2.5 t/ha).
+_MAX_GRAIN_YIELD_KG_HA: dict[str, float] = {
+    "CIEAR": 8000,   # chickpea grain up to 5 t/ha
+    "PIBAR": 8000,   # pea grain up to 6 t/ha
+    "LENCU": 2800,   # lentil grain max ~2.5 t/ha, straw starts ~3 t/ha
+    "VICFX": 8000,   # faba bean grain up to 6 t/ha
+    "LTHSA": 4000,   # grass pea grain up to 3 t/ha
+    "GLXMA": 8000,   # soybean
+    "VICSA": 8000,   # vetch
+    "VICVI": 8000,   # hairy vetch
+}
+_DEFAULT_MAX_GRAIN = 8000
+
+# Harvest indices for grain → total biomass conversion
+# grain_yield / harvest_index = total_above_ground_biomass
+_HARVEST_INDICES = {
+    "CIEAR": 0.35,  # chickpea
+    "PIBAR": 0.40,  # field pea
+    "LENCU": 0.35,  # lentil
+    "VICFX": 0.45,  # faba bean
+    "LTHSA": 0.30,  # grass pea
+    "GLXMA": 0.35,  # soybean
+    "VICSA": 0.40,  # common vetch
+    "VICVI": 0.40,  # hairy vetch
+}
+# Minimum trials required to override hardcoded values
+_MIN_TRIALS_FOR_OVERRIDE = 3
+
+# Scraped trial cache: (eppo, climate, management) → stats dict
+_scraped_stats: dict[tuple[str, str, str], dict[str, Any]] = {}
+_scraped_raw: list[dict[str, Any]] = []
+
+
+def _load_scraped_data() -> tuple[dict, list]:
+    """Load all scraped JSON files and compute per-(species, climate, mgmt) stats.
+
+    Returns (stats_dict, raw_observations).
+    """
+    all_obs = []
+    for path in _SCRAPED_DATA_PATHS:
+        if path.exists():
+            try:
+                with open(path) as f:
+                    all_obs.extend(_json.load(f))
+            except Exception:
+                pass
+
+    # Group observations by (eppo, climate, management)
+    groups: dict[tuple[str, str, str], list[float]] = _defaultdict(list)
+    for o in all_obs:
+        yld = o.get("yield_kg_ha")
+        if not yld or yld <= 0:
+            continue
+        eppo = o.get("species_eppo", "")
+        if not eppo or len(eppo) != 5:
+            continue
+        climate = o.get("climate_class", "")
+        mgmt = o.get("management", "conventional")
+
+        # Skip cultivation guide reference data (not measured trials)
+        notes = o.get("notes", "")
+        source_pdf = o.get("source_pdf", "")
+        if "guía" in notes.lower() or "guia" in source_pdf.lower():
+            continue
+
+        # Filter: exclude straw yields and greenhouse data
+        max_grain = _MAX_GRAIN_YIELD_KG_HA.get(eppo, _DEFAULT_MAX_GRAIN)
+        if yld > max_grain:
+            # Straw or greenhouse data — skip for grain yield enrichment
+            continue
+
+        key = (eppo, climate, mgmt)
+        groups[key].append(yld)
+
+    # Compute statistics per group
+    stats: dict[tuple[str, str, str], dict[str, Any]] = {}
+    for key, yields in groups.items():
+        if len(yields) < 1:
+            continue
+        eppo, climate, mgmt = key
+        hi = _HARVEST_INDICES.get(eppo, 0.35)
+        grain_mean = _mean(yields)
+        grain_min = min(yields)
+        grain_max = max(yields)
+        # Convert grain yield to total biomass using harvest index
+        biomass_mean = grain_mean / (hi * 1000)
+        biomass_min = grain_min / (hi * 1000)
+        biomass_max = grain_max / (hi * 1000)
+        stats[key] = {
+            "grain_yield_kg_ha": round(grain_mean),
+            "grain_min_kg_ha": round(grain_min),
+            "grain_max_kg_ha": round(grain_max),
+            "biomass_t_ha": round(biomass_mean, 1),
+            "biomass_min_t_ha": round(biomass_min, 1),
+            "biomass_max_t_ha": round(biomass_max, 1),
+            "n_trials": len(yields),
+            "harvest_index": hi,
+        }
+    return stats, all_obs
+
+
+def _apply_scraped_enrichment() -> None:
+    """Enrich PROTEIN_CROPS and COVER_CROPS with fresh scraped trial data.
+
+    Called at module load. Updates hardcoded values with measured data
+    from IFAPA (Andalusia) and ITACyL (Castilla y León) field trials.
+
+    Strategy:
+    - For each (eppo, climate), pick the management with the MOST trials
+    - Only override if n_trials >= _MIN_TRIALS_FOR_OVERRIDE
+    - Exception: if current value is estimated/extrapolated, override with any data
+    - Clear data_gap flag when we get real measurements
+    """
+    global _scraped_stats, _scraped_raw
+    stats, raw = _load_scraped_data()
+    _scraped_stats = stats
+    _scraped_raw = raw
+
+    # Group by (eppo, climate) and pick best management
+    best_per_climate: dict[tuple[str, str], dict] = {}
+    for (eppo, climate, mgmt), s in stats.items():
+        key = (eppo, climate)
+        if key not in best_per_climate or s["n_trials"] > best_per_climate[key]["n_trials"]:
+            best_per_climate[key] = {**s, "management": mgmt}
+
+    for (eppo, climate), s in best_per_climate.items():
+        mgmt = s["management"]
+        n = s["n_trials"]
+
+        # ── Enrich PROTEIN_CROPS ──
+        if eppo in PROTEIN_CROPS:
+            entry = PROTEIN_CROPS[eppo]
+            if climate not in entry.setdefault("climates", {}):
+                entry["climates"][climate] = {}
+            climate_data = entry["climates"][climate]
+
+            current = climate_data.get("biomass_t_ha", {})
+            current_source = current.get("source", "") if isinstance(current, dict) else ""
+            is_estimated = any(kw in current_source.lower() for kw in (
+                "estimated", "extrapolated", "derived"
+            ))
+            has_data_gap = entry.get("data_gap")
+
+            should_override = n >= _MIN_TRIALS_FOR_OVERRIDE or is_estimated
+
+            if should_override:
+                source_label = f"IFAPA/ITACyL field trials (n={n}, {mgmt})"
+                climate_data["biomass_t_ha"] = {
+                    "value": s["biomass_t_ha"],
+                    "min": s["biomass_min_t_ha"],
+                    "max": s["biomass_max_t_ha"],
+                    "source": source_label,
+                }
+                climate_data["grain_yield_kg_ha"] = {
+                    "value": s["grain_yield_kg_ha"],
+                    "min": s["grain_min_kg_ha"],
+                    "max": s["grain_max_kg_ha"],
+                    "source": source_label,
+                }
+                # Clear data_gap flag only if we have enough real trial data
+                if has_data_gap and n >= _MIN_TRIALS_FOR_OVERRIDE:
+                    entry.pop("data_gap", None)
+                    entry.pop("data_gap_note", None)
+
+        # ── Enrich COVER_CROPS where applicable ──
+        if eppo in COVER_CROPS:
+            entry = COVER_CROPS[eppo]
+            if climate not in entry.setdefault("climates", {}):
+                entry["climates"][climate] = {}
+            climate_data = entry["climates"][climate]
+            current = climate_data.get("biomass_t_ha", {})
+            current_source = current.get("source", "") if isinstance(current, dict) else ""
+            is_estimated = any(kw in current_source.lower() for kw in (
+                "estimated", "extrapolated", "derived"
+            ))
+
+            if n >= _MIN_TRIALS_FOR_OVERRIDE or is_estimated:
+                source_label = f"IFAPA/ITACyL field trials (n={n}, {mgmt})"
+                climate_data["biomass_t_ha"] = {
+                    "value": s["biomass_t_ha"],
+                    "min": s["biomass_min_t_ha"],
+                    "max": s["biomass_max_t_ha"],
+                    "source": source_label,
+                }
+
+
+def get_trial_observations(
+    species_eppo: str | None = None,
+    climate_class: str | None = None,
+    management: str | None = None,
+) -> list[dict[str, Any]]:
+    """Get raw trial observations from scraped data (IFAPA, ITACyL).
+
+    Args:
+        species_eppo: Filter by EPPO code (e.g., 'CIEAR'). None = all.
+        climate_class: Filter by Köppen climate (e.g., 'BSk'). None = all.
+        management: Filter by management (e.g., 'organic'). None = all.
+
+    Returns:
+        List of observation dicts with species, variety, location, yield, etc.
+    """
+    if not _scraped_raw:
+        _apply_scraped_enrichment()
+
+    results = []
+    for o in _scraped_raw:
+        if species_eppo and o.get("species_eppo") != species_eppo:
+            continue
+        if climate_class and o.get("climate_class") != climate_class:
+            continue
+        if management and o.get("management") != management:
+            continue
+        results.append(o)
+    return results
+
+
+def get_scraped_stats(
+    species_eppo: str | None = None,
+    climate_class: str | None = None,
+    management: str | None = None,
+) -> dict[str, Any] | None:
+    """Get aggregated statistics from scraped trial data.
+
+    Returns:
+        Dict with grain_yield_kg_ha, biomass_t_ha, n_trials, etc.
+        None if no data available for the given filters.
+    """
+    if not _scraped_stats:
+        _apply_scraped_enrichment()
+
+    if species_eppo and climate_class and management:
+        return _scraped_stats.get((species_eppo, climate_class, management))
+
+    # Return best match: try exact, then any management
+    if species_eppo and climate_class:
+        for mgmt in [management, "conventional", "low_input", "organic", "unspecified"]:
+            if mgmt is None:
+                continue
+            key = (species_eppo, climate_class, mgmt)
+            if key in _scraped_stats:
+                return _scraped_stats[key]
+    return None
+
+
+# ── Initialize enrichment at module load ─────────────────────────────────
+_apply_scraped_enrichment()
 
 
 def lookup(species_eppo: str, climate_class: str, param: str | None = None) -> dict[str, Any] | float | None:
