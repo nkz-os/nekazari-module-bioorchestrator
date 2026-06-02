@@ -232,3 +232,118 @@ export interface SoilData {
   source?: string;
   message?: string;
 }
+
+// ── F4: Crop-Health Integration ──────────────────────────────────────────────
+
+export interface AssignCropRequest {
+  parcel_id: string;
+  variety_uri: string;
+  crop_uri: string;
+  management: "organic" | "conventional";
+  season_start: string;
+  season_end: string;
+}
+
+export interface AssignCropResponse {
+  status: "assigned" | "cleared";
+  parcel_id: string;
+  variety: string;
+  crop: string;
+  management: string;
+}
+
+export interface CropContextResponse {
+  parcel_id: string;
+  crop: { eppo: string; name: string; scientific_name: string | null };
+  variety: { name: string; uri: string } | null;
+  management: string | null;
+  season: {
+    start: string | null;
+    end: string | null;
+    gdd_accumulated: number | null;
+    current_stage: string | null;
+  };
+  phenology: Record<string, unknown> | null;
+  thermal_limits: Record<string, unknown> | null;
+  soil: {
+    requirements: Record<string, unknown> | null;
+    actual: Record<string, unknown> | null;
+    suitability: Record<string, unknown> | null;
+  };
+  soil_sensors: Record<string, unknown> | null;
+  phenology_source: string;
+  match_level: string;
+  provenance: Record<string, unknown> | null;
+}
+
+export interface YieldPotentialResponse {
+  variety: string;
+  crop: string;
+  target_environment: Record<string, unknown>;
+  expected_yield_kg_ha: number;
+  confidence_interval: [number, number];
+  trials_analyzed: number;
+  similar_sites: string[];
+  current_estimated_yield_kg_ha?: number;
+  yield_gap_kg_ha?: number;
+  yield_gap_pct?: number;
+  limiting_factor?: string;
+  stage_ky: Record<string, number>;
+}
+
+const API_BASE = process.env.NKZ_API_URL || "https://nkz.robotika.cloud";
+
+export async function assignCrop(
+  data: AssignCropRequest
+): Promise<AssignCropResponse> {
+  const res = await fetch(`${API_BASE}/api/graph/agriculture/assign-crop`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+    credentials: "include",
+  });
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.detail || "Failed to assign crop");
+  }
+  return res.json();
+}
+
+export async function getCropContext(
+  parcelId: string,
+  gdd?: number
+): Promise<CropContextResponse> {
+  const params = new URLSearchParams({ parcel_id: parcelId });
+  if (gdd !== undefined) params.append("gdd", String(gdd));
+  const res = await fetch(
+    `${API_BASE}/api/graph/agriculture/crop-context?${params}`,
+    { credentials: "include" }
+  );
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.detail || "Failed to get crop context");
+  }
+  return res.json();
+}
+
+export async function getYieldPotential(
+  variety: string,
+  crop: string,
+  climateClass?: string,
+  soilType?: string,
+  parcelId?: string
+): Promise<YieldPotentialResponse> {
+  const params = new URLSearchParams({ variety, crop });
+  if (climateClass) params.append("climate_class", climateClass);
+  if (soilType) params.append("soil_type", soilType);
+  if (parcelId) params.append("parcel_id", parcelId);
+  const res = await fetch(
+    `${API_BASE}/api/graph/agriculture/yield-potential?${params}`,
+    { credentials: "include" }
+  );
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.detail || "Failed to get yield potential");
+  }
+  return res.json();
+}

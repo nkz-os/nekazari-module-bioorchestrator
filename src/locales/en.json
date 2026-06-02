@@ -361,5 +361,27 @@
     "source": "SoilGrids 2.0 + LUCAS 2018",
     "noEntity": "The soil module has not processed this parcel. Soil data requires defining horizons and selecting data providers.",
     "depthColumn": "{{from}}–{{to}} cm"
+  },
+  "assign": {
+    "title": "Assign variety to parcel",
+    "varietyLabel": "Variety",
+    "expectedYield": "Expected yield",
+    "trialsLabel": "trials in similar sites",
+    "parcelLabel": "Parcel",
+    "parcelPlaceholder": "Select parcel...",
+    "managementLabel": "Management",
+    "conventional": "Conventional",
+    "organic": "Organic",
+    "organicWarningTitle": "Organic mode: limited data",
+    "organicWarningBody": "Only {{organicTrials}} organic trials vs {{conventionalTrials}} conventional for this crop/climate. Yield and risk calculations have lower precision. Estimated yield: -{{pct}}% (Seufert et al. 2012, Ponisio et al. 2015).",
+    "seasonLabel": "Season",
+    "sowingDate": "Sowing",
+    "harvestDate": "Harvest",
+    "cancel": "Cancel",
+    "confirm": "Assign to this parcel",
+    "assigned_badge": "Assigned to {{parcel}}",
+    "reassign": "Reassign",
+    "clear": "Remove assignment",
+    "noParcels": "No parcels available. Create a parcel first."
   }
 }
