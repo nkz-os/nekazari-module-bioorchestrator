@@ -490,6 +490,7 @@ class Connector(AbstractConnector):
                 species_scientific_name=sci_names.get(eppo),
                 species_common_names=common.get(eppo, {}),
                 crop_category=d.get("crop_category"),
+                management="low_input",  # INTIA BSk/Cfb trials: rainfed, low external inputs
                 raw_record=d,
             )
             entity.compute_hash()

@@ -632,6 +632,7 @@ class Connector(AbstractConnector):
                 notes=d.get("notes"),
                 species_scientific_name=_SCI_NAMES.get(eppo),
                 species_common_names=_COMMON.get(eppo, {}),
+                management="unspecified",  # Practice notes cover both organic and conventional
                 crop_category=d.get("crop_category"),
                 raw_record=d,
             )

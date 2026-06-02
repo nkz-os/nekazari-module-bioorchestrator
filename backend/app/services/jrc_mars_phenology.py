@@ -448,6 +448,7 @@ class Connector(AbstractConnector):
                 notes=d.get("notes"),
                 species_scientific_name=_SCI_NAMES.get(eppo),
                 species_common_names=_COMMON.get(eppo, {}),
+                management="conventional",  # JRC MARS monitors mainstream agriculture
                 crop_category=d.get("crop_category"),
                 raw_record=d,
             )
