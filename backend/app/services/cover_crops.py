@@ -486,30 +486,53 @@ def estimate_dates(
 ) -> dict[str, Any]:
     """Estimate dates based on GDD accumulation and climate zone.
 
-    Returns dict with ISO date strings: cover_crop_sowing_date,
-    termination_date, protein_crop_sowing_date, protein_crop_harvest_date.
+    Cover crops are autumn-sown (Oct-Nov) and terminated the following spring
+    (Apr-Jun depending on climate and GDD accumulation). Protein crops are
+    spring-sown after termination and harvested in late summer.
+
+    GDD accumulates slowly over winter (~2-3/day) and accelerates in spring
+    (~8-12/day). We use a simple two-phase model: winter dormancy period
+    with minimal GDD (Dec-Feb) and active accumulation in spring.
+
+    Returns dict with ISO date strings.
     """
     from datetime import datetime, timedelta
 
     windows = SOWING_WINDOWS.get(climate_class, SOWING_WINDOWS["Csa"])
-    cover_start, cover_end = windows["cover_crop_autumn"]
-    protein_start, protein_end = windows["protein_crop_spring"]
+    cover_start, _ = windows["cover_crop_autumn"]
+    protein_start, _ = windows["protein_crop_spring"]
 
-    spring_gdd_rates = {"BSk": 8, "BSh": 10, "Csa": 10, "Cfb": 6, "Dfa": 10, "Dfb": 10}
+    # Spring GDD/day rates (climatic average Mar-Jun)
+    spring_gdd_rates = {"BSk": 8, "BSh": 12, "Csa": 10, "Cfb": 5, "Dfa": 8, "Dfb": 7}
     gdd_day = spring_gdd_rates.get(climate_class, 8)
 
     cover_sow = datetime(2026, *map(int, cover_start.split("-")))
-    autumn_gdd_rate = gdd_day * 0.4  # autumn GDD ~40% of spring rate
-    cover_term_days = cover_gdd / max(autumn_gdd_rate, 2)
-    termination = cover_sow + timedelta(days=int(cover_term_days))
 
-    protein_sow = termination + timedelta(days=7)
+    # Two-phase model:
+    # Phase 1 (autumn): ~30 days at 0.5× spring rate → ~120-150 GDD
+    # Phase 2 (winter dormancy): ~90 days at 0.1× spring rate → ~70-90 GDD  
+    # Phase 3 (spring): rest at full spring rate
+    autumn_gdd = 30 * gdd_day * 0.5   # ~120-150 GDD accumulated in autumn
+    winter_gdd = 90 * gdd_day * 0.1   # ~45-90 GDD during winter dormancy
+    remaining_gdd = cover_gdd - autumn_gdd - winter_gdd
+
+    if remaining_gdd <= 0:
+        remaining_gdd = cover_gdd * 0.7  # fallback: spring portion only
+
+    spring_days = remaining_gdd / max(gdd_day, 3)
+
+    # Termination: 30 autumn days + 90 winter days + spring_days from sowing
+    total_days = 30 + 90 + int(spring_days)
+    termination = cover_sow + timedelta(days=total_days)
+
+    # Protein crop: 1-2 weeks after termination, but not before spring window start
+    protein_sow = termination + timedelta(days=10)
     ref_protein_start = datetime(2026, *map(int, protein_start.split("-")))
     if protein_sow < ref_protein_start:
         protein_sow = ref_protein_start
 
-    protein_harvest_days = protein_gdd / gdd_day
-    harvest = protein_sow + timedelta(days=int(protein_harvest_days))
+    harvest_days = protein_gdd / max(gdd_day, 3)
+    harvest = protein_sow + timedelta(days=int(harvest_days))
 
     return {
         "cover_crop_sowing_date": cover_sow.strftime("%Y-%m-%d"),
@@ -517,4 +540,5 @@ def estimate_dates(
         "protein_crop_sowing_date": protein_sow.strftime("%Y-%m-%d"),
         "protein_crop_harvest_date": harvest.strftime("%Y-%m-%d"),
         "gdd_per_day_spring": gdd_day,
+        "gdd_accumulation_note": f"Two-phase model: {autumn_gdd:.0f} GDD (autumn) + {winter_gdd:.0f} GDD (winter) + {remaining_gdd:.0f} GDD (spring) = {cover_gdd:.0f} GDD total",
     }
