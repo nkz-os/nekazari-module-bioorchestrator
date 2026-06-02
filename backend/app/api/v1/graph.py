@@ -590,6 +590,10 @@ async def agriculture_extrapolate(
         description="Maximum annual rainfall of the target environment (mm)",
     ),
     top_n: int = Query(default=10, le=30, description="Number of top varieties to return"),
+    filter_soil_suitability: bool = Query(
+        default=False,
+        description="Filter out varieties incompatible with target soil (pH, texture)",
+    ),
 ):
     """Extrapolate best crop varieties for a target environment.
 
@@ -650,6 +654,7 @@ async def agriculture_extrapolate(
         rainfall_min=rainfall_min,
         rainfall_max=rainfall_max,
         top_n=top_n,
+        filter_soil_suitability=filter_soil_suitability,
     )
 
     if "error" in result:
@@ -772,6 +777,32 @@ async def agriculture_crop_context(
         parcel_id=parcel_id,
         tenant_id=tenant_id,
         gdd=gdd,
+    )
+    if "error" in result:
+        raise HTTPException(status_code=404, detail=result["error"])
+    return result
+
+
+@router.get("/agriculture/yield-potential")
+async def agriculture_yield_potential(
+    driver: DriverDep,
+    request: Request,
+    variety: str = Query(..., description="Variety name (e.g. 'LG_AURUS')"),
+    crop: str = Query(..., description="EPPO code or species (e.g. 'TRZAX')"),
+    climate_class: str | None = Query(default=None, description="Köppen climate class"),
+    soil_type: str | None = Query(default=None, description="WRB soil type"),
+    parcel_id: str | None = Query(default=None, description="Optional parcel URN for yield gap"),
+):
+    """Compute expected yield and yield gap for a variety."""
+    tenant_id = getattr(request.state, "tenant_id", "")
+    dao = GraphDAO(driver)
+    result = await dao.get_yield_potential(
+        variety=variety,
+        crop=crop,
+        climate_class=climate_class,
+        soil_type=soil_type,
+        parcel_id=parcel_id,
+        tenant_id=tenant_id,
     )
     if "error" in result:
         raise HTTPException(status_code=404, detail=result["error"])

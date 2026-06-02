@@ -925,6 +925,7 @@ class GraphDAO:
         rainfall_min: float | None = None,
         rainfall_max: float | None = None,
         top_n: int = 10,
+        filter_soil_suitability: bool = False,
     ) -> dict:
         """Extrapolate best varieties for a target environment.
 
@@ -1072,11 +1073,48 @@ class GraphDAO:
                     "trial_sites": sorted(record["sites"]),
                 })
 
+        # ── Soil suitability filter (post-ranking) ─────────────────
+        excluded_by_soil: list = []
+        target_ph = None
+        if filter_soil_suitability:
+            soil_ph_map = {
+                "Calcisol": 7.5, "Luvisol": 6.5, "Fluvisol": 7.0,
+                "Cambisol": 6.0, "Leptosol": 7.0, "Vertisol": 7.5,
+                "Chernozem": 7.0, "Phaeozem": 6.5, "Regosol": 6.5,
+                "Andosol": 5.5, "Podzol": 4.5, "Solonchak": 8.5,
+            }
+            tgt_soil = target_env.get("soil_type") or soil_type
+            if tgt_soil:
+                target_ph = soil_ph_map.get(tgt_soil)
+
+            if target_ph is not None:
+                filtered_ranked = []
+                for v in ranked:
+                    sr = await self.get_soil_suitability(crop)
+                    if not sr:
+                        filtered_ranked.append(v)
+                        continue
+                    ph_min = sr.get("ph_min")
+                    ph_max = sr.get("ph_max")
+                    if ph_min is not None and ph_max is not None:
+                        if not (ph_min <= target_ph <= ph_max):
+                            excluded_by_soil.append({
+                                "variety": v["variety"],
+                                "reason": f"pH {target_ph} outside range [{ph_min}, {ph_max}]",
+                                "soil_requirement": {"ph_min": ph_min, "ph_max": ph_max, "textures": sr.get("textures", [])},
+                            })
+                            continue
+                    filtered_ranked.append(v)
+                ranked = filtered_ranked
+
         return {
             "target_environment": target_env,
             "similar_sites": [s["name"] for s in similar_sites_result],
-            "similar_sites_detail": similar_sites_result[:5],  # top 5 for brevity
+            "similar_sites_detail": similar_sites_result[:5],
             "ranked_varieties": ranked,
+            "excluded_by_soil": excluded_by_soil,
+            "soil_filter_applied": filter_soil_suitability and target_ph is not None,
+            "target_soil": {"ph": target_ph} if filter_soil_suitability else None,
             "data_quality": {
                 "total_trials_analyzed": sum(v["trial_count"] for v in ranked),
                 "unique_varieties": len(ranked),
@@ -1623,6 +1661,107 @@ def _resolve_relationship(entity: dict, rel_name: str) -> str | None:
             )
         return {"status": "cleared", "parcel_id": parcel_id}
 
+    async def get_yield_potential(
+        self,
+        variety: str,
+        crop: str,
+        climate_class: str | None = None,
+        soil_type: str | None = None,
+        parcel_id: str | None = None,
+        tenant_id: str = "",
+    ) -> dict:
+        """Compute expected yield and yield gap for a variety."""
+        import math
+        import httpx
+        from app.ingestion.orion import OrionIngestionClient
+
+        trials = await self.get_variety_trials(
+            crop=crop,
+            climate_class=climate_class,
+            soil_type=soil_type,
+            limit=200,
+        )
+
+        variety_trials = [
+            t for t in trials
+            if t.get("variety", "").upper() == variety.upper()
+            or variety.upper() in t.get("variety", "").upper()
+        ]
+
+        if not variety_trials:
+            return {"error": f"No trial data found for variety '{variety}' (crop={crop})"}
+
+        yields = [t["yield_kg_ha"] for t in variety_trials if t.get("yield_kg_ha") is not None]
+        if not yields:
+            return {"error": f"No yield data available for variety '{variety}'"}
+
+        mean_yield = sum(yields) / len(yields)
+        n = len(yields)
+        stddev = math.sqrt(sum((y - mean_yield) ** 2 for y in yields) / (n - 1)) if n > 1 else 0
+        ci_low = mean_yield - 1.96 * stddev / math.sqrt(n) if n > 1 else mean_yield
+        ci_high = mean_yield + 1.96 * stddev / math.sqrt(n) if n > 1 else mean_yield
+
+        sites = list(set(t.get("site_name") for t in variety_trials if t.get("site_name")))
+
+        result: dict = {
+            "variety": variety,
+            "crop": crop,
+            "target_environment": {
+                "climate_class": climate_class,
+                "soil_type": soil_type,
+            },
+            "expected_yield_kg_ha": round(mean_yield, 1),
+            "confidence_interval": [round(ci_low, 1), round(ci_high, 1)],
+            "trials_analyzed": len(variety_trials),
+            "similar_sites": sites[:10],
+        }
+
+        if parcel_id:
+            current_yield = None
+            try:
+                orion = OrionIngestionClient()
+                async with httpx.AsyncClient(timeout=10.0) as client:
+                    assess_resp = await client.get(
+                        f"{orion.base}/ngsi-ld/v1/entities",
+                        params={
+                            "type": "CropHealthAssessment",
+                            "q": f'refAgriParcel=="{parcel_id}"',
+                            "limit": 1,
+                            "options": "keyValues",
+                        },
+                        headers={
+                            "Accept": "application/ld+json",
+                            "NGSILD-Tenant": tenant_id,
+                        },
+                    )
+                    if assess_resp.status_code == 200:
+                        entities = assess_resp.json()
+                        if entities:
+                            yup = entities[0].get("yieldUtilizationPct")
+                            if yup is not None:
+                                current_yield = mean_yield * (float(yup) / 100)
+            except Exception:
+                pass
+
+            if current_yield is not None:
+                gap = mean_yield - current_yield
+                result["current_estimated_yield_kg_ha"] = round(current_yield, 1)
+                result["yield_gap_kg_ha"] = round(gap, 1)
+                result["yield_gap_pct"] = round(gap / mean_yield * 100, 1) if mean_yield > 0 else 0
+
+        phenology = await self.get_phenology_params(species=crop)
+        if phenology:
+            result["stage_ky"] = {
+                phenology.get("stage", "vegetative"): phenology.get("ky", 0.45),
+            }
+
+        if climate_class and climate_class in ("BSk", "BSh", "Csa", "Csb"):
+            result["limiting_factor"] = "water"
+        else:
+            result["limiting_factor"] = "unknown"
+
+        return result
+
     async def get_crop_context(
         self,
         parcel_id: str,
@@ -1698,6 +1837,57 @@ def _resolve_relationship(entity: dict, rel_name: str) -> str | None:
         thermal = await self.get_heat_tolerance(species_query)
         soil_req = await self.get_soil_suitability(species_query)
 
+        # ── Soil module integration ────────────────────────────
+        soil_actual = {"data_available": False, "source": "unavailable"}
+        soil_suitability = None
+        try:
+            from app.services.soil_client import (
+                compute_soil_suitability,
+                get_parcel_soil_properties,
+            )
+            soil_actual = await get_parcel_soil_properties(parcel_id)
+            if soil_actual.get("data_available") and soil_req:
+                soil_suitability = compute_soil_suitability(soil_req, soil_actual)
+        except Exception:
+            pass
+
+        # ── Soil sensors from latest CropHealthAssessment ───────
+        soil_sensors: dict = {"available": False}
+        try:
+            async with httpx.AsyncClient(timeout=5.0) as client:
+                sensor_resp = await client.get(
+                    f"{orion.base}/ngsi-ld/v1/entities",
+                    params={
+                        "type": "CropHealthAssessment",
+                        "q": f'refAgriParcel=="{parcel_id}"',
+                        "limit": 1,
+                        "options": "keyValues",
+                    },
+                    headers={
+                        "Accept": "application/ld+json",
+                        "NGSILD-Tenant": tenant_id,
+                    },
+                )
+                if sensor_resp.status_code == 200:
+                    entities = sensor_resp.json()
+                    if entities and isinstance(entities, list):
+                        a = entities[0]
+                        has_data = any(
+                            a.get(k) is not None
+                            for k in ("soilPh", "soilEC", "soilMoisturePct", "soilTemperatureC")
+                        )
+                        if has_data:
+                            soil_sensors = {
+                                "available": True,
+                                "last_reading": a.get("assessedAt", ""),
+                                "ph": a.get("soilPh"),
+                                "ec_ds_m": a.get("soilEC"),
+                                "moisture_pct": a.get("soilMoisturePct"),
+                                "temperature_c": a.get("soilTemperatureC"),
+                            }
+        except Exception:
+            pass
+
         if phenology and not phenology.get("is_default", True):
             if variety_name and management:
                 phenology_source = f"bioorchestrator:variety:{variety_name}:management:{management}"
@@ -1751,10 +1941,10 @@ def _resolve_relationship(entity: dict, rel_name: str) -> str | None:
                     "depth_min_cm": soil_req.get("depth_min_cm") if soil_req else None,
                     "salinity_max_ds_m": soil_req.get("salinity_max_ds_m") if soil_req else None,
                 },
-                "actual": None,
-                "suitability": None,
+                "actual": soil_actual,
+                "suitability": soil_suitability,
             },
-            "soil_sensors": {"available": False},
+            "soil_sensors": soil_sensors,
             "phenology_source": phenology_source,
             "match_level": phenology.get("match_level") if phenology else "none",
             "provenance": phenology.get("provenance") if phenology else None,
