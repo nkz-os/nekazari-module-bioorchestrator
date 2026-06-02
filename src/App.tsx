@@ -17,6 +17,8 @@ import VarietyFinder from './components/VarietyFinder';
 import ClimateExplorer from './components/ClimateExplorer';
 import ParcelHealth from './components/ParcelHealth';
 import WaterBudget from './components/WaterBudget';
+import CropComparator from './components/CropComparator';
+import RotationPlanner from './components/RotationPlanner';
 import type { CropItem } from './services/api';
 import './i18n';
 
@@ -26,6 +28,8 @@ const TAB_GROUPS = [
     label: 'app.groups.parcel',
     tabs: [
       { id: 'variety-finder' as const, icon: Search, label: 'app.tabs.varietyFinder' },
+      { id: 'comparator' as const, icon: Activity, label: 'app.tabs.comparator' },
+      { id: 'rotation-plan' as const, icon: RefreshCw, label: 'app.tabs.rotationPlan' },
       { id: 'parcel-health' as const, icon: Heart, label: 'app.tabs.parcelHealth' },
       { id: 'water-budget' as const, icon: Droplets, label: 'app.tabs.waterBudget' },
     ],
@@ -96,6 +100,8 @@ const App: React.FC = () => {
         <CropCatalog onSelectCrop={(crop) => { setSelectedCrop(crop); setView('detail'); }} />
       )}
       {active === 'variety-finder' && <VarietyFinder />}
+      {active === 'comparator' && <CropComparator />}
+      {active === 'rotation-plan' && <RotationPlanner />}
       {active === 'parcel-health' && <ParcelHealth />}
       {active === 'water-budget' && <WaterBudget />}
       {active === 'climate' && <ClimateExplorer />}
