@@ -1,7 +1,32 @@
 # European Cover Crop Data — Gaps Summary
 
-> **Date:** 2026-06-02  
-> **Branch:** `feat/european-cover-crop-data`
+> **Date:** 2026-06-02 (updated post Phase 1)  
+> **Branches:** `feat/european-cover-crop-data`, `feat/intia-pipeline` (Phase 1 done)
+
+## Phase Progress
+
+| Phase | Source | Status | Repo | Records |
+|-------|--------|--------|------|---------|
+| ✅ Phase 1 | INTIA Navarra | **Done** | `nkz-intia-scraper` | 54 validated AgriKnowledge entities |
+| ⏳ Phase 2 | JRC MARS Bulletins | Pending exploration | — | — |
+| ⏳ Phase 3 | ITACyL / IFAPA | Pending exploration | — | — |
+
+### Phase 1 Deliverables (Complete)
+
+- **`nkz-intia-scraper/`**: PDF table extractor — 97 observations from 6 PDFs (2020-2025)
+- **`backend/app/services/intia_experimentacion.py`**: Connector producing AgriKnowledge entities
+- **`backend/app/services/intia_cover_crops.py`**: Updated with extracted values
+- **Key findings**: 48-treatment cover crop screening at Sartaguda (BSk), roller-crimper trials, rotation yields
+
+### Phase 2-3 Status
+
+JRC MARS (https://agri4cast.jrc.ec.europa.eu/) is a JavaScript SPA — requires either:
+- API discovery (check for REST endpoints)
+- Headless browser scraping (Playwright/Selenium)
+
+ITACyL/IFAPA portals require initial exploration to understand data format.
+
+**Request for user**: Explore JRC MARS for data download links, and ITACyL/IFAPA for legume trial sections.
 
 ## Executive Summary
 

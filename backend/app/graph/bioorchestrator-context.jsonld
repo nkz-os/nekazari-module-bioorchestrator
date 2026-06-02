@@ -201,15 +201,15 @@
       "@container": "@json"
     },
 
-    "TRIAL_AT": {
+    "refTrialSite": {
       "@id": "nkz:trialSite",
       "@type": "@id",
-      "rdfs:comment": "Links a trial observation to its TrialSite location"
+      "rdfs:comment": "NGSI-LD ref to TrialSite — links a trial observation to its TrialSite location"
     },
-    "SOURCED_FROM": {
+    "refArticleSource": {
       "@id": "dc:source",
       "@type": "@id",
-      "rdfs:comment": "Links data to its bibliographic source (ArticleSource)"
+      "rdfs:comment": "NGSI-LD ref to ArticleSource — links data to its bibliographic source"
     },
 
     "name": "nkz:siteName",
