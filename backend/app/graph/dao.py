@@ -1487,3 +1487,116 @@ class GraphDAO:
         if isinstance(attr, dict):
             return attr.get("value")
         return attr
+
+    # ═══════════════════════════════════════════════════════════════════════════
+    # F4: Crop-Health Integration
+    # ═══════════════════════════════════════════════════════════════════════════
+
+    async def assign_crop_to_parcel(
+        self,
+        parcel_id: str,
+        crop_uri: str,
+        variety_uri: str,
+        management: str,
+        season_start: str,
+        season_end: str,
+        tenant_id: str,
+    ) -> dict:
+        """Write crop assignment to Orion-LD AgriParcel entity.
+
+        Creates/updates hasAgriCrop, hasAgriCropVariety Relationships
+        and management, cropSeasonStart, cropSeasonEnd Properties.
+        Overwrites any existing assignment (one active crop per parcel).
+        """
+        import httpx
+        from fastapi import HTTPException
+
+        from app.ingestion.orion import OrionIngestionClient
+
+        orion = OrionIngestionClient()
+
+        patch_body = {
+            "hasAgriCrop": {
+                "type": "Relationship",
+                "object": crop_uri,
+            },
+            "hasAgriCropVariety": {
+                "type": "Relationship",
+                "object": variety_uri,
+            },
+            "management": {
+                "type": "Property",
+                "value": management,
+            },
+            "cropSeasonStart": {
+                "type": "Property",
+                "value": {"@type": "Date", "@value": season_start},
+            },
+            "cropSeasonEnd": {
+                "type": "Property",
+                "value": {"@type": "Date", "@value": season_end},
+            },
+        }
+
+        try:
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                resp = await client.patch(
+                    f"{orion.base}/ngsi-ld/v1/entities/{parcel_id}/attrs",
+                    json=patch_body,
+                    headers={
+                        "Content-Type": "application/ld+json",
+                        "NGSILD-Tenant": tenant_id,
+                        "Fiware-Service": tenant_id,
+                        "Fiware-ServicePath": "/",
+                    },
+                )
+                if resp.status_code in (204, 200):
+                    return {
+                        "status": "assigned",
+                        "parcel_id": parcel_id,
+                        "variety": variety_uri.split(":")[-1],
+                        "crop": crop_uri.split(":")[-1],
+                        "management": management,
+                    }
+                elif resp.status_code == 404:
+                    raise HTTPException(
+                        status_code=404, detail=f"Parcel not found: {parcel_id}"
+                    )
+                else:
+                    raise HTTPException(
+                        status_code=502,
+                        detail=f"Orion-LD returned {resp.status_code}: {resp.text[:200]}",
+                    )
+        except httpx.ConnectError:
+            raise HTTPException(status_code=502, detail="Orion-LD unreachable")
+
+    async def clear_crop_assignment(
+        self, parcel_id: str, tenant_id: str
+    ) -> dict:
+        """Remove crop assignment from AgriParcel."""
+        import httpx
+
+        from app.ingestion.orion import OrionIngestionClient
+
+        orion = OrionIngestionClient()
+
+        patch_body = {
+            "hasAgriCrop": {"type": "Relationship", "object": None},
+            "hasAgriCropVariety": {"type": "Relationship", "object": None},
+            "management": {"type": "Property", "value": None},
+            "cropSeasonStart": {"type": "Property", "value": None},
+            "cropSeasonEnd": {"type": "Property", "value": None},
+        }
+
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            await client.patch(
+                f"{orion.base}/ngsi-ld/v1/entities/{parcel_id}/attrs",
+                json=patch_body,
+                headers={
+                    "Content-Type": "application/ld+json",
+                    "NGSILD-Tenant": tenant_id,
+                    "Fiware-Service": tenant_id,
+                    "Fiware-ServicePath": "/",
+                },
+            )
+        return {"status": "cleared", "parcel_id": parcel_id}
