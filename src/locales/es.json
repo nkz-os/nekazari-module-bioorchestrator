@@ -2,12 +2,18 @@
   "app": {
     "title": "BioOrchestrator",
     "subtitle": "Pipeline de biodiversidad multidominio — Agricultura · Ganadería · Forestal · Agroforestería",
+    "groups": {
+      "parcel": "Mi Parcela",
+      "reference": "Datos de Referencia"
+    },
     "tabs": {
       "sources": "Fuentes de datos",
       "pipeline": "Pipeline",
       "phenology": "Fenología",
       "dadis": "Explorador DAD-IS",
-      "variety-finder": "Buscador de variedades",
+      "varietyFinder": "Buscador de variedades",
+      "parcelHealth": "Salud Parcela",
+      "waterBudget": "Balance Hídrico",
       "catalog": "Catálogo",
       "thermal": "Térmica",
       "npk": "NPK",
@@ -383,5 +389,40 @@
     "reassign": "Reasignar",
     "clear": "Quitar asignación",
     "noParcels": "No hay parcelas disponibles. Crea una parcela primero."
+  },
+  "common": {
+    "loading": "Cargando..."
+  },
+  "parcelHealth": {
+    "title": "Salud de la Parcela",
+    "selectParcel": "Seleccionar parcela...",
+    "selectPrompt": "Selecciona una parcela para ver su estado de salud",
+    "noCrop": "Esta parcela no tiene cultivo asignado.",
+    "goToVarietyFinder": "Ve al Buscador de Variedades para asignar un cultivo primero.",
+    "error": "No se pudo cargar los datos de salud",
+    "crop": "Cultivo",
+    "variety": "Variedad",
+    "management": "Manejo",
+    "source": "Fuente",
+    "calibrated": "Calibrado",
+    "default": "Por defecto",
+    "phenology": "Fenología",
+    "yieldGap": "Brecha de Rendimiento",
+    "expected": "Esperado",
+    "soilSuitability": "Idoneidad del Suelo",
+    "soilSensors": "Sensores de Suelo",
+    "phenologySource": "Origen fenología",
+    "matchLevel": "Nivel de coincidencia"
+  },
+  "waterBudget": {
+    "title": "Balance Hídrico",
+    "selectParcel": "Seleccionar parcela...",
+    "selectPrompt": "Selecciona una parcela para calcular necesidades de riego",
+    "availableWater": "Agua Disponible",
+    "etc": "Evapotranspiración (ETc)",
+    "rainfall": "Lluvia Esperada",
+    "forecast": "Previsión",
+    "deficit": "Déficit",
+    "irrigationRequired": "Riego necesario"
   }
 }

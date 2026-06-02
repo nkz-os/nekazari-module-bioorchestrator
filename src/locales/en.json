@@ -2,12 +2,18 @@
   "app": {
     "title": "BioOrchestrator",
     "subtitle": "Multi-domain biodiversity pipeline — Agriculture · Livestock · Forestry · Agroforestry",
+    "groups": {
+      "parcel": "My Parcel",
+      "reference": "Reference Data"
+    },
     "tabs": {
       "sources": "Data sources",
       "pipeline": "Pipeline",
       "phenology": "Phenology",
       "dadis": "DAD-IS Explorer",
-      "variety-finder": "Variety Finder",
+      "varietyFinder": "Variety Finder",
+      "parcelHealth": "Parcel Health",
+      "waterBudget": "Water Budget",
       "catalog": "Catalog",
       "thermal": "Thermal",
       "npk": "NPK",
@@ -383,5 +389,42 @@
     "reassign": "Reassign",
     "clear": "Remove assignment",
     "noParcels": "No parcels available. Create a parcel first."
+  },
+  "common": {
+    "loading": "Loading..."
+  },
+  "parcelHealth": {
+    "title": "Parcel Health",
+    "selectParcel": "Select parcel...",
+    "selectPrompt": "Select a parcel to view its health status",
+    "noCrop": "No crop assigned to this parcel yet.",
+    "goToVarietyFinder": "Go to Variety Finder to assign a crop variety first.",
+    "error": "Could not load health data",
+    "crop": "Crop",
+    "variety": "Variety",
+    "management": "Management",
+    "source": "Source",
+    "calibrated": "Calibrated",
+    "default": "Default",
+    "phenology": "Phenology",
+    "yieldGap": "Yield Gap",
+    "expected": "Expected",
+    "soilSuitability": "Soil Suitability",
+    "soilSensors": "Soil Sensors",
+    "phenologySource": "Phenology source",
+    "matchLevel": "Match level"
+  },
+  "waterBudget": {
+    "title": "Water Budget",
+    "selectParcel": "Select parcel...",
+    "selectPrompt": "Select a parcel to calculate irrigation needs",
+    "availableWater": "Available Water",
+    "etc": "Evapotranspiration (ETc)",
+    "rainfall": "Expected Rainfall",
+    "forecast": "Forecast",
+    "deficit": "Deficit",
+    "irrigationRequired": "Irrigation required",
+    "recommendation": "Recommendation",
+    "confidence": "Confidence"
   }
 }
