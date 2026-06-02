@@ -1769,7 +1769,7 @@ class GraphDAO:
             extrapolated = await self.extrapolate_varieties(
                 crop=crop, climate_class=target_climate, soil_type=target_soil, top_n=1,
             )
-            best = extrapolated.get("ranked_varieties", [{}])[0] if isinstance(extrapolated, dict) else {}
+            best = (extrapolated.get("ranked_varieties") or [{}])[0] if isinstance(extrapolated, dict) else {}
 
             yield_val = best.get("mean_yield_kg_ha", 0) or 0
             ops = ref["operations_count"]
@@ -1878,7 +1878,7 @@ class GraphDAO:
             ref = get_crop_ref(crop)
 
             extrapolated = await self.extrapolate_varieties(crop=crop, top_n=1)
-            best = extrapolated.get("ranked_varieties", [{}])[0] if isinstance(extrapolated, dict) else {}
+            best = (extrapolated.get("ranked_varieties") or [{}])[0] if isinstance(extrapolated, dict) else {}
             yield_val = best.get("mean_yield_kg_ha", 0) or 0
 
             carbon = ref["carbon_fixed_tco2e_ha"]
