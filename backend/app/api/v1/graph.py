@@ -701,6 +701,10 @@ async def agriculture_regenerative_sequence(
         default="any",
         description="Management context: 'organic', 'conventional', or 'any'",
     ),
+    parcel_id: str | None = Query(
+        default=None,
+        description="Optional AgriParcel URN for real soil AWC data from Soil module",
+    ),
 ):
     """Plan a regenerative cover-crop-to-protein-crop sequence.
 
@@ -712,8 +716,13 @@ async def agriculture_regenerative_sequence(
     Uses European agronomic data from INTIA Navarra, JRC MARS Bulletins,
     and Legumes Translated (H2020).
 
+    Calculation methodology follows FAO-56 (Allen et al. 1998) for water
+    balance, Clark (2007) for cover crop N dynamics, and Peoples et al.
+    (2021) for legume N fixation rates. Full audit trail in response.
+
     Example:
       /agriculture/regenerative-sequence?climate_class=Csa&target_protein=VICFX
+      /agriculture/regenerative-sequence?climate_class=Csa&target_protein=VICFX&parcel_id=urn:ngsi-ld:AgriParcel:123
       /agriculture/regenerative-sequence?climate_class=BSk&target_protein=CIEAR&management=organic
 
     Management modes:
@@ -734,6 +743,7 @@ async def agriculture_regenerative_sequence(
         target_protein=target_protein,
         soil_type=soil_type,
         management=management,
+        parcel_id=parcel_id,
     )
 
     if "error" in result:
