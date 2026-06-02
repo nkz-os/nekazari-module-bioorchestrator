@@ -809,6 +809,24 @@ async def agriculture_yield_potential(
     return result
 
 
+@router.get("/agriculture/water-budget")
+async def agriculture_water_budget(
+    driver: DriverDep,
+    request: Request,
+    parcel_id: str = Query(..., description="AgriParcel URN"),
+    week_start: str | None = Query(default=None, description="ISO date for week start (default: today)"),
+):
+    """Calculate weekly irrigation requirement for a parcel."""
+    tenant_id = getattr(request.state, "tenant_id", "")
+    dao = GraphDAO(driver)
+    result = await dao.get_water_budget(
+        parcel_id=parcel_id, tenant_id=tenant_id, week_start=week_start,
+    )
+    if "error" in result:
+        raise HTTPException(status_code=404, detail=result["error"])
+    return result
+
+
 # ═══════════════════════════════════════════════════════════════════════════════
 # F4: Crop-Health Integration — Endpoints
 # ═══════════════════════════════════════════════════════════════════════════════

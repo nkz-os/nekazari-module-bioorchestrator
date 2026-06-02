@@ -1742,6 +1742,99 @@ class GraphDAO:
         result["limiting_factor"] = "water" if climate_class and climate_class in ("BSk", "BSh", "Csa", "Csb") else "unknown"
         return result
 
+    async def get_water_budget(
+        self, parcel_id: str, tenant_id: str = "", week_start: str | None = None
+    ) -> dict:
+        """Calculate weekly irrigation requirement for a parcel."""
+        import os
+        import httpx
+        from datetime import date, timedelta
+
+        ws = date.fromisoformat(week_start) if week_start else date.today()
+        we = ws + timedelta(days=6)
+
+        ctx = await self.get_crop_context(parcel_id=parcel_id, tenant_id=tenant_id)
+        if "error" in ctx:
+            return ctx
+
+        kc = 0.85
+        kc_stage = "unknown"
+        awc = 120
+        confidence = "medium"
+        notes: list = []
+
+        if ctx.get("phenology") and ctx["phenology"].get("kc") is not None:
+            kc = ctx["phenology"]["kc"]
+            kc_stage = ctx["phenology"].get("stage", "unknown")
+        else:
+            notes.append("Using default Kc (no phenology data)")
+
+        soil = ctx.get("soil", {})
+        actual = soil.get("actual", {})
+        if actual.get("data_available") and actual.get("awc_mm"):
+            awc = actual["awc_mm"]
+        else:
+            notes.append("Using default AWC 120mm (Soil module unavailable)")
+            confidence = "low"
+
+        sensor = ctx.get("soil_sensors", {})
+        current_moisture: float | None = None
+        if sensor.get("available") and sensor.get("moisture_pct"):
+            current_moisture = awc * sensor["moisture_pct"] / 100
+            confidence = "high"
+            notes = []
+        else:
+            current_moisture = awc * 0.7
+            notes.append("No soil moisture sensor — assuming 70% AWC")
+
+        eto = 35.0
+        rainfall = 5.0
+        try:
+            weather_url = os.getenv("WEATHER_API_URL", "")
+            if weather_url:
+                async with httpx.AsyncClient(timeout=10.0) as client:
+                    resp = await client.get(
+                        f"{weather_url}/api/weather/weekly",
+                        params={"lat": 0, "lon": 0, "start": ws.isoformat(), "end": we.isoformat()},
+                        headers={"X-Tenant-ID": tenant_id},
+                    )
+                    if resp.status_code == 200:
+                        wdata = resp.json()
+                        eto = float(wdata.get("eto_mm", eto))
+                        rainfall = float(wdata.get("precip_mm", rainfall))
+                    else:
+                        notes.append("Weather API unavailable — using averages")
+        except Exception:
+            notes.append("Weather API unavailable — using averages")
+
+        etc_weekly = round(kc * eto, 2)
+        mad = awc * 0.5
+        available = max(0.0, current_moisture - mad)
+        deficit = max(0.0, round(etc_weekly - rainfall - available, 2))
+        irrigation_mm = round(deficit)
+        irrigation_m3_ha = round(irrigation_mm * 10)
+
+        if deficit <= 0:
+            recommendation = "No irrigation needed this week"
+        elif deficit < 15:
+            recommendation = f"Light irrigation: approximately {irrigation_mm}mm"
+        elif deficit < 30:
+            recommendation = f"Apply approximately {irrigation_mm}mm irrigation this week"
+        else:
+            recommendation = f"Significant deficit: apply {irrigation_mm}mm irrigation urgently"
+
+        return {
+            "parcel_id": parcel_id, "week_start": ws.isoformat(), "week_end": we.isoformat(),
+            "soil_awc_mm": awc, "current_moisture_estimate_mm": round(current_moisture, 1),
+            "mad_mm": round(mad, 1), "kc": kc, "kc_stage": kc_stage,
+            "eto_weekly_mm": eto, "etc_weekly_mm": etc_weekly,
+            "forecast_rainfall_mm": rainfall, "deficit_mm": deficit,
+            "irrigation_required_mm": irrigation_mm, "irrigation_required_m3_ha": irrigation_m3_ha,
+            "confidence": confidence,
+            "confidence_notes": "; ".join(notes) if notes else "All data sources available",
+            "recommendation": recommendation,
+        }
+
 
 def _extract_prop_value(prop: dict | str | None) -> str | None:
     """Extract value from NGSI-LD Property (dict with 'value' key) or plain string."""
