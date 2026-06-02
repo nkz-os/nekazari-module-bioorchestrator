@@ -361,5 +361,27 @@
     "source": "SoilGrids 2.0 + LUCAS 2018",
     "noEntity": "El módulo soil no ha procesado esta parcela. Los datos de suelo requieren definir horizontes y seleccionar proveedores de datos.",
     "depthColumn": "{{from}}–{{to}} cm"
+  },
+  "assign": {
+    "title": "Asignar variedad a parcela",
+    "varietyLabel": "Variedad",
+    "expectedYield": "Rendimiento esperado",
+    "trialsLabel": "ensayos en sitios similares",
+    "parcelLabel": "Parcela",
+    "parcelPlaceholder": "Seleccionar parcela...",
+    "managementLabel": "Manejo",
+    "conventional": "Convencional",
+    "organic": "Orgánico",
+    "organicWarningTitle": "Modo orgánico: datos limitados",
+    "organicWarningBody": "Solo {{organicTrials}} ensayos orgánicos vs {{conventionalTrials}} convencionales para este cultivo/clima. Los cálculos de rendimiento y riesgo tienen menor precisión. Rendimiento estimado: -{{pct}}% (Seufert et al. 2012, Ponisio et al. 2015).",
+    "seasonLabel": "Temporada",
+    "sowingDate": "Siembra",
+    "harvestDate": "Cosecha",
+    "cancel": "Cancelar",
+    "confirm": "Asignar a esta parcela",
+    "assigned_badge": "Asignada a {{parcel}}",
+    "reassign": "Reasignar",
+    "clear": "Quitar asignación",
+    "noParcels": "No hay parcelas disponibles. Crea una parcela primero."
   }
 }
