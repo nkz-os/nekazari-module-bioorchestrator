@@ -1488,6 +1488,28 @@ class GraphDAO:
             return attr.get("value")
         return attr
 
+
+def _extract_prop_value(prop: dict | str | None) -> str | None:
+    """Extract value from NGSI-LD Property (dict with 'value' key) or plain string."""
+    if prop is None:
+        return None
+    if isinstance(prop, dict):
+        val = prop.get("value")
+        if isinstance(val, dict):
+            return val.get("@value")
+        return val
+    return str(prop)
+
+
+def _resolve_relationship(entity: dict, rel_name: str) -> str | None:
+    """Extract object URI from an NGSI-LD Relationship or string."""
+    rel = entity.get(rel_name)
+    if isinstance(rel, dict) and rel.get("type") == "Relationship":
+        return rel.get("object")
+    if isinstance(rel, str):
+        return rel
+    return None
+
     # ═══════════════════════════════════════════════════════════════════════════
     # F4: Crop-Health Integration
     # ═══════════════════════════════════════════════════════════════════════════
@@ -1600,3 +1622,140 @@ class GraphDAO:
                 },
             )
         return {"status": "cleared", "parcel_id": parcel_id}
+
+    async def get_crop_context(
+        self,
+        parcel_id: str,
+        tenant_id: str = "",
+        gdd: float | None = None,
+    ) -> dict:
+        """Return full calibrated agronomic context for a parcel.
+
+        1. Read hasAgriCrop / hasAgriCropVariety from Orion-LD AgriParcel
+        2. Enrich with Neo4j phenology, thermal, soil data
+        3. Assemble phenology_source string
+        """
+        import httpx
+        from fastapi import HTTPException
+        from app.ingestion.orion import OrionIngestionClient
+
+        orion = OrionIngestionClient()
+
+        try:
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                resp = await client.get(
+                    f"{orion.base}/ngsi-ld/v1/entities/{parcel_id}",
+                    headers={
+                        "Accept": "application/ld+json",
+                        "NGSILD-Tenant": tenant_id,
+                        "Fiware-Service": tenant_id,
+                    },
+                )
+                if resp.status_code == 404:
+                    return {"error": f"Parcel not found: {parcel_id}"}
+                resp.raise_for_status()
+                parcel = resp.json()
+        except httpx.ConnectError:
+            raise HTTPException(status_code=502, detail="Orion-LD unreachable")
+        except Exception as e:
+            return {"error": f"Failed to read parcel: {str(e)}"}
+
+        crop_uri = _resolve_relationship(parcel, "hasAgriCrop")
+        variety_uri = _resolve_relationship(parcel, "hasAgriCropVariety")
+        management = _extract_prop_value(parcel.get("management"))
+        season_start = _extract_prop_value(parcel.get("cropSeasonStart"))
+        season_end = _extract_prop_value(parcel.get("cropSeasonEnd"))
+
+        if not crop_uri:
+            return {"error": "Parcel has no crop assigned"}
+
+        crop_eppo = crop_uri.split(":")[-1] if crop_uri else "unknown"
+        crop_name = None
+        crop_scientific = None
+        try:
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                crop_resp = await client.get(
+                    f"{orion.base}/ngsi-ld/v1/entities/{crop_uri}",
+                    headers={"Accept": "application/ld+json", "NGSILD-Tenant": tenant_id},
+                )
+                if crop_resp.status_code == 200:
+                    crop_entity = crop_resp.json()
+                    crop_name = _extract_prop_value(crop_entity.get("name"))
+                    crop_scientific = _extract_prop_value(crop_entity.get("scientificName"))
+        except Exception:
+            pass
+
+        variety_name = variety_uri.split(":")[-1] if variety_uri else None
+
+        species_query = crop_name or crop_scientific or crop_eppo
+        phenology = await self.get_phenology_params(
+            species=species_query,
+            cultivar=variety_name,
+            management=management,
+            gdd=gdd,
+        )
+
+        thermal = await self.get_heat_tolerance(species_query)
+        soil_req = await self.get_soil_suitability(species_query)
+
+        if phenology and not phenology.get("is_default", True):
+            if variety_name and management:
+                phenology_source = f"bioorchestrator:variety:{variety_name}:management:{management}"
+            elif variety_name:
+                phenology_source = f"bioorchestrator:variety:{variety_name}"
+            else:
+                phenology_source = f"bioorchestrator:species:{crop_eppo}"
+        else:
+            phenology_source = "default"
+
+        return {
+            "parcel_id": parcel_id,
+            "crop": {
+                "eppo": crop_eppo,
+                "name": crop_name or crop_eppo,
+                "scientific_name": crop_scientific,
+            },
+            "variety": {
+                "name": variety_name,
+                "uri": variety_uri,
+            } if variety_name else None,
+            "management": management,
+            "season": {
+                "start": season_start,
+                "end": season_end,
+                "gdd_accumulated": gdd,
+                "current_stage": phenology.get("stage") if phenology else None,
+            },
+            "phenology": {
+                "stage": phenology.get("stage"),
+                "stage_gdd_min": phenology.get("stage_gdd_min"),
+                "stage_gdd_max": phenology.get("stage_gdd_max"),
+                "kc": phenology.get("kc"),
+                "ky": phenology.get("ky"),
+                "d1": phenology.get("d1"),
+                "d2": phenology.get("d2"),
+                "mds_ref": phenology.get("mds_ref"),
+                "base_temp": phenology.get("stage_base_temp"),
+            } if phenology else None,
+            "thermal_limits": {
+                "heat_damage_c": thermal.get("heat_damage_c"),
+                "frost_damage_c": thermal.get("frost_damage_c"),
+                "heat_accum_hours": thermal.get("heat_accum_hours"),
+            } if thermal else None,
+            "soil": {
+                "requirements": {
+                    "ph_min": soil_req.get("ph_min") if soil_req else None,
+                    "ph_max": soil_req.get("ph_max") if soil_req else None,
+                    "textures": soil_req.get("textures", []) if soil_req else [],
+                    "drainage": soil_req.get("drainage") if soil_req else None,
+                    "depth_min_cm": soil_req.get("depth_min_cm") if soil_req else None,
+                    "salinity_max_ds_m": soil_req.get("salinity_max_ds_m") if soil_req else None,
+                },
+                "actual": None,
+                "suitability": None,
+            },
+            "soil_sensors": {"available": False},
+            "phenology_source": phenology_source,
+            "match_level": phenology.get("match_level") if phenology else "none",
+            "provenance": phenology.get("provenance") if phenology else None,
+        }

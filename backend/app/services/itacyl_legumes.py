@@ -1,8 +1,7 @@
-"""IFAPA Servifapa connector — reads extracted legume yield data from Andalusia.
+"""ITACyL legume trial connector — Castilla y León (BSk climate).
 
-Consumes nkz-ifapa-scraper output and produces AgriKnowledge entities.
-Data: 133 observations across 9 species from IFAPA variety trials (2003-2024).
-Climate: Csa (Mediterranean) and BSh (hot semi-arid) in Andalusia, Spain.
+Consumes nkz-itacyl-scraper output and produces AgriKnowledge entities.
+Climate: BSk (cold semi-arid continental) in Castilla y León, Spain.
 """
 
 from __future__ import annotations
@@ -17,35 +16,30 @@ from ikerketa.models.agronomy import AgriKnowledge
 
 
 def _resolve_management(entry: dict) -> str:
-    """Resolve management from observation field or filename fallback."""
+    """Resolve management from observation field."""
     mgmt = entry.get("management", "")
     if mgmt and mgmt != "conventional":
-        # Trust the extractor's management classification
-        # (e.g., 'organic', 'low_input' from intercropping/inoculated systems)
         return mgmt
-    source_pdf = entry.get("source_pdf", "")
-    if any(k in source_pdf.lower() for k in ('ecologico', 'ecológica', 'ecológico')):
-        return "organic"
     return "conventional"
 
 
 class Connector(AbstractConnector):
-    """IFAPA legume variety trial connector.
+    """ITACyL legume variety trial connector.
 
     Output: AgriKnowledge entities for Neo4j :AgriKnowledge ingestion.
-    Management: conventional (default) or organic (for ecológico PDFs).
+    Management: conventional (official variety trials in Castilla y León).
     """
 
     @property
     def source_name(self) -> DataSource:
-        return DataSource.IFAPA
+        return DataSource.ITACYL
 
     def fetch(self, *, limit: int | None = None, **params: Any) -> list[RawRecord]:
         json_path = params.get("json_path", "")
         if not json_path:
             candidates = [
-                "/home/g/Documents/nekazari/nkz-ifapa-scraper/data/output/ifapa_extracted.json",
-                "data/output/ifapa_extracted.json",
+                "/home/g/Documents/nekazari/nkz-itacyl-scraper/data/output/itacyl_extracted.json",
+                "data/output/itacyl_extracted.json",
             ]
             for c in candidates:
                 if Path(c).exists():
@@ -69,8 +63,8 @@ class Connector(AbstractConnector):
             if species_filter and eppo != species_filter:
                 continue
             records.append(RawRecord(
-                source_name=DataSource.IFAPA,
-                record_id=f"ifapa_{i}",
+                source_name=DataSource.ITACYL,
+                record_id=f"itacyl_{i}",
                 data=entry,
             ))
         return records
@@ -80,33 +74,38 @@ class Connector(AbstractConnector):
 
         entities: list[BaseEntity] = []
 
-        # Grain yield caps per species (filter straw + greenhouse):
+        # Group by (species_eppo, climate_class, management) and compute stats
+        groups: dict[tuple[str, str], list[float]] = defaultdict(list)
+        details: dict[tuple[str, str], dict] = {}
+
+        # Configure which yields to include (filter out straw/guide data)
         MAX_GRAIN_YIELD: dict[str, float] = {
             "CIEAR": 8000,
-            "PIBAR": 8000,
-            "LENCU": 2800,
+            "PIBAR": 8000,   # pea grain up to 6 t/ha in irrigated
+            "LENCU": 2800,   # lentil grain max ~2.5 t/ha
             "VICFX": 8000,
             "LTHSA": 4000,
+            "GLXMA": 8000,
             "VICSA": 8000,
             "VICVI": 8000,
         }
 
-        # Group by (species_eppo, climate_class) and compute mean yield
-        groups: dict[tuple[str, str], list[float]] = defaultdict(list)
-        details: dict[tuple[str, str], dict] = {}
-
         for record in raw_records:
             d = record.data
             eppo = d.get("species_eppo", "")
-            climate = d.get("climate_class", "Csa")
+            climate = d.get("climate_class", "BSk")
+            mgmt = _resolve_management(d)
+
             yld = d.get("yield_kg_ha", 0) or 0
             if yld <= 0:
                 continue
 
-            # Filter straw yields, greenhouse data, guides
+            # Filter straw yields and greenhouse data
             max_grain = MAX_GRAIN_YIELD.get(eppo, 8000)
             if yld > max_grain:
                 continue
+
+            # Skip cultivation guides
             notes = d.get("notes", "")
             source_pdf = d.get("source_pdf", "")
             if "guía" in notes.lower() or "guia" in source_pdf.lower():
@@ -119,7 +118,7 @@ class Connector(AbstractConnector):
                     "species": d.get("species", ""),
                     "location": d.get("location", ""),
                     "campaign": d.get("campaign", ""),
-                    "management": _resolve_management(d),
+                    "management": mgmt,
                     "varieties": [],
                     "pdfs": set(),
                 }
@@ -138,8 +137,8 @@ class Connector(AbstractConnector):
             n_varieties = len(set(det["varieties"]))
 
             entity = AgriKnowledge(
-                source_name=DataSource.IFAPA,
-                source_record_id=f"ifapa_{eppo}_{climate}",
+                source_name=DataSource.ITACYL,
+                source_record_id=f"itacyl_{eppo}_{climate}",
                 species_eppo=eppo,
                 climate_class=climate,
                 parameter="biomass_t_ha",
@@ -147,12 +146,17 @@ class Connector(AbstractConnector):
                 unit="t/ha",
                 value_min=round(val_min, 2),
                 value_max=round(val_max, 2),
-                source_url="https://www.juntadeandalucia.es/agriculturaypesca/ifapa/servifapa/",
-                source_institution="IFAPA (Junta de Andalucía)",
+                source_url="https://www.itacyl.es/investigacion-e-innovacion/i-i-agricola/resultados-de-ensayos",
+                source_institution="ITACyL (Instituto Tecnológico Agrario de Castilla y León)",
                 confidence=0.85,
                 management=det["management"],
                 crop_category="protein_crop",
-                notes=f"{det['species']} yield. {len(yields)} trials, {n_varieties} varieties. {det['location']}, {det['campaign']}. PDFs: {', '.join(sorted(det['pdfs'])[:3])}",
+                notes=(
+                    f"{det['species']} grain yield. {len(yields)} trials, "
+                    f"{n_varieties} varieties. "
+                    f"Locations: {det['location']}. Campaigns: {det['campaign']}. "
+                    f"PDFs: {', '.join(sorted(det['pdfs'])[:3])}"
+                ),
                 raw_record={"yields": yields, "n": len(yields)},
             )
             entity.compute_hash()
