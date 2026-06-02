@@ -208,6 +208,7 @@ class GraphDAO:
                     p.kc AS kc,
                     p.kcCiLow AS kc_ci_low,
                     p.kcCiHigh AS kc_ci_high,
+                    p.ky AS ky,
                     p.d1 AS d1,
                     p.d1CiLow AS d1_ci_low,
                     p.d1CiHigh AS d1_ci_high,
@@ -274,6 +275,7 @@ class GraphDAO:
                     if record["kc_ci_low"] is not None
                     else None
                 ),
+                "ky": record.get("ky"),
                 "d1": record["d1"],
                 "d1_confidence_interval": (
                     [record["d1_ci_low"], record["d1_ci_high"]]
