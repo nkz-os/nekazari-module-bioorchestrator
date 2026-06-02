@@ -291,7 +291,7 @@ export interface YieldPotentialResponse {
   stage_ky: Record<string, number>;
 }
 
-const API_BASE = process.env.NKZ_API_URL || "https://nkz.robotika.cloud";
+const API_BASE = (import.meta as any).env?.VITE_API_URL || "https://nkz.robotika.cloud";
 
 export async function assignCrop(
   data: AssignCropRequest
