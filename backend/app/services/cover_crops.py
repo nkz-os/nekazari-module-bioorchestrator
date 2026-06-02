@@ -338,8 +338,36 @@ PROTEIN_CROPS: dict[str, dict[str, Any]] = {
                 "n_fixation_kg_ha": {"value": 120, "min": 60, "max": 180, "source": "Legumes Translated PN#18"},
             },
             "BSk": {
-                "not_viable": True,
-                "not_viable_note": "Soybean requires irrigation in semi-arid BSk climates. Not recommended for rainfed regenerative sequences.",
+                "biomass_t_ha": {"value": 4.0, "min": 2.5, "max": 6.0, "source": "ITACyL field trials (n=15)"},
+                "gdd_to_maturity": {"value": 1800, "min": 1600, "max": 2100, "source": "ITACyL field trials"},
+                "n_fixation_kg_ha": {"value": 100, "min": 50, "max": 160, "source": "Legumes Translated PN#18"},
+                "irrigation_note": "Requires irrigation in BSk. ITACyL trials (2004-2005) achieved 2.1-6.0 t/ha under irrigation in Castilla y León.",
+            },
+        },
+    },
+    "VICSA": {
+        "scientific": "Vicia sativa L.",
+        "common_name": "Common vetch (grain)",
+        "type": "legume",
+        "protein_content_pct": 28,
+        "harvest_index": 0.40,
+        "eppo_search": "VICSA",
+        "climates": {
+            "Csa": {
+                "biomass_t_ha": {"value": 3.5, "min": 2.0, "max": 5.0, "source": "Legumes Translated + IFAPA (estimated)"},
+                "gdd_to_maturity": {"value": 1200, "min": 1050, "max": 1350, "source": "Estimated from Vicia faba"},
+                "n_fixation_kg_ha": {"value": 90, "min": 60, "max": 130, "source": "Legumes Translated PN#12"},
+            },
+            "BSk": {
+                "biomass_t_ha": {"value": 4.8, "min": 2.5, "max": 7.0, "source": "ITACyL field trials (n=21)"},
+                "grain_yield_kg_ha": {"value": 1921, "min": 1030, "max": 3700, "source": "ITACyL field trials (n=21)"},
+                "gdd_to_maturity": {"value": 1300, "min": 1150, "max": 1450, "source": "ITACyL field trials"},
+                "n_fixation_kg_ha": {"value": 80, "min": 60, "max": 110, "source": "INTIA Navarra"},
+            },
+            "Cfb": {
+                "biomass_t_ha": {"value": 5.0, "min": 3.5, "max": 7.0, "source": "Legumes Translated"},
+                "gdd_to_maturity": {"value": 1400, "min": 1200, "max": 1550, "source": "Estimated"},
+                "n_fixation_kg_ha": {"value": 110, "min": 80, "max": 150, "source": "Legumes Translated"},
             },
         },
     },
