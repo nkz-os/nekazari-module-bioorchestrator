@@ -1140,18 +1140,63 @@ class GraphDAO:
         target_protein: str = "VICFX",
         soil_type: str | None = None,
         management: str = "any",
+        parcel_id: str | None = None,
+        lat: float | None = None,
+        lon: float | None = None,
     ) -> dict:
         """Plan a regenerative cover-crop-to-protein-crop sequence.
 
         Uses European cover crop reference data (INTIA, JRC MARS,
-        Legumes Translated) combined with Neo4j variety trial data
+        Legumes Translated H2020) combined with Neo4j variety trial data
         via extrapolate_varieties() for protein crop ranking.
+
+        When parcel_id is provided, enriches water balance with real
+        Soil AWC from the Soil module instead of regional defaults.
+
+        Calculation methodology (fully auditable):
+        ─────────────────────────────────────────────
+        Cover crop selection:
+          - Filters by C/N ratio (<20 for protein crops, per Clark 2007)
+          - Ranks by expected biomass (t/ha) per climate zone
+          - Screens frost tolerance against site frost days
+          - Sources: INTIA Navarra (2019-2023), JRC MARS Bulletins,
+            Legumes Translated H2020 Practice Notes #5,8,12,15,18
+
+        Nitrogen dynamics:
+          - N_cover_total = biomass_t_ha × 1000 × N_content_pct / 100
+          - N_cover_available = N_cover_total × 0.50
+            (50% first-season mineralization, Clark 2007)
+          - N_fixed = from European trial data (Peoples et al. 2021)
+          - Protein yield adjusted for organic: ×0.80
+            (Seufert et al. 2012, Ponisio et al. 2015)
+
+        Date estimation:
+          - Cover crop sowing: climate-specific autumn window
+          - Termination: climate-specific month midpoint, adjusted
+            ±days by GDD deviation from typical (1200 GDD baseline)
+          - Protein crop sowing: 10 days after termination,
+            clamped to spring sowing window
+          - Harvest: protein_GDD / spring_GDD_rate
+          - Base temperatures: 4°C (cool-season), 10°C (warm-season)
+            per Trudgill et al. 2005
+
+        Water balance (FAO-56 method):
+          - ETc = Kc_cover(0.8) × ET0_growing_season
+            ET0_growing_season = annual_ET0 × 0.40 (Oct-May fraction)
+          - Water supply = effective_rain + soil_AWC/2
+            effective_rain = growing_season_rainfall × 0.80
+            growing_season_rainfall = annual_rainfall × 0.60
+          - Risk: low (<-20mm), medium (-20 to +20mm), high (>+20mm)
+          - If parcel_id: soil_AWC from AgriSoil entity via Soil module
 
         Args:
             climate_class: Köppen climate (e.g. 'Csa', 'BSk')
             target_protein: EPPO code of target protein crop
             soil_type: Optional WRB soil type
             management: 'organic', 'conventional', or 'any'
+            parcel_id: Optional AgriParcel URN for real soil/weather data
+            lat: Optional latitude for environment resolution
+            lon: Optional longitude for environment resolution
 
         Returns:
             Complete sequence plan dict matching RegenerativeSequence schema.
@@ -1253,10 +1298,16 @@ class GraphDAO:
         )
 
         # ── Water balance ─────────────────────────────────────────────
+        # If parcel_id provided, fetch real soil AWC from Soil module
+        soil_awc = None
+        if parcel_id:
+            soil_awc = await self._fetch_parcel_awc(parcel_id)
+
         water_balance = self._assess_water_balance(
             climate_meta=climate_meta,
             cover_biomass_t_ha=cover_biomass,
             soil_type=soil_type,
+            soil_awc_override=soil_awc,
         )
 
         # ── Alternatives ──────────────────────────────────────────────
@@ -1338,6 +1389,7 @@ class GraphDAO:
         climate_meta: dict,
         cover_biomass_t_ha: float,
         soil_type: str | None = None,
+        soil_awc_override: float | None = None,
     ) -> dict:
         """Estimate water balance for the cover crop growing period.
 
@@ -1368,7 +1420,7 @@ class GraphDAO:
         effective_rain = growing_season_rain * 0.80  # 20% loss to runoff/percolation
 
         # Soil AWC contribution (typical Mediterranean soil: 100-150mm in top 1m)
-        soil_awc = 120  # mm — conservative for Calcisol/Luvisol
+        soil_awc = soil_awc_override if soil_awc_override else 120  # mm
 
         # Net balance
         water_supply = effective_rain + soil_awc * 0.5  # 50% of AWC usable without stress
@@ -1396,6 +1448,35 @@ class GraphDAO:
             "cover_kc": cover_kc,
             "method": f"ETc = Kc({cover_kc}) × ET0_growing_season({growing_season_et0:.0f}mm). Water supply = effective_rain({effective_rain:.0f}mm) + soil_AWC/2({soil_awc/2:.0f}mm).",
         }
+
+    @staticmethod
+    async def _fetch_parcel_awc(parcel_id: str) -> float | None:
+        """Fetch available water capacity (mm) from Soil module for a parcel.
+
+        Queries the Soil module API for AgriSoil entities linked to the parcel
+        and returns the weighted average AWC across soil horizons.
+        Returns None if the Soil module is unreachable or has no data.
+        """
+        try:
+            import httpx
+            soil_service = "http://soil-api-service:8000"
+            async with httpx.AsyncClient(timeout=5.0) as client:
+                resp = await client.get(
+                    f"{soil_service}/api/v1/soil/parcels/{parcel_id}/properties",
+                    params={"properties": "availableWaterCapacity"},
+                )
+                if resp.status_code == 200:
+                    data = resp.json()
+                    horizons = data.get("horizons", [])
+                    if horizons:
+                        total_awc = sum(
+                            h.get("availableWaterCapacity", 0) or 0
+                            for h in horizons
+                        )
+                        return round(total_awc, 1) if total_awc > 0 else None
+        except Exception:
+            pass
+        return None
 
     @staticmethod
     def _extract_value(entity: dict, attr_name: str):
