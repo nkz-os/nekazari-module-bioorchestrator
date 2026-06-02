@@ -334,7 +334,32 @@ PROTEIN_CROPS: dict[str, dict[str, Any]] = {
     },
 }
 
-# ── Sowing windows by climate zone ──────────────────────────────────────────
+# ── Management regime tag per data source ────────────────────────────────────
+# Used to adjust biomass expectations based on farming system.
+DATA_SOURCE_MANAGEMENT: dict[str, str] = {
+    "Legumes Translated": "unspecified",
+    "INTIA Navarra": "low_input",
+    "INTIA + JRC MARS": "low_input",
+    "JRC MARS": "conventional",
+    "Legumes Translated PN#12": "unspecified",
+    "Legumes Translated PN#12,15": "unspecified",
+    "Legumes Translated PN#5": "unspecified",
+    "Legumes Translated PN#5 + INTIA": "low_input",
+    "Legumes Translated PN#8": "unspecified",
+    "Legumes Translated PN#15": "unspecified",
+    "Legumes Translated PN#18": "unspecified",
+    "Legumes Translated + INTIA": "low_input",
+    "Legumes Translated (estimated)": "unspecified",
+    "Estimated from Csa/BSk": "unspecified",
+    "Estimated from Csa": "unspecified",
+    "Extrapolated from pea": "unspecified",
+    "Extrapolated from CIEAR/LENCU": "unspecified",
+    "INTIA (estimated)": "low_input",
+    "INTIA Navarra (2019-2023)": "low_input",
+    "Estimated": "unspecified",
+    "Derived from C:N ratio": "unspecified",
+    "Extrapolated": "unspecified",
+}
 SOWING_WINDOWS: dict[str, dict[str, tuple[str, str]]] = {
     "Csa": {"cover_crop_autumn": ("10-15", "11-15"), "protein_crop_spring": ("04-01", "05-01")},
     "BSk": {"cover_crop_autumn": ("10-01", "10-20"), "protein_crop_spring": ("04-15", "05-15")},
@@ -397,9 +422,35 @@ def select_cover_crops(
         if climate_data is None:
             continue
 
-        biomass = climate_data.get("biomass_t_ha", {}).get("value", 0)
-        cn_ratio = climate_data.get("c_n_ratio", {}).get("value")
-        frost_tol = climate_data.get("frost_tolerance_c", {}).get("value")
+        biomass_entry = climate_data.get("biomass_t_ha", {})
+        biomass = biomass_entry.get("value", 0) if isinstance(biomass_entry, dict) else biomass_entry
+        cn_ratio_entry = climate_data.get("c_n_ratio", {})
+        cn_ratio = cn_ratio_entry.get("value") if isinstance(cn_ratio_entry, dict) else cn_ratio_entry
+        frost_entry = climate_data.get("frost_tolerance_c", {})
+        frost_tol = frost_entry.get("value") if isinstance(frost_entry, dict) else frost_entry
+
+        # ── Management-aware biomass adjustment ────────────────────────
+        source = biomass_entry.get("source", "unknown") if isinstance(biomass_entry, dict) else "unknown"
+        src_mgmt = DATA_SOURCE_MANAGEMENT.get(source, "unspecified")
+        mgmt_note = ""
+        original_biomass = biomass
+
+        if management == "organic":
+            # Organic systems yield ~80% of conventional (Seufert et al. 2012, Ponisio et al. 2015)
+            # Apply only to data from conventional or unspecified sources
+            if src_mgmt in ("conventional", "unspecified"):
+                biomass *= ORGANIC_YIELD_FACTOR
+                mgmt_note = f"↓{ORGANIC_YIELD_FACTOR:.0%} organic factor applied (source: {src_mgmt})"
+            else:
+                mgmt_note = f"source is {src_mgmt} — no adjustment needed"
+        elif management == "conventional":
+            # Exclude organic-only data (optimistic for conventional context)
+            if src_mgmt == "organic":
+                mgmt_note = "excluded: organic-only data not suitable for conventional context"
+                continue
+            mgmt_note = f"source is {src_mgmt}"
+        else:
+            mgmt_note = f"source is {src_mgmt}"
 
         suitable = True
         if biomass < min_biomass_t_ha:
@@ -416,8 +467,11 @@ def select_cover_crops(
             "type": cc["type"],
             "kill_method": cc.get("kill_method", "roller_crimper"),
             "suitable": suitable,
-            "target_biomass_t_ha": biomass,
+            "target_biomass_t_ha": round(biomass, 1),
+            "original_biomass_t_ha": round(original_biomass, 1),
             "c_n_ratio": cn_ratio,
+            "management_source": src_mgmt,
+            "management_note": mgmt_note,
             **{k: v for k, v in climate_data.items()},
         })
 
