@@ -6,8 +6,31 @@
       "sources": "Fuentes de datos",
       "pipeline": "Pipeline",
       "phenology": "Fenología",
-      "dadis": "Explorador DAD-IS"
+      "dadis": "Explorador DAD-IS",
+      "variety-finder": "Buscador de variedades",
+      "catalog": "Catálogo",
+      "thermal": "Térmica",
+      "npk": "NPK",
+      "soil": "Suelo",
+      "rotation": "Rotación"
     }
+  },
+  "varietyFinder": {
+    "title": "Buscador de variedades",
+    "crop": "Cultivo (EPPO)",
+    "climate": "Zona climática",
+    "soil": "Tipo de suelo",
+    "optional": "opcional",
+    "search": "Buscar",
+    "selectCrop": "Seleccionar cultivo...",
+    "targetEnvironment": "Entorno objetivo",
+    "similarSites": "Sitios similares",
+    "rankedVarieties": "Variedades ordenadas",
+    "variety": "Variedad",
+    "meanYield": "Rendimiento medio (kg/ha)",
+    "trials": "Ensayos",
+    "sites": "Sitios",
+    "noResults": "No se encontraron variedades para este entorno. Prueba otros filtros."
   },
   "sources": {
     "loading": "Cargando fuentes...",
