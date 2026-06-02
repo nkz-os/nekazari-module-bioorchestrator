@@ -170,6 +170,16 @@ export function useBioApi() {
       get(`/api/parcel/${encodeURIComponent(parcelId)}/vegetation?index=${index}&period=${period}`),
     getParcelSoil: (parcelId: string): Promise<SoilData> =>
       get(`/api/parcel/${encodeURIComponent(parcelId)}/soil`),
+    getAgricultureCrops: () => get('/api/graph/agriculture/crops'),
+    getTrialSites: () => get('/api/graph/agriculture/trial-sites'),
+    extrapolateVarieties: (params: Record<string, string>) => {
+      const qs = new URLSearchParams(params).toString();
+      return get(`/api/graph/agriculture/extrapolate?${qs}`);
+    },
+    getRegenerativeSequence: (params: Record<string, string>) => {
+      const qs = new URLSearchParams(params).toString();
+      return get(`/api/graph/agriculture/regenerative-sequence?${qs}`);
+    },
   };
 }
 

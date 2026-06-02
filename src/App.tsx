@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useTranslation } from '@nekazari/sdk';
 import { Card, Button } from '@nekazari/ui-kit';
-import { Activity, GitBranch, Sprout, Database, Leaf, Thermometer, Droplets, RefreshCw } from 'lucide-react';
+import { Activity, GitBranch, Sprout, Database, Leaf, Thermometer, Droplets, RefreshCw, Search } from 'lucide-react';
 import SourcesDashboard from './components/SourcesDashboard';
 import PipelineRunner from './components/PipelineRunner';
 import PhenologyBrowser from './components/PhenologyBrowser';
@@ -13,11 +13,13 @@ import ThermalTolerance from './components/ThermalTolerance';
 import NutrientProfile from './components/NutrientProfile';
 import SoilSuitability from './components/SoilSuitability';
 import RotationConstraints from './components/RotationConstraints';
+import VarietyFinder from './components/VarietyFinder';
 import type { CropItem } from './services/api';
 import './i18n';
 
 const TABS = [
   { id: 'catalog', icon: Leaf },
+  { id: 'variety-finder', icon: Search },
   { id: 'phenology', icon: Sprout },
   { id: 'thermal', icon: Thermometer },
   { id: 'npk', icon: Droplets },
@@ -68,6 +70,7 @@ const App: React.FC = () => {
       {active === 'catalog' && view === 'catalog' && (
         <CropCatalog onSelectCrop={(crop) => { setSelectedCrop(crop); setView('detail'); }} />
       )}
+      {active === 'variety-finder' && <VarietyFinder />}
       {active === 'catalog' && view === 'detail' && selectedCrop && (
         <>
           <Button variant="ghost" onClick={() => setView('catalog')}>{'< Back'}</Button>
