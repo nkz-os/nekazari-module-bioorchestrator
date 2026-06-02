@@ -160,6 +160,7 @@ class Connector(AbstractConnector):
                 notes=f"[{d.get('campaign', '')}] {d.get('notes', '')}",
                 species_scientific_name=_SCI_NAMES.get(species_name),
                 species_common_names={},
+                management="low_input",  # Cover crop screening + rotation: low external inputs in BSk
                 crop_category="cover_crop_winter",
                 raw_record=d,
             )
