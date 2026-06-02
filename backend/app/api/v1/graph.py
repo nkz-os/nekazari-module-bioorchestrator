@@ -750,3 +750,71 @@ async def agriculture_regenerative_sequence(
         raise HTTPException(status_code=404, detail=result["error"])
 
     return result
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# F4: Crop-Health Integration — Endpoints
+# ═══════════════════════════════════════════════════════════════════════════════
+
+
+@router.post("/agriculture/assign-crop")
+async def agriculture_assign_crop(
+    driver: DriverDep,
+    request: Request,
+):
+    """Assign a crop variety to a parcel. Writes to Orion-LD.
+
+    Request body (JSON):
+    {
+      "parcel_id": "urn:ngsi-ld:AgriParcel:parcela-42",
+      "variety_uri": "urn:ngsi-ld:AgriCropVariety:LG_AURUS",
+      "crop_uri": "urn:ngsi-ld:AgriCrop:TRZAX",
+      "management": "organic",
+      "season_start": "2026-10-15",
+      "season_end": "2027-06-30"
+    }
+
+    To clear assignment, send only parcel_id with no other fields.
+    """
+    body = await request.json()
+    parcel_id = body.get("parcel_id")
+
+    if not parcel_id:
+        raise HTTPException(status_code=400, detail="parcel_id is required")
+
+    # Clear assignment if no crop specified
+    if not body.get("crop_uri"):
+        dao = GraphDAO(driver)
+        result = await dao.clear_crop_assignment(
+            parcel_id=parcel_id,
+            tenant_id=getattr(request.state, "tenant_id", ""),
+        )
+        return result
+
+    # Validate required fields
+    required = ["variety_uri", "crop_uri", "management", "season_start", "season_end"]
+    missing = [f for f in required if not body.get(f)]
+    if missing:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Missing required fields: {', '.join(missing)}",
+        )
+
+    management = body["management"]
+    if management not in ("organic", "conventional"):
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid management: '{management}'. Use 'organic' or 'conventional'.",
+        )
+
+    dao = GraphDAO(driver)
+    result = await dao.assign_crop_to_parcel(
+        parcel_id=parcel_id,
+        crop_uri=body["crop_uri"],
+        variety_uri=body["variety_uri"],
+        management=management,
+        season_start=body["season_start"],
+        season_end=body["season_end"],
+        tenant_id=getattr(request.state, "tenant_id", ""),
+    )
+    return result
