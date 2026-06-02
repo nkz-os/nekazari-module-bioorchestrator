@@ -1339,27 +1339,62 @@ class GraphDAO:
         cover_biomass_t_ha: float,
         soil_type: str | None = None,
     ) -> dict:
+        """Estimate water balance for the cover crop growing period.
+
+        Uses Kc × ET0 approach for the cover crop growing season (Oct-May),
+        which is more realistic than biomass-based transpiration coefficients.
+
+        Cover crop Kc during vegetative stage: ~0.7-0.9 (FAO-56).
+        Winter ET0 is ~30-40% of annual ET0 in Mediterranean climates.
+        """
         avg_rainfall = climate_meta.get("avg_rainfall_mm")
         avg_et0 = climate_meta.get("avg_et0_mm")
         if avg_rainfall is None:
             return {"risk": "unknown", "deficit_mm": None, "note": "Insufficient climate data"}
-        crop_water_demand = cover_biomass_t_ha * 250
-        effective_rain = avg_rainfall * 0.7
-        deficit = crop_water_demand - effective_rain
-        if deficit < avg_rainfall * -0.2:
+
+        # Cover crop Kc (vegetative stage, before termination)
+        cover_kc = 0.8
+
+        # Growing season ET0: Oct-May ≈ 40% of annual ET0 in Mediterranean climates
+        # (the remaining 60% occurs in the hot summer months Jun-Sep)
+        growing_season_et0 = (avg_et0 or avg_rainfall * 0.8) * 0.40
+
+        # Crop water demand: ETc = Kc × ET0_growing_season
+        crop_etc = cover_kc * growing_season_et0
+
+        # Effective rainfall during growing season: ~60% of annual rain falls Oct-May
+        # (Mediterranean pattern: wet winters, dry summers)
+        growing_season_rain = avg_rainfall * 0.60
+        effective_rain = growing_season_rain * 0.80  # 20% loss to runoff/percolation
+
+        # Soil AWC contribution (typical Mediterranean soil: 100-150mm in top 1m)
+        soil_awc = 120  # mm — conservative for Calcisol/Luvisol
+
+        # Net balance
+        water_supply = effective_rain + soil_awc * 0.5  # 50% of AWC usable without stress
+        deficit = crop_etc - water_supply
+
+        if deficit < -20:
             risk = "low"
-        elif deficit < avg_rainfall * 0:
+        elif deficit < 20:
             risk = "medium"
         else:
             risk = "high"
+
         return {
             "risk": risk,
-            "crop_water_demand_mm": round(crop_water_demand),
+            "crop_etc_mm": round(crop_etc, 1),
+            "growing_season_et0_mm": round(growing_season_et0, 1),
+            "growing_season_rainfall_mm": round(growing_season_rain, 1),
+            "effective_rainfall_mm": round(effective_rain, 1),
+            "soil_awc_mm": soil_awc,
+            "water_supply_mm": round(water_supply, 1),
+            "deficit_mm": round(deficit, 1),
             "avg_annual_rainfall_mm": round(avg_rainfall),
-            "effective_rainfall_mm": round(effective_rain),
-            "deficit_mm": round(deficit),
-            "avg_et0_mm": round(avg_et0) if avg_et0 else None,
+            "avg_annual_et0_mm": round(avg_et0) if avg_et0 else None,
             "soil_type": soil_type,
+            "cover_kc": cover_kc,
+            "method": f"ETc = Kc({cover_kc}) × ET0_growing_season({growing_season_et0:.0f}mm). Water supply = effective_rain({effective_rain:.0f}mm) + soil_AWC/2({soil_awc/2:.0f}mm).",
         }
 
     @staticmethod
