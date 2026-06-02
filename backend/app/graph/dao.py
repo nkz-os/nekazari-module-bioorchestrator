@@ -1526,28 +1526,6 @@ class GraphDAO:
             return attr.get("value")
         return attr
 
-
-def _extract_prop_value(prop: dict | str | None) -> str | None:
-    """Extract value from NGSI-LD Property (dict with 'value' key) or plain string."""
-    if prop is None:
-        return None
-    if isinstance(prop, dict):
-        val = prop.get("value")
-        if isinstance(val, dict):
-            return val.get("@value")
-        return val
-    return str(prop)
-
-
-def _resolve_relationship(entity: dict, rel_name: str) -> str | None:
-    """Extract object URI from an NGSI-LD Relationship or string."""
-    rel = entity.get(rel_name)
-    if isinstance(rel, dict) and rel.get("type") == "Relationship":
-        return rel.get("object")
-    if isinstance(rel, str):
-        return rel
-    return None
-
     # ═══════════════════════════════════════════════════════════════════════════
     # F4: Crop-Health Integration
     # ═══════════════════════════════════════════════════════════════════════════
@@ -1570,32 +1548,16 @@ def _resolve_relationship(entity: dict, rel_name: str) -> str | None:
         """
         import httpx
         from fastapi import HTTPException
-
         from app.ingestion.orion import OrionIngestionClient
 
         orion = OrionIngestionClient()
 
         patch_body = {
-            "hasAgriCrop": {
-                "type": "Relationship",
-                "object": crop_uri,
-            },
-            "hasAgriCropVariety": {
-                "type": "Relationship",
-                "object": variety_uri,
-            },
-            "management": {
-                "type": "Property",
-                "value": management,
-            },
-            "cropSeasonStart": {
-                "type": "Property",
-                "value": {"@type": "Date", "@value": season_start},
-            },
-            "cropSeasonEnd": {
-                "type": "Property",
-                "value": {"@type": "Date", "@value": season_end},
-            },
+            "hasAgriCrop": {"type": "Relationship", "object": crop_uri},
+            "hasAgriCropVariety": {"type": "Relationship", "object": variety_uri},
+            "management": {"type": "Property", "value": management},
+            "cropSeasonStart": {"type": "Property", "value": {"@type": "Date", "@value": season_start}},
+            "cropSeasonEnd": {"type": "Property", "value": {"@type": "Date", "@value": season_end}},
         }
 
         try:
@@ -1619,176 +1581,26 @@ def _resolve_relationship(entity: dict, rel_name: str) -> str | None:
                         "management": management,
                     }
                 elif resp.status_code == 404:
-                    raise HTTPException(
-                        status_code=404, detail=f"Parcel not found: {parcel_id}"
-                    )
+                    raise HTTPException(status_code=404, detail=f"Parcel not found: {parcel_id}")
                 else:
-                    raise HTTPException(
-                        status_code=502,
-                        detail=f"Orion-LD returned {resp.status_code}: {resp.text[:200]}",
-                    )
+                    raise HTTPException(status_code=502, detail=f"Orion-LD returned {resp.status_code}")
         except httpx.ConnectError:
             raise HTTPException(status_code=502, detail="Orion-LD unreachable")
 
-    async def clear_crop_assignment(
-        self, parcel_id: str, tenant_id: str
-    ) -> dict:
-        """Remove crop assignment from AgriParcel."""
-        import httpx
-
-        from app.ingestion.orion import OrionIngestionClient
-
-        orion = OrionIngestionClient()
-
-        patch_body = {
-            "hasAgriCrop": {"type": "Relationship", "object": None},
-            "hasAgriCropVariety": {"type": "Relationship", "object": None},
-            "management": {"type": "Property", "value": None},
-            "cropSeasonStart": {"type": "Property", "value": None},
-            "cropSeasonEnd": {"type": "Property", "value": None},
-        }
-
-        async with httpx.AsyncClient(timeout=10.0) as client:
-            await client.patch(
-                f"{orion.base}/ngsi-ld/v1/entities/{parcel_id}/attrs",
-                json=patch_body,
-                headers={
-                    "Content-Type": "application/ld+json",
-                    "NGSILD-Tenant": tenant_id,
-                    "Fiware-Service": tenant_id,
-                    "Fiware-ServicePath": "/",
-                },
-            )
-        return {"status": "cleared", "parcel_id": parcel_id}
-
-    async def get_yield_potential(
-        self,
-        variety: str,
-        crop: str,
-        climate_class: str | None = None,
-        soil_type: str | None = None,
-        parcel_id: str | None = None,
-        tenant_id: str = "",
-    ) -> dict:
-        """Compute expected yield and yield gap for a variety."""
-        import math
-        import httpx
-        from app.ingestion.orion import OrionIngestionClient
-
-        trials = await self.get_variety_trials(
-            crop=crop,
-            climate_class=climate_class,
-            soil_type=soil_type,
-            limit=200,
-        )
-
-        variety_trials = [
-            t for t in trials
-            if t.get("variety", "").upper() == variety.upper()
-            or variety.upper() in t.get("variety", "").upper()
-        ]
-
-        if not variety_trials:
-            return {"error": f"No trial data found for variety '{variety}' (crop={crop})"}
-
-        yields = [t["yield_kg_ha"] for t in variety_trials if t.get("yield_kg_ha") is not None]
-        if not yields:
-            return {"error": f"No yield data available for variety '{variety}'"}
-
-        mean_yield = sum(yields) / len(yields)
-        n = len(yields)
-        stddev = math.sqrt(sum((y - mean_yield) ** 2 for y in yields) / (n - 1)) if n > 1 else 0
-        ci_low = mean_yield - 1.96 * stddev / math.sqrt(n) if n > 1 else mean_yield
-        ci_high = mean_yield + 1.96 * stddev / math.sqrt(n) if n > 1 else mean_yield
-
-        sites = list(set(t.get("site_name") for t in variety_trials if t.get("site_name")))
-
-        result: dict = {
-            "variety": variety,
-            "crop": crop,
-            "target_environment": {
-                "climate_class": climate_class,
-                "soil_type": soil_type,
-            },
-            "expected_yield_kg_ha": round(mean_yield, 1),
-            "confidence_interval": [round(ci_low, 1), round(ci_high, 1)],
-            "trials_analyzed": len(variety_trials),
-            "similar_sites": sites[:10],
-        }
-
-        if parcel_id:
-            current_yield = None
-            try:
-                orion = OrionIngestionClient()
-                async with httpx.AsyncClient(timeout=10.0) as client:
-                    assess_resp = await client.get(
-                        f"{orion.base}/ngsi-ld/v1/entities",
-                        params={
-                            "type": "CropHealthAssessment",
-                            "q": f'refAgriParcel=="{parcel_id}"',
-                            "limit": 1,
-                            "options": "keyValues",
-                        },
-                        headers={
-                            "Accept": "application/ld+json",
-                            "NGSILD-Tenant": tenant_id,
-                        },
-                    )
-                    if assess_resp.status_code == 200:
-                        entities = assess_resp.json()
-                        if entities:
-                            yup = entities[0].get("yieldUtilizationPct")
-                            if yup is not None:
-                                current_yield = mean_yield * (float(yup) / 100)
-            except Exception:
-                pass
-
-            if current_yield is not None:
-                gap = mean_yield - current_yield
-                result["current_estimated_yield_kg_ha"] = round(current_yield, 1)
-                result["yield_gap_kg_ha"] = round(gap, 1)
-                result["yield_gap_pct"] = round(gap / mean_yield * 100, 1) if mean_yield > 0 else 0
-
-        phenology = await self.get_phenology_params(species=crop)
-        if phenology:
-            result["stage_ky"] = {
-                phenology.get("stage", "vegetative"): phenology.get("ky", 0.45),
-            }
-
-        if climate_class and climate_class in ("BSk", "BSh", "Csa", "Csb"):
-            result["limiting_factor"] = "water"
-        else:
-            result["limiting_factor"] = "unknown"
-
-        return result
-
     async def get_crop_context(
-        self,
-        parcel_id: str,
-        tenant_id: str = "",
-        gdd: float | None = None,
+        self, parcel_id: str, tenant_id: str = "", gdd: float | None = None
     ) -> dict:
-        """Return full calibrated agronomic context for a parcel.
-
-        1. Read hasAgriCrop / hasAgriCropVariety from Orion-LD AgriParcel
-        2. Enrich with Neo4j phenology, thermal, soil data
-        3. Assemble phenology_source string
-        """
+        """Return full calibrated agronomic context for a parcel."""
         import httpx
         from fastapi import HTTPException
         from app.ingestion.orion import OrionIngestionClient
 
         orion = OrionIngestionClient()
-
         try:
             async with httpx.AsyncClient(timeout=10.0) as client:
                 resp = await client.get(
                     f"{orion.base}/ngsi-ld/v1/entities/{parcel_id}",
-                    headers={
-                        "Accept": "application/ld+json",
-                        "NGSILD-Tenant": tenant_id,
-                        "Fiware-Service": tenant_id,
-                    },
+                    headers={"Accept": "application/ld+json", "NGSILD-Tenant": tenant_id, "Fiware-Service": tenant_id},
                 )
                 if resp.status_code == 404:
                     return {"error": f"Parcel not found: {parcel_id}"}
@@ -1804,7 +1616,6 @@ def _resolve_relationship(entity: dict, rel_name: str) -> str | None:
         management = _extract_prop_value(parcel.get("management"))
         season_start = _extract_prop_value(parcel.get("cropSeasonStart"))
         season_end = _extract_prop_value(parcel.get("cropSeasonEnd"))
-
         if not crop_uri:
             return {"error": "Parcel has no crop assigned"}
 
@@ -1825,66 +1636,33 @@ def _resolve_relationship(entity: dict, rel_name: str) -> str | None:
             pass
 
         variety_name = variety_uri.split(":")[-1] if variety_uri else None
-
         species_query = crop_name or crop_scientific or crop_eppo
         phenology = await self.get_phenology_params(
-            species=species_query,
-            cultivar=variety_name,
-            management=management,
-            gdd=gdd,
+            species=species_query, cultivar=variety_name, management=management, gdd=gdd,
         )
-
         thermal = await self.get_heat_tolerance(species_query)
         soil_req = await self.get_soil_suitability(species_query)
 
-        # ── Soil module integration ────────────────────────────
-        soil_actual = {"data_available": False, "source": "unavailable"}
+        from app.services.soil_client import compute_soil_suitability, get_parcel_soil_properties
+        soil_actual = await get_parcel_soil_properties(parcel_id)
         soil_suitability = None
-        try:
-            from app.services.soil_client import (
-                compute_soil_suitability,
-                get_parcel_soil_properties,
-            )
-            soil_actual = await get_parcel_soil_properties(parcel_id)
-            if soil_actual.get("data_available") and soil_req:
-                soil_suitability = compute_soil_suitability(soil_req, soil_actual)
-        except Exception:
-            pass
+        if soil_actual.get("data_available") and soil_req:
+            soil_suitability = compute_soil_suitability(soil_req, soil_actual)
 
-        # ── Soil sensors from latest CropHealthAssessment ───────
         soil_sensors: dict = {"available": False}
         try:
             async with httpx.AsyncClient(timeout=5.0) as client:
                 sensor_resp = await client.get(
                     f"{orion.base}/ngsi-ld/v1/entities",
-                    params={
-                        "type": "CropHealthAssessment",
-                        "q": f'refAgriParcel=="{parcel_id}"',
-                        "limit": 1,
-                        "options": "keyValues",
-                    },
-                    headers={
-                        "Accept": "application/ld+json",
-                        "NGSILD-Tenant": tenant_id,
-                    },
+                    params={"type": "CropHealthAssessment", "q": f'refAgriParcel=="{parcel_id}"', "limit": 1, "options": "keyValues"},
+                    headers={"Accept": "application/ld+json", "NGSILD-Tenant": tenant_id},
                 )
                 if sensor_resp.status_code == 200:
                     entities = sensor_resp.json()
                     if entities and isinstance(entities, list):
                         a = entities[0]
-                        has_data = any(
-                            a.get(k) is not None
-                            for k in ("soilPh", "soilEC", "soilMoisturePct", "soilTemperatureC")
-                        )
-                        if has_data:
-                            soil_sensors = {
-                                "available": True,
-                                "last_reading": a.get("assessedAt", ""),
-                                "ph": a.get("soilPh"),
-                                "ec_ds_m": a.get("soilEC"),
-                                "moisture_pct": a.get("soilMoisturePct"),
-                                "temperature_c": a.get("soilTemperatureC"),
-                            }
+                        if any(a.get(k) is not None for k in ("soilPh", "soilEC", "soilMoisturePct", "soilTemperatureC")):
+                            soil_sensors = {"available": True, "last_reading": a.get("assessedAt", ""), "ph": a.get("soilPh"), "ec_ds_m": a.get("soilEC"), "moisture_pct": a.get("soilMoisturePct"), "temperature_c": a.get("soilTemperatureC")}
         except Exception:
             pass
 
@@ -1900,52 +1678,88 @@ def _resolve_relationship(entity: dict, rel_name: str) -> str | None:
 
         return {
             "parcel_id": parcel_id,
-            "crop": {
-                "eppo": crop_eppo,
-                "name": crop_name or crop_eppo,
-                "scientific_name": crop_scientific,
-            },
-            "variety": {
-                "name": variety_name,
-                "uri": variety_uri,
-            } if variety_name else None,
+            "crop": {"eppo": crop_eppo, "name": crop_name or crop_eppo, "scientific_name": crop_scientific},
+            "variety": {"name": variety_name, "uri": variety_uri} if variety_name else None,
             "management": management,
-            "season": {
-                "start": season_start,
-                "end": season_end,
-                "gdd_accumulated": gdd,
-                "current_stage": phenology.get("stage") if phenology else None,
-            },
-            "phenology": {
-                "stage": phenology.get("stage"),
-                "stage_gdd_min": phenology.get("stage_gdd_min"),
-                "stage_gdd_max": phenology.get("stage_gdd_max"),
-                "kc": phenology.get("kc"),
-                "ky": phenology.get("ky"),
-                "d1": phenology.get("d1"),
-                "d2": phenology.get("d2"),
-                "mds_ref": phenology.get("mds_ref"),
-                "base_temp": phenology.get("stage_base_temp"),
-            } if phenology else None,
-            "thermal_limits": {
-                "heat_damage_c": thermal.get("heat_damage_c"),
-                "frost_damage_c": thermal.get("frost_damage_c"),
-                "heat_accum_hours": thermal.get("heat_accum_hours"),
-            } if thermal else None,
-            "soil": {
-                "requirements": {
-                    "ph_min": soil_req.get("ph_min") if soil_req else None,
-                    "ph_max": soil_req.get("ph_max") if soil_req else None,
-                    "textures": soil_req.get("textures", []) if soil_req else [],
-                    "drainage": soil_req.get("drainage") if soil_req else None,
-                    "depth_min_cm": soil_req.get("depth_min_cm") if soil_req else None,
-                    "salinity_max_ds_m": soil_req.get("salinity_max_ds_m") if soil_req else None,
-                },
-                "actual": soil_actual,
-                "suitability": soil_suitability,
-            },
+            "season": {"start": season_start, "end": season_end, "gdd_accumulated": gdd, "current_stage": phenology.get("stage") if phenology else None},
+            "phenology": {"stage": phenology.get("stage"), "kc": phenology.get("kc"), "ky": phenology.get("ky"), "d1": phenology.get("d1"), "d2": phenology.get("d2"), "mds_ref": phenology.get("mds_ref"), "base_temp": phenology.get("stage_base_temp"), "stage_gdd_min": phenology.get("stage_gdd_min"), "stage_gdd_max": phenology.get("stage_gdd_max")} if phenology else None,
+            "thermal_limits": {"heat_damage_c": thermal.get("heat_damage_c"), "frost_damage_c": thermal.get("frost_damage_c"), "heat_accum_hours": thermal.get("heat_accum_hours")} if thermal else None,
+            "soil": {"requirements": {"ph_min": soil_req.get("ph_min") if soil_req else None, "ph_max": soil_req.get("ph_max") if soil_req else None, "textures": soil_req.get("textures", []) if soil_req else [], "drainage": soil_req.get("drainage") if soil_req else None, "depth_min_cm": soil_req.get("depth_min_cm") if soil_req else None, "salinity_max_ds_m": soil_req.get("salinity_max_ds_m") if soil_req else None}, "actual": soil_actual, "suitability": soil_suitability},
             "soil_sensors": soil_sensors,
             "phenology_source": phenology_source,
             "match_level": phenology.get("match_level") if phenology else "none",
             "provenance": phenology.get("provenance") if phenology else None,
         }
+
+    async def clear_crop_assignment(self, parcel_id: str, tenant_id: str) -> dict:
+        """Remove crop assignment from AgriParcel."""
+        import httpx
+        from app.ingestion.orion import OrionIngestionClient
+        orion = OrionIngestionClient()
+        patch_body = {"hasAgriCrop": {"type": "Relationship", "object": None}, "hasAgriCropVariety": {"type": "Relationship", "object": None}, "management": {"type": "Property", "value": None}, "cropSeasonStart": {"type": "Property", "value": None}, "cropSeasonEnd": {"type": "Property", "value": None}}
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            await client.patch(f"{orion.base}/ngsi-ld/v1/entities/{parcel_id}/attrs", json=patch_body, headers={"Content-Type": "application/ld+json", "NGSILD-Tenant": tenant_id, "Fiware-Service": tenant_id, "Fiware-ServicePath": "/"})
+        return {"status": "cleared", "parcel_id": parcel_id}
+
+    async def get_yield_potential(self, variety: str, crop: str, climate_class: str | None = None, soil_type: str | None = None, parcel_id: str | None = None, tenant_id: str = "") -> dict:
+        """Compute expected yield and yield gap for a variety."""
+        import math, httpx
+        from app.ingestion.orion import OrionIngestionClient
+        trials = await self.get_variety_trials(crop=crop, climate_class=climate_class, soil_type=soil_type, limit=200)
+        variety_trials = [t for t in trials if variety.upper() in t.get("variety", "").upper()]
+        if not variety_trials:
+            return {"error": f"No trial data found for variety '{variety}' (crop={crop})"}
+        yields = [t["yield_kg_ha"] for t in variety_trials if t.get("yield_kg_ha") is not None]
+        if not yields:
+            return {"error": f"No yield data available for variety '{variety}'"}
+        mean_yield = sum(yields) / len(yields)
+        n = len(yields)
+        stddev = math.sqrt(sum((y - mean_yield) ** 2 for y in yields) / (n - 1)) if n > 1 else 0
+        ci_low = mean_yield - 1.96 * stddev / math.sqrt(n) if n > 1 else mean_yield
+        ci_high = mean_yield + 1.96 * stddev / math.sqrt(n) if n > 1 else mean_yield
+        sites = list(set(t.get("site_name") for t in variety_trials if t.get("site_name")))
+        result: dict = {"variety": variety, "crop": crop, "target_environment": {"climate_class": climate_class, "soil_type": soil_type}, "expected_yield_kg_ha": round(mean_yield, 1), "confidence_interval": [round(ci_low, 1), round(ci_high, 1)], "trials_analyzed": len(variety_trials), "similar_sites": sites[:10]}
+        if parcel_id:
+            try:
+                orion = OrionIngestionClient()
+                async with httpx.AsyncClient(timeout=10.0) as client:
+                    assess_resp = await client.get(f"{orion.base}/ngsi-ld/v1/entities", params={"type": "CropHealthAssessment", "q": f'refAgriParcel==\"{parcel_id}\"', "limit": 1, "options": "keyValues"}, headers={"Accept": "application/ld+json", "NGSILD-Tenant": tenant_id})
+                    if assess_resp.status_code == 200:
+                        entities = assess_resp.json()
+                        if entities:
+                            yup = entities[0].get("yieldUtilizationPct")
+                            if yup is not None:
+                                current_yield = mean_yield * (float(yup) / 100)
+                                gap = mean_yield - current_yield
+                                result["current_estimated_yield_kg_ha"] = round(current_yield, 1)
+                                result["yield_gap_kg_ha"] = round(gap, 1)
+                                result["yield_gap_pct"] = round(gap / mean_yield * 100, 1) if mean_yield else 0
+            except Exception:
+                pass
+        phenology = await self.get_phenology_params(species=crop)
+        if phenology:
+            result["stage_ky"] = {phenology.get("stage", "vegetative"): phenology.get("ky", 0.45)}
+        result["limiting_factor"] = "water" if climate_class and climate_class in ("BSk", "BSh", "Csa", "Csb") else "unknown"
+        return result
+
+
+def _extract_prop_value(prop: dict | str | None) -> str | None:
+    """Extract value from NGSI-LD Property (dict with 'value' key) or plain string."""
+    if prop is None:
+        return None
+    if isinstance(prop, dict):
+        val = prop.get("value")
+        if isinstance(val, dict):
+            return val.get("@value")
+        return val
+    return str(prop)
+
+
+def _resolve_relationship(entity: dict, rel_name: str) -> str | None:
+    """Extract object URI from an NGSI-LD Relationship or string."""
+    rel = entity.get(rel_name)
+    if isinstance(rel, dict) and rel.get("type") == "Relationship":
+        return rel.get("object")
+    if isinstance(rel, str):
+        return rel
+    return None
