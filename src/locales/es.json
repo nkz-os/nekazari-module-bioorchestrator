@@ -12,7 +12,8 @@
       "thermal": "Térmica",
       "npk": "NPK",
       "soil": "Suelo",
-      "rotation": "Rotación"
+      "rotation": "Rotación",
+      "climate": "Mapa climático"
     }
   },
   "varietyFinder": {
@@ -31,6 +32,20 @@
     "trials": "Ensayos",
     "sites": "Sitios",
     "noResults": "No se encontraron variedades para este entorno. Prueba otros filtros."
+  },
+  "climateExplorer": {
+    "title": "Explorador de zonas climáticas",
+    "filter": "Filtrar por clima",
+    "all": "Todos",
+    "legend": "Zonas climáticas",
+    "majorSite": "sitio principal",
+    "sites": "sitios",
+    "climate": "Clima",
+    "soil": "Suelo",
+    "rainfall": "Lluvia anual",
+    "elevation": "Altitud",
+    "frostDays": "Días de helada/año",
+    "trials": "Ensayos"
   },
   "sources": {
     "loading": "Cargando fuentes...",

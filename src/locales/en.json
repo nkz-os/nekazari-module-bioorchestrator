@@ -12,7 +12,8 @@
       "thermal": "Thermal",
       "npk": "NPK",
       "soil": "Soil",
-      "rotation": "Rotation"
+      "rotation": "Rotation",
+      "climate": "Climate Map"
     }
   },
   "varietyFinder": {
@@ -31,6 +32,20 @@
     "trials": "Trials",
     "sites": "Sites",
     "noResults": "No varieties found matching this environment. Try different climate or soil filters."
+  },
+  "climateExplorer": {
+    "title": "Climate Zone Explorer",
+    "filter": "Filter by climate",
+    "all": "All",
+    "legend": "Climate zones",
+    "majorSite": "major site",
+    "sites": "sites",
+    "climate": "Climate",
+    "soil": "Soil",
+    "rainfall": "Annual rainfall",
+    "elevation": "Elevation",
+    "frostDays": "Frost days/year",
+    "trials": "Variety trials"
   },
   "sources": {
     "loading": "Loading sources...",
