@@ -12,6 +12,8 @@
       "phenology": "Fenología",
       "dadis": "Explorador DAD-IS",
       "varietyFinder": "Buscador de variedades",
+      "comparator": "Comparador",
+      "rotationPlan": "Plan Rotación",
       "parcelHealth": "Salud Parcela",
       "waterBudget": "Balance Hídrico",
       "catalog": "Catálogo",
@@ -424,5 +426,32 @@
     "forecast": "Previsión",
     "deficit": "Déficit",
     "irrigationRequired": "Riego necesario"
+  },
+  "comparator": {
+    "title": "Comparador de Cultivos",
+    "selectParcel": "Seleccionar parcela...",
+    "selectCrops": "Cultivos a comparar",
+    "economicInputs": "Parámetros económicos",
+    "optional": "opcional — por defecto 1 (ranking puramente agronómico)",
+    "seedPrice": "Coste semilla",
+    "harvestPrice": "Precio cosecha",
+    "operationCost": "Coste/manejo",
+    "compare": "Comparar",
+    "crop": "Cultivo",
+    "variety": "Mejor variedad",
+    "score": "Puntuación",
+    "soil": "Suelo",
+    "defaultPricesNote": "Precios por defecto (1). Los márgenes económicos equivalen al rendimiento agronómico. Introduce precios reales para comparación económica.",
+    "scoreNote": "Puntuación = ranking ponderado (rendimiento 40% + margen 30% + carbono 20% + suelo 10%)"
+  },
+  "rotation": {
+    "title": "Planificador de Rotación",
+    "selectParcel": "Seleccionar parcela...",
+    "years": "Años",
+    "economicInputs": "Parámetros económicos",
+    "calculate": "Calcular Rotación",
+    "year": "Año",
+    "cumulative": "Acumulado",
+    "yearsLabel": "años"
   }
 }

@@ -1742,6 +1742,192 @@ class GraphDAO:
         result["limiting_factor"] = "water" if climate_class and climate_class in ("BSk", "BSh", "Csa", "Csb") else "unknown"
         return result
 
+    async def compare_crops(
+        self, parcel_id: str, crops: list[str],
+        seed_price: float = 1, harvest_price: float = 1, operation_cost: float = 1,
+        tenant_id: str = "",
+    ) -> dict:
+        """Compare multiple crops on a parcel — agronomic, environmental, economic."""
+        from app.services.crop_reference import get_crop_ref
+
+        ctx = await self.get_crop_context(parcel_id=parcel_id, tenant_id=tenant_id)
+        target_climate = None
+        target_soil = None
+        if "error" not in ctx:
+            env = ctx.get("target_environment", {}) if isinstance(ctx.get("target_environment"), dict) else {}
+            target_climate = env.get("climate_class") or ctx.get("season", {}).get("current_stage", "")
+            soil_data = ctx.get("soil", {})
+            if isinstance(soil_data, dict):
+                actual = soil_data.get("actual", {})
+                if isinstance(actual, dict) and actual.get("data_available"):
+                    target_soil = actual.get("texture", "")
+
+        comparisons = []
+        for crop in crops:
+            ref = get_crop_ref(crop)
+            # Get best variety
+            extrapolated = await self.extrapolate_varieties(
+                crop=crop, climate_class=target_climate, soil_type=target_soil, top_n=1,
+            )
+            best = extrapolated.get("ranked_varieties", [{}])[0] if isinstance(extrapolated, dict) else {}
+
+            yield_val = best.get("mean_yield_kg_ha", 0) or 0
+            ops = ref["operations_count"]
+            seed_cost = seed_price * 1
+            ops_cost = ops * operation_cost
+            total_cost = seed_cost + ops_cost
+            gross_rev = yield_val * harvest_price
+            net_margin = gross_rev - total_cost
+            carbon = ref["carbon_fixed_tco2e_ha"]
+
+            # Soil suitability
+            soil_req = await self.get_soil_suitability(crop)
+            warnings = []
+            if soil_req and isinstance(soil_data, dict):
+                actual = soil_data.get("actual", {})
+                if isinstance(actual, dict) and actual.get("ph"):
+                    ph = actual["ph"]
+                    if soil_req.get("ph_min") and soil_req.get("ph_max"):
+                        if not (soil_req["ph_min"] <= ph <= soil_req["ph_max"]):
+                            warnings.append(f"pH {ph} outside [{soil_req['ph_min']}, {soil_req['ph_max']}]")
+
+            comparisons.append({
+                "crop": crop,
+                "best_variety": best.get("variety", ""),
+                "agronomics": {
+                    "expected_yield_kg_ha": round(yield_val, 1),
+                    "confidence_interval": best.get("confidence_interval") if best else None,
+                    "trials_analyzed": best.get("trial_count", 0),
+                    "growing_season_days": ref["growing_season_days"],
+                    "operations_count": ops,
+                },
+                "environmental": {
+                    "carbon_fixed_tco2e_ha": carbon,
+                    "n_fixation_kg_ha": ref["n_fixation_kg_ha"],
+                    "n_requirement_kg_ha": ref["n_requirement_kg_ha"],
+                },
+                "economic": {
+                    "seed_cost_eur_ha": round(seed_cost, 2) if seed_price > 1 else None,
+                    "operations_cost_eur_ha": round(ops_cost, 2) if operation_cost > 1 else None,
+                    "total_cost_eur_ha": round(total_cost, 2),
+                    "gross_revenue_eur_ha": round(gross_rev, 2),
+                    "net_margin_eur_ha": round(net_margin, 2),
+                },
+                "soil_suitability": {"overall": "suitable" if not warnings else "warning", "warnings": warnings},
+            })
+
+        # Rankings
+        by_margin = sorted(comparisons, key=lambda x: x["economic"]["net_margin_eur_ha"], reverse=True)
+        by_carbon = sorted(comparisons, key=lambda x: x["environmental"]["carbon_fixed_tco2e_ha"], reverse=True)
+        # Composite score: yield 40% + margin 30% + carbon 20% + suitability 10%
+        if comparisons:
+            max_yield = max(c["agronomics"]["expected_yield_kg_ha"] for c in comparisons) or 1
+            max_margin = max(c["economic"]["net_margin_eur_ha"] for c in comparisons) or 1
+            max_carbon = max(c["environmental"]["carbon_fixed_tco2e_ha"] for c in comparisons) or 1
+            for c in comparisons:
+                suit_score = 10 if c["soil_suitability"]["overall"] == "suitable" else 5
+                c["composite_score"] = round(
+                    40 * c["agronomics"]["expected_yield_kg_ha"] / max_yield
+                    + 30 * c["economic"]["net_margin_eur_ha"] / max_margin
+                    + 20 * c["environmental"]["carbon_fixed_tco2e_ha"] / max_carbon
+                    + suit_score, 1
+                )
+            by_score = sorted(comparisons, key=lambda x: x.get("composite_score", 0), reverse=True)
+        else:
+            by_score = []
+
+        return {
+            "parcel_id": parcel_id,
+            "target_environment": {"climate_class": target_climate, "soil_type": target_soil},
+            "economic_inputs": {"seed_price_eur_ha": seed_price, "harvest_price_eur_t": harvest_price, "operation_cost_eur": operation_cost},
+            "comparisons": comparisons,
+            "ranking": {
+                "by_margin": [c["crop"] for c in by_margin],
+                "by_carbon": [c["crop"] for c in by_carbon],
+                "by_score": [c["crop"] for c in by_score],
+            },
+        }
+
+    async def rotation_plan(
+        self, parcel_id: str, years: int = 3,
+        seed_price: float = 1, harvest_price: float = 1, operation_cost: float = 1,
+        tenant_id: str = "",
+    ) -> dict:
+        """Generate multi-year rotation plan with carbon and N tracking."""
+        from app.services.crop_reference import get_crop_ref
+
+        if years < 2 or years > 6:
+            return {"error": "Years must be between 2 and 6"}
+
+        ctx = await self.get_crop_context(parcel_id=parcel_id, tenant_id=tenant_id)
+        plan = []
+        soil_n_pool = 50  # starting soil N pool kg/ha (assumption)
+        previous_crop = None
+        cumulative_yield = 0.0
+        cumulative_carbon = 0.0
+        cumulative_margin = 0.0
+
+        # Available crops to rotate
+        available = await self.recommend_next_crop("none" if not previous_crop else previous_crop)
+        crop_pool = [c["name"] for c in available[:10]] if available else ["TRZAX", "PIBSX", "CIEAR", "HORVX"]
+
+        for year_idx in range(years):
+            if not crop_pool:
+                break
+            crop = crop_pool[year_idx % len(crop_pool)]
+            ref = get_crop_ref(crop)
+
+            extrapolated = await self.extrapolate_varieties(crop=crop, top_n=1)
+            best = extrapolated.get("ranked_varieties", [{}])[0] if isinstance(extrapolated, dict) else {}
+            yield_val = best.get("mean_yield_kg_ha", 0) or 0
+
+            carbon = ref["carbon_fixed_tco2e_ha"]
+            n_fix = ref["n_fixation_kg_ha"]
+            n_req = ref["n_requirement_kg_ha"]
+            n_balance = n_fix - n_req + (soil_n_pool if year_idx > 0 else 0)
+            soil_n_pool = max(0, soil_n_pool + n_fix - n_req)
+
+            ops = ref["operations_count"]
+            total_cost = (seed_price * 1) + (ops * operation_cost)
+            gross_rev = yield_val * harvest_price
+            margin = gross_rev - total_cost
+
+            cumulative_yield += yield_val
+            cumulative_carbon += carbon
+            cumulative_margin += margin
+
+            entry = {
+                "year": year_idx + 1, "crop": crop,
+                "variety": best.get("variety", ""),
+                "expected_yield_kg_ha": round(yield_val, 1),
+                "carbon_fixed_tco2e": carbon,
+                "net_margin_eur_ha": round(margin, 2),
+                "n_balance_kg_ha": round(n_balance, 1),
+                "n_fixation_kg_ha": n_fix,
+                "n_requirement_kg_ha": n_req,
+                "soil_n_pool_after_kg_ha": round(soil_n_pool, 1),
+            }
+
+            # Rotation constraint check
+            if previous_crop:
+                constraints = await self.get_rotation_constraints(previous_crop)
+                violated = [rc for rc in constraints if rc.get("crop_b") == crop]
+                if violated:
+                    entry["rotation_warning"] = violated[0].get("reason", "Rotation constraint violated")
+
+            plan.append(entry)
+            previous_crop = crop
+
+        return {
+            "parcel_id": parcel_id, "years": years, "plan": plan,
+            "cumulative": {
+                "total_yield_kg_ha": round(cumulative_yield, 1),
+                "total_carbon_fixed_tco2e": round(cumulative_carbon, 2),
+                "total_net_margin_eur_ha": round(cumulative_margin, 2),
+                "final_soil_n_pool_kg_ha": round(soil_n_pool, 1),
+            },
+        }
+
     async def get_water_budget(
         self, parcel_id: str, tenant_id: str = "", week_start: str | None = None
     ) -> dict:

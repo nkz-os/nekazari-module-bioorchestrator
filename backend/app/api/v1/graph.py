@@ -827,6 +827,49 @@ async def agriculture_water_budget(
     return result
 
 
+@router.get("/agriculture/compare-crops")
+async def agriculture_compare_crops(
+    driver: DriverDep, request: Request,
+    parcel_id: str = Query(..., description="AgriParcel URN"),
+    crops: str = Query(..., description="Comma-separated EPPO codes (e.g. TRZAX,HORVX)"),
+    seed_price: float = Query(1, description="Seed cost €/ha"),
+    harvest_price: float = Query(1, description="Harvest price €/t"),
+    operation_cost: float = Query(1, description="Cost per field operation €"),
+):
+    """Compare multiple crops on a parcel — agronomic, environmental, economic."""
+    crop_list = [c.strip() for c in crops.split(",") if c.strip()]
+    if not crop_list:
+        raise HTTPException(status_code=400, detail="At least one crop required")
+    dao = GraphDAO(driver)
+    result = await dao.compare_crops(
+        parcel_id=parcel_id, crops=crop_list,
+        seed_price=seed_price, harvest_price=harvest_price, operation_cost=operation_cost,
+        tenant_id=getattr(request.state, "tenant_id", ""),
+    )
+    return result
+
+
+@router.get("/agriculture/rotation-plan")
+async def agriculture_rotation_plan(
+    driver: DriverDep, request: Request,
+    parcel_id: str = Query(..., description="AgriParcel URN"),
+    years: int = Query(3, ge=2, le=6, description="Planning horizon in years"),
+    seed_price: float = Query(1, description="Seed cost €/ha"),
+    harvest_price: float = Query(1, description="Harvest price €/t"),
+    operation_cost: float = Query(1, description="Cost per field operation €"),
+):
+    """Generate multi-year rotation plan with carbon and N tracking."""
+    dao = GraphDAO(driver)
+    result = await dao.rotation_plan(
+        parcel_id=parcel_id, years=years,
+        seed_price=seed_price, harvest_price=harvest_price, operation_cost=operation_cost,
+        tenant_id=getattr(request.state, "tenant_id", ""),
+    )
+    if "error" in result:
+        raise HTTPException(status_code=400, detail=result["error"])
+    return result
+
+
 # ═══════════════════════════════════════════════════════════════════════════════
 # F4: Crop-Health Integration — Endpoints
 # ═══════════════════════════════════════════════════════════════════════════════

@@ -12,6 +12,8 @@
       "phenology": "Phenology",
       "dadis": "DAD-IS Explorer",
       "varietyFinder": "Variety Finder",
+      "comparator": "Comparator",
+      "rotationPlan": "Rotation Plan",
       "parcelHealth": "Parcel Health",
       "waterBudget": "Water Budget",
       "catalog": "Catalog",
@@ -426,5 +428,32 @@
     "irrigationRequired": "Irrigation required",
     "recommendation": "Recommendation",
     "confidence": "Confidence"
+  },
+  "comparator": {
+    "title": "Crop Comparator",
+    "selectParcel": "Select parcel...",
+    "selectCrops": "Crops to compare",
+    "economicInputs": "Economic parameters",
+    "optional": "optional — defaults to 1 (purely agronomic ranking)",
+    "seedPrice": "Seed cost",
+    "harvestPrice": "Harvest price",
+    "operationCost": "Cost/operation",
+    "compare": "Compare",
+    "crop": "Crop",
+    "variety": "Top variety",
+    "score": "Score",
+    "soil": "Soil",
+    "defaultPricesNote": "Prices set to default (1). Economic margins equal agronomic yield. Enter real prices for economic comparison.",
+    "scoreNote": "Score = weighted rank (yield 40% + margin 30% + carbon 20% + soil 10%)"
+  },
+  "rotation": {
+    "title": "Rotation Planner",
+    "selectParcel": "Select parcel...",
+    "years": "Years",
+    "economicInputs": "Economic parameters",
+    "calculate": "Calculate Rotation",
+    "year": "Year",
+    "cumulative": "Cumulative",
+    "yearsLabel": "years"
   }
 }
