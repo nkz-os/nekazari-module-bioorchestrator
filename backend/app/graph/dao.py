@@ -1132,6 +1132,236 @@ class GraphDAO:
                 crops.append(dict(record))
             return crops
 
+    # ── Regenerative Sequence Planner ────────────────────────────────────
+
+    async def get_regenerative_sequence(
+        self,
+        climate_class: str,
+        target_protein: str = "VICFX",
+        soil_type: str | None = None,
+        management: str = "any",
+    ) -> dict:
+        """Plan a regenerative cover-crop-to-protein-crop sequence.
+
+        Uses European cover crop reference data (INTIA, JRC MARS,
+        Legumes Translated) combined with Neo4j variety trial data
+        via extrapolate_varieties() for protein crop ranking.
+
+        Args:
+            climate_class: Köppen climate (e.g. 'Csa', 'BSk')
+            target_protein: EPPO code of target protein crop
+            soil_type: Optional WRB soil type
+            management: 'organic', 'conventional', or 'any'
+
+        Returns:
+            Complete sequence plan dict matching RegenerativeSequence schema.
+        """
+        from app.services.cover_crops import (
+            COVER_CROPS,
+            PROTEIN_CROPS,
+            select_cover_crops,
+            estimate_n_fixation,
+            estimate_dates,
+            lookup,
+            ORGANIC_YIELD_FACTOR,
+        )
+
+        # ── Validate inputs ───────────────────────────────────────────
+        protein = PROTEIN_CROPS.get(target_protein)
+        if protein is None:
+            return {"error": f"Unknown protein crop: {target_protein}. Available: {list(PROTEIN_CROPS.keys())}"}
+
+        if protein.get("climates", {}).get(climate_class, {}).get("not_viable"):
+            return {
+                "error": protein["climates"][climate_class].get("not_viable_note",
+                    f"{target_protein} not viable in {climate_class}"),
+            }
+
+        # ── Resolve climate metadata from Neo4j ───────────────────────
+        climate_meta = {}
+        async with self._driver.session() as session:
+            result = await session.run("""
+                MATCH (ts:TrialSite)
+                WHERE ts.climateClass = $climate
+                RETURN avg(ts.annualRainfallMm) AS avg_rainfall,
+                       avg(ts.frostDaysPerYear) AS avg_frost_days,
+                       avg(ts.annualET0Mm) AS avg_et0,
+                       count(ts) AS site_count
+            """, climate=climate_class)
+            row = await result.single()
+            if row:
+                climate_meta = {
+                    "avg_rainfall_mm": round(row["avg_rainfall"], 1) if row["avg_rainfall"] else None,
+                    "avg_frost_days": round(row["avg_frost_days"], 1) if row["avg_frost_days"] else 0,
+                    "avg_et0_mm": round(row["avg_et0"], 1) if row["avg_et0"] else None,
+                    "sites_in_zone": row["site_count"],
+                }
+
+        frost_days = climate_meta.get("avg_frost_days", 0)
+
+        # ── Select cover crops ────────────────────────────────────────
+        candidate_cover_crops = select_cover_crops(
+            climate_class=climate_class,
+            management=management,
+            min_biomass_t_ha=2.0,
+            max_c_n_ratio=20,
+            frost_days=frost_days,
+        )
+
+        # ── Rank protein crop varieties ───────────────────────────────
+        eppo_search = protein.get("eppo_search", target_protein)
+        variety_ranking = await self.extrapolate_varieties(
+            crop=eppo_search,
+            climate_class=climate_class,
+            soil_type=soil_type,
+            top_n=5,
+        )
+
+        best_variety = None
+        if variety_ranking.get("ranked_varieties"):
+            best_variety = variety_ranking["ranked_varieties"][0]
+            if management == "organic" and best_variety:
+                best_variety["organic_yield_estimate_kg_ha"] = round(
+                    best_variety["mean_yield_kg_ha"] * ORGANIC_YIELD_FACTOR
+                )
+
+        # ── Build primary recommendation ──────────────────────────────
+        primary_cover = candidate_cover_crops[0] if candidate_cover_crops else None
+        if primary_cover is None:
+            return {"error": f"No suitable cover crop for climate={climate_class}"}
+
+        cover_biomass = primary_cover["target_biomass_t_ha"]
+        best_yield = best_variety["mean_yield_kg_ha"] if best_variety else None
+
+        n_estimate = estimate_n_fixation(
+            cover_eppo=primary_cover["eppo"],
+            protein_eppo=target_protein,
+            cover_biomass_t_ha=cover_biomass,
+            protein_yield_kg_ha=best_yield,
+            management=management,
+        )
+
+        cover_gdd = primary_cover.get("gdd_to_termination", {})
+        cover_gdd_val = cover_gdd.get("value", 1250) if isinstance(cover_gdd, dict) else cover_gdd
+        protein_gdd_param = protein.get("climates", {}).get(climate_class, {}).get("gdd_to_maturity", {})
+        protein_gdd_val = protein_gdd_param.get("value", 1400) if isinstance(protein_gdd_param, dict) else protein_gdd_param
+
+        dates = estimate_dates(
+            climate_class=climate_class,
+            cover_gdd=cover_gdd_val,
+            protein_gdd=protein_gdd_val,
+        )
+
+        # ── Water balance ─────────────────────────────────────────────
+        water_balance = self._assess_water_balance(
+            climate_meta=climate_meta,
+            cover_biomass_t_ha=cover_biomass,
+            soil_type=soil_type,
+        )
+
+        # ── Alternatives ──────────────────────────────────────────────
+        alternatives = []
+        for cc in candidate_cover_crops[1:4]:
+            n_alt = estimate_n_fixation(
+                cover_eppo=cc["eppo"],
+                protein_eppo=target_protein,
+                cover_biomass_t_ha=cc["target_biomass_t_ha"],
+                protein_yield_kg_ha=best_yield,
+                management=management,
+            )
+            alternatives.append({
+                "cover_crop": cc["eppo"],
+                "cover_crop_common": cc["common_name"],
+                "cover_crop_scientific": cc["scientific"],
+                "biomass_t_ha": cc["target_biomass_t_ha"],
+                "c_n_ratio": cc.get("c_n_ratio", {}).get("value") if isinstance(cc.get("c_n_ratio"), dict) else cc.get("c_n_ratio"),
+                "n_available_kg_ha": n_alt.get("n_cover_available_kg_ha"),
+                "type": cc["type"],
+            })
+
+        # ── Management warnings ───────────────────────────────────────
+        organic_warning = None
+        if management == "organic" and best_variety:
+            organic_warning = (
+                "Protein variety ranking uses conventional trial data (no organic trials available). "
+                f"Expected organic yield ~{ORGANIC_YIELD_FACTOR*100:.0f}% of conventional "
+                f"({round(best_yield * ORGANIC_YIELD_FACTOR) if best_yield else '?'} kg/ha). "
+                "Source: Seufert et al. 2012, Ponisio et al. 2015."
+            )
+
+        # ── Build response ────────────────────────────────────────────
+        cn_ratio_val = primary_cover.get("c_n_ratio", {})
+        cn_ratio = cn_ratio_val.get("value") if isinstance(cn_ratio_val, dict) else cn_ratio_val
+
+        return {
+            "cover_crop": primary_cover["eppo"],
+            "cover_crop_common": primary_cover["common_name"],
+            "cover_crop_scientific": primary_cover["scientific"],
+            "cover_crop_type": primary_cover["type"],
+            "cover_biomass_t_ha": cover_biomass,
+            "c_n_ratio": cn_ratio,
+            "n_cover_total_kg_ha": n_estimate.get("n_cover_total_kg_ha"),
+            "n_cover_available_kg_ha": n_estimate.get("n_cover_available_kg_ha"),
+            "n_protein_fixed_kg_ha": n_estimate.get("n_protein_fixed_kg_ha"),
+            "protein_crop": target_protein,
+            "protein_crop_scientific": protein["scientific"],
+            "protein_crop_common": protein["common_name"],
+            "protein_variety": best_variety["variety"] if best_variety else None,
+            "expected_protein_yield_kg_ha": best_yield,
+            "protein_kg_ha": n_estimate.get("protein_kg_ha"),
+            "management_mode": management,
+            "organic_data_warning": organic_warning,
+            "termination_gdd": cover_gdd_val,
+            "termination_method": primary_cover.get("kill_method", "roller_crimper"),
+            "cover_crop_sowing_date": dates["cover_crop_sowing_date"],
+            "termination_date_estimate": dates["termination_date"],
+            "protein_crop_sowing_date": dates["protein_crop_sowing_date"],
+            "protein_crop_harvest_date": dates["protein_crop_harvest_date"],
+            "water_balance_risk": water_balance["risk"],
+            "water_balance_detail": water_balance,
+            "alternatives": alternatives,
+            "variety_trials": variety_ranking.get("ranked_varieties", [])[:3],
+            "management_distribution": {
+                "cover_crop_params": "European (INTIA low_input + JRC MARS conventional + Legumes Translated)",
+                "variety_trials": f"conventional (~{variety_ranking.get('data_quality', {}).get('total_trials_analyzed', 0)} trials)",
+            },
+            "provenance": {
+                "cover_crop_source": "INTIA Navarra, JRC MARS Bulletins, Legumes Translated H2020",
+                "n_fixation_source": "Peoples et al. 2021, Unkovich et al. 2010",
+                "yield_source": f"Neo4j VarietyTrial data: {variety_ranking.get('data_quality', {}).get('total_trials_analyzed', 0)} trials",
+                "climate_source": f"TrialSite data: {climate_meta.get('sites_in_zone', 0)} sites in {climate_class}",
+            },
+        }
+
+    @staticmethod
+    def _assess_water_balance(
+        climate_meta: dict,
+        cover_biomass_t_ha: float,
+        soil_type: str | None = None,
+    ) -> dict:
+        avg_rainfall = climate_meta.get("avg_rainfall_mm")
+        avg_et0 = climate_meta.get("avg_et0_mm")
+        if avg_rainfall is None:
+            return {"risk": "unknown", "deficit_mm": None, "note": "Insufficient climate data"}
+        crop_water_demand = cover_biomass_t_ha * 250
+        effective_rain = avg_rainfall * 0.7
+        deficit = crop_water_demand - effective_rain
+        if deficit < avg_rainfall * -0.2:
+            risk = "low"
+        elif deficit < avg_rainfall * 0:
+            risk = "medium"
+        else:
+            risk = "high"
+        return {
+            "risk": risk,
+            "crop_water_demand_mm": round(crop_water_demand),
+            "avg_annual_rainfall_mm": round(avg_rainfall),
+            "effective_rainfall_mm": round(effective_rain),
+            "deficit_mm": round(deficit),
+            "avg_et0_mm": round(avg_et0) if avg_et0 else None,
+            "soil_type": soil_type,
+        }
+
     @staticmethod
     def _extract_value(entity: dict, attr_name: str):
         """Extract a scalar value from an NGSI-LD Property attribute."""

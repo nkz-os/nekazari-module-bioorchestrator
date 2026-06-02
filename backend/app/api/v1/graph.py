@@ -680,3 +680,63 @@ async def agriculture_crops(
     dao = GraphDAO(driver)
     crops = await dao.get_available_crops()
     return {"crops": crops, "total": len(crops)}
+
+
+@router.get("/agriculture/regenerative-sequence")
+async def agriculture_regenerative_sequence(
+    driver: DriverDep,
+    climate_class: str = Query(
+        ...,
+        description="Köppen climate class (e.g. 'Csa', 'BSk', 'Cfb')",
+    ),
+    target_protein: str = Query(
+        default="VICFX",
+        description="EPPO code of target protein crop: VICFX (faba), PIBAR (pea), CIEAR (chickpea), LENCU (lentil), GLXMA (soy)",
+    ),
+    soil_type: str | None = Query(
+        default=None,
+        description="WRB soil type (e.g. 'Calcisol', 'Luvisol')",
+    ),
+    management: str = Query(
+        default="any",
+        description="Management context: 'organic', 'conventional', or 'any'",
+    ),
+):
+    """Plan a regenerative cover-crop-to-protein-crop sequence.
+
+    Given a climate zone and target protein crop, returns the best cover crop
+    for roller-crimper termination with expected biomass, nitrogen dynamics,
+    GDD timeline, estimated dates, water balance risk, and protein crop
+    variety ranking from European trial data.
+
+    Uses European agronomic data from INTIA Navarra, JRC MARS Bulletins,
+    and Legumes Translated (H2020).
+
+    Example:
+      /agriculture/regenerative-sequence?climate_class=Csa&target_protein=VICFX
+      /agriculture/regenerative-sequence?climate_class=BSk&target_protein=CIEAR&management=organic
+
+    Management modes:
+      - 'organic': Only organic + low_input params. If variety data is conventional,
+        applies 20% yield reduction estimate (Seufert et al. 2012).
+      - 'conventional': Conventional + integrated params.
+      - 'any': All data sources merged (default).
+    """
+    if management not in ("organic", "conventional", "any"):
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid management mode: '{management}'. Use 'organic', 'conventional', or 'any'.",
+        )
+
+    dao = GraphDAO(driver)
+    result = await dao.get_regenerative_sequence(
+        climate_class=climate_class,
+        target_protein=target_protein,
+        soil_type=soil_type,
+        management=management,
+    )
+
+    if "error" in result:
+        raise HTTPException(status_code=404, detail=result["error"])
+
+    return result
