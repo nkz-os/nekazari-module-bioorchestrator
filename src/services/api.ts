@@ -59,6 +59,7 @@ export interface CropItem {
   has_thermal: boolean;
   has_npk?: boolean;
   has_rotation?: boolean;
+  registered_varieties?: number;
 }
 
 export interface CropDetail {
@@ -384,11 +385,88 @@ export async function fetchAlerts(parcelId: string): Promise<AlertItem[]> {
   return data.alerts || [];
 }
 
-export async function fetchOrganicInputs(crop: string): Promise<{inputs: {product: string; active_substance: string; category: string}[]}> {
+export async function fetchOrganicInputs(crop: string): Promise<OrganicInputsResult> {
   const resp = await fetch(
     `${API_BASE}/api/graph/agriculture/organic-inputs?crop=${encodeURIComponent(crop)}`,
     { credentials: "include" }
   );
-  if (!resp.ok) return {inputs: []};
+  if (!resp.ok) return {inputs: [], source_unavailable: false};
   return resp.json();
+}
+
+// ── F6: Regenerative Sequence Types ──────────────────────────────────────
+
+export interface CropListCrop {
+  eppo_code: string;
+  scientific_name: string;
+}
+
+export interface CoverCropAlternative {
+  cover_crop: string;
+  cover_crop_common: string;
+  cover_crop_scientific: string;
+  biomass_t_ha: number;
+  c_n_ratio: number;
+  n_available_kg_ha: number;
+  type: string;
+}
+
+export interface WaterBalanceDetail {
+  risk: string;
+  crop_etc_mm: number;
+  growing_season_et0_mm: number;
+  growing_season_rainfall_mm: number;
+  effective_rainfall_mm: number;
+  soil_awc_mm: number;
+  water_supply_mm: number;
+  deficit_mm: number;
+  avg_annual_rainfall_mm: number;
+  avg_annual_et0_mm: number | null;
+  soil_type: string | null;
+  cover_kc: number;
+  method: string;
+}
+
+export interface RegenerativeSequenceResult {
+  cover_crop: string;
+  cover_crop_common: string;
+  cover_crop_scientific: string;
+  cover_crop_type: string;
+  cover_biomass_t_ha: number;
+  c_n_ratio: number;
+  n_cover_total_kg_ha: number;
+  n_cover_available_kg_ha: number;
+  n_protein_fixed_kg_ha: number;
+  protein_crop: string;
+  protein_crop_scientific: string;
+  protein_crop_common: string;
+  protein_variety: string | null;
+  expected_protein_yield_kg_ha: number | null;
+  protein_kg_ha: number;
+  management_mode: string;
+  organic_data_warning: string | null;
+  termination_gdd: number;
+  termination_method: string;
+  cover_crop_sowing_date: string;
+  termination_date_estimate: string;
+  protein_crop_sowing_date: string;
+  protein_crop_harvest_date: string;
+  water_balance_risk: string;
+  water_balance_detail: WaterBalanceDetail;
+  alternatives: CoverCropAlternative[];
+  variety_trials: Record<string, unknown>[];
+  management_distribution: { cover_crop_params: string; variety_trials: string };
+  provenance: { cover_crop_source: string; n_fixation_source: string; yield_source: string; climate_source: string };
+  error?: string;
+}
+
+export interface OrganicInputItem {
+  product: string;
+  active_substance: string;
+  category: string;
+}
+
+export interface OrganicInputsResult {
+  inputs: OrganicInputItem[];
+  source_unavailable?: boolean;
 }
