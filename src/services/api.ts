@@ -363,6 +363,13 @@ export interface AlertItem {
   severity: string;
   recommended_action: string;
   timestamp: string;
+  stage?: string;
+  eco_impact?: {
+    pollinator_species: string[];
+    risk_level: string;
+    recommended_window: string;
+    safer_alternatives: string[];
+  };
 }
 
 export async function fetchAssessmentHistory(parcelId: string, days: number = 30): Promise<HistoryPoint[]> {
@@ -457,6 +464,18 @@ export interface RegenerativeSequenceResult {
   variety_trials: Record<string, unknown>[];
   management_distribution: { cover_crop_params: string; variety_trials: string };
   provenance: { cover_crop_source: string; n_fixation_source: string; yield_source: string; climate_source: string };
+  carbon_projection?: {
+    current_soc_pct: number | null;
+    target_soc_pct: number;
+    projected_soc_pct: number | null;
+    soc_delta_pct: number;
+    co2e_sequestered_ton_ha: number;
+    fertilizer_n_saved_kg_ha: number;
+    fertilizer_savings_eur_ha: number;
+    years_to_target: number | null;
+    soil_texture: string;
+    methodology: string;
+  };
   error?: string;
 }
 

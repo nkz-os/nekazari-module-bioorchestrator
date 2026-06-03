@@ -202,7 +202,16 @@
     "waterBalance": "Balanç Hídric",
     "alternatives": "Cobertures Alternatives",
     "dates": "Dates Clau",
-    "provenance": "Fonts de Dades"
+    "provenance": "Fonts de Dades",
+    "carbon": {
+      "title": "Projecció de Carboni",
+      "currentSoc": "COS actual",
+      "targetSoc": "COS objectiu",
+      "projectedSoc": "COS projectat",
+      "fertilizerSaved": "N fertilitzant estalviat",
+      "savings": "Estalvi estimat",
+      "yearsToTarget": "Anys fins objectiu"
+    }
   },
   "organic": {
     "title": "Insums Orgànics",
@@ -225,7 +234,11 @@
       "info": "Informativa"
     },
     "recommendedAction": "Acció recomanada",
-    "filterAll": "Totes"
+    "filterAll": "Totes",
+    "pollinators": "Pol·linitzadors detectats",
+    "pollinatorsUnknown": "Sense dades específiques",
+    "recommendedWindow": "Finestra recomanada",
+    "saferAlternatives": "Alternatives més segures"
   },
   "rotation": {
     "title": "Rotation Constraints",

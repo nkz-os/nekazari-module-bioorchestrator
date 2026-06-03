@@ -10,7 +10,9 @@ interface YearEntry {
   soil_n_pool_after_kg_ha: number; rotation_warning?: string;
   pest_risk?: { shared_pests?: string[]; shared_count?: number; risk_level?: string };
 }
-interface PlanResult { plan: YearEntry[]; cumulative: { total_yield_kg_ha: number; total_carbon_fixed_tco2e: number; total_net_margin_eur_ha: number; final_soil_n_pool_kg_ha: number }; }
+interface PacRule { id: string; pass: boolean | null; detail: string; }
+interface PacCompliance { score: number; max_score: number; rules: PacRule[]; disclaimer: string; }
+interface PlanResult { plan: YearEntry[]; cumulative: { total_yield_kg_ha: number; total_carbon_fixed_tco2e: number; total_net_margin_eur_ha: number; final_soil_n_pool_kg_ha: number }; pac_compliance?: PacCompliance; }
 
 export default function RotationPlanner() {
   const { t } = useTranslation();
@@ -107,6 +109,45 @@ export default function RotationPlanner() {
               <div>🧪 N pool: {result.cumulative.final_soil_n_pool_kg_ha} kg/ha</div>
             </div>
           </div>
+
+          {/* PAC Compliance */}
+          {result.pac_compliance && (
+            <div style={{ marginTop: 16, maxWidth: 600 }}>
+              <strong style={{ fontSize: 15 }}>🇪🇺 {t("rotation.pac.title")}</strong>
+              <div style={{ display: "flex", alignItems: "center", gap: 16, marginTop: 8, marginBottom: 12 }}>
+                <div style={{
+                  width: 72, height: 72, borderRadius: "50%",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  background: result.pac_compliance.score >= 80 ? "#d4edda" : result.pac_compliance.score >= 50 ? "#fff3cd" : "#f8d7da",
+                  border: `4px solid ${result.pac_compliance.score >= 80 ? "#28a745" : result.pac_compliance.score >= 50 ? "#ffc107" : "#dc3545"}`,
+                  fontSize: 20, fontWeight: 700
+                }}>
+                  {result.pac_compliance.score}%
+                </div>
+                <div style={{ fontSize: 12, color: "#888" }}>
+                  {t("rotation.pac.score")}: {result.pac_compliance.score}/{result.pac_compliance.max_score}
+                </div>
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                {result.pac_compliance.rules.map((rule) => (
+                  <div key={rule.id} style={{
+                    padding: "8px 12px", borderRadius: 6, fontSize: 13,
+                    background: rule.pass === true ? "#d4edda" : rule.pass === false ? "#f8d7da" : "#f5f5f5",
+                    border: `1px solid ${rule.pass === true ? "#c3e6cb" : rule.pass === false ? "#f5c6cb" : "#ddd"}`,
+                  }}>
+                    <span style={{ marginRight: 8 }}>
+                      {rule.pass === true ? "✅" : rule.pass === false ? "❌" : "⊘"}
+                    </span>
+                    <strong>{t(`rotation.pac.rule.${rule.id}`)}</strong>
+                    <span style={{ marginLeft: 8, color: "#666" }}>{rule.detail}</span>
+                  </div>
+                ))}
+              </div>
+              <div style={{ fontSize: 11, color: "#aaa", marginTop: 8, fontStyle: "italic" }}>
+                {result.pac_compliance.disclaimer}
+              </div>
+            </div>
+          )}
         </>
       )}
     </div>

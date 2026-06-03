@@ -202,7 +202,16 @@
     "waterBalance": "Bilan Hydrique",
     "alternatives": "Couverts Alternatifs",
     "dates": "Dates Clés",
-    "provenance": "Sources de Données"
+    "provenance": "Sources de Données",
+    "carbon": {
+      "title": "Projection Carbone",
+      "currentSoc": "COS actuel",
+      "targetSoc": "COS cible",
+      "projectedSoc": "COS projeté",
+      "fertilizerSaved": "N engrais économisé",
+      "savings": "Économie estimée",
+      "yearsToTarget": "Années jusqu'à l'objectif"
+    }
   },
   "organic": {
     "title": "Intrants Organiques",
@@ -225,7 +234,11 @@
       "info": "Info"
     },
     "recommendedAction": "Action recommandée",
-    "filterAll": "Toutes"
+    "filterAll": "Toutes",
+    "pollinators": "Pollinisateurs détectés",
+    "pollinatorsUnknown": "Pas de données spécifiques",
+    "recommendedWindow": "Fenêtre recommandée",
+    "saferAlternatives": "Alternatives plus sûres"
   },
   "rotation": {
     "title": "Rotation Constraints",
