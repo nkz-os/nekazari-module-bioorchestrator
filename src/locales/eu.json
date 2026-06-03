@@ -202,7 +202,16 @@
     "waterBalance": "Ur Balantzea",
     "alternatives": "Estaldura Alternatiboak",
     "dates": "Data Gakoak",
-    "provenance": "Datu-iturriak"
+    "provenance": "Datu-iturriak",
+    "carbon": {
+      "title": "Karbono Proiekzioa",
+      "currentSoc": "Egungo SOC",
+      "targetSoc": "SOC helburua",
+      "projectedSoc": "SOC proiektatua",
+      "fertilizerSaved": "Ongarri N aurreztua",
+      "savings": "Aurrezpen estimatua",
+      "yearsToTarget": "Helbururako urteak"
+    }
   },
   "organic": {
     "title": "Input Organikoak",
@@ -225,7 +234,11 @@
       "info": "Informatiboa"
     },
     "recommendedAction": "Gomendatutako ekintza",
-    "filterAll": "Denak"
+    "filterAll": "Denak",
+    "pollinators": "Polinizatzaileak detektatuta",
+    "pollinatorsUnknown": "Datu zehatzik gabe",
+    "recommendedWindow": "Gomendatutako leihoa",
+    "saferAlternatives": "Alternatiba seguruagoak"
   },
   "rotation": {
     "title": "Rotation Constraints",

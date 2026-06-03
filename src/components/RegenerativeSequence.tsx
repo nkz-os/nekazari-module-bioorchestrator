@@ -161,6 +161,49 @@ export default function RegenerativeSequence() {
             </div>
           </div>
 
+          {/* Carbon Projection */}
+          {result.carbon_projection && (
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ flex: "1 1 100%", padding: 16, background: "#f0fdf4", borderRadius: 8, border: "1px solid #bbf7d0" }}>
+                <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 8 }}>🌍 {t("regenerative.carbon.title")}</div>
+                <div style={{ display: "flex", gap: 16, flexWrap: "wrap", fontSize: 13 }}>
+                  <div style={{ flex: 1, minWidth: 200 }}>
+                    {result.carbon_projection.current_soc_pct != null && (
+                      <div style={{ marginBottom: 8 }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
+                          <span>{t("regenerative.carbon.currentSoc")}: <strong>{result.carbon_projection.current_soc_pct}%</strong></span>
+                          <span>{t("regenerative.carbon.targetSoc")}: <strong>{result.carbon_projection.target_soc_pct}%</strong></span>
+                        </div>
+                        <div style={{ height: 10, background: "#e9ecef", borderRadius: 5, overflow: "hidden" }}>
+                          <div style={{
+                            height: "100%", background: "linear-gradient(90deg, #28a745, #20c997)", borderRadius: 5,
+                            width: `${Math.min(100, ((result.carbon_projection.current_soc_pct ?? 0) / result.carbon_projection.target_soc_pct) * 100)}%`,
+                            transition: "width 0.5s"
+                          }} />
+                        </div>
+                        {result.carbon_projection.projected_soc_pct != null && (
+                          <div style={{ marginTop: 4, fontSize: 11, color: "#28a745" }}>
+                            → {t("regenerative.carbon.projectedSoc")}: {result.carbon_projection.projected_soc_pct}%
+                            ({result.carbon_projection.soc_delta_pct > 0 ? "+" : ""}{result.carbon_projection.soc_delta_pct}%)
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                  <div style={{ flex: 1, minWidth: 180 }}>
+                    <div>🌱 CO₂e: <strong>{result.carbon_projection.co2e_sequestered_ton_ha} t/ha</strong></div>
+                    <div>🧪 {t("regenerative.carbon.fertilizerSaved")}: <strong>{result.carbon_projection.fertilizer_n_saved_kg_ha} kg/ha</strong></div>
+                    <div>💰 {t("regenerative.carbon.savings")}: <strong>{result.carbon_projection.fertilizer_savings_eur_ha} €/ha</strong></div>
+                    {result.carbon_projection.years_to_target != null && (
+                      <div style={{ marginTop: 4 }}>⏳ {t("regenerative.carbon.yearsToTarget")}: <strong>{result.carbon_projection.years_to_target}</strong></div>
+                    )}
+                    <div style={{ fontSize: 10, color: "#999", marginTop: 4 }}>{result.carbon_projection.soil_texture}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           {result.alternatives.length > 0 && (
             <div style={{ marginBottom: 16 }}>
               <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 8 }}>🔄 {t("regenerative.alternatives")}</div>

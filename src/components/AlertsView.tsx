@@ -134,10 +134,26 @@ export default function AlertsView() {
                       </div>
                       <span style={{ fontSize: 11, color: "#999" }}>{formatTime(alert.timestamp)}</span>
                     </div>
-                    <div style={{ fontSize: 14, fontWeight: 500, marginBottom: 4 }}>{alert.type}</div>
+                    <div style={{ fontSize: 14, fontWeight: 500, marginBottom: 4 }}>
+                      {alert.type}
+                      {alert.eco_impact && (
+                        <span style={{ marginLeft: 8, padding: "1px 8px", background: alert.eco_impact.risk_level === "high" ? "#f8d7da" : "#fff3cd", borderRadius: 10, fontSize: 11, fontWeight: 600 }}>
+                          🐝 Eco-Warning
+                        </span>
+                      )}
+                    </div>
                     {alert.recommended_action && (
                       <div style={{ fontSize: 12, color: "#666" }}>
                         💡 {t("alerts.recommendedAction")}: {alert.recommended_action}
+                      </div>
+                    )}
+                    {alert.eco_impact && (
+                      <div style={{ marginTop: 8, padding: 8, background: "rgba(255,255,255,0.6)", borderRadius: 6, fontSize: 12 }}>
+                        <div>🐝 {t("alerts.pollinators")}: {alert.eco_impact.pollinator_species.join(", ") || t("alerts.pollinatorsUnknown")}</div>
+                        <div>⏰ {t("alerts.recommendedWindow")}: {alert.eco_impact.recommended_window}</div>
+                        {alert.eco_impact.safer_alternatives.length > 0 && (
+                          <div>🌿 {t("alerts.saferAlternatives")}: {alert.eco_impact.safer_alternatives.join(", ")}</div>
+                        )}
                       </div>
                     )}
                   </div>

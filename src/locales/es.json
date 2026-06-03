@@ -312,7 +312,16 @@
     "waterBalance": "Balance Hídrico",
     "alternatives": "Coberturas Alternativas",
     "dates": "Fechas Clave",
-    "provenance": "Fuentes de Datos"
+    "provenance": "Fuentes de Datos",
+    "carbon": {
+      "title": "Proyección de Carbono",
+      "currentSoc": "COS actual",
+      "targetSoc": "COS objetivo",
+      "projectedSoc": "COS proyectado",
+      "fertilizerSaved": "N fertilizante ahorrado",
+      "savings": "Ahorro estimado",
+      "yearsToTarget": "Años hasta objetivo"
+    }
   },
   "organic": {
     "title": "Insumos Orgánicos",
@@ -335,7 +344,11 @@
       "info": "Informativa"
     },
     "recommendedAction": "Acción recomendada",
-    "filterAll": "Todas"
+    "filterAll": "Todas",
+    "pollinators": "Polinizadores detectados",
+    "pollinatorsUnknown": "Sin datos específicos",
+    "recommendedWindow": "Ventana recomendada",
+    "saferAlternatives": "Alternativas más seguras"
   },
   "rotation": {
     "title": "Restricciones de Rotación",
@@ -498,7 +511,18 @@
     "calculate": "Calcular Rotación",
     "year": "Año",
     "cumulative": "Acumulado",
-    "yearsLabel": "años"
+    "yearsLabel": "años",
+    "pac": {
+      "title": "Cumplimiento PAC",
+      "score": "Puntuación de Cumplimiento",
+      "rule": {
+        "cover_on_slope": "Cubierta invernal en pendientes >10%",
+        "natura2000_buffer": "Franja protección Natura 2000",
+        "crop_diversity": "Diversidad de cultivos (≥2)",
+        "winter_cover": "Cobertura del suelo en invierno",
+        "pesticide_limits": "Límites de fitosanitarios"
+      }
+    }
   },
   "disclaimer": {
     "text": "Las recomendaciones se basan en modelos agronómicos y datos de fuentes científicas. No sustituyen el criterio profesional. Consulte a su técnico agrícola local antes de tomar decisiones de cultivo."

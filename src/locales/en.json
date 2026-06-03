@@ -312,7 +312,16 @@
     "waterBalance": "Water Balance",
     "alternatives": "Alternative Cover Crops",
     "dates": "Key Dates",
-    "provenance": "Data Sources"
+    "provenance": "Data Sources",
+    "carbon": {
+      "title": "Carbon Projection",
+      "currentSoc": "Current SOC",
+      "targetSoc": "Target SOC",
+      "projectedSoc": "Projected SOC",
+      "fertilizerSaved": "Fertilizer N saved",
+      "savings": "Estimated savings",
+      "yearsToTarget": "Years to target"
+    }
   },
   "organic": {
     "title": "Organic Inputs",
@@ -335,7 +344,11 @@
       "info": "Info"
     },
     "recommendedAction": "Recommended action",
-    "filterAll": "All"
+    "filterAll": "All",
+    "pollinators": "Pollinators detected",
+    "pollinatorsUnknown": "No specific data",
+    "recommendedWindow": "Recommended window",
+    "saferAlternatives": "Safer alternatives"
   },
   "rotation": {
     "title": "Rotation Constraints",
@@ -500,7 +513,18 @@
     "calculate": "Calculate Rotation",
     "year": "Year",
     "cumulative": "Cumulative",
-    "yearsLabel": "years"
+    "yearsLabel": "years",
+    "pac": {
+      "title": "PAC Compliance",
+      "score": "Compliance Score",
+      "rule": {
+        "cover_on_slope": "Winter cover on slopes >10%",
+        "natura2000_buffer": "Natura 2000 protection buffer",
+        "crop_diversity": "Crop diversity (≥2 crops)",
+        "winter_cover": "Winter soil cover",
+        "pesticide_limits": "Pesticide limits"
+      }
+    }
   },
   "disclaimer": {
     "text": "Recommendations are based on agronomic models and third-party scientific data. They do not replace professional judgment. Consult your local agricultural technician before making crop decisions."
