@@ -936,3 +936,15 @@ async def agriculture_assign_crop(
         tenant_id=getattr(request.state, "tenant_id", ""),
     )
     return result
+
+
+@router.get("/agriculture/alerts")
+async def agriculture_alerts(
+    request: Request,
+    driver: DriverDep,
+    parcel_id: str = Query(..., description="AgriParcel URN"),
+):
+    """Return active alerts for a parcel from the crop:events Redis Stream."""
+    dao = GraphDAO(driver)
+    result = await dao.get_alerts(parcel_id=parcel_id)
+    return result

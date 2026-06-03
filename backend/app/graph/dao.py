@@ -17,9 +17,15 @@ Tenant model:
 
 from __future__ import annotations
 
+import logging
+import os
 from typing import Any
 
 from neo4j import AsyncDriver
+
+logger = logging.getLogger(__name__)
+
+TIMESERIES_READER_URL = os.getenv("TIMESERIES_READER_URL", "http://timeseries-reader-service:5000")
 
 
 class GraphDAO:
@@ -1861,7 +1867,23 @@ class GraphDAO:
 
         ctx = await self.get_crop_context(parcel_id=parcel_id, tenant_id=tenant_id)
         plan = []
-        soil_n_pool = 50  # starting soil N pool kg/ha (assumption)
+        # Estimate initial soil N from Soil module data
+        soil_n_pool = 50  # fallback
+        if ctx and "soil" in ctx:
+            actual = ctx.get("soil", {}).get("actual", {})
+            if isinstance(actual, dict):
+                total_n = actual.get("totalN_kg_ha") or actual.get("total_n")
+                if total_n is not None:
+                    try:
+                        soil_n_pool = float(total_n)
+                    except (ValueError, TypeError):
+                        pass
+                elif actual.get("soilOrganicMatterPct") is not None:
+                    try:
+                        soil_n_pool = round(float(actual["soilOrganicMatterPct"]) * 15, 1)
+                    except (ValueError, TypeError):
+                        pass
+        initial_soil_n = soil_n_pool
         previous_crop = None
         cumulative_yield = 0.0
         cumulative_carbon = 0.0
@@ -1920,6 +1942,7 @@ class GraphDAO:
 
         return {
             "parcel_id": parcel_id, "years": years, "plan": plan,
+            "initial_soil_n_kg_ha": initial_soil_n,
             "cumulative": {
                 "total_yield_kg_ha": round(cumulative_yield, 1),
                 "total_carbon_fixed_tco2e": round(cumulative_carbon, 2),
@@ -1927,6 +1950,60 @@ class GraphDAO:
                 "final_soil_n_pool_kg_ha": round(soil_n_pool, 1),
             },
         }
+
+    async def _fetch_weekly_eto(self, tenant_id: str, ws: str, we: str) -> float | None:
+        """Fetch weekly ET0 from timeseries-reader using the tenant's WeatherObserved.
+
+        Resolution chain:
+        1. Find any WeatherObserved entity in Orion-LD for this tenant
+        2. Query timeseries-reader /v2/query for eto_mm attribute
+        3. Sum daily ET0 values across the week
+        Falls back to None if any step fails → caller uses 35mm default.
+        """
+        import httpx
+
+        try:
+            from app.ingestion.orion import OrionIngestionClient
+            orion = OrionIngestionClient()
+            weather_entities = await orion.list_by_type("WeatherObserved", limit=1)
+            if not weather_entities:
+                logger.info("No WeatherObserved entities found for tenant %s", tenant_id)
+                return None
+            weather_urn = weather_entities[0].get("id", "")
+            if not weather_urn:
+                return None
+
+            body = {
+                "time_from": ws,
+                "time_to": we,
+                "resolution": 86400000,
+                "series": [{"entity_urn": weather_urn, "attribute": "eto_mm"}],
+            }
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                resp = await client.post(
+                    f"{TIMESERIES_READER_URL}/api/timeseries/v2/query",
+                    json=body,
+                    headers={"X-Tenant-ID": tenant_id, "Accept": "application/json"},
+                )
+                if resp.status_code != 200:
+                    logger.warning("Timeseries-reader returned %d for ET0 query", resp.status_code)
+                    return None
+
+                data = resp.json()
+                series_list = data.get("series", [])
+                if not series_list:
+                    return None
+                points = series_list[0].get("points", [])
+                if not points:
+                    return None
+
+                total_eto = sum(p[1] for p in points if p[1] is not None)
+                return round(total_eto, 1) if total_eto > 0 else None
+        except (httpx.ConnectError, httpx.TimeoutException):
+            logger.warning("Timeseries-reader unreachable for ET0")
+        except Exception as e:
+            logger.warning("Failed to fetch ET0 from timeseries-reader: %s", e)
+        return None
 
     async def get_water_budget(
         self, parcel_id: str, tenant_id: str = "", week_start: str | None = None
@@ -1975,23 +2052,17 @@ class GraphDAO:
 
         eto = 35.0
         rainfall = 5.0
-        try:
-            weather_url = os.getenv("WEATHER_API_URL", "")
-            if weather_url:
-                async with httpx.AsyncClient(timeout=10.0) as client:
-                    resp = await client.get(
-                        f"{weather_url}/api/weather/weekly",
-                        params={"lat": 0, "lon": 0, "start": ws.isoformat(), "end": we.isoformat()},
-                        headers={"X-Tenant-ID": tenant_id},
-                    )
-                    if resp.status_code == 200:
-                        wdata = resp.json()
-                        eto = float(wdata.get("eto_mm", eto))
-                        rainfall = float(wdata.get("precip_mm", rainfall))
-                    else:
-                        notes.append("Weather API unavailable — using averages")
-        except Exception:
-            notes.append("Weather API unavailable — using averages")
+
+        # Try real ET0 from timeseries-reader
+        real_eto = await self._fetch_weekly_eto(
+            tenant_id=tenant_id,
+            ws=ws.isoformat(), we=we.isoformat(),
+        )
+        if real_eto is not None:
+            eto = real_eto
+            notes.append("ET0 from timeseries-reader (WeatherObserved)")
+        else:
+            notes.append("Using default ET0 35mm (no weather data available)")
 
         etc_weekly = round(kc * eto, 2)
         mad = awc * 0.5
@@ -2020,6 +2091,64 @@ class GraphDAO:
             "confidence_notes": "; ".join(notes) if notes else "All data sources available",
             "recommendation": recommendation,
         }
+
+    async def get_alerts(self, parcel_id: str, limit: int = 5, max_age_days: int = 7) -> dict:
+        """Fetch recent alerts for a parcel from Redis Streams crop:events.
+
+        Reads the crop:events Redis Stream for crop.stress.breach events
+        matching the given parcel_id within max_age_days.
+        """
+        import json as _json
+        from datetime import datetime, timedelta, timezone
+
+        try:
+            import redis.asyncio as aioredis
+            r = aioredis.Redis.from_url("redis://redis-service:6379/0", socket_timeout=5.0)
+        except Exception:
+            return {"alerts": []}
+
+        try:
+            cutoff = datetime.now(timezone.utc) - timedelta(days=max_age_days)
+            cutoff_ms = int(cutoff.timestamp() * 1000)
+
+            raw = await r.xrevrange("crop:events", count=limit * 2)
+            alerts = []
+            seen = 0
+
+            for msg_id, fields in raw:
+                if seen >= limit:
+                    break
+                try:
+                    payload = _json.loads(fields.get(b"payload", b"{}"))
+                    if (
+                        payload.get("event_type") == "crop.stress.breach"
+                        and payload.get("parcel_id") == parcel_id
+                    ):
+                        ts = payload.get("timestamp", "")
+                        try:
+                            ts_dt = datetime.fromisoformat(ts)
+                            if ts_dt < cutoff:
+                                continue
+                        except Exception:
+                            pass
+                        alerts.append({
+                            "type": payload.get("event_type", "unknown"),
+                            "severity": payload.get("overall_severity", "UNKNOWN"),
+                            "recommended_action": payload.get("recommended_action", ""),
+                            "timestamp": ts,
+                        })
+                        seen += 1
+                except Exception:
+                    continue
+
+            await r.aclose()
+            return {"alerts": alerts}
+        except Exception:
+            try:
+                await r.aclose()
+            except Exception:
+                pass
+            return {"alerts": []}
 
 
 def _extract_prop_value(prop: dict | str | None) -> str | None:
