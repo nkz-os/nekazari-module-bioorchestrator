@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useTranslation } from '@nekazari/sdk';
 import { Card, Button } from '@nekazari/ui-kit';
-import { Activity, GitBranch, Sprout, Database, Leaf, Thermometer, Droplets, RefreshCw, Search, Globe, Heart } from 'lucide-react';
+import { Activity, GitBranch, Sprout, Database, Leaf, Thermometer, Droplets, RefreshCw, Search, Globe, Heart, Dna, Bell, FlaskRound } from 'lucide-react';
 import SourcesDashboard from './components/SourcesDashboard';
 import PipelineRunner from './components/PipelineRunner';
 import PhenologyBrowser from './components/PhenologyBrowser';
@@ -19,6 +19,9 @@ import ParcelHealth from './components/ParcelHealth';
 import WaterBudget from './components/WaterBudget';
 import CropComparator from './components/CropComparator';
 import RotationPlanner from './components/RotationPlanner';
+import RegenerativeSequence from './components/RegenerativeSequence';
+import OrganicInputs from './components/OrganicInputs';
+import AlertsView from './components/AlertsView';
 import SourcePowerBar from './components/SourcePowerBar';
 import DisclaimerFooter from './components/DisclaimerFooter';
 import type { CropItem } from './services/api';
@@ -30,6 +33,8 @@ const TAB_SOURCE_COUNTS: Record<string, number> = {
   'rotation-plan': 6,
   'parcel-health': 4,
   'water-budget': 3,
+  'regenerative': 5,
+  'alerts': 2,
   'catalog': 5,
   'climate': 3,
   'phenology': 3,
@@ -37,6 +42,7 @@ const TAB_SOURCE_COUNTS: Record<string, number> = {
   'npk': 2,
   'soil': 2,
   'rotation': 2,
+  'organic': 3,
   'pipeline': 6,
   'dadis': 1,
   'sources': 29,
@@ -52,6 +58,8 @@ const TAB_GROUPS = [
       { id: 'rotation-plan' as const, icon: RefreshCw, label: 'app.tabs.rotationPlan' },
       { id: 'parcel-health' as const, icon: Heart, label: 'app.tabs.parcelHealth' },
       { id: 'water-budget' as const, icon: Droplets, label: 'app.tabs.waterBudget' },
+      { id: 'regenerative' as const, icon: Dna, label: 'app.tabs.regenerative' },
+      { id: 'alerts' as const, icon: Bell, label: 'app.tabs.alerts' },
     ],
   },
   {
@@ -65,6 +73,7 @@ const TAB_GROUPS = [
       { id: 'npk' as const, icon: Droplets, label: 'app.tabs.npk' },
       { id: 'soil' as const, icon: Sprout, label: 'app.tabs.soil' },
       { id: 'rotation' as const, icon: RefreshCw, label: 'app.tabs.rotation' },
+      { id: 'organic' as const, icon: FlaskRound, label: 'app.tabs.organic' },
       { id: 'pipeline' as const, icon: GitBranch, label: 'app.tabs.pipeline' },
       { id: 'dadis' as const, icon: Database, label: 'app.tabs.dadis' },
       { id: 'sources' as const, icon: Activity, label: 'app.tabs.sources' },
@@ -129,6 +138,8 @@ const App: React.FC = () => {
       {active === 'rotation-plan' && <RotationPlanner />}
       {active === 'parcel-health' && <ParcelHealth />}
       {active === 'water-budget' && <WaterBudget />}
+      {active === 'regenerative' && <RegenerativeSequence />}
+      {active === 'alerts' && <AlertsView />}
       {active === 'climate' && <ClimateExplorer />}
       {active === 'catalog' && view === 'detail' && selectedCrop && (
         <>
@@ -144,6 +155,7 @@ const App: React.FC = () => {
       {active === 'npk' && <NutrientProfile />}
       {active === 'soil' && <SoilSuitability />}
       {active === 'rotation' && <RotationConstraints />}
+      {active === 'organic' && <OrganicInputs />}
       {active === 'pipeline' && <PipelineRunner />}
       {active === 'dadis' && <BreedDiscovery />}
       {active === 'sources' && <SourcesDashboard />}
