@@ -6,7 +6,10 @@
       "sources": "Fontes de dados",
       "pipeline": "Pipeline",
       "phenology": "Fenologia",
-      "dadis": "Explorador DAD-IS"
+      "dadis": "Explorador DAD-IS",
+      "regenerative": "Seq. Regenerativa",
+      "alerts": "Alertas",
+      "organic": "Insumos Orgânicos"
     }
   },
   "sources": {
@@ -186,6 +189,43 @@
     "empty": "No soil requirements available for this species.",
     "allPresent": "All catalog crops have EcoCrop soil requirements.",
     "count": "{{shown}} of {{total}} species"
+  },
+  "regenerative": {
+    "title": "Sequência Regenerativa",
+    "climate": "Zona climática",
+    "protein": "Cultura proteica alvo",
+    "management": "Manejo",
+    "plan": "Planear Sequência",
+    "coverCrop": "Cultura de Cobertura",
+    "proteinCrop": "Cultura Proteica",
+    "nitrogen": "Balanço de Azoto",
+    "waterBalance": "Balanço Hídrico",
+    "alternatives": "Coberturas Alternativas",
+    "dates": "Datas Chave",
+    "provenance": "Fontes de Dados"
+  },
+  "organic": {
+    "title": "Insumos Orgânicos",
+    "selectCrop": "Selecionar cultura...",
+    "product": "Produto",
+    "activeSubstance": "Substância Ativa",
+    "category": "Categoria",
+    "empty": "Nenhum insumo orgânico autorizado encontrado para esta cultura.",
+    "eppoUnavailable": "API EPPO não configurada — pesquisa de insumos orgânicos indisponível."
+  },
+  "alerts": {
+    "title": "Alertas",
+    "selectParcel": "Selecionar parcela...",
+    "selectPrompt": "Selecione uma parcela para ver alertas",
+    "empty": "Sem alertas ativos para esta parcela",
+    "noFilterMatch": "Sem alertas correspondentes ao filtro",
+    "severity": {
+      "critical": "Crítica",
+      "warning": "Aviso",
+      "info": "Info"
+    },
+    "recommendedAction": "Ação recomendada",
+    "filterAll": "Todas"
   },
   "rotation": {
     "title": "Rotation Constraints",

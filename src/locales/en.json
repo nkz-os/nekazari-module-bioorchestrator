@@ -16,11 +16,14 @@
       "rotationPlan": "Rotation Plan",
       "parcelHealth": "Parcel Health",
       "waterBudget": "Water Budget",
+      "regenerative": "Regen. Sequence",
+      "alerts": "Alerts",
       "catalog": "Catalog",
       "thermal": "Thermal",
       "npk": "NPK",
       "soil": "Soil",
       "rotation": "Rotation",
+      "organic": "Organic Inputs",
       "climate": "Climate Map"
     }
   },
@@ -296,6 +299,43 @@
     "empty": "No soil requirements available for this species.",
     "allPresent": "All catalog crops have EcoCrop soil requirements.",
     "count": "{{shown}} of {{total}} species"
+  },
+  "regenerative": {
+    "title": "Regenerative Sequence",
+    "climate": "Climate zone",
+    "protein": "Target protein crop",
+    "management": "Management",
+    "plan": "Plan Sequence",
+    "coverCrop": "Cover Crop",
+    "proteinCrop": "Protein Crop",
+    "nitrogen": "Nitrogen Balance",
+    "waterBalance": "Water Balance",
+    "alternatives": "Alternative Cover Crops",
+    "dates": "Key Dates",
+    "provenance": "Data Sources"
+  },
+  "organic": {
+    "title": "Organic Inputs",
+    "selectCrop": "Select crop...",
+    "product": "Product",
+    "activeSubstance": "Active Substance",
+    "category": "Category",
+    "empty": "No authorized organic inputs found for this crop.",
+    "eppoUnavailable": "EPPO API not configured — organic input lookup unavailable."
+  },
+  "alerts": {
+    "title": "Alerts",
+    "selectParcel": "Select parcel...",
+    "selectPrompt": "Select a parcel to view alerts",
+    "empty": "No active alerts for this parcel",
+    "noFilterMatch": "No alerts matching filter",
+    "severity": {
+      "critical": "Critical",
+      "warning": "Warning",
+      "info": "Info"
+    },
+    "recommendedAction": "Recommended action",
+    "filterAll": "All"
   },
   "rotation": {
     "title": "Rotation Constraints",

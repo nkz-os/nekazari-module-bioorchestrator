@@ -16,11 +16,14 @@
       "rotationPlan": "Plan Rotación",
       "parcelHealth": "Salud Parcela",
       "waterBudget": "Balance Hídrico",
+      "regenerative": "Sec. Regenerativa",
+      "alerts": "Alertas",
       "catalog": "Catálogo",
       "thermal": "Térmica",
       "npk": "NPK",
       "soil": "Suelo",
       "rotation": "Rotación",
+      "organic": "Insumos Orgánicos",
       "climate": "Mapa climático"
     }
   },
@@ -296,6 +299,43 @@
     "empty": "No hay requisitos edáficos para esta especie.",
     "allPresent": "Todos los cultivos del catálogo tienen requisitos edáficos de EcoCrop.",
     "count": "{{shown}} de {{total}} especies"
+  },
+  "regenerative": {
+    "title": "Secuencia Regenerativa",
+    "climate": "Zona climática",
+    "protein": "Cultivo proteico objetivo",
+    "management": "Manejo",
+    "plan": "Planificar Secuencia",
+    "coverCrop": "Cultivo de Cobertura",
+    "proteinCrop": "Cultivo Proteico",
+    "nitrogen": "Balance de Nitrógeno",
+    "waterBalance": "Balance Hídrico",
+    "alternatives": "Coberturas Alternativas",
+    "dates": "Fechas Clave",
+    "provenance": "Fuentes de Datos"
+  },
+  "organic": {
+    "title": "Insumos Orgánicos",
+    "selectCrop": "Seleccionar cultivo...",
+    "product": "Producto",
+    "activeSubstance": "Sustancia Activa",
+    "category": "Categoría",
+    "empty": "No se encontraron insumos orgánicos autorizados para este cultivo.",
+    "eppoUnavailable": "API EPPO no configurada — búsqueda de insumos orgánicos no disponible."
+  },
+  "alerts": {
+    "title": "Alertas",
+    "selectParcel": "Seleccionar parcela...",
+    "selectPrompt": "Selecciona una parcela para ver alertas",
+    "empty": "Sin alertas activas para esta parcela",
+    "noFilterMatch": "Sin alertas con este filtro",
+    "severity": {
+      "critical": "Crítica",
+      "warning": "Advertencia",
+      "info": "Informativa"
+    },
+    "recommendedAction": "Acción recomendada",
+    "filterAll": "Todas"
   },
   "rotation": {
     "title": "Restricciones de Rotación",
