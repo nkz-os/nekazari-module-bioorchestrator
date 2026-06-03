@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
+import { useParcelSelector } from "../hooks/useParcelSelector";
 import { getCropContext, CropContextResponse } from "../services/api";
 
-interface Parcel { id: string; name: string; }
 interface BudgetData {
   parcel_id: string; week_start: string; week_end: string;
   soil_awc_mm: number; current_moisture_estimate_mm: number; mad_mm: number;
@@ -14,19 +14,13 @@ interface BudgetData {
 
 export default function WaterBudget() {
   const { t } = useTranslation();
-  const [parcels, setParcels] = useState<Parcel[]>([]);
-  const [selectedParcel, setSelectedParcel] = useState("");
+  const { parcels, selected: selectedParcel, setSelected: setSelectedParcel } = useParcelSelector();
   const [ctx, setCtx] = useState<CropContextResponse | null>(null);
   const [budget, setBudget] = useState<BudgetData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  useEffect(() => {
-    const sdk = (window as any).__NKZ_SDK__;
-    if (sdk?.getParcels) sdk.getParcels().then((p: Parcel[]) => setParcels(p));
-  }, []);
-
-  useEffect(() => {
+  React.useEffect(() => {
     if (!selectedParcel) return;
     setLoading(true); setError("");
     (async () => {

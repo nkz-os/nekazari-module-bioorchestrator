@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
+import { useParcelSelector } from "../hooks/useParcelSelector";
 
-interface Parcel { id: string; name: string; }
 interface CropItem { eppo_code: string; scientific_name: string; }
 interface ComparisonRow {
   crop: string; best_variety: string;
@@ -15,9 +15,8 @@ interface Result { comparisons: ComparisonRow[]; ranking: { by_margin: string[];
 
 export default function CropComparator() {
   const { t } = useTranslation();
-  const [parcels, setParcels] = useState<Parcel[]>([]);
+  const { parcels, selected: selectedParcel, setSelected: setSelectedParcel } = useParcelSelector();
   const [availableCrops, setAvailableCrops] = useState<CropItem[]>([]);
-  const [selectedParcel, setSelectedParcel] = useState("");
   const [selectedCrops, setSelectedCrops] = useState<Set<string>>(new Set());
   const [seedPrice, setSeedPrice] = useState(1);
   const [harvestPrice, setHarvestPrice] = useState(1);
@@ -27,9 +26,6 @@ export default function CropComparator() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    const sdk = (window as any).__NKZ_SDK__;
-    if (sdk?.getParcels) sdk.getParcels().then((p: Parcel[]) => setParcels(p));
-    // Fetch available crops
     const API_BASE = (import.meta as any).env?.VITE_API_URL || "https://nkz.robotika.cloud";
     fetch(`${API_BASE}/api/graph/agriculture/crops`, { credentials: "include" })
       .then(r => r.json())

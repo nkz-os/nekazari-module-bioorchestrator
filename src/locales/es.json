@@ -414,7 +414,9 @@
     "soilSuitability": "Idoneidad del Suelo",
     "soilSensors": "Sensores de Suelo",
     "phenologySource": "Origen fenología",
-    "matchLevel": "Nivel de coincidencia"
+    "matchLevel": "Nivel de coincidencia",
+    "sensorData": "Datos del Sensor",
+    "noSensorData": "Sin datos de sensores aún. Instala sensores de suelo/planta o espera al pase del satélite."
   },
   "waterBudget": {
     "title": "Balance Hídrico",

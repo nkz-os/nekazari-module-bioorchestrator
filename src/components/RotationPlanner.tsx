@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
+import { useParcelSelector } from "../hooks/useParcelSelector";
 
-interface Parcel { id: string; name: string; }
 interface YearEntry {
   year: number; crop: string; variety: string;
   expected_yield_kg_ha: number; carbon_fixed_tco2e: number;
@@ -13,8 +13,7 @@ interface PlanResult { plan: YearEntry[]; cumulative: { total_yield_kg_ha: numbe
 
 export default function RotationPlanner() {
   const { t } = useTranslation();
-  const [parcels, setParcels] = useState<Parcel[]>([]);
-  const [selectedParcel, setSelectedParcel] = useState("");
+  const { parcels, selected: selectedParcel, setSelected: setSelectedParcel } = useParcelSelector();
   const [years, setYears] = useState(3);
   const [seedPrice, setSeedPrice] = useState(1);
   const [harvestPrice, setHarvestPrice] = useState(1);
@@ -22,11 +21,6 @@ export default function RotationPlanner() {
   const [result, setResult] = useState<PlanResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-
-  useEffect(() => {
-    const sdk = (window as any).__NKZ_SDK__;
-    if (sdk?.getParcels) sdk.getParcels().then((p: Parcel[]) => setParcels(p));
-  }, []);
 
   const handlePlan = async () => {
     if (!selectedParcel) return;
