@@ -220,5 +220,8 @@
     "sectionError": "Could not load {{section}} data.",
     "retry": "Retry",
     "deprecatedSoilNote": "Deprecated data — coming soon from Soil module"
+  },
+  "disclaimer": {
+    "text": "Les recomanacions es basen en models agronòmics i dades de fonts científiques. No substitueixen el criteri professional. Consulteu el vostre tècnic agrícola local abans de prendre decisions de cultiu."
   }
 }

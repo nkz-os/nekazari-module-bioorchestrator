@@ -461,5 +461,8 @@
     "year": "Year",
     "cumulative": "Cumulative",
     "yearsLabel": "years"
+  },
+  "disclaimer": {
+    "text": "Recommendations are based on agronomic models and third-party scientific data. They do not replace professional judgment. Consult your local agricultural technician before making crop decisions."
   }
 }
