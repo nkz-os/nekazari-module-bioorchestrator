@@ -19,8 +19,28 @@ import ParcelHealth from './components/ParcelHealth';
 import WaterBudget from './components/WaterBudget';
 import CropComparator from './components/CropComparator';
 import RotationPlanner from './components/RotationPlanner';
+import SourcePowerBar from './components/SourcePowerBar';
+import DisclaimerFooter from './components/DisclaimerFooter';
 import type { CropItem } from './services/api';
 import './i18n';
+
+const TAB_SOURCE_COUNTS: Record<string, number> = {
+  'variety-finder': 5,
+  'comparator': 7,
+  'rotation-plan': 6,
+  'parcel-health': 4,
+  'water-budget': 3,
+  'catalog': 5,
+  'climate': 3,
+  'phenology': 3,
+  'thermal': 2,
+  'npk': 2,
+  'soil': 2,
+  'rotation': 2,
+  'pipeline': 6,
+  'dadis': 1,
+  'sources': 29,
+};
 
 const TAB_GROUPS = [
   {
@@ -89,12 +109,17 @@ const App: React.FC = () => {
                 >
                   <Icon className="w-4 h-4" />
                   {t(tab.label)}
+                  <span style={{ fontSize: 9, color: "#999", marginLeft: 2, fontFamily: "monospace" }}>
+                    🛰️{TAB_SOURCE_COUNTS[tab.id] || 0}
+                  </span>
                 </button>
               );
             })}
           </div>
         </div>
       ))}
+
+      <SourcePowerBar />
 
       {active === 'catalog' && view === 'catalog' && (
         <CropCatalog onSelectCrop={(crop) => { setSelectedCrop(crop); setView('detail'); }} />
@@ -122,6 +147,7 @@ const App: React.FC = () => {
       {active === 'pipeline' && <PipelineRunner />}
       {active === 'dadis' && <BreedDiscovery />}
       {active === 'sources' && <SourcesDashboard />}
+      <DisclaimerFooter />
     </Card>
   );
 };

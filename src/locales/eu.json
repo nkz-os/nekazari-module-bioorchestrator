@@ -220,5 +220,8 @@
     "sectionError": "Could not load {{section}} data.",
     "retry": "Retry",
     "deprecatedSoilNote": "Deprecated data — coming soon from Soil module"
+  },
+  "disclaimer": {
+    "text": "Recommendations are based on agronomic models and third-party scientific data. They do not replace professional judgment. Consult your local agricultural technician before making crop decisions."
   }
 }

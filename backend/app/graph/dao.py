@@ -1823,6 +1823,12 @@ class GraphDAO:
                 "soil_suitability": {"overall": "suitable" if not warnings else "warning", "warnings": warnings},
             }
 
+            # Attach source provenance metadata
+            if "n_fixation_source" in ref:
+                entry["environmental"]["n_fixation_source"] = ref["n_fixation_source"]
+            if "growing_season_source" in ref:
+                entry["agronomics"]["growing_season_source"] = ref["growing_season_source"]
+
             # Enrich with forage value and market maturity (non-blocking)
             if ref.get("n_fixation_kg_ha", 0) > 0:
                 try:

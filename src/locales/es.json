@@ -459,5 +459,8 @@
     "year": "Año",
     "cumulative": "Acumulado",
     "yearsLabel": "años"
+  },
+  "disclaimer": {
+    "text": "Las recomendaciones se basan en modelos agronómicos y datos de fuentes científicas. No sustituyen el criterio profesional. Consulte a su técnico agrícola local antes de tomar decisiones de cultivo."
   }
 }

@@ -5,8 +5,8 @@ import { useParcelSelector } from "../hooks/useParcelSelector";
 interface CropItem { eppo_code: string; scientific_name: string; }
 interface ComparisonRow {
   crop: string; best_variety: string;
-  agronomics: { expected_yield_kg_ha: number; confidence_interval?: [number,number]; trials_analyzed: number; growing_season_days: number; operations_count: number };
-  environmental: { carbon_fixed_tco2e_ha: number; n_fixation_kg_ha: number };
+  agronomics: { expected_yield_kg_ha: number; confidence_interval?: [number,number]; trials_analyzed: number; growing_season_days: number; operations_count: number; growing_season_source?: string };
+  environmental: { carbon_fixed_tco2e_ha: number; n_fixation_kg_ha: number; n_fixation_source?: string };
   economic: { net_margin_eur_ha: number; total_cost_eur_ha: number; gross_revenue_eur_ha: number };
   soil_suitability: { overall: string; warnings: string[] };
   composite_score?: number;
@@ -128,7 +128,16 @@ export default function CropComparator() {
                   <td style={{ padding: 8 }}>{c.best_variety || "—"}</td>
                   <td style={{ padding: 8 }}>{c.agronomics.expected_yield_kg_ha.toLocaleString()}</td>
                   <td style={{ padding: 8 }}>{c.environmental.carbon_fixed_tco2e_ha}</td>
-                  <td style={{ padding: 8 }}>{c.environmental.n_fixation_kg_ha > 0 ? `+${c.environmental.n_fixation_kg_ha}` : "—"}</td>
+                  <td style={{ padding: 8, fontSize: 12 }}>
+                    {c.environmental.n_fixation_kg_ha > 0 ? `+${c.environmental.n_fixation_kg_ha}` : "—"}
+                    {c.environmental.n_fixation_source && (
+                      <sup style={{ fontSize: 9, color: "#999", marginLeft: 2 }} title={c.environmental.n_fixation_source}>
+                        {c.environmental.n_fixation_source.includes("AgriKnowledge") ? "🧪" :
+                         c.environmental.n_fixation_source.includes("EPPO") ? "🔬" :
+                         c.environmental.n_fixation_source.includes("measured") ? "📏" : "📋"}
+                      </sup>
+                    )}
+                  </td>
                   <td style={{ padding: 8 }}>{pricesAreDefault ? c.agronomics.expected_yield_kg_ha.toLocaleString() : `${c.economic.net_margin_eur_ha.toLocaleString()} €`}</td>
                   <td style={{ padding: 8 }}>{c.composite_score ? "⭐".repeat(Math.min(5, Math.round(c.composite_score / 20))) : ""}</td>
                   <td style={{ padding: 8 }}>{c.soil_suitability.overall === "suitable" ? "✅" : "⚠️"}</td>
