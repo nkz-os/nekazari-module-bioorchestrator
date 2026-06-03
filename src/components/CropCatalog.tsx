@@ -84,6 +84,9 @@ export default function CropCatalog({ onSelectCrop }: CropCatalogProps) {
               {crop.variety_count > 0 && (
                 <Badge intent="info">{t('catalog.tree.varieties', { count: crop.variety_count })}</Badge>
               )}
+              {(crop.registered_varieties ?? crop.variety_count) > 0 && (
+                <Badge intent="accent">🏷️ {crop.registered_varieties ?? crop.variety_count}</Badge>
+              )}
               <Badge intent={crop.has_kc ? 'positive' : 'default'}>{crop.has_kc ? 'Kc ✓' : 'Kc ✗'}</Badge>
               <Badge intent={crop.has_thermal ? 'positive' : 'default'}>{t('catalog.detail.thermal')} {crop.has_thermal ? '✓' : '✗'}</Badge>
             </div>
