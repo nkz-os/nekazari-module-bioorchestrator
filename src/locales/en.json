@@ -416,7 +416,11 @@
     "phenologySource": "Phenology source",
     "matchLevel": "Match level",
     "sensorData": "Sensor Data",
-    "noSensorData": "No sensor data yet. Deploy sensors or wait for satellite pass."
+    "noSensorData": "No sensor data yet. Deploy sensors or wait for satellite pass.",
+    "historyTitle": "Historical evolution",
+    "noHistory": "No historical data available",
+    "waterBalance": "Water balance",
+    "activeAlerts": "Active alerts"
   },
   "waterBudget": {
     "title": "Water Budget",

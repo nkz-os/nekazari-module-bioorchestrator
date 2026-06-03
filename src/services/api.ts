@@ -347,3 +347,39 @@ export async function getYieldPotential(
   }
   return res.json();
 }
+
+// ── F5: ParcelHealth History & Alerts ─────────────────────────────────────
+
+export interface HistoryPoint {
+  date: string;
+  cwsi: number | null;
+  mds: number | null;
+  balance: number | null;
+}
+
+export interface AlertItem {
+  type: string;
+  severity: string;
+  recommended_action: string;
+  timestamp: string;
+}
+
+export async function fetchAssessmentHistory(parcelId: string, days: number = 30): Promise<HistoryPoint[]> {
+  const resp = await fetch(
+    `${API_BASE}/api/crop-health/assessments/history?parcelId=${encodeURIComponent(parcelId)}&days=${days}`,
+    { credentials: "include" }
+  );
+  if (!resp.ok) return [];
+  const data = await resp.json();
+  return data.points || [];
+}
+
+export async function fetchAlerts(parcelId: string): Promise<AlertItem[]> {
+  const resp = await fetch(
+    `${API_BASE}/api/graph/agriculture/alerts?parcel_id=${encodeURIComponent(parcelId)}`,
+    { credentials: "include" }
+  );
+  if (!resp.ok) return [];
+  const data = await resp.json();
+  return data.alerts || [];
+}

@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useParcelSelector } from "../hooks/useParcelSelector";
-import { getCropContext, getYieldPotential, CropContextResponse, YieldPotentialResponse } from "../services/api";
+import { getCropContext, getYieldPotential, CropContextResponse, YieldPotentialResponse, fetchAssessmentHistory, fetchAlerts, HistoryPoint, AlertItem } from "../services/api";
+import ParcelHealthChart from "./ParcelHealthChart";
 
 interface AssessmentData {
   cwsiValue?: number; mdsValue?: number; mdsSeverity?: string;
@@ -19,6 +20,8 @@ export default function ParcelHealth() {
   const [assessment, setAssessment] = useState<AssessmentData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [history, setHistory] = useState<HistoryPoint[]>([]);
+  const [alerts, setAlerts] = useState<AlertItem[]>([]);
 
   useEffect(() => {
     if (!selectedParcel) return;
@@ -30,13 +33,15 @@ export default function ParcelHealth() {
           setError("noCropAssigned"); setLoading(false); return;
         }
         setCtx(context);
-        // Fetch assessment + yield in parallel
+        // Fetch assessment + yield + history + alerts in parallel
         const API_BASE = (import.meta as any).env?.VITE_API_URL || "https://nkz.robotika.cloud";
-        const [assessResp, ypPromise] = await Promise.allSettled([
+        const [assessResp, ypPromise, histPromise, alertPromise] = await Promise.allSettled([
           fetch(`${API_BASE}/api/crop-health/assessments/latest?parcelId=${selectedParcel}`, { credentials: "include" }).then(r => r.json()),
           context.variety?.name
             ? getYieldPotential(context.variety.name, context.crop.eppo, undefined, undefined, selectedParcel)
             : Promise.resolve(null),
+          fetchAssessmentHistory(selectedParcel, 14),
+          fetchAlerts(selectedParcel),
         ]);
         if (assessResp.status === "fulfilled" && assessResp.value?.assessments?.length) {
           setAssessment(assessResp.value.assessments[0]);
@@ -44,6 +49,8 @@ export default function ParcelHealth() {
         if (ypPromise.status === "fulfilled" && ypPromise.value && !("detail" in ypPromise.value)) {
           setYp(ypPromise.value);
         }
+        if (histPromise.status === "fulfilled") setHistory(histPromise.value);
+        if (alertPromise.status === "fulfilled") setAlerts(alertPromise.value);
       } catch (e: any) { setError(e.message || "unknown"); }
       finally { setLoading(false); }
     })();
@@ -78,6 +85,17 @@ export default function ParcelHealth() {
       {error && error !== "noCropAssigned" && <div style={{ padding: 20, background: "#f8d7da", borderRadius: 8, maxWidth: 500 }}>{t("parcelHealth.error")}: {error}</div>}
       {ctx?.crop && (
         <>
+          {/* Alert banner */}
+          {alerts.length > 0 && (
+            <div style={{ padding: 10, background: "#f8d7da", borderRadius: 8, marginBottom: 12, maxWidth: 600, fontSize: 13 }}>
+              ⚠️ <strong>{t("parcelHealth.activeAlerts")}:</strong>{" "}
+              {alerts.map((a, i) => (
+                <span key={i} style={{ marginRight: 12 }}>
+                  {a.severity} — {a.recommended_action} ({a.timestamp?.slice(0, 10)})
+                </span>
+              ))}
+            </div>
+          )}
           {/* Crop info */}
           <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 16 }}>
             <div style={{ padding: "8px 12px", background: "#f0f4ff", borderRadius: 6, fontSize: 13 }}><strong>{t("parcelHealth.crop")}:</strong> {ctx.crop.name} ({ctx.crop.eppo})</div>
@@ -138,6 +156,9 @@ export default function ParcelHealth() {
               <strong>🌡️ {t("parcelHealth.soilSensors")}:</strong> pH {(ctx.soil_sensors as any).ph} — Moist {(ctx.soil_sensors as any).moisture_pct}%
             </div>
           )}
+
+          {/* Historical chart */}
+          <ParcelHealthChart data={history} />
 
           <div style={{ fontSize: 11, color: "#999", marginTop: 16 }}>
             {t("parcelHealth.phenologySource")}: {ctx.phenology_source} — {t("parcelHealth.matchLevel")}: {ctx.match_level}
