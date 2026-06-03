@@ -83,11 +83,11 @@ All parameters carry **full scientific provenance** (DOI, institution, method, c
 |------|-------------|
 | **Variety Finder** | Rank varieties by climate, soil, yield — extrapolated from Neo4j trial data |
 | **Crop Comparator** | Side-by-side agronomic, environmental, and economic comparison with forage value and market maturity |
-| **Rotation Planner** | Multi-year rotation with N balance, C fixation, pest risk from EPPO, soil N pool tracking |
+| **Rotation Planner** | Multi-year rotation with N balance, C fixation, pest risk, **PAC compliance score** (eco-schemes) |
 | **Parcel Health** | Real-time CWSI/MDS/water balance from Crop-Health module with historical chart |
 | **Water Budget** | ETc × Kc irrigation demand using real ET0 from timeseries-reader |
-| **Regenerative Sequence** | Cover crop → protein crop design with N fixation (AgriKnowledge/EPPO), water balance, alternative ranking |
-| **Alerts** | Redis-sourced parcel alerts with severity filter and recommended actions |
+| **Regenerative Sequence** | Cover crop → protein crop design with N fixation, water balance, **carbon projection** (SOC, CO₂e, €) |
+| **Alerts** | Redis-sourced parcel alerts with severity filter, **🐝 eco-warnings** (GBIF pollinators + pesticide safety) |
 
 ### 📚 Reference Data
 
@@ -114,6 +114,16 @@ Crop N fixation and growing season are resolved from **multiple live sources** (
 3. **EcoCrop CSV** (FAO GAEZ) — growing season days per crop
 4. **IPCC 2019 Tier 1** — static fallback for 18 crops
 
+### 🌍 Sustainability & Compliance
+
+BioOrchestrator enriches agronomic decisions with real-time environmental intelligence:
+
+| Feature | How it works |
+|---------|-------------|
+| 🐝 **Biodiversity Shield** | When Crop-Health detects flowering (via GDD phenology), BioOrchestrator cross-references GBIF pollinator presence and EU Pesticides bee toxicity — emitting eco-warnings with safer alternatives and recommended nocturnal application windows |
+| 🇪🇺 **PAC Compliance** | Evaluates rotation plans against CAP eco-scheme rules: winter cover on slopes >10% (Copernicus DEM), Natura 2000 buffer zones, crop diversity minimums, winter soil cover, pesticide limits — produces a 0-100% compliance score |
+| 🌱 **Carbon Projection** | Calculates SOC increase from cover crop biomass using IPCC 2019 Tier 1 humification coefficients, projects years to reach optimal SOC by soil texture, and estimates fertilizer savings (€/ha) from biological N fixation |
+
 ### 🌍 Multi-language
 
 Full i18n support in **6 languages**: English, Spanish, Basque, French, Portuguese, Catalan.
@@ -132,13 +142,13 @@ Full i18n support in **6 languages**: English, Spanish, Basque, French, Portugue
 | `GET /similar-sites` | Find sites similar to a target environment |
 | `GET /extrapolate` | Rank varieties for a crop+climate+soil combination |
 | `GET /compare-crops` | Multi-crop comparison (agronomic, environmental, economic) |
-| `GET /rotation-plan` | Multi-year rotation with N balance, C, economics, pest risk |
-| `GET /regenerative-sequence` | Cover crop → protein crop design with water/N balance |
+| `GET /rotation-plan` | Multi-year rotation + PAC compliance evaluation (eco-schemes) |
+| `GET /regenerative-sequence` | Cover crop → protein crop + carbon projection (SOC, CO₂e) |
 | `GET /crop-context` | Full crop context for a parcel (phenology, thermal, soil) |
 | `GET /yield-potential` | Expected yield with confidence interval from trials |
 | `GET /water-budget` | ETc-based irrigation demand per parcel |
 | `POST /assign-crop` | Assign variety + management to a parcel |
-| `GET /alerts` | Redis-sourced alerts per parcel |
+| `GET /alerts` | Redis-sourced alerts + eco-impact enrichment (pollinators, pesticides) |
 | `GET /organic-inputs` | FiBL authorized inputs per crop pest |
 
 ### Graph (`/api/graph/*`)
