@@ -948,3 +948,14 @@ async def agriculture_alerts(
     dao = GraphDAO(driver)
     result = await dao.get_alerts(parcel_id=parcel_id)
     return result
+
+
+@router.get("/agriculture/organic-inputs")
+async def agriculture_organic_inputs(
+    request: Request,
+    driver: DriverDep,
+    crop: str = Query(..., description="EPPO code (e.g. 'TRZAX')"),
+):
+    """Return authorized organic inputs for a crop's pests (FiBL)."""
+    dao = GraphDAO(driver)
+    return await dao.get_organic_inputs(eppo=crop)

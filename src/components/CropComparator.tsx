@@ -10,6 +10,8 @@ interface ComparisonRow {
   economic: { net_margin_eur_ha: number; total_cost_eur_ha: number; gross_revenue_eur_ha: number };
   soil_suitability: { overall: string; warnings: string[] };
   composite_score?: number;
+  forage_value?: { crude_protein_pct: number | null; organic_matter_digestibility_pct: number | null };
+  market_maturity?: { registered_varieties: number };
 }
 interface Result { comparisons: ComparisonRow[]; ranking: { by_margin: string[]; by_carbon: string[]; by_score: string[] }; target_environment: any; economic_inputs: any; }
 
@@ -115,6 +117,8 @@ export default function CropComparator() {
                 <th style={{ padding: 8 }}>{pricesAreDefault ? "Score*" : "Margin (€/ha)"}</th>
                 <th style={{ padding: 8 }}>{t("comparator.score")}</th>
                 <th style={{ padding: 8 }}>{t("comparator.soil")}</th>
+                <th style={{ padding: 8 }}>🌾 Forage</th>
+                <th style={{ padding: 8 }}>🏷️ EU</th>
               </tr>
             </thead>
             <tbody>
@@ -128,6 +132,12 @@ export default function CropComparator() {
                   <td style={{ padding: 8 }}>{pricesAreDefault ? c.agronomics.expected_yield_kg_ha.toLocaleString() : `${c.economic.net_margin_eur_ha.toLocaleString()} €`}</td>
                   <td style={{ padding: 8 }}>{c.composite_score ? "⭐".repeat(Math.min(5, Math.round(c.composite_score / 20))) : ""}</td>
                   <td style={{ padding: 8 }}>{c.soil_suitability.overall === "suitable" ? "✅" : "⚠️"}</td>
+                  <td style={{ padding: 8, fontSize: 12 }}>
+                    {c.forage_value?.crude_protein_pct != null ? `${c.forage_value.crude_protein_pct}% CP` : "—"}
+                  </td>
+                  <td style={{ padding: 8, fontSize: 12 }}>
+                    {(c.market_maturity?.registered_varieties || 0) > 0 ? c.market_maturity!.registered_varieties.toLocaleString() : "—"}
+                  </td>
                 </tr>
               ))}
             </tbody>
