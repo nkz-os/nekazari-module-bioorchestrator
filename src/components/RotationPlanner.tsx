@@ -8,6 +8,7 @@ interface YearEntry {
   net_margin_eur_ha: number; n_balance_kg_ha: number;
   n_fixation_kg_ha: number; n_requirement_kg_ha: number;
   soil_n_pool_after_kg_ha: number; rotation_warning?: string;
+  pest_risk?: { shared_pests?: string[]; shared_count?: number; risk_level?: string };
 }
 interface PlanResult { plan: YearEntry[]; cumulative: { total_yield_kg_ha: number; total_carbon_fixed_tco2e: number; total_net_margin_eur_ha: number; final_soil_n_pool_kg_ha: number }; }
 
@@ -86,6 +87,12 @@ export default function RotationPlanner() {
                   {entry.n_fixation_kg_ha > 0 && <span> (fixes {entry.n_fixation_kg_ha})</span>}
                 </div>
                 {entry.rotation_warning && <div style={{ marginTop: 4, fontSize: 11, color: "#856404" }}>⚠️ {entry.rotation_warning}</div>}
+                {entry.pest_risk && entry.pest_risk.risk_level && entry.pest_risk.risk_level !== "none" && entry.pest_risk.risk_level !== "unknown" && (
+                  <div style={{ marginTop: 4, fontSize: 11, color: entry.pest_risk.risk_level === "high" ? "#721c24" : "#856404" }}>
+                    🐛 {entry.pest_risk.shared_pests?.slice(0, 3).join(", ")}
+                    {(entry.pest_risk.shared_count || 0) > 3 && ` +${(entry.pest_risk.shared_count || 0) - 3} more`}
+                  </div>
+                )}
               </div>
             ))}
           </div>

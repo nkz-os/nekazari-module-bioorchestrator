@@ -17,6 +17,7 @@ Tenant model:
 
 from __future__ import annotations
 
+import asyncio
 import logging
 import os
 from typing import Any
@@ -1770,7 +1771,7 @@ class GraphDAO:
 
         comparisons = []
         for crop in crops:
-            ref = get_crop_ref(crop)
+            ref = await get_crop_ref(crop)
             # Get best variety
             extrapolated = await self.extrapolate_varieties(
                 crop=crop, climate_class=target_climate, soil_type=target_soil, top_n=1,
@@ -1797,7 +1798,7 @@ class GraphDAO:
                         if not (soil_req["ph_min"] <= ph <= soil_req["ph_max"]):
                             warnings.append(f"pH {ph} outside [{soil_req['ph_min']}, {soil_req['ph_max']}]")
 
-            comparisons.append({
+            entry = {
                 "crop": crop,
                 "best_variety": best.get("variety", ""),
                 "agronomics": {
@@ -1820,7 +1821,24 @@ class GraphDAO:
                     "net_margin_eur_ha": round(net_margin, 2),
                 },
                 "soil_suitability": {"overall": "suitable" if not warnings else "warning", "warnings": warnings},
-            })
+            }
+
+            # Enrich with forage value and market maturity (non-blocking)
+            if ref.get("n_fixation_kg_ha", 0) > 0:
+                try:
+                    forage = await self.get_forage_value(crop)
+                    if forage:
+                        entry["forage_value"] = forage
+                except Exception:
+                    pass
+            try:
+                maturity = await self.get_market_maturity(crop)
+                if maturity and not maturity.get("source_unavailable"):
+                    entry["market_maturity"] = maturity
+            except Exception:
+                pass
+
+            comparisons.append(entry)
 
         # Rankings
         by_margin = sorted(comparisons, key=lambda x: x["economic"]["net_margin_eur_ha"], reverse=True)
@@ -1897,7 +1915,7 @@ class GraphDAO:
             if not crop_pool:
                 break
             crop = crop_pool[year_idx % len(crop_pool)]
-            ref = get_crop_ref(crop)
+            ref = await get_crop_ref(crop)
 
             extrapolated = await self.extrapolate_varieties(crop=crop, top_n=1)
             best = (extrapolated.get("ranked_varieties") or [{}])[0] if isinstance(extrapolated, dict) else {}
@@ -1936,6 +1954,13 @@ class GraphDAO:
                 violated = [rc for rc in constraints if rc.get("crop_b") == crop]
                 if violated:
                     entry["rotation_warning"] = violated[0].get("reason", "Rotation constraint violated")
+
+            # Pest risk check (EPPO — non-blocking)
+            if previous_crop:
+                pest_risk = await self.get_shared_pests(previous_crop, crop)
+                entry["pest_risk"] = pest_risk
+            else:
+                entry["pest_risk"] = {"shared_pests": [], "shared_count": 0, "risk_level": "none"}
 
             plan.append(entry)
             previous_crop = crop
@@ -2149,6 +2174,156 @@ class GraphDAO:
             except Exception:
                 pass
             return {"alerts": []}
+
+    async def get_shared_pests(self, crop_a: str, crop_b: str) -> dict:
+        """Find pests shared between two crops via EPPO API.
+
+        Returns {shared_pests: [...], shared_count: int, risk_level: str,
+        source_unavailable: bool}. Never raises — returns partial data on failure.
+        """
+        import os as _os, httpx
+
+        api_key = _os.getenv("EPPO_API_KEY", "")
+        base = "https://api.eppo.int/gd/v2"
+
+        result: dict = {"shared_pests": [], "shared_count": 0, "risk_level": "unknown", "source_unavailable": False}
+
+        if not api_key:
+            result["source_unavailable"] = True
+            return result
+
+        async def _fetch_pests(eppo_code: str) -> list[str]:
+            try:
+                async with httpx.AsyncClient(timeout=10.0) as client:
+                    resp = await client.get(
+                        f"{base}/taxons/taxon/{eppo_code}/pests",
+                        headers={"X-Api-Key": api_key},
+                    )
+                    if resp.status_code == 200:
+                        data = resp.json()
+                        pests = data if isinstance(data, list) else data.get("pests", [])
+                        return [
+                            p.get("scientificName", p.get("prefName", ""))
+                            for p in pests
+                            if isinstance(p, dict)
+                        ]
+            except Exception as e:
+                logger.warning("EPPO pest fetch failed for %s: %s", eppo_code, e)
+            return []
+
+        try:
+            pests_a, pests_b = await asyncio.gather(
+                _fetch_pests(crop_a), _fetch_pests(crop_b),
+            )
+            shared = sorted(set(pests_a) & set(pests_b))
+            count = len(shared)
+            result["shared_pests"] = shared[:10]
+            result["shared_count"] = count
+            if count >= 5:
+                result["risk_level"] = "high"
+            elif count >= 2:
+                result["risk_level"] = "medium"
+            elif count >= 1:
+                result["risk_level"] = "low"
+            else:
+                result["risk_level"] = "none"
+        except Exception as e:
+            logger.warning("Pest risk calculation failed: %s", e)
+            result["source_unavailable"] = True
+
+        return result
+
+    async def get_forage_value(self, eppo: str) -> dict | None:
+        """Get forage nutritional value from Feedipedia CSV. Returns None if not a feed crop."""
+        import csv
+        from pathlib import Path
+
+        csv_path = Path(__file__).parent.parent.parent.parent / "data" / "raw" / "feedipedia.csv"
+        if not csv_path.exists():
+            return None
+
+        try:
+            with csv_path.open("r", encoding="utf-8") as f:
+                for row in csv.DictReader(f):
+                    if row.get("eppo_code", "").strip().upper() == eppo.upper():
+                        cp = row.get("crude_protein_pct")
+                        omd = row.get("organic_matter_digestibility_pct")
+                        if cp or omd:
+                            return {
+                                "crude_protein_pct": float(cp) if cp else None,
+                                "organic_matter_digestibility_pct": float(omd) if omd else None,
+                            }
+        except Exception as e:
+            logger.warning("Feedipedia lookup failed: %s", e)
+        return None
+
+    async def get_market_maturity(self, eppo: str) -> dict:
+        """Get CPVO registered variety count for a crop. Non-blocking."""
+        import os as _os, httpx
+
+        result: dict = {"registered_varieties": 0, "source_unavailable": False}
+        try:
+            async with httpx.AsyncClient(timeout=15.0) as client:
+                resp = await client.get(
+                    "https://cpvo.europa.eu/api/variety-finder/search",
+                    params={"species_code": eppo, "limit": 1, "format": "json"},
+                )
+                if resp.status_code == 200:
+                    data = resp.json()
+                    total = data.get("total", data.get("totalCount", 0))
+                    result["registered_varieties"] = total
+                    return result
+        except Exception as e:
+            logger.warning("CPVO lookup failed for %s: %s", eppo, e)
+            result["source_unavailable"] = True
+        return result
+
+    async def get_organic_inputs(self, eppo: str) -> dict:
+        """Get FiBL organic inputs compatible with this crop's pests. Non-blocking."""
+        import csv
+        import os as _os
+        import httpx
+        from pathlib import Path
+
+        result: dict = {"inputs": [], "source_unavailable": False}
+
+        # 1) Get pests for this crop from EPPO
+        api_key = _os.getenv("EPPO_API_KEY", "")
+        pest_names: list[str] = []
+        if api_key:
+            try:
+                async with httpx.AsyncClient(timeout=10.0) as client:
+                    resp = await client.get(
+                        f"https://api.eppo.int/gd/v2/taxons/taxon/{eppo}/pests",
+                        headers={"X-Api-Key": api_key},
+                    )
+                    if resp.status_code == 200:
+                        data = resp.json()
+                        pests = data if isinstance(data, list) else data.get("pests", [])
+                        pest_names = [
+                            p.get("scientificName", p.get("prefName", "")).lower()
+                            for p in pests if isinstance(p, dict)
+                        ]
+            except Exception as e:
+                logger.warning("EPPO pest fetch for organic inputs failed: %s", e)
+
+        # 2) Cross-reference with FiBL
+        csv_path = Path(__file__).parent.parent.parent.parent / "data" / "raw" / "fibl_inputs.csv"
+        if csv_path.exists() and pest_names:
+            try:
+                with csv_path.open("r", encoding="utf-8") as f:
+                    for row in csv.DictReader(f):
+                        target = (row.get("target_pests", "") or "").lower()
+                        if any(p in target for p in pest_names):
+                            result["inputs"].append({
+                                "product": row.get("product_name", ""),
+                                "active_substance": row.get("active_substance", ""),
+                                "category": row.get("category", ""),
+                            })
+            except Exception as e:
+                logger.warning("FiBL lookup failed: %s", e)
+
+        return result
 
 
 def _extract_prop_value(prop: dict | str | None) -> str | None:

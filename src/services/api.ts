@@ -383,3 +383,12 @@ export async function fetchAlerts(parcelId: string): Promise<AlertItem[]> {
   const data = await resp.json();
   return data.alerts || [];
 }
+
+export async function fetchOrganicInputs(crop: string): Promise<{inputs: {product: string; active_substance: string; category: string}[]}> {
+  const resp = await fetch(
+    `${API_BASE}/api/graph/agriculture/organic-inputs?crop=${encodeURIComponent(crop)}`,
+    { credentials: "include" }
+  );
+  if (!resp.ok) return {inputs: []};
+  return resp.json();
+}
