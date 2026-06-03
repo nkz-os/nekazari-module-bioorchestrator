@@ -414,7 +414,9 @@
     "soilSuitability": "Soil Suitability",
     "soilSensors": "Soil Sensors",
     "phenologySource": "Phenology source",
-    "matchLevel": "Match level"
+    "matchLevel": "Match level",
+    "sensorData": "Sensor Data",
+    "noSensorData": "No sensor data yet. Deploy sensors or wait for satellite pass."
   },
   "waterBudget": {
     "title": "Water Budget",
