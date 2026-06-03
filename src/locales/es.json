@@ -416,7 +416,11 @@
     "phenologySource": "Origen fenología",
     "matchLevel": "Nivel de coincidencia",
     "sensorData": "Datos del Sensor",
-    "noSensorData": "Sin datos de sensores aún. Instala sensores de suelo/planta o espera al pase del satélite."
+    "noSensorData": "Sin datos de sensores aún. Instala sensores de suelo/planta o espera al pase del satélite.",
+    "historyTitle": "Evolución histórica",
+    "noHistory": "Sin datos históricos disponibles",
+    "waterBalance": "Balance hídrico",
+    "activeAlerts": "Alertas activas"
   },
   "waterBudget": {
     "title": "Balance Hídrico",
