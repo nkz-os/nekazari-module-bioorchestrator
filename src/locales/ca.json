@@ -6,7 +6,10 @@
       "sources": "Fonts de dades",
       "pipeline": "Pipeline",
       "phenology": "Fenologia",
-      "dadis": "Explorador DAD-IS"
+      "dadis": "Explorador DAD-IS",
+      "regenerative": "Seq. Regenerativa",
+      "alerts": "Alertes",
+      "organic": "Insums Orgànics"
     }
   },
   "sources": {
@@ -186,6 +189,43 @@
     "empty": "No soil requirements available for this species.",
     "allPresent": "All catalog crops have EcoCrop soil requirements.",
     "count": "{{shown}} of {{total}} species"
+  },
+  "regenerative": {
+    "title": "Seqüència Regenerativa",
+    "climate": "Zona climàtica",
+    "protein": "Cultiu proteic objectiu",
+    "management": "Maneig",
+    "plan": "Planificar Seqüència",
+    "coverCrop": "Cultiu de Cobertura",
+    "proteinCrop": "Cultiu Proteic",
+    "nitrogen": "Balanç de Nitrogen",
+    "waterBalance": "Balanç Hídric",
+    "alternatives": "Cobertures Alternatives",
+    "dates": "Dates Clau",
+    "provenance": "Fonts de Dades"
+  },
+  "organic": {
+    "title": "Insums Orgànics",
+    "selectCrop": "Seleccionar cultiu...",
+    "product": "Producte",
+    "activeSubstance": "Substància Activa",
+    "category": "Categoria",
+    "empty": "No s'han trobat insums orgànics autoritzats per a aquest cultiu.",
+    "eppoUnavailable": "API EPPO no configurada — cerca d'insums orgànics no disponible."
+  },
+  "alerts": {
+    "title": "Alertes",
+    "selectParcel": "Seleccionar parcel·la...",
+    "selectPrompt": "Selecciona una parcel·la per veure alertes",
+    "empty": "Sense alertes actives per a aquesta parcel·la",
+    "noFilterMatch": "Sense alertes amb aquest filtre",
+    "severity": {
+      "critical": "Crítica",
+      "warning": "Advertència",
+      "info": "Informativa"
+    },
+    "recommendedAction": "Acció recomanada",
+    "filterAll": "Totes"
   },
   "rotation": {
     "title": "Rotation Constraints",

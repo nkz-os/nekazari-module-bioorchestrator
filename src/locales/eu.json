@@ -6,7 +6,10 @@
       "sources": "Datu-iturriak",
       "pipeline": "Pipeline",
       "phenology": "Fenologia",
-      "dadis": "DAD-IS Arakatzailea"
+      "dadis": "DAD-IS Arakatzailea",
+      "regenerative": "Sek. Birsortzailea",
+      "alerts": "Alertak",
+      "organic": "Input Organikoak"
     }
   },
   "sources": {
@@ -186,6 +189,43 @@
     "empty": "No soil requirements available for this species.",
     "allPresent": "All catalog crops have EcoCrop soil requirements.",
     "count": "{{shown}} of {{total}} species"
+  },
+  "regenerative": {
+    "title": "Sekuentzia Birsortzailea",
+    "climate": "Zona klimatikoa",
+    "protein": "Proteina-labore helburua",
+    "management": "Kudeaketa",
+    "plan": "Sekuentzia Planifikatu",
+    "coverCrop": "Estaldura-laborea",
+    "proteinCrop": "Proteina-laborea",
+    "nitrogen": "Nitrogeno Balantzea",
+    "waterBalance": "Ur Balantzea",
+    "alternatives": "Estaldura Alternatiboak",
+    "dates": "Data Gakoak",
+    "provenance": "Datu-iturriak"
+  },
+  "organic": {
+    "title": "Input Organikoak",
+    "selectCrop": "Aukeratu laborea...",
+    "product": "Produktua",
+    "activeSubstance": "Substantzia Aktiboa",
+    "category": "Kategoria",
+    "empty": "Ez da input organiko baimendurik aurkitu labore honetarako.",
+    "eppoUnavailable": "EPPO APIa konfiguratu gabe — input organikoen bilaketa ez dago erabilgarri."
+  },
+  "alerts": {
+    "title": "Alertak",
+    "selectParcel": "Aukeratu partzela...",
+    "selectPrompt": "Aukeratu partzela bat alertak ikusteko",
+    "empty": "Ez dago alerta aktiborik partzela honetan",
+    "noFilterMatch": "Ez dago alertarik filtro honekin",
+    "severity": {
+      "critical": "Kritikoa",
+      "warning": "Abisua",
+      "info": "Informatiboa"
+    },
+    "recommendedAction": "Gomendatutako ekintza",
+    "filterAll": "Denak"
   },
   "rotation": {
     "title": "Rotation Constraints",
