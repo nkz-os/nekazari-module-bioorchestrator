@@ -54,11 +54,11 @@ const PipelineRunner: React.FC = () => {
         <div className="flex gap-3 items-end flex-wrap">
           <div className="flex-1 min-w-[200px]">
             <label className="text-nkz-xs font-medium text-nkz-text-muted block mb-1">{t('pipeline.sourcesLabel')}</label>
-            <Input type="text" placeholder={t('pipeline.sourcesPlaceholder')} value={sources} onChange={(e: any) => setSources(e.target.value)} disabled={running} size="sm" />
+            <Input type="text" placeholder={t('pipeline.sourcesPlaceholder')} value={sources} onChange={(e) => setSources(e.target.value)} disabled={running} size="sm" />
           </div>
           <div className="w-24">
             <label className="text-nkz-xs font-medium text-nkz-text-muted block mb-1">{t('pipeline.limitLabel')}</label>
-            <Input type="number" min={1} max={10000} value={String(limit)} onChange={(e: any) => setLimit(Number(e.target.value))} disabled={running} size="sm" />
+            <Input type="number" min={1} max={10000} value={String(limit)} onChange={(e) => setLimit(Number(e.target.value))} disabled={running} size="sm" />
           </div>
           <Button variant="primary" size="sm" onClick={handleRun} disabled={running} leadingIcon={running ? <Spinner size="sm" /> : <Play className="w-4 h-4" />}>
             {running ? t('pipeline.running') : t('pipeline.run')}
