@@ -4,7 +4,7 @@ import { Panel, Stack, Button, Input, Badge, Spinner, Surface, IconButton, Card,
 import { Search, Database, Globe, Settings, X, CheckCircle, ExternalLink } from 'lucide-react';
 import { useBioApi, getDadisCredentials, setDadisCredentials, clearDadisCredentials } from '../../services/api';
 
-interface DadisBreed { breedName: string; breedId: string; speciesId: number; countryISO3: string; transboundaryId?: string; }
+interface DadisBreed { [key: string]: unknown; breedName: string; breedId: string; speciesId: number; countryISO3: string; transboundaryId?: string; }
 interface DadisCountry { iso3: string; name: string; }
 interface DadisSpecies { id: number; name: string; }
 const DADIS_DEFAULT_URL = 'https://us-central1-fao-dadis-dev.cloudfunctions.net/api/v1';

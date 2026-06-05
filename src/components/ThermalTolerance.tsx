@@ -14,6 +14,7 @@ interface SpeciesItem {
 }
 
 interface ThermalRow {
+  [key: string]: unknown;
   name: string;
   scientificName?: string;
   heatThresholdC?: number;
@@ -113,14 +114,14 @@ const ThermalTolerance: React.FC = () => {
       {
         accessorKey: 'name',
         header: t('thermal.columns.species'),
-        cell: (info: { getValue: () => any; row: { original: ThermalRow } }) => (
+        cell: (info: { getValue: () => unknown; row: { original: Record<string, unknown> } }) => (
           <div>
             <span className="text-nkz-text-primary font-medium">
-              {info.row.original.name}
+              {info.row.original.name as string}
             </span>
-            {info.row.original.scientificName && (
+            {(info.row.original.scientificName as string) && (
               <span className="text-nkz-text-muted text-xs block italic">
-                {info.row.original.scientificName}
+                {info.row.original.scientificName as string}
               </span>
             )}
           </div>
@@ -129,31 +130,31 @@ const ThermalTolerance: React.FC = () => {
       {
         accessorKey: 'heatThresholdC',
         header: t('thermal.columns.heatThreshold'),
-        cell: (info: { getValue: () => any }) =>
+        cell: (info: { getValue: () => unknown }) =>
           info.getValue() != null ? `${info.getValue()}°C` : '—',
       },
       {
         accessorKey: 'frostThresholdC',
         header: t('thermal.columns.frostThreshold'),
-        cell: (info: { getValue: () => any }) =>
+        cell: (info: { getValue: () => unknown }) =>
           info.getValue() != null ? `${info.getValue()}°C` : '—',
       },
       {
         accessorKey: 'accumHours',
         header: t('thermal.columns.accumHours'),
-        cell: (info: { getValue: () => any }) =>
+        cell: (info: { getValue: () => unknown }) =>
           info.getValue() != null ? `${info.getValue()}h` : '—',
       },
       {
         accessorKey: 'sourceType',
         header: t('thermal.columns.source'),
-        cell: (info: { getValue: () => any; row: { original: ThermalRow } }) => {
+        cell: (info: { getValue: () => unknown; row: { original: Record<string, unknown> } }) => {
           const st = info.getValue() as string | undefined;
-          const src = info.row.original.sourceShort ?? '';
+          const src = (info.row.original.sourceShort ?? '') as string;
           const isDerived =
             st === 'derived' || src.toLowerCase().includes('ecocrop');
           return (
-            <Badge intent={isDerived ? 'info' : 'positive'} size="sm">
+            <Badge intent={isDerived ? 'info' : 'positive'}>
               {isDerived ? t('thermal.derivedSource') : t('thermal.publishedSource')}
             </Badge>
           );

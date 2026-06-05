@@ -14,6 +14,7 @@ interface SpeciesItem {
 }
 
 interface NpkRow {
+  [key: string]: unknown;
   stage: string;
   n: number | null;
   p: number | null;
@@ -127,27 +128,27 @@ const NutrientProfile: React.FC = () => {
       {
         accessorKey: 'n',
         header: t('npk.columns.n'),
-        cell: (info: { getValue: () => any }) =>
+        cell: (info: { getValue: () => unknown }) =>
           info.getValue() != null ? `${Number(info.getValue()).toFixed(1)}` : '—',
       },
       {
         accessorKey: 'p',
         header: t('npk.columns.p'),
-        cell: (info: { getValue: () => any }) =>
+        cell: (info: { getValue: () => unknown }) =>
           info.getValue() != null ? `${Number(info.getValue()).toFixed(1)}` : '—',
       },
       {
         accessorKey: 'k',
         header: t('npk.columns.k'),
-        cell: (info: { getValue: () => any }) =>
+        cell: (info: { getValue: () => unknown }) =>
           info.getValue() != null ? `${Number(info.getValue()).toFixed(1)}` : '—',
       },
       {
         accessorKey: 'sourceShort',
         header: t('npk.columns.source'),
-        cell: (info: { getValue: () => any }) =>
+        cell: (info: { getValue: () => unknown }) =>
           info.getValue() ? (
-            <Badge intent="info" size="sm">
+            <Badge intent="info">
               {info.getValue() as string}
             </Badge>
           ) : (
