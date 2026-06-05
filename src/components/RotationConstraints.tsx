@@ -14,6 +14,7 @@ interface SpeciesItem {
 }
 
 interface RotationRow {
+  [key: string]: unknown;
   cropA: string;
   cropB: string;
   intervalYears: number;
@@ -105,7 +106,7 @@ const RotationConstraints: React.FC = () => {
       {
         accessorKey: 'intervalYears',
         header: t('rotation.columns.interval'),
-        cell: (info: { getValue: () => any }) => {
+        cell: (info: { getValue: () => unknown }) => {
           const years = info.getValue() as number;
           return years === 0
             ? t('rotation.perennial')
@@ -115,18 +116,19 @@ const RotationConstraints: React.FC = () => {
       {
         accessorKey: 'reason',
         header: t('rotation.columns.reason'),
-        cell: (info: { getValue: () => any; row: { original: RotationRow } }) => {
-          const reason: string = info.getValue() ?? '';
+        cell: (info: { getValue: () => unknown; row: { original: Record<string, unknown> } }) => {
+          const reason: string = (info.getValue() ?? '') as string;
           const row = info.row.original;
-          if (!reason && !row.sourceShort) return '—';
+          const src = row.sourceShort as string | undefined;
+          if (!reason && !src) return '—';
           return (
             <div className="flex flex-col gap-0.5">
               {reason && (
                 <span className="text-nkz-text-primary text-xs">{reason}</span>
               )}
-              {row.sourceShort && (
-                <Badge intent="info" size="sm">
-                  {row.sourceShort}
+              {src && (
+                <Badge intent="info">
+                  {src}
                 </Badge>
               )}
             </div>

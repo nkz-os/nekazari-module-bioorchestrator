@@ -51,7 +51,7 @@ export default function CropDetail({ cropId, onContribute, onViewInParcel }: Pro
         ))}
       </Stack>
 
-      <Tabs.Root value={activeTab} onValueChange={setActiveTab}>
+      <Tabs defaultValue="kc" value={activeTab} onValueChange={setActiveTab}>
         <Tabs.List>
           {tabs.map(t => (
             <Tabs.Trigger key={t.id} value={t.id}>{t.label}</Tabs.Trigger>
@@ -128,7 +128,7 @@ export default function CropDetail({ cropId, onContribute, onViewInParcel }: Pro
             </Card>
           )}
         </Tabs.Content>
-      </Tabs.Root>
+      </Tabs>
 
       <Stack gap="tight">
         <Button variant="secondary" size="sm" onClick={onContribute} leadingIcon={<PlusCircle size={14} />}>
