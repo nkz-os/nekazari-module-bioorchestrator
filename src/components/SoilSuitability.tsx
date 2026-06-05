@@ -14,6 +14,7 @@ interface SpeciesItem {
 }
 
 interface SoilRow {
+  [key: string]: unknown;
   name: string;
   scientificName?: string;
   phMin: number | null;
@@ -102,14 +103,14 @@ const SoilSuitability: React.FC = () => {
       {
         accessorKey: 'name',
         header: t('soil.columns.species'),
-        cell: (info: { getValue: () => any; row: { original: SoilRow } }) => (
+        cell: (info: { getValue: () => unknown; row: { original: Record<string, unknown> } }) => (
           <div>
             <span className="text-nkz-text-primary font-medium">
-              {info.row.original.name}
+              {info.row.original.name as string}
             </span>
-            {info.row.original.scientificName && (
+            {(info.row.original.scientificName as string) && (
               <span className="text-nkz-text-muted text-xs block italic">
-                {info.row.original.scientificName}
+                {info.row.original.scientificName as string}
               </span>
             )}
           </div>
@@ -118,36 +119,36 @@ const SoilSuitability: React.FC = () => {
       {
         accessorKey: 'phMin',
         header: t('soil.columns.phMin'),
-        cell: (info: { getValue: () => any }) => (info.getValue() != null ? `${info.getValue()}` : '—'),
+        cell: (info: { getValue: () => unknown }) => (info.getValue() != null ? `${info.getValue()}` : '—'),
       },
       {
         accessorKey: 'phMax',
         header: t('soil.columns.phMax'),
-        cell: (info: { getValue: () => any }) => (info.getValue() != null ? `${info.getValue()}` : '—'),
+        cell: (info: { getValue: () => unknown }) => (info.getValue() != null ? `${info.getValue()}` : '—'),
       },
       {
         accessorKey: 'textures',
         header: t('soil.columns.textures'),
-        cell: (info: { getValue: () => any }) => {
-          const txs: string[] = info.getValue() ?? [];
+        cell: (info: { getValue: () => unknown }) => {
+          const txs = (info.getValue() ?? []) as string[];
           return txs.length > 0 ? txs.join(', ') : '—';
         },
       },
       {
         accessorKey: 'drainage',
         header: t('soil.columns.drainage'),
-        cell: (info: { getValue: () => any }) => info.getValue() || '—',
+        cell: (info: { getValue: () => unknown }) => info.getValue() || '—',
       },
       {
         accessorKey: 'depthMinCm',
         header: t('soil.columns.depthMin'),
-        cell: (info: { getValue: () => any }) =>
+        cell: (info: { getValue: () => unknown }) =>
           info.getValue() != null ? `${info.getValue()} cm` : '—',
       },
       {
         accessorKey: 'salinityMaxDsM',
         header: t('soil.columns.salinityMax'),
-        cell: (info: { getValue: () => any }) =>
+        cell: (info: { getValue: () => unknown }) =>
           info.getValue() != null ? `${info.getValue()} dS/m` : '—',
       },
     ],
