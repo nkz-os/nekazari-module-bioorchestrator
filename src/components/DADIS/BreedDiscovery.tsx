@@ -68,8 +68,8 @@ export const BreedDiscovery: React.FC = () => {
                 <Surface variant="sunken" padding="stack">
                   <Stack gap="stack">
                     <div className="flex items-center justify-between"><h4 className="text-nkz-sm font-medium">{t('dadis.settings.title')}</h4><IconButton aria-label="Close" size="sm" variant="ghost" onClick={() => setShowSettings(false)}><X className="w-4 h-4" /></IconButton></div>
-                    <div><label className="text-nkz-xs font-medium text-nkz-text-muted block mb-1">{t('dadis.settings.apiUrl')}</label><Input value={settingsUrl} onChange={(e: any) => setSettingsUrl(e.target.value)} placeholder={DADIS_DEFAULT_URL} size="sm" /></div>
-                    <div><label className="text-nkz-xs font-medium text-nkz-text-muted block mb-1">{t('dadis.settings.apiToken')}</label><Input type="password" value={settingsToken} onChange={(e: any) => setSettingsToken(e.target.value)} placeholder={t('dadis.settings.tokenPlaceholder')} size="sm" /></div>
+                    <div><label className="text-nkz-xs font-medium text-nkz-text-muted block mb-1">{t('dadis.settings.apiUrl')}</label><Input value={settingsUrl} onChange={(e) => setSettingsUrl(e.target.value)} placeholder={DADIS_DEFAULT_URL} size="sm" /></div>
+                    <div><label className="text-nkz-xs font-medium text-nkz-text-muted block mb-1">{t('dadis.settings.apiToken')}</label><Input type="password" value={settingsToken} onChange={(e) => setSettingsToken(e.target.value)} placeholder={t('dadis.settings.tokenPlaceholder')} size="sm" /></div>
                     <Button variant="primary" size="sm" onClick={saveCreds}>{t('dadis.settings.save')}</Button>
                   </Stack>
                 </Surface>
@@ -110,8 +110,8 @@ export const BreedDiscovery: React.FC = () => {
             <Surface variant="sunken" padding="stack">
               <Stack gap="stack">
                 <h4 className="text-nkz-sm font-medium">{t('dadis.settings.title')}</h4>
-                <Input value={settingsUrl} onChange={(e: any) => setSettingsUrl(e.target.value)} placeholder={DADIS_DEFAULT_URL} size="sm" />
-                <Input type="password" value={settingsToken} onChange={(e: any) => setSettingsToken(e.target.value)} placeholder={t('dadis.settings.tokenPlaceholder')} size="sm" />
+                <Input value={settingsUrl} onChange={(e) => setSettingsUrl(e.target.value)} placeholder={DADIS_DEFAULT_URL} size="sm" />
+                <Input type="password" value={settingsToken} onChange={(e) => setSettingsToken(e.target.value)} placeholder={t('dadis.settings.tokenPlaceholder')} size="sm" />
                 <div className="flex gap-2"><Button variant="primary" size="sm" onClick={saveCreds}>{t('dadis.settings.update')}</Button><Button variant="danger" size="sm" onClick={clearCreds}>{t('dadis.settings.disconnect')}</Button></div>
               </Stack>
             </Surface>

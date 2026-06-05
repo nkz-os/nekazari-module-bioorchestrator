@@ -47,21 +47,21 @@ const PhenologyContribute: React.FC<Props> = ({ onClose }) => {
             <Stack gap="stack">
               <p className="text-nkz-sm text-nkz-text-secondary">{t('phenology.contribute.description')}</p>
               <FormGrid columns={2}>
-                <FormField label={t('phenology.species')} required><Input value={species} onChange={(e: any) => setSpecies(e.target.value)} placeholder="e.g. olive" size="sm" required /></FormField>
-                <FormField label={t('phenology.stage')} required><Input value={stage} onChange={(e: any) => setStage(e.target.value)} placeholder="e.g. vegetative" size="sm" required /></FormField>
-                <FormField label={t('phenology.cultivar')}><Input value={cultivar} onChange={(e: any) => setCultivar(e.target.value)} placeholder="e.g. Picual" size="sm" /></FormField>
-                <FormField label="Kc" required><Input type="number" step="0.01" min={0} max={2} value={kc} onChange={(e: any) => setKc(e.target.value)} placeholder="0.85" size="sm" required /></FormField>
-                <FormField label="D1 (NWSB) °C"><Input type="number" step="0.1" value={d1} onChange={(e: any) => setD1(e.target.value)} placeholder="2.0" size="sm" /></FormField>
-                <FormField label="D2 (Max Stress) °C"><Input type="number" step="0.1" value={d2} onChange={(e: any) => setD2(e.target.value)} placeholder="8.0" size="sm" /></FormField>
-                <FormField label="MDS Ref (µm)"><Input type="number" step="1" value={mdsRef} onChange={(e: any) => setMdsRef(e.target.value)} placeholder="150" size="sm" /></FormField>
+                <FormField label={t('phenology.species')} required><Input value={species} onChange={(e) => setSpecies(e.target.value)} placeholder="e.g. olive" size="sm" required /></FormField>
+                <FormField label={t('phenology.stage')} required><Input value={stage} onChange={(e) => setStage(e.target.value)} placeholder="e.g. vegetative" size="sm" required /></FormField>
+                <FormField label={t('phenology.cultivar')}><Input value={cultivar} onChange={(e) => setCultivar(e.target.value)} placeholder="e.g. Picual" size="sm" /></FormField>
+                <FormField label="Kc" required><Input type="number" step="0.01" min={0} max={2} value={kc} onChange={(e) => setKc(e.target.value)} placeholder="0.85" size="sm" required /></FormField>
+                <FormField label="D1 (NWSB) °C"><Input type="number" step="0.1" value={d1} onChange={(e) => setD1(e.target.value)} placeholder="2.0" size="sm" /></FormField>
+                <FormField label="D2 (Max Stress) °C"><Input type="number" step="0.1" value={d2} onChange={(e) => setD2(e.target.value)} placeholder="8.0" size="sm" /></FormField>
+                <FormField label="MDS Ref (µm)"><Input type="number" step="1" value={mdsRef} onChange={(e) => setMdsRef(e.target.value)} placeholder="150" size="sm" /></FormField>
               </FormGrid>
               <Surface variant="sunken" padding="stack">
                 <Stack gap="stack">
                   <h4 className="text-nkz-sm font-medium">{t('phenology.contribute.provenance')}</h4>
                   <FormGrid columns={2}>
-                    <FormField label="DOI"><Input value={doi} onChange={(e: any) => setDoi(e.target.value)} placeholder="10.1234/example" size="sm" /></FormField>
-                    <FormField label={t('phenology.contribute.author')}><Input value={author} onChange={(e: any) => setAuthor(e.target.value)} placeholder="e.g. Orgaz" size="sm" /></FormField>
-                    <FormField label="Email"><Input type="email" value={email} onChange={(e: any) => setEmail(e.target.value)} placeholder="email@example.com" size="sm" /></FormField>
+                    <FormField label="DOI"><Input value={doi} onChange={(e) => setDoi(e.target.value)} placeholder="10.1234/example" size="sm" /></FormField>
+                    <FormField label={t('phenology.contribute.author')}><Input value={author} onChange={(e) => setAuthor(e.target.value)} placeholder="e.g. Orgaz" size="sm" /></FormField>
+                    <FormField label="Email"><Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="email@example.com" size="sm" /></FormField>
                   </FormGrid>
                   <FormField label={t('phenology.contribute.conditions')}>
                     <textarea value={conditions} onChange={(e) => setConditions(e.target.value)} rows={3} className="w-full rounded-nkz-md border border-nkz-border bg-nkz-surface px-nkz-stack py-nkz-tight text-nkz-sm resize-y" />
