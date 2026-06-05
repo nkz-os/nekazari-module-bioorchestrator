@@ -171,9 +171,9 @@ const VarietyFinder: React.FC = () => {
             {similarSites.length > 0 && (
               <div className="mt-1 flex flex-wrap gap-1">
                 {similarSites.slice(0, 8).map(s => (
-                  <Badge key={s} intent="info" size="sm">{s}</Badge>
+                  <Badge key={s} intent="info">{s}</Badge>
                 ))}
-                {similarSites.length > 8 && <Badge intent="default" size="sm">+{similarSites.length - 8}</Badge>}
+                {similarSites.length > 8 && <Badge intent="default">+{similarSites.length - 8}</Badge>}
               </div>
             )}
           </Card>
@@ -220,7 +220,7 @@ const VarietyFinder: React.FC = () => {
                           ±{v.stddev_yield_kg_ha?.toLocaleString()}
                         </td>
                         <td className="py-2 pr-3 text-center">
-                          <Badge intent={v.trial_count >= 5 ? 'positive' : 'warning'} size="sm">
+                          <Badge intent={v.trial_count >= 5 ? 'positive' : 'warning'}>
                             {v.trial_count}
                           </Badge>
                         </td>
