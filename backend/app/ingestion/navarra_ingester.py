@@ -41,6 +41,72 @@ from neo4j import AsyncDriver, AsyncGraphDatabase
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
+# EPPO code → scientific name mapping (canonical, used for enrichment)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+EPPO_SCIENTIFIC_NAMES: dict[str, str] = {
+    "ALLPO": "Allium porrum",
+    "AVESA": "Avena sativa",
+    "BETVU": "Beta vulgaris",
+    "BRPNA": "Brassica napus",
+    "BRSNN": "Brassica napus",
+    "CIEAR": "Cicer arietinum",
+    "CPSAN": "Capsicum annuum",
+    "CUMME": "Cucumis melo",
+    "FRAAN": "Fragaria x ananassa",
+    "GLXMA": "Glycine max",
+    "HELAN": "Helianthus annuus",
+    "HORVX": "Hordeum vulgare",
+    "LENCU": "Lens culinaris",
+    "LTHSA": "Lathyrus sativus",
+    "LYPES": "Solanum lycopersicum",
+    "MABSD": "Malus domestica",
+    "MEDSA": "Medicago sativa",
+    "ORYSA": "Oryza sativa",
+    "PIBSX": "Pisum sativum",
+    "PISSA": "Pisum sativum",
+    "PRNAR": "Prunus armeniaca",
+    "PRNDU": "Prunus dulcis",
+    "SECCE": "Secale cereale",
+    "SOLME": "Solanum melongena",
+    "SOLTU": "Solanum tuberosum",
+    "TRZAW": "Triticum aestivum",
+    "TRZAX": "Triticum aestivum",
+    "TRZDU": "Triticum durum",
+    "TTLSS": "Triticosecale",
+    "VICER": "Vicia ervilia",
+    "VICFX": "Vicia faba",
+    "VICSA": "Vicia sativa",
+    "ZEAMX": "Zea mays",
+}
+
+
+def _resolve_scientific_name(eppo_code: str, raw_scientific: str | None) -> str | None:
+    """Resolve a scientific name for a crop, preferring known values.
+
+    Priority:
+      1. Provided scientific name (if not null/empty/None/'(unknown)')
+      2. EPPO code lookup in canonical mapping
+      3. EPPO code itself as fallback
+      4. None if nothing available
+    """
+    # Normalize raw value
+    if raw_scientific and str(raw_scientific).strip() not in ("", "None", "(unknown)", "null"):
+        return str(raw_scientific).strip()
+
+    # Look up EPPO code
+    eppo = (eppo_code or "").strip().upper()
+    if eppo in EPPO_SCIENTIFIC_NAMES:
+        return EPPO_SCIENTIFIC_NAMES[eppo]
+
+    # Fallback: use EPPO code if it looks like a valid code
+    if len(eppo) == 5 and eppo.isalpha():
+        return None  # Will be resolved at query time or in UI
+
+    return None
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
 # MERGE keys — composite natural keys for idempotent ingestion
 # ═══════════════════════════════════════════════════════════════════════════════
 
@@ -289,7 +355,10 @@ class NavarraIngester:
                     """,
                     merge_key=merge_key,
                     crop_eppo=(node.get("crop_eppo") or "").replace("eppo:", ""),
-                    crop_sci=node.get("crop_scientific"),
+                    crop_sci=_resolve_scientific_name(
+                        (node.get("crop_eppo") or "").replace("eppo:", ""),
+                        node.get("crop_scientific"),
+                    ),
                     variety=node.get("variety"),
                     zone=node.get("agroclimatic_zone"),
                     year=node.get("year"),
