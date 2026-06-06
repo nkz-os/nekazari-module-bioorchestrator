@@ -91,8 +91,12 @@ def _resolve_scientific_name(eppo_code: str, raw_scientific: str | None) -> str 
       4. None if nothing available
     """
     # Normalize raw value
-    if raw_scientific and str(raw_scientific).strip() not in ("", "None", "(unknown)", "null"):
-        return str(raw_scientific).strip()
+    raw = str(raw_scientific).strip() if raw_scientific else ""
+    if raw and raw not in ("", "None", "(unknown)", "null"):
+        # If the "scientific name" is just the EPPO code, treat as unknown
+        eppo = (eppo_code or "").strip().upper()
+        if raw.upper() != eppo:
+            return raw
 
     # Look up EPPO code
     eppo = (eppo_code or "").strip().upper()
