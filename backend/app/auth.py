@@ -18,8 +18,22 @@ from starlette.responses import JSONResponse
 # Endpoints that don't require auth — health probes, docs, and public reference data
 SKIP_AUTH_PATHS = {"/healthz", "/readyz", "/docs", "/openapi.json"}
 
-# Public reference data endpoints — global knowledge graph, no tenant-specific data
-SKIP_AUTH_PREFIXES = ["/api/graph/agriculture/", "/ngsi-ld/"]
+# Public reference data endpoints — global knowledge graph, no tenant-specific data.
+# These are scientific reference data (EPPO codes, phenology params, crop catalog)
+# available to all users regardless of auth state.
+SKIP_AUTH_PREFIXES = [
+    "/api/graph/agriculture/",
+    "/api/graph/species",
+    "/api/graph/phenology-params",
+    "/api/graph/heat-tolerance",
+    "/api/graph/nutrient-profile",
+    "/api/graph/soil-suitability",
+    "/api/graph/rotation-constraints",
+    "/api/graph/recommendations/",
+    "/api/graph/varieties",
+    "/api/crop/catalog",
+    "/ngsi-ld/",
+]
 
 
 class NKZAuthMiddleware(BaseHTTPMiddleware):

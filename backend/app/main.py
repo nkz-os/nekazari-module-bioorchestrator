@@ -167,6 +167,12 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+# NKZ auth middleware (validates JWT from platform).
+# MUST be added BEFORE CORSMiddleware so CORS headers wrap error responses.
+app.add_middleware(NKZAuthMiddleware)
+
+# CORS — outermost middleware: adds headers to ALL responses including
+# 401/403/500 from auth and other inner middleware.
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.allowed_origins,
@@ -174,9 +180,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-# NKZ auth middleware (validates JWT from platform)
-app.add_middleware(NKZAuthMiddleware)
 
 # Graph API router
 from app.api import router as api_router  # noqa: E402
