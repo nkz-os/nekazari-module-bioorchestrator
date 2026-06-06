@@ -572,5 +572,16 @@
     "soilSuitability": "Each crop has specific soil requirements: pH range, texture preference, drainage needs, and salinity tolerance. Match your soil to find suitable crops.",
     "thermalTolerance": "Heat and frost thresholds indicate when crop damage begins. Derived values are estimated from species temperature ranges; Published values come from field research.",
     "npk": "Nitrogen (N), Phosphorus (P), and Potassium (K) uptake varies by growth stage. Use these profiles to plan fertilizer applications."
+  },
+  "climateExplorer": {
+    "legend": "Köppen-Geiger Classification",
+    "legendCsa": "Csa (Mediterranean) — ideal for olives and vineyards due to dry, hot summers",
+    "legendBSk": "BSk (Semi-arid) — requires resilient crops or irrigation",
+    "legendCfb": "Cfb (Oceanic) — supports year-round rainfed farming",
+    "legendGeneral": "The climate zones indicate the suitability for different agricultural practices."
+  },
+  "varietyFinder": {
+    "anySoil": "Any soil type",
+    "noDataAvailable": "No data available for this species yet"
   }
 }

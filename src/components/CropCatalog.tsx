@@ -25,7 +25,7 @@ export default function CropCatalog({ onSelectCrop }: CropCatalogProps) {
       setError(null);
       try {
         const result = await getCatalog({ source: source || undefined, q: search || undefined });
-        if (!cancelled) setCrops(result.crops);
+        if (!cancelled) setCrops(result?.crops || []);
       } catch (e: any) {
         if (!cancelled) setError(e.message || 'Failed to load catalog');
       } finally {

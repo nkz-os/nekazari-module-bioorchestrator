@@ -125,12 +125,16 @@ const VarietyFinder: React.FC = () => {
           {/* Soil (optional) */}
           <div className="w-[150px]">
             <label className="block text-nkz-xs font-medium text-nkz-text-secondary mb-1">{t('varietyFinder.soil')} ({t('varietyFinder.optional')})</label>
-            <input
+            <select
               className="w-full h-9 rounded-nkz-md border border-nkz-border bg-nkz-surface px-2 text-nkz-sm"
-              placeholder="Calcisol"
               value={soil}
               onChange={e => setSoil(e.target.value)}
-            />
+            >
+              <option value="">{t('varietyFinder.anySoil')}</option>
+              {['Calcisol','Cambisol','Chernozem','Fluvisol','Gleysol','Leptosol','Luvisol','Phaeozem','Regosol','Vertisol'].map(s => (
+                <option key={s} value={s}>{s}</option>
+              ))}
+            </select>
           </div>
 
           {/* Search */}

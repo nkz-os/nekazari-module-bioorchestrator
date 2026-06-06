@@ -41,7 +41,7 @@ const PhenologyBrowser: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [showContribute, setShowContribute] = useState(false);
 
-  useEffect(() => { api.getSpecies().then((d: any) => { if (Array.isArray(d)) setSpeciesList(d); }).catch(() => {}); }, []);
+  useEffect(() => { api.getSpecies().then((d: any) => { if (d) { const list = Array.isArray(d) ? d : (d?.species || []); setSpeciesList(list); } }).catch(() => {}); }, []);
 
   const fetchParams = useCallback(async () => {
     setLoading(true); setError(null);
@@ -77,7 +77,7 @@ const PhenologyBrowser: React.FC = () => {
       </div>
 
       <div className="flex flex-wrap gap-3 items-end">
-        <div className="min-w-[160px]"><label className="text-nkz-xs font-medium text-nkz-text-muted block mb-1">{t('phenology.species')}</label><select className={selectCls} value={species} onChange={(e) => setSpecies(e.target.value)}>{speciesOptions.map((s: any) => <option key={s.name} value={s.name}>{s.scientific_name ? `${s.name} (${s.scientific_name})` : s.name}{s.has_phenology ? ` — ${s.params_count} params` : ' — no data'}</option>)}</select></div>
+        <div className="min-w-[160px]"><label className="text-nkz-xs font-medium text-nkz-text-muted block mb-1">{t('phenology.species')}</label><select className={selectCls} value={species} onChange={(e) => setSpecies(e.target.value)}>{speciesOptions.map((s: any) => <option key={s.name} value={s.name}>{s.scientific_name ? `${s.name} (${s.scientific_name})` : s.name}{s.has_phenology ? ` — ${s.params_count} params` : ` — ${t('varietyFinder.noDataAvailable')}`}</option>)}</select></div>
         <div className="min-w-[140px]"><label className="text-nkz-xs font-medium text-nkz-text-muted block mb-1">{t('phenology.stage')}</label><select className={selectCls} value={stage} onChange={(e) => setStage(e.target.value)}><option value="">{t('phenology.anyStage')}</option>{STAGES.map((s) => <option key={s} value={s}>{s}</option>)}</select></div>
         <div className="min-w-[140px]"><label className="text-nkz-xs font-medium text-nkz-text-muted block mb-1">{t('phenology.cultivar')}</label><select className={selectCls} value={cultivar} onChange={(e) => setCultivar(e.target.value)}><option value="">{t('phenology.anyCultivar')}</option>{CULTIVARS.map((c) => <option key={c} value={c}>{c}</option>)}</select></div>
         <div className="min-w-[160px]"><label className="text-nkz-xs font-medium text-nkz-text-muted block mb-1">{t('phenology.management')}</label><select className={selectCls} value={management} onChange={(e) => setManagement(e.target.value)}>{MGMT.map((m) => <option key={m} value={m}>{MGMT_LABELS[m] || m || t('phenology.standardIrrigation')}</option>)}</select></div>
