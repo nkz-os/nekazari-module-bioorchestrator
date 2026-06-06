@@ -10,7 +10,8 @@
  * IkerKeta's existing livestock/GBIF connectors.
  */
 
-const BASE = '/api/bioorchestrator';
+const API_BASE = (import.meta as any).env?.VITE_API_URL || "https://nkz.robotika.cloud";
+const BASE = `${API_BASE}/api/bioorchestrator`;
 
 // ── DAD-IS per-user credentials (localStorage) ──────────────────────────────
 
@@ -291,8 +292,6 @@ export interface YieldPotentialResponse {
   limiting_factor?: string;
   stage_ky: Record<string, number>;
 }
-
-const API_BASE = (import.meta as any).env?.VITE_API_URL || "https://nkz.robotika.cloud";
 
 export async function assignCrop(
   data: AssignCropRequest

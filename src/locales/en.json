@@ -364,6 +364,27 @@
     "contributeAction": "Contribute rotation rule",
     "lowCoverage": "Only {{count}} rotation rules registered. Most crops lack data."
   },
+  "rotationPlanner": {
+    "title": "Rotation Planner",
+    "selectParcel": "Select parcel...",
+    "years": "Years",
+    "economicInputs": "Economic parameters",
+    "calculate": "Calculate Rotation",
+    "year": "Year",
+    "cumulative": "Cumulative",
+    "yearsLabel": "years",
+    "pac": {
+      "title": "PAC Compliance",
+      "score": "Compliance Score",
+      "rule": {
+        "cover_on_slope": "Winter cover on slopes >10%",
+        "natura2000_buffer": "Natura 2000 protection buffer",
+        "crop_diversity": "Crop diversity (≥2 crops)",
+        "winter_cover": "Winter soil cover",
+        "pesticide_limits": "Pesticide limits"
+      }
+    }
+  },
   "panel": {
     "noCrop": "This parcel has no crop assigned. Assign one to see agronomic recommendations.",
     "assignCrop": "Assign crop",
@@ -505,28 +526,51 @@
     "defaultPricesNote": "Prices set to default (1). Economic margins equal agronomic yield. Enter real prices for economic comparison.",
     "scoreNote": "Score = weighted rank (yield 40% + margin 30% + carbon 20% + soil 10%)"
   },
-  "rotation": {
-    "title": "Rotation Planner",
-    "selectParcel": "Select parcel...",
-    "years": "Years",
-    "economicInputs": "Economic parameters",
-    "calculate": "Calculate Rotation",
-    "year": "Year",
-    "cumulative": "Cumulative",
-    "yearsLabel": "years",
-    "pac": {
-      "title": "PAC Compliance",
-      "score": "Compliance Score",
-      "rule": {
-        "cover_on_slope": "Winter cover on slopes >10%",
-        "natura2000_buffer": "Natura 2000 protection buffer",
-        "crop_diversity": "Crop diversity (≥2 crops)",
-        "winter_cover": "Winter soil cover",
-        "pesticide_limits": "Pesticide limits"
-      }
-    }
-  },
   "disclaimer": {
     "text": "Recommendations are based on agronomic models and third-party scientific data. They do not replace professional judgment. Consult your local agricultural technician before making crop decisions."
+  },
+  "crops": {
+    "ALLPO": "Leek",
+    "AVESA": "Oats",
+    "BETVU": "Beetroot",
+    "BRPNA": "Rapeseed",
+    "BRSNN": "Rapeseed",
+    "CIEAR": "Chickpea",
+    "CPSAN": "Bell Pepper",
+    "CUMME": "Melon",
+    "FRAAN": "Strawberry",
+    "GLXMA": "Soybean",
+    "HELAN": "Sunflower",
+    "HORVX": "Barley",
+    "LENCU": "Lentil",
+    "LTHSA": "Grass Pea",
+    "LYPES": "Tomato",
+    "MABSD": "Apple",
+    "MEDSA": "Alfalfa",
+    "ORYSA": "Rice",
+    "PIBSX": "Field Pea",
+    "PISSA": "Pea",
+    "PRNAR": "Apricot",
+    "PRNDU": "Almond",
+    "SECCE": "Rye",
+    "SOLME": "Eggplant",
+    "SOLTU": "Potato",
+    "TRZAW": "Soft Wheat",
+    "TRZAX": "Wheat",
+    "TRZDU": "Durum Wheat",
+    "TTLSS": "Triticale",
+    "VICER": "Bitter Vetch",
+    "VICFX": "Faba Bean",
+    "VICSA": "Common Vetch",
+    "ZEAMX": "Maize"
+  },
+  "onboarding": {
+    "varietyFinder": "Find the best crop varieties for your climate and soil. We analyze trial data from environments similar to yours and rank varieties by yield performance.",
+    "climateExplorer": "Each point is a trial site colored by its Köppen-Geiger climate zone. Click a point to see its details. Use this to find sites with climates similar to your farm.",
+    "phenologyBrowser": "Crop coefficients (Kc, D1, D2, MDS) describe how a crop uses water at each growth stage. These values come from published scientific research.",
+    "rotationConstraints": "Some crops cannot be planted after others due to shared pests, diseases, or soil depletion. These rules come from FAO guidelines and scientific literature.",
+    "soilSuitability": "Each crop has specific soil requirements: pH range, texture preference, drainage needs, and salinity tolerance. Match your soil to find suitable crops.",
+    "thermalTolerance": "Heat and frost thresholds indicate when crop damage begins. Derived values are estimated from species temperature ranges; Published values come from field research.",
+    "npk": "Nitrogen (N), Phosphorus (P), and Potassium (K) uptake varies by growth stage. Use these profiles to plan fertilizer applications."
   }
 }

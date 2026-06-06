@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
+import { useTranslation } from '@nekazari/sdk';
 import { Stack, Card, Input, Select, Badge, Skeleton, EmptyState } from '@nekazari/ui-kit';
 import { Search, ChevronRight, ChevronDown, Leaf } from 'lucide-react';
 import { useCropApi, CropItem } from '../services/api';

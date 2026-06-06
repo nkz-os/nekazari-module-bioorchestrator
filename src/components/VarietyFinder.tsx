@@ -57,7 +57,8 @@ const VarietyFinder: React.FC = () => {
     try {
       const params = new URLSearchParams({ crop, climate_class: climate, top_n: '15' });
       if (soil) params.set('soil_type', soil);
-      const resp = await fetch(`/api/graph/agriculture/extrapolate?${params}`);
+      const API_BASE = (import.meta as any).env?.VITE_API_URL || "https://nkz.robotika.cloud";
+      const resp = await fetch(`${API_BASE}/api/graph/agriculture/extrapolate?${params}`, { credentials: 'include' });
       if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
       const data = await resp.json();
       setResults(data.ranked_varieties || []);
@@ -78,6 +79,12 @@ const VarietyFinder: React.FC = () => {
         <h2 className="text-nkz-lg font-bold text-nkz-text-primary">{t('varietyFinder.title')}</h2>
       </div>
 
+      {/* Onboarding tooltip */}
+      <div className="mb-3 rounded-nkz-md bg-nkz-info-soft border border-nkz-info p-nkz-stack text-nkz-xs text-nkz-text-secondary">
+        <strong className="text-nkz-text-primary">💡 {t('varietyFinder.title')}:</strong>{' '}
+        {t('onboarding.varietyFinder')}
+      </div>
+
       {/* Input form */}
       <Card padding="md">
         <div className="flex flex-wrap gap-3 items-end">
@@ -90,11 +97,14 @@ const VarietyFinder: React.FC = () => {
               onChange={e => setCrop(e.target.value)}
             >
               <option value="">{t('varietyFinder.selectCrop')}</option>
-              {cropOptions.map(c => (
-                <option key={c.eppo_code} value={c.eppo_code}>
-                  {c.eppo_code} — {c.scientific_name} ({c.trial_count} trials)
-                </option>
-              ))}
+              {cropOptions.map(c => {
+                const name = t(`crops.${c.eppo_code}`, { defaultValue: c.scientific_name === '(unknown)' ? c.eppo_code : c.scientific_name });
+                return (
+                  <option key={c.eppo_code} value={c.eppo_code}>
+                    {name} ({c.trial_count} {t('varietyFinder.trials').toLowerCase()})
+                  </option>
+                );
+              })}
             </select>
           </div>
 

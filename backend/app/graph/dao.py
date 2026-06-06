@@ -102,7 +102,7 @@ class GraphDAO:
         async with self._driver.session() as session:
             result = await session.run("""
                 MATCH (s:Species)
-                OPTIONAL MATCH (s)-[:HAS_STAGE]->(st:PhenologyStage)-[:HAS_PARAMS]->(p:PhenologyParams)
+                OPTIONAL MATCH (s)-[:HAS_STAGE]->(st:PhenologyStage)-[:HAS_PARAMETER]->(p:PhenologyParams)
                 RETURN s.name AS name,
                        s.scientificName AS scientific_name,
                        count(DISTINCT st) AS stage_count,
