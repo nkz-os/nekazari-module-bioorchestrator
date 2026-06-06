@@ -256,6 +256,7 @@ class GraphDAO:
                 stage=stage,
                 cultivar=cultivar,
                 mgmt=management,
+                gdd=gdd,
             )
             record = await result.single()
             if record is None or record["match_level"] == "none":
