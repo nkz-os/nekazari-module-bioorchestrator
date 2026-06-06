@@ -42,24 +42,24 @@ export default function RotationPlanner() {
 
   return (
     <div>
-      <h2 className="text-nkz-lg font-bold text-nkz-text-primary mb-4">🔄 {t("rotation.title")}</h2>
+      <h2 className="text-nkz-lg font-bold text-nkz-text-primary mb-4">🔄 {t("rotationPlanner.title")}</h2>
 
       <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 16, maxWidth: 600 }}>
         <div style={{ flex: 1, minWidth: 200 }}>
           <select value={selectedParcel} onChange={e => setSelectedParcel(e.target.value)} style={{ width: "100%", padding: 8 }}>
-            <option value="">{t("rotation.selectParcel")}</option>
+            <option value="">{t("rotationPlanner.selectParcel")}</option>
             {parcels.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
           </select>
         </div>
         <div>
-          <label style={{ fontSize: 12 }}>{t("rotation.years")}</label><br />
+          <label style={{ fontSize: 12 }}>{t("rotationPlanner.years")}</label><br />
           <input type="range" min={2} max={6} value={years} onChange={e => setYears(Number(e.target.value))} style={{ width: 150 }} />
           <span style={{ marginLeft: 8 }}>{years}</span>
         </div>
       </div>
 
       <div style={{ marginBottom: 16, padding: 12, background: "#f9f9f9", borderRadius: 8, maxWidth: 500 }}>
-        <strong>{t("rotation.economicInputs")}</strong> <span style={{ fontSize: 11, color: "#999" }}>({t("comparator.optional")})</span>
+        <strong>{t("rotationPlanner.economicInputs")}</strong> <span style={{ fontSize: 11, color: "#999" }}>({t("comparator.optional")})</span>
         <div style={{ display: "flex", gap: 12, marginTop: 8, flexWrap: "wrap" }}>
           <div><label style={{ fontSize: 12 }}>{t("comparator.seedPrice")}</label><br /><input type="number" value={seedPrice} onChange={e => setSeedPrice(Number(e.target.value))} style={{ width: 100, padding: 4 }} /></div>
           <div><label style={{ fontSize: 12 }}>{t("comparator.harvestPrice")}</label><br /><input type="number" value={harvestPrice} onChange={e => setHarvestPrice(Number(e.target.value))} style={{ width: 100, padding: 4 }} /></div>
@@ -69,7 +69,7 @@ export default function RotationPlanner() {
 
       <button onClick={handlePlan} disabled={loading || !selectedParcel}
               style={{ padding: "8px 20px", background: "#4caf50", color: "white", border: "none", borderRadius: 4, cursor: "pointer", marginBottom: 16 }}>
-        {loading ? "⏳" : t("rotation.calculate")}
+        {loading ? "⏳" : t("rotationPlanner.calculate")}
       </button>
       {error && <div style={{ color: "red", marginBottom: 12 }}>{error}</div>}
 
@@ -79,7 +79,7 @@ export default function RotationPlanner() {
           <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 16 }}>
             {result.plan.map((entry, i) => (
               <div key={i} style={{ flex: "1 1 180px", padding: 12, background: entry.rotation_warning ? "#fff3cd" : "#f0f4ff", borderRadius: 8, border: "1px solid #ddd", minWidth: 160 }}>
-                <div style={{ fontSize: 12, color: "#666" }}>{t("rotation.year")} {entry.year}</div>
+                <div style={{ fontSize: 12, color: "#666" }}>{t("rotationPlanner.year")} {entry.year}</div>
                 <div style={{ fontWeight: 600, fontSize: 15 }}>{entry.crop}</div>
                 <div style={{ fontSize: 12 }}>{entry.variety || "—"}</div>
                 <div style={{ marginTop: 8, fontSize: 12 }}>
@@ -101,7 +101,7 @@ export default function RotationPlanner() {
 
           {/* Cumulative */}
           <div style={{ padding: 16, background: "#d4edda", borderRadius: 8, maxWidth: 500 }}>
-            <strong>{t("rotation.cumulative")} ({years} {t("rotation.yearsLabel")})</strong>
+            <strong>{t("rotationPlanner.cumulative")} ({years} {t("rotationPlanner.yearsLabel")})</strong>
             <div style={{ display: "flex", gap: 24, marginTop: 8, flexWrap: "wrap" }}>
               <div>🌾 {result.cumulative.total_yield_kg_ha.toLocaleString()} kg/ha</div>
               <div>🌍 {result.cumulative.total_carbon_fixed_tco2e} tCO₂e</div>
@@ -113,7 +113,7 @@ export default function RotationPlanner() {
           {/* PAC Compliance */}
           {result.pac_compliance && (
             <div style={{ marginTop: 16, maxWidth: 600 }}>
-              <strong style={{ fontSize: 15 }}>🇪🇺 {t("rotation.pac.title")}</strong>
+              <strong style={{ fontSize: 15 }}>🇪🇺 {t("rotationPlanner.pac.title")}</strong>
               <div style={{ display: "flex", alignItems: "center", gap: 16, marginTop: 8, marginBottom: 12 }}>
                 <div style={{
                   width: 72, height: 72, borderRadius: "50%",
@@ -125,7 +125,7 @@ export default function RotationPlanner() {
                   {result.pac_compliance.score}%
                 </div>
                 <div style={{ fontSize: 12, color: "#888" }}>
-                  {t("rotation.pac.score")}: {result.pac_compliance.score}/{result.pac_compliance.max_score}
+                  {t("rotationPlanner.pac.score")}: {result.pac_compliance.score}/{result.pac_compliance.max_score}
                 </div>
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
@@ -138,7 +138,7 @@ export default function RotationPlanner() {
                     <span style={{ marginRight: 8 }}>
                       {rule.pass === true ? "✅" : rule.pass === false ? "❌" : "⊘"}
                     </span>
-                    <strong>{t(`rotation.pac.rule.${rule.id}`)}</strong>
+                    <strong>{t(`rotationPlanner.pac.rule.${rule.id}`)}</strong>
                     <span style={{ marginLeft: 8, color: "#666" }}>{rule.detail}</span>
                   </div>
                 ))}

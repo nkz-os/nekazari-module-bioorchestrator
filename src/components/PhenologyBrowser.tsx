@@ -70,6 +70,12 @@ const PhenologyBrowser: React.FC = () => {
 
   return (
     <Stack gap="section">
+      {/* Onboarding */}
+      <div className="rounded-nkz-md bg-nkz-info-soft border border-nkz-info p-nkz-stack text-nkz-xs text-nkz-text-secondary">
+        <strong className="text-nkz-text-primary">💡 Phenology:</strong>{' '}
+        {t('onboarding.phenologyBrowser')}
+      </div>
+
       <div className="flex flex-wrap gap-3 items-end">
         <div className="min-w-[160px]"><label className="text-nkz-xs font-medium text-nkz-text-muted block mb-1">{t('phenology.species')}</label><select className={selectCls} value={species} onChange={(e) => setSpecies(e.target.value)}>{speciesOptions.map((s: any) => <option key={s.name} value={s.name}>{s.scientific_name ? `${s.name} (${s.scientific_name})` : s.name}{s.has_phenology ? ` — ${s.params_count} params` : ' — no data'}</option>)}</select></div>
         <div className="min-w-[140px]"><label className="text-nkz-xs font-medium text-nkz-text-muted block mb-1">{t('phenology.stage')}</label><select className={selectCls} value={stage} onChange={(e) => setStage(e.target.value)}><option value="">{t('phenology.anyStage')}</option>{STAGES.map((s) => <option key={s} value={s}>{s}</option>)}</select></div>

@@ -166,6 +166,10 @@ const RotationConstraints: React.FC = () => {
     <Stack gap="section">
       <TabSubtitle>{t('rotation.subtitle')}</TabSubtitle>
 
+      <div className="rounded-nkz-md bg-nkz-info-soft border border-nkz-info p-nkz-stack text-nkz-xs text-nkz-text-secondary">
+        {t('onboarding.rotationConstraints')}
+      </div>
+
       <div className="relative max-w-sm">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-nkz-text-muted" />
         <input

@@ -41,8 +41,8 @@ async def graph_stats(driver: DriverDep, tenant_id: str = Depends(_get_tenant_id
 async def list_species(driver: DriverDep):
     """List all species with variety counts and data availability."""
     dao = GraphDAO(driver)
-    crops = await dao.get_crop_catalog()
-    return {"species": crops, "total": len(crops)}
+    crops = await dao.get_all_species()
+    return crops
 
 
 @router.get("/phenology-params")

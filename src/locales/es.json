@@ -364,6 +364,27 @@
     "contributeAction": "Contribuir regla de rotación",
     "lowCoverage": "Solo {{count}} reglas de rotación registradas. La mayoría de cultivos no tienen datos."
   },
+  "rotationPlanner": {
+    "title": "Planificador de Rotación",
+    "selectParcel": "Seleccionar parcela...",
+    "years": "Años",
+    "economicInputs": "Parámetros económicos",
+    "calculate": "Calcular Rotación",
+    "year": "Año",
+    "cumulative": "Acumulado",
+    "yearsLabel": "años",
+    "pac": {
+      "title": "Cumplimiento PAC",
+      "score": "Puntuación de Cumplimiento",
+      "rule": {
+        "cover_on_slope": "Cubierta invernal en pendientes >10%",
+        "natura2000_buffer": "Franja protección Natura 2000",
+        "crop_diversity": "Diversidad de cultivos (≥2)",
+        "winter_cover": "Cobertura del suelo en invierno",
+        "pesticide_limits": "Límites de fitosanitarios"
+      }
+    }
+  },
   "panel": {
     "noCrop": "Esta parcela no tiene un cultivo asignado. Asigna uno para ver recomendaciones agronómicas.",
     "assignCrop": "Asignar cultivo",
@@ -503,28 +524,51 @@
     "defaultPricesNote": "Precios por defecto (1). Los márgenes económicos equivalen al rendimiento agronómico. Introduce precios reales para comparación económica.",
     "scoreNote": "Puntuación = ranking ponderado (rendimiento 40% + margen 30% + carbono 20% + suelo 10%)"
   },
-  "rotation": {
-    "title": "Planificador de Rotación",
-    "selectParcel": "Seleccionar parcela...",
-    "years": "Años",
-    "economicInputs": "Parámetros económicos",
-    "calculate": "Calcular Rotación",
-    "year": "Año",
-    "cumulative": "Acumulado",
-    "yearsLabel": "años",
-    "pac": {
-      "title": "Cumplimiento PAC",
-      "score": "Puntuación de Cumplimiento",
-      "rule": {
-        "cover_on_slope": "Cubierta invernal en pendientes >10%",
-        "natura2000_buffer": "Franja protección Natura 2000",
-        "crop_diversity": "Diversidad de cultivos (≥2)",
-        "winter_cover": "Cobertura del suelo en invierno",
-        "pesticide_limits": "Límites de fitosanitarios"
-      }
-    }
-  },
   "disclaimer": {
     "text": "Las recomendaciones se basan en modelos agronómicos y datos de fuentes científicas. No sustituyen el criterio profesional. Consulte a su técnico agrícola local antes de tomar decisiones de cultivo."
+  },
+  "crops": {
+    "ALLPO": "Puerro",
+    "AVESA": "Avena",
+    "BETVU": "Remolacha",
+    "BRPNA": "Colza",
+    "BRSNN": "Colza",
+    "CIEAR": "Garbanzo",
+    "CPSAN": "Pimiento",
+    "CUMME": "Melón",
+    "FRAAN": "Fresa",
+    "GLXMA": "Soja",
+    "HELAN": "Girasol",
+    "HORVX": "Cebada",
+    "LENCU": "Lenteja",
+    "LTHSA": "Almorta",
+    "LYPES": "Tomate",
+    "MABSD": "Manzano",
+    "MEDSA": "Alfalfa",
+    "ORYSA": "Arroz",
+    "PIBSX": "Guisante de campo",
+    "PISSA": "Guisante",
+    "PRNAR": "Albaricoquero",
+    "PRNDU": "Almendro",
+    "SECCE": "Centeno",
+    "SOLME": "Berenjena",
+    "SOLTU": "Patata",
+    "TRZAW": "Trigo blando",
+    "TRZAX": "Trigo",
+    "TRZDU": "Trigo duro",
+    "TTLSS": "Triticale",
+    "VICER": "Yero",
+    "VICFX": "Haba",
+    "VICSA": "Veza común",
+    "ZEAMX": "Maíz"
+  },
+  "onboarding": {
+    "varietyFinder": "Encuentra las mejores variedades para tu clima y suelo. Analizamos datos de ensayos en entornos similares al tuyo y ordenamos las variedades por rendimiento.",
+    "climateExplorer": "Cada punto es un sitio de ensayo coloreado según su zona climática Köppen-Geiger. Haz clic en un punto para ver sus detalles. Úsalo para encontrar sitios con clima similar a tu finca.",
+    "phenologyBrowser": "Los coeficientes de cultivo (Kc, D1, D2, MDS) describen cómo un cultivo usa el agua en cada fase. Estos valores provienen de investigación científica publicada.",
+    "rotationConstraints": "Algunos cultivos no pueden plantarse después de otros debido a plagas, enfermedades o agotamiento del suelo compartidos. Estas reglas provienen de guías FAO y literatura científica.",
+    "soilSuitability": "Cada cultivo tiene requisitos de suelo específicos: rango de pH, textura preferida, necesidades de drenaje y tolerancia a la salinidad. Contrasta con tu suelo para encontrar cultivos adecuados.",
+    "thermalTolerance": "Los umbrales de calor y helada indican cuándo comienza el daño al cultivo. Los valores Derivados se estiman a partir de rangos de temperatura; los Publicados provienen de investigación de campo.",
+    "npk": "La absorción de Nitrógeno (N), Fósforo (P) y Potasio (K) varía según la fase de crecimiento. Usa estos perfiles para planificar la fertilización."
   }
 }

@@ -88,8 +88,8 @@ const ClimateExplorer: React.FC = () => {
     : null;
 
   const viewBox = bounds
-    ? `${bounds.minLon - 1} ${bounds.minLat - 1} ${bounds.maxLon - bounds.minLon + 2} ${bounds.maxLat - bounds.minLat + 2}`
-    : '-10 35 30 20';
+    ? `${bounds.minLon - 1} ${-(bounds.maxLat + 1)} ${bounds.maxLon - bounds.minLon + 2} ${bounds.maxLat - bounds.minLat + 2}`
+    : '-10 -45 30 20';
 
   return (
     <div className="space-y-4">
@@ -124,6 +124,11 @@ const ClimateExplorer: React.FC = () => {
             );
           })}
         </div>
+        <div className="mt-3 pt-3 border-t border-nkz-border text-nkz-xs text-nkz-text-muted">
+          <strong>Köppen-Geiger Classification:</strong> The climate zones indicate the suitability for different agricultural practices. 
+          For instance, <strong>Csa (Mediterranean)</strong> is ideal for olives and vineyards due to dry, hot summers. 
+          <strong>BSk (Semi-arid)</strong> requires resilient crops or irrigation, while <strong>Cfb (Oceanic)</strong> supports year-round rainfed farming.
+        </div>
       </Card>
 
       {/* Map */}
@@ -135,9 +140,9 @@ const ClimateExplorer: React.FC = () => {
               <line
                 key={`h${i}`}
                 x1={bounds.minLon - 1}
-                y1={bounds.minLat + (bounds.maxLat - bounds.minLat) * i / 4}
+                y1={-(bounds.minLat + (bounds.maxLat - bounds.minLat) * i / 4)}
                 x2={bounds.maxLon + 1}
-                y2={bounds.minLat + (bounds.maxLat - bounds.minLat) * i / 4}
+                y2={-(bounds.minLat + (bounds.maxLat - bounds.minLat) * i / 4)}
                 stroke="#e5e7eb"
                 strokeWidth="0.05"
               />
@@ -152,7 +157,7 @@ const ClimateExplorer: React.FC = () => {
               >
                 <circle
                   cx={site.longitude}
-                  cy={site.latitude}
+                  cy={-site.latitude}
                   r={site === selectedSite ? 0.35 : 0.2}
                   fill={CLIMATE_COLORS[site.climate_class] || '#999'}
                   stroke={site === selectedSite ? '#000' : 'none'}
@@ -162,7 +167,7 @@ const ClimateExplorer: React.FC = () => {
                 {site.variety_trial_count > 50 && (
                   <circle
                     cx={site.longitude}
-                    cy={site.latitude}
+                    cy={-site.latitude}
                     r={site === selectedSite ? 0.5 : 0.3}
                     fill="none"
                     stroke={CLIMATE_COLORS[site.climate_class] || '#999'}

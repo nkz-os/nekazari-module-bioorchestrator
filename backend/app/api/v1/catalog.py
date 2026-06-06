@@ -21,6 +21,51 @@ async def list_crops(
     return {"crops": crops, "total": len(crops)}
 
 
+@router.get("/thermal-summary")
+async def thermal_summary(
+    dao: GraphDAO = Depends(get_dao),
+):
+    """Return count of species with/without thermal data."""
+    async with dao._driver.session() as session:
+        result = await session.run("""
+            MATCH (s:Species)
+            OPTIONAL MATCH (s)-[:HAS_HEAT_TOLERANCE]->(ht:CropHeatTolerance)
+            RETURN count(DISTINCT s) as total,
+                   count(DISTINCT ht) as with_thermal
+        """)
+        record = await result.single()
+        total = record["total"]
+        with_thermal = record["with_thermal"]
+        return {
+            "total_species": total,
+            "with_thermal": with_thermal,
+            "without_thermal": total - with_thermal,
+        }
+
+
+@router.get("/npk-summary")
+async def npk_summary(
+    dao: GraphDAO = Depends(get_dao),
+):
+    """Return count of species with/without NPK data."""
+    async with dao._driver.session() as session:
+        result = await session.run("""
+            MATCH (s:Species)
+            OPTIONAL MATCH (s)-[:HAS_STAGE]->(:PhenologyStage)-[:HAS_NUTRIENT_PROFILE]->(np:CropNutrientProfile)
+            WITH s, count(DISTINCT np) as np_count
+            RETURN count(s) as total_species,
+                   count(CASE WHEN np_count > 0 THEN s END) as with_npk
+        """)
+        record = await result.single()
+        total = record["total_species"]
+        with_npk = record["with_npk"]
+        return {
+            "total_species": total,
+            "with_npk": with_npk,
+            "without_npk": total - with_npk,
+        }
+
+
 @router.get("/{crop_id:path}")
 async def get_crop_detail(
     crop_id: str,
@@ -159,50 +204,6 @@ async def contribute_parameter(
             await orion.patch_entity(crop_id, orion_attrs)
 
     return {"status": "submitted", "crop_id": crop_id}
-
-
-@router.get("/thermal-summary")
-async def thermal_summary(
-    dao: GraphDAO = Depends(get_dao),
-):
-    """Return count of species with/without thermal data."""
-    async with dao._driver.session() as session:
-        result = await session.run("""
-            MATCH (c:AgriCrop)
-            OPTIONAL MATCH (c)-[:HAS_HEAT_TOLERANCE]->(ht:CropHeatTolerance)
-            RETURN count(DISTINCT c) as total,
-                   count(DISTINCT ht) as with_thermal
-        """)
-        record = await result.single()
-        total = record["total"]
-        with_thermal = record["with_thermal"]
-        return {
-            "total_species": total,
-            "with_thermal": with_thermal,
-            "without_thermal": total - with_thermal,
-        }
-
-
-@router.get("/npk-summary")
-async def npk_summary(
-    dao: GraphDAO = Depends(get_dao),
-):
-    """Return count of species with/without NPK data."""
-    async with dao._driver.session() as session:
-        result = await session.run("""
-            MATCH (c:AgriCrop)
-            OPTIONAL MATCH (c)-[:HAS_NUTRIENT_PROFILE]->(np:CropNutrientProfile)
-            RETURN count(DISTINCT c) as total_species,
-                   count(DISTINCT CASE WHEN np IS NOT NULL THEN c END) as with_npk
-        """)
-        record = await result.single()
-        total = record["total_species"]
-        with_npk = record["with_npk"]
-        return {
-            "total_species": total,
-            "with_npk": with_npk,
-            "without_npk": total - with_npk,
-        }
 
 
 @router.post("/derive-thermal")

@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react";
-import { useTranslation } from "react-i18next";
+import { useTranslation } from "@nekazari/sdk";
 import type { CropListCrop, OrganicInputsResult } from "../services/api";
 
 export default function OrganicInputs() {
-  const { t } = useTranslation();
+  const { t } = useTranslation('bioorchestrator');
   const [availableCrops, setAvailableCrops] = useState<CropListCrop[]>([]);
   const [selectedCrop, setSelectedCrop] = useState("");
   const [result, setResult] = useState<OrganicInputsResult | null>(null);
@@ -24,7 +24,10 @@ export default function OrganicInputs() {
     let cancelled = false;
     setLoading(true); setError(""); setResult(null);
     fetch(`${API_BASE}/api/graph/agriculture/organic-inputs?crop=${encodeURIComponent(selectedCrop)}`, { credentials: "include" })
-      .then(r => r.json())
+      .then(r => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return r.json();
+      })
       .then((data: OrganicInputsResult) => { if (!cancelled) setResult(data); })
       .catch((e: Error) => { if (!cancelled) setError(e.message); })
       .finally(() => { if (!cancelled) setLoading(false); });
@@ -44,11 +47,14 @@ export default function OrganicInputs() {
           style={{ width: "100%", padding: 8 }}
         >
           <option value="">{t("organic.selectCrop")}</option>
-          {availableCrops.map(c => (
-            <option key={c.eppo_code} value={c.eppo_code}>
-              {c.eppo_code} ({c.scientific_name?.slice(0, 30)})
-            </option>
-          ))}
+          {availableCrops.map(c => {
+            const name = t(`crops.${c.eppo_code}`, { defaultValue: c.scientific_name === '(unknown)' ? c.eppo_code : c.scientific_name });
+            return (
+              <option key={c.eppo_code} value={c.eppo_code}>
+                {c.eppo_code} — {name}
+              </option>
+            );
+          })}
         </select>
       </div>
 

@@ -150,7 +150,7 @@ const RecommendationsPanel: React.FC<Props> = ({ parcelId, parcelName, cropType,
             <DataRow label={t('thermal.title')} available={dataAvail.thermal} />
             <DataRow label={t('soil.title')} available={dataAvail.soil_suitability} />
             <DataRow label={t('npk.title')} available={dataAvail.npk} />
-            <DataRow label={t('rotation.title')} available={dataAvail.rotation} />
+            <DataRow label={t('rotationPlanner.title')} available={dataAvail.rotation} />
           </Stack>
           {completedCount === 0 && (
             <div className="text-nkz-warning text-sm"><AlertTriangle size={14} className="inline mr-1" />{t('panel.none')}</div>
