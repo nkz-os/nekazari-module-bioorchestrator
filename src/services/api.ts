@@ -12,6 +12,8 @@
 
 const API_BASE = (import.meta as any).env?.VITE_API_URL || "https://nkz.robotika.cloud";
 const BASE = `${API_BASE}/api/bioorchestrator`;
+// Direct graph path bypasses api-gateway auth for public reference data endpoints
+const GRAPH = `${API_BASE}/api`;
 
 // ── DAD-IS per-user credentials (localStorage) ──────────────────────────────
 
@@ -149,23 +151,23 @@ export function useBioApi() {
     getSources: () => get('/api/v1/sources'),
     runPipeline: (body: any) => post('/api/pipeline/run', body),
     getPipelineHistory: (limit = 5) => get(`/api/pipeline/history?limit=${limit}`),
-    getSpecies: () => get('/api/graph/species'),
-    getPhenologyParams: (params: URLSearchParams) => get(`/api/graph/phenology-params?${params.toString()}`),
+    getSpecies: () => get(`${GRAPH}/graph/species`),
+    getPhenologyParams: (params: URLSearchParams) => get(`${GRAPH}/graph/phenology-params?${params.toString()}`),
     contributePhenology: (params: URLSearchParams) => post(`/api/graph/phenology-params/contribute?${params.toString()}`),
-    getHeatTolerance: (species: string) => get(`/api/graph/heat-tolerance?species=${encodeURIComponent(species)}`),
-    getNutrientProfile: (species: string, stage?: string) => get(`/api/graph/nutrient-profile?species=${encodeURIComponent(species)}${stage ? `&stage=${encodeURIComponent(stage)}` : ''}`),
-    getNextCrop: (crop: string) => get(`/api/graph/recommendations/next-crop?previous_crop=${encodeURIComponent(crop)}`),
-    getSoilSuitability: (species: string) => get(`/api/graph/soil-suitability?species=${encodeURIComponent(species)}`),
-    getSoilData: (lat: number, lon: number) => get(`/api/graph/soil-data?lat=${lat}&lon=${lon}`),
-    getProtectedArea: (lat: number, lon: number) => get(`/api/graph/protected-area-check?lat=${lat}&lon=${lon}`),
-    getVarieties: (species: string) => get(`/api/graph/varieties?species=${encodeURIComponent(species)}`),
-    getPesticides: (crop: string) => get(`/api/graph/pesticides?crop=${encodeURIComponent(crop)}`),
-    getPollinators: (lat: number, lon: number) => get(`/api/graph/pollinators?lat=${lat}&lon=${lon}`),
-    getTerrain: (lat: number, lon: number) => get(`/api/graph/terrain?lat=${lat}&lon=${lon}`),
-    getClimateReference: (lat: number, lon: number) => get(`/api/graph/climate-reference?lat=${lat}&lon=${lon}`),
-    getRotationConstraints: (crop: string) => get(`/api/graph/rotation-constraints?crop=${encodeURIComponent(crop)}`),
-    getGraphSpecies: () => get('/api/graph/species'),
-    simulateCrop: (baseline: string, scenario: string) => get(`/api/graph/recommendations/simulate?baseline_crop=${encodeURIComponent(baseline)}&scenario_crop=${encodeURIComponent(scenario)}`),
+    getHeatTolerance: (species: string) => get(`${GRAPH}/graph/heat-tolerance?species=${encodeURIComponent(species)}`),
+    getNutrientProfile: (species: string, stage?: string) => get(`${GRAPH}/graph/nutrient-profile?species=${encodeURIComponent(species)}${stage ? `&stage=${encodeURIComponent(stage)}` : ''}`),
+    getNextCrop: (crop: string) => get(`${GRAPH}/graph/recommendations/next-crop?previous_crop=${encodeURIComponent(crop)}`),
+    getSoilSuitability: (species: string) => get(`${GRAPH}/graph/soil-suitability?species=${encodeURIComponent(species)}`),
+    getSoilData: (lat: number, lon: number) => get(`${GRAPH}/graph/soil-data?lat=${lat}&lon=${lon}`),
+    getProtectedArea: (lat: number, lon: number) => get(`${GRAPH}/graph/protected-area-check?lat=${lat}&lon=${lon}`),
+    getVarieties: (species: string) => get(`${GRAPH}/graph/varieties?species=${encodeURIComponent(species)}`),
+    getPesticides: (crop: string) => get(`${GRAPH}/graph/pesticides?crop=${encodeURIComponent(crop)}`),
+    getPollinators: (lat: number, lon: number) => get(`${GRAPH}/graph/pollinators?lat=${lat}&lon=${lon}`),
+    getTerrain: (lat: number, lon: number) => get(`${GRAPH}/graph/terrain?lat=${lat}&lon=${lon}`),
+    getClimateReference: (lat: number, lon: number) => get(`${GRAPH}/graph/climate-reference?lat=${lat}&lon=${lon}`),
+    getRotationConstraints: (crop: string) => get(`${GRAPH}/graph/rotation-constraints?crop=${encodeURIComponent(crop)}`),
+    getGraphSpecies: () => get(`${GRAPH}/graph/species`),
+    simulateCrop: (baseline: string, scenario: string) => get(`${GRAPH}/graph/recommendations/simulate?baseline_crop=${encodeURIComponent(baseline)}&scenario_crop=${encodeURIComponent(scenario)}`),
     getDadisCountries: () => get('/api/dadis/countries', dadisHeaders()),
     getDadisSpecies: () => get('/api/dadis/species', dadisHeaders()),
     getDadisBreeds: (classification = 'all', countryIds?: string[], speciesIds?: number[]) => post('/api/dadis/breeds', { classification, countryIds: countryIds || [], speciesIds: speciesIds || [] }, dadisHeaders()),
@@ -174,15 +176,15 @@ export function useBioApi() {
       get(`/api/parcel/${encodeURIComponent(parcelId)}/vegetation?index=${index}&period=${period}`),
     getParcelSoil: (parcelId: string): Promise<SoilData> =>
       get(`/api/parcel/${encodeURIComponent(parcelId)}/soil`),
-    getAgricultureCrops: () => get('/api/graph/agriculture/crops'),
-    getTrialSites: () => get('/api/graph/agriculture/trial-sites'),
+    getAgricultureCrops: () => get(`${GRAPH}/graph/agriculture/crops`),
+    getTrialSites: () => get(`${GRAPH}/graph/agriculture/trial-sites`),
     extrapolateVarieties: (params: Record<string, string>) => {
       const qs = new URLSearchParams(params).toString();
-      return get(`/api/graph/agriculture/extrapolate?${qs}`);
+      return get(`${GRAPH}/graph/agriculture/extrapolate?${qs}`);
     },
     getRegenerativeSequence: (params: Record<string, string>) => {
       const qs = new URLSearchParams(params).toString();
-      return get(`/api/graph/agriculture/regenerative-sequence?${qs}`);
+      return get(`${GRAPH}/graph/agriculture/regenerative-sequence?${qs}`);
     },
   };
 }
