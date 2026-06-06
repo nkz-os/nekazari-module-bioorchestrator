@@ -35,6 +35,8 @@ function dadisHeaders(): Record<string, string> {
 async function get(path: string, extraHeaders?: Record<string, string>): Promise<any> {
   const headers: Record<string, string> = { ...extraHeaders };
   const resp = await fetch(`${BASE}${path}`, { headers, credentials: 'include' });
+  // 401 = not authenticated, expected for public pages — return null silently
+  if (resp.status === 401) return null;
   if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
   const ct = resp.headers.get('content-type') || '';
   return ct.includes('application/json') ? resp.json() : resp.text();

@@ -570,5 +570,16 @@
     "soilSuitability": "Cada cultivo tiene requisitos de suelo específicos: rango de pH, textura preferida, necesidades de drenaje y tolerancia a la salinidad. Contrasta con tu suelo para encontrar cultivos adecuados.",
     "thermalTolerance": "Los umbrales de calor y helada indican cuándo comienza el daño al cultivo. Los valores Derivados se estiman a partir de rangos de temperatura; los Publicados provienen de investigación de campo.",
     "npk": "La absorción de Nitrógeno (N), Fósforo (P) y Potasio (K) varía según la fase de crecimiento. Usa estos perfiles para planificar la fertilización."
+  },
+  "climateExplorer": {
+    "legend": "Clasificación Köppen-Geiger",
+    "legendCsa": "Csa (Mediterráneo) — ideal para olivos y viñedos por sus veranos secos y cálidos",
+    "legendBSk": "BSk (Semiárido) — requiere cultivos resilientes o riego",
+    "legendCfb": "Cfb (Oceánico) — permite agricultura de secano todo el año",
+    "legendGeneral": "Las zonas climáticas indican la idoneidad para distintas prácticas agrícolas."
+  },
+  "varietyFinder": {
+    "anySoil": "Cualquier tipo de suelo",
+    "noDataAvailable": "Sin datos disponibles para esta especie"
   }
 }
