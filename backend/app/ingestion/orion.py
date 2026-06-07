@@ -52,7 +52,7 @@ class OrionIngestionClient:
     async def query_by_relationship(
         self, entity_type: str, rel_name: str, target_id: str, limit: int = 1
     ) -> list[dict]:
-        """Query entities by relationship target (e.g. refAgriParcel=={parcel_id})."""
+        """Query entities by relationship target (e.g. hasAgriParcel=={parcel_id})."""
         async with httpx.AsyncClient(timeout=15) as client:
             resp = await client.get(
                 f"{self.base}/ngsi-ld/v1/entities",

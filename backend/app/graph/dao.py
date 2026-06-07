@@ -1745,7 +1745,7 @@ class GraphDAO:
             async with httpx.AsyncClient(timeout=5.0) as client:
                 sensor_resp = await client.get(
                     f"{orion.base}/ngsi-ld/v1/entities",
-                    params={"type": "CropHealthAssessment", "q": f'refAgriParcel=="{parcel_id}"', "limit": 1, "options": "keyValues"},
+                    params={"type": "CropHealthAssessment", "q": f'hasAgriParcel=="{parcel_id}"', "limit": 1, "options": "keyValues"},
                     headers={"Accept": "application/ld+json", "NGSILD-Tenant": tenant_id},
                 )
                 if sensor_resp.status_code == 200:
@@ -1814,7 +1814,7 @@ class GraphDAO:
             try:
                 orion = OrionIngestionClient()
                 async with httpx.AsyncClient(timeout=10.0) as client:
-                    assess_resp = await client.get(f"{orion.base}/ngsi-ld/v1/entities", params={"type": "CropHealthAssessment", "q": f'refAgriParcel==\"{parcel_id}\"', "limit": 1, "options": "keyValues"}, headers={"Accept": "application/ld+json", "NGSILD-Tenant": tenant_id})
+                    assess_resp = await client.get(f"{orion.base}/ngsi-ld/v1/entities", params={"type": "CropHealthAssessment", "q": f'hasAgriParcel==\"{parcel_id}\"', "limit": 1, "options": "keyValues"}, headers={"Accept": "application/ld+json", "NGSILD-Tenant": tenant_id})
                     if assess_resp.status_code == 200:
                         entities = assess_resp.json()
                         if entities:

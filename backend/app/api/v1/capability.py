@@ -68,7 +68,7 @@ async def get_parcel_capabilities(parcel_id: str, dao: DaoDep) -> dict:
                 f"{orion}/ngsi-ld/v1/entities",
                 params={
                     "type": et,
-                    "q": f'refAgriParcel=="urn:ngsi-ld:AgriParcel:{parcel_id}"',
+                    "q": f'hasAgriParcel=="urn:ngsi-ld:AgriParcel:{parcel_id}"',
                 },
                 headers={
                     "Accept": "application/json",
