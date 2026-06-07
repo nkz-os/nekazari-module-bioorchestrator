@@ -42,7 +42,7 @@ async def parcel_vegetation(
     parcel_urn = f"urn:ngsi-ld:AgriParcel:{parcel_id}"
 
     try:
-        entities = await orion.query_by_relationship("VegetationIndex", "refAgriParcel", parcel_urn)
+        entities = await orion.query_by_relationship("VegetationIndex", "hasAgriParcel", parcel_urn)
     except Exception:
         return _veg_unavailable(index, period)
 
@@ -54,7 +54,7 @@ async def parcel_vegetation(
     since = None
     if period == "season":
         try:
-            seasons = await orion.query_by_relationship("AgriCropSeason", "refAgriParcel", parcel_urn, limit=1)
+            seasons = await orion.query_by_relationship("AgriCropSeason", "hasAgriParcel", parcel_urn, limit=1)
             if seasons:
                 start_raw = seasons[0].get("startDate", {})
                 if isinstance(start_raw, dict):
@@ -90,7 +90,7 @@ async def parcel_soil(parcel_id: str, request: Request):
     parcel_urn = f"urn:ngsi-ld:AgriParcel:{parcel_id}"
 
     try:
-        entities = await orion.query_by_relationship("AgriSoilExtended", "refAgriParcel", parcel_urn)
+        entities = await orion.query_by_relationship("AgriSoilExtended", "hasAgriParcel", parcel_urn)
     except Exception:
         return {"available": False, "message": "El modulo soil no ha procesado esta parcela."}
 
