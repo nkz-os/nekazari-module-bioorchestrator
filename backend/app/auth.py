@@ -32,6 +32,9 @@ SKIP_AUTH_PREFIXES = [
     "/api/graph/recommendations/",
     "/api/graph/varieties",
     "/api/crop/catalog",
+    "/api/v1/sources",
+    "/api/v1/catalog",
+    "/api/v1/capability",
     "/ngsi-ld/",
 ]
 
@@ -50,6 +53,19 @@ class NKZAuthMiddleware(BaseHTTPMiddleware):
         for prefix in SKIP_AUTH_PREFIXES:
             if request.url.path.startswith(prefix):
                 return await call_next(request)
+
+        # Trust gateway-injected headers (request already passed api-gateway auth)
+        gateway_tenant = request.headers.get("X-Tenant-ID", "")
+        gateway_user = request.headers.get("X-User-ID", "")
+        gateway_roles = request.headers.get("X-User-Roles", "")
+        if gateway_tenant and gateway_user:
+            request.state.user = {
+                "sub": gateway_user,
+                "tenant_id": gateway_tenant,
+                "roles": gateway_roles.split(",") if gateway_roles else [],
+            }
+            request.state.tenant_id = normalize_tenant_id(gateway_tenant)
+            return await call_next(request)
 
         # Development mode: skip auth
         if os.getenv("AUTH_DISABLED", "false").lower() == "true":
