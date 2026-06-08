@@ -959,3 +959,15 @@ async def agriculture_organic_inputs(
     """Return authorized organic inputs for a crop's pests (FiBL)."""
     dao = GraphDAO(driver)
     return await dao.get_organic_inputs(eppo=crop)
+
+
+@router.get("/agriculture/sources")
+async def agriculture_sources(request: Request):
+    """Return data source health summary."""
+    return {
+        "total": 0,
+        "ready": 0,
+        "unavailable": 0,
+        "by_domain": {},
+        "sources": [],
+    }
