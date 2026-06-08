@@ -36,7 +36,8 @@ function dadisHeaders(): Record<string, string> {
 
 async function get(path: string, extraHeaders?: Record<string, string>): Promise<any> {
   const headers: Record<string, string> = { ...extraHeaders };
-  const resp = await fetch(`${BASE}${path}`, { headers, credentials: 'include' });
+  const url = path.startsWith("http") ? path : `${BASE}${path}`;
+  const resp = await fetch(url, { headers, credentials: 'include' });
   // 401 = not authenticated, expected for public pages — return null silently
   if (resp.status === 401) return null;
   if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
@@ -46,7 +47,8 @@ async function get(path: string, extraHeaders?: Record<string, string>): Promise
 
 async function post(path: string, body?: any, extraHeaders?: Record<string, string>): Promise<any> {
   const headers: Record<string, string> = { 'Content-Type': 'application/json', ...extraHeaders };
-  const resp = await fetch(`${BASE}${path}`, { method: 'POST', headers, body: body ? JSON.stringify(body) : undefined, credentials: 'include' });
+  const url = path.startsWith("http") ? path : `${BASE}${path}`;
+  const resp = await fetch(url, { method: 'POST', headers, body: body ? JSON.stringify(body) : undefined, credentials: 'include' });
   if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
   const ct = resp.headers.get('content-type') || '';
   return ct.includes('application/json') ? resp.json() : resp.text();
@@ -148,7 +150,7 @@ export function useCropApi() {
 
 export function useBioApi() {
   return {
-    getSources: () => get('/api/v1/sources'),
+    getSources: () => get(`${GRAPH}/graph/agriculture/sources`),
     runPipeline: (body: any) => post('/api/pipeline/run', body),
     getPipelineHistory: (limit = 5) => get(`/api/pipeline/history?limit=${limit}`),
     getSpecies: () => get(`${GRAPH}/graph/species`),
