@@ -26,11 +26,23 @@ logger = logging.getLogger(__name__)
 CROP_REFERENCE: dict[str, dict] = {
     # Cereals
     "TRZAX": {"carbon_fixed_tco2e_ha": 2.8, "operations_count": 7, "n_requirement_kg_ha": 180, "n_fixation_kg_ha": 0, "growing_season_days": 210},
+    "TRZDU": {"carbon_fixed_tco2e_ha": 2.5, "operations_count": 6, "n_requirement_kg_ha": 160, "n_fixation_kg_ha": 0, "growing_season_days": 200},
+    "TRZAS": {"carbon_fixed_tco2e_ha": 2.3, "operations_count": 6, "n_requirement_kg_ha": 140, "n_fixation_kg_ha": 0, "growing_season_days": 210},
     "HORVX": {"carbon_fixed_tco2e_ha": 2.3, "operations_count": 6, "n_requirement_kg_ha": 140, "n_fixation_kg_ha": 0, "growing_season_days": 190},
+    "HORVW": {"carbon_fixed_tco2e_ha": 2.2, "operations_count": 5, "n_requirement_kg_ha": 130, "n_fixation_kg_ha": 0, "growing_season_days": 180},
     "AVESA": {"carbon_fixed_tco2e_ha": 2.0, "operations_count": 5, "n_requirement_kg_ha": 120, "n_fixation_kg_ha": 0, "growing_season_days": 180},
     "SECCE": {"carbon_fixed_tco2e_ha": 2.1, "operations_count": 5, "n_requirement_kg_ha": 110, "n_fixation_kg_ha": 0, "growing_season_days": 200},
     "ZEAXX": {"carbon_fixed_tco2e_ha": 4.0, "operations_count": 8, "n_requirement_kg_ha": 250, "n_fixation_kg_ha": 0, "growing_season_days": 180},
+    "ZEAMX": {"carbon_fixed_tco2e_ha": 4.2, "operations_count": 8, "n_requirement_kg_ha": 260, "n_fixation_kg_ha": 0, "growing_season_days": 180},
+    "SORVU": {"carbon_fixed_tco2e_ha": 3.5, "operations_count": 6, "n_requirement_kg_ha": 150, "n_fixation_kg_ha": 0, "growing_season_days": 170},
+    "ORYSA": {"carbon_fixed_tco2e_ha": 2.8, "operations_count": 9, "n_requirement_kg_ha": 160, "n_fixation_kg_ha": 0, "growing_season_days": 180},
+    # Oilseeds
+    "BRSNW": {"carbon_fixed_tco2e_ha": 2.2, "operations_count": 6, "n_requirement_kg_ha": 180, "n_fixation_kg_ha": 0, "growing_season_days": 280},
+    "BRSNN": {"carbon_fixed_tco2e_ha": 2.0, "operations_count": 5, "n_requirement_kg_ha": 170, "n_fixation_kg_ha": 0, "growing_season_days": 260},
+    "HELAN": {"carbon_fixed_tco2e_ha": 1.8, "operations_count": 5, "n_requirement_kg_ha": 100, "n_fixation_kg_ha": 0, "growing_season_days": 150},
+    # Root & tuber crops
     "SOLTU": {"carbon_fixed_tco2e_ha": 1.8, "operations_count": 9, "n_requirement_kg_ha": 200, "n_fixation_kg_ha": 0, "growing_season_days": 160},
+    "BETVU": {"carbon_fixed_tco2e_ha": 2.5, "operations_count": 8, "n_requirement_kg_ha": 180, "n_fixation_kg_ha": 0, "growing_season_days": 210},
     # Legumes
     "CIEAR": {"carbon_fixed_tco2e_ha": 0.9, "operations_count": 4, "n_requirement_kg_ha": 30, "n_fixation_kg_ha": 80, "growing_season_days": 150},
     "PIBSX": {"carbon_fixed_tco2e_ha": 1.2, "operations_count": 4, "n_requirement_kg_ha": 20, "n_fixation_kg_ha": 100, "growing_season_days": 140},
@@ -42,10 +54,27 @@ CROP_REFERENCE: dict[str, dict] = {
     "VICVI": {"carbon_fixed_tco2e_ha": 1.2, "operations_count": 3, "n_requirement_kg_ha": 10, "n_fixation_kg_ha": 120, "growing_season_days": 160},
     "VICER": {"carbon_fixed_tco2e_ha": 0.9, "operations_count": 3, "n_requirement_kg_ha": 15, "n_fixation_kg_ha": 100, "growing_season_days": 140},
     "LTHSA": {"carbon_fixed_tco2e_ha": 0.8, "operations_count": 3, "n_requirement_kg_ha": 10, "n_fixation_kg_ha": 90, "growing_season_days": 130},
+    "LUPAL": {"carbon_fixed_tco2e_ha": 1.3, "operations_count": 3, "n_requirement_kg_ha": 10, "n_fixation_kg_ha": 100, "growing_season_days": 160},
+    "LUPAN": {"carbon_fixed_tco2e_ha": 1.4, "operations_count": 3, "n_requirement_kg_ha": 10, "n_fixation_kg_ha": 120, "growing_season_days": 170},
+    "PHVUX": {"carbon_fixed_tco2e_ha": 1.0, "operations_count": 5, "n_requirement_kg_ha": 20, "n_fixation_kg_ha": 50, "growing_season_days": 140},
     # Forage
     "MEDSA": {"carbon_fixed_tco2e_ha": 3.0, "operations_count": 5, "n_requirement_kg_ha": 10, "n_fixation_kg_ha": 200, "growing_season_days": 250},
-    # Other
+    "MEDLU": {"carbon_fixed_tco2e_ha": 2.5, "operations_count": 4, "n_requirement_kg_ha": 10, "n_fixation_kg_ha": 170, "growing_season_days": 220},
+    "TRFPR": {"carbon_fixed_tco2e_ha": 2.8, "operations_count": 4, "n_requirement_kg_ha": 10, "n_fixation_kg_ha": 150, "growing_season_days": 240},
+    # Vegetables
+    "SOLLC": {"carbon_fixed_tco2e_ha": 0.8, "operations_count": 10, "n_requirement_kg_ha": 180, "n_fixation_kg_ha": 0, "growing_season_days": 150},
+    "CAPAN": {"carbon_fixed_tco2e_ha": 0.6, "operations_count": 8, "n_requirement_kg_ha": 140, "n_fixation_kg_ha": 0, "growing_season_days": 160},
+    "CUMSA": {"carbon_fixed_tco2e_ha": 0.5, "operations_count": 7, "n_requirement_kg_ha": 100, "n_fixation_kg_ha": 0, "growing_season_days": 120},
+    "CUCUM": {"carbon_fixed_tco2e_ha": 0.4, "operations_count": 7, "n_requirement_kg_ha": 90, "n_fixation_kg_ha": 0, "growing_season_days": 110},
+    "ALLCE": {"carbon_fixed_tco2e_ha": 0.7, "operations_count": 7, "n_requirement_kg_ha": 150, "n_fixation_kg_ha": 0, "growing_season_days": 180},
+    # Perennial / fruits / nuts
     "BRUn":  {"carbon_fixed_tco2e_ha": 5.2, "operations_count": 6, "n_requirement_kg_ha": 200, "n_fixation_kg_ha": 0, "growing_season_days": 250},
+    "OLEU":  {"carbon_fixed_tco2e_ha": 3.5, "operations_count": 5, "n_requirement_kg_ha": 100, "n_fixation_kg_ha": 0, "growing_season_days": 365},
+    "VITIS": {"carbon_fixed_tco2e_ha": 3.0, "operations_count": 10, "n_requirement_kg_ha": 80, "n_fixation_kg_ha": 0, "growing_season_days": 240},
+    "PRMDO": {"carbon_fixed_tco2e_ha": 4.0, "operations_count": 8, "n_requirement_kg_ha": 90, "n_fixation_kg_ha": 0, "growing_season_days": 210},
+    "PRNAR": {"carbon_fixed_tco2e_ha": 3.8, "operations_count": 6, "n_requirement_kg_ha": 120, "n_fixation_kg_ha": 0, "growing_season_days": 220},
+    "CITRU": {"carbon_fixed_tco2e_ha": 3.2, "operations_count": 7, "n_requirement_kg_ha": 150, "n_fixation_kg_ha": 0, "growing_season_days": 365},
+    "PRMPE": {"carbon_fixed_tco2e_ha": 2.8, "operations_count": 7, "n_requirement_kg_ha": 80, "n_fixation_kg_ha": 0, "growing_season_days": 200},
 }
 
 DEFAULT_REFERENCE = {"carbon_fixed_tco2e_ha": 1.5, "operations_count": 5, "n_requirement_kg_ha": 100, "n_fixation_kg_ha": 0, "growing_season_days": 180}
