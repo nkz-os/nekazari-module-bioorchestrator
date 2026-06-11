@@ -6,13 +6,31 @@ from app.core.config import settings
 class OrionIngestionClient:
     """Thin wrapper around Orion-LD for AgriCrop upsert operations."""
 
-    def __init__(self):
+    def __init__(self, tenant_id: str = ""):
         self.base = settings.orion_ld_url
+        self.tenant_id = tenant_id
+        self.ctx = settings.context_url
         self.headers = {
             "Content-Type": "application/ld+json",
             "Accept": "application/ld+json",
         }
-        self.ctx = settings.context_url
+        if tenant_id:
+            self.headers["NGSILD-Tenant"] = tenant_id
+
+    @property
+    def _get_headers(self) -> dict[str, str]:
+        """Headers for GET requests — include Link for @context type resolution."""
+        h = {
+            "Accept": "application/ld+json",
+            "Link": (
+                f'<{self.ctx}>; '
+                'rel="http://www.w3.org/ns/json-ld#context"; '
+                'type="application/ld+json"'
+            ),
+        }
+        if self.tenant_id:
+            h["NGSILD-Tenant"] = self.tenant_id
+        return h
 
     async def upsert_entity(self, entity: dict) -> dict:
         """Create or update a single NGSI-LD entity via upsert."""
@@ -44,7 +62,7 @@ class OrionIngestionClient:
             resp = await client.get(
                 f"{self.base}/ngsi-ld/v1/entities",
                 params={"type": entity_type, "limit": limit},
-                headers={"Accept": "application/ld+json"},
+                headers=self._get_headers,
             )
             resp.raise_for_status()
             return resp.json()
@@ -61,7 +79,7 @@ class OrionIngestionClient:
                     "q": f'{rel_name}=="{target_id}"',
                     "limit": limit,
                 },
-                headers={"Accept": "application/ld+json"},
+                headers=self._get_headers,
             )
             resp.raise_for_status()
             data = resp.json()
@@ -72,7 +90,7 @@ class OrionIngestionClient:
         async with httpx.AsyncClient(timeout=10) as client:
             resp = await client.get(
                 f"{self.base}/ngsi-ld/v1/entities/{entity_id}",
-                headers={"Accept": "application/ld+json"},
+                headers=self._get_headers,
             )
             if resp.status_code == 404:
                 return None
