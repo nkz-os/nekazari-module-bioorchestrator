@@ -11,7 +11,7 @@ from cachetools import TTLCache
 
 logger = logging.getLogger(__name__)
 
-SOIL_API_URL = os.getenv("SOIL_API_URL", "http://soil-api-service:5000")
+SOIL_API_URL = os.getenv("SOIL_API_URL", "http://soil-module-service:8000")
 
 # Cache soil properties per parcel for 24h (soil doesn't change day-to-day)
 _soil_cache: TTLCache[str, dict[str, Any]] = TTLCache(maxsize=256, ttl=86400)
@@ -20,10 +20,14 @@ _soil_cache: TTLCache[str, dict[str, Any]] = TTLCache(maxsize=256, ttl=86400)
 async def get_parcel_soil_properties(parcel_id: str) -> dict[str, Any]:
     """Fetch actual soil properties for a parcel from the Soil module.
 
+    Calls GET /v1/soil/parcel/{id}/summary (AgriSoilExtended entity)
+    and extracts the top-horizon properties.
+
     Returns dict with: ph, texture, awc_mm, organic_matter_pct,
     bulk_density_g_cm3, depth_cm, source, data_available.
 
-    If Soil module is unreachable, returns data_available=False.
+    If Soil module is unreachable or parcel has no soil data,
+    returns data_available=False.
     Results cached per parcel_id for 24h.
     """
     cached = _soil_cache.get(parcel_id)
@@ -31,24 +35,40 @@ async def get_parcel_soil_properties(parcel_id: str) -> dict[str, Any]:
         return cached
 
     try:
-        async with httpx.AsyncClient(timeout=5.0) as client:
+        async with httpx.AsyncClient(timeout=10.0) as client:
             resp = await client.get(
-                f"{SOIL_API_URL}/api/v1/soil/parcel/{parcel_id}/properties",
+                f"{SOIL_API_URL}/v1/soil/parcel/{parcel_id}/summary",
             )
             if resp.status_code == 200:
                 data = resp.json()
+                # NGSI-LD entity: horizons live inside {"type":"Property","value":[...]}
+                horizons = (data.get("horizons") or {}).get("value", [])
+                if not horizons:
+                    result: dict[str, Any] = {"data_available": False, "source": "no_horizons"}
+                    _soil_cache[parcel_id] = result
+                    return result
+                h = horizons[0]
+                # Organic matter ≈ organic_carbon × 1.724 (van Bemmelen factor)
+                oc = h.get("organicCarbon")
+                om_pct = round(oc * 1.724, 2) if oc is not None else None
                 result = {
-                    "ph": data.get("ph"),
-                    "texture": data.get("texture"),
-                    "awc_mm": data.get("awc_mm"),
-                    "organic_matter_pct": data.get("organic_matter_pct"),
-                    "bulk_density_g_cm3": data.get("bulk_density_g_cm3"),
-                    "depth_cm": data.get("depth_cm"),
-                    "source": data.get("source", "soilgrids"),
+                    "ph": h.get("ph"),
+                    "texture": h.get("usdaTextureClass"),
+                    "awc_mm": (
+                        round((h["fieldCapacity"] - h["wiltingPoint"]) * (h["depthTo"] - h["depthFrom"]) * 10, 1)
+                        if h.get("fieldCapacity") is not None and h.get("wiltingPoint") is not None
+                        else None
+                    ),
+                    "organic_matter_pct": om_pct,
+                    "bulk_density_g_cm3": h.get("bulkDensity"),
+                    "depth_cm": f"{h.get('depthFrom', 0)}-{h.get('depthTo', 30)}",
+                    "source": (data.get("dataSource") or {}).get("value", "soilgrids"),
                     "data_available": True,
                 }
                 _soil_cache[parcel_id] = result
                 return result
+            elif resp.status_code == 404:
+                logger.info("No soil data for parcel %s (404)", parcel_id)
             else:
                 logger.warning(
                     "Soil module returned %d for parcel %s",
