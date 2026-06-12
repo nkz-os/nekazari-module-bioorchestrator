@@ -19,7 +19,7 @@ export const moduleSlots = {
       component: 'RecommendationsPanel',
       localComponent: RecommendationsPanel,
       priority: 25,
-      showWhen: { entityType: ['AgriParcel'] },
+      showWhen: { entityType: ['AgriParcel', 'AgriCrop'] },
     },
   ],
   'bottom-panel': [
