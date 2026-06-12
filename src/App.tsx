@@ -1,4 +1,4 @@
-import React, { useState, lazy, Suspense } from 'react';
+import React, { useState, lazy, Suspense, Component, ErrorInfo } from 'react';
 import { useTranslation } from '@nekazari/sdk';
 import { Card, Stack, Spinner, Button } from '@nekazari/ui-kit';
 import { ArrowLeft, FlaskConical } from 'lucide-react';
@@ -48,6 +48,36 @@ const TOOL_MAP: Record<string, React.LazyExoticComponent<React.ComponentType<any
   dadis: BreedDiscovery,
 };
 
+function ToolErrorFallback({ toolId, onBack }: { toolId: string; onBack: () => void }) {
+  const { t } = useTranslation('bioorchestrator');
+  return (
+    <Card padding="lg">
+      <p className="text-nkz-text-muted mb-3">Failed to load tool: {toolId}</p>
+      <Button variant="ghost" onClick={onBack}>{t('app.backToDashboard')}</Button>
+    </Card>
+  );
+}
+
+class ToolErrorBoundary extends Component<
+  { children: React.ReactNode; fallback: React.ReactNode },
+  { hasError: boolean }
+> {
+  constructor(props: { children: React.ReactNode; fallback: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false };
+  }
+  static getDerivedStateFromError(_: Error) {
+    return { hasError: true };
+  }
+  componentDidCatch(error: Error, info: ErrorInfo) {
+    console.error('Tool render error:', error, info);
+  }
+  render() {
+    if (this.state.hasError) return this.props.fallback;
+    return this.props.children;
+  }
+}
+
 function ToolView({ toolId, onBack }: { toolId: string; onBack: () => void }) {
   const { t } = useTranslation('bioorchestrator');
   const ToolComponent = TOOL_MAP[toolId];
@@ -67,7 +97,9 @@ function ToolView({ toolId, onBack }: { toolId: string; onBack: () => void }) {
         {t('app.backToDashboard')}
       </Button>
       <Suspense fallback={<Spinner size="lg" />}>
-        <ToolComponent />
+        <ToolErrorBoundary fallback={<ToolErrorFallback toolId={toolId} onBack={onBack} />}>
+          <ToolComponent />
+        </ToolErrorBoundary>
       </Suspense>
     </Stack>
   );
