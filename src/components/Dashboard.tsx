@@ -33,7 +33,7 @@ export default function Dashboard({ onSelectTool }: DashboardProps) {
   const { t } = useTranslation('bioorchestrator');
   const { selectedParcel } = useParcelContext();
 
-  const needsParcel = (section: string) => section === 'predict' || section === 'compare';
+  const needsParcel = (section: ToolCard['section']) => section === 'predict' || section === 'compare';
 
   const renderCard = (tool: ToolCard) => {
     const Icon = tool.icon;
