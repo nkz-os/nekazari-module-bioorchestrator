@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { Card, Badge, Button, Skeleton, DetailGrid, DetailItem } from '@nekazari/ui-kit';
+import { Card, Badge, Button, Skeleton, DetailGrid, DetailItem, Select, Stack, EmptyState } from '@nekazari/ui-kit';
 import { useTranslation } from '@nekazari/sdk';
 import { Search, Sprout, MapPin, Thermometer, Globe, TrendingUp, AlertTriangle } from 'lucide-react';
 import { useBioApi } from '../services/api';
+import { useParcelContext } from '../context/ParcelContext';
 
 type ClimateClass = 'Csa' | 'BSk' | 'Cfb' | 'BSh' | 'Dfa' | 'Dfb';
 
@@ -32,6 +33,7 @@ type ViewState = 'input' | 'loading' | 'results' | 'error';
 const VarietyFinder: React.FC = () => {
   const { t } = useTranslation('bioorchestrator');
   const api = useBioApi();
+  const { selectedParcel } = useParcelContext();
 
   const [crop, setCrop] = useState('');
   const [climate, setClimate] = useState<ClimateClass>('Csa');
@@ -71,19 +73,26 @@ const VarietyFinder: React.FC = () => {
     }
   };
 
-  return (
-    <div className="space-y-4">
-      {/* Header */}
-      <div className="flex items-center gap-2 mb-2">
-        <Search className="w-5 h-5 text-nkz-accent-base" />
-        <h2 className="text-nkz-lg font-bold text-nkz-text-primary">{t('varietyFinder.title')}</h2>
-      </div>
+  if (!selectedParcel) {
+    return (
+      <EmptyState
+        icon={<MapPin className="w-8 h-8" />}
+        title={t('varietyFinder.selectParcel')}
+        description={t('varietyFinder.selectParcelDesc')}
+      />
+    );
+  }
 
-      {/* Onboarding tooltip */}
-      <div className="mb-3 rounded-nkz-md bg-nkz-info-soft border border-nkz-info p-nkz-stack text-nkz-xs text-nkz-text-secondary">
-        <strong className="text-nkz-text-primary">💡 {t('varietyFinder.title')}:</strong>{' '}
-        {t('onboarding.varietyFinder')}
-      </div>
+  return (
+    <Stack gap="section">
+      {/* Header */}
+      <Stack gap="tight">
+        <div className="flex items-center gap-2">
+          <Search className="w-5 h-5 text-nkz-accent-base" />
+          <h2 className="text-nkz-lg font-bold text-nkz-text-primary">{t('varietyFinder.title')}</h2>
+        </div>
+        <p className="text-nkz-sm text-nkz-text-secondary">{t('onboarding.varietyFinder')}</p>
+      </Stack>
 
       {/* Input form */}
       <Card padding="md">
@@ -91,50 +100,36 @@ const VarietyFinder: React.FC = () => {
           {/* Crop selector */}
           <div className="flex-1 min-w-[200px]">
             <label className="block text-nkz-xs font-medium text-nkz-text-secondary mb-1">{t('varietyFinder.crop')}</label>
-            <select
-              className="w-full h-9 rounded-nkz-md border border-nkz-border bg-nkz-surface px-2 text-nkz-sm"
+            <Select
               value={crop}
-              onChange={e => setCrop(e.target.value)}
-            >
-              <option value="">{t('varietyFinder.selectCrop')}</option>
-              {cropOptions.map(c => {
+              onValueChange={setCrop}
+              placeholder={t('varietyFinder.selectCrop')}
+              options={cropOptions.map(c => {
                 const name = t(`crops.${c.eppo_code}`, { defaultValue: c.scientific_name === '(unknown)' ? c.eppo_code : c.scientific_name });
-                return (
-                  <option key={c.eppo_code} value={c.eppo_code}>
-                    {name} ({c.trial_count} {t('varietyFinder.trials').toLowerCase()})
-                  </option>
-                );
+                return { value: c.eppo_code, label: `${name} (${c.trial_count} ${t('varietyFinder.trials').toLowerCase()})` };
               })}
-            </select>
+            />
           </div>
 
           {/* Climate selector */}
           <div className="w-[150px]">
             <label className="block text-nkz-xs font-medium text-nkz-text-secondary mb-1">{t('varietyFinder.climate')}</label>
-            <select
-              className="w-full h-9 rounded-nkz-md border border-nkz-border bg-nkz-surface px-2 text-nkz-sm"
+            <Select
               value={climate}
-              onChange={e => setClimate(e.target.value as ClimateClass)}
-            >
-              {CLIMATES.map(c => (
-                <option key={c.value} value={c.value}>{c.label} — {c.desc}</option>
-              ))}
-            </select>
+              onValueChange={(v) => setClimate(v as ClimateClass)}
+              options={CLIMATES.map(c => ({ value: c.value, label: `${c.label} — ${c.desc}` }))}
+            />
           </div>
 
           {/* Soil (optional) */}
           <div className="w-[150px]">
             <label className="block text-nkz-xs font-medium text-nkz-text-secondary mb-1">{t('varietyFinder.soil')} ({t('varietyFinder.optional')})</label>
-            <select
-              className="w-full h-9 rounded-nkz-md border border-nkz-border bg-nkz-surface px-2 text-nkz-sm"
+            <Select
               value={soil}
-              onChange={e => setSoil(e.target.value)}
-            >
-              <option value="">{t('varietyFinder.anySoil')}</option>
-              {['Calcisol','Cambisol','Chernozem','Fluvisol','Gleysol','Leptosol','Luvisol','Phaeozem','Regosol','Vertisol'].map(s => (
-                <option key={s} value={s}>{s}</option>
-              ))}
-            </select>
+              onValueChange={setSoil}
+              placeholder={t('varietyFinder.anySoil')}
+              options={['Calcisol','Cambisol','Chernozem','Fluvisol','Gleysol','Leptosol','Luvisol','Phaeozem','Regosol','Vertisol'].map(s => ({ value: s, label: s }))}
+            />
           </div>
 
           {/* Search */}
@@ -251,7 +246,7 @@ const VarietyFinder: React.FC = () => {
           </Card>
         </>
       )}
-    </div>
+    </Stack>
   );
 };
 
