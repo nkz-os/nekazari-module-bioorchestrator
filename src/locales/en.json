@@ -1,7 +1,7 @@
 {
   "app": {
     "title": "BioOrchestrator",
-    "subtitle": "Multi-domain biodiversity pipeline — Agriculture · Livestock · Forestry · Agroforestry",
+    "subtitle": "Predict, compare, and plan — agronomic intelligence backed by trial data from similar environments.",
     "groups": {
       "parcel": "My Parcel",
       "reference": "Reference Data"
@@ -25,38 +25,95 @@
       "rotation": "Rotation",
       "organic": "Organic Inputs",
       "climate": "Climate Map"
-    }
+    },
+    "sections": {
+      "predictEvaluate": "Predict & Evaluate",
+      "comparePlan": "Compare & Plan",
+      "knowledgeBase": "Knowledge Base"
+    },
+    "cards": {
+      "varietyFinder": {
+        "title": "Variety Finder",
+        "subtitle": "Best-adapted varieties for your parcel, climate and soil. Ranked by yield from similar trial sites."
+      },
+      "parcelStatus": {
+        "title": "Current Parcel Status",
+        "subtitle": "Real-time crop stress, water balance, and active alerts from sensor and satellite data."
+      },
+      "comparator": {
+        "title": "Crop Comparator",
+        "subtitle": "Side-by-side crop comparison for your parcel: yield potential, margin, carbon score."
+      },
+      "rotationPlanner": {
+        "title": "Rotation Planner",
+        "subtitle": "Multi-year rotation design with CAP compliance scoring."
+      },
+      "waterBudget": {
+        "title": "Water Budget",
+        "subtitle": "Irrigation needs based on ETc, rainfall forecast, and soil available water."
+      },
+      "regenerative": {
+        "title": "Regenerative Sequence",
+        "subtitle": "Cover crop + protein crop sequences with carbon and nitrogen projections."
+      },
+      "catalog": {
+        "title": "Crop Catalog",
+        "subtitle": "Browse species and varieties with complete agronomic profiles."
+      },
+      "climate": {
+        "title": "Climate Map",
+        "subtitle": "Köppen-Geiger zone explorer with trial site data."
+      },
+      "phenology": {
+        "title": "Phenology Browser",
+        "subtitle": "Kc, D1, D2, MDS parameters by species, stage, and cultivar."
+      },
+      "thermal": {
+        "title": "Thermal Tolerance",
+        "subtitle": "Heat and frost damage thresholds per species."
+      },
+      "npk": {
+        "title": "NPK Profiles",
+        "subtitle": "Nutrient absorption rates per phenological stage."
+      },
+      "soil": {
+        "title": "Soil Requirements",
+        "subtitle": "pH, texture, drainage, and salinity per crop."
+      },
+      "rotation": {
+        "title": "Rotation Constraints",
+        "subtitle": "Minimum intervals between crops from FAO guidelines."
+      },
+      "organic": {
+        "title": "Organic Inputs",
+        "subtitle": "Authorized organic products per crop from EPPO."
+      },
+      "pipeline": {
+        "title": "Pipeline",
+        "subtitle": "Data ingestion orchestrator across biodiversity sources."
+      },
+      "sources": {
+        "title": "Data Sources",
+        "subtitle": "Multi-domain biodiversity data availability status."
+      },
+      "dadis": {
+        "title": "DAD-IS Explorer",
+        "subtitle": "FAO breed discovery — livestock biodiversity."
+      }
+    },
+    "backToDashboard": "← Back to dashboard",
+    "selectParcelPrompt": "Select a parcel above to get started"
   },
   "varietyFinder": {
-    "title": "Variety Finder",
-    "crop": "Crop (EPPO)",
-    "climate": "Climate zone",
-    "soil": "Soil type",
-    "optional": "optional",
-    "search": "Search",
-    "selectCrop": "Select a crop...",
-    "targetEnvironment": "Target Environment",
-    "similarSites": "Similar sites",
-    "rankedVarieties": "Ranked Varieties",
-    "variety": "Variety",
-    "meanYield": "Mean yield (kg/ha)",
-    "trials": "Trials",
-    "sites": "Sites",
-    "noResults": "No varieties found matching this environment. Try different climate or soil filters."
+    "anySoil": "Any soil type",
+    "noDataAvailable": "No data available for this species yet"
   },
   "climateExplorer": {
-    "title": "Climate Zone Explorer",
-    "filter": "Filter by climate",
-    "all": "All",
-    "legend": "Climate zones",
-    "majorSite": "major site",
-    "sites": "sites",
-    "climate": "Climate",
-    "soil": "Soil",
-    "rainfall": "Annual rainfall",
-    "elevation": "Elevation",
-    "frostDays": "Frost days/year",
-    "trials": "Variety trials"
+    "legend": "Köppen-Geiger Classification",
+    "legendCsa": "Csa (Mediterranean) — ideal for olives and vineyards due to dry, hot summers",
+    "legendBSk": "BSk (Semi-arid) — requires resilient crops or irrigation",
+    "legendCfb": "Cfb (Oceanic) — supports year-round rainfed farming",
+    "legendGeneral": "The climate zones indicate the suitability for different agricultural practices."
   },
   "sources": {
     "loading": "Loading sources...",
@@ -573,15 +630,11 @@
     "thermalTolerance": "Heat and frost thresholds indicate when crop damage begins. Derived values are estimated from species temperature ranges; Published values come from field research.",
     "npk": "Nitrogen (N), Phosphorus (P), and Potassium (K) uptake varies by growth stage. Use these profiles to plan fertilizer applications."
   },
-  "climateExplorer": {
-    "legend": "Köppen-Geiger Classification",
-    "legendCsa": "Csa (Mediterranean) — ideal for olives and vineyards due to dry, hot summers",
-    "legendBSk": "BSk (Semi-arid) — requires resilient crops or irrigation",
-    "legendCfb": "Cfb (Oceanic) — supports year-round rainfed farming",
-    "legendGeneral": "The climate zones indicate the suitability for different agricultural practices."
-  },
-  "varietyFinder": {
-    "anySoil": "Any soil type",
-    "noDataAvailable": "No data available for this species yet"
+  "globalParcel": {
+    "workingOn": "Working on",
+    "selectParcel": "Select a parcel...",
+    "noParcels": "No parcels available",
+    "error": "Failed to load parcels",
+    "loading": "Loading parcels..."
   }
 }

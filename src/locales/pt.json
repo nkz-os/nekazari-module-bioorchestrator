@@ -1,7 +1,7 @@
 {
   "app": {
     "title": "BioOrchestrator",
-    "subtitle": "Pipeline de biodiversidade multidomínio — Agricultura · Pecuária · Silvicultura · Agrofloresta",
+    "subtitle": "Predict, compare, and plan — agronomic intelligence backed by trial data from similar environments.",
     "tabs": {
       "sources": "Fontes de dados",
       "pipeline": "Pipeline",
@@ -10,7 +10,84 @@
       "regenerative": "Seq. Regenerativa",
       "alerts": "Alertas",
       "organic": "Insumos Orgânicos"
-    }
+    },
+    "sections": {
+      "predictEvaluate": "Predict & Evaluate",
+      "comparePlan": "Compare & Plan",
+      "knowledgeBase": "Knowledge Base"
+    },
+    "cards": {
+      "varietyFinder": {
+        "title": "Variety Finder",
+        "subtitle": "Best-adapted varieties for your parcel, climate and soil. Ranked by yield from similar trial sites."
+      },
+      "parcelStatus": {
+        "title": "Current Parcel Status",
+        "subtitle": "Real-time crop stress, water balance, and active alerts from sensor and satellite data."
+      },
+      "comparator": {
+        "title": "Crop Comparator",
+        "subtitle": "Side-by-side crop comparison for your parcel: yield potential, margin, carbon score."
+      },
+      "rotationPlanner": {
+        "title": "Rotation Planner",
+        "subtitle": "Multi-year rotation design with CAP compliance scoring."
+      },
+      "waterBudget": {
+        "title": "Water Budget",
+        "subtitle": "Irrigation needs based on ETc, rainfall forecast, and soil available water."
+      },
+      "regenerative": {
+        "title": "Regenerative Sequence",
+        "subtitle": "Cover crop + protein crop sequences with carbon and nitrogen projections."
+      },
+      "catalog": {
+        "title": "Crop Catalog",
+        "subtitle": "Browse species and varieties with complete agronomic profiles."
+      },
+      "climate": {
+        "title": "Climate Map",
+        "subtitle": "Köppen-Geiger zone explorer with trial site data."
+      },
+      "phenology": {
+        "title": "Phenology Browser",
+        "subtitle": "Kc, D1, D2, MDS parameters by species, stage, and cultivar."
+      },
+      "thermal": {
+        "title": "Thermal Tolerance",
+        "subtitle": "Heat and frost damage thresholds per species."
+      },
+      "npk": {
+        "title": "NPK Profiles",
+        "subtitle": "Nutrient absorption rates per phenological stage."
+      },
+      "soil": {
+        "title": "Soil Requirements",
+        "subtitle": "pH, texture, drainage, and salinity per crop."
+      },
+      "rotation": {
+        "title": "Rotation Constraints",
+        "subtitle": "Minimum intervals between crops from FAO guidelines."
+      },
+      "organic": {
+        "title": "Organic Inputs",
+        "subtitle": "Authorized organic products per crop from EPPO."
+      },
+      "pipeline": {
+        "title": "Pipeline",
+        "subtitle": "Data ingestion orchestrator across biodiversity sources."
+      },
+      "sources": {
+        "title": "Data Sources",
+        "subtitle": "Multi-domain biodiversity data availability status."
+      },
+      "dadis": {
+        "title": "DAD-IS Explorer",
+        "subtitle": "FAO breed discovery — livestock biodiversity."
+      }
+    },
+    "backToDashboard": "← Back to dashboard",
+    "selectParcelPrompt": "Select a parcel above to get started"
   },
   "sources": {
     "loading": "Carregando fontes...",
@@ -276,5 +353,12 @@
   },
   "disclaimer": {
     "text": "As recomendações baseiam-se em modelos agronómicos e dados científicos de terceiros. Não substituem o julgamento profissional. Consulte o seu técnico agrícola local antes de tomar decisões de cultivo."
+  },
+  "globalParcel": {
+    "workingOn": "Working on",
+    "selectParcel": "Select a parcel...",
+    "noParcels": "No parcels available",
+    "error": "Failed to load parcels",
+    "loading": "Loading parcels..."
   }
 }

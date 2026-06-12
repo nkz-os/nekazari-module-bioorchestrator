@@ -1,7 +1,7 @@
 {
   "app": {
     "title": "BioOrchestrator",
-    "subtitle": "Pipeline de biodiversidad multidominio — Agricultura · Ganadería · Forestal · Agroforestería",
+    "subtitle": "Predice, compara y planifica — inteligencia agronómica respaldada por datos de ensayos en entornos similares.",
     "groups": {
       "parcel": "Mi Parcela",
       "reference": "Datos de Referencia"
@@ -25,38 +25,95 @@
       "rotation": "Rotación",
       "organic": "Insumos Orgánicos",
       "climate": "Mapa climático"
-    }
+    },
+    "sections": {
+      "predictEvaluate": "Predecir y Evaluar",
+      "comparePlan": "Comparar y Planificar",
+      "knowledgeBase": "Base de Conocimiento"
+    },
+    "cards": {
+      "varietyFinder": {
+        "title": "Buscador de Variedades",
+        "subtitle": "Variedades mejor adaptadas para tu parcela, clima y suelo. Ordenadas por rendimiento en sitios similares."
+      },
+      "parcelStatus": {
+        "title": "Estado de la Parcela",
+        "subtitle": "Estrés del cultivo en tiempo real, balance hídrico y alertas activas desde sensores y satélite."
+      },
+      "comparator": {
+        "title": "Comparador de Cultivos",
+        "subtitle": "Comparación lado a lado para tu parcela: rendimiento potencial, margen, carbono."
+      },
+      "rotationPlanner": {
+        "title": "Planificador de Rotación",
+        "subtitle": "Diseño de rotación multi-año con puntuación de cumplimiento PAC."
+      },
+      "waterBudget": {
+        "title": "Balance Hídrico",
+        "subtitle": "Necesidades de riego basadas en ETc, previsión de lluvia y agua disponible en el suelo."
+      },
+      "regenerative": {
+        "title": "Secuencia Regenerativa",
+        "subtitle": "Secuencias de cultivo de cobertura + proteico con proyecciones de carbono y nitrógeno."
+      },
+      "catalog": {
+        "title": "Catálogo de Cultivos",
+        "subtitle": "Explora especies y variedades con perfiles agronómicos completos."
+      },
+      "climate": {
+        "title": "Mapa Climático",
+        "subtitle": "Explorador de zonas Köppen-Geiger con datos de ensayos."
+      },
+      "phenology": {
+        "title": "Explorador de Fenología",
+        "subtitle": "Parámetros Kc, D1, D2, MDS por especie, etapa y cultivar."
+      },
+      "thermal": {
+        "title": "Tolerancia Térmica",
+        "subtitle": "Umbrales de daño por calor y helada por especie."
+      },
+      "npk": {
+        "title": "Perfiles NPK",
+        "subtitle": "Tasas de absorción de nutrientes por etapa fenológica."
+      },
+      "soil": {
+        "title": "Requisitos de Suelo",
+        "subtitle": "pH, textura, drenaje y salinidad por cultivo."
+      },
+      "rotation": {
+        "title": "Restricciones de Rotación",
+        "subtitle": "Intervalos mínimos entre cultivos según guías FAO."
+      },
+      "organic": {
+        "title": "Insumos Orgánicos",
+        "subtitle": "Productos orgánicos autorizados por cultivo desde EPPO."
+      },
+      "pipeline": {
+        "title": "Pipeline",
+        "subtitle": "Orquestador de ingesta de datos entre fuentes de biodiversidad."
+      },
+      "sources": {
+        "title": "Fuentes de Datos",
+        "subtitle": "Estado de disponibilidad de datos de biodiversidad multi-dominio."
+      },
+      "dadis": {
+        "title": "Explorador DAD-IS",
+        "subtitle": "Descubrimiento de razas FAO — biodiversidad ganadera."
+      }
+    },
+    "backToDashboard": "← Volver al panel",
+    "selectParcelPrompt": "Selecciona una parcela arriba para empezar"
   },
   "varietyFinder": {
-    "title": "Buscador de variedades",
-    "crop": "Cultivo (EPPO)",
-    "climate": "Zona climática",
-    "soil": "Tipo de suelo",
-    "optional": "opcional",
-    "search": "Buscar",
-    "selectCrop": "Seleccionar cultivo...",
-    "targetEnvironment": "Entorno objetivo",
-    "similarSites": "Sitios similares",
-    "rankedVarieties": "Variedades ordenadas",
-    "variety": "Variedad",
-    "meanYield": "Rendimiento medio (kg/ha)",
-    "trials": "Ensayos",
-    "sites": "Sitios",
-    "noResults": "No se encontraron variedades para este entorno. Prueba otros filtros."
+    "anySoil": "Cualquier tipo de suelo",
+    "noDataAvailable": "Sin datos disponibles para esta especie"
   },
   "climateExplorer": {
-    "title": "Explorador de zonas climáticas",
-    "filter": "Filtrar por clima",
-    "all": "Todos",
-    "legend": "Zonas climáticas",
-    "majorSite": "sitio principal",
-    "sites": "sitios",
-    "climate": "Clima",
-    "soil": "Suelo",
-    "rainfall": "Lluvia anual",
-    "elevation": "Altitud",
-    "frostDays": "Días de helada/año",
-    "trials": "Ensayos"
+    "legend": "Clasificación Köppen-Geiger",
+    "legendCsa": "Csa (Mediterráneo) — ideal para olivos y viñedos por sus veranos secos y cálidos",
+    "legendBSk": "BSk (Semiárido) — requiere cultivos resilientes o riego",
+    "legendCfb": "Cfb (Oceánico) — permite agricultura de secano todo el año",
+    "legendGeneral": "Las zonas climáticas indican la idoneidad para distintas prácticas agrícolas."
   },
   "sources": {
     "loading": "Cargando fuentes...",
@@ -571,15 +628,11 @@
     "thermalTolerance": "Los umbrales de calor y helada indican cuándo comienza el daño al cultivo. Los valores Derivados se estiman a partir de rangos de temperatura; los Publicados provienen de investigación de campo.",
     "npk": "La absorción de Nitrógeno (N), Fósforo (P) y Potasio (K) varía según la fase de crecimiento. Usa estos perfiles para planificar la fertilización."
   },
-  "climateExplorer": {
-    "legend": "Clasificación Köppen-Geiger",
-    "legendCsa": "Csa (Mediterráneo) — ideal para olivos y viñedos por sus veranos secos y cálidos",
-    "legendBSk": "BSk (Semiárido) — requiere cultivos resilientes o riego",
-    "legendCfb": "Cfb (Oceánico) — permite agricultura de secano todo el año",
-    "legendGeneral": "Las zonas climáticas indican la idoneidad para distintas prácticas agrícolas."
-  },
-  "varietyFinder": {
-    "anySoil": "Cualquier tipo de suelo",
-    "noDataAvailable": "Sin datos disponibles para esta especie"
+  "globalParcel": {
+    "workingOn": "Trabajando en",
+    "selectParcel": "Seleccionar parcela...",
+    "noParcels": "No hay parcelas disponibles",
+    "error": "Error al cargar parcelas",
+    "loading": "Cargando parcelas..."
   }
 }
