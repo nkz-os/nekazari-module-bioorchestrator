@@ -1,15 +1,13 @@
-import React from "react";
-import { useTranslation } from "react-i18next";
+import React from 'react';
+import { useTranslation } from '@nekazari/sdk';
 
 export default function DisclaimerFooter() {
-  const { t } = useTranslation();
+  const { t } = useTranslation('bioorchestrator');
   return (
-    <div style={{
-      padding: "8px 12px", fontSize: 11, color: "#999",
-      background: "#fafafa", borderTop: "1px solid #f0f0f0",
-      textAlign: "center", marginTop: 16,
-    }}>
-      ⚠️ {t("disclaimer.text")}
+    <div className="pt-4 mt-4 border-t border-nkz-border text-center">
+      <p className="text-nkz-xs text-nkz-text-muted">
+        ⚠️ {t('disclaimer.text')}
+      </p>
     </div>
   );
 }
