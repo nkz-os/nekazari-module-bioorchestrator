@@ -23,6 +23,7 @@ import os
 from typing import Any
 
 from neo4j import AsyncDriver
+from nkz_platform_sdk.orion import OrionClient
 
 logger = logging.getLogger(__name__)
 
@@ -1631,52 +1632,144 @@ class GraphDAO:
         season_end: str,
         tenant_id: str,
     ) -> dict:
-        """Write crop assignment to Orion-LD AgriParcel entity.
+        """Create a per-parcel AgriCrop entity and assign it to the parcel.
 
-        Creates/updates hasAgriCrop, hasAgriCropVariety Relationships
-        and management, cropSeasonStart, cropSeasonEnd Properties.
-        Overwrites any existing assignment (one active crop per parcel).
+        1. Creates a new AgriCrop entity in Orion-LD with refParent pointing
+           to the parcel, species, variety, dates, management.
+        2. Patches the AgriParcel with hasAgriCrop to the new entity.
+        3. If the parcel had a previous assignment, marks the old crop harvested.
         """
         import httpx
         from fastapi import HTTPException
-        from app.ingestion.orion import OrionIngestionClient
+        from datetime import datetime, timezone
 
-        orion = OrionIngestionClient()
+        parcel_short = parcel_id.split(":")[-1]
+        season_year = season_start[:4] if season_start else str(datetime.now(timezone.utc).year)
+        crop_eppo = crop_uri.split(":")[-1] if crop_uri else "unknown"
+        variety_name = variety_uri.split(":")[-1] if variety_uri else None
 
-        patch_body = {
-            "hasAgriCrop": {"type": "Relationship", "object": crop_uri},
-            "hasAgriCropVariety": {"type": "Relationship", "object": variety_uri},
-            "management": {"type": "Property", "value": management},
-            "cropSeasonStart": {"type": "Property", "value": {"@type": "Date", "@value": season_start}},
-            "cropSeasonEnd": {"type": "Property", "value": {"@type": "Date", "@value": season_end}},
+        # Build entity ID for the per-parcel AgriCrop
+        new_crop_id = f"urn:ngsi-ld:AgriCrop:{tenant_id}:{parcel_short}:{season_year}"
+
+        # Build the AgriCrop entity body
+        now = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+        agri_crop_body = {
+            "id": new_crop_id,
+            "type": "AgriCrop",
+            "refParent": {
+                "type": "Relationship",
+                "object": parcel_id,
+            },
+            "hasAgriParcel": {
+                "type": "Relationship",
+                "object": parcel_id,
+            },
+            "species": {
+                "type": "Property",
+                "value": crop_eppo,
+            },
+            "plantingDate": {
+                "type": "Property",
+                "value": {"@type": "Date", "@value": season_start},
+            },
+            "harvestDate": {
+                "type": "Property",
+                "value": {"@type": "Date", "@value": season_end},
+            },
+            "management": {
+                "type": "Property",
+                "value": management,
+            },
+            "status": {
+                "type": "Property",
+                "value": "active",
+            },
+            "dateCreated": {
+                "type": "Property",
+                "value": {"@type": "DateTime", "@value": now},
+            },
         }
+        if variety_name:
+            agri_crop_body["variety"] = {
+                "type": "Property",
+                "value": variety_name,
+            }
 
+        client = OrionClient(tenant_id=tenant_id)
         try:
-            async with httpx.AsyncClient(timeout=10.0) as client:
-                resp = await client.patch(
-                    f"{orion.base}/ngsi-ld/v1/entities/{parcel_id}/attrs",
-                    json=patch_body,
-                    headers={
-                        "Content-Type": "application/ld+json",
-                        "NGSILD-Tenant": tenant_id,
-                        "Fiware-Service": tenant_id,
-                        "Fiware-ServicePath": "/",
-                    },
-                )
-                if resp.status_code in (204, 200):
-                    return {
-                        "status": "assigned",
-                        "parcel_id": parcel_id,
-                        "variety": variety_uri.split(":")[-1],
-                        "crop": crop_uri.split(":")[-1],
-                        "management": management,
-                    }
-                elif resp.status_code == 404:
-                    raise HTTPException(status_code=404, detail=f"Parcel not found: {parcel_id}")
+            # Step 1: Create the AgriCrop entity (@context injected by OrionClient)
+            try:
+                result = await client.create_entity(agri_crop_body)
+            except httpx.HTTPStatusError as e:
+                if e.response.status_code == 409:
+                    # Entity already exists — upsert via PATCH attrs
+                    await client.update_entity_attrs(new_crop_id, {
+                        k: v for k, v in agri_crop_body.items()
+                        if k not in ("id", "type", "@context", "dateCreated")
+                    })
                 else:
-                    raise HTTPException(status_code=502, detail=f"Orion-LD returned {resp.status_code}")
+                    raise HTTPException(
+                        status_code=502,
+                        detail=f"Orion-LD create entity failed: {e.response.status_code} {e.response.text[:200]}",
+                    )
+
+            # Step 2: Read existing hasAgriCrop on the parcel (for harvest marking)
+            old_crop_id = None
+            try:
+                parcel_entity = await client.get_entity(parcel_id)
+                old_crop_rel = (
+                    parcel_entity.get("hasAgriCrop", {}).get("object")
+                    or parcel_entity.get("refAgriCrop", {}).get("object")
+                    or parcel_entity.get("hasAgriCrop")
+                    or parcel_entity.get("refAgriCrop")
+                )
+                if old_crop_rel and isinstance(old_crop_rel, str) and old_crop_rel != new_crop_id:
+                    old_crop_id = old_crop_rel
+            except Exception:
+                pass  # non-blocking: best-effort harvest marking
+
+            # Step 3: Mark old crop as harvested
+            if old_crop_id:
+                try:
+                    await client.update_entity_attrs(old_crop_id, {
+                        "status": {"type": "Property", "value": "harvested"},
+                    })
+                except Exception:
+                    pass  # non-blocking
+
+            # Step 4: Patch the AgriParcel with new crop assignment
+            patch_body = {
+                "hasAgriCrop": {"type": "Relationship", "object": new_crop_id},
+                "hasAgriCropVariety": {"type": "Relationship", "object": variety_uri},
+                "management": {"type": "Property", "value": management},
+                "cropSeasonStart": {
+                    "type": "Property",
+                    "value": {"@type": "Date", "@value": season_start},
+                },
+                "cropSeasonEnd": {
+                    "type": "Property",
+                    "value": {"@type": "Date", "@value": season_end},
+                },
+            }
+            await client.update_entity_attrs(parcel_id, patch_body)
+
+            return {
+                "status": "assigned",
+                "parcel_id": parcel_id,
+                "crop": crop_eppo,
+                "variety": variety_name,
+                "management": management,
+                "entity_id": new_crop_id,
+            }
+
+        except httpx.HTTPStatusError as e:
+            if e.response.status_code == 404:
+                raise HTTPException(status_code=404, detail=f"Parcel not found: {parcel_id}")
+            raise HTTPException(status_code=502, detail=f"Orion-LD error: {e.response.status_code}")
         except httpx.ConnectError:
             raise HTTPException(status_code=502, detail="Orion-LD unreachable")
+        finally:
+            await client.close()
 
     async def get_crop_context(
         self, parcel_id: str, tenant_id: str = "", gdd: float | None = None
