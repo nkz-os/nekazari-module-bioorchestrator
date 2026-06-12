@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { useParcelSelector } from "../hooks/useParcelSelector";
+import { useParcelContext } from '../context/ParcelContext';
+import { Card, Button, Stack, EmptyState, Skeleton } from '@nekazari/ui-kit';
+import { AlertTriangle, Activity } from 'lucide-react';
 
 interface CropItem { eppo_code: string; scientific_name: string; }
 interface ComparisonRow {
@@ -17,7 +19,7 @@ interface Result { comparisons: ComparisonRow[]; ranking: { by_margin: string[];
 
 export default function CropComparator() {
   const { t } = useTranslation();
-  const { parcels, selected: selectedParcel, setSelected: setSelectedParcel } = useParcelSelector();
+  const { selectedParcel, loading: parcelLoading, error: parcelError } = useParcelContext();
   const [availableCrops, setAvailableCrops] = useState<CropItem[]>([]);
   const [selectedCrops, setSelectedCrops] = useState<Set<string>>(new Set());
   const [seedPrice, setSeedPrice] = useState(1);
@@ -59,24 +61,31 @@ export default function CropComparator() {
 
   const pricesAreDefault = seedPrice === 1 && harvestPrice === 1 && operationCost === 1;
 
-  return (
-    <div>
-      <h2 className="text-nkz-lg font-bold text-nkz-text-primary mb-4">📊 {t("comparator.title")}</h2>
+  if (parcelLoading) return <Skeleton variant="rect" height="200px" />;
+  if (parcelError) return <EmptyState icon={<AlertTriangle className="w-8 h-8" />} title={parcelError} />;
+  if (!selectedParcel) return <EmptyState icon={<Activity className="w-8 h-8" />} title={t('app.selectParcelPrompt')} />;
 
-      <div style={{ marginBottom: 16, maxWidth: 400 }}>
-        <select value={selectedParcel} onChange={e => setSelectedParcel(e.target.value)} style={{ width: "100%", padding: 8 }}>
-          <option value="">{t("comparator.selectParcel")}</option>
-          {parcels.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-        </select>
+  return (
+    <Stack gap="section">
+      <div>
+        <h2 className="text-nkz-lg font-bold text-nkz-text-primary mb-1">📊 {t("comparator.title")}</h2>
+        <p className="text-nkz-text-muted text-sm">{t("comparator.subtitle")}</p>
       </div>
 
       {/* Crop selector */}
-      <div style={{ marginBottom: 16 }}>
-        <strong>{t("comparator.selectCrops")}:</strong>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 8, maxWidth: 600 }}>
+      <div>
+        <strong className="text-nkz-sm block mb-nkz-inline">{t("comparator.selectCrops")}:</strong>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
           {availableCrops.slice(0, 12).map(c => (
-            <label key={c.eppo_code} style={{ padding: "4px 10px", background: selectedCrops.has(c.eppo_code) ? "#d4edda" : "#f5f5f5", borderRadius: 6, fontSize: 13, cursor: "pointer", border: "1px solid #ddd" }}>
-              <input type="checkbox" checked={selectedCrops.has(c.eppo_code)} onChange={() => toggleCrop(c.eppo_code)} style={{ marginRight: 4 }} />
+            <label
+              key={c.eppo_code}
+              className={`inline-flex items-center px-2 py-1 rounded-nkz-md border text-nkz-xs cursor-pointer ${
+                selectedCrops.has(c.eppo_code)
+                  ? 'bg-nkz-positive-soft border-nkz-positive'
+                  : 'bg-nkz-surface border-nkz-border'
+              }`}
+            >
+              <input type="checkbox" checked={selectedCrops.has(c.eppo_code)} onChange={() => toggleCrop(c.eppo_code)} className="mr-1" />
               {c.eppo_code} ({c.scientific_name?.slice(0, 20) || ""})
             </label>
           ))}
@@ -84,76 +93,91 @@ export default function CropComparator() {
       </div>
 
       {/* Economic inputs */}
-      <div style={{ marginBottom: 16, padding: 12, background: "#f9f9f9", borderRadius: 8, maxWidth: 500 }}>
-        <strong>{t("comparator.economicInputs")}</strong> <span style={{ fontSize: 11, color: "#999" }}>({t("comparator.optional")})</span>
+      <Card padding="md">
+        <strong className="text-nkz-sm">{t("comparator.economicInputs")}</strong>{" "}
+        <span className="text-nkz-xs text-nkz-text-muted">({t("comparator.optional")})</span>
         <div style={{ display: "flex", gap: 12, marginTop: 8, flexWrap: "wrap" }}>
-          <div><label style={{ fontSize: 12 }}>{t("comparator.seedPrice")} (€/ha)</label><br /><input type="number" value={seedPrice} onChange={e => setSeedPrice(Number(e.target.value))} style={{ width: 100, padding: 4 }} /></div>
-          <div><label style={{ fontSize: 12 }}>{t("comparator.harvestPrice")} (€/t)</label><br /><input type="number" value={harvestPrice} onChange={e => setHarvestPrice(Number(e.target.value))} style={{ width: 100, padding: 4 }} /></div>
-          <div><label style={{ fontSize: 12 }}>{t("comparator.operationCost")} (€/op)</label><br /><input type="number" value={operationCost} onChange={e => setOperationCost(Number(e.target.value))} style={{ width: 100, padding: 4 }} /></div>
+          <div>
+            <label className="text-nkz-xs">{t("comparator.seedPrice")} (€/ha)</label><br />
+            <input type="number" value={seedPrice} onChange={e => setSeedPrice(Number(e.target.value))} className="w-24 px-2 py-1 border border-nkz-border rounded-nkz-sm text-nkz-sm" />
+          </div>
+          <div>
+            <label className="text-nkz-xs">{t("comparator.harvestPrice")} (€/t)</label><br />
+            <input type="number" value={harvestPrice} onChange={e => setHarvestPrice(Number(e.target.value))} className="w-24 px-2 py-1 border border-nkz-border rounded-nkz-sm text-nkz-sm" />
+          </div>
+          <div>
+            <label className="text-nkz-xs">{t("comparator.operationCost")} (€/op)</label><br />
+            <input type="number" value={operationCost} onChange={e => setOperationCost(Number(e.target.value))} className="w-24 px-2 py-1 border border-nkz-border rounded-nkz-sm text-nkz-sm" />
+          </div>
         </div>
-      </div>
+      </Card>
 
-      <button onClick={handleCompare} disabled={loading || !selectedParcel || selectedCrops.size === 0}
-              style={{ padding: "8px 20px", background: "#4caf50", color: "white", border: "none", borderRadius: 4, cursor: "pointer", marginBottom: 16 }}>
-        {loading ? "⏳" : t("comparator.compare")}
-      </button>
-      {error && <div style={{ color: "red", marginBottom: 12 }}>{error}</div>}
+      <Button
+        onClick={handleCompare}
+        disabled={loading || !selectedParcel || selectedCrops.size === 0}
+        variant="primary"
+        loading={loading}
+      >
+        {t("comparator.compare")}
+      </Button>
+
+      {error && <div className="text-nkz-negative text-nkz-sm">{error}</div>}
 
       {result && (
         <div style={{ overflowX: "auto" }}>
           {pricesAreDefault && (
-            <div style={{ padding: 8, background: "#fff3cd", borderRadius: 6, marginBottom: 12, fontSize: 13, maxWidth: 500 }}>
+            <div className="px-3 py-2 bg-nkz-warning-soft rounded-nkz-md text-nkz-xs border border-nkz-warning max-w-xl mb-nkz-stack">
               ⚠️ {t("comparator.defaultPricesNote")}
             </div>
           )}
-          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+          <table className="w-full border-collapse text-nkz-xs">
             <thead>
-              <tr style={{ background: "#f5f5f5", textAlign: "left" }}>
-                <th style={{ padding: 8 }}>{t("comparator.crop")}</th>
-                <th style={{ padding: 8 }}>{t("comparator.variety")}</th>
-                <th style={{ padding: 8 }}>Yield (kg/ha)</th>
-                <th style={{ padding: 8 }}>C (tCO₂e/ha)</th>
-                <th style={{ padding: 8 }}>N fix</th>
-                <th style={{ padding: 8 }}>{pricesAreDefault ? "Score*" : "Margin (€/ha)"}</th>
-                <th style={{ padding: 8 }}>{t("comparator.score")}</th>
-                <th style={{ padding: 8 }}>{t("comparator.soil")}</th>
-                <th style={{ padding: 8 }}>🌾 Forage</th>
-                <th style={{ padding: 8 }}>🏷️ EU</th>
+              <tr className="bg-nkz-surface text-left">
+                <th className="p-2">{t("comparator.crop")}</th>
+                <th className="p-2">{t("comparator.variety")}</th>
+                <th className="p-2">Yield (kg/ha)</th>
+                <th className="p-2">C (tCO₂e/ha)</th>
+                <th className="p-2">N fix</th>
+                <th className="p-2">{pricesAreDefault ? "Score*" : "Margin (€/ha)"}</th>
+                <th className="p-2">{t("comparator.score")}</th>
+                <th className="p-2">{t("comparator.soil")}</th>
+                <th className="p-2">🌾 Forage</th>
+                <th className="p-2">🏷️ EU</th>
               </tr>
             </thead>
             <tbody>
               {result.comparisons.map((c, i) => (
-                <tr key={c.crop} style={{ borderBottom: "1px solid #eee", background: i === 0 ? "#f0faf0" : "transparent" }}>
-                  <td style={{ padding: 8, fontWeight: 600 }}>{c.crop}</td>
-                  <td style={{ padding: 8 }}>{c.best_variety || "—"}</td>
-                  <td style={{ padding: 8 }}>{c.agronomics.expected_yield_kg_ha.toLocaleString()}</td>
-                  <td style={{ padding: 8 }}>{c.environmental.carbon_fixed_tco2e_ha}</td>
-                  <td style={{ padding: 8, fontSize: 12 }}>
+                <tr key={c.crop} className={`border-b border-nkz-border ${i === 0 ? 'bg-nkz-positive-soft' : ''}`}>
+                  <td className="p-2 font-semibold">{c.crop}</td>
+                  <td className="p-2">{c.best_variety || "—"}</td>
+                  <td className="p-2">{c.agronomics.expected_yield_kg_ha.toLocaleString()}</td>
+                  <td className="p-2">{c.environmental.carbon_fixed_tco2e_ha}</td>
+                  <td className="p-2 text-nkz-xs">
                     {c.environmental.n_fixation_kg_ha > 0 ? `+${c.environmental.n_fixation_kg_ha}` : "—"}
                     {c.environmental.n_fixation_source && (
-                      <sup style={{ fontSize: 9, color: "#999", marginLeft: 2 }} title={c.environmental.n_fixation_source}>
+                      <sup className="text-[9px] text-nkz-text-muted ml-0.5" title={c.environmental.n_fixation_source}>
                         {c.environmental.n_fixation_source.includes("AgriKnowledge") ? "🧪" :
                          c.environmental.n_fixation_source.includes("EPPO") ? "🔬" :
                          c.environmental.n_fixation_source.includes("measured") ? "📏" : "📋"}
                       </sup>
                     )}
                   </td>
-                  <td style={{ padding: 8 }}>{pricesAreDefault ? c.agronomics.expected_yield_kg_ha.toLocaleString() : `${c.economic.net_margin_eur_ha.toLocaleString()} €`}</td>
-                  <td style={{ padding: 8 }}>{c.composite_score ? "⭐".repeat(Math.min(5, Math.round(c.composite_score / 20))) : ""}</td>
-                  <td style={{ padding: 8 }}>{c.soil_suitability.overall === "suitable" ? "✅" : "⚠️"}</td>
-                  <td style={{ padding: 8, fontSize: 12 }}>
+                  <td className="p-2">{pricesAreDefault ? c.agronomics.expected_yield_kg_ha.toLocaleString() : `${c.economic.net_margin_eur_ha.toLocaleString()} €`}</td>
+                  <td className="p-2">{c.composite_score ? "⭐".repeat(Math.min(5, Math.round(c.composite_score / 20))) : ""}</td>
+                  <td className="p-2">{c.soil_suitability.overall === "suitable" ? "✅" : "⚠️"}</td>
+                  <td className="p-2 text-nkz-xs">
                     {c.forage_value?.crude_protein_pct != null ? `${c.forage_value.crude_protein_pct}% CP` : "—"}
                   </td>
-                  <td style={{ padding: 8, fontSize: 12 }}>
+                  <td className="p-2 text-nkz-xs">
                     {(c.market_maturity?.registered_varieties || 0) > 0 ? c.market_maturity!.registered_varieties.toLocaleString() : "—"}
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
-          {pricesAreDefault && <div style={{ fontSize: 11, color: "#999", marginTop: 4 }}>* {t("comparator.scoreNote")}</div>}
+          {pricesAreDefault && <div className="text-nkz-xs text-nkz-text-muted mt-1">* {t("comparator.scoreNote")}</div>}
         </div>
       )}
-    </div>
+    </Stack>
   );
 }

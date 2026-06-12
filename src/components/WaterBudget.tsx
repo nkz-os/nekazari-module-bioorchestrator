@@ -1,6 +1,8 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useParcelSelector } from "../hooks/useParcelSelector";
+import { useParcelContext } from '../context/ParcelContext';
+import { Card, Stack, EmptyState, Skeleton, Spinner, ProgressBar } from '@nekazari/ui-kit';
+import { AlertTriangle, Activity } from 'lucide-react';
 import { getCropContext, CropContextResponse } from "../services/api";
 
 interface BudgetData {
@@ -14,7 +16,7 @@ interface BudgetData {
 
 export default function WaterBudget() {
   const { t } = useTranslation();
-  const { parcels, selected: selectedParcel, setSelected: setSelectedParcel } = useParcelSelector();
+  const { selectedParcel, loading: parcelLoading, error: parcelError } = useParcelContext();
   const [ctx, setCtx] = useState<CropContextResponse | null>(null);
   const [budget, setBudget] = useState<BudgetData | null>(null);
   const [loading, setLoading] = useState(false);
@@ -36,45 +38,106 @@ export default function WaterBudget() {
     })();
   }, [selectedParcel]);
 
-  const gauge = (label: string, value: number, max: number, unit: string, note: string) => (
-    <div style={{ marginBottom: 12 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13 }}>
-        <span>{label}</span><span>{value} {unit}</span>
-      </div>
-      <div style={{ background: "#eee", borderRadius: 4, height: 8, overflow: "hidden" }}>
-        <div style={{ background: "#4caf50", height: 8, width: `${Math.min(100, (value / max) * 100)}%` }} />
-      </div>
-      <div style={{ fontSize: 11, color: "#999" }}>{note}</div>
-    </div>
-  );
+  function gaugeIntent(value: number, max: number): 'positive' | 'warning' | 'negative' | 'default' {
+    const pct = max > 0 ? (value / max) * 100 : 0;
+    if (pct > 60) return 'positive';
+    if (pct > 30) return 'warning';
+    return 'negative';
+  }
+
+  if (parcelLoading) return <Skeleton variant="rect" height="200px" />;
+  if (parcelError) return <EmptyState icon={<AlertTriangle className="w-8 h-8" />} title={parcelError} />;
+  if (!selectedParcel) return <EmptyState icon={<Activity className="w-8 h-8" />} title={t('app.selectParcelPrompt')} />;
 
   return (
-    <div>
-      <h2 className="text-nkz-lg font-bold text-nkz-text-primary mb-4">💧 {t("waterBudget.title")}</h2>
-      <div style={{ marginBottom: 16, maxWidth: 400 }}>
-        <select value={selectedParcel} onChange={e => setSelectedParcel(e.target.value)} style={{ width: "100%", padding: 8 }}>
-          <option value="">{t("waterBudget.selectParcel")}</option>
-          {parcels.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-        </select>
+    <Stack gap="section">
+      <div>
+        <h2 className="text-nkz-lg font-bold text-nkz-text-primary mb-1">💧 {t("waterBudget.title")}</h2>
+        <p className="text-nkz-text-muted text-sm">{t("waterBudget.subtitle")}</p>
       </div>
-      {loading && <div style={{ padding: 20, textAlign: "center" }}>⏳ {t("common.loading")}</div>}
-      {error && <div style={{ padding: 20, background: "#f8d7da", borderRadius: 8, maxWidth: 500 }}>{error}</div>}
-      {budget && (
-        <div style={{ maxWidth: 600 }}>
-          <div style={{ marginBottom: 16, fontSize: 14, color: "#666" }}>{budget.week_start} → {budget.week_end}</div>
-          {gauge(t("waterBudget.availableWater"), budget.current_moisture_estimate_mm, budget.soil_awc_mm, "mm", `AWC: ${budget.soil_awc_mm}mm`)}
-          {gauge(t("waterBudget.etc"), budget.etc_weekly_mm, 50, "mm", `Kc: ${budget.kc} (${budget.kc_stage})`)}
-          {gauge(t("waterBudget.rainfall"), budget.forecast_rainfall_mm, 50, "mm", t("waterBudget.forecast"))}
-          <div style={{ padding: 16, background: budget.deficit_mm > 20 ? "#f8d7da" : budget.deficit_mm > 0 ? "#fff3cd" : "#d4edda", borderRadius: 8, marginBottom: 16 }}>
-            <strong>{t("waterBudget.deficit")}: {budget.deficit_mm} mm</strong>
-            {budget.irrigation_required_mm > 0 && (
-              <div style={{ marginTop: 8 }}>{t("waterBudget.irrigationRequired")}: <strong>{budget.irrigation_required_mm} mm = {budget.irrigation_required_m3_ha} m³/ha</strong></div>
-            )}
-            <div style={{ marginTop: 8, fontSize: 14 }}>{budget.recommendation}</div>
-          </div>
-          <div style={{ fontSize: 11, color: "#999" }}>{t("waterBudget.confidence")}: {budget.confidence} — {budget.confidence_notes}</div>
+
+      {loading && (
+        <div className="flex items-center gap-2 text-nkz-text-muted text-nkz-sm p-nkz-stack">
+          <Spinner size="md" /> {t("common.loading")}
         </div>
       )}
-    </div>
+      {error && (
+        <div className="px-nkz-stack py-nkz-inline bg-nkz-negative-soft border border-nkz-negative rounded-nkz-md text-nkz-sm text-nkz-negative max-w-xl">
+          {error}
+        </div>
+      )}
+
+      {budget && (
+        <Stack gap="stack">
+          <div className="text-nkz-sm text-nkz-text-muted">{budget.week_start} → {budget.week_end}</div>
+
+          {/* Available water gauge */}
+          <div>
+            <div className="flex justify-between text-nkz-xs mb-1">
+              <span>{t("waterBudget.availableWater")}</span>
+              <span>{budget.current_moisture_estimate_mm} mm</span>
+            </div>
+            <ProgressBar
+              value={budget.soil_awc_mm > 0 ? Math.min(100, (budget.current_moisture_estimate_mm / budget.soil_awc_mm) * 100) : 0}
+              intent={gaugeIntent(budget.current_moisture_estimate_mm, budget.soil_awc_mm)}
+              size="sm"
+            />
+            <div className="text-nkz-xs text-nkz-text-muted mt-0.5">AWC: {budget.soil_awc_mm}mm</div>
+          </div>
+
+          {/* ETC gauge */}
+          <div>
+            <div className="flex justify-between text-nkz-xs mb-1">
+              <span>{t("waterBudget.etc")}</span>
+              <span>{budget.etc_weekly_mm} mm</span>
+            </div>
+            <ProgressBar
+              value={Math.min(100, (budget.etc_weekly_mm / 50) * 100)}
+              intent={budget.etc_weekly_mm > 35 ? 'negative' : budget.etc_weekly_mm > 20 ? 'warning' : 'positive'}
+              size="sm"
+            />
+            <div className="text-nkz-xs text-nkz-text-muted mt-0.5">Kc: {budget.kc} ({budget.kc_stage})</div>
+          </div>
+
+          {/* Rainfall gauge */}
+          <div>
+            <div className="flex justify-between text-nkz-xs mb-1">
+              <span>{t("waterBudget.rainfall")}</span>
+              <span>{budget.forecast_rainfall_mm} mm</span>
+            </div>
+            <ProgressBar
+              value={Math.min(100, (budget.forecast_rainfall_mm / 50) * 100)}
+              intent={budget.forecast_rainfall_mm > 30 ? 'positive' : budget.forecast_rainfall_mm > 10 ? 'warning' : 'negative'}
+              size="sm"
+            />
+            <div className="text-nkz-xs text-nkz-text-muted mt-0.5">{t("waterBudget.forecast")}</div>
+          </div>
+
+          {/* Deficit / recommendation */}
+          <Card
+            padding="md"
+            className={
+              budget.deficit_mm > 20
+                ? 'bg-nkz-negative-soft border-nkz-negative'
+                : budget.deficit_mm > 0
+                ? 'bg-nkz-warning-soft border-nkz-warning'
+                : 'bg-nkz-positive-soft border-nkz-positive'
+            }
+          >
+            <strong>{t("waterBudget.deficit")}: {budget.deficit_mm} mm</strong>
+            {budget.irrigation_required_mm > 0 && (
+              <div className="mt-2">
+                {t("waterBudget.irrigationRequired")}: <strong>{budget.irrigation_required_mm} mm = {budget.irrigation_required_m3_ha} m³/ha</strong>
+              </div>
+            )}
+            <div className="mt-2 text-nkz-sm">{budget.recommendation}</div>
+          </Card>
+
+          <div className="text-nkz-xs text-nkz-text-muted">
+            {t("waterBudget.confidence")}: {budget.confidence} — {budget.confidence_notes}
+          </div>
+        </Stack>
+      )}
+    </Stack>
   );
 }
