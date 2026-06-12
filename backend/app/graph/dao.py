@@ -935,6 +935,8 @@ class GraphDAO:
         rainfall_max: float | None = None,
         top_n: int = 10,
         filter_soil_suitability: bool = False,
+        parcel_id: str | None = None,
+        tenant_id: str = "",
     ) -> dict:
         """Extrapolate best varieties for a target environment.
 
@@ -1116,6 +1118,20 @@ class GraphDAO:
                     filtered_ranked.append(v)
                 ranked = filtered_ranked
 
+        # ── Weather-based scoring adjustment ─────────────────────
+        weather_stats = None
+        penalties_applied: dict = {}
+        if parcel_id:
+            weather_stats = await self.fetch_parcel_weather_stats(parcel_id, tenant_id)
+            if weather_stats:
+                from app.graph.recommendation import apply_weather_penalties
+                ranked, weather_stats, penalties_applied = await apply_weather_penalties(
+                    weather_stats=weather_stats,
+                    ranked_varieties=ranked,
+                    crop=crop,
+                    dao=self,
+                )
+
         return {
             "target_environment": target_env,
             "similar_sites": [s["name"] for s in similar_sites_result],
@@ -1124,6 +1140,8 @@ class GraphDAO:
             "excluded_by_soil": excluded_by_soil,
             "soil_filter_applied": filter_soil_suitability and target_ph is not None,
             "target_soil": {"ph": target_ph} if filter_soil_suitability else None,
+            "weather_stats": weather_stats,
+            "weather_penalties": penalties_applied if weather_stats else None,
             "data_quality": {
                 "total_trials_analyzed": sum(v["trial_count"] for v in ranked),
                 "unique_varieties": len(ranked),
@@ -1608,6 +1626,48 @@ class GraphDAO:
                         return round(total_awc, 1) if total_awc > 0 else None
         except Exception:
             pass
+        return None
+
+    @staticmethod
+    async def fetch_parcel_weather_stats(parcel_id: str, tenant_id: str = "") -> dict | None:
+        """Fetch weatherStats from an AgriParcel entity in Orion-LD.
+
+        Queries Orion-LD for the parcel entity with keyValues format
+        and extracts the weatherStats attribute written by Weather-Map.
+
+        Returns:
+            Parsed weather stats dict (temperature_avg, water_balance, eto, frost_risk),
+            or None if the parcel has no weatherStats or Orion-LD is unreachable.
+        """
+        try:
+            import httpx
+            from app.core.config import settings
+
+            headers = {
+                "NGSILD-Tenant": tenant_id,
+                "Fiware-Service": tenant_id,
+                "Fiware-ServicePath": "/",
+            }
+
+            orion_url = settings.orion_ld_url
+            url = f"{orion_url}/ngsi-ld/v1/entities/{parcel_id}"
+
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                resp = await client.get(
+                    url,
+                    params={"options": "keyValues"},
+                    headers=headers,
+                )
+                if resp.status_code == 200:
+                    data = resp.json()
+                    weather_stats = data.get("weatherStats")
+                    if weather_stats is not None:
+                        return weather_stats
+        except Exception as exc:
+            logger.warning(
+                "Failed to fetch weatherStats for parcel %s: %s",
+                parcel_id, exc,
+            )
         return None
 
     @staticmethod
