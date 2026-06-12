@@ -1718,15 +1718,16 @@ class GraphDAO:
             try:
                 parcel_entity = await client.get_entity(parcel_id)
                 old_crop_rel = (
-                    parcel_entity.get("hasAgriCrop", {}).get("object")
-                    or parcel_entity.get("refAgriCrop", {}).get("object")
-                    or parcel_entity.get("hasAgriCrop")
-                    or parcel_entity.get("refAgriCrop")
+                    _resolve_relationship(parcel_entity, "hasAgriCrop")
+                    or _resolve_relationship(parcel_entity, "refAgriCrop")
                 )
-                if old_crop_rel and isinstance(old_crop_rel, str) and old_crop_rel != new_crop_id:
+                if old_crop_rel and old_crop_rel != new_crop_id:
                     old_crop_id = old_crop_rel
+            except httpx.HTTPStatusError as e:
+                if e.response.status_code != 404:
+                    logger.warning("Failed to read parcel for harvest marking: %s", e)
             except Exception:
-                pass  # non-blocking: best-effort harvest marking
+                logger.exception("Unexpected error reading parcel for harvest marking")
 
             # Step 3: Mark old crop as harvested
             if old_crop_id:
@@ -1735,7 +1736,7 @@ class GraphDAO:
                         "status": {"type": "Property", "value": "harvested"},
                     })
                 except Exception:
-                    pass  # non-blocking
+                    logger.warning("Failed to mark old crop %s as harvested", old_crop_id)
 
             # Step 4: Patch the AgriParcel with new crop assignment
             patch_body = {

@@ -31,6 +31,7 @@ async def test_assign_crop_creates_entity():
         assert result["status"] == "assigned"
         assert result["crop"] == "TRZAX"
         assert result["entity_id"] == "urn:ngsi-ld:AgriCrop:test-tenant:test-parcel:2026"
+        MockClient.assert_called_once_with(tenant_id="test-tenant")
         instance.create_entity.assert_called_once()
         # Should patch both the parcel (hasAgriCrop) and NOT mark old crop (no old crop)
         # update_entity_attrs should be called for the parcel patch
@@ -53,7 +54,7 @@ async def test_assign_crop_marks_old_harvested():
         instance = MockClient.return_value
         instance.create_entity = AsyncMock(return_value={"id": "new-id", "status": "created"})
         instance.get_entity = AsyncMock(return_value={
-            "hasAgriCrop": {"object": old_crop_id},
+            "hasAgriCrop": {"type": "Relationship", "object": old_crop_id},
         })
         instance.update_entity_attrs = AsyncMock()
         instance.close = AsyncMock()
@@ -68,6 +69,7 @@ async def test_assign_crop_marks_old_harvested():
             tenant_id="test-tenant",
         )
 
+        MockClient.assert_called_once_with(tenant_id="test-tenant")
         # Old crop should have been patched with status=harvested
         old_crop_calls = [c for c in instance.update_entity_attrs.call_args_list
                          if c[0][0] == old_crop_id]
@@ -110,4 +112,10 @@ async def test_assign_crop_409_upserts():
         # Should have called update_entity_attrs for the existing entity
         existing_crop_calls = [c for c in instance.update_entity_attrs.call_args_list
                               if c[0][0] == result["entity_id"]]
-        assert len(existing_crop_calls) >= 1
+        assert len(existing_crop_calls) == 1
+        patch_body = existing_crop_calls[0][0][1]
+        assert "id" not in patch_body
+        assert "type" not in patch_body
+        assert "dateCreated" not in patch_body
+        assert patch_body["species"]["value"] == "TRZAX"
+        MockClient.assert_called_once_with(tenant_id="test-tenant")
