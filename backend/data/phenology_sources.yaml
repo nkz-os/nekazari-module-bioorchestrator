@@ -1,0 +1,760 @@
+# Phenology Parameters — Seed Data
+#
+# Sources:
+#   FAO-56: Allen et al. (1998). Crop evapotranspiration.
+#           https://doi.org/10.1016/B978-0-12-813995-6.00008-X
+#
+# Graph model:
+#   (:Species)-[:HAS_STAGE]->(:PhenologyStage)-[:HAS_PARAMETER]->(:PhenologyParams)
+#
+# This YAML is consumed by scripts/seed_phenology.py.
+#
+# NOTE on d1/d2 units:
+#   d1 = days from planting to stage onset
+#   d2 = days from planting to stage end
+
+stage_detection: {}
+
+species:
+  # ── Triticum aestivum (Wheat) ──────────────────────────────────────────
+  - name: "wheat"
+    scientific_name: "Triticum aestivum"
+    agrovoc_uri: "http://aims.fao.org/aos/agrovoc/c_7951"
+    stages:
+      - name: "initial"
+        description: "From planting to 10% ground cover"
+        parameters:
+          - kc: 0.30
+            d1: 15
+            d2: 45
+            mds_ref: 80
+            source:
+              doi: "10.1016/B978-0-12-813995-6.00008-X"
+              short: "FAO-56"
+              author: "Allen et al."
+              year: 1998
+              institution: "FAO"
+              method: "FAO-56 Table 12"
+              conditions: "Semi-arid, no stress"
+      - name: "development"
+        description: "From 10% ground cover to effective full cover"
+        parameters:
+          - kc: 0.70
+            d1: 45
+            d2: 105
+            mds_ref: 120
+            source:
+              doi: "10.1016/B978-0-12-813995-6.00008-X"
+              short: "FAO-56"
+              author: "Allen et al."
+              year: 1998
+              institution: "FAO"
+              method: "FAO-56 Table 12"
+              conditions: "Semi-arid, no stress"
+      - name: "mid-season"
+        description: "From effective full cover to start of maturity"
+        parameters:
+          - kc: 1.15
+            d1: 105
+            d2: 180
+            mds_ref: 150
+            source:
+              doi: "10.1016/B978-0-12-813995-6.00008-X"
+              short: "FAO-56"
+              author: "Allen et al."
+              year: 1998
+              institution: "FAO"
+              method: "FAO-56 Table 12"
+              conditions: "Semi-arid, no stress"
+      - name: "late-season"
+        description: "From start of maturity to harvest or full senescence"
+        parameters:
+          - kc: 0.40
+            d1: 180
+            d2: 230
+            mds_ref: 100
+            source:
+              doi: "10.1016/B978-0-12-813995-6.00008-X"
+              short: "FAO-56"
+              author: "Allen et al."
+              year: 1998
+              institution: "FAO"
+              method: "FAO-56 Table 12"
+              conditions: "Semi-arid, no stress"
+
+  # ── Zea mays (Maize) ──────────────────────────────────────────────────
+  - name: "maize"
+    scientific_name: "Zea mays"
+    agrovoc_uri: "http://aims.fao.org/aos/agrovoc/c_8487"
+    stages:
+      - name: "initial"
+        parameters:
+          - kc: 0.30
+            d1: 15
+            d2: 50
+            mds_ref: 90
+            source:
+              doi: "10.1016/B978-0-12-813995-6.00008-X"
+              short: "FAO-56"
+              author: "Allen et al."
+              year: 1998
+              institution: "FAO"
+              method: "FAO-56 Table 12"
+      - name: "development"
+        parameters:
+          - kc: 0.70
+            d1: 50
+            d2: 120
+            mds_ref: 130
+            source:
+              doi: "10.1016/B978-0-12-813995-6.00008-X"
+              short: "FAO-56"
+              author: "Allen et al."
+              year: 1998
+              institution: "FAO"
+      - name: "mid-season"
+        parameters:
+          - kc: 1.20
+            d1: 120
+            d2: 210
+            mds_ref: 180
+            source:
+              doi: "10.1016/B978-0-12-813995-6.00008-X"
+              short: "FAO-56"
+              author: "Allen et al."
+              year: 1998
+              institution: "FAO"
+      - name: "late-season"
+        parameters:
+          - kc: 0.60
+            d1: 210
+            d2: 260
+            mds_ref: 110
+            source:
+              doi: "10.1016/B978-0-12-813995-6.00008-X"
+              short: "FAO-56"
+              author: "Allen et al."
+              year: 1998
+              institution: "FAO"
+
+  # ── Oryza sativa (Rice) ────────────────────────────────────────────────
+  - name: "rice"
+    scientific_name: "Oryza sativa"
+    agrovoc_uri: "http://aims.fao.org/aos/agrovoc/c_6639"
+    stages:
+      - name: "initial"
+        parameters:
+          - kc: 1.05
+            d1: 10
+            d2: 40
+            mds_ref: 70
+            source:
+              doi: "10.1016/B978-0-12-813995-6.00008-X"
+              short: "FAO-56"
+              author: "Allen et al."
+              year: 1998
+      - name: "development"
+        parameters:
+          - kc: 1.10
+            d1: 40
+            d2: 100
+            mds_ref: 110
+            source:
+              doi: "10.1016/B978-0-12-813995-6.00008-X"
+              short: "FAO-56"
+              author: "Allen et al."
+              year: 1998
+      - name: "mid-season"
+        parameters:
+          - kc: 1.20
+            d1: 100
+            d2: 200
+            mds_ref: 160
+            source:
+              doi: "10.1016/B978-0-12-813995-6.00008-X"
+              short: "FAO-56"
+              author: "Allen et al."
+              year: 1998
+      - name: "late-season"
+        parameters:
+          - kc: 0.80
+            d1: 200
+            d2: 250
+            mds_ref: 90
+            source:
+              doi: "10.1016/B978-0-12-813995-6.00008-X"
+              short: "FAO-56"
+              author: "Allen et al."
+              year: 1998
+
+  # ── Glycine max (Soybean) ──────────────────────────────────────────────
+  - name: "soybean"
+    scientific_name: "Glycine max"
+    agrovoc_uri: "http://aims.fao.org/aos/agrovoc/c_6706"
+    stages:
+      - name: "initial"
+        parameters:
+          - kc: 0.40
+            d1: 15
+            d2: 45
+            mds_ref: 85
+            source:
+              doi: "10.1016/B978-0-12-813995-6.00008-X"
+              short: "FAO-56"
+              author: "Allen et al."
+              year: 1998
+      - name: "development"
+        parameters:
+          - kc: 0.75
+            d1: 45
+            d2: 110
+            mds_ref: 125
+            source:
+              doi: "10.1016/B978-0-12-813995-6.00008-X"
+              short: "FAO-56"
+              author: "Allen et al."
+              year: 1998
+      - name: "mid-season"
+        parameters:
+          - kc: 1.15
+            d1: 110
+            d2: 190
+            mds_ref: 170
+            source:
+              doi: "10.1016/B978-0-12-813995-6.00008-X"
+              short: "FAO-56"
+              author: "Allen et al."
+              year: 1998
+      - name: "late-season"
+        parameters:
+          - kc: 0.50
+            d1: 190
+            d2: 240
+            mds_ref: 100
+            source:
+              doi: "10.1016/B978-0-12-813995-6.00008-X"
+              short: "FAO-56"
+              author: "Allen et al."
+              year: 1998
+
+  # ── Helianthus annuus (Sunflower) ──────────────────────────────────────
+  - name: "sunflower"
+    scientific_name: "Helianthus annuus"
+    agrovoc_uri: "http://aims.fao.org/aos/agrovoc/c_7205"
+    stages:
+      - name: "initial"
+        parameters:
+          - kc: 0.35
+            d1: 10
+            d2: 40
+            mds_ref: 75
+            source:
+              doi: "10.1016/B978-0-12-813995-6.00008-X"
+              short: "FAO-56"
+              author: "Allen et al."
+              year: 1998
+      - name: "development"
+        parameters:
+          - kc: 0.70
+            d1: 40
+            d2: 100
+            mds_ref: 120
+            source:
+              doi: "10.1016/B978-0-12-813995-6.00008-X"
+              short: "FAO-56"
+              author: "Allen et al."
+              year: 1998
+      - name: "mid-season"
+        parameters:
+          - kc: 1.15
+            d1: 100
+            d2: 185
+            mds_ref: 165
+            source:
+              doi: "10.1016/B978-0-12-813995-6.00008-X"
+              short: "FAO-56"
+              author: "Allen et al."
+              year: 1998
+      - name: "late-season"
+        parameters:
+          - kc: 0.35
+            d1: 185
+            d2: 235
+            mds_ref: 100
+            source:
+              doi: "10.1016/B978-0-12-813995-6.00008-X"
+              short: "FAO-56"
+              author: "Allen et al."
+              year: 1998
+
+  # ── Solanum tuberosum (Potato) ─────────────────────────────────────────
+  - name: "potato"
+    scientific_name: "Solanum tuberosum"
+    agrovoc_uri: "http://aims.fao.org/aos/agrovoc/c_7249"
+    stages:
+      - name: "initial"
+        parameters:
+          - kc: 0.50
+            d1: 15
+            d2: 50
+            mds_ref: 80
+            source:
+              doi: "10.1016/B978-0-12-813995-6.00008-X"
+              short: "FAO-56"
+              author: "Allen et al."
+              year: 1998
+      - name: "development"
+        parameters:
+          - kc: 0.75
+            d1: 50
+            d2: 115
+            mds_ref: 130
+            source:
+              doi: "10.1016/B978-0-12-813995-6.00008-X"
+              short: "FAO-56"
+              author: "Allen et al."
+              year: 1998
+      - name: "mid-season"
+        parameters:
+          - kc: 1.15
+            d1: 115
+            d2: 195
+            mds_ref: 160
+            source:
+              doi: "10.1016/B978-0-12-813995-6.00008-X"
+              short: "FAO-56"
+              author: "Allen et al."
+              year: 1998
+      - name: "late-season"
+        parameters:
+          - kc: 0.75
+            d1: 195
+            d2: 245
+            mds_ref: 100
+            source:
+              doi: "10.1016/B978-0-12-813995-6.00008-X"
+              short: "FAO-56"
+              author: "Allen et al."
+              year: 1998
+
+  # ── Medicago sativa (Alfalfa) ──────────────────────────────────────────
+  - name: "alfalfa"
+    scientific_name: "Medicago sativa"
+    agrovoc_uri: "http://aims.fao.org/aos/agrovoc/c_4682"
+    stages:
+      - name: "initial"
+        parameters:
+          - kc: 0.40
+            d1: 5
+            d2: 20
+            mds_ref: 60
+            source:
+              doi: "10.1016/B978-0-12-813995-6.00008-X"
+              short: "FAO-56"
+              author: "Allen et al."
+              year: 1998
+      - name: "development"
+        parameters:
+          - kc: 0.80
+            d1: 20
+            d2: 55
+            mds_ref: 100
+            source:
+              doi: "10.1016/B978-0-12-813995-6.00008-X"
+              short: "FAO-56"
+              author: "Allen et al."
+              year: 1998
+      - name: "mid-season"
+        parameters:
+          - kc: 1.15
+            d1: 55
+            d2: 110
+            mds_ref: 150
+            source:
+              doi: "10.1016/B978-0-12-813995-6.00008-X"
+              short: "FAO-56"
+              author: "Allen et al."
+              year: 1998
+      - name: "late-season"
+        parameters:
+          - kc: 0.90
+            d1: 110
+            d2: 140
+            mds_ref: 90
+            source:
+              doi: "10.1016/B978-0-12-813995-6.00008-X"
+              short: "FAO-56"
+              author: "Allen et al."
+              year: 1998
+
+  # ── Vitis vinifera (Grapevine) ─────────────────────────────────────────
+  - name: "grapevine"
+    scientific_name: "Vitis vinifera"
+    agrovoc_uri: "http://aims.fao.org/aos/agrovoc/c_8237"
+    stages:
+      - name: "initial"
+        parameters:
+          - kc: 0.30
+            d1: 10
+            d2: 40
+            mds_ref: 70
+            source:
+              doi: "10.1016/B978-0-12-813995-6.00008-X"
+              short: "FAO-56"
+              author: "Allen et al."
+              year: 1998
+      - name: "development"
+        parameters:
+          - kc: 0.70
+            d1: 40
+            d2: 100
+            mds_ref: 110
+            source:
+              doi: "10.1016/B978-0-12-813995-6.00008-X"
+              short: "FAO-56"
+              author: "Allen et al."
+              year: 1998
+      - name: "mid-season"
+        parameters:
+          - kc: 0.85
+            d1: 100
+            d2: 170
+            mds_ref: 140
+            source:
+              doi: "10.1016/B978-0-12-813995-6.00008-X"
+              short: "FAO-56"
+              author: "Allen et al."
+              year: 1998
+      - name: "late-season"
+        parameters:
+          - kc: 0.50
+            d1: 170
+            d2: 220
+            mds_ref: 90
+            source:
+              doi: "10.1016/B978-0-12-813995-6.00008-X"
+              short: "FAO-56"
+              author: "Allen et al."
+              year: 1998
+
+  # ── Olea europaea (Olive tree) ─────────────────────────────────────────
+  - name: "olive"
+    scientific_name: "Olea europaea"
+    agrovoc_uri: "http://aims.fao.org/aos/agrovoc/c_5323"
+    stages:
+      - name: "initial"
+        parameters:
+          - kc: 0.65
+            d1: 15
+            d2: 50
+            mds_ref: 90
+            source:
+              doi: "10.1016/B978-0-12-813995-6.00008-X"
+              short: "FAO-56"
+              author: "Allen et al."
+              year: 1998
+      - name: "development"
+        parameters:
+          - kc: 0.70
+            d1: 50
+            d2: 110
+            mds_ref: 130
+            source:
+              doi: "10.1016/B978-0-12-813995-6.00008-X"
+              short: "FAO-56"
+              author: "Allen et al."
+              year: 1998
+      - name: "mid-season"
+        parameters:
+          - kc: 0.70
+            d1: 110
+            d2: 185
+            mds_ref: 150
+            source:
+              doi: "10.1016/B978-0-12-813995-6.00008-X"
+              short: "FAO-56"
+              author: "Allen et al."
+              year: 1998
+      - name: "late-season"
+        parameters:
+          - kc: 0.65
+            d1: 185
+            d2: 230
+            mds_ref: 100
+            source:
+              doi: "10.1016/B978-0-12-813995-6.00008-X"
+              short: "FAO-56"
+              author: "Allen et al."
+              year: 1998
+
+# ── Heat Tolerance ─────────────────────────────────────────────────────────
+# Source: EcoCrop (FAO) + JRC MARS
+# t_min, t_opt_min, t_opt_max, t_max in Celsius
+# gdd_min/gdd_max: Growing Degree Days for full cycle
+
+crop_heat_tolerance:
+  wheat:
+    heat_damage_threshold_c: 35
+    frost_damage_threshold_c: -5
+    heat_accum_hours: 48
+    source:
+      short: "EcoCrop"
+      author: "FAO"
+      year: 2020
+  maize:
+    heat_damage_threshold_c: 40
+    frost_damage_threshold_c: -2
+    heat_accum_hours: 36
+    source:
+      short: "EcoCrop"
+      author: "FAO"
+      year: 2020
+  rice:
+    heat_damage_threshold_c: 38
+    frost_damage_threshold_c: 0
+    heat_accum_hours: 24
+    source:
+      short: "EcoCrop"
+      author: "FAO"
+      year: 2020
+  soybean:
+    heat_damage_threshold_c: 35
+    frost_damage_threshold_c: -2
+    heat_accum_hours: 36
+    source:
+      short: "EcoCrop"
+      author: "FAO"
+      year: 2020
+  sunflower:
+    heat_damage_threshold_c: 36
+    frost_damage_threshold_c: -3
+    heat_accum_hours: 36
+    source:
+      short: "EcoCrop"
+      author: "FAO"
+      year: 2020
+  potato:
+    heat_damage_threshold_c: 30
+    frost_damage_threshold_c: -1
+    heat_accum_hours: 24
+    source:
+      short: "EcoCrop"
+      author: "FAO"
+      year: 2020
+  alfalfa:
+    heat_damage_threshold_c: 35
+    frost_damage_threshold_c: -5
+    heat_accum_hours: 48
+    source:
+      short: "EcoCrop"
+      author: "FAO"
+      year: 2020
+  grapevine:
+    heat_damage_threshold_c: 38
+    frost_damage_threshold_c: -2
+    heat_accum_hours: 48
+    source:
+      short: "EcoCrop"
+      author: "FAO"
+      year: 2020
+  olive:
+    heat_damage_threshold_c: 38
+    frost_damage_threshold_c: -5
+    heat_accum_hours: 48
+    source:
+      short: "EcoCrop"
+      author: "FAO"
+      year: 2020
+
+# ── Nutrient Profiles ─────────────────────────────────────────────────────
+# Source: FAO Fertilizer Guidelines + CPVO variety trial standards
+# Units: kg/ha
+
+crop_nutrient_profiles:
+  wheat:
+    nitrogen:
+      initial:
+        uptake_kg_ha_day: null
+        total_kg_ha: 20
+      development:
+        uptake_kg_ha_day: 2.0
+        total_kg_ha: 60
+      mid-season:
+        uptake_kg_ha_day: 2.5
+        total_kg_ha: 120
+      late-season:
+        uptake_kg_ha_day: 0.5
+        total_kg_ha: 30
+    phosphorus:
+      initial:
+        uptake_kg_ha_day: null
+        total_kg_ha: 10
+      development:
+        uptake_kg_ha_day: 1.0
+        total_kg_ha: 30
+      mid-season:
+        uptake_kg_ha_day: 1.2
+        total_kg_ha: 60
+      late-season:
+        uptake_kg_ha_day: 0.2
+        total_kg_ha: 10
+    potassium:
+      initial:
+        uptake_kg_ha_day: null
+        total_kg_ha: 15
+      development:
+        uptake_kg_ha_day: 1.5
+        total_kg_ha: 40
+      mid-season:
+        uptake_kg_ha_day: 2.0
+        total_kg_ha: 80
+      late-season:
+        uptake_kg_ha_day: 0.3
+        total_kg_ha: 15
+    source:
+      short: "FAO Guidelines"
+      doi: "10.4060/cb0456en"
+  maize:
+    nitrogen:
+      initial:
+        uptake_kg_ha_day: null
+        total_kg_ha: 25
+      development:
+        uptake_kg_ha_day: 3.0
+        total_kg_ha: 80
+      mid-season:
+        uptake_kg_ha_day: 4.0
+        total_kg_ha: 160
+      late-season:
+        uptake_kg_ha_day: 0.5
+        total_kg_ha: 35
+    phosphorus:
+      initial:
+        uptake_kg_ha_day: null
+        total_kg_ha: 12
+      development:
+        uptake_kg_ha_day: 1.0
+        total_kg_ha: 35
+      mid-season:
+        uptake_kg_ha_day: 1.0
+        total_kg_ha: 55
+      late-season:
+        uptake_kg_ha_day: 0.2
+        total_kg_ha: 10
+    potassium:
+      initial:
+        uptake_kg_ha_day: null
+        total_kg_ha: 20
+      development:
+        uptake_kg_ha_day: 2.5
+        total_kg_ha: 60
+      mid-season:
+        uptake_kg_ha_day: 3.0
+        total_kg_ha: 120
+      late-season:
+        uptake_kg_ha_day: 0.5
+        total_kg_ha: 20
+    source:
+      short: "FAO Guidelines"
+      doi: "10.4060/cb0456en"
+  olive:
+    nitrogen:
+      initial:
+        uptake_kg_ha_day: null
+        total_kg_ha: 10
+      development:
+        uptake_kg_ha_day: 0.8
+        total_kg_ha: 25
+      mid-season:
+        uptake_kg_ha_day: 1.0
+        total_kg_ha: 50
+      late-season:
+        uptake_kg_ha_day: 0.3
+        total_kg_ha: 10
+    phosphorus:
+      initial:
+        uptake_kg_ha_day: null
+        total_kg_ha: 5
+      development:
+        uptake_kg_ha_day: 0.5
+        total_kg_ha: 15
+      mid-season:
+        uptake_kg_ha_day: 0.5
+        total_kg_ha: 30
+      late-season:
+        uptake_kg_ha_day: 0.1
+        total_kg_ha: 5
+    potassium:
+      initial:
+        uptake_kg_ha_day: null
+        total_kg_ha: 15
+      development:
+        uptake_kg_ha_day: 1.5
+        total_kg_ha: 40
+      mid-season:
+        uptake_kg_ha_day: 2.0
+        total_kg_ha: 80
+      late-season:
+        uptake_kg_ha_day: 0.3
+        total_kg_ha: 15
+    source:
+      short: "FAO Guidelines"
+      doi: "10.4060/cb0456en"
+
+# ── Soil Suitability ─────────────────────────────────────────────────────
+crop_soil_suitability:
+  wheat:
+    ph_min: 5.5
+    ph_max: 7.5
+    textures: ["loam", "clay loam", "silty loam"]
+    drainage: ["well", "moderate"]
+    depth_min_cm: 60
+    salinity_max_ds_m: 6
+    source:
+      short: "FAO EcoCrop"
+  maize:
+    ph_min: 5.0
+    ph_max: 7.5
+    textures: ["loam", "sandy loam", "silty loam"]
+    drainage: ["well"]
+    depth_min_cm: 50
+    salinity_max_ds_m: 4
+    source:
+      short: "FAO EcoCrop"
+  olive:
+    ph_min: 6.0
+    ph_max: 8.5
+    textures: ["loam", "sandy loam", "clay loam", "silty loam"]
+    drainage: ["well"]
+    depth_min_cm: 60
+    salinity_max_ds_m: 8
+    source:
+      short: "FAO EcoCrop"
+
+# ── Rotation Constraints ─────────────────────────────────────────────────
+rotation_constraints:
+  - crop_a: "wheat"
+    crop_b: "maize"
+    interval_years: 1
+    reason: "Same pest family (Fusarium spp.)"
+    source_short: "JRC MARS"
+  - crop_a: "wheat"
+    crop_b: "barley"
+    interval_years: 1
+    reason: "Shared take-all disease (Gaeumannomyces graminis)"
+    source_short: "JRC MARS"
+  - crop_a: "sunflower"
+    crop_b: "sunflower"
+    interval_years: 3
+    reason: "Sclerotinia sclerotiorum buildup"
+    source_short: "JRC MARS"
+  - crop_a: "potato"
+    crop_b: "potato"
+    interval_years: 3
+    reason: "Nematode and late blight buildup"
+    source_short: "JRC MARS"
+  - crop_a: "maize"
+    crop_b: "maize"
+    interval_years: 1
+    reason: "European corn borer pressure"
+    source_short: "JRC MARS"
