@@ -3,7 +3,7 @@ import { useTranslation } from '@nekazari/sdk';
 import { Card, Stack, Badge } from '@nekazari/ui-kit';
 import {
   Leaf, Globe, Sprout, Thermometer, Droplets, RefreshCw,
-  FlaskRound, GitBranch, Activity, Database,
+  FlaskRound, GitBranch, Activity, Database, Mountain,
 } from 'lucide-react';
 
 interface KBItem {
@@ -18,7 +18,7 @@ const KB_ITEMS: KBItem[] = [
   { id: 'phenology', icon: Sprout },
   { id: 'thermal', icon: Thermometer },
   { id: 'npk', icon: Droplets },
-  { id: 'soil', icon: Sprout },
+  { id: 'soil', icon: Mountain },
   { id: 'rotation', icon: RefreshCw },
   { id: 'organic', icon: FlaskRound },
   { id: 'pipeline', icon: GitBranch },
@@ -45,8 +45,17 @@ export default function KnowledgeBaseGrid({ onSelect }: Props) {
             <Card
               key={item.id}
               padding="md"
-              className="cursor-pointer hover:border-nkz-accent-base transition-colors"
+              role="button"
+              tabIndex={0}
+              aria-label={t(`app.cards.${item.id}.title`)}
+              className="cursor-pointer hover:border-nkz-accent-base transition-colors focus-visible:ring-2 focus-visible:ring-nkz-accent-base focus-visible:outline-none"
               onClick={() => onSelect(item.id)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  onSelect(item.id);
+                }
+              }}
             >
               <div className="flex items-start gap-3">
                 <Icon className="w-5 h-5 text-nkz-accent-base shrink-0 mt-0.5" />
