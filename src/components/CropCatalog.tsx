@@ -89,6 +89,8 @@ export default function CropCatalog({ onSelectCrop }: CropCatalogProps) {
               )}
               <Badge intent={crop.has_kc ? 'positive' : 'default'}>{crop.has_kc ? 'Kc ✓' : 'Kc ✗'}</Badge>
               <Badge intent={crop.has_thermal ? 'positive' : 'default'}>{t('catalog.detail.thermal')} {crop.has_thermal ? '✓' : '✗'}</Badge>
+              <Badge intent={crop.has_npk ? 'positive' : 'default'}>NPK {crop.has_npk ? '✓' : '✗'}</Badge>
+              <Badge intent={crop.has_rotation ? 'positive' : 'default'}>Rotation {crop.has_rotation ? '✓' : '✗'}</Badge>
             </div>
             {expanded.has(crop.uri) && crop.variety_count > 0 && (
               <div className="ml-6 text-nkz-text-muted text-sm" />

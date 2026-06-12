@@ -4,6 +4,7 @@ import { Card, Badge, Stack, Spinner, Panel, DetailGrid, DetailItem, Surface } f
 import { Sprout, Thermometer, Beaker, BookOpen } from 'lucide-react';
 import { useBioApi } from '../services/api';
 import PhenologyContribute from './PhenologyContribute';
+import TabSubtitle from './shared/TabSubtitle';
 
 interface PhenologyParams {
   species: string; scientific_name?: string; stage: string; stage_description?: string;
@@ -70,6 +71,8 @@ const PhenologyBrowser: React.FC = () => {
 
   return (
     <Stack gap="section">
+      <TabSubtitle>{t('phenology.subtitle')}</TabSubtitle>
+
       {/* Onboarding */}
       <div className="rounded-nkz-md bg-nkz-info-soft border border-nkz-info p-nkz-stack text-nkz-xs text-nkz-text-secondary">
         <strong className="text-nkz-text-primary">💡 Phenology:</strong>{' '}
