@@ -3,7 +3,6 @@ import { useTranslation } from '@nekazari/sdk';
 import { Stack, DataTable, Badge } from '@nekazari/ui-kit';
 
 import { useBioApi } from '../services/api';
-import TabSubtitle from './shared/TabSubtitle';
 import DataTableSkeleton from './shared/DataTableSkeleton';
 import ContextEmptyState from './shared/ContextEmptyState';
 
@@ -161,7 +160,7 @@ const NutrientProfile: React.FC = () => {
 
   return (
     <Stack gap="section">
-      <TabSubtitle>{t('npk.subtitle')}</TabSubtitle>
+      <p className="text-nkz-text-muted text-sm mb-3 leading-relaxed max-w-3xl">{t('npk.subtitle')}</p>
 
       {loadingSpecies ? (
         <div className="h-9 rounded-nkz-md bg-nkz-surface-sunken animate-pulse" />

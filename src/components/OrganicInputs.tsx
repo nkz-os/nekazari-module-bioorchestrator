@@ -2,7 +2,6 @@ import React, { useState, useEffect, useMemo } from "react";
 import { useTranslation } from "@nekazari/sdk";
 import { Card, Stack, Select, DataTable, Badge } from "@nekazari/ui-kit";
 import ContextEmptyState from "./shared/ContextEmptyState";
-import TabSubtitle from "./shared/TabSubtitle";
 import DataTableSkeleton from "./shared/DataTableSkeleton";
 import type { CropListCrop, OrganicInputsResult } from "../services/api";
 

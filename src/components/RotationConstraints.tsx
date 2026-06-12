@@ -3,7 +3,6 @@ import { useTranslation } from '@nekazari/sdk';
 import { Stack, DataTable, Badge } from '@nekazari/ui-kit';
 import { Search, AlertTriangle } from 'lucide-react';
 import { useBioApi } from '../services/api';
-import TabSubtitle from './shared/TabSubtitle';
 import DataTableSkeleton from './shared/DataTableSkeleton';
 import ContextEmptyState from './shared/ContextEmptyState';
 
@@ -142,7 +141,7 @@ const RotationConstraints: React.FC = () => {
   if (loading) {
     return (
       <Stack gap="section">
-        <TabSubtitle>{t('rotation.subtitle')}</TabSubtitle>
+        <p className="text-nkz-text-muted text-sm mb-3 leading-relaxed max-w-3xl">{t('rotation.subtitle')}</p>
         <DataTableSkeleton columns={4} />
       </Stack>
     );
@@ -151,7 +150,7 @@ const RotationConstraints: React.FC = () => {
   if (error) {
     return (
       <Stack gap="section">
-        <TabSubtitle>{t('rotation.subtitle')}</TabSubtitle>
+        <p className="text-nkz-text-muted text-sm mb-3 leading-relaxed max-w-3xl">{t('rotation.subtitle')}</p>
         <ContextEmptyState
           message={error}
           variant="warning"
@@ -164,7 +163,7 @@ const RotationConstraints: React.FC = () => {
 
   return (
     <Stack gap="section">
-      <TabSubtitle>{t('rotation.subtitle')}</TabSubtitle>
+      <p className="text-nkz-text-muted text-sm mb-3 leading-relaxed max-w-3xl">{t('rotation.subtitle')}</p>
 
       <div className="rounded-nkz-md bg-nkz-info-soft border border-nkz-info p-nkz-stack text-nkz-xs text-nkz-text-secondary">
         {t('onboarding.rotationConstraints')}
