@@ -1,167 +1,126 @@
-import React, { useState } from 'react';
+import React, { useState, lazy, Suspense } from 'react';
 import { useTranslation } from '@nekazari/sdk';
-import { Card, Button } from '@nekazari/ui-kit';
-import { Activity, GitBranch, Sprout, Database, Leaf, Thermometer, Droplets, RefreshCw, Search, Globe, Heart, Dna, Bell, FlaskRound } from 'lucide-react';
-import SourcesDashboard from './components/SourcesDashboard';
-import PipelineRunner from './components/PipelineRunner';
-import PhenologyBrowser from './components/PhenologyBrowser';
-import { BreedDiscovery } from './components/DADIS/BreedDiscovery';
-import CropCatalog from './components/CropCatalog';
-import CropDetail from './components/CropDetail';
-import ContributeWizard from './components/ContributeWizard';
-import ThermalTolerance from './components/ThermalTolerance';
-import NutrientProfile from './components/NutrientProfile';
-import SoilSuitability from './components/SoilSuitability';
-import RotationConstraints from './components/RotationConstraints';
-import VarietyFinder from './components/VarietyFinder';
-import ClimateExplorer from './components/ClimateExplorer';
-import ParcelHealth from './components/ParcelHealth';
-import WaterBudget from './components/WaterBudget';
-import CropComparator from './components/CropComparator';
-import RotationPlanner from './components/RotationPlanner';
-import RegenerativeSequence from './components/RegenerativeSequence';
-import OrganicInputs from './components/OrganicInputs';
-import AlertsView from './components/AlertsView';
-import SourcePowerBar from './components/SourcePowerBar';
+import { Card, Stack, Spinner, Button } from '@nekazari/ui-kit';
+import { ArrowLeft, FlaskConical } from 'lucide-react';
+import { ParcelProvider, useParcelContext } from './context/ParcelContext';
+import GlobalParcelSelector from './components/GlobalParcelSelector';
+import Dashboard from './components/Dashboard';
 import DisclaimerFooter from './components/DisclaimerFooter';
-import type { CropItem } from './services/api';
 import './i18n';
 
-const TAB_SOURCE_COUNTS: Record<string, number> = {
-  'variety-finder': 5,
-  'comparator': 7,
-  'rotation-plan': 6,
-  'parcel-health': 4,
-  'water-budget': 3,
-  'regenerative': 5,
-  'alerts': 2,
-  'catalog': 5,
-  'climate': 3,
-  'phenology': 3,
-  'thermal': 2,
-  'npk': 2,
-  'soil': 2,
-  'rotation': 2,
-  'organic': 3,
-  'pipeline': 6,
-  'dadis': 1,
-  'sources': 29,
+const VarietyFinder = lazy(() => import('./components/VarietyFinder'));
+const ParcelHealth = lazy(() => import('./components/ParcelHealth'));
+const CropComparator = lazy(() => import('./components/CropComparator'));
+const RotationPlanner = lazy(() => import('./components/RotationPlanner'));
+const WaterBudget = lazy(() => import('./components/WaterBudget'));
+const RegenerativeSequence = lazy(() => import('./components/RegenerativeSequence'));
+const CropCatalog = lazy(() => import('./components/CropCatalog'));
+const ClimateExplorer = lazy(() => import('./components/ClimateExplorer'));
+const PhenologyBrowser = lazy(() => import('./components/PhenologyBrowser'));
+const ThermalTolerance = lazy(() => import('./components/ThermalTolerance'));
+const NutrientProfile = lazy(() => import('./components/NutrientProfile'));
+const SoilSuitability = lazy(() => import('./components/SoilSuitability'));
+const RotationConstraints = lazy(() => import('./components/RotationConstraints'));
+const OrganicInputs = lazy(() => import('./components/OrganicInputs'));
+const PipelineRunner = lazy(() => import('./components/PipelineRunner'));
+const SourcesDashboard = lazy(() => import('./components/SourcesDashboard'));
+const BreedDiscovery = lazy(() => import('./components/DADIS/BreedDiscovery').then(m => ({ default: m.BreedDiscovery })));
+
+type ViewState = { mode: 'dashboard' } | { mode: 'tool'; toolId: string };
+
+const TOOL_MAP: Record<string, React.LazyExoticComponent<React.FC>> = {
+  varietyFinder: VarietyFinder,
+  parcelStatus: ParcelHealth,
+  comparator: CropComparator,
+  rotationPlanner: RotationPlanner,
+  waterBudget: WaterBudget,
+  regenerative: RegenerativeSequence,
+  catalog: CropCatalog,
+  climate: ClimateExplorer,
+  phenology: PhenologyBrowser,
+  thermal: ThermalTolerance,
+  npk: NutrientProfile,
+  soil: SoilSuitability,
+  rotation: RotationConstraints,
+  organic: OrganicInputs,
+  pipeline: PipelineRunner,
+  sources: SourcesDashboard,
+  dadis: BreedDiscovery,
 };
 
-const TAB_GROUPS = [
-  {
-    group: 'parcel' as const,
-    label: 'app.groups.parcel',
-    tabs: [
-      { id: 'variety-finder' as const, icon: Search, label: 'app.tabs.varietyFinder' },
-      { id: 'comparator' as const, icon: Activity, label: 'app.tabs.comparator' },
-      { id: 'rotation-plan' as const, icon: RefreshCw, label: 'app.tabs.rotationPlan' },
-      { id: 'parcel-health' as const, icon: Heart, label: 'app.tabs.parcelHealth' },
-      { id: 'water-budget' as const, icon: Droplets, label: 'app.tabs.waterBudget' },
-      { id: 'regenerative' as const, icon: Dna, label: 'app.tabs.regenerative' },
-      { id: 'alerts' as const, icon: Bell, label: 'app.tabs.alerts' },
-    ],
-  },
-  {
-    group: 'reference' as const,
-    label: 'app.groups.reference',
-    tabs: [
-      { id: 'catalog' as const, icon: Leaf, label: 'app.tabs.catalog' },
-      { id: 'climate' as const, icon: Globe, label: 'app.tabs.climate' },
-      { id: 'phenology' as const, icon: Sprout, label: 'app.tabs.phenology' },
-      { id: 'thermal' as const, icon: Thermometer, label: 'app.tabs.thermal' },
-      { id: 'npk' as const, icon: Droplets, label: 'app.tabs.npk' },
-      { id: 'soil' as const, icon: Sprout, label: 'app.tabs.soil' },
-      { id: 'rotation' as const, icon: RefreshCw, label: 'app.tabs.rotation' },
-      { id: 'organic' as const, icon: FlaskRound, label: 'app.tabs.organic' },
-      { id: 'pipeline' as const, icon: GitBranch, label: 'app.tabs.pipeline' },
-      { id: 'dadis' as const, icon: Database, label: 'app.tabs.dadis' },
-      { id: 'sources' as const, icon: Activity, label: 'app.tabs.sources' },
-    ],
-  },
-] as const;
-
-type TabId = typeof TAB_GROUPS[number]['tabs'][number]['id'];
-
-const App: React.FC = () => {
-  const [active, setActive] = useState<TabId>('variety-finder');
+function ToolView({ toolId, onBack }: { toolId: string; onBack: () => void }) {
   const { t } = useTranslation('bioorchestrator');
-  const [selectedCrop, setSelectedCrop] = useState<CropItem | null>(null);
-  const [showContribute, setShowContribute] = useState(false);
-  const [view, setView] = useState<'catalog' | 'detail'>('catalog');
+  const ToolComponent = TOOL_MAP[toolId];
 
-  const handleTabChange = (tabId: TabId) => {
-    setActive(tabId);
-    if (tabId !== 'catalog') setView('catalog');
+  if (!ToolComponent) {
+    return (
+      <Card padding="lg">
+        <p className="text-nkz-text-muted">Unknown tool: {toolId}</p>
+        <Button variant="ghost" onClick={onBack}>{t('app.backToDashboard')}</Button>
+      </Card>
+    );
+  }
+
+  return (
+    <Stack gap="section">
+      <Button variant="ghost" onClick={onBack} leadingIcon={<ArrowLeft className="w-4 h-4" />}>
+        {t('app.backToDashboard')}
+      </Button>
+      <Suspense fallback={<Spinner size="lg" />}>
+        <ToolComponent />
+      </Suspense>
+    </Stack>
+  );
+}
+
+function AppInner() {
+  const { t } = useTranslation('bioorchestrator');
+  const [view, setView] = useState<ViewState>({ mode: 'dashboard' });
+
+  const handleSelectTool = (toolId: string) => {
+    setView({ mode: 'tool', toolId });
+  };
+
+  const handleBack = () => {
+    setView({ mode: 'dashboard' });
   };
 
   return (
-    <Card padding="md">
-      <div className="flex items-center justify-between mb-4">
-        <h1 className="text-nkz-lg font-bold text-nkz-text-primary">{t('app.title')}</h1>
-      </div>
-
-      {TAB_GROUPS.map((group) => (
-        <div key={group.group}>
-          <div className="text-xs text-nkz-text-muted uppercase tracking-wider px-4 py-1 mt-2 first:mt-0">
-            {t(group.label)}
-          </div>
-          <div className="flex flex-wrap border-b border-nkz-border mb-4">
-            {group.tabs.map((tab) => {
-              const Icon = tab.icon;
-              const isActive = active === tab.id;
-              return (
-                <button
-                  key={tab.id}
-                  className={`flex items-center gap-1.5 px-4 py-2 text-sm font-medium border-b-2 transition-colors ${isActive ? 'text-nkz-accent-base border-nkz-accent-base' : 'border-transparent text-nkz-text-muted hover:text-nkz-text-primary'}`}
-                  onClick={() => handleTabChange(tab.id)}
-                >
-                  <Icon className="w-4 h-4" />
-                  {t(tab.label)}
-                  <span style={{ fontSize: 9, color: "#999", marginLeft: 2, fontFamily: "monospace" }}>
-                    🛰️{TAB_SOURCE_COUNTS[tab.id] || 0}
-                  </span>
-                </button>
-              );
-            })}
+    <Card padding="lg">
+      <Stack gap="section">
+        {/* Header */}
+        <div className="flex items-center gap-3">
+          <FlaskConical className="w-7 h-7 text-nkz-accent-base" />
+          <div>
+            <h1 className="text-nkz-2xl font-bold text-nkz-text-primary">
+              {t('app.title')}
+            </h1>
+            <p className="text-nkz-base text-nkz-text-muted mt-1">
+              {t('app.subtitle')}
+            </p>
           </div>
         </div>
-      ))}
 
-      <SourcePowerBar />
+        {/* Global parcel selector */}
+        <GlobalParcelSelector />
 
-      {active === 'catalog' && view === 'catalog' && (
-        <CropCatalog onSelectCrop={(crop) => { setSelectedCrop(crop); setView('detail'); }} />
-      )}
-      {active === 'variety-finder' && <VarietyFinder />}
-      {active === 'comparator' && <CropComparator />}
-      {active === 'rotation-plan' && <RotationPlanner />}
-      {active === 'parcel-health' && <ParcelHealth />}
-      {active === 'water-budget' && <WaterBudget />}
-      {active === 'regenerative' && <RegenerativeSequence />}
-      {active === 'alerts' && <AlertsView />}
-      {active === 'climate' && <ClimateExplorer />}
-      {active === 'catalog' && view === 'detail' && selectedCrop && (
-        <>
-          <Button variant="ghost" onClick={() => setView('catalog')}>{'< Back'}</Button>
-          <CropDetail cropId={selectedCrop.uri} onContribute={() => setShowContribute(true)} onViewInParcel={() => {}} />
-        </>
-      )}
-      {showContribute && selectedCrop && (
-        <ContributeWizard cropId={selectedCrop.uri} cropName={selectedCrop.name} onClose={() => setShowContribute(false)} onSuccess={() => { setShowContribute(false); setView('detail'); }} />
-      )}
-      {active === 'phenology' && <PhenologyBrowser />}
-      {active === 'thermal' && <ThermalTolerance />}
-      {active === 'npk' && <NutrientProfile />}
-      {active === 'soil' && <SoilSuitability />}
-      {active === 'rotation' && <RotationConstraints />}
-      {active === 'organic' && <OrganicInputs />}
-      {active === 'pipeline' && <PipelineRunner />}
-      {active === 'dadis' && <BreedDiscovery />}
-      {active === 'sources' && <SourcesDashboard />}
-      <DisclaimerFooter />
+        {/* Content: Dashboard or Tool */}
+        {view.mode === 'dashboard' ? (
+          <Dashboard onSelectTool={handleSelectTool} />
+        ) : (
+          <ToolView toolId={view.toolId} onBack={handleBack} />
+        )}
+
+        <DisclaimerFooter />
+      </Stack>
     </Card>
   );
-};
+}
+
+const App: React.FC = () => (
+  <ParcelProvider>
+    <AppInner />
+  </ParcelProvider>
+);
 
 export default App;
