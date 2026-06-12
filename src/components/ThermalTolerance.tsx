@@ -3,7 +3,6 @@ import { useTranslation } from '@nekazari/sdk';
 import { Stack, DataTable, Badge, Input } from '@nekazari/ui-kit';
 import { Search } from 'lucide-react';
 import { useBioApi, useCropApi } from '../services/api';
-import TabSubtitle from './shared/TabSubtitle';
 import DataTableSkeleton from './shared/DataTableSkeleton';
 import ContextEmptyState from './shared/ContextEmptyState';
 
@@ -167,7 +166,7 @@ const ThermalTolerance: React.FC = () => {
   if (loading) {
     return (
       <Stack gap="section">
-        <TabSubtitle>{t('thermal.subtitle')}</TabSubtitle>
+        <p className="text-nkz-text-muted text-sm mb-3 leading-relaxed max-w-3xl">{t('thermal.subtitle')}</p>
         <DataTableSkeleton columns={5} />
       </Stack>
     );
@@ -176,7 +175,7 @@ const ThermalTolerance: React.FC = () => {
   if (error) {
     return (
       <Stack gap="section">
-        <TabSubtitle>{t('thermal.subtitle')}</TabSubtitle>
+        <p className="text-nkz-text-muted text-sm mb-3 leading-relaxed max-w-3xl">{t('thermal.subtitle')}</p>
         <ContextEmptyState
           message={error}
           variant="warning"
@@ -189,7 +188,7 @@ const ThermalTolerance: React.FC = () => {
 
   return (
     <Stack gap="section">
-      <TabSubtitle>{t('thermal.subtitle')}</TabSubtitle>
+      <p className="text-nkz-text-muted text-sm mb-3 leading-relaxed max-w-3xl">{t('thermal.subtitle')}</p>
 
       <div className="relative max-w-sm">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-nkz-text-muted" />
