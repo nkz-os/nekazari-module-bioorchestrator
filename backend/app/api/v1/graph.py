@@ -594,6 +594,18 @@ async def agriculture_extrapolate(
         default=False,
         description="Filter out varieties incompatible with target soil (pH, texture)",
     ),
+    parcel_id: str | None = Query(
+        default=None,
+        description=(
+            "AgriParcel URN (e.g. 'urn:ngsi-ld:AgriParcel:XXX') for weather-adjusted "
+            "recommendations. When provided, reads weatherStats from Orion-LD and "
+            "adjusts variety scores for drought, heat, and frost stress."
+        ),
+    ),
+    tenant_id: str = Query(
+        default="default",
+        description="Tenant namespace for multi-tenancy.",
+    ),
 ):
     """Extrapolate best crop varieties for a target environment.
 
@@ -655,6 +667,8 @@ async def agriculture_extrapolate(
         rainfall_max=rainfall_max,
         top_n=top_n,
         filter_soil_suitability=filter_soil_suitability,
+        parcel_id=parcel_id,
+        tenant_id=tenant_id,
     )
 
     if "error" in result:
