@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { assignCrop, AssignCropRequest } from "../services/api";
+import { fetchParcels, assignCrop, AssignCropRequest, ParcelItem } from "../services/api";
 
 interface Parcel {
   id: string;
@@ -35,10 +35,11 @@ export default function AssignVarietyModal({ variety, onClose, onAssigned }: Pro
   const [error, setError] = useState("");
 
   useEffect(() => {
-    const sdk = (window as any).__NKZ_SDK__;
-    if (sdk?.getParcels) {
-      sdk.getParcels().then((p: Parcel[]) => setParcels(p));
-    }
+    let cancelled = false;
+    fetchParcels()
+      .then((p: ParcelItem[]) => { if (!cancelled) setParcels(p as Parcel[]); })
+      .catch(() => { if (!cancelled) setParcels([]); });
+    return () => { cancelled = true; };
   }, []);
 
   const handleAssign = async () => {

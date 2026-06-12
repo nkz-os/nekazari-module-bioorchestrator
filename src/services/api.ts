@@ -241,6 +241,29 @@ export interface SoilData {
   message?: string;
 }
 
+export interface ParcelItem {
+  id: string;
+  name: string;
+}
+
+export async function fetchParcels(): Promise<ParcelItem[]> {
+  try {
+    const resp = await fetch(
+      `${API_BASE}/ngsi-ld/v1/entities?type=AgriParcel&options=keyValues&limit=500`,
+      { headers: { "Accept": "application/ld+json" }, credentials: "include" }
+    );
+    if (!resp.ok) return [];
+    const entities = await resp.json();
+    if (!Array.isArray(entities)) return [];
+    return entities.map((e: any) => ({
+      id: e.id,
+      name: e.name?.value || e.name || e.id?.split(":")?.pop() || e.id,
+    }));
+  } catch {
+    return [];
+  }
+}
+
 // ── F4: Crop-Health Integration ──────────────────────────────────────────────
 
 export interface AssignCropRequest {
