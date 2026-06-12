@@ -16,6 +16,20 @@ const CLIMATES: { value: ClimateClass; label: string; desc: string }[] = [
   { value: 'Dfb', label: 'Dfb', desc: 'Warm-summer continental' },
 ];
 
+const SOIL_TYPES = [
+  { value: '', labelKey: 'varietyFinder.anySoil' },
+  { value: 'Calcisol', label: 'Calcisol' },
+  { value: 'Cambisol', label: 'Cambisol' },
+  { value: 'Chernozem', label: 'Chernozem' },
+  { value: 'Fluvisol', label: 'Fluvisol' },
+  { value: 'Gleysol', label: 'Gleysol' },
+  { value: 'Leptosol', label: 'Leptosol' },
+  { value: 'Luvisol', label: 'Luvisol' },
+  { value: 'Phaeozem', label: 'Phaeozem' },
+  { value: 'Regosol', label: 'Regosol' },
+  { value: 'Vertisol', label: 'Vertisol' },
+];
+
 interface CropOption { eppo_code: string; scientific_name: string; trial_count: number; }
 interface VarietyResult {
   variety: string;
@@ -145,7 +159,7 @@ const VarietyFinder: React.FC = () => {
               value={soil}
               onValueChange={setSoil}
               placeholder={t('varietyFinder.anySoil')}
-              options={['Calcisol','Cambisol','Chernozem','Fluvisol','Gleysol','Leptosol','Luvisol','Phaeozem','Regosol','Vertisol'].map(s => ({ value: s, label: s }))}
+              options={SOIL_TYPES.map(s => ({ value: s.value, label: s.labelKey ? t(s.labelKey) : s.label! }))}
             />
           </div>
 
