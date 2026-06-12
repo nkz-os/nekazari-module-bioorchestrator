@@ -28,7 +28,7 @@ const BreedDiscovery = lazy(() => import('./components/DADIS/BreedDiscovery').th
 
 type ViewState = { mode: 'dashboard' } | { mode: 'tool'; toolId: string };
 
-const TOOL_MAP: Record<string, React.LazyExoticComponent<React.FC>> = {
+const TOOL_MAP: Record<string, React.LazyExoticComponent<React.ComponentType<any>>> = {
   varietyFinder: VarietyFinder,
   parcelStatus: ParcelHealth,
   comparator: CropComparator,
