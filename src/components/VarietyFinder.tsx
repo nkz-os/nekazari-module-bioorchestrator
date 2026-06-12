@@ -33,7 +33,7 @@ type ViewState = 'input' | 'loading' | 'results' | 'error';
 const VarietyFinder: React.FC = () => {
   const { t } = useTranslation('bioorchestrator');
   const api = useBioApi();
-  const { selectedParcel } = useParcelContext();
+  const { selectedParcel, loading: parcelLoading, error: parcelError } = useParcelContext();
 
   const [crop, setCrop] = useState('');
   const [climate, setClimate] = useState<ClimateClass>('Csa');
@@ -57,12 +57,12 @@ const VarietyFinder: React.FC = () => {
     setView('loading');
     setError('');
     try {
-      const params = new URLSearchParams({ crop, climate_class: climate, top_n: '15' });
-      if (soil) params.set('soil_type', soil);
-      const API_BASE = (import.meta as any).env?.VITE_API_URL || "https://nkz.robotika.cloud";
-      const resp = await fetch(`${API_BASE}/api/graph/agriculture/extrapolate?${params}`, { credentials: 'include' });
-      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-      const data = await resp.json();
+      const data = await api.extrapolateVarieties({
+        crop,
+        climate_class: climate,
+        top_n: '15',
+        ...(soil ? { soil_type: soil } : {}),
+      });
       setResults(data.ranked_varieties || []);
       setSimilarSites(data.similar_sites || []);
       setTargetEnv(data.target_environment || {});
@@ -72,6 +72,23 @@ const VarietyFinder: React.FC = () => {
       setView('error');
     }
   };
+
+  if (parcelLoading) {
+    return (
+      <Card padding="md">
+        <Skeleton variant="rect" height="120px" />
+      </Card>
+    );
+  }
+
+  if (parcelError) {
+    return (
+      <EmptyState
+        icon={<AlertTriangle className="w-8 h-8" />}
+        title={parcelError}
+      />
+    );
+  }
 
   if (!selectedParcel) {
     return (
@@ -157,7 +174,10 @@ const VarietyFinder: React.FC = () => {
         <Card padding="md">
           <div className="flex items-center gap-2 text-nkz-error">
             <AlertTriangle className="w-5 h-5" />
-            <span>{error}</span>
+            <span className="flex-1">{error}</span>
+            <Button variant="ghost" size="sm" onClick={handleSearch}>
+              {t('panel.retry')}
+            </Button>
           </div>
         </Card>
       )}
