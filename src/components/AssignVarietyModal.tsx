@@ -2,11 +2,6 @@ import React, { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { fetchParcels, assignCrop, AssignCropRequest, ParcelItem } from "../services/api";
 
-interface Parcel {
-  id: string;
-  name: string;
-}
-
 interface VarietyInfo {
   name: string;
   scientificName?: string;
@@ -26,7 +21,7 @@ interface Props {
 
 export default function AssignVarietyModal({ variety, onClose, onAssigned }: Props) {
   const { t } = useTranslation();
-  const [parcels, setParcels] = useState<Parcel[]>([]);
+  const [parcels, setParcels] = useState<ParcelItem[]>([]);
   const [selectedParcel, setSelectedParcel] = useState("");
   const [management, setManagement] = useState<"conventional" | "organic">("conventional");
   const [seasonStart, setSeasonStart] = useState("");
@@ -37,7 +32,7 @@ export default function AssignVarietyModal({ variety, onClose, onAssigned }: Pro
   useEffect(() => {
     let cancelled = false;
     fetchParcels()
-      .then((p: ParcelItem[]) => { if (!cancelled) setParcels(p as Parcel[]); })
+      .then((p: ParcelItem[]) => { if (!cancelled) setParcels(p); })
       .catch(() => { if (!cancelled) setParcels([]); });
     return () => { cancelled = true; };
   }, []);
