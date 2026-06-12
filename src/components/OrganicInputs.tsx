@@ -1,9 +1,23 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useTranslation } from "@nekazari/sdk";
+import { Card, Stack, Select, DataTable, Badge } from "@nekazari/ui-kit";
+import ContextEmptyState from "./shared/ContextEmptyState";
+import TabSubtitle from "./shared/TabSubtitle";
+import DataTableSkeleton from "./shared/DataTableSkeleton";
 import type { CropListCrop, OrganicInputsResult } from "../services/api";
 
+interface InputRow {
+  [key: string]: unknown;
+  product: string;
+  active_substance: string;
+  category: string;
+}
+
+const selectCls =
+  "w-full h-9 rounded-nkz-md border border-nkz-border bg-nkz-surface px-nkz-stack text-nkz-sm text-nkz-text-primary focus-visible:ring-2 focus-visible:ring-nkz-accent-base";
+
 export default function OrganicInputs() {
-  const { t } = useTranslation('bioorchestrator');
+  const { t } = useTranslation("bioorchestrator");
   const [availableCrops, setAvailableCrops] = useState<CropListCrop[]>([]);
   const [selectedCrop, setSelectedCrop] = useState("");
   const [result, setResult] = useState<OrganicInputsResult | null>(null);
@@ -36,70 +50,62 @@ export default function OrganicInputs() {
 
   const selectedCropName = availableCrops.find(c => c.eppo_code === selectedCrop)?.scientific_name || selectedCrop;
 
-  return (
-    <div>
-      <h2 className="text-nkz-lg font-bold text-nkz-text-primary mb-4">🍃 {t("organic.title")}</h2>
+  const cropOptions = availableCrops.map(c => ({
+    value: c.eppo_code,
+    label: `${c.eppo_code} — ${t(`crops.${c.eppo_code}`, { defaultValue: c.scientific_name === "(unknown)" ? c.eppo_code : c.scientific_name })}`,
+  }));
 
-      <div style={{ marginBottom: 16, maxWidth: 400 }}>
-        <select
+  const columns = useMemo(
+    () => [
+      { accessorKey: "product", header: t("organic.product") },
+      { accessorKey: "active_substance", header: t("organic.activeSubstance") },
+      {
+        accessorKey: "category",
+        header: t("organic.category"),
+        cell: (info: { getValue: () => unknown }) => (
+          <Badge intent="info">{info.getValue() as string}</Badge>
+        ),
+      },
+    ],
+    [t],
+  );
+
+  return (
+    <Stack gap="section">
+      <h2 className="text-nkz-lg font-bold text-nkz-text-primary">🍃 {t("organic.title")}</h2>
+
+      <div className="max-w-sm">
+        <label className="text-nkz-xs font-medium text-nkz-text-muted block mb-1">{t("organic.selectCrop")}</label>
+        <Select
           value={selectedCrop}
-          onChange={e => setSelectedCrop(e.target.value)}
-          style={{ width: "100%", padding: 8 }}
-        >
-          <option value="">{t("organic.selectCrop")}</option>
-          {availableCrops.map(c => {
-            const name = t(`crops.${c.eppo_code}`, { defaultValue: c.scientific_name === '(unknown)' ? c.eppo_code : c.scientific_name });
-            return (
-              <option key={c.eppo_code} value={c.eppo_code}>
-                {c.eppo_code} — {name}
-              </option>
-            );
-          })}
-        </select>
+          onValueChange={setSelectedCrop}
+          options={cropOptions}
+        />
       </div>
 
-      {loading && <div style={{ padding: 20, color: "#999" }}>⏳ {t("common.loading")}</div>}
-      {error && <div style={{ color: "red", marginBottom: 12 }}>{error}</div>}
+      {loading && <DataTableSkeleton columns={3} />}
+      {error && <ContextEmptyState message={error} variant="warning" actionLabel={t("panel.retry")} onAction={() => setSelectedCrop(selectedCrop)} />}
 
       {result && result.source_unavailable && (
-        <div style={{ padding: 10, background: "#fff3cd", borderRadius: 6, marginBottom: 12, fontSize: 13 }}>
+        <div className="bg-nkz-warning-soft border border-nkz-warning rounded-nkz-md p-3 text-sm">
           ⚠️ {t("organic.eppoUnavailable")}
         </div>
       )}
 
       {result && !result.source_unavailable && result.inputs.length === 0 && selectedCrop && (
-        <div style={{ padding: 20, color: "#999", textAlign: "center" }}>
-          {t("organic.empty")}
-        </div>
+        <ContextEmptyState message={t("organic.empty")} variant="info" />
       )}
 
       {result && result.inputs.length > 0 && (
-        <div>
-          <div style={{ marginBottom: 8, fontSize: 13, color: "#666" }}>
+        <Stack gap="stack">
+          <div className="text-sm text-nkz-text-muted">
             {t("organic.title")} — {selectedCropName} ({result.inputs.length})
           </div>
-          <div style={{ overflowX: "auto" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
-              <thead>
-                <tr style={{ background: "#f5f5f5", textAlign: "left" }}>
-                  <th style={{ padding: 8 }}>{t("organic.product")}</th>
-                  <th style={{ padding: 8 }}>{t("organic.activeSubstance")}</th>
-                  <th style={{ padding: 8 }}>{t("organic.category")}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {result.inputs.map((item, i) => (
-                  <tr key={i} style={{ borderBottom: "1px solid #eee" }}>
-                    <td style={{ padding: 8 }}>{item.product}</td>
-                    <td style={{ padding: 8 }}>{item.active_substance}</td>
-                    <td style={{ padding: 8, color: "#888" }}>{item.category}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
+          <Card padding="none">
+            <DataTable columns={columns} data={result.inputs as InputRow[]} />
+          </Card>
+        </Stack>
       )}
-    </div>
+    </Stack>
   );
 }

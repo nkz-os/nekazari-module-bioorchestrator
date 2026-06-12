@@ -135,7 +135,7 @@ const ClimateExplorer: React.FC = () => {
 
       {/* Map */}
       <Card padding="md">
-        <div className="relative bg-nkz-surface-sunken rounded-nkz-md overflow-hidden" style={{ height: '400px' }}>
+        <div className="relative bg-nkz-surface-sunken rounded-nkz-md overflow-hidden h-[400px]">
           <svg viewBox={viewBox} className="w-full h-full" preserveAspectRatio="xMidYMid meet">
             {/* Grid lines */}
             {bounds && Array.from({ length: 5 }).map((_, i) => (

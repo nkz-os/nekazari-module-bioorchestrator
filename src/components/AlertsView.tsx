@@ -1,19 +1,21 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { useParcelSelector } from "../hooks/useParcelSelector";
+import { useParcelContext } from "../context/ParcelContext";
+import { Card, Badge, Button, Stack } from "@nekazari/ui-kit";
+import ContextEmptyState from "./shared/ContextEmptyState";
 import type { AlertItem } from "../services/api";
 
 type SeverityFilter = "all" | "critical" | "warning" | "info";
 
-const SEVERITY_COLORS: Record<string, { bg: string; text: string; dot: string }> = {
-  critical: { bg: "#f8d7da", text: "#721c24", dot: "#dc3545" },
-  warning: { bg: "#fff3cd", text: "#856404", dot: "#ffc107" },
-  info: { bg: "#d1ecf1", text: "#0c5460", dot: "#17a2b8" },
+const SEVERITY_INTENTS: Record<string, "negative" | "warning" | "info"> = {
+  critical: "negative",
+  warning: "warning",
+  info: "info",
 };
 
 export default function AlertsView() {
   const { t } = useTranslation();
-  const { parcels, selected: selectedParcel, setSelected: setSelectedParcel } = useParcelSelector();
+  const { selectedParcel, loading: parcelLoading, error: parcelError } = useParcelContext();
   const [alerts, setAlerts] = useState<AlertItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -66,48 +68,35 @@ export default function AlertsView() {
     { key: "info", label: t("alerts.severity.info") },
   ];
 
+  if (parcelLoading) return <div className="text-nkz-text-muted p-4">⏳ {t("common.loading")}</div>;
+  if (parcelError) return <ContextEmptyState message={parcelError} variant="warning" actionLabel={t("panel.retry")} onAction={() => window.location.reload()} />;
+  if (!selectedParcel) return <ContextEmptyState message={t("alerts.selectPrompt")} variant="info" />;
+
   return (
-    <div>
-      <h2 className="text-nkz-lg font-bold text-nkz-text-primary mb-4">🔔 {t("alerts.title")}</h2>
+    <Stack gap="section">
+      <h2 className="text-nkz-lg font-bold text-nkz-text-primary">🔔 {t("alerts.title")}</h2>
 
-      <div style={{ marginBottom: 16, maxWidth: 400 }}>
-        <select value={selectedParcel} onChange={e => setSelectedParcel(e.target.value)} style={{ width: "100%", padding: 8 }}>
-          <option value="">{t("alerts.selectParcel")}</option>
-          {parcels.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-        </select>
-      </div>
-
-      {!selectedParcel && (
-        <div style={{ padding: 40, textAlign: "center", color: "#999" }}>
-          {t("alerts.selectPrompt")}
-        </div>
+      {loading && (
+        <div className="text-nkz-text-muted py-5">⏳ {t("common.loading")}</div>
       )}
 
-      {selectedParcel && loading && (
-        <div style={{ padding: 20, color: "#999" }}>⏳ {t("common.loading")}</div>
+      {error && (
+        <div className="text-nkz-danger mb-3">{error}</div>
       )}
 
-      {selectedParcel && error && (
-        <div style={{ color: "red", marginBottom: 12 }}>{error}</div>
-      )}
-
-      {selectedParcel && !loading && !error && (
-        <>
+      {!loading && !error && (
+        <Stack gap="stack">
           {alerts.length > 0 && (
-            <div style={{ display: "flex", gap: 4, marginBottom: 16, flexWrap: "wrap" }}>
+            <div className="flex gap-1 flex-wrap">
               {FILTER_TABS.map(tab => (
                 <button
                   key={tab.key}
                   onClick={() => setSeverityFilter(tab.key)}
-                  style={{
-                    padding: "6px 14px",
-                    border: "1px solid #ddd",
-                    borderRadius: 20,
-                    background: severityFilter === tab.key ? "#333" : "#fff",
-                    color: severityFilter === tab.key ? "#fff" : "#333",
-                    cursor: "pointer",
-                    fontSize: 12,
-                  }}
+                  className={`px-3.5 py-1.5 border rounded-full text-xs cursor-pointer transition-colors ${
+                    severityFilter === tab.key
+                      ? "bg-nkz-text-primary text-nkz-surface border-nkz-text-primary"
+                      : "bg-nkz-surface text-nkz-text-primary border-nkz-border hover:bg-nkz-surface-sunken"
+                  }`}
                 >
                   {tab.label} {tab.key !== "all" && `(${counts[tab.key]})`}
                 </button>
@@ -116,39 +105,42 @@ export default function AlertsView() {
           )}
 
           {filtered.length === 0 ? (
-            <div style={{ padding: 40, textAlign: "center", color: "#999" }}>
-              {alerts.length === 0 ? t("alerts.empty") : t("alerts.noFilterMatch")}
-            </div>
+            <ContextEmptyState
+              message={alerts.length === 0 ? t("alerts.empty") : t("alerts.noFilterMatch")}
+              variant="info"
+            />
           ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            <div className="flex flex-col gap-2">
               {filtered.map((alert, i) => {
-                const sev = SEVERITY_COLORS[alert.severity] || SEVERITY_COLORS.info;
+                const intent = SEVERITY_INTENTS[alert.severity] || "info";
                 return (
-                  <div key={i} style={{ padding: 12, background: sev.bg, borderRadius: 8, border: `1px solid ${sev.dot}20` }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                        <span style={{ width: 10, height: 10, borderRadius: "50%", background: sev.dot, display: "inline-block" }} />
-                        <span style={{ fontWeight: 600, fontSize: 12, color: sev.text, textTransform: "uppercase" }}>
+                  <Card key={i} padding="md" className={`border-l-4 border-l-${intent === "negative" ? "nkz-danger" : intent === "warning" ? "nkz-warning" : "nkz-info"}`}>
+                    <div className="flex justify-between items-center mb-1.5">
+                      <div className="flex items-center gap-2">
+                        <span className={`w-2.5 h-2.5 rounded-full inline-block ${
+                          intent === "negative" ? "bg-nkz-danger" : intent === "warning" ? "bg-nkz-warning" : "bg-nkz-info"
+                        }`} />
+                        <Badge intent={intent}>
                           {t(`alerts.severity.${alert.severity}`)}
-                        </span>
+                        </Badge>
                       </div>
-                      <span style={{ fontSize: 11, color: "#999" }}>{formatTime(alert.timestamp)}</span>
+                      <span className="text-nkz-xs text-nkz-text-muted">{formatTime(alert.timestamp)}</span>
                     </div>
-                    <div style={{ fontSize: 14, fontWeight: 500, marginBottom: 4 }}>
+                    <div className="text-sm font-medium mb-1">
                       {alert.type}
                       {alert.eco_impact && (
-                        <span style={{ marginLeft: 8, padding: "1px 8px", background: alert.eco_impact.risk_level === "high" ? "#f8d7da" : "#fff3cd", borderRadius: 10, fontSize: 11, fontWeight: 600 }}>
+                        <Badge intent={alert.eco_impact.risk_level === "high" ? "negative" : "warning"} className="ml-2">
                           🐝 Eco-Warning
-                        </span>
+                        </Badge>
                       )}
                     </div>
                     {alert.recommended_action && (
-                      <div style={{ fontSize: 12, color: "#666" }}>
+                      <div className="text-nkz-xs text-nkz-text-muted">
                         💡 {t("alerts.recommendedAction")}: {alert.recommended_action}
                       </div>
                     )}
                     {alert.eco_impact && (
-                      <div style={{ marginTop: 8, padding: 8, background: "rgba(255,255,255,0.6)", borderRadius: 6, fontSize: 12 }}>
+                      <div className="mt-2 p-2 bg-nkz-surface-sunken rounded-nkz-md text-xs">
                         <div>🐝 {t("alerts.pollinators")}: {alert.eco_impact.pollinator_species.join(", ") || t("alerts.pollinatorsUnknown")}</div>
                         <div>⏰ {t("alerts.recommendedWindow")}: {alert.eco_impact.recommended_window}</div>
                         {alert.eco_impact.safer_alternatives.length > 0 && (
@@ -156,13 +148,13 @@ export default function AlertsView() {
                         )}
                       </div>
                     )}
-                  </div>
+                  </Card>
                 );
               })}
             </div>
           )}
-        </>
+        </Stack>
       )}
-    </div>
+    </Stack>
   );
 }
