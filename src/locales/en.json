@@ -130,7 +130,8 @@
     "warnings": {
       "keyMissing": "Key missing",
       "noDataFile": "No data file"
-    }
+    },
+    "title": "Data Sources"
   },
   "pipeline": {
     "sourcesLabel": "Sources (comma-separated, empty = all)",
@@ -460,7 +461,8 @@
     "scenarioIncomplete": "Both crops have incomplete data. The comparison may be inconclusive.",
     "sectionError": "Could not load {{section}} data.",
     "retry": "Retry",
-    "deprecatedSoilNote": "Deprecated data — coming soon from Soil module"
+    "deprecatedSoilNote": "Deprecated data — coming soon from Soil module",
+    "title": "Recommendations"
   },
   "vegetation": {
     "title": "Vegetation Indices",

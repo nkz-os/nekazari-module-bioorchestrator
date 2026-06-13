@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Stack, Card, Badge, Button, DetailGrid, DetailItem, Skeleton } from '@nekazari/ui-kit';
+import { SlotShell } from '@nekazari/viewer-kit';
 import { useTranslation } from '@nekazari/sdk';
 import {
   RefreshCw, Globe, Thermometer, MapPin, Sprout, Bug, Beaker,
@@ -8,6 +9,8 @@ import {
 import { useBioApi, useCropApi } from '../services/api';
 import type { VegetationData, SoilData as ParcelSoilData, SoilHorizon } from '../services/api';
 import ContextEmptyState from './shared/ContextEmptyState';
+
+const bioAccent = { base: '#14B8A6', soft: '#CCFBF1', strong: '#0D9488' };
 
 interface RecCrop { name: string; scientific_name?: string; }
 interface CropSoilReq { ph_min: number; ph_max: number; textures: string[]; drainage: string[]; depth_min_cm: number; salinity_max_ds_m: number; source_short?: string; }
@@ -106,24 +109,32 @@ const RecommendationsPanel: React.FC<Props> = ({ parcelId, parcelName, cropType,
   // No-crop state
   if (!cropType) {
     return (
-      <ContextEmptyState
-        message={t('panel.noCrop')}
-        actionLabel={t('panel.assignCrop')}
-        variant="warning"
-      />
+      <SlotShell moduleId="bioorchestrator" title={t('panel.title')} icon={<RefreshCw className="w-4 h-4" />} accent={bioAccent}>
+        <ContextEmptyState
+          message={t('panel.noCrop')}
+          actionLabel={t('panel.assignCrop')}
+          variant="warning"
+        />
+      </SlotShell>
     );
   }
 
-  if (loading) return <Stack gap="stack"><Skeleton variant="rect" height="60px" /><Skeleton variant="rect" height="80px" /><Skeleton variant="rect" height="80px" /></Stack>;
+  if (loading) return (
+    <SlotShell moduleId="bioorchestrator" title={t('panel.title')} icon={<RefreshCw className="w-4 h-4" />} accent={bioAccent}>
+      <Stack gap="stack"><Skeleton variant="rect" height="60px" /><Skeleton variant="rect" height="80px" /><Skeleton variant="rect" height="80px" /></Stack>
+    </SlotShell>
+  );
 
   // Crop not in catalog
   if (cropNotFound) {
     return (
-      <ContextEmptyState
-        message={t('panel.cropNotInCatalog', { crop: cropType })}
-        actionLabel={t('panel.addToCatalog')}
-        variant="warning"
-      />
+      <SlotShell moduleId="bioorchestrator" title={t('panel.title')} icon={<RefreshCw className="w-4 h-4" />} accent={bioAccent}>
+        <ContextEmptyState
+          message={t('panel.cropNotInCatalog', { crop: cropType })}
+          actionLabel={t('panel.addToCatalog')}
+          variant="warning"
+        />
+      </SlotShell>
     );
   }
 
@@ -131,8 +142,8 @@ const RecommendationsPanel: React.FC<Props> = ({ parcelId, parcelName, cropType,
   const completedCount = dataKeys.filter(k => dataAvail[k]).length;
 
   return (
-    <Stack gap="stack">
-      <div className="flex items-center gap-2"><RefreshCw className="w-4 h-4 text-nkz-accent-base" /><h3 className="text-nkz-md font-semibold text-nkz-text-primary">Recommendations</h3></div>
+    <SlotShell moduleId="bioorchestrator" title={t('panel.title')} icon={<RefreshCw className="w-4 h-4" />} accent={bioAccent}>
+      <Stack gap="stack">
       {parcelName && <p className="text-nkz-sm text-nkz-text-secondary">{parcelName}</p>}
 
       {/* Section 1: Data Availability — always expanded */}
@@ -260,7 +271,8 @@ const RecommendationsPanel: React.FC<Props> = ({ parcelId, parcelName, cropType,
       <CollapsibleSection title={t('panel.scenarioSimulator')}>
         <ScenarioSimulator currentCrop={cropType} />
       </CollapsibleSection>
-    </Stack>
+      </Stack>
+    </SlotShell>
   );
 };
 
