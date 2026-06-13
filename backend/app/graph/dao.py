@@ -1926,13 +1926,19 @@ class GraphDAO:
         }
 
     async def clear_crop_assignment(self, parcel_id: str, tenant_id: str) -> dict:
-        """Remove crop assignment from AgriParcel."""
-        import httpx
-        from app.ingestion.orion import OrionIngestionClient
-        orion = OrionIngestionClient()
-        patch_body = {"hasAgriCrop": {"type": "Relationship", "object": None}, "hasAgriCropVariety": {"type": "Relationship", "object": None}, "management": {"type": "Property", "value": None}, "cropSeasonStart": {"type": "Property", "value": None}, "cropSeasonEnd": {"type": "Property", "value": None}}
-        async with httpx.AsyncClient(timeout=10.0) as client:
-            await client.patch(f"{orion.base}/ngsi-ld/v1/entities/{parcel_id}/attrs", json=patch_body, headers={"Content-Type": "application/ld+json", "NGSILD-Tenant": tenant_id, "Fiware-Service": tenant_id, "Fiware-ServicePath": "/"})
+        """Remove crop assignment from AgriParcel. Raises on Orion failure."""
+        patch_body = {
+            "hasAgriCrop": {"type": "Relationship", "object": None},
+            "hasAgriCropVariety": {"type": "Relationship", "object": None},
+            "management": {"type": "Property", "value": None},
+            "cropSeasonStart": {"type": "Property", "value": None},
+            "cropSeasonEnd": {"type": "Property", "value": None},
+        }
+        orion = OrionClient(tenant_id)
+        try:
+            await orion.update_entity_attrs(parcel_id, patch_body)
+        finally:
+            await orion.close()
         return {"status": "cleared", "parcel_id": parcel_id}
 
     async def get_yield_potential(self, variety: str, crop: str, climate_class: str | None = None, soil_type: str | None = None, parcel_id: str | None = None, tenant_id: str = "") -> dict:

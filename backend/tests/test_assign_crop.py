@@ -119,3 +119,72 @@ async def test_assign_crop_409_upserts():
         assert "dateCreated" not in patch_body
         assert patch_body["species"]["value"] == "TRZAX"
         MockClient.assert_called_once_with(tenant_id="test-tenant")
+
+
+# ── clear_crop_assignment ──────────────────────────────────────────────────────
+
+@pytest.mark.asyncio
+async def test_clear_crop_assignment_uses_sdk_and_tenant():
+    """clear_crop_assignment must use OrionClient with the correct tenant and patch body."""
+    mock_driver = AsyncMock()
+    dao = GraphDAO(mock_driver)
+
+    captured_entity_id = None
+    captured_attrs = None
+    close_called = False
+
+    class FakeOrion:
+        def __init__(self, tenant_id):
+            self.tenant_id = tenant_id
+
+        async def update_entity_attrs(self, entity_id, attrs):
+            nonlocal captured_entity_id, captured_attrs
+            captured_entity_id = entity_id
+            captured_attrs = attrs
+
+        async def close(self):
+            nonlocal close_called
+            close_called = True
+
+    with patch("app.graph.dao.OrionClient", side_effect=lambda t: FakeOrion(t)) as MockClient:
+        result = await dao.clear_crop_assignment(
+            parcel_id="urn:ngsi-ld:AgriParcel:test-parcel",
+            tenant_id="acme",
+        )
+
+    MockClient.assert_called_once_with("acme")
+    assert captured_entity_id == "urn:ngsi-ld:AgriParcel:test-parcel"
+    assert set(captured_attrs.keys()) == {
+        "hasAgriCrop", "hasAgriCropVariety", "management", "cropSeasonStart", "cropSeasonEnd"
+    }
+    assert result == {"status": "cleared", "parcel_id": "urn:ngsi-ld:AgriParcel:test-parcel"}
+    assert close_called, "close() must be called (finally block)"
+
+
+@pytest.mark.asyncio
+async def test_clear_crop_assignment_raises_on_orion_error():
+    """clear_crop_assignment must propagate Orion failures (not swallow them)."""
+    mock_driver = AsyncMock()
+    dao = GraphDAO(mock_driver)
+
+    close_called = False
+
+    class FakeOrionFailing:
+        def __init__(self, tenant_id):
+            pass
+
+        async def update_entity_attrs(self, entity_id, attrs):
+            raise RuntimeError("orion 400")
+
+        async def close(self):
+            nonlocal close_called
+            close_called = True
+
+    with patch("app.graph.dao.OrionClient", side_effect=lambda tenant_id: FakeOrionFailing(tenant_id)):
+        with pytest.raises(RuntimeError, match="orion 400"):
+            await dao.clear_crop_assignment(
+                parcel_id="urn:ngsi-ld:AgriParcel:test-parcel",
+                tenant_id="acme",
+            )
+
+    assert close_called, "close() must still be called even when update_entity_attrs raises"
