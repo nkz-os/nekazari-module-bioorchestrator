@@ -61,14 +61,14 @@ class TestHealthCheck:
         """health_check() returns 'connected' when Neo4j responds."""
         # Replace driver with one that returns a result with 'alive'=1
         dao._driver = _make_driver({"alive": 1})
-        result = asyncio.get_event_loop().run_until_complete(dao.health_check())
+        result = asyncio.run(dao.health_check())
         assert result["neo4j"] == "connected"
         assert result["alive"] == 1
 
     def test_error(self, dao):
         """health_check() returns 'error' when Neo4j raises."""
         dao._driver.session.return_value.__aenter__.return_value.run.side_effect = Exception("connection refused")
-        result = asyncio.get_event_loop().run_until_complete(dao.health_check())
+        result = asyncio.run(dao.health_check())
         assert result["neo4j"] == "error"
         assert "connection refused" in result["detail"]
 
@@ -95,7 +95,7 @@ class TestPhenologyParams:
             "alternatives": [],
         }
         dao._driver = _make_driver(record)
-        result = asyncio.get_event_loop().run_until_complete(
+        result = asyncio.run(
             dao.get_phenology_params("olive", "vegetative")
         )
         assert result is not None
@@ -106,7 +106,7 @@ class TestPhenologyParams:
     def test_not_found_returns_none(self, dao):
         """get_phenology_params() returns None when no data."""
         dao._driver = _make_driver(None)  # None record → single() returns None
-        result = asyncio.get_event_loop().run_until_complete(
+        result = asyncio.run(
             dao.get_phenology_params("unknown_species", "flowering")
         )
         assert result is None
