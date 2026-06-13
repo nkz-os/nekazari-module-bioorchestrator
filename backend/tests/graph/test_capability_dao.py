@@ -1,11 +1,17 @@
 """Capability DAO upsert + query semantics (async Neo4j driver)."""
 from __future__ import annotations
 import asyncio
+import shutil
 import pytest
 from neo4j import AsyncGraphDatabase
 from testcontainers.neo4j import Neo4jContainer
 
 from app.graph.capability_dao import CapabilityDao
+
+pytestmark = pytest.mark.skipif(
+    shutil.which("docker") is None,
+    reason="docker unavailable for testcontainers",
+)
 
 
 # One event loop reused for all tests so the Neo4j async driver stays bound
@@ -17,9 +23,12 @@ def _run(coro):
     return _loop.run_until_complete(coro)
 
 
+_NEO4J_PASSWORD = "testpassword"
+
+
 @pytest.fixture(scope="module")
 def neo4j_container():
-    with Neo4jContainer("neo4j:5.26-community") as n:
+    with Neo4jContainer("neo4j:5.26-community", password=_NEO4J_PASSWORD) as n:
         yield n
 
 

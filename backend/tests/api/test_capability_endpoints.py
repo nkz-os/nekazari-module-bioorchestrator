@@ -8,6 +8,7 @@ Seed data once per module via a session-level seed flag.
 from __future__ import annotations
 
 import os
+import shutil
 
 import httpx
 import pytest
@@ -20,8 +21,15 @@ from testcontainers.neo4j import Neo4jContainer
 from app.api.v1.capability import router as capability_router, get_capability_dao
 from app.graph.capability_dao import CapabilityDao
 
+pytestmark = [
+    pytest.mark.anyio,
+    pytest.mark.skipif(
+        shutil.which("docker") is None,
+        reason="docker unavailable for testcontainers",
+    ),
+]
 
-pytestmark = pytest.mark.anyio
+_NEO4J_PASSWORD = "testpassword"
 
 # Container is started once for the whole module (sync fixture — no loop involved).
 _container: Neo4jContainer | None = None
@@ -32,7 +40,7 @@ _seeded = False
 def neo4j_container():
     """Start a Neo4j container for the module; populate _container global."""
     global _container
-    with Neo4jContainer("neo4j:5.26-community") as n:
+    with Neo4jContainer("neo4j:5.26-community", password=_NEO4J_PASSWORD) as n:
         _container = n
         yield n
     _container = None
