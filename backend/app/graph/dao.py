@@ -1838,78 +1838,82 @@ class GraphDAO:
         """Return full calibrated agronomic context for a parcel."""
         import httpx
         from fastapi import HTTPException
-        from app.ingestion.orion import OrionIngestionClient
 
-        orion = OrionIngestionClient()
+        orion = OrionClient(tenant_id)
         try:
-            async with httpx.AsyncClient(timeout=10.0) as client:
-                resp = await client.get(
-                    f"{orion.base}/ngsi-ld/v1/entities/{parcel_id}",
-                    headers={"Accept": "application/ld+json", "NGSILD-Tenant": tenant_id, "Fiware-Service": tenant_id},
-                )
-                if resp.status_code == 404:
+            # ── 1. Fetch parcel entity ──────────────────────────────────────
+            try:
+                parcel = await orion.get_entity(parcel_id)
+            except httpx.HTTPStatusError as exc:
+                if exc.response.status_code == 404:
                     return {"error": f"Parcel not found: {parcel_id}"}
-                resp.raise_for_status()
-                parcel = resp.json()
-        except httpx.ConnectError:
-            raise HTTPException(status_code=502, detail="Orion-LD unreachable")
-        except Exception as e:
-            return {"error": f"Failed to read parcel: {str(e)}"}
+                raise
+            except httpx.ConnectError:
+                raise HTTPException(status_code=502, detail="Orion-LD unreachable")
+            except Exception as e:
+                return {"error": f"Failed to read parcel: {str(e)}"}
 
-        crop_uri = _resolve_relationship(parcel, "hasAgriCrop")
-        variety_uri = _resolve_relationship(parcel, "hasAgriCropVariety")
-        management = _extract_prop_value(parcel.get("management"))
-        season_start = _extract_prop_value(parcel.get("cropSeasonStart"))
-        season_end = _extract_prop_value(parcel.get("cropSeasonEnd"))
-        if not crop_uri:
-            return {"error": "Parcel has no crop assigned"}
+            crop_uri = _resolve_relationship(parcel, "hasAgriCrop")
+            variety_uri = _resolve_relationship(parcel, "hasAgriCropVariety")
+            management = _extract_prop_value(parcel.get("management"))
+            season_start = _extract_prop_value(parcel.get("cropSeasonStart"))
+            season_end = _extract_prop_value(parcel.get("cropSeasonEnd"))
+            if not crop_uri:
+                return {"error": "Parcel has no crop assigned"}
 
-        crop_eppo = crop_uri.split(":")[-1] if crop_uri else "unknown"
-        crop_name = None
-        crop_scientific = None
-        try:
-            async with httpx.AsyncClient(timeout=10.0) as client:
-                crop_resp = await client.get(
-                    f"{orion.base}/ngsi-ld/v1/entities/{crop_uri}",
-                    headers={"Accept": "application/ld+json", "NGSILD-Tenant": tenant_id},
+            # ── 2. Fetch crop entity ────────────────────────────────────────
+            crop_eppo = crop_uri.split(":")[-1] if crop_uri else "unknown"
+            crop_name = None
+            crop_scientific = None
+            try:
+                crop_entity = await orion.get_entity(crop_uri)
+                crop_name = _extract_prop_value(crop_entity.get("name"))
+                crop_scientific = _extract_prop_value(crop_entity.get("scientificName"))
+            except Exception:
+                pass
+
+            variety_name = variety_uri.split(":")[-1] if variety_uri else None
+            species_query = crop_name or crop_scientific or crop_eppo
+            phenology = await self.get_phenology_params(
+                species=species_query, cultivar=variety_name, management=management, gdd=gdd,
+            )
+            thermal = await self.get_heat_tolerance(species_query)
+            soil_req = await self.get_soil_suitability(species_query)
+
+            from app.services.soil_client import compute_soil_suitability, get_parcel_soil_properties
+            soil_actual = await get_parcel_soil_properties(parcel_id)
+            soil_suitability = None
+            if soil_actual.get("data_available") and soil_req:
+                soil_suitability = compute_soil_suitability(soil_req, soil_actual)
+
+            # ── 3. Fetch latest CropHealthAssessment (normalized NGSI-LD) ──
+            soil_sensors: dict = {"available": False}
+            try:
+                entities = await orion.query_entities(
+                    type="CropHealthAssessment",
+                    q=f'hasAgriParcel=="{parcel_id}"',
+                    limit=1,
                 )
-                if crop_resp.status_code == 200:
-                    crop_entity = crop_resp.json()
-                    crop_name = _extract_prop_value(crop_entity.get("name"))
-                    crop_scientific = _extract_prop_value(crop_entity.get("scientificName"))
-        except Exception:
-            pass
+                if entities and isinstance(entities, list):
+                    a = entities[0]
+                    ph = _extract_prop_value(a.get("soilPh"))
+                    ec = _extract_prop_value(a.get("soilEC"))
+                    moisture = _extract_prop_value(a.get("soilMoisturePct"))
+                    temp = _extract_prop_value(a.get("soilTemperatureC"))
+                    if any(v is not None for v in (ph, ec, moisture, temp)):
+                        soil_sensors = {
+                            "available": True,
+                            "last_reading": _extract_prop_value(a.get("assessedAt")) or "",
+                            "ph": ph,
+                            "ec_ds_m": ec,
+                            "moisture_pct": moisture,
+                            "temperature_c": temp,
+                        }
+            except Exception:
+                pass
 
-        variety_name = variety_uri.split(":")[-1] if variety_uri else None
-        species_query = crop_name or crop_scientific or crop_eppo
-        phenology = await self.get_phenology_params(
-            species=species_query, cultivar=variety_name, management=management, gdd=gdd,
-        )
-        thermal = await self.get_heat_tolerance(species_query)
-        soil_req = await self.get_soil_suitability(species_query)
-
-        from app.services.soil_client import compute_soil_suitability, get_parcel_soil_properties
-        soil_actual = await get_parcel_soil_properties(parcel_id)
-        soil_suitability = None
-        if soil_actual.get("data_available") and soil_req:
-            soil_suitability = compute_soil_suitability(soil_req, soil_actual)
-
-        soil_sensors: dict = {"available": False}
-        try:
-            async with httpx.AsyncClient(timeout=5.0) as client:
-                sensor_resp = await client.get(
-                    f"{orion.base}/ngsi-ld/v1/entities",
-                    params={"type": "CropHealthAssessment", "q": f'hasAgriParcel=="{parcel_id}"', "limit": 1, "options": "keyValues"},
-                    headers={"Accept": "application/ld+json", "NGSILD-Tenant": tenant_id},
-                )
-                if sensor_resp.status_code == 200:
-                    entities = sensor_resp.json()
-                    if entities and isinstance(entities, list):
-                        a = entities[0]
-                        if any(a.get(k) is not None for k in ("soilPh", "soilEC", "soilMoisturePct", "soilTemperatureC")):
-                            soil_sensors = {"available": True, "last_reading": a.get("assessedAt", ""), "ph": a.get("soilPh"), "ec_ds_m": a.get("soilEC"), "moisture_pct": a.get("soilMoisturePct"), "temperature_c": a.get("soilTemperatureC")}
-        except Exception:
-            pass
+        finally:
+            await orion.close()
 
         if phenology and not phenology.get("is_default", True):
             if variety_name and management:
