@@ -4,15 +4,15 @@ All methods use the AsyncDriver and return plain dicts for JSON serialisation.
 Business logic lives in app/services/.
 
 Tenant model:
-  The knowledge graph stores global reference data (AGROVOC taxonomy, EPPO codes,
-  IUCN species, phenology parameters). This data is inherently multi-tenant-safe
-  because it describes biological reality, not tenant-specific state.
+  The Neo4j knowledge graph holds ONLY global biological reference data
+  (crop catalog, phenology, EPPO/IUCN/AGROVOC). It is a single shared graph,
+  NOT partitioned by tenant — biological reality is identical for all tenants.
+  Tenant isolation is enforced at the deployment level (a dedicated nkz instance
+  if a customer requires it), never by a tenant axis inside this graph.
 
-  Tenant-scoped data (future Phase 2 features like custom DSS rules, user-created
-  crop rotation plans) must be linked to a :Tenant node via [:BELONGS_TO] and
-  filtered by tenant_id in every query. Methods accept an optional tenant_id
-  parameter that is ignored for global data but will be enforced when
-  tenant-scoped subgraphs are added.
+  Tenant-specific data (parcels, NDVI, soil, weather, crop assignments) lives in
+  Orion-LD per-tenant stores + TimescaleDB and is read on demand with the request's
+  tenant; it is never persisted into this graph.
 """
 
 from __future__ import annotations
@@ -48,12 +48,12 @@ class GraphDAO:
 
     # ── Global stats (not tenant-filtered — counts all reference data) ────────
 
-    async def get_stats(self, tenant_id: str | None = None) -> dict[str, Any]:
+    async def get_stats(self) -> dict[str, Any]:
         """Return node count, relationship count, and per-label counts.
 
-        When tenant_id is provided and tenant-scoped subgraphs exist,
-        results are filtered to that tenant's view. For global reference
-        data this parameter is a no-op.
+        Counts all nodes and relationships in the shared global graph.
+        No tenant filtering applies — the graph holds only biological
+        reference data that is identical for all tenants.
         """
         async with self._driver.session() as session:
             totals_result = await session.run(
@@ -131,7 +131,6 @@ class GraphDAO:
         lat: float | None = None,
         lon: float | None = None,
         gdd: float | None = None,
-        tenant_id: str | None = None,
     ) -> dict | None:
         """Query phenology parameters with context-aware cascade matching.
 
@@ -2211,7 +2210,6 @@ class GraphDAO:
         pac = await self._evaluate_pac_compliance(
             parcel_id=parcel_id,
             plan=plan,
-            tenant_id=tenant_id,
         )
 
         return {
@@ -2227,7 +2225,7 @@ class GraphDAO:
         }
 
     async def _evaluate_pac_compliance(
-        self, parcel_id: str, plan: list[dict], tenant_id: str = ""
+        self, parcel_id: str, plan: list[dict]
     ) -> dict:
         """Evaluate CAP/PAC eco-scheme compliance for a rotation plan.
 
