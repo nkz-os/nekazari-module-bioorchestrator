@@ -76,8 +76,6 @@ async def get_crop_detail(
     Aggregates Orion-LD entity data + Neo4j graph enrichment
     (phenology params, heat tolerance, NPK profiles, rotation constraints).
     """
-    orion = OrionIngestionClient()
-
     async with dao._driver.session() as session:
         result = await session.run("""
             MATCH (c:AgriCrop {uri: $uri})

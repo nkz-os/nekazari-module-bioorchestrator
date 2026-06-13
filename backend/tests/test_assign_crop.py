@@ -59,7 +59,7 @@ async def test_assign_crop_marks_old_harvested():
         instance.update_entity_attrs = AsyncMock()
         instance.close = AsyncMock()
 
-        result = await dao.assign_crop_to_parcel(
+        await dao.assign_crop_to_parcel(
             parcel_id="urn:ngsi-ld:AgriParcel:test-parcel",
             crop_uri="urn:ngsi-ld:AgriCrop:TRZAX",
             variety_uri="urn:ngsi-ld:AgriCropVariety:LG_AURUS",

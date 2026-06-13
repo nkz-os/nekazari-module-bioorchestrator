@@ -18,7 +18,6 @@ Data sources (all open access):
 from __future__ import annotations
 
 import math
-from datetime import date
 from typing import Any
 
 

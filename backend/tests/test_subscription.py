@@ -6,7 +6,6 @@ Bug: previous code used Content-Type: application/ld+json without @context in bo
 from __future__ import annotations
 
 import asyncio
-from unittest.mock import MagicMock
 
 
 # ── Fake httpx infrastructure ──────────────────────────────────────────────────
