@@ -2,6 +2,7 @@
 from datetime import datetime as dt
 
 from fastapi import APIRouter, HTTPException, Query, Request
+from nkz_platform_sdk.orion import OrionClient
 
 from app.ingestion.orion import OrionIngestionClient
 from app.services.timescale import compute_trend, query_vegetation_timeseries
@@ -38,49 +39,55 @@ async def parcel_vegetation(
     if period not in VALID_PERIODS:
         raise HTTPException(status_code=400, detail=f"Invalid period: {period}. Valid: {VALID_PERIODS}")
 
-    orion = OrionIngestionClient()
+    tenant_id = getattr(request.state, "tenant_id", "") or request.headers.get("X-Tenant-ID", "")
+    orion = OrionClient(tenant_id)
     parcel_urn = f"urn:ngsi-ld:AgriParcel:{parcel_id}"
 
     try:
-        entities = await orion.query_by_relationship("VegetationIndex", "hasAgriParcel", parcel_urn)
-    except Exception:
-        return _veg_unavailable(index, period)
-
-    if not entities:
-        return _veg_unavailable(index, period)
-
-    entity_id = entities[0].get("id", "")
-
-    since = None
-    if period == "season":
         try:
-            seasons = await orion.query_by_relationship("AgriCropSeason", "hasAgriParcel", parcel_urn, limit=1)
-            if seasons:
-                start_raw = seasons[0].get("startDate", {})
-                if isinstance(start_raw, dict):
-                    start_val = start_raw.get("value")
-                    if start_val:
-                        since = dt.fromisoformat(start_val.replace("Z", "+00:00"))
+            entities = await orion.query_entities(type="VegetationIndex", q=f'hasAgriParcel=="{parcel_urn}"', limit=1)
         except Exception:
-            since = None
+            return _veg_unavailable(index, period)
 
-    attr_name = f"{index}Mean"
-    observations = query_vegetation_timeseries(entity_id, attr_name, period, since)
+        if not entities:
+            return _veg_unavailable(index, period)
 
-    current_value = observations[-1]["value"] if observations else None
-    trend = compute_trend(observations)
+        entity_id = entities[0].get("id", "")
 
-    return {
-        "available": True,
-        "index": index,
-        "period": period,
-        "observations": observations,
-        "current": current_value,
-        "trend": trend,
-        "count": len(observations),
-        "source": "Sentinel-2 L2A (ESA Copernicus)",
-        "processor": "vegetation-health v2.0.0",
-    }
+        since = None
+        if period == "season":
+            try:
+                seasons = await orion.query_entities(
+                    type="AgriCropSeason", q=f'hasAgriParcel=="{parcel_urn}"', limit=1
+                )
+                if seasons:
+                    start_raw = seasons[0].get("startDate", {})
+                    if isinstance(start_raw, dict):
+                        start_val = start_raw.get("value")
+                        if start_val:
+                            since = dt.fromisoformat(start_val.replace("Z", "+00:00"))
+            except Exception:
+                since = None
+
+        attr_name = f"{index}Mean"
+        observations = query_vegetation_timeseries(entity_id, attr_name, period, since)
+
+        current_value = observations[-1]["value"] if observations else None
+        trend = compute_trend(observations)
+
+        return {
+            "available": True,
+            "index": index,
+            "period": period,
+            "observations": observations,
+            "current": current_value,
+            "trend": trend,
+            "count": len(observations),
+            "source": "Sentinel-2 L2A (ESA Copernicus)",
+            "processor": "vegetation-health v2.0.0",
+        }
+    finally:
+        await orion.close()
 
 
 @router.get("/{parcel_id}/soil")

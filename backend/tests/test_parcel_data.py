@@ -70,3 +70,52 @@ def test_soil_available_response_structure():
     assert len(response["horizons"]) == 1
     assert response["horizons"][0]["sand"] == 52.0
     assert response["hydrologicGroup"] == "B"
+
+
+from unittest.mock import patch
+
+
+class _RecordingOrion:
+    """Factory that records the tenant_id each OrionClient is built with."""
+    constructed_tenants: list[str] = []
+
+    def __init__(self, tenant_id, *a, **k):
+        _RecordingOrion.constructed_tenants.append(tenant_id)
+        self.tenant_id = tenant_id
+
+    async def query_entities(self, type=None, q=None, limit=100, offset=0, attrs=None):
+        return []  # no entities → endpoint returns "unavailable"
+
+    async def close(self):
+        return None
+
+
+def _get_route_globals(client, path):
+    """Return the __globals__ dict of the actual registered route endpoint.
+
+    The conftest uses patch.dict('sys.modules', ...) which is cleaned up after
+    fixture creation, leaving the route endpoint's __globals__ pointing to an
+    orphaned module dict that is different from what 'import app.api.v1.parcel_data'
+    returns after fixture setup. We must patch the dict the live route uses.
+    """
+    for route in client.app.routes:
+        if hasattr(route, "path") and route.path == path:
+            return route.endpoint.__globals__
+    raise RuntimeError(f"Route not found: {path}")
+
+
+def test_vegetation_uses_request_tenant(client):
+    _RecordingOrion.constructed_tenants = []
+    route_globals = _get_route_globals(client, "/api/parcel/{parcel_id}/vegetation")
+    original = route_globals["OrionClient"]
+    route_globals["OrionClient"] = _RecordingOrion
+    try:
+        resp = client.get(
+            "/api/parcel/P1/vegetation",
+            headers={"X-Tenant-ID": "asociacion-allotarra", "X-User-ID": "u1", "X-User-Roles": "Tecnico"},
+        )
+    finally:
+        route_globals["OrionClient"] = original
+    assert resp.status_code == 200
+    assert "asociacion-allotarra" in _RecordingOrion.constructed_tenants
+    assert "" not in _RecordingOrion.constructed_tenants  # never the default store
