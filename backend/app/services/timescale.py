@@ -15,12 +15,14 @@ PERIOD_MAP = {
 
 
 def _connect():
-    """Connect to TimescaleDB. DSN comes from env var (K8s secret), empty default = local dev."""
-    return psycopg2.connect(
-        settings.timescale_dsn if settings.timescale_dsn
-        else "postgresql://postgres@localhost:5432/telemetry",
-        connect_timeout=10,
-    )
+    """Connect to TimescaleDB. DSN is mandatory (K8s secret) — no localhost fallback."""
+    dsn = settings.timescale_dsn
+    if not dsn:
+        raise RuntimeError(
+            "TIMESCALE_DSN is required (no localhost fallback). "
+            "Set it via the K8s secret."
+        )
+    return psycopg2.connect(dsn, connect_timeout=10)
 
 
 def query_vegetation_timeseries(
