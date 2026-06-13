@@ -31,10 +31,10 @@ async def graph_health(driver: DriverDep):
 
 
 @router.get("/stats")
-async def graph_stats(driver: DriverDep, tenant_id: str = Depends(_get_tenant_id)):
+async def graph_stats(driver: DriverDep):
     """Return node and relationship counts for the knowledge graph."""
     dao = GraphDAO(driver)
-    return await dao.get_stats(tenant_id=tenant_id or None)
+    return await dao.get_stats()
 
 
 @router.get("/species")
@@ -79,7 +79,6 @@ async def phenology_params(
         description="Growing Degree Days accumulated since season start. "
                     "If provided and stage is not given, auto-detects phenological stage.",
     ),
-    tenant_id: str = Depends(_get_tenant_id),
 ):
     """Return phenology parameters with scientific provenance.
 
@@ -107,7 +106,6 @@ async def phenology_params(
         lat=lat,
         lon=lon,
         gdd=gdd,
-        tenant_id=tenant_id or None,
     )
 
     if params is None:
