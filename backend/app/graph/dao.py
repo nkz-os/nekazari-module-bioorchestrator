@@ -1640,29 +1640,14 @@ class GraphDAO:
             or None if the parcel has no weatherStats or Orion-LD is unreachable.
         """
         try:
-            import httpx
-            from app.core.config import settings
-
-            headers = {
-                "NGSILD-Tenant": tenant_id,
-                "Fiware-Service": tenant_id,
-                "Fiware-ServicePath": "/",
-            }
-
-            orion_url = settings.orion_ld_url
-            url = f"{orion_url}/ngsi-ld/v1/entities/{parcel_id}"
-
-            async with httpx.AsyncClient(timeout=10.0) as client:
-                resp = await client.get(
-                    url,
-                    params={"options": "keyValues"},
-                    headers=headers,
-                )
-                if resp.status_code == 200:
-                    data = resp.json()
-                    weather_stats = data.get("weatherStats")
-                    if weather_stats is not None:
-                        return weather_stats
+            orion = OrionClient(tenant_id)
+            try:
+                entity = await orion.get_entity(parcel_id)
+            finally:
+                await orion.close()
+            weather_stats = _extract_prop_value(entity.get("weatherStats"))
+            if weather_stats is not None:
+                return weather_stats
         except Exception as exc:
             logger.warning(
                 "Failed to fetch weatherStats for parcel %s: %s",
@@ -1952,8 +1937,7 @@ class GraphDAO:
 
     async def get_yield_potential(self, variety: str, crop: str, climate_class: str | None = None, soil_type: str | None = None, parcel_id: str | None = None, tenant_id: str = "") -> dict:
         """Compute expected yield and yield gap for a variety."""
-        import math, httpx
-        from app.ingestion.orion import OrionIngestionClient
+        import math
         trials = await self.get_variety_trials(crop=crop, climate_class=climate_class, soil_type=soil_type, limit=200)
         variety_trials = [t for t in trials if variety.upper() in t.get("variety", "").upper()]
         if not variety_trials:
@@ -1970,19 +1954,23 @@ class GraphDAO:
         result: dict = {"variety": variety, "crop": crop, "target_environment": {"climate_class": climate_class, "soil_type": soil_type}, "expected_yield_kg_ha": round(mean_yield, 1), "confidence_interval": [round(ci_low, 1), round(ci_high, 1)], "trials_analyzed": len(variety_trials), "similar_sites": sites[:10]}
         if parcel_id:
             try:
-                orion = OrionIngestionClient()
-                async with httpx.AsyncClient(timeout=10.0) as client:
-                    assess_resp = await client.get(f"{orion.base}/ngsi-ld/v1/entities", params={"type": "CropHealthAssessment", "q": f'hasAgriParcel==\"{parcel_id}\"', "limit": 1, "options": "keyValues"}, headers={"Accept": "application/ld+json", "NGSILD-Tenant": tenant_id})
-                    if assess_resp.status_code == 200:
-                        entities = assess_resp.json()
-                        if entities:
-                            yup = entities[0].get("yieldUtilizationPct")
-                            if yup is not None:
-                                current_yield = mean_yield * (float(yup) / 100)
-                                gap = mean_yield - current_yield
-                                result["current_estimated_yield_kg_ha"] = round(current_yield, 1)
-                                result["yield_gap_kg_ha"] = round(gap, 1)
-                                result["yield_gap_pct"] = round(gap / mean_yield * 100, 1) if mean_yield else 0
+                orion = OrionClient(tenant_id)
+                try:
+                    entities = await orion.query_entities(
+                        type="CropHealthAssessment",
+                        q=f'hasAgriParcel=="{parcel_id}"',
+                        limit=1,
+                    )
+                finally:
+                    await orion.close()
+                if entities:
+                    yup = _extract_prop_value(entities[0].get("yieldUtilizationPct"))
+                    if yup is not None:
+                        current_yield = mean_yield * (float(yup) / 100)
+                        gap = mean_yield - current_yield
+                        result["current_estimated_yield_kg_ha"] = round(current_yield, 1)
+                        result["yield_gap_kg_ha"] = round(gap, 1)
+                        result["yield_gap_pct"] = round(gap / mean_yield * 100, 1) if mean_yield else 0
             except Exception:
                 pass
         phenology = await self.get_phenology_params(species=crop)
@@ -2789,14 +2777,25 @@ class GraphDAO:
         return result
 
 
-def _extract_prop_value(prop: dict | str | None) -> str | None:
-    """Extract value from NGSI-LD Property (dict with 'value' key) or plain string."""
+def _extract_prop_value(prop: dict | str | None):
+    """Extract value from NGSI-LD Property (dict with 'value' key) or plain scalar.
+
+    Handles:
+    - Normalized Property: {"type": "Property", "value": <scalar|dict>}
+    - RDF typed literal as value: {"@value": ..., "@type": ...}
+    - Plain scalar (str, int, float) — returned as-is
+    - Plain dict value (e.g. weatherStats blob) — returned as-is
+    """
     if prop is None:
         return None
     if isinstance(prop, dict):
         val = prop.get("value")
         if isinstance(val, dict):
-            return val.get("@value")
+            # RDF typed literal e.g. {"@value": "2026-01-01", "@type": "xsd:date"}
+            if "@value" in val:
+                return val["@value"]
+            # Plain object value (e.g. weatherStats blob) — return as-is
+            return val
         return val
     return str(prop)
 
