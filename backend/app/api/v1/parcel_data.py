@@ -4,7 +4,6 @@ from datetime import datetime as dt
 from fastapi import APIRouter, HTTPException, Query, Request
 from nkz_platform_sdk.orion import OrionClient
 
-from app.ingestion.orion import OrionIngestionClient
 from app.services.timescale import compute_trend, query_vegetation_timeseries
 
 router = APIRouter(prefix="/parcel", tags=["parcel-data"])
@@ -93,33 +92,37 @@ async def parcel_vegetation(
 @router.get("/{parcel_id}/soil")
 async def parcel_soil(parcel_id: str, request: Request):
     """Get soil horizons for a parcel from Orion-LD (AgriSoilExtended)."""
-    orion = OrionIngestionClient()
+    tenant_id = getattr(request.state, "tenant_id", "") or request.headers.get("X-Tenant-ID", "")
+    orion = OrionClient(tenant_id)
     parcel_urn = f"urn:ngsi-ld:AgriParcel:{parcel_id}"
 
     try:
-        entities = await orion.query_by_relationship("AgriSoilExtended", "hasAgriParcel", parcel_urn)
-    except Exception:
-        return {"available": False, "message": "El modulo soil no ha procesado esta parcela."}
+        try:
+            entities = await orion.query_entities(type="AgriSoilExtended", q=f'hasAgriParcel=="{parcel_urn}"', limit=1)
+        except Exception:
+            return {"available": False, "message": "El modulo soil no ha procesado esta parcela."}
 
-    if not entities:
+        if not entities:
+            return {
+                "available": False,
+                "message": "El modulo soil no ha procesado esta parcela. Los datos de suelo requieren definir horizontes y seleccionar proveedores de datos.",
+            }
+
+        entity = entities[0]
+
+        horizons_raw = entity.get("horizons", {})
+        horizons = horizons_raw.get("value", []) if isinstance(horizons_raw, dict) else []
+
+        hydro_group = entity.get("hydrologicGroup", {})
+        if isinstance(hydro_group, dict):
+            hydro_group = hydro_group.get("value")
+
         return {
-            "available": False,
-            "message": "El modulo soil no ha procesado esta parcela. Los datos de suelo requieren definir horizontes y seleccionar proveedores de datos.",
+            "available": True,
+            "entityId": entity.get("id"),
+            "horizons": horizons,
+            "hydrologicGroup": hydro_group,
+            "source": "SoilGrids 2.0 + LUCAS 2018",
         }
-
-    entity = entities[0]
-
-    horizons_raw = entity.get("horizons", {})
-    horizons = horizons_raw.get("value", []) if isinstance(horizons_raw, dict) else []
-
-    hydro_group = entity.get("hydrologicGroup", {})
-    if isinstance(hydro_group, dict):
-        hydro_group = hydro_group.get("value")
-
-    return {
-        "available": True,
-        "entityId": entity.get("id"),
-        "horizons": horizons,
-        "hydrologicGroup": hydro_group,
-        "source": "SoilGrids 2.0 + LUCAS 2018",
-    }
+    finally:
+        await orion.close()
