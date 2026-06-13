@@ -2352,9 +2352,11 @@ class GraphDAO:
         import httpx
 
         try:
-            from app.ingestion.orion import OrionIngestionClient
-            orion = OrionIngestionClient()
-            weather_entities = await orion.list_by_type("WeatherObserved", limit=1)
+            orion = OrionClient(tenant_id)
+            try:
+                weather_entities = await orion.query_entities(type="WeatherObserved", limit=1)
+            finally:
+                await orion.close()
             if not weather_entities:
                 logger.info("No WeatherObserved entities found for tenant %s", tenant_id)
                 return None
