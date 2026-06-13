@@ -119,3 +119,20 @@ def test_vegetation_uses_request_tenant(client):
     assert resp.status_code == 200
     assert "asociacion-allotarra" in _RecordingOrion.constructed_tenants
     assert "" not in _RecordingOrion.constructed_tenants  # never the default store
+
+
+def test_soil_uses_request_tenant(client):
+    _RecordingOrion.constructed_tenants = []
+    route_globals = _get_route_globals(client, "/api/parcel/{parcel_id}/soil")
+    original = route_globals["OrionClient"]
+    route_globals["OrionClient"] = _RecordingOrion
+    try:
+        resp = client.get(
+            "/api/parcel/P1/soil",
+            headers={"X-Tenant-ID": "asociacion-allotarra", "X-User-ID": "u1", "X-User-Roles": "Tecnico"},
+        )
+    finally:
+        route_globals["OrionClient"] = original
+    assert resp.status_code == 200
+    assert "asociacion-allotarra" in _RecordingOrion.constructed_tenants
+    assert "" not in _RecordingOrion.constructed_tenants  # never the default store
