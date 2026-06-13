@@ -1268,12 +1268,10 @@ class GraphDAO:
             Complete sequence plan dict matching RegenerativeSequence schema.
         """
         from app.services.cover_crops import (
-            COVER_CROPS,
             PROTEIN_CROPS,
             select_cover_crops,
             estimate_n_fixation,
             estimate_dates,
-            lookup,
             ORGANIC_YIELD_FACTOR,
         )
 
@@ -1489,7 +1487,7 @@ class GraphDAO:
         soil_texture = "unknown"
         if parcel_id:
             try:
-                soil_awc = await self._fetch_parcel_awc(parcel_id)
+                await self._fetch_parcel_awc(parcel_id)
                 # Try to also get SOC from same endpoint
                 import httpx
                 async with httpx.AsyncClient(timeout=5.0) as client:
@@ -1743,7 +1741,7 @@ class GraphDAO:
         try:
             # Step 1: Create the AgriCrop entity (@context injected by OrionClient)
             try:
-                result = await client.create_entity(agri_crop_body)
+                await client.create_entity(agri_crop_body)
             except httpx.HTTPStatusError as e:
                 if e.response.status_code == 409:
                     # Entity already exists — upsert via PATCH attrs
@@ -2396,8 +2394,6 @@ class GraphDAO:
         self, parcel_id: str, tenant_id: str = "", week_start: str | None = None
     ) -> dict:
         """Calculate weekly irrigation requirement for a parcel."""
-        import os
-        import httpx
         from datetime import date, timedelta
 
         ws = date.fromisoformat(week_start) if week_start else date.today()
@@ -2499,8 +2495,6 @@ class GraphDAO:
 
         try:
             cutoff = datetime.now(timezone.utc) - timedelta(days=max_age_days)
-            cutoff_ms = int(cutoff.timestamp() * 1000)
-
             raw = await r.xrevrange("crop:events", count=limit * 2)
             alerts = []
             seen = 0
@@ -2575,11 +2569,6 @@ class GraphDAO:
         # Get parcel coordinates from crop context
         try:
             ctx = await self.get_crop_context(parcel_id=parcel_id)
-            lat = None
-            lon = None
-            if ctx and ctx.get("soil", {}).get("actual") is not None:
-                # Approximate — crop context doesn't store lat/lon directly
-                pass
         except Exception:
             return eco
 
@@ -2587,7 +2576,7 @@ class GraphDAO:
         try:
             import httpx
             # Use a default location if parcel coords unavailable
-            async with httpx.AsyncClient(timeout=5.0) as client:
+            async with httpx.AsyncClient(timeout=5.0):
                 # GBIF occurrence search for common pollinator taxa near parcel
                 # Falls back to general pollinator presence
                 eco["pollinator_species"] = ["Apis mellifera", "Bombus terrestris"]
@@ -2621,7 +2610,7 @@ class GraphDAO:
         try:
             async with __import__("httpx").AsyncClient(timeout=8.0) as client:
                 resp = await client.get(
-                    f"https://ec.europa.eu/food/plant/pesticides/eu-pesticides-database/api/public/products",
+                    "https://ec.europa.eu/food/plant/pesticides/eu-pesticides-database/api/public/products",
                     params={"crop": crop, "limit": 10},
                 )
                 if resp.status_code == 200:
@@ -2636,7 +2625,8 @@ class GraphDAO:
         Returns {shared_pests: [...], shared_count: int, risk_level: str,
         source_unavailable: bool}. Never raises — returns partial data on failure.
         """
-        import os as _os, httpx
+        import os as _os
+        import httpx
 
         api_key = _os.getenv("EPPO_API_KEY", "")
         base = "https://api.eppo.int/gd/v2"
@@ -2714,7 +2704,7 @@ class GraphDAO:
 
     async def get_market_maturity(self, eppo: str) -> dict:
         """Get CPVO registered variety count for a crop. Non-blocking."""
-        import os as _os, httpx
+        import httpx
 
         result: dict = {"registered_varieties": 0, "source_unavailable": False}
         try:

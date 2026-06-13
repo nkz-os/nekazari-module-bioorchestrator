@@ -72,7 +72,6 @@ def test_soil_available_response_structure():
     assert response["hydrologicGroup"] == "B"
 
 
-from unittest.mock import patch
 
 
 class _RecordingOrion:

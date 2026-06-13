@@ -2,12 +2,10 @@
 
 from __future__ import annotations
 
-import os
 from typing import Annotated
 
 import httpx
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
-from fastapi.responses import JSONResponse
 from neo4j import AsyncDriver
 
 from app.core.dependencies import get_neo4j_driver

@@ -219,7 +219,7 @@ try:
                 methods=list(route.methods) if route.methods else ['GET'],
                 include_in_schema=False,
             )
-    print(f"[bioorchestrator] IkerKeta routes registered on main app")
+    print("[bioorchestrator] IkerKeta routes registered on main app")
 except ImportError:
     print("[bioorchestrator] ikerketa.api not available — running without data endpoints")
 

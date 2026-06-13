@@ -7,7 +7,6 @@ Seed data once per module via a session-level seed flag.
 """
 from __future__ import annotations
 
-import os
 import shutil
 
 import httpx

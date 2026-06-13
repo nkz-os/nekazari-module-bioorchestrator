@@ -140,7 +140,7 @@ class DadisClient:
         return await self._request("GET", "species")
 
 
-from fastapi import Request
+from fastapi import Request  # noqa: E402
 
 
 def get_dadis_client(request: Request) -> DadisClient:

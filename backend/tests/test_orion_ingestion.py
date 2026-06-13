@@ -1,4 +1,3 @@
-import pytest
 from app.ingestion.uri import agri_crop_uri
 
 
