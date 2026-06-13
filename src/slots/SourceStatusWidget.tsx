@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from '@nekazari/sdk';
 import { Spinner, Badge } from '@nekazari/ui-kit';
+import { SlotShell } from '@nekazari/viewer-kit';
 import { useBioApi } from '../services/api';
 
 const bioAccent = { base: '#14B8A6', soft: '#CCFBF1', strong: '#0D9488' };
@@ -18,17 +19,17 @@ const SourceStatusWidget: React.FC = () => {
 
   if (!counts) {
     return (
-      <div>
+      <SlotShell moduleId="bioorchestrator" title={t('sources.title')} accent={bioAccent}>
         <div className="flex items-center gap-2">
           <Spinner size="sm" />
           <span className="text-nkz-sm text-nkz-text-muted">{t('sources.loading')}</span>
         </div>
-      </div>
+      </SlotShell>
     );
   }
 
   return (
-    <div>
+    <SlotShell moduleId="bioorchestrator" title={t('sources.title')} accent={bioAccent}>
       <div className="flex items-center gap-2 text-nkz-sm">
         <span className="font-medium text-nkz-text-primary">
           {t('sources.summary.ready')}:
@@ -37,7 +38,7 @@ const SourceStatusWidget: React.FC = () => {
         <span className="text-nkz-text-muted">/</span>
         <span className="text-nkz-text-primary">{counts.total}</span>
       </div>
-    </div>
+    </SlotShell>
   );
 };
 

@@ -104,7 +104,8 @@
     "warnings": {
       "keyMissing": "Falta clau",
       "noDataFile": "Sense fitxer de dades"
-    }
+    },
+    "title": "Fonts de dades"
   },
   "pipeline": {
     "sourcesLabel": "Fonts (separades per comes, buit = totes)",
@@ -349,7 +350,8 @@
     "scenarioIncomplete": "Both crops have incomplete data. The comparison may be inconclusive.",
     "sectionError": "Could not load {{section}} data.",
     "retry": "Retry",
-    "deprecatedSoilNote": "Deprecated data — coming soon from Soil module"
+    "deprecatedSoilNote": "Deprecated data — coming soon from Soil module",
+    "title": "Recomanacions"
   },
   "disclaimer": {
     "text": "Les recomanacions es basen en models agronòmics i dades de fonts científiques. No substitueixen el criteri professional. Consulteu el vostre tècnic agrícola local abans de prendre decisions de cultiu."
