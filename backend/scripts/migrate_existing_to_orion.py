@@ -15,9 +15,11 @@ import yaml
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from app.ingestion.uri import agri_crop_uri
-from app.ingestion.orion import OrionIngestionClient
+from app.ingestion.builders import build_agri_crop_entity
 from app.core.dependencies import get_driver
 from app.graph.dao import GraphDAO
+from nkz_platform_sdk.orion import OrionClient
+from app.core.config import settings
 
 
 async def main():
@@ -31,7 +33,11 @@ async def main():
     with open(yaml_path) as f:
         phen_data = yaml.safe_load(f)
 
-    orion = OrionIngestionClient()
+    orion = OrionClient(
+        settings.catalog_tenant,
+        base_url=settings.orion_ld_url,
+        context_url=settings.context_url,
+    )
     driver = await get_driver()
     dao = GraphDAO(driver)
     migrated = 0
@@ -64,15 +70,16 @@ async def main():
                 attrs["frostDamageThresholdC"] = {"type": "Property",
                                                    "value": float(ht["frostDamageThresholdC"])}
 
-        agri_crop = orion.build_entity(
+        agri_crop = build_agri_crop_entity(
             uri, common_name, sci_name, "Manual curation (phenology_sources.yaml)",
             extra_attrs=attrs)
-        await orion.upsert_entity(agri_crop)
+        await orion.upsert_entities_batch([agri_crop])
         migrated += 1
         print(f"  [{migrated}] {common_name} ({sci_name}) -> {uri}")
 
     print(f"Done. {migrated} species migrated to Orion-LD.")
     print("NOTE: Detailed provenance (per-stage, per-cultivar) remains in Neo4j.")
+    await orion.close()
     await driver.close()
 
 

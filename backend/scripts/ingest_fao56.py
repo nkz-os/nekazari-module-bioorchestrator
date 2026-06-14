@@ -12,10 +12,12 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from app.ingestion.uri import agri_crop_uri
-from app.ingestion.orion import OrionIngestionClient
+from app.ingestion.builders import build_agri_crop_entity
 from app.ingestion.sync import sync_all_agri_crops
 from app.graph.dao import GraphDAO
 from app.core.dependencies import get_driver
+from nkz_platform_sdk.orion import OrionClient
+from app.core.config import settings
 
 # Hardcoded mapping from FAO-56 common names to scientific names.
 # Extracted manually from FAO-56 Table 12 + external cross-reference.
@@ -42,7 +44,11 @@ FAO56_CROPS = [
 
 
 async def main():
-    orion = OrionIngestionClient()
+    orion = OrionClient(
+        settings.catalog_tenant,
+        base_url=settings.orion_ld_url,
+        context_url=settings.context_url,
+    )
     driver = await get_driver()
     dao = GraphDAO(driver)
 
@@ -53,7 +59,7 @@ async def main():
         # Check if AgriCrop already exists in Orion-LD
         # If it does, patch Kc attributes; if not, create minimal entity
         try:
-            await orion.patch_entity(uri, {
+            await orion.append_entity_attrs(uri, {
                 "kcIni": {"type": "Property", "value": kc_ini},
                 "kcMid": {"type": "Property", "value": kc_mid},
                 "kcEnd": {"type": "Property", "value": kc_end},
@@ -62,7 +68,7 @@ async def main():
             })
         except Exception:
             # Entity doesn't exist yet — create it
-            agri_crop = orion.build_entity(uri, common, sci, "FAO-56",
+            agri_crop = build_agri_crop_entity(uri, common, sci, "FAO-56",
                 extra_attrs={
                     "kcIni": {"type": "Property", "value": kc_ini},
                     "kcMid": {"type": "Property", "value": kc_mid},
@@ -70,13 +76,14 @@ async def main():
                     "kcSource": {"type": "Property", "value": "FAO-56 Table 12"},
                     "maxHeight": {"type": "Property", "value": height},
                 })
-            await orion.upsert_entity(agri_crop)
+            await orion.upsert_entities_batch([agri_crop])
 
         upserted += 1
         print(f"  [{upserted:3d}] {common} ({sci}) -> Kc {kc_ini:.2f}/{kc_mid:.2f}/{kc_end:.2f}")
 
     synced = await sync_all_agri_crops(dao, orion)
     print(f"Done. {upserted} crops with FAO-56 Kc, {synced} synced to Neo4j.")
+    await orion.close()
     await driver.close()
 
 

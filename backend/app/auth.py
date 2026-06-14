@@ -36,6 +36,10 @@ SKIP_AUTH_PREFIXES = [
     "/api/v1/catalog",
     "/api/v1/capability",
     "/ngsi-ld/",
+    # Orion-LD subscription notifications POST here directly (in-cluster, no
+    # api-gateway, no JWT). NetworkPolicy gates ingress. Without this the
+    # production auth branch 401s every notification and the catalog sync dies.
+    "/api/ngsi-ld/",
 ]
 
 

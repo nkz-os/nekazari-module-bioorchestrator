@@ -12,21 +12,26 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from app.ingestion.orion import OrionIngestionClient
 from app.ingestion.sync import sync_all_agri_crops
 from app.graph.dao import GraphDAO
 from app.core.dependencies import get_driver
+from nkz_platform_sdk.orion import OrionClient
+from app.core.config import settings
 
 HEAT_MARGIN_C = 2.0   # Conservative offset from absolute max to damage threshold
 FROST_THRESHOLD = 0.0  # Only derive frost threshold if tempMinAbs < 0 deg C
 
 
 async def main():
-    orion = OrionIngestionClient()
+    orion = OrionClient(
+        settings.catalog_tenant,
+        base_url=settings.orion_ld_url,
+        context_url=settings.context_url,
+    )
     driver = await get_driver()
     dao = GraphDAO(driver)
 
-    crops = await orion.list_by_type("AgriCrop")
+    crops = await orion.query_entities(type="AgriCrop", limit=1000)
     derived = 0
 
     for crop in crops:
@@ -52,13 +57,14 @@ async def main():
                 "value": "EcoCrop GAEZ v4 (derived, conserv. margin +/-2 deg C)",
             }
             try:
-                await orion.patch_entity(crop["id"], attrs_to_patch)
+                await orion.append_entity_attrs(crop["id"], attrs_to_patch)
                 derived += 1
             except Exception as e:
                 print(f"  ERROR patching {crop.get('id')}: {e}")
 
     synced = await sync_all_agri_crops(dao, orion)
     print(f"Done. {derived} crops with derived thermal limits, {synced} synced to Neo4j.")
+    await orion.close()
     await driver.close()
 
 
