@@ -104,7 +104,8 @@
     "warnings": {
       "keyMissing": "Chave ausente",
       "noDataFile": "Sem arquivo de dados"
-    }
+    },
+    "title": "Fontes de dados"
   },
   "pipeline": {
     "sourcesLabel": "Fontes (separadas por vírgulas, vazio = todas)",
@@ -349,7 +350,8 @@
     "scenarioIncomplete": "Both crops have incomplete data. The comparison may be inconclusive.",
     "sectionError": "Could not load {{section}} data.",
     "retry": "Retry",
-    "deprecatedSoilNote": "Deprecated data — coming soon from Soil module"
+    "deprecatedSoilNote": "Deprecated data — coming soon from Soil module",
+    "title": "Recomendações"
   },
   "disclaimer": {
     "text": "As recomendações baseiam-se em modelos agronómicos e dados científicos de terceiros. Não substituem o julgamento profissional. Consulte o seu técnico agrícola local antes de tomar decisões de cultivo."

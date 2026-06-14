@@ -1,8 +1,11 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useTranslation } from '@nekazari/sdk';
-import { Card, Button, Badge, Spinner, Stack, Input, ProgressBar } from '@nekazari/ui-kit';
+import { Button, Badge, Spinner, Stack, Input, ProgressBar } from '@nekazari/ui-kit';
+import { SlotShell } from '@nekazari/viewer-kit';
 import { Play, CheckCircle, XCircle } from 'lucide-react';
 import { useBioApi } from '../services/api';
+
+const bioAccent = { base: '#14B8A6', soft: '#CCFBF1', strong: '#0D9488' };
 
 interface PipelineResult { success: boolean; entities_before_dedup: number; entities_after_dedup: number; relationships: number; crossref_matches: number; duration_seconds: number; errors: string[]; }
 interface ProgressEvent { run_id: string; step: number; total: number; connector: string; status: string; timestamp: string; }
@@ -45,11 +48,12 @@ const PipelineRunner: React.FC = () => {
   const pct = progress && progress.total > 0 ? Math.round((progress.step / progress.total) * 100) : 0;
 
   return (
-    <Card padding="md">
-      <div className="flex items-center gap-2 mb-4">
-        <Play className="w-4 h-4 text-nkz-accent-base" />
-        <span className="text-nkz-md font-semibold text-nkz-text-primary">{t('pipeline.title')}</span>
-      </div>
+    <SlotShell
+      moduleId="bioorchestrator"
+      title={t('pipeline.title')}
+      icon={<Play className="w-4 h-4" />}
+      accent={bioAccent}
+    >
       <Stack gap="stack">
         <div className="flex gap-3 items-end flex-wrap">
           <div className="flex-1 min-w-[200px]">
@@ -94,7 +98,7 @@ const PipelineRunner: React.FC = () => {
           </div>
         )}
       </Stack>
-    </Card>
+    </SlotShell>
   );
 };
 

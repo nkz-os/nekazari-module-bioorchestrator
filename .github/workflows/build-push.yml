@@ -42,13 +42,13 @@ jobs:
         working-directory: backend
         run: |
           pip install ruff
-          ruff check app/ tests/ || true
+          ruff check app/ tests/
 
       - name: Run unit tests
         working-directory: backend
         env:
           PYTHONPATH: .
-        run: pytest tests/ -v --tb=short -x || true
+        run: pytest tests/ -v --tb=short
 
   # ==========================================================================
   # Build and push backend Docker image

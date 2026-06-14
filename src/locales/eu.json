@@ -104,7 +104,8 @@
     "warnings": {
       "keyMissing": "Gakoa falta da",
       "noDataFile": "Datu-fitxategirik ez"
-    }
+    },
+    "title": "Datu-iturriak"
   },
   "pipeline": {
     "sourcesLabel": "Iturriak (komaz bereizita, hutsik = guztiak)",
@@ -349,7 +350,8 @@
     "scenarioIncomplete": "Both crops have incomplete data. The comparison may be inconclusive.",
     "sectionError": "Could not load {{section}} data.",
     "retry": "Retry",
-    "deprecatedSoilNote": "Deprecated data — coming soon from Soil module"
+    "deprecatedSoilNote": "Deprecated data — coming soon from Soil module",
+    "title": "Gomendiosk"
   },
   "disclaimer": {
     "text": "Recommendations are based on agronomic models and third-party scientific data. They do not replace professional judgment. Consult your local agricultural technician before making crop decisions."

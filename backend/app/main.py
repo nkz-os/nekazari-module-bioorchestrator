@@ -17,7 +17,9 @@ import json as _json
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 
-from fastapi import FastAPI, Query, Request
+import httpx
+
+from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, StreamingResponse
 
@@ -31,8 +33,14 @@ _ikerketa_available = False
 
 
 async def _create_orion_subscription():
-    """Create or update the NGSI-LD subscription for AgriCrop changes."""
-    import httpx
+    """Create the NGSI-LD subscription for AgriCrop changes (idempotent).
+
+    Sends as application/json + Link header (NGSI-LD fragment pattern).
+    Subscription body carries no @context, so ld+json would cause Orion 400.
+    """
+    ctx = settings.context_url
+    link = f'<{ctx}>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"'
+    endpoint_uri = "http://bioorchestrator-service:8420/api/ngsi-ld/notify"
     sub = {
         "type": "Subscription",
         "entities": [{"type": "AgriCrop"}],
@@ -41,27 +49,32 @@ async def _create_orion_subscription():
                               "heatDamageThresholdC", "frostDamageThresholdC"],
         "notification": {
             "endpoint": {
-                "uri": "http://bioorchestrator-service:8420/api/ngsi-ld/notify",
+                "uri": endpoint_uri,
                 "accept": "application/json",
             }
-        }
+        },
     }
     try:
         async with httpx.AsyncClient(timeout=10) as client:
             resp = await client.get(
                 f"{settings.orion_ld_url}/ngsi-ld/v1/subscriptions",
-                params={"type": "Subscription"},
-                headers={"Accept": "application/ld+json"},
+                params={"limit": 1000},
+                headers={"Accept": "application/json", "Link": link},
             )
             existing = resp.json() if resp.status_code == 200 else []
-            if not existing:
+            ours = any(
+                isinstance(s, dict)
+                and s.get("notification", {}).get("endpoint", {}).get("uri") == endpoint_uri
+                for s in existing
+            )
+            if not ours:
                 await client.post(
                     f"{settings.orion_ld_url}/ngsi-ld/v1/subscriptions",
                     json=sub,
-                    headers={"Content-Type": "application/ld+json"},
+                    headers={"Content-Type": "application/json", "Link": link},
                 )
-    except Exception:
-        pass  # Non-critical — sync works without subscription
+    except Exception as exc:
+        print(f"[bioorchestrator] WARNING: subscription setup failed: {exc}")
 
 
 async def _run_cypher_migrations(driver):
@@ -206,7 +219,7 @@ try:
                 methods=list(route.methods) if route.methods else ['GET'],
                 include_in_schema=False,
             )
-    print(f"[bioorchestrator] IkerKeta routes registered on main app")
+    print("[bioorchestrator] IkerKeta routes registered on main app")
 except ImportError:
     print("[bioorchestrator] ikerketa.api not available — running without data endpoints")
 

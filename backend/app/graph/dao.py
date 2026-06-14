@@ -4,15 +4,15 @@ All methods use the AsyncDriver and return plain dicts for JSON serialisation.
 Business logic lives in app/services/.
 
 Tenant model:
-  The knowledge graph stores global reference data (AGROVOC taxonomy, EPPO codes,
-  IUCN species, phenology parameters). This data is inherently multi-tenant-safe
-  because it describes biological reality, not tenant-specific state.
+  The Neo4j knowledge graph holds ONLY global biological reference data
+  (crop catalog, phenology, EPPO/IUCN/AGROVOC). It is a single shared graph,
+  NOT partitioned by tenant — biological reality is identical for all tenants.
+  Tenant isolation is enforced at the deployment level (a dedicated nkz instance
+  if a customer requires it), never by a tenant axis inside this graph.
 
-  Tenant-scoped data (future Phase 2 features like custom DSS rules, user-created
-  crop rotation plans) must be linked to a :Tenant node via [:BELONGS_TO] and
-  filtered by tenant_id in every query. Methods accept an optional tenant_id
-  parameter that is ignored for global data but will be enforced when
-  tenant-scoped subgraphs are added.
+  Tenant-specific data (parcels, NDVI, soil, weather, crop assignments) lives in
+  Orion-LD per-tenant stores + TimescaleDB and is read on demand with the request's
+  tenant; it is never persisted into this graph.
 """
 
 from __future__ import annotations
@@ -48,12 +48,12 @@ class GraphDAO:
 
     # ── Global stats (not tenant-filtered — counts all reference data) ────────
 
-    async def get_stats(self, tenant_id: str | None = None) -> dict[str, Any]:
+    async def get_stats(self) -> dict[str, Any]:
         """Return node count, relationship count, and per-label counts.
 
-        When tenant_id is provided and tenant-scoped subgraphs exist,
-        results are filtered to that tenant's view. For global reference
-        data this parameter is a no-op.
+        Counts all nodes and relationships in the shared global graph.
+        No tenant filtering applies — the graph holds only biological
+        reference data that is identical for all tenants.
         """
         async with self._driver.session() as session:
             totals_result = await session.run(
@@ -131,7 +131,6 @@ class GraphDAO:
         lat: float | None = None,
         lon: float | None = None,
         gdd: float | None = None,
-        tenant_id: str | None = None,
     ) -> dict | None:
         """Query phenology parameters with context-aware cascade matching.
 
@@ -1269,12 +1268,10 @@ class GraphDAO:
             Complete sequence plan dict matching RegenerativeSequence schema.
         """
         from app.services.cover_crops import (
-            COVER_CROPS,
             PROTEIN_CROPS,
             select_cover_crops,
             estimate_n_fixation,
             estimate_dates,
-            lookup,
             ORGANIC_YIELD_FACTOR,
         )
 
@@ -1490,7 +1487,7 @@ class GraphDAO:
         soil_texture = "unknown"
         if parcel_id:
             try:
-                soil_awc = await self._fetch_parcel_awc(parcel_id)
+                await self._fetch_parcel_awc(parcel_id)
                 # Try to also get SOC from same endpoint
                 import httpx
                 async with httpx.AsyncClient(timeout=5.0) as client:
@@ -1640,29 +1637,14 @@ class GraphDAO:
             or None if the parcel has no weatherStats or Orion-LD is unreachable.
         """
         try:
-            import httpx
-            from app.core.config import settings
-
-            headers = {
-                "NGSILD-Tenant": tenant_id,
-                "Fiware-Service": tenant_id,
-                "Fiware-ServicePath": "/",
-            }
-
-            orion_url = settings.orion_ld_url
-            url = f"{orion_url}/ngsi-ld/v1/entities/{parcel_id}"
-
-            async with httpx.AsyncClient(timeout=10.0) as client:
-                resp = await client.get(
-                    url,
-                    params={"options": "keyValues"},
-                    headers=headers,
-                )
-                if resp.status_code == 200:
-                    data = resp.json()
-                    weather_stats = data.get("weatherStats")
-                    if weather_stats is not None:
-                        return weather_stats
+            orion = OrionClient(tenant_id)
+            try:
+                entity = await orion.get_entity(parcel_id)
+            finally:
+                await orion.close()
+            weather_stats = _extract_prop_value(entity.get("weatherStats"))
+            if weather_stats is not None:
+                return weather_stats
         except Exception as exc:
             logger.warning(
                 "Failed to fetch weatherStats for parcel %s: %s",
@@ -1759,7 +1741,7 @@ class GraphDAO:
         try:
             # Step 1: Create the AgriCrop entity (@context injected by OrionClient)
             try:
-                result = await client.create_entity(agri_crop_body)
+                await client.create_entity(agri_crop_body)
             except httpx.HTTPStatusError as e:
                 if e.response.status_code == 409:
                     # Entity already exists — upsert via PATCH attrs
@@ -1838,78 +1820,82 @@ class GraphDAO:
         """Return full calibrated agronomic context for a parcel."""
         import httpx
         from fastapi import HTTPException
-        from app.ingestion.orion import OrionIngestionClient
 
-        orion = OrionIngestionClient()
+        orion = OrionClient(tenant_id)
         try:
-            async with httpx.AsyncClient(timeout=10.0) as client:
-                resp = await client.get(
-                    f"{orion.base}/ngsi-ld/v1/entities/{parcel_id}",
-                    headers={"Accept": "application/ld+json", "NGSILD-Tenant": tenant_id, "Fiware-Service": tenant_id},
-                )
-                if resp.status_code == 404:
+            # ── 1. Fetch parcel entity ──────────────────────────────────────
+            try:
+                parcel = await orion.get_entity(parcel_id)
+            except httpx.HTTPStatusError as exc:
+                if exc.response.status_code == 404:
                     return {"error": f"Parcel not found: {parcel_id}"}
-                resp.raise_for_status()
-                parcel = resp.json()
-        except httpx.ConnectError:
-            raise HTTPException(status_code=502, detail="Orion-LD unreachable")
-        except Exception as e:
-            return {"error": f"Failed to read parcel: {str(e)}"}
+                raise
+            except httpx.ConnectError:
+                raise HTTPException(status_code=502, detail="Orion-LD unreachable")
+            except Exception as e:
+                return {"error": f"Failed to read parcel: {str(e)}"}
 
-        crop_uri = _resolve_relationship(parcel, "hasAgriCrop")
-        variety_uri = _resolve_relationship(parcel, "hasAgriCropVariety")
-        management = _extract_prop_value(parcel.get("management"))
-        season_start = _extract_prop_value(parcel.get("cropSeasonStart"))
-        season_end = _extract_prop_value(parcel.get("cropSeasonEnd"))
-        if not crop_uri:
-            return {"error": "Parcel has no crop assigned"}
+            crop_uri = _resolve_relationship(parcel, "hasAgriCrop")
+            variety_uri = _resolve_relationship(parcel, "hasAgriCropVariety")
+            management = _extract_prop_value(parcel.get("management"))
+            season_start = _extract_prop_value(parcel.get("cropSeasonStart"))
+            season_end = _extract_prop_value(parcel.get("cropSeasonEnd"))
+            if not crop_uri:
+                return {"error": "Parcel has no crop assigned"}
 
-        crop_eppo = crop_uri.split(":")[-1] if crop_uri else "unknown"
-        crop_name = None
-        crop_scientific = None
-        try:
-            async with httpx.AsyncClient(timeout=10.0) as client:
-                crop_resp = await client.get(
-                    f"{orion.base}/ngsi-ld/v1/entities/{crop_uri}",
-                    headers={"Accept": "application/ld+json", "NGSILD-Tenant": tenant_id},
+            # ── 2. Fetch crop entity ────────────────────────────────────────
+            crop_eppo = crop_uri.split(":")[-1] if crop_uri else "unknown"
+            crop_name = None
+            crop_scientific = None
+            try:
+                crop_entity = await orion.get_entity(crop_uri)
+                crop_name = _extract_prop_value(crop_entity.get("name"))
+                crop_scientific = _extract_prop_value(crop_entity.get("scientificName"))
+            except Exception:
+                pass
+
+            variety_name = variety_uri.split(":")[-1] if variety_uri else None
+            species_query = crop_name or crop_scientific or crop_eppo
+            phenology = await self.get_phenology_params(
+                species=species_query, cultivar=variety_name, management=management, gdd=gdd,
+            )
+            thermal = await self.get_heat_tolerance(species_query)
+            soil_req = await self.get_soil_suitability(species_query)
+
+            from app.services.soil_client import compute_soil_suitability, get_parcel_soil_properties
+            soil_actual = await get_parcel_soil_properties(parcel_id)
+            soil_suitability = None
+            if soil_actual.get("data_available") and soil_req:
+                soil_suitability = compute_soil_suitability(soil_req, soil_actual)
+
+            # ── 3. Fetch latest CropHealthAssessment (normalized NGSI-LD) ──
+            soil_sensors: dict = {"available": False}
+            try:
+                entities = await orion.query_entities(
+                    type="CropHealthAssessment",
+                    q=f'hasAgriParcel=="{parcel_id}"',
+                    limit=1,
                 )
-                if crop_resp.status_code == 200:
-                    crop_entity = crop_resp.json()
-                    crop_name = _extract_prop_value(crop_entity.get("name"))
-                    crop_scientific = _extract_prop_value(crop_entity.get("scientificName"))
-        except Exception:
-            pass
+                if entities and isinstance(entities, list):
+                    a = entities[0]
+                    ph = _extract_prop_value(a.get("soilPh"))
+                    ec = _extract_prop_value(a.get("soilEC"))
+                    moisture = _extract_prop_value(a.get("soilMoisturePct"))
+                    temp = _extract_prop_value(a.get("soilTemperatureC"))
+                    if any(v is not None for v in (ph, ec, moisture, temp)):
+                        soil_sensors = {
+                            "available": True,
+                            "last_reading": _extract_prop_value(a.get("assessedAt")) or "",
+                            "ph": ph,
+                            "ec_ds_m": ec,
+                            "moisture_pct": moisture,
+                            "temperature_c": temp,
+                        }
+            except Exception:
+                pass
 
-        variety_name = variety_uri.split(":")[-1] if variety_uri else None
-        species_query = crop_name or crop_scientific or crop_eppo
-        phenology = await self.get_phenology_params(
-            species=species_query, cultivar=variety_name, management=management, gdd=gdd,
-        )
-        thermal = await self.get_heat_tolerance(species_query)
-        soil_req = await self.get_soil_suitability(species_query)
-
-        from app.services.soil_client import compute_soil_suitability, get_parcel_soil_properties
-        soil_actual = await get_parcel_soil_properties(parcel_id)
-        soil_suitability = None
-        if soil_actual.get("data_available") and soil_req:
-            soil_suitability = compute_soil_suitability(soil_req, soil_actual)
-
-        soil_sensors: dict = {"available": False}
-        try:
-            async with httpx.AsyncClient(timeout=5.0) as client:
-                sensor_resp = await client.get(
-                    f"{orion.base}/ngsi-ld/v1/entities",
-                    params={"type": "CropHealthAssessment", "q": f'hasAgriParcel=="{parcel_id}"', "limit": 1, "options": "keyValues"},
-                    headers={"Accept": "application/ld+json", "NGSILD-Tenant": tenant_id},
-                )
-                if sensor_resp.status_code == 200:
-                    entities = sensor_resp.json()
-                    if entities and isinstance(entities, list):
-                        a = entities[0]
-                        if any(a.get(k) is not None for k in ("soilPh", "soilEC", "soilMoisturePct", "soilTemperatureC")):
-                            soil_sensors = {"available": True, "last_reading": a.get("assessedAt", ""), "ph": a.get("soilPh"), "ec_ds_m": a.get("soilEC"), "moisture_pct": a.get("soilMoisturePct"), "temperature_c": a.get("soilTemperatureC")}
-        except Exception:
-            pass
+        finally:
+            await orion.close()
 
         if phenology and not phenology.get("is_default", True):
             if variety_name and management:
@@ -1937,19 +1923,24 @@ class GraphDAO:
         }
 
     async def clear_crop_assignment(self, parcel_id: str, tenant_id: str) -> dict:
-        """Remove crop assignment from AgriParcel."""
-        import httpx
-        from app.ingestion.orion import OrionIngestionClient
-        orion = OrionIngestionClient()
-        patch_body = {"hasAgriCrop": {"type": "Relationship", "object": None}, "hasAgriCropVariety": {"type": "Relationship", "object": None}, "management": {"type": "Property", "value": None}, "cropSeasonStart": {"type": "Property", "value": None}, "cropSeasonEnd": {"type": "Property", "value": None}}
-        async with httpx.AsyncClient(timeout=10.0) as client:
-            await client.patch(f"{orion.base}/ngsi-ld/v1/entities/{parcel_id}/attrs", json=patch_body, headers={"Content-Type": "application/ld+json", "NGSILD-Tenant": tenant_id, "Fiware-Service": tenant_id, "Fiware-ServicePath": "/"})
+        """Remove crop assignment from AgriParcel. Raises on Orion failure."""
+        patch_body = {
+            "hasAgriCrop": {"type": "Relationship", "object": None},
+            "hasAgriCropVariety": {"type": "Relationship", "object": None},
+            "management": {"type": "Property", "value": None},
+            "cropSeasonStart": {"type": "Property", "value": None},
+            "cropSeasonEnd": {"type": "Property", "value": None},
+        }
+        orion = OrionClient(tenant_id)
+        try:
+            await orion.update_entity_attrs(parcel_id, patch_body)
+        finally:
+            await orion.close()
         return {"status": "cleared", "parcel_id": parcel_id}
 
     async def get_yield_potential(self, variety: str, crop: str, climate_class: str | None = None, soil_type: str | None = None, parcel_id: str | None = None, tenant_id: str = "") -> dict:
         """Compute expected yield and yield gap for a variety."""
-        import math, httpx
-        from app.ingestion.orion import OrionIngestionClient
+        import math
         trials = await self.get_variety_trials(crop=crop, climate_class=climate_class, soil_type=soil_type, limit=200)
         variety_trials = [t for t in trials if variety.upper() in t.get("variety", "").upper()]
         if not variety_trials:
@@ -1966,19 +1957,23 @@ class GraphDAO:
         result: dict = {"variety": variety, "crop": crop, "target_environment": {"climate_class": climate_class, "soil_type": soil_type}, "expected_yield_kg_ha": round(mean_yield, 1), "confidence_interval": [round(ci_low, 1), round(ci_high, 1)], "trials_analyzed": len(variety_trials), "similar_sites": sites[:10]}
         if parcel_id:
             try:
-                orion = OrionIngestionClient()
-                async with httpx.AsyncClient(timeout=10.0) as client:
-                    assess_resp = await client.get(f"{orion.base}/ngsi-ld/v1/entities", params={"type": "CropHealthAssessment", "q": f'hasAgriParcel==\"{parcel_id}\"', "limit": 1, "options": "keyValues"}, headers={"Accept": "application/ld+json", "NGSILD-Tenant": tenant_id})
-                    if assess_resp.status_code == 200:
-                        entities = assess_resp.json()
-                        if entities:
-                            yup = entities[0].get("yieldUtilizationPct")
-                            if yup is not None:
-                                current_yield = mean_yield * (float(yup) / 100)
-                                gap = mean_yield - current_yield
-                                result["current_estimated_yield_kg_ha"] = round(current_yield, 1)
-                                result["yield_gap_kg_ha"] = round(gap, 1)
-                                result["yield_gap_pct"] = round(gap / mean_yield * 100, 1) if mean_yield else 0
+                orion = OrionClient(tenant_id)
+                try:
+                    entities = await orion.query_entities(
+                        type="CropHealthAssessment",
+                        q=f'hasAgriParcel=="{parcel_id}"',
+                        limit=1,
+                    )
+                finally:
+                    await orion.close()
+                if entities:
+                    yup = _extract_prop_value(entities[0].get("yieldUtilizationPct"))
+                    if yup is not None:
+                        current_yield = mean_yield * (float(yup) / 100)
+                        gap = mean_yield - current_yield
+                        result["current_estimated_yield_kg_ha"] = round(current_yield, 1)
+                        result["yield_gap_kg_ha"] = round(gap, 1)
+                        result["yield_gap_pct"] = round(gap / mean_yield * 100, 1) if mean_yield else 0
             except Exception:
                 pass
         phenology = await self.get_phenology_params(species=crop)
@@ -2213,7 +2208,6 @@ class GraphDAO:
         pac = await self._evaluate_pac_compliance(
             parcel_id=parcel_id,
             plan=plan,
-            tenant_id=tenant_id,
         )
 
         return {
@@ -2229,7 +2223,7 @@ class GraphDAO:
         }
 
     async def _evaluate_pac_compliance(
-        self, parcel_id: str, plan: list[dict], tenant_id: str = ""
+        self, parcel_id: str, plan: list[dict]
     ) -> dict:
         """Evaluate CAP/PAC eco-scheme compliance for a rotation plan.
 
@@ -2352,9 +2346,11 @@ class GraphDAO:
         import httpx
 
         try:
-            from app.ingestion.orion import OrionIngestionClient
-            orion = OrionIngestionClient()
-            weather_entities = await orion.list_by_type("WeatherObserved", limit=1)
+            orion = OrionClient(tenant_id)
+            try:
+                weather_entities = await orion.query_entities(type="WeatherObserved", limit=1)
+            finally:
+                await orion.close()
             if not weather_entities:
                 logger.info("No WeatherObserved entities found for tenant %s", tenant_id)
                 return None
@@ -2398,8 +2394,6 @@ class GraphDAO:
         self, parcel_id: str, tenant_id: str = "", week_start: str | None = None
     ) -> dict:
         """Calculate weekly irrigation requirement for a parcel."""
-        import os
-        import httpx
         from datetime import date, timedelta
 
         ws = date.fromisoformat(week_start) if week_start else date.today()
@@ -2501,8 +2495,6 @@ class GraphDAO:
 
         try:
             cutoff = datetime.now(timezone.utc) - timedelta(days=max_age_days)
-            cutoff_ms = int(cutoff.timestamp() * 1000)
-
             raw = await r.xrevrange("crop:events", count=limit * 2)
             alerts = []
             seen = 0
@@ -2577,11 +2569,6 @@ class GraphDAO:
         # Get parcel coordinates from crop context
         try:
             ctx = await self.get_crop_context(parcel_id=parcel_id)
-            lat = None
-            lon = None
-            if ctx and ctx.get("soil", {}).get("actual") is not None:
-                # Approximate — crop context doesn't store lat/lon directly
-                pass
         except Exception:
             return eco
 
@@ -2589,7 +2576,7 @@ class GraphDAO:
         try:
             import httpx
             # Use a default location if parcel coords unavailable
-            async with httpx.AsyncClient(timeout=5.0) as client:
+            async with httpx.AsyncClient(timeout=5.0):
                 # GBIF occurrence search for common pollinator taxa near parcel
                 # Falls back to general pollinator presence
                 eco["pollinator_species"] = ["Apis mellifera", "Bombus terrestris"]
@@ -2623,7 +2610,7 @@ class GraphDAO:
         try:
             async with __import__("httpx").AsyncClient(timeout=8.0) as client:
                 resp = await client.get(
-                    f"https://ec.europa.eu/food/plant/pesticides/eu-pesticides-database/api/public/products",
+                    "https://ec.europa.eu/food/plant/pesticides/eu-pesticides-database/api/public/products",
                     params={"crop": crop, "limit": 10},
                 )
                 if resp.status_code == 200:
@@ -2638,7 +2625,8 @@ class GraphDAO:
         Returns {shared_pests: [...], shared_count: int, risk_level: str,
         source_unavailable: bool}. Never raises — returns partial data on failure.
         """
-        import os as _os, httpx
+        import os as _os
+        import httpx
 
         api_key = _os.getenv("EPPO_API_KEY", "")
         base = "https://api.eppo.int/gd/v2"
@@ -2716,7 +2704,7 @@ class GraphDAO:
 
     async def get_market_maturity(self, eppo: str) -> dict:
         """Get CPVO registered variety count for a crop. Non-blocking."""
-        import os as _os, httpx
+        import httpx
 
         result: dict = {"registered_varieties": 0, "source_unavailable": False}
         try:
@@ -2783,14 +2771,25 @@ class GraphDAO:
         return result
 
 
-def _extract_prop_value(prop: dict | str | None) -> str | None:
-    """Extract value from NGSI-LD Property (dict with 'value' key) or plain string."""
+def _extract_prop_value(prop: dict | str | None):
+    """Extract value from NGSI-LD Property (dict with 'value' key) or plain scalar.
+
+    Handles:
+    - Normalized Property: {"type": "Property", "value": <scalar|dict>}
+    - RDF typed literal as value: {"@value": ..., "@type": ...}
+    - Plain scalar (str, int, float) — returned as-is
+    - Plain dict value (e.g. weatherStats blob) — returned as-is
+    """
     if prop is None:
         return None
     if isinstance(prop, dict):
         val = prop.get("value")
         if isinstance(val, dict):
-            return val.get("@value")
+            # RDF typed literal e.g. {"@value": "2026-01-01", "@type": "xsd:date"}
+            if "@value" in val:
+                return val["@value"]
+            # Plain object value (e.g. weatherStats blob) — return as-is
+            return val
         return val
     return str(prop)
 
