@@ -1043,17 +1043,30 @@ class GraphDAO:
                      vt.yieldKgHa AS yield_val,
                      vt.year AS year,
                      ts.name AS site_name,
-                     vt.irrigationRegime AS irrigation
+                     vt.irrigationRegime AS irrigation,
+                     vt.productionSystem AS production_system
                 ORDER BY variety, year
                 WITH variety,
                      collect(DISTINCT year) AS years,
                      collect(DISTINCT site_name) AS sites,
+                     collect(DISTINCT irrigation) AS irrigation_regimes,
+                     collect(DISTINCT production_system) AS production_systems,
                      avg(yield_val) AS mean_yield,
                      min(yield_val) AS min_yield,
                      max(yield_val) AS max_yield,
                      stDev(yield_val) AS stddev_yield,
                      count(*) AS trial_count
                 WHERE trial_count >= 1
+                  AND ($irrigation_regime IS NULL
+                       OR $irrigation_regime IN irrigation_regimes
+                       OR irrigation_regimes = []
+                       OR irrigation_regimes = [null]
+                       OR irrigation_regimes = [""])
+                  AND ($production_system IS NULL
+                       OR $production_system IN production_systems
+                       OR production_systems = []
+                       OR production_systems = [null]
+                       OR production_systems = [""])
                 RETURN variety,
                        mean_yield,
                        min_yield,
@@ -1061,12 +1074,16 @@ class GraphDAO:
                        stddev_yield,
                        trial_count,
                        years,
-                       sites
+                       sites,
+                       irrigation_regimes,
+                       production_systems
                 ORDER BY mean_yield DESC
                 LIMIT $top_n
                 """,
                 site_names=similar_site_names,
                 crop=crop,
+                irrigation_regime=irrigation_regime,
+                production_system=None,  # Placeholder: future use when data exists
                 top_n=top_n,
             )
 
@@ -1081,6 +1098,8 @@ class GraphDAO:
                     "trial_count": record["trial_count"],
                     "trial_years": sorted(record["years"]),
                     "trial_sites": sorted(record["sites"]),
+                    "irrigation_regimes": record["irrigation_regimes"],
+                    "production_systems": record["production_systems"],
                 })
 
         # ── Soil suitability filter (post-ranking) ─────────────────
@@ -1139,6 +1158,7 @@ class GraphDAO:
             "excluded_by_soil": excluded_by_soil,
             "soil_filter_applied": filter_soil_suitability and target_ph is not None,
             "target_soil": {"ph": target_ph} if filter_soil_suitability else None,
+            "irrigation_filter_applied": irrigation_regime is not None,
             "weather_stats": weather_stats,
             "weather_penalties": penalties_applied if weather_stats else None,
             "data_quality": {

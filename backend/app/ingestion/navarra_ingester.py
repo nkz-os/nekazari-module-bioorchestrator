@@ -113,10 +113,15 @@ def _resolve_scientific_name(eppo_code: str, raw_scientific: str | None) -> str 
 # ═══════════════════════════════════════════════════════════════════════════════
 
 def _merge_key_trial_site(node: dict) -> str:
-    """Unique key: name + municipality (both always present)."""
+    """Unique key: source + name + municipality.
+
+    Includes source to prevent cross-source collisions when
+    different data providers reference the same physical site.
+    """
+    source = _resolve_source(node)
     name = (node.get("name") or "").strip().lower()
     muni = (node.get("municipality") or "").strip().lower()
-    return f"{name}|{muni}"
+    return f"{source}|{name}|{muni}"
 
 def _merge_key_article_source(node: dict) -> str:
     """Unique key: source + issue_number + article_title."""
@@ -126,39 +131,40 @@ def _merge_key_article_source(node: dict) -> str:
     return f"{source}|{issue}|{title}"
 
 def _merge_key_variety_trial(node: dict) -> str:
-    """Unique key: crop + variety + location + irrigation + year."""
+    """Unique key: source + crop + variety + location + irrigation + year.
+
+    Includes source prefix to guarantee cross-source uniqueness.
+    Without it, two different data providers (e.g. GENVCE and NÉBIH)
+    could collide on identical crop/variety/location/year combinations.
+    """
+    source = _resolve_source(node)
     crop = str(node.get("crop_eppo") or node.get("crop_scientific") or "unknown")
     variety = (node.get("variety") or "").strip().lower()
     location = (node.get("trial_location") or "unknown").strip().lower()
     irrigation = str(node.get("irrigation_regime") or "unknown")
     year = str(node.get("year") or 0)
-    return f"{crop}|{variety}|{location}|{irrigation}|{year}"
+    return f"{source}|{crop}|{variety}|{location}|{irrigation}|{year}"
 
 def _merge_key_management_trial(node: dict) -> str:
-    """Unique key: uses @id as tiebreaker when composite fields collide.
+    """Unique key: source + experiment + crop + treatment + @id.
     
-    The composite key (experiment_type + crop + treatment + metric + location + year)
-    can collide when fields are null/unknown across different records. The @id from
-    JSON-LD is always unique and serves as the definitive merge key.
+    Includes source prefix and @id suffix to guarantee cross-source uniqueness.
     """
+    source = _resolve_source(node)
     exp_type = str(node.get("experiment_type") or "")
     crop = str(node.get("crop_eppo") or "")
     treatment = (node.get("treatment") or "").strip().lower()[:60]
-    metric = (node.get("result_metric") or "").strip().lower()[:40]
-    location = (node.get("trial_location") or "").strip().lower()[:40]
-    year = str(node.get("year") or "")
-    composite = f"{exp_type}|{crop}|{treatment}|{metric}|{location}|{year}"
-    # Append @id suffix to guarantee uniqueness even when composite fields are empty
     uid = str(node.get("@id", ""))
-    return f"{composite}|{uid}"
+    return f"{source}|{exp_type}|{crop}|{treatment}|{uid}"
 
 def _merge_key_harvest_data(node: dict) -> str:
-    """Unique key: campaign + crop + zone."""
+    """Unique key: source + campaign + crop + zone."""
+    source = _resolve_source(node)
     campaign = str(node.get("campaign") or "")
     crop = str(node.get("crop_eppo") or "")
     zone = str(node.get("agroclimatic_zone") or "")
     uid = str(node.get("@id", ""))
-    return f"{campaign}|{crop}|{zone}|{uid}"
+    return f"{source}|{campaign}|{crop}|{zone}|{uid}"
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -253,10 +259,12 @@ class NavarraIngester:
         async with self._driver.session() as s:
             for node in sites:
                 merge_key = _merge_key_trial_site(node)
+                source = _resolve_source(node)
                 await s.run(
                     """
                     MERGE (ts:TrialSite {mergeKey: $merge_key})
-                    SET ts.name = $name,
+                    SET ts.dataSource = $source,
+                        ts.name = $name,
                         ts.municipality = $municipality,
                         ts.region = COALESCE($region, ts.region),
                         ts.agroclimaticZone = $zone,
@@ -272,10 +280,10 @@ class NavarraIngester:
                         ts.soilPh = $soil_ph,
                         ts.soilOrganicMatterPct = $soil_om,
                         ts.photoperiodSummerHours = $photoperiod,
-                        ts.dataSource = $data_source,
                         ts.updatedAt = datetime()
                     """,
                     merge_key=merge_key,
+                    source=source,
                     name=node.get("name"),
                     municipality=node.get("municipality"),
                     region=node.get("region"),
@@ -292,7 +300,6 @@ class NavarraIngester:
                     soil_ph=node.get("soilPh"),
                     soil_om=node.get("soilOrganicMatterPct"),
                     photoperiod=node.get("photoperiodSummerHours"),
-                    data_source=node.get("dataSource"),
                 )
                 count += 1
         return count
@@ -335,10 +342,12 @@ class NavarraIngester:
         async with self._driver.session() as s:
             for node in trials:
                 merge_key = _merge_key_variety_trial(node)
+                source = _resolve_source(node)
                 await s.run(
                     """
                     MERGE (vt:VarietyTrial {mergeKey: $merge_key})
-                    SET vt.cropEppo = $crop_eppo,
+                    SET vt.dataSource = $source,
+                        vt.cropEppo = $crop_eppo,
                         vt.cropScientific = $crop_sci,
                         vt.variety = $variety,
                         vt.agroclimaticZone = $zone,
@@ -348,6 +357,7 @@ class NavarraIngester:
                         vt.qualityParams = $quality,
                         vt.diseaseScores = $disease,
                         vt.irrigationRegime = $irrigation,
+                        vt.productionSystem = $production_system,
                         vt.trialLocation = $location,
                         vt.confidence = $confidence,
                         vt.pageInIssue = $page,
@@ -356,6 +366,7 @@ class NavarraIngester:
                         vt.updatedAt = datetime()
                     """,
                     merge_key=merge_key,
+                    source=source,
                     crop_eppo=(node.get("crop_eppo") or "").replace("eppo:", ""),
                     crop_sci=_resolve_scientific_name(
                         (node.get("crop_eppo") or "").replace("eppo:", ""),
@@ -369,6 +380,7 @@ class NavarraIngester:
                     quality=json.dumps(node.get("quality_params")) if node.get("quality_params") else None,
                     disease=json.dumps(node.get("disease_scores")) if node.get("disease_scores") else None,
                     irrigation=node.get("irrigation_regime"),
+                    production_system=node.get("production_system"),
                     location=node.get("trial_location"),
                     confidence=node.get("confidence"),
                     page=node.get("page_in_issue"),
@@ -383,10 +395,12 @@ class NavarraIngester:
         async with self._driver.session() as s:
             for node in trials:
                 merge_key = _merge_key_management_trial(node)
+                source = _resolve_source(node)
                 await s.run(
                     """
                     MERGE (mt:ManagementTrial {mergeKey: $merge_key})
-                    SET mt.cropEppo = $crop_eppo,
+                    SET mt.dataSource = $source,
+                        mt.cropEppo = $crop_eppo,
                         mt.variety = $variety,
                         mt.experimentType = $exp_type,
                         mt.treatment = $treatment,
@@ -405,6 +419,7 @@ class NavarraIngester:
                         mt.updatedAt = datetime()
                     """,
                     merge_key=merge_key,
+                    source=source,
                     crop_eppo=(node.get("crop_eppo") or "").replace("eppo:", ""),
                     variety=node.get("variety"),
                     exp_type=node.get("experiment_type"),
@@ -430,10 +445,12 @@ class NavarraIngester:
         async with self._driver.session() as s:
             for node in records:
                 merge_key = _merge_key_harvest_data(node)
+                source = _resolve_source(node)
                 await s.run(
                     """
                     MERGE (hd:HarvestData {mergeKey: $merge_key})
-                    SET hd.cropEppo = $crop_eppo,
+                    SET hd.dataSource = $source,
+                        hd.cropEppo = $crop_eppo,
                         hd.agroclimaticZone = $zone,
                         hd.campaign = $campaign,
                         hd.areaHa = $area,
@@ -445,6 +462,7 @@ class NavarraIngester:
                         hd.updatedAt = datetime()
                     """,
                     merge_key=merge_key,
+                    source=source,
                     crop_eppo=(node.get("crop_eppo") or "").replace("eppo:", ""),
                     zone=node.get("agroclimatic_zone"),
                     campaign=node.get("campaign"),
@@ -601,6 +619,39 @@ class NavarraIngester:
         if "@graph" not in data:
             raise ValueError(f"Not a valid JSON-LD file: missing @graph in {path}")
         return data
+
+
+def _resolve_source(node: dict) -> str:
+    """Extract source name from a JSON-LD node.
+
+    Resolution order:
+      1. node['source'] (direct field)
+      2. node['metadata']['source'] (nested in metadata)
+      3. node['@id'] (extract prefix like 'urn:nkz:nebih' or 'urn:nkz:iniav')
+      4. 'unknown' (fallback)
+    """
+    source = node.get("source")
+    if source:
+        return source.strip().lower()
+
+    meta = node.get("metadata")
+    if isinstance(meta, dict) and meta.get("source"):
+        return meta["source"].strip().lower()
+    if isinstance(meta, str):
+        try:
+            m = json.loads(meta)
+            if m.get("source"):
+                return m["source"].strip().lower()
+        except json.JSONDecodeError:
+            pass
+
+    # Fallback: extract from @id prefix
+    nid = node.get("@id", "")
+    parts = nid.split(":")
+    if len(parts) >= 3:
+        return parts[2].strip().lower()  # e.g. "urn:nkz:nebih:trial:..." -> "nebih"
+
+    return "unknown"
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
