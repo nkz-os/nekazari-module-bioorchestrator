@@ -267,21 +267,21 @@ async def variety_catalogue(
 ):
     """Return varieties for a species from Orion-LD via hasSubCrop."""
     from app.ingestion.uri import agri_crop_uri
-    from app.ingestion.orion import OrionIngestionClient
+    from nkz_platform_sdk.orion import OrionClient
+    from app.core.config import settings
 
-    orion = OrionIngestionClient()
     parent_uri = agri_crop_uri(species)
-
+    orion = OrionClient(
+        settings.catalog_tenant,
+        base_url=settings.orion_ld_url,
+        context_url=settings.context_url,
+    )
     try:
-        async with httpx.AsyncClient(timeout=30) as client:
-            resp = await client.get(
-                f"{orion.base}/ngsi-ld/v1/entities/{parent_uri}",
-                headers={"Accept": "application/ld+json"},
-            )
-            resp.raise_for_status()
-            parent = resp.json()
+        parent = await orion.get_entity(parent_uri)
     except Exception:
         return {"varieties": [], "error": "Parent species not found in catalog"}
+    finally:
+        await orion.close()
 
     sub_crop = parent.get("hasSubCrop", {})
     variety_uris = []
