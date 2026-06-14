@@ -413,10 +413,10 @@ SOWING_WINDOWS: dict[str, dict[str, tuple[str, str]]] = {
 #  Scraped trial data enrichment — IFAPA (Andalusia) + ITACyL (Castilla y León)
 # ═══════════════════════════════════════════════════════════════════════════
 
-import json as _json
-from pathlib import Path as _Path
-from collections import defaultdict as _defaultdict
-from statistics import mean as _mean, stdev as _stdev
+import json as _json  # noqa: E402
+from pathlib import Path as _Path  # noqa: E402
+from collections import defaultdict as _defaultdict  # noqa: E402
+from statistics import mean as _mean  # noqa: E402
 
 # Paths to scraped data JSON files (updated by IFAPA/ITACyL scrapers)
 _SCRAPED_DATA_PATHS = [

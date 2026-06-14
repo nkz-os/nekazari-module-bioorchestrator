@@ -46,7 +46,7 @@ async def get_neo4j_driver() -> AsyncGenerator[AsyncDriver, None]:
     yield get_driver()
 
 
-def get_dao() -> "GraphDAO":
+def get_dao() -> "GraphDAO":  # noqa: F821 — GraphDAO imported inside body to avoid circular import
     """FastAPI dependency: returns GraphDAO wrapping the active Neo4j driver."""
     from app.graph.dao import GraphDAO
     return GraphDAO(get_driver())

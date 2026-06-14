@@ -130,7 +130,8 @@
     "warnings": {
       "keyMissing": "Falta clave",
       "noDataFile": "Sin archivo de datos"
-    }
+    },
+    "title": "Fuentes de datos"
   },
   "pipeline": {
     "sourcesLabel": "Fuentes (separadas por comas, vacío = todas)",
@@ -460,7 +461,8 @@
     "scenarioIncomplete": "Ambos cultivos tienen datos incompletos. La comparativa puede no ser concluyente.",
     "sectionError": "No se pudieron cargar los datos de {{section}}.",
     "retry": "Reintentar",
-    "deprecatedSoilNote": "Dato deprecado — próximamente desde módulo Soil"
+    "deprecatedSoilNote": "Dato deprecado — próximamente desde módulo Soil",
+    "title": "Recomendaciones"
   },
   "vegetation": {
     "title": "Índices de Vegetación",

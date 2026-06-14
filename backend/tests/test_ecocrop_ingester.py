@@ -1,6 +1,4 @@
-import pytest
 from app.ingestion.uri import agri_crop_uri
-from app.ingestion.orion import OrionIngestionClient
 from app.ingestion.ecocrop_ingester import EcoCropIngester
 
 

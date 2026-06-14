@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import os
-from collections.abc import AsyncGenerator
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest

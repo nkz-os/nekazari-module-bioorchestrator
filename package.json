@@ -2,6 +2,7 @@
   "name": "nekazari-module-bioorchestrator",
   "version": "0.1.0",
   "private": true,
+  "license": "AGPL-3.0",
   "packageManager": "pnpm@9.0.0",
   "type": "module",
   "main": "./src/Module.tsx",
@@ -30,8 +31,8 @@
     "@types/react": "^18.3.1",
     "@types/react-dom": "^18.3.0",
     "@vitejs/plugin-react": "^4.3.0",
-    "i18next": "^26.2.0",
-    "react-i18next": "^17.0.8",
+    "i18next": "^23.11.0",
+    "react-i18next": "^14.1.0",
     "typescript": "^5.4.0",
     "vite": "^5.4.0"
   }
