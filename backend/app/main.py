@@ -17,7 +17,7 @@ import json as _json
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 
-import httpx
+from nkz_platform_sdk.subscriptions import SubscriptionRegistrar
 
 from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -32,47 +32,23 @@ from app.core.dependencies import close_driver, init_driver
 _ikerketa_available = False
 
 
-async def _create_orion_subscription():
-    """Create the NGSI-LD subscription for AgriCrop changes (idempotent).
+async def _ensure_catalog_subscription():
+    """Ensure the AgriCrop subscription exists in the canonical catalog tenant.
 
-    Sends as application/json + Link header (NGSI-LD fragment pattern).
-    Subscription body carries no @context, so ld+json would cause Orion 400.
+    Uses SubscriptionRegistrar (idempotent by description). The catalog lives in
+    tenant `settings.catalog_tenant` ("default"); a subscription in any other
+    store (e.g. the legacy no-header one) watches an empty store and never fires.
     """
-    ctx = settings.context_url
-    link = f'<{ctx}>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"'
-    endpoint_uri = "http://bioorchestrator-service:8420/api/ngsi-ld/notify"
-    sub = {
-        "type": "Subscription",
-        "entities": [{"type": "AgriCrop"}],
-        "watchedAttributes": ["kcIni", "kcMid", "kcEnd", "hasSubCrop",
-                              "phMin", "phMax", "tempMinAbs", "tempMaxAbs",
-                              "heatDamageThresholdC", "frostDamageThresholdC"],
-        "notification": {
-            "endpoint": {
-                "uri": endpoint_uri,
-                "accept": "application/json",
-            }
-        },
-    }
+    registrar = SubscriptionRegistrar(
+        orion_url=settings.orion_ld_url,
+        notification_url="http://bioorchestrator-service:8420/api/ngsi-ld/notify",
+        subscriptions=[{"type": "AgriCrop"}],
+        module_name="bioorchestrator",
+        context_url=settings.context_url,
+    )
     try:
-        async with httpx.AsyncClient(timeout=10) as client:
-            resp = await client.get(
-                f"{settings.orion_ld_url}/ngsi-ld/v1/subscriptions",
-                params={"limit": 1000},
-                headers={"Accept": "application/json", "Link": link},
-            )
-            existing = resp.json() if resp.status_code == 200 else []
-            ours = any(
-                isinstance(s, dict)
-                and s.get("notification", {}).get("endpoint", {}).get("uri") == endpoint_uri
-                for s in existing
-            )
-            if not ours:
-                await client.post(
-                    f"{settings.orion_ld_url}/ngsi-ld/v1/subscriptions",
-                    json=sub,
-                    headers={"Content-Type": "application/json", "Link": link},
-                )
+        result = await registrar.ensure_all([settings.catalog_tenant])
+        print(f"[bioorchestrator] catalog subscription ensured: {result}")
     except Exception as exc:
         print(f"[bioorchestrator] WARNING: subscription setup failed: {exc}")
 
@@ -122,7 +98,7 @@ async def _start_background_tasks():
         from app.workers.sync_worker import handle_sync_agri_crop
         background_queue.register("sync_agri_crop", handle_sync_agri_crop)
         asyncio.create_task(background_queue.run_loop())
-        asyncio.create_task(_create_orion_subscription())
+        asyncio.create_task(_ensure_catalog_subscription())
         print("[bioorchestrator] background tasks started")
     except Exception as exc:
         print(f"[bioorchestrator] WARNING: background tasks init failed: {exc}")
