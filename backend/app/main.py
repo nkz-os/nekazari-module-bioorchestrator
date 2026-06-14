@@ -17,6 +17,7 @@ import json as _json
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 
+from nkz_platform_sdk.orion import OrionClient
 from nkz_platform_sdk.subscriptions import SubscriptionRegistrar
 
 from fastapi import FastAPI, HTTPException, Query, Request
@@ -25,7 +26,9 @@ from fastapi.responses import JSONResponse, StreamingResponse
 
 from app.auth import NKZAuthMiddleware
 from app.core.config import settings
-from app.core.dependencies import close_driver, init_driver
+from app.core.dependencies import close_driver, get_driver, init_driver
+from app.graph.dao import GraphDAO
+from app.ingestion.sync import sync_all_agri_crops
 
 # Module-level readiness state set during lifespan.
 # K8s probes hit /healthz and /readyz every 10-30s — must be fast and never rate-limited.
@@ -51,6 +54,27 @@ async def _ensure_catalog_subscription():
         print(f"[bioorchestrator] catalog subscription ensured: {result}")
     except Exception as exc:
         print(f"[bioorchestrator] WARNING: subscription setup failed: {exc}")
+
+
+async def _reconcile_catalog() -> int:
+    """Idempotently reconcile Neo4j with the canonical AgriCrop catalog.
+
+    The subscription only fires on changes; this backfills pre-existing
+    entities (and self-heals if Neo4j is wiped). merge_agri_crop is MERGE,
+    so re-running is safe.
+    """
+    orion = OrionClient(
+        settings.catalog_tenant,
+        base_url=settings.orion_ld_url,
+        context_url=settings.context_url,
+    )
+    try:
+        dao = GraphDAO(get_driver())
+        count = await sync_all_agri_crops(dao, orion)
+        print(f"[bioorchestrator] catalog reconcile: {count} AgriCrop synced to Neo4j")
+        return count
+    finally:
+        await orion.close()
 
 
 async def _run_cypher_migrations(driver):
@@ -99,6 +123,12 @@ async def _start_background_tasks():
         background_queue.register("sync_agri_crop", handle_sync_agri_crop)
         asyncio.create_task(background_queue.run_loop())
         asyncio.create_task(_ensure_catalog_subscription())
+        async def _reconcile_guarded():
+            try:
+                await _reconcile_catalog()
+            except Exception as exc:
+                print(f"[bioorchestrator] WARNING: catalog reconcile failed: {exc}")
+        asyncio.create_task(_reconcile_guarded())
         print("[bioorchestrator] background tasks started")
     except Exception as exc:
         print(f"[bioorchestrator] WARNING: background tasks init failed: {exc}")
