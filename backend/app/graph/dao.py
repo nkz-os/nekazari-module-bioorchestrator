@@ -745,7 +745,8 @@ class GraphDAO:
           - "What wheat varieties perform best in BSk climate?"
           - "Show me tomato trials on calcareous soils under rainfed conditions"
         """
-        where_clauses = ["vt.yieldKgHa IS NOT NULL"]
+        # Effective yield: prefer absolute yieldKgHa, fallback to BSL 1-9 notes scaled
+        where_clauses = ["(vt.yieldKgHa IS NOT NULL OR vt.yieldNoteS1 IS NOT NULL)"]
         params: dict[str, Any] = {"limit": limit}
 
         if crop:
@@ -769,7 +770,7 @@ class GraphDAO:
             params["irrigation"] = irrigation_regime
 
         if min_yield_kg_ha is not None:
-            where_clauses.append("vt.yieldKgHa >= $min_yield")
+            where_clauses.append("COALESCE(vt.yieldKgHa, vt.yieldNoteS1 * 1000) >= $min_yield")
             params["min_yield"] = min_yield_kg_ha
 
         if min_rainfall_mm is not None:
@@ -790,6 +791,8 @@ class GraphDAO:
                    vt.cropScientific AS crop_scientific,
                    vt.variety AS variety,
                    vt.yieldKgHa AS yield_kg_ha,
+                   vt.yieldNoteS1 AS yield_note_s1,
+                   COALESCE(vt.yieldKgHa, vt.yieldNoteS1 * 1000) AS yield_effective_kg_ha,
                    vt.yieldRelativePct AS yield_relative_pct,
                    vt.qualityParams AS quality_params,
                    vt.diseaseScores AS disease_scores,
@@ -809,7 +812,7 @@ class GraphDAO:
                    as_article.articleTitle AS source_title,
                    as_article.issueNumber AS source_issue,
                    as_article.year AS source_year
-            ORDER BY vt.yieldKgHa DESC
+            ORDER BY COALESCE(vt.yieldKgHa, vt.yieldNoteS1 * 1000) DESC
             LIMIT $limit
         """
 
@@ -1033,14 +1036,14 @@ class GraphDAO:
                 """
                 MATCH (vt:VarietyTrial)-[:TRIAL_AT]->(ts:TrialSite)
                 WHERE ts.name IN $site_names
-                  AND vt.yieldKgHa IS NOT NULL
+                  AND (vt.yieldKgHa IS NOT NULL OR vt.yieldNoteS1 IS NOT NULL)
                   AND (
                       vt.cropEppo = $crop
                       OR vt.cropScientific CONTAINS $crop
                       OR toLower(vt.cropScientific) = toLower($crop)
                   )
                 WITH vt.variety AS variety,
-                     vt.yieldKgHa AS yield_val,
+                     COALESCE(vt.yieldKgHa, vt.yieldNoteS1 * 1000) AS yield_val,
                      vt.year AS year,
                      ts.name AS site_name,
                      vt.irrigationRegime AS irrigation,
