@@ -1,10 +1,11 @@
 """Crop catalog API — species/varieties from Orion-LD + Neo4j."""
 from fastapi import APIRouter, Query, Depends, HTTPException
 from app.graph.dao import GraphDAO
-from app.ingestion.orion import OrionIngestionClient
 from app.ingestion.ecocrop_ingester import EcoCropIngester
 from app.ingestion.variety_ingester import VarietyIngester
 from app.core.dependencies import get_dao, get_current_user
+from nkz_platform_sdk.orion import OrionClient
+from app.core.config import settings
 
 router = APIRouter(prefix="/catalog", tags=["crop-catalog"])
 
@@ -130,17 +131,23 @@ async def trigger_ingestion(
     dao: GraphDAO = Depends(get_dao),
 ):
     """Trigger ingestion from an external source. Requires technician/admin."""
-    orion = OrionIngestionClient()
-
-    if source == "ecocrop":
-        ingester = EcoCropIngester(orion)
-        filter_list = species_filter.split(",") if species_filter else None
-        result = await ingester.ingest(dao, species_filter=filter_list)
-    elif source == "cpvo":
-        ingester = VarietyIngester(orion)
-        result = await ingester.ingest(dao)
-    else:
-        raise HTTPException(status_code=400, detail=f"Unknown source: {source}")
+    orion = OrionClient(
+        settings.catalog_tenant,
+        base_url=settings.orion_ld_url,
+        context_url=settings.context_url,
+    )
+    try:
+        if source == "ecocrop":
+            ingester = EcoCropIngester(orion)
+            filter_list = species_filter.split(",") if species_filter else None
+            result = await ingester.ingest(dao, species_filter=filter_list)
+        elif source == "cpvo":
+            ingester = VarietyIngester(orion)
+            result = await ingester.ingest(dao)
+        else:
+            raise HTTPException(status_code=400, detail=f"Unknown source: {source}")
+    finally:
+        await orion.close()
 
     return result
 
@@ -191,15 +198,22 @@ async def contribute_parameter(
             params=params,
         )
 
-    # Also PATCH to Orion-LD if Kc values provided
+    # Also push Kc values to Orion-LD if provided
     if any(k in params for k in ("kc", "kcIni", "kcMid", "kcEnd")):
-        orion = OrionIngestionClient()
         orion_attrs = {}
         for key in ("kcIni", "kcMid", "kcEnd"):
             if key in params:
                 orion_attrs[key] = {"type": "Property", "value": params[key]}
         if orion_attrs:
-            await orion.patch_entity(crop_id, orion_attrs)
+            orion = OrionClient(
+                settings.catalog_tenant,
+                base_url=settings.orion_ld_url,
+                context_url=settings.context_url,
+            )
+            try:
+                await orion.append_entity_attrs(crop_id, orion_attrs)
+            finally:
+                await orion.close()
 
     return {"status": "submitted", "crop_id": crop_id}
 
