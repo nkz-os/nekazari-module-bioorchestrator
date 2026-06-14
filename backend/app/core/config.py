@@ -41,6 +41,9 @@ class Settings(BaseSettings):
     # ── Orion-LD ──────────────────────────────────────────────────────────────
     orion_ld_url: str = "http://orion-ld-service:1026"
     context_url: str = "http://api-gateway-service:5000/ngsi-ld-context.json"
+    # Canonical Orion-LD tenant owning the global AgriCrop reference catalog.
+    # bioorch is the SOLE writer; other modules consume via /api/crop/catalog.
+    catalog_tenant: str = "default"
 
     # ── TimescaleDB ───────────────────────────────────────────────────────────
     timescale_dsn: str = ""
