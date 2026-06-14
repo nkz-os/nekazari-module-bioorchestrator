@@ -11,7 +11,7 @@ async def sync_all_agri_crops(dao: GraphDAO, orion_client) -> int:
 
     Returns count of synced entities.
     """
-    crops = await orion_client.list_by_type("AgriCrop")
+    crops = await orion_client.query_entities(type="AgriCrop", limit=1000)
     count = 0
     for crop in crops:
         await dao.merge_agri_crop(crop)

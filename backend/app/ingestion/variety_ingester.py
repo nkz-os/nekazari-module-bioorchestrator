@@ -1,6 +1,6 @@
 """Ingest crop varieties from CPVO into Orion-LD as AgriCrop entities."""
 from app.ingestion.uri import agri_crop_uri
-from app.ingestion.orion import OrionIngestionClient
+from app.ingestion.builders import build_agri_crop_entity
 from app.ingestion.sync import sync_all_agri_crops
 from app.graph.dao import GraphDAO
 
@@ -8,7 +8,7 @@ from app.graph.dao import GraphDAO
 class VarietyIngester:
     """Transform CPVO connector output -> NGSI-LD AgriCrop varieties."""
 
-    def __init__(self, orion: OrionIngestionClient):
+    def __init__(self, orion):
         self.orion = orion
 
     async def ingest(self, dao: GraphDAO, limit: int | None = None) -> dict:
@@ -50,7 +50,7 @@ class VarietyIngester:
                 attrs["maintainer"] = {"type": "Property",
                                        "value": var["maintainer"]}
 
-            agri_crop = self.orion.build_entity(
+            agri_crop = build_agri_crop_entity(
                 variety_uri, common_name, sci_name, "CPVO",
                 extra_attrs=attrs)
             agri_crops.append(agri_crop)
@@ -63,11 +63,11 @@ class VarietyIngester:
         chunk_size = 100
         for i in range(0, len(agri_crops), chunk_size):
             chunk = agri_crops[i:i + chunk_size]
-            await self.orion.upsert_batch(chunk)
+            await self.orion.upsert_entities_batch(chunk)
 
         # Update parent species with hasSubCrop relationships
         for parent_uri, variety_uris in parent_updates.items():
-            await self.orion.patch_entity(parent_uri, {
+            await self.orion.append_entity_attrs(parent_uri, {
                 "hasSubCrop": {
                     "type": "Relationship",
                     "object": variety_uris,

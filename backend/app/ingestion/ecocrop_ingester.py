@@ -1,6 +1,6 @@
 """Ingest species from EcoCrop GAEZ v4 into Orion-LD as AgriCrop entities."""
 from app.ingestion.uri import agri_crop_uri
-from app.ingestion.orion import OrionIngestionClient
+from app.ingestion.builders import build_agri_crop_entity
 from app.ingestion.sync import sync_all_agri_crops
 from app.graph.dao import GraphDAO
 
@@ -28,7 +28,7 @@ class EcoCropIngester:
         "agroVocUri": "agroVocConcept",
     }
 
-    def __init__(self, orion: OrionIngestionClient):
+    def __init__(self, orion):
         self.orion = orion
 
     def _to_ngsi_ld_attrs(self, eco_entity: dict) -> dict:
@@ -70,7 +70,7 @@ class EcoCropIngester:
             uri = agri_crop_uri(sci_name)
             name = eco.get("name") or sci_name
             attrs = self._to_ngsi_ld_attrs(eco)
-            agri_crop = self.orion.build_entity(
+            agri_crop = build_agri_crop_entity(
                 uri, name, sci_name, "EcoCrop GAEZ v4", extra_attrs=attrs)
             agri_crops.append(agri_crop)
 
@@ -78,7 +78,7 @@ class EcoCropIngester:
         chunk_size = 100
         for i in range(0, len(agri_crops), chunk_size):
             chunk = agri_crops[i:i + chunk_size]
-            await self.orion.upsert_batch(chunk)
+            await self.orion.upsert_entities_batch(chunk)
 
         # Sync to Neo4j
         synced = await sync_all_agri_crops(dao, self.orion)
