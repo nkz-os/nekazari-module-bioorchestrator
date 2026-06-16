@@ -17,7 +17,6 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from app.ingestion.uri import agri_crop_uri
 from app.ingestion.builders import build_agri_crop_entity
 from app.core.dependencies import get_driver
-from app.graph.dao import GraphDAO
 from nkz_platform_sdk.orion import OrionClient
 from app.core.config import settings
 
@@ -39,7 +38,6 @@ async def main():
         context_url=settings.context_url,
     )
     driver = await get_driver()
-    dao = GraphDAO(driver)
     migrated = 0
 
     for species_entry in phen_data.get("species", []):

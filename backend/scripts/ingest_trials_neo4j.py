@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 """Ingest IFAPA + ITACyL trial observations as VarietyTrial nodes in Neo4j."""
 
-import urllib.request, json, base64
+import json
+import base64
+import urllib.request
 
 NEO4J_URL = "http://bioorchestrator-neo4j:7474/db/neo4j/tx/commit"
 AUTH_B64 = base64.b64encode(b"neo4j:bioorchestrator").decode()

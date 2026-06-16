@@ -88,7 +88,7 @@ def seed(driver: Driver, data: dict[str, Any]) -> dict[str, int]:
                     src = param.get("source", {})
 
                     # Upsert Parameter node with provenance
-                    result = session.run(
+                    session.run(
                         """
                         MATCH (:Species {name: $sp_name})-[:HAS_STAGE]->
                               (st:PhenologyStage {name: $st_name})
