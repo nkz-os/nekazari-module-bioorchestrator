@@ -31,9 +31,20 @@ EPPO_TO_SPECIES: dict[str, str] = {
 
 
 class CtiflIngester(BaseIngester):
-    """Transform CTIFL JSON-LD to canonical node dicts."""
+    """Transform CTIFL JSON-LD to canonical node dicts.
+
+    CTIFL AUDIT (2026-06-16): All 33 PDFs in the scraped catalog are
+    behind the subscription wall at ctifl.fr/subscription/file/check/id/...
+    No PDFs are publicly accessible. ALL content is editorial-restricted.
+    See internal-docs-local/ctifl-audit-2026-06-16.md for details.
+
+    All articles are marked skip_ingestion=True. The future merge() will
+    skip nodes linked to restricted articles. No CTIFL data should be
+    ingested without a proper licensing agreement.
+    """
 
     SOURCE_ID = "CTIFL"
+    ALL_RESTRICTED = True  # per audit: no public PDFs found
 
     async def _parse_nodes(self, data: dict) -> dict[str, list[dict]]:
         graph = data.get("@graph", [])
@@ -82,6 +93,8 @@ class CtiflIngester(BaseIngester):
             "issueNumber": node.get("issue_number"),
             "articleTitle": node.get("article_title"),
             "year": node.get("year"),
+            "license_class": "editorial-restricted",
+            "skip_ingestion": True,
             "mergeKey": (
                 f"{self.SOURCE_ID.lower()}|"
                 f"{str(node.get('issue_number', ''))}|"
@@ -91,7 +104,7 @@ class CtiflIngester(BaseIngester):
 
     def _convert_trial(self, node: dict) -> dict:
         eppo = BaseIngester._normalize_eppo(node.get("crop_eppo"))
-        return {
+        result = {
             "cropEppo": eppo,
             "cropScientific": EPPO_TO_SPECIES.get(eppo),
             "variety": node.get("variety"),
@@ -101,6 +114,7 @@ class CtiflIngester(BaseIngester):
             "trialLocation": node.get("trial_location"),
             "confidence": node.get("confidence", self._registry_entry.get("confidence_default", "medium")),
             "source_id": self.SOURCE_ID,
+            "skip_ingestion": True,
             "mergeKey": (
                 f"{self.SOURCE_ID.lower()}|{eppo or 'unknown'}|"
                 f"{str(node.get('variety', '')).strip().lower()}|"
@@ -109,6 +123,8 @@ class CtiflIngester(BaseIngester):
                 f"{str(node.get('year', 0))}"
             ),
         }
+        return result
+
 
     def _convert_management(self, node: dict) -> dict:
         return {
@@ -119,6 +135,7 @@ class CtiflIngester(BaseIngester):
             "resultValue": node.get("result_value"),
             "confidence": node.get("confidence", self._registry_entry.get("confidence_default", "medium")),
             "source_id": self.SOURCE_ID,
+            "skip_ingestion": True,
             "mergeKey": (
                 f"{self.SOURCE_ID.lower()}|"
                 f"{str(node.get('experiment_type', ''))}|"
