@@ -35,9 +35,9 @@ def mock_driver() -> AsyncDriver:
 @pytest.fixture
 def client() -> TestClient:
     """FastAPI TestClient with IkerKeta import skipped."""
-    with patch.dict("sys.modules", {"ikerketa": MagicMock(__version__="0.1.0")}):
-        with patch("app.core.dependencies.init_driver", AsyncMock()):
-            with patch("app.core.dependencies.close_driver", AsyncMock()):
-                from app.main import app
+    with patch.dict("sys.modules", {"ikerketa": MagicMock(__version__="0.1.0")}), \
+         patch("app.core.dependencies.init_driver", AsyncMock()), \
+         patch("app.core.dependencies.close_driver", AsyncMock()):
+        from app.main import app
 
-                return TestClient(app)
+        yield TestClient(app)

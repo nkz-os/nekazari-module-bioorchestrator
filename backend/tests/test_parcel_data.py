@@ -1,3 +1,5 @@
+from unittest.mock import patch
+
 import pytest
 
 from app.services.timescale import PERIOD_MAP, compute_trend
@@ -89,32 +91,13 @@ class _RecordingOrion:
         return None
 
 
-def _get_route_globals(client, path):
-    """Return the __globals__ dict of the actual registered route endpoint.
-
-    The conftest uses patch.dict('sys.modules', ...) which is cleaned up after
-    fixture creation, leaving the route endpoint's __globals__ pointing to an
-    orphaned module dict that is different from what 'import app.api.v1.parcel_data'
-    returns after fixture setup. We must patch the dict the live route uses.
-    """
-    for route in client.app.routes:
-        if hasattr(route, "path") and route.path == path:
-            return route.endpoint.__globals__
-    raise RuntimeError(f"Route not found: {path}")
-
-
 def test_vegetation_uses_request_tenant(client):
     _RecordingOrion.constructed_tenants = []
-    route_globals = _get_route_globals(client, "/api/parcel/{parcel_id}/vegetation")
-    original = route_globals["OrionClient"]
-    route_globals["OrionClient"] = _RecordingOrion
-    try:
+    with patch("app.api.v1.parcel_data.OrionClient", _RecordingOrion):
         resp = client.get(
             "/api/parcel/P1/vegetation",
             headers={"X-Tenant-ID": "asociacion-allotarra", "X-User-ID": "u1", "X-User-Roles": "Tecnico"},
         )
-    finally:
-        route_globals["OrionClient"] = original
     assert resp.status_code == 200
     assert "asociacion-allotarra" in _RecordingOrion.constructed_tenants
     assert "" not in _RecordingOrion.constructed_tenants  # never the default store
@@ -122,16 +105,11 @@ def test_vegetation_uses_request_tenant(client):
 
 def test_soil_uses_request_tenant(client):
     _RecordingOrion.constructed_tenants = []
-    route_globals = _get_route_globals(client, "/api/parcel/{parcel_id}/soil")
-    original = route_globals["OrionClient"]
-    route_globals["OrionClient"] = _RecordingOrion
-    try:
+    with patch("app.api.v1.parcel_data.OrionClient", _RecordingOrion):
         resp = client.get(
             "/api/parcel/P1/soil",
             headers={"X-Tenant-ID": "asociacion-allotarra", "X-User-ID": "u1", "X-User-Roles": "Tecnico"},
         )
-    finally:
-        route_globals["OrionClient"] = original
     assert resp.status_code == 200
     assert "asociacion-allotarra" in _RecordingOrion.constructed_tenants
     assert "" not in _RecordingOrion.constructed_tenants  # never the default store
