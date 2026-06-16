@@ -44,7 +44,7 @@ async def parcel_vegetation(
 
     try:
         try:
-            entities = await orion.query_entities(type="VegetationIndex", q=f'hasAgriParcel=="{parcel_urn}"', limit=1)
+            entities = await orion.query_entities(type="VegetationIndex", q=f'hasAgriParcel=="{parcel_urn}"|refAgriParcel=="{parcel_urn}"', limit=1)
         except Exception:
             return _veg_unavailable(index, period)
 
@@ -57,7 +57,7 @@ async def parcel_vegetation(
         if period == "season":
             try:
                 seasons = await orion.query_entities(
-                    type="AgriCropSeason", q=f'hasAgriParcel=="{parcel_urn}"', limit=1
+                    type="AgriCropSeason", q=f'hasAgriParcel=="{parcel_urn}"|refAgriParcel=="{parcel_urn}"', limit=1
                 )
                 if seasons:
                     start_raw = seasons[0].get("startDate", {})
@@ -98,7 +98,7 @@ async def parcel_soil(parcel_id: str, request: Request):
 
     try:
         try:
-            entities = await orion.query_entities(type="AgriSoilExtended", q=f'hasAgriParcel=="{parcel_urn}"', limit=1)
+            entities = await orion.query_entities(type="AgriSoilExtended", q=f'hasAgriParcel=="{parcel_urn}"|refAgriParcel=="{parcel_urn}"', limit=1)
         except Exception:
             return {"available": False, "message": "El modulo soil no ha procesado esta parcela."}
 

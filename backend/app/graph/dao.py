@@ -1910,7 +1910,7 @@ class GraphDAO:
             try:
                 entities = await orion.query_entities(
                     type="CropHealthAssessment",
-                    q=f'hasAgriParcel=="{parcel_id}"',
+                    q=f'hasAgriParcel=="{parcel_id}"|refAgriParcel=="{parcel_id}"',
                     limit=1,
                 )
                 if entities and isinstance(entities, list):
@@ -1998,7 +1998,7 @@ class GraphDAO:
                 try:
                     entities = await orion.query_entities(
                         type="CropHealthAssessment",
-                        q=f'hasAgriParcel=="{parcel_id}"',
+                        q=f'hasAgriParcel=="{parcel_id}"|refAgriParcel=="{parcel_id}"',
                         limit=1,
                     )
                 finally:
