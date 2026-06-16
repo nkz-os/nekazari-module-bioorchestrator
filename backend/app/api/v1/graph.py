@@ -598,9 +598,10 @@ async def agriculture_extrapolate(
         ),
     ),
     tenant_id: str = Query(
-        default="default",
-        description="Tenant namespace for multi-tenancy.",
+        default="",
+        description="Tenant namespace for multi-tenancy (default: from auth context).",
     ),
+    request: Request = None,
 ):
     """Extrapolate best crop varieties for a target environment.
 
@@ -651,6 +652,10 @@ async def agriculture_extrapolate(
         resolved_env = None  # DAO will look it up
     else:
         resolved_env = None  # Explicit filters only
+
+    # Resolve tenant: prefer gateway header over query param
+    if not tenant_id and request is not None:
+        tenant_id = getattr(request.state, "tenant_id", "")
 
     result = await dao.extrapolate_varieties(
         crop=crop,
