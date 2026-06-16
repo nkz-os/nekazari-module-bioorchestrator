@@ -1,62 +1,41 @@
-"""INTIA-EXP → canonical node transformation (BaseIngester subclass).
+"""AHDB (UK Recommended Lists) → canonical node transformation.
 
-Reads the INTIA-EXP JSON-LD file and transforms it into canonical node
-dicts with mergeKeys and registry enrichment.
+Reads the AHDB JSON-LD file (from nkz-ahdb-scraper) and transforms it into
+canonical node dicts with mergeKeys for idempotent ingestion.
+
+AHDB data is from the UK Recommended Lists for cereals and oilseeds.
+It uses relative yield (% of control) rather than absolute yield kg/ha.
+No TrialSite nodes exist in the JSON-LD — trials are national (UK-wide).
 
 Usage:
-    python -m app.ingestion.intia_exp_ingester \
-        --jsonld ../nkz-intia-exp-scraper/data/trials.jsonld
+    python -m app.ingestion.ahdb_ingester \
+        --jsonld ../nkz-ahdb-scraper/data/jsonld/ahdb_trials.jsonld
 """
 
 from __future__ import annotations
 
 import argparse
 import asyncio
+import json
 
 from app.ingestion.base_ingester import BaseIngester
 
 
 EPPO_TO_SPECIES: dict[str, str] = {
-    "ALLPO": "Allium porrum",
-    "AVESA": "Avena sativa",
-    "BETVU": "Beta vulgaris",
-    "BRPNA": "Brassica napus",
-    "BRSNN": "Brassica napus",
-    "CIEAR": "Cicer arietinum",
-    "CPSAN": "Capsicum annuum",
-    "CUMME": "Cucumis melo",
-    "FRAAN": "Fragaria x ananassa",
-    "GLXMA": "Glycine max",
-    "HELAN": "Helianthus annuus",
-    "HORVX": "Hordeum vulgare",
-    "LENCU": "Lens culinaris",
-    "LTHSA": "Lathyrus sativus",
-    "LYPES": "Solanum lycopersicum",
-    "MABSD": "Malus domestica",
-    "MEDSA": "Medicago sativa",
-    "ORYSA": "Oryza sativa",
-    "PIBSX": "Pisum sativum",
-    "PISSA": "Pisum sativum",
-    "PRNAR": "Prunus armeniaca",
-    "PRNDU": "Prunus dulcis",
-    "SECCE": "Secale cereale",
-    "SOLME": "Solanum melongena",
-    "SOLTU": "Solanum tuberosum",
-    "TRZAW": "Triticum aestivum",
     "TRZAX": "Triticum aestivum",
-    "TRZDU": "Triticum durum",
+    "TRZAW": "Triticum aestivum",
+    "HORVX": "Hordeum vulgare",
+    "AVESA": "Avena sativa",
+    "SECCE": "Secale cereale",
     "TTLSS": "Triticosecale",
-    "VICER": "Vicia ervilia",
-    "VICFX": "Vicia faba",
-    "VICSA": "Vicia sativa",
-    "ZEAMX": "Zea mays",
+    "BRSNN": "Brassica napus",
 }
 
 
-class IntiaExpIngester(BaseIngester):
-    """Transform INTIA-EXP JSON-LD to canonical node dicts."""
+class AhdbIngester(BaseIngester):
+    """Transform AHDB JSON-LD to canonical node dicts."""
 
-    SOURCE_ID = "INTIA-EXP"
+    SOURCE_ID = "AHDB"
 
     async def _parse_nodes(self, data: dict) -> dict[str, list[dict]]:
         graph = data.get("@graph", [])
@@ -73,8 +52,6 @@ class IntiaExpIngester(BaseIngester):
                 articles.append(self._convert_article(node))
             elif t == "VarietyTrial":
                 variety_trials.append(self._convert_trial(node))
-            elif t == "ManagementTrial":
-                management_trials.append(self._convert_management(node))
 
         return {
             "trial_sites": sites,
@@ -105,6 +82,7 @@ class IntiaExpIngester(BaseIngester):
             "issueNumber": node.get("issue_number"),
             "articleTitle": node.get("article_title"),
             "year": node.get("year"),
+            "topic": node.get("topic"),
             "mergeKey": (
                 f"{self.SOURCE_ID.lower()}|"
                 f"{str(node.get('issue_number', ''))}|"
@@ -116,50 +94,46 @@ class IntiaExpIngester(BaseIngester):
         eppo = BaseIngester._normalize_eppo(node.get("crop_eppo"))
         return {
             "cropEppo": eppo,
-            "cropScientific": EPPO_TO_SPECIES.get(eppo),
+            "cropScientific": EPPO_TO_SPECIES.get(eppo) or node.get("crop_scientific"),
             "variety": node.get("variety"),
             "year": node.get("year"),
-            "yieldKgHa": node.get("yield_kg_ha"),
-            "irrigationRegime": node.get("irrigation_regime"),
+            "yieldRelativePct": node.get("yield_relative_pct"),
+            "qualityParams": (
+                json.dumps(node.get("quality_params"))
+                if node.get("quality_params")
+                else None
+            ),
+            "diseaseScores": (
+                json.dumps(node.get("disease_scores"))
+                if node.get("disease_scores")
+                else None
+            ),
+            "agronomicTraits": (
+                json.dumps(node.get("agronomic_traits"))
+                if node.get("agronomic_traits")
+                else None
+            ),
             "trialLocation": node.get("trial_location"),
-            "confidence": node.get("confidence", self._registry_entry.get("confidence_default", "medium")),
+            "confidence": node.get("confidence", self._registry_entry.get("confidence_default", "high")),
             "source_id": self.SOURCE_ID,
             "trial_id": node.get("@id", ""),
             "mergeKey": (
                 f"{self.SOURCE_ID.lower()}|{eppo or 'unknown'}|"
                 f"{str(node.get('variety', '')).strip().lower()}|"
                 f"{str(node.get('trial_location', 'unknown')).strip().lower()}|"
-                f"{str(node.get('irrigation_regime', 'unknown'))}|"
                 f"{str(node.get('year', 0))}"
-            ),
-        }
-
-    def _convert_management(self, node: dict) -> dict:
-        return {
-            "cropEppo": BaseIngester._normalize_eppo(node.get("crop_eppo")),
-            "experimentType": node.get("experiment_type"),
-            "treatment": node.get("treatment"),
-            "resultMetric": node.get("result_metric"),
-            "resultValue": node.get("result_value"),
-            "confidence": node.get("confidence", self._registry_entry.get("confidence_default", "medium")),
-            "source_id": self.SOURCE_ID,
-            "trial_id": node.get("@id", ""),
-            "mergeKey": (
-                f"{self.SOURCE_ID.lower()}|"
-                f"{str(node.get('experiment_type', ''))}|"
-                f"{str(node.get('treatment', ''))[:60]}"
             ),
         }
 
 
 async def main():
-    parser = argparse.ArgumentParser(description="INTIA-EXP → transform nodes")
-    parser.add_argument("--jsonld", required=True, help="Path to JSON-LD")
+    parser = argparse.ArgumentParser(description="AHDB → transform nodes")
+    parser.add_argument("--jsonld", required=True, help="Path to AHDB JSON-LD")
     parser.add_argument("--dry-run", action="store_true", default=True)
     parser.add_argument("--no-dry-run", action="store_true", help="Actually run (will fail)")
     args = parser.parse_args()
 
-    ingester = IntiaExpIngester()
+    ingester = AhdbIngester()
     nodes = await ingester.transform(args.jsonld)
     print(f"[{ingester.SOURCE_ID.lower()}_ingester] Transformed nodes:")
     for node_type, items in nodes.items():

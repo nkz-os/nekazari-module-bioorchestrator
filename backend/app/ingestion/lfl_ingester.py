@@ -101,6 +101,7 @@ class LflIngester(BaseIngester):
             "trialLocation": node.get("trial_location"),
             "confidence": node.get("confidence", self._registry_entry.get("confidence_default", "medium")),
             "source_id": self.SOURCE_ID,
+            "trial_id": node.get("@id", ""),
             "mergeKey": (
                 f"{self.SOURCE_ID.lower()}|{eppo or 'unknown'}|"
                 f"{str(node.get('variety', '')).strip().lower()}|"
@@ -119,6 +120,7 @@ class LflIngester(BaseIngester):
             "resultValue": node.get("result_value"),
             "confidence": node.get("confidence", self._registry_entry.get("confidence_default", "medium")),
             "source_id": self.SOURCE_ID,
+            "trial_id": node.get("@id", ""),
             "mergeKey": (
                 f"{self.SOURCE_ID.lower()}|"
                 f"{str(node.get('experiment_type', ''))}|"
