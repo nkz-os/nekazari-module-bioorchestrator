@@ -1,41 +1,30 @@
 """
-Navarra Agraria → Neo4j ingestion script.
+Navarra Agraria → canonical node transformation (BaseIngester subclass).
 
-Reads the enriched JSON-LD file and performs idempotent MERGE operations
-into the BioOrchestrator Neo4j knowledge graph.
+Reads the enriched JSON-LD file and transforms it into canonical node dicts
+with mergeKeys for idempotent ingestion and registry enrichment.
 
 Usage:
     python -m app.ingestion.navarra_ingester \
         --jsonld data/jsonld/all_trials_enriched.jsonld \
-        --neo4j-uri bolt://localhost:7687 \
-        --neo4j-user neo4j \
-        --neo4j-password bioorchestrator \
         --dry-run
 
-Entidades creadas:
-    - :TrialSite (40 nodos)
-    - :ArticleSource (303 nodos)
-    - :VarietyTrial (505 nodos)
-    - :ManagementTrial (224 nodos)
-    - :HarvestData (3 nodos)
-
-Relaciones creadas:
-    - (:VarietyTrial)-[:TRIAL_AT]->(:TrialSite)
-    - (:ManagementTrial)-[:TRIAL_AT]->(:TrialSite)
-    - (:VarietyTrial)-[:SOURCED_FROM]->(:ArticleSource)
-    - (:ManagementTrial)-[:SOURCED_FROM]->(:ArticleSource)
-    - (:HarvestData)-[:SOURCED_FROM]->(:ArticleSource)
-    - (:VarietyTrial)-[:TRIAL_OF]->(:Species)  — when EPPO code matches
-
-Idempotencia: Todas las operaciones usan MERGE con claves compuestas.
+Transforms:
+    - :TrialSite
+    - :ArticleSource
+    - :VarietyTrial
+    - :ManagementTrial
+    - :HarvestData
 """
 
 from __future__ import annotations
 
 import json
-from pathlib import Path
+from typing import Optional
 
-from neo4j import AsyncDriver, AsyncGraphDatabase
+from neo4j import AsyncDriver
+
+from app.ingestion.base_ingester import BaseIngester
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -171,86 +160,58 @@ def _merge_key_harvest_data(node: dict) -> str:
 # Ingester
 # ═══════════════════════════════════════════════════════════════════════════════
 
-class NavarraIngester:
-    """Idempotent ingestion of Navarra Agraria JSON-LD into Neo4j."""
+class NavarraIngester(BaseIngester):
+    """Navarra Agraria → canonical node transformation with registry enrichment."""
 
-    def __init__(self, driver: AsyncDriver) -> None:
+    SOURCE_ID = "NAVARRA-AGRARIA"
+
+    def __init__(self, driver: Optional[AsyncDriver] = None) -> None:
+        super().__init__()
         self._driver = driver
         self._stats: dict[str, int] = {}
 
     async def ingest(self, jsonld_path: str, dry_run: bool = False) -> dict:
-        """Main entry point: read JSON-LD, MERGE all nodes and relationships.
+        """Transform JSON-LD to canonical nodes.
+
+        Args:
+            jsonld_path: Path to enriched JSON-LD file.
+            dry_run: If True, only print stats without Neo4j writes.
 
         Returns:
             Dict with per-type counts.
         """
-        data = self._load_jsonld(jsonld_path)
-        graph = data.get("@graph", [])
+        nodes = await self.transform(jsonld_path)
+        sites = nodes["trial_sites"]
+        articles = nodes["article_sources"]
+        variety_trials = nodes["variety_trials"]
+        management_trials = nodes["management_trials"]
 
-        if not graph:
-            print("[navarra_ingester] ERROR: @graph is empty — nothing to ingest")
-            return {"error": "empty @graph"}
-
-        # ── Phase 1: partition by @type ──────────────────────────────────
-        sites = []
-        articles = []
-        variety_trials = []
-        management_trials = []
-        harvest_data = []
-        unknown = []
-
-        for node in graph:
-            t = node.get("@type", "")
-            if t == "TrialSite":
-                sites.append(node)
-            elif t == "ArticleSource":
-                articles.append(node)
-            elif t == "VarietyTrial":
-                variety_trials.append(node)
-            elif t == "ManagementTrial":
-                management_trials.append(node)
-            elif t == "HarvestData":
-                harvest_data.append(node)
-            else:
-                unknown.append(t)
-
-        print(f"[navarra_ingester] Partitioned {len(graph)} nodes:")
+        print(f"[navarra_ingester] Transformed {sum(len(v) for v in nodes.values())} nodes:")
         print(f"  TrialSites:        {len(sites)}")
         print(f"  ArticleSources:    {len(articles)}")
         print(f"  VarietyTrials:     {len(variety_trials)}")
         print(f"  ManagementTrials:  {len(management_trials)}")
-        print(f"  HarvestData:       {len(harvest_data)}")
-        if unknown:
-            print(f"  Unknown types:     {set(unknown)}")
 
-        if dry_run:
-            return {
-                "dry_run": True,
-                "would_ingest": {
-                    "TrialSite": len(sites),
-                    "ArticleSource": len(articles),
-                    "VarietyTrial": len(variety_trials),
-                    "ManagementTrial": len(management_trials),
-                    "HarvestData": len(harvest_data),
-                }
-            }
+        if dry_run or not self._driver:
+            return {"dry_run": True, "transformed": {k: len(v) for k, v in nodes.items()}}
 
-        # ── Phase 2: MERGE nodes ─────────────────────────────────────────
-        stats: dict[str, int] = {}
-
-        stats["trial_sites_merged"] = await self._merge_trial_sites(sites)
-        stats["article_sources_merged"] = await self._merge_article_sources(articles)
-        stats["variety_trials_merged"] = await self._merge_variety_trials(variety_trials)
-        stats["management_trials_merged"] = await self._merge_management_trials(management_trials)
-        stats["harvest_data_merged"] = await self._merge_harvest_data(harvest_data)
-
-        # ── Phase 3: MERGE relationships ─────────────────────────────────
-        stats["relationships_created"] = await self._merge_relationships(
-            variety_trials, management_trials, harvest_data
+        # Neo4j MERGE — disabled until unified ingestion
+        raise NotImplementedError(
+            "Neo4j MERGE disabled until unified ingestion. "
+            "Use dry_run=True to preview."
         )
 
-        self._stats = stats
-        return stats
+    async def merge(self, nodes: dict[str, list[dict]]) -> dict[str, int]:
+        """MERGE nodes into Neo4j — disabled until unified ingestion.
+
+        Raises:
+            NotImplementedError: Unified ingestion is pending.
+        """
+        raise NotImplementedError(
+            "Unified ingestion pending. "
+            "Use transform() to prepare nodes, then wait for the "
+            "unified ingestion pipeline."
+        )
 
     # ── Node MERGE operations ────────────────────────────────────────────────
 
@@ -606,19 +567,56 @@ class NavarraIngester:
 
         return count
 
-    # ── Helpers ──────────────────────────────────────────────────────────────
+    # ── Parse ──────────────────────────────────────────────────────────────
 
-    @staticmethod
-    def _load_jsonld(path: str) -> dict:
-        """Load and validate JSON-LD file."""
-        filepath = Path(path)
-        if not filepath.exists():
-            raise FileNotFoundError(f"JSON-LD file not found: {path}")
-        with open(filepath) as f:
-            data = json.load(f)
-        if "@graph" not in data:
-            raise ValueError(f"Not a valid JSON-LD file: missing @graph in {path}")
-        return data
+    async def _parse_nodes(self, data: dict) -> dict[str, list[dict]]:
+        """Partition @graph by @type and set mergeKey on each node.
+
+        Args:
+            data: Parsed JSON-LD dict (with @graph key).
+
+        Returns:
+            Canonical node dicts keyed by type.
+        """
+        graph = data.get("@graph", [])
+
+        sites = []
+        articles = []
+        variety_trials = []
+        management_trials = []
+        harvest_data = []
+        unknown = []
+
+        for node in graph:
+            t = node.get("@type", "")
+            if t == "TrialSite":
+                node["mergeKey"] = _merge_key_trial_site(node)
+                sites.append(node)
+            elif t == "ArticleSource":
+                node["mergeKey"] = _merge_key_article_source(node)
+                articles.append(node)
+            elif t == "VarietyTrial":
+                node["mergeKey"] = _merge_key_variety_trial(node)
+                variety_trials.append(node)
+            elif t == "ManagementTrial":
+                node["mergeKey"] = _merge_key_management_trial(node)
+                management_trials.append(node)
+            elif t == "HarvestData":
+                node["mergeKey"] = _merge_key_harvest_data(node)
+                harvest_data.append(node)
+            else:
+                unknown.append(t)
+
+        if unknown:
+            print(f"[navarra_ingester] Unknown types: {set(unknown)}")
+
+        return {
+            "trial_sites": sites,
+            "article_sources": articles,
+            "variety_trials": variety_trials,
+            "management_trials": management_trials,
+            "harvest_data": harvest_data,
+        }
 
 
 def _resolve_source(node: dict) -> str:
@@ -661,38 +659,15 @@ def _resolve_source(node: dict) -> str:
 async def main():
     import argparse
 
-    parser = argparse.ArgumentParser(description="Navarra Agraria → Neo4j ingestion")
+    parser = argparse.ArgumentParser(description="Navarra Agraria → transform nodes")
     parser.add_argument("--jsonld", required=True, help="Path to all_trials_enriched.jsonld")
-    parser.add_argument("--neo4j-uri", default="bolt://localhost:7687")
-    parser.add_argument("--neo4j-user", default="neo4j")
-    parser.add_argument("--neo4j-password", default="bioorchestrator")
-    parser.add_argument("--dry-run", action="store_true")
+    parser.add_argument("--dry-run", action="store_true", default=True)
+    parser.add_argument("--no-dry-run", action="store_true", help="Actually run (will fail — reserved for unified ingestion)")
     args = parser.parse_args()
 
-    driver = AsyncGraphDatabase.driver(
-        args.neo4j_uri,
-        auth=(args.neo4j_user, args.neo4j_password),
-    )
-
-    try:
-        ingester = NavarraIngester(driver)
-        stats = await ingester.ingest(args.jsonld, dry_run=args.dry_run)
-        print(json.dumps(stats, indent=2))
-
-        if not args.dry_run:
-            # Verify
-            async with driver.session() as s:
-                result = await s.run(
-                    "MATCH (n) WHERE n.mergeKey IS NOT NULL "
-                    "RETURN labels(n)[0] AS label, count(n) AS cnt "
-                    "ORDER BY cnt DESC"
-                )
-                print("\n[verify] Nodes ingested by type:")
-                async for record in result:
-                    print(f"  {record['label']}: {record['cnt']}")
-
-    finally:
-        await driver.close()
+    ingester = NavarraIngester()
+    stats = await ingester.ingest(args.jsonld, dry_run=not args.no_dry_run)
+    print(json.dumps(stats, indent=2))
 
 
 if __name__ == "__main__":
