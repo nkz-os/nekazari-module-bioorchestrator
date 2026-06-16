@@ -48,11 +48,11 @@ def test_get_source_lowercase():
 
 
 def test_all_sources_returns_all():
-    """all_sources returns all 10 entries."""
+    """all_sources returns at least 10 entries."""
     from app.common.source_registry import all_sources
 
     sources = all_sources()
-    assert len(sources) == 10
+    assert len(sources) >= 10  # will grow as more sources are added
     ids = [s["source_id"] for s in sources]
     assert "NAVARRA-AGRARIA" in ids
     assert "GENVCE" in ids
@@ -67,11 +67,11 @@ def test_all_sources_returns_all():
 
 
 def test_all_source_ids():
-    """all_source_ids returns 10 strings."""
+    """all_source_ids returns at least 10 strings."""
     from app.common.source_registry import all_source_ids
 
     ids = all_source_ids()
-    assert len(ids) == 10
+    assert len(ids) >= 10
     assert all(isinstance(s, str) for s in ids)
 
 
