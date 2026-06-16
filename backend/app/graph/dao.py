@@ -20,6 +20,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import os
+import re
 from typing import Any
 
 from neo4j import AsyncDriver
@@ -67,13 +68,26 @@ class GraphDAO:
 
             label_result = await session.run(
                 "CALL db.labels() YIELD label "
-                "CALL apoc.cypher.run('MATCH (n:`' + label + '`) RETURN count(n) AS c', {}) "
-                "YIELD value "
-                "RETURN label, value.c AS count "
-                "ORDER BY count DESC LIMIT 30"
+                "RETURN label"
             )
-            label_records = await label_result.data()
-            label_counts = {r["label"]: r["count"] for r in label_records}
+            labels = [r["label"] async for r in label_result]
+
+            label_counts = {}
+            for lbl in labels:
+                # Defense-in-depth: labels come from db.labels() (app-set), never user input
+                if not re.match(r'^[A-Za-z][A-Za-z0-9_]*$', lbl):
+                    continue
+                cnt = await session.run(
+                    "MATCH (n:" + lbl + ") RETURN count(n) AS c"
+                )
+                row = await cnt.single()
+                if row:
+                    label_counts[lbl] = row["c"]
+
+            # Sort by count desc, limit to 30
+            label_counts = dict(
+                sorted(label_counts.items(), key=lambda x: -x[1])[:30]
+            )
 
         return {
             "node_count": node_count,
