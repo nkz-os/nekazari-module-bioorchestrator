@@ -99,7 +99,7 @@
     "institution": "Bayerische Landesanstalt für Landwirtschaft (LfL)",
     "institution_short": "LfL",
     "country": "DE",
-    "country_name": {"en": "Germany", "es": "Alemania", "fr": "Allemagne", "pt": "Alemanha"},
+    "country_name": {"en": "Germany", "es": "Alemania", "de": "Deutschland", "fr": "Allemagne", "pt": "Alemanha"},
     "url": "https://www.lfl.bayern.de",
     "document_url_template": null,
     "license_class": "public-sector-psi",
@@ -111,12 +111,14 @@
     "attribution": {
       "en": "Data sourced from Landessortenversuche (state variety trials) published by LfL Bayern (Bavarian State Research Center for Agriculture).",
       "es": "Datos obtenidos de los ensayos varietales estatales (Landessortenversuche) publicados por LfL Bayern (Centro de Investigación Agraria del Estado de Baviera).",
+      "de": "Daten aus den Landessortenversuchen, veröffentlicht von der Bayerischen Landesanstalt für Landwirtschaft (LfL).",
       "fr": "Données issues des essais variétaux d'État (Landessortenversuche) publiés par le LfL Bayern (Centre de recherche agricole de l'État de Bavière).",
       "pt": "Dados obtidos dos ensaios varietais estaduais (Landessortenversuche) publicados pelo LfL Bayern (Centro de Pesquisa Agrícola do Estado da Baviera)."
     },
     "disclaimer": {
       "en": "LfL variety trials are conducted by the Bavarian State Research Center. NKZ extrapolates results to similar environments — this does not constitute an official LfL recommendation.",
       "es": "Los ensayos varietales LfL son realizados por el Centro de Investigación Agraria de Baviera. NKZ extrapola los resultados — esto no constituye una recomendación oficial de LfL.",
+      "de": "Die LfL-Sortenversuche werden von der Bayerischen Landesanstalt für Landwirtschaft durchgeführt. NKZ extrapoliert Ergebnisse auf ähnliche Umgebungen — dies stellt keine offizielle Empfehlung der LfL dar.",
       "fr": "Les essais variétaux LfL sont menés par le Centre de recherche agricole bavarois. NKZ extrapole les résultats — cela ne constitue pas une recommandation officielle du LfL.",
       "pt": "Os ensaios varietais LfL são realizados pelo Centro de Pesquisa Agrícola da Baviera. A NKZ extrapola os resultados — isto não constitui uma recomendação oficial da LfL."
     },
@@ -129,7 +131,7 @@
     "institution": "NÉBIH — Nemzeti Élelmiszerlánc-biztonsági Hivatal / VSZT — Vetőmag Szövetség",
     "institution_short": "NÉBIH",
     "country": "HU",
-    "country_name": {"en": "Hungary", "es": "Hungría", "fr": "Hongrie", "pt": "Hungria"},
+    "country_name": {"en": "Hungary", "es": "Hungría", "fr": "Hongrie", "hu": "Magyarország", "pt": "Hungria"},
     "url": "https://portal.nebih.gov.hu",
     "document_url_template": null,
     "license_class": "public-sector-psi",
@@ -142,12 +144,14 @@
       "en": "Data sourced from national variety trial results published by NÉBIH (Hungarian National Food Chain Safety Authority) and VSZT (Hungarian Seed Association).",
       "es": "Datos obtenidos de resultados de ensayos varietales nacionales publicados por NÉBIH (Autoridad Nacional de Seguridad de la Cadena Alimentaria de Hungría) y VSZT (Asociación Húngara de Semillas).",
       "fr": "Données issues des résultats d'essais variétaux nationaux publiés par NÉBIH et VSZT (Autorité hongroise de sécurité de la chaîne alimentaire et Association hongroise des semences).",
+      "hu": "A NÉBIH (Nemzeti Élelmiszerlánc-biztonsági Hivatal) és a VSZT (Vetőmag Szövetség) által közzétett országos fajtakísérleti eredményekből származó adatok.",
       "pt": "Dados obtidos de resultados de ensaios varietais nacionais publicados pela NÉBIH (Autoridade Nacional de Segurança da Cadeia Alimentar da Hungria) e VSZT (Associação Húngara de Sementes)."
     },
     "disclaimer": {
       "en": "NÉBIH/VSZT trials are part of the Hungarian national variety testing system. NKZ extrapolates results to similar environments — this does not constitute an official recommendation by NÉBIH or VSZT.",
       "es": "Los ensayos NÉBIH/VSZT forman parte del sistema nacional de ensayos varietales húngaro. NKZ extrapola los resultados — esto no constituye una recomendación oficial de NÉBIH o VSZT.",
       "fr": "Les essais NÉBIH/VSZT font partie du système national hongrois d'essais variétaux. NKZ extrapole les résultats — cela ne constitue pas une recommandation officielle de NÉBIH ou VSZT.",
+      "hu": "A NÉBIH/VSZT kísérletek a magyar nemzeti fajtakísérleti rendszer részét képezik. NKZ az eredményeket hasonló környezetekre extrapolálja — ez nem minősül a NÉBIH vagy a VSZT hivatalos ajánlásának.",
       "pt": "Os ensaios NÉBIH/VSZT fazem parte do sistema nacional húngaro de ensaios varietais. A NKZ extrapola os resultados — isto não constitui uma recomendação oficial da NÉBIH ou VSZT."
     },
     "site_urls": ["https://portal.nebih.gov.hu", "https://vszt.hu"],
@@ -280,7 +284,7 @@
     "institution": "CREA — Consiglio per la Ricerca in Agricoltura e l'Analisi dell'Economia Agraria",
     "institution_short": "CREA",
     "country": "IT",
-    "country_name": {"en": "Italy", "es": "Italia", "fr": "Italie", "pt": "Itália"},
+    "country_name": {"en": "Italy", "es": "Italia", "fr": "Italie", "it": "Italia", "pt": "Itália"},
     "url": "https://www.crea.gov.it",
     "document_url_template": null,
     "license_class": "public-sector-psi",
@@ -293,12 +297,14 @@
       "en": "Data sourced from maize variety trials published by CREA (Council for Agricultural Research and Economics, Italy).",
       "es": "Datos obtenidos de ensayos varietales de maíz publicados por CREA (Consejo de Investigación Agraria, Italia).",
       "fr": "Données issues des essais variétaux de maïs publiés par le CREA (Conseil pour la Recherche en Agriculture, Italie).",
+      "it": "Dati provenienti dalle prove varietali sul mais pubblicate dal CREA (Consiglio per la Ricerca in Agricoltura e l'Analisi dell'Economia Agraria).",
       "pt": "Dados obtidos de ensaios varietais de milho publicados pelo CREA (Conselho de Pesquisa Agrícola, Itália)."
     },
     "disclaimer": {
       "en": "CREA trials are conducted by the Italian research council. NKZ extrapolates results to similar environments — this does not constitute an official CREA recommendation.",
       "es": "Los ensayos CREA son realizados por el consejo de investigación italiano. NKZ extrapola los resultados — esto no constituye una recomendación oficial de CREA.",
       "fr": "Les essais CREA sont menés par le conseil de recherche italien. NKZ extrapole les résultats — cela ne constitue pas une recommandation officielle du CREA.",
+      "it": "Le prove CREA sono condotte dal consiglio di ricerca italiano. NKZ estrapola i risultati ad ambienti simili — ciò non costituisce una raccomandazione ufficiale del CREA.",
       "pt": "Os ensaios CREA são realizados pelo conselho de investigação italiano. A NKZ extrapola os resultados — isto não constitui uma recomendação oficial do CREA."
     },
     "site_urls": ["https://www.crea.gov.it"],
