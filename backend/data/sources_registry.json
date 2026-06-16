@@ -309,5 +309,58 @@
     },
     "site_urls": ["https://www.crea.gov.it"],
     "tags": ["maize", "variety-trials", "italy"]
+  },
+  {
+    "source_id": "BSL",
+    "name": "Bundessortenamt (BSL)",
+    "institution": "Bundessortenamt — Federal Plant Variety Office",
+    "institution_short": "BSL",
+    "country": "DE",
+    "country_name": {"en": "Germany", "es": "Alemania", "de": "Deutschland", "fr": "Allemagne", "pt": "Alemanha"},
+    "url": "https://www.bundessortenamt.de",
+    "document_url_template": null,
+    "license_class": "public-sector-psi",
+    "use_type": "variety-trial-network",
+    "official_status": true,
+    "data_format": "pdf-extracted",
+    "extraction_method": "llm-enhanced",
+    "confidence_default": "high",
+    "attribution": {
+      "en": "Data sourced from official German variety trials (Landessortenversuche) published by the Bundessortenamt (BSL).",
+      "de": "Daten aus den Landessortenversuchen, veröffentlicht vom Bundessortenamt.",
+      "es": "Datos obtenidos de los ensayos varietales oficiales alemanes publicados por el Bundessortenamt."
+    },
+    "disclaimer": {
+      "en": "BSL variety trials are the official German variety testing system. NKZ extrapolates results — this does not constitute an official BSL recommendation.",
+      "de": "Die BSL-Sortenversuche sind das offizielle deutsche Sortenprüfungssystem. NKZ extrapoliert Ergebnisse — dies stellt keine offizielle Empfehlung des BSL dar."
+    },
+    "site_urls": ["https://www.bundessortenamt.de"],
+    "tags": ["cereals", "maize", "rapeseed", "potato", "variety-trials", "germany", "official"]
+  },
+  {
+    "source_id": "AHDB",
+    "name": "AHDB Recommended Lists",
+    "institution": "AHDB — Agriculture and Horticulture Development Board",
+    "institution_short": "AHDB",
+    "country": "GB",
+    "country_name": {"en": "United Kingdom", "es": "Reino Unido", "fr": "Royaume-Uni", "pt": "Reino Unido"},
+    "url": "https://ahdb.org.uk",
+    "document_url_template": null,
+    "license_class": "public-sector-psi",
+    "use_type": "variety-trial-network",
+    "official_status": false,
+    "data_format": "pdf-extracted",
+    "extraction_method": "llm-enhanced",
+    "confidence_default": "high",
+    "attribution": {
+      "en": "Data sourced from the AHDB Recommended Lists for cereals and oilseeds (Agriculture and Horticulture Development Board, UK).",
+      "es": "Datos obtenidos de las Listas Recomendadas de AHDB para cereales y oleaginosas.",
+      "fr": "Données issues des listes recommandées de l'AHDB pour les céréales et oléagineux."
+    },
+    "disclaimer": {
+      "en": "AHDB Recommended Lists are produced by AHDB. NKZ extrapolates results — this does not constitute an official AHDB recommendation."
+    },
+    "site_urls": ["https://ahdb.org.uk"],
+    "tags": ["cereals", "oilseeds", "wheat", "barley", "variety-trials", "uk"]
   }
 ]

@@ -100,12 +100,14 @@ class ItacylIngester(BaseIngester):
             "trialLocation": node.get("trial_location"),
             "confidence": node.get("confidence", self._registry_entry.get("confidence_default", "medium")),
             "source_id": self.SOURCE_ID,
+            "trial_id": node.get("@id", ""),
             "mergeKey": (
                 f"{self.SOURCE_ID.lower()}|{eppo or 'unknown'}|"
                 f"{str(node.get('variety', '')).strip().lower()}|"
                 f"{str(node.get('trial_location', 'unknown')).strip().lower()}|"
                 f"{str(node.get('irrigation_regime', 'unknown'))}|"
-                f"{str(node.get('year', 0))}"
+                f"{str(node.get('year', 0))}|"
+                f"{str(node.get('yield_kg_ha', 0))}"
             ),
         }
 
@@ -118,6 +120,7 @@ class ItacylIngester(BaseIngester):
             "resultValue": node.get("result_value"),
             "confidence": node.get("confidence", self._registry_entry.get("confidence_default", "medium")),
             "source_id": self.SOURCE_ID,
+            "trial_id": node.get("@id", ""),
             "mergeKey": (
                 f"{self.SOURCE_ID.lower()}|"
                 f"{str(node.get('experiment_type', ''))}|"

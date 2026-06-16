@@ -114,6 +114,7 @@ class CtiflIngester(BaseIngester):
             "trialLocation": node.get("trial_location"),
             "confidence": node.get("confidence", self._registry_entry.get("confidence_default", "medium")),
             "source_id": self.SOURCE_ID,
+            "trial_id": node.get("@id", ""),
             "skip_ingestion": True,
             "mergeKey": (
                 f"{self.SOURCE_ID.lower()}|{eppo or 'unknown'}|"

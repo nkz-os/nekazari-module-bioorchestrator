@@ -127,6 +127,7 @@ class GenvceIngester(BaseIngester):
             ),
             "confidence": node.get("confidence", "high"),
             "source_id": "GENVCE",
+            "trial_id": node.get("@id", ""),
             "mergeKey": (
                 f"genvce|{eppo or 'unknown'}|"
                 f"{str(node.get('variety', '')).strip().lower()}|"
