@@ -21,8 +21,6 @@ from __future__ import annotations
 import json
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Any
-
 from app.common.source_registry import get_source
 
 
@@ -54,7 +52,8 @@ class BaseIngester(ABC):
         Returns:
             Dict with keys: trial_sites, article_sources,
             variety_trials, management_trials. Each value is a list
-            of canonical node dicts with mergeKey and registry metadata.
+            of canonical node dicts. Subclasses must set 'mergeKey'
+            in _parse_nodes(). Registry metadata is added automatically.
 
         Raises:
             FileNotFoundError: If jsonld_path does not exist.
