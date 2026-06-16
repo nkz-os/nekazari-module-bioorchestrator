@@ -23,7 +23,7 @@ import logging
 import os
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Any, Optional
+from typing import Optional
 
 from neo4j import AsyncDriver, AsyncGraphDatabase
 

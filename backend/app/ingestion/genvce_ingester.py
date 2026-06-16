@@ -154,7 +154,7 @@ async def main():
     ingester = GenvceIngester()
     nodes = await ingester.transform(args.jsonld)
 
-    print(f"[genvce_ingester] Transformed nodes:")
+    print("[genvce_ingester] Transformed nodes:")
     for node_type, items in nodes.items():
         print(f"  {node_type}: {len(items)}")
 
