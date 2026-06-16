@@ -43,12 +43,13 @@ def _load_registry() -> list[SourceInfo]:
     if not path.exists():
         logger.warning("Sources registry not found at %s — returning empty", path)
         return []
-    with open(path) as f:
+    with open(path, encoding="utf-8") as f:
         data: list[SourceInfo] = json.load(f)
     logger.info("Loaded %d sources from registry", len(data))
     return data
 
 
+@cache
 def _build_index() -> dict[str, SourceInfo]:
     """Build source_id -> entry index."""
     return {s["source_id"]: s for s in _load_registry()}
@@ -59,7 +60,15 @@ def _build_index() -> dict[str, SourceInfo]:
 def get_source(source_id: str) -> SourceInfo:
     """Return the full source entry for a given source_id.
 
-    Raises KeyError if source_id is not found.
+    Args:
+        source_id: The unique identifier for the source
+            (e.g., "NAVARRA-AGRARIA", "GENVCE").
+
+    Returns:
+        The full source metadata dictionary.
+
+    Raises:
+        KeyError: If source_id is not found in the registry.
     """
     index = _build_index()
     if source_id not in index:
@@ -72,6 +81,14 @@ def get_attribution(source_id: str, locale: str = "en") -> str:
 
     Falls back to 'en' if the locale is not available, then to
     the first available locale if even 'en' is missing.
+
+    Args:
+        source_id: The unique identifier for the source.
+        locale: BCP 47 language tag (e.g., "en", "es", "fr").
+
+    Returns:
+        Attribution text string. Empty string if no text is available
+        for any locale.
     """
     src = get_source(source_id)
     attr = src.get("attribution", {})
@@ -79,24 +96,54 @@ def get_attribution(source_id: str, locale: str = "en") -> str:
 
 
 def get_disclaimer(source_id: str, locale: str = "en") -> str:
-    """Return disclaimer text in the requested locale."""
+    """Return disclaimer text in the requested locale.
+
+    Falls back to 'en' if the locale is not available, then to
+    the first available locale if even 'en' is missing.
+
+    Args:
+        source_id: The unique identifier for the source.
+        locale: BCP 47 language tag (e.g., "en", "es", "fr").
+
+    Returns:
+        Disclaimer text string. Empty string if no text is available
+        for any locale.
+    """
     src = get_source(source_id)
     disc = src.get("disclaimer", {})
     return _resolve_localized(disc, locale)
 
 
 def all_sources() -> list[SourceInfo]:
-    """Return the full list of all sources."""
+    """Return the full list of all registered sources.
+
+    Returns:
+        List of all source metadata dictionaries. Empty list
+        if the registry file is not found.
+    """
     return list(_load_registry())
 
 
 def all_source_ids() -> list[str]:
-    """Return all registered source_id values."""
+    """Return all registered source_id values.
+
+    Returns:
+        List of source_id strings (e.g., "NAVARRA-AGRARIA",
+        "GENVCE", ...). Empty list if the registry is empty.
+    """
     return list(_build_index().keys())
 
 
 def sources_by_license(license_class: str) -> list[SourceInfo]:
-    """Return sources that match a given license_class."""
+    """Return sources that match a given license_class.
+
+    Args:
+        license_class: The license class to filter by
+            (e.g., "public-sector-psi", "editorial-restricted").
+
+    Returns:
+        List of sources with the matching license_class.
+    """
     return [s for s in _load_registry() if s.get("license_class") == license_class]
 
 
@@ -105,6 +152,14 @@ def get_combined_attribution(source_ids: list[str], locale: str = "en") -> str:
 
     Used when a UI component displays data from multiple sources
     (e.g. Variety Finder results).
+
+    Args:
+        source_ids: List of source_id strings to combine.
+        locale: BCP 47 language tag for localization.
+
+    Returns:
+        Space-joined attribution string with deduplicated texts.
+        Empty string if no sources are valid.
     """
     texts: list[str] = []
     for sid in source_ids:
@@ -125,13 +180,22 @@ def get_combined_attribution(source_ids: list[str], locale: str = "en") -> str:
 
 
 def get_combined_disclaimer(source_ids: list[str], locale: str = "en") -> str:
-    """Join disclaimer text from multiple sources."""
+    """Join disclaimer text from multiple sources.
+
+    Args:
+        source_ids: List of source_id strings to combine.
+        locale: BCP 47 language tag for localization.
+
+    Returns:
+        Space-joined disclaimer string with deduplicated texts.
+        Empty string if no sources are valid.
+    """
     texts: list[str] = []
     for sid in source_ids:
         try:
             texts.append(get_disclaimer(sid, locale))
         except KeyError:
-            pass
+            logger.warning("Unknown source_id %s in combined disclaimer", sid)
     if not texts:
         return ""
     seen: set[str] = set()
