@@ -301,7 +301,11 @@ class GraphDAO:
             )
             record = await result.single()
             if record is None or record["match_level"] == "none":
-                return None
+                # ── Fallback: try CropHealthAssessment from Orion-LD ─────
+                return await self._fallback_phenology_from_orion(
+                    species=species,
+                    stage=stage,
+                )
 
             # Filter nulls from alternatives collection
             alts = [
@@ -422,6 +426,126 @@ class GraphDAO:
             if record is None:
                 return {"status": "error", "detail": "Failed to create"}
             return {"status": record["status"], "source": record["source"]}
+
+    # ── Phenology Fallback (Orion-LD CropHealthAssessment) ──────────────────────
+
+    async def _fallback_phenology_from_orion(
+        self,
+        species: str,
+        stage: str | None = None,
+    ) -> dict | None:
+        """Fallback: fetch phenology params from CropHealthAssessment in Orion-LD.
+
+        Called when Neo4j has no data for the requested species.
+        Queries the most recent CropHealthAssessment entity for the species
+        and extracts Kc, D1, D2, MDS from its attributes.
+        """
+        try:
+            from app.core.config import settings
+            from nkz_platform_sdk.orion import OrionClient
+
+            orion = OrionClient(
+                settings.catalog_tenant,
+                base_url=settings.orion_ld_url,
+                context_url=settings.context_url,
+            )
+            try:
+                entities = await orion.query_entities(
+                    type="CropHealthAssessment",
+                    limit=5,
+                    order_by="assessedAt",
+                    order_desc=True,
+                )
+            finally:
+                await orion.close()
+
+            if not entities or not isinstance(entities, list):
+                return None
+
+            # Find the first entity that matches the species
+            for entity in entities:
+                species_val = (
+                    entity.get("species", {}).get("value")
+                    or entity.get("species", {}).get("object")
+                    or entity.get("species")
+                )
+                if not species_val:
+                    continue
+                if species.lower() in str(species_val).lower():
+                    return self._extract_phenology_from_assessment(entity)
+
+            # If no species match but we have any assessment, return the latest
+            return self._extract_phenology_from_assessment(entities[0])
+
+        except ImportError:
+            logger.warning("nkz_platform_sdk not available, cannot fallback to Orion")
+            return None
+        except Exception as exc:
+            logger.warning("Phenology fallback to Orion failed: %s", exc)
+            return None
+
+    def _extract_phenology_from_assessment(self, entity: dict) -> dict | None:
+        """Extract phenology params from a CropHealthAssessment entity.
+
+        The entity is expected in normalized NGSI-LD format (from OrionClient).
+        """
+        def _val(key: str) -> float | None:
+            v = entity.get(key)
+            if v is None:
+                return None
+            if isinstance(v, dict):
+                return v.get("value")
+            if isinstance(v, (int, float)):
+                return float(v)
+            return None
+
+        kc = _val("kc")
+        ky = _val("ky")
+        d1 = _val("d1") or _val("nwsbBaseline") or _val("d1Baseline")
+        d2 = _val("d2") or _val("maxStressBaseline") or _val("d2Baseline")
+        mds_ref = _val("mdsRef") or _val("mdsReference")
+
+        if kc is None and d1 is None and d2 is None and mds_ref is None:
+            return None
+
+        return {
+            "species": entity.get("id", ""),
+            "scientific_name": None,
+            "agrovoc_uri": None,
+            "stage": (
+                entity.get("phenologyStage", {}).get("value")
+                if isinstance(entity.get("phenologyStage"), dict)
+                else entity.get("phenologyStage")
+            ),
+            "stage_description": None,
+            "stage_base_temp": None,
+            "stage_gdd_min": None,
+            "stage_gdd_max": None,
+            "kc": kc,
+            "kc_confidence_interval": None,
+            "ky": ky,
+            "d1": d1,
+            "d1_confidence_interval": None,
+            "d2": d2,
+            "d2_confidence_interval": None,
+            "mds_ref": mds_ref,
+            "mds_ref_confidence_interval": None,
+            "cultivar": None,
+            "management": None,
+            "climate_zone": None,
+            "is_default": True,
+            "provenance": {
+                "doi": None,
+                "short": "CropHealthAssessment (fallback)",
+                "author": None,
+                "year": None,
+                "institution": None,
+                "method": "Orion-LD fallback",
+                "conditions": None,
+            },
+            "alternatives": [],
+            "match_level": "fallback_orion",
+        }
 
     # ── Heat Tolerance ─────────────────────────────────────────────────────────
 
