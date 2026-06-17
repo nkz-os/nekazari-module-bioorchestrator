@@ -28,15 +28,17 @@ export function ParcelProvider({ children }: { children: React.ReactNode }) {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const sdk = (window as any).__NKZ_SDK__;
-    if (sdk?.getParcels) {
-      sdk.getParcels()
-        .then((p: Parcel[]) => setParcels(p))
+    import('../services/api').then(({ fetchParcels }) => {
+      fetchParcels()
+        .then((p: Parcel[]) => {
+          setParcels(p);
+          setError(null);
+        })
         .catch((err: unknown) => setError(String(err)))
         .finally(() => setLoading(false));
-    } else {
+    }).catch(() => {
       setLoading(false);
-    }
+    });
   }, []);
 
   const value = useMemo<ParcelContextValue>(

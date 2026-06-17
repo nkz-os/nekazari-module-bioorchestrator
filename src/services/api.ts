@@ -32,10 +32,28 @@ function dadisHeaders(): Record<string, string> {
   return { 'X-Dadis-Api-Url': creds.apiUrl, 'X-Dadis-Api-Token': creds.apiToken };
 }
 
-// ── Simple fetch wrapper (httpOnly cookie auth, same as original code) ──────
+// ── Auth helper — reads JWT from Keycloak (injected by host) ──────────────
+
+function getAuthToken(): string | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const keycloak = (window as any).keycloak;
+    if (keycloak?.token) return keycloak.token;
+  } catch { /* keycloak not available */ }
+  return null;
+}
+
+export function authHeaders(): Record<string, string> {
+  const token = getAuthToken();
+  return token ? { 'Authorization': `Bearer ${token}` } : {};
+}
+
+// ── Simple fetch wrapper ────────────────────────────────────────────────────
+// Uses JWT Bearer token for auth (the backend/bioorchestrator expects JWT,
+// not session cookies). Gateway routes (/api/bioorchestrator/*) also pick it up.
 
 async function get(path: string, extraHeaders?: Record<string, string>): Promise<any> {
-  const headers: Record<string, string> = { ...extraHeaders };
+  const headers: Record<string, string> = { ...authHeaders(), ...extraHeaders };
   const url = path.startsWith("http") ? path : `${BASE}${path}`;
   const resp = await fetch(url, { headers, credentials: 'include' });
   // 401 = not authenticated, expected for public pages — return null silently
@@ -46,9 +64,11 @@ async function get(path: string, extraHeaders?: Record<string, string>): Promise
 }
 
 async function post(path: string, body?: any, extraHeaders?: Record<string, string>): Promise<any> {
-  const headers: Record<string, string> = { 'Content-Type': 'application/json', ...extraHeaders };
+  const headers: Record<string, string> = { 'Content-Type': 'application/json', ...authHeaders(), ...extraHeaders };
   const url = path.startsWith("http") ? path : `${BASE}${path}`;
   const resp = await fetch(url, { method: 'POST', headers, body: body ? JSON.stringify(body) : undefined, credentials: 'include' });
+  // 401 = not authenticated, expected for public pages — return null silently
+  if (resp.status === 401) return null;
   if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
   const ct = resp.headers.get('content-type') || '';
   return ct.includes('application/json') ? resp.json() : resp.text();
@@ -250,7 +270,7 @@ export async function fetchParcels(): Promise<ParcelItem[]> {
   try {
     const resp = await fetch(
       `${API_BASE}/ngsi-ld/v1/entities?type=AgriParcel&options=keyValues&limit=500`,
-      { headers: { "Accept": "application/ld+json" }, credentials: "include" }
+      { headers: { "Accept": "application/ld+json", ...authHeaders() }, credentials: "include" }
     );
     if (!resp.ok) return [];
     const entities = await resp.json();
@@ -327,13 +347,13 @@ export async function assignCrop(
 ): Promise<AssignCropResponse> {
   const res = await fetch(`${API_BASE}/api/graph/agriculture/assign-crop`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...authHeaders() },
     body: JSON.stringify(data),
     credentials: "include",
   });
   if (!res.ok) {
-    const err = await res.json();
-    throw new Error(err.detail || "Failed to assign crop");
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.detail || `HTTP ${res.status}`);
   }
   return res.json();
 }
@@ -346,11 +366,11 @@ export async function getCropContext(
   if (gdd !== undefined) params.append("gdd", String(gdd));
   const res = await fetch(
     `${API_BASE}/api/graph/agriculture/crop-context?${params}`,
-    { credentials: "include" }
+    { headers: authHeaders(), credentials: "include" }
   );
   if (!res.ok) {
-    const err = await res.json();
-    throw new Error(err.detail || "Failed to get crop context");
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.detail || `HTTP ${res.status}`);
   }
   return res.json();
 }
@@ -368,11 +388,11 @@ export async function getYieldPotential(
   if (parcelId) params.append("parcel_id", parcelId);
   const res = await fetch(
     `${API_BASE}/api/graph/agriculture/yield-potential?${params}`,
-    { credentials: "include" }
+    { headers: authHeaders(), credentials: "include" }
   );
   if (!res.ok) {
-    const err = await res.json();
-    throw new Error(err.detail || "Failed to get yield potential");
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.detail || `HTTP ${res.status}`);
   }
   return res.json();
 }
@@ -403,7 +423,7 @@ export interface AlertItem {
 export async function fetchAssessmentHistory(parcelId: string, days: number = 30): Promise<HistoryPoint[]> {
   const resp = await fetch(
     `${API_BASE}/api/crop-health/assessments/history?parcelId=${encodeURIComponent(parcelId)}&days=${days}`,
-    { credentials: "include" }
+    { headers: authHeaders(), credentials: "include" }
   );
   if (!resp.ok) return [];
   const data = await resp.json();
@@ -413,7 +433,7 @@ export async function fetchAssessmentHistory(parcelId: string, days: number = 30
 export async function fetchAlerts(parcelId: string): Promise<AlertItem[]> {
   const resp = await fetch(
     `${API_BASE}/api/graph/agriculture/alerts?parcel_id=${encodeURIComponent(parcelId)}`,
-    { credentials: "include" }
+    { headers: authHeaders(), credentials: "include" }
   );
   if (!resp.ok) return [];
   const data = await resp.json();
@@ -423,7 +443,7 @@ export async function fetchAlerts(parcelId: string): Promise<AlertItem[]> {
 export async function fetchOrganicInputs(crop: string): Promise<OrganicInputsResult> {
   const resp = await fetch(
     `${API_BASE}/api/graph/agriculture/organic-inputs?crop=${encodeURIComponent(crop)}`,
-    { credentials: "include" }
+    { headers: authHeaders(), credentials: "include" }
   );
   if (!resp.ok) return {inputs: [], source_unavailable: false};
   return resp.json();
