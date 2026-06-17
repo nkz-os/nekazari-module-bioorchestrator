@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
+import { useViewer } from '@nekazari/sdk';
 
 export interface Parcel {
   id: string;
@@ -27,6 +28,19 @@ export function ParcelProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Watch viewer entity selection for auto-sync
+  // Safe: module always runs inside viewer host where useViewer context is provided
+  let viewerEntityId: string | undefined;
+  let viewerEntityType: string | undefined;
+  try {
+    const viewerCtx = useViewer();
+    viewerEntityId = (viewerCtx as any)?.selectedEntityId;
+    viewerEntityType = (viewerCtx as any)?.selectedEntityType;
+  } catch {
+    // Viewer context not available (dev/test outside viewer host)
+  }
+
+  // Fetch parcels from Orion-LD
   useEffect(() => {
     import('../services/api').then(({ fetchParcels }) => {
       fetchParcels()
@@ -41,9 +55,22 @@ export function ParcelProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
+  // Sync: when viewer selects an AgriParcel, auto-select in our dropdown
+  useEffect(() => {
+    if (!viewerEntityId || !viewerEntityType) return;
+    if (viewerEntityType !== 'AgriParcel') return;
+    if (!parcels.some(p => p.id === viewerEntityId)) return;
+    setSelectedParcel(viewerEntityId);
+  }, [viewerEntityId, viewerEntityType, parcels]);
+
+  // Stable parcel setter
+  const handleSetSelectedParcel = useCallback((id: string) => {
+    setSelectedParcel(id);
+  }, []);
+
   const value = useMemo<ParcelContextValue>(
-    () => ({ parcels, selectedParcel, setSelectedParcel, loading, error }),
-    [parcels, selectedParcel, loading, error],
+    () => ({ parcels, selectedParcel, setSelectedParcel: handleSetSelectedParcel, loading, error }),
+    [parcels, selectedParcel, handleSetSelectedParcel, loading, error],
   );
   return <ParcelContext.Provider value={value}>{children}</ParcelContext.Provider>;
 }
