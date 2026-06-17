@@ -5,9 +5,28 @@ import { Search, Sprout, MapPin, Thermometer, Globe, TrendingUp, AlertTriangle }
 import { useBioApi } from '../services/api';
 import { useParcelContext } from '../context/ParcelContext';
 
-type ClimateClass = 'Csa' | 'BSk' | 'Cfb' | 'BSh' | 'Dfa' | 'Dfb';
+interface ClimateOption {
+  value: string;
+  label: string;
+  desc: string;
+}
 
-const CLIMATES: { value: ClimateClass; label: string; desc: string }[] = [
+interface SoilOption {
+  value: string;
+  label: string;
+}
+
+const KOPPEN_DESCRIPTIONS: Record<string, string> = {
+  Af: 'Tropical rainforest', Am: 'Tropical monsoon', Aw: 'Tropical savanna',
+  BWh: 'Hot desert', BWk: 'Cold desert', BSh: 'Hot semi-arid', BSk: 'Cold semi-arid',
+  Csa: 'Hot-summer Mediterranean', Csb: 'Warm-summer Mediterranean', Csc: 'Cold-summer Mediterranean',
+  Cwa: 'Monsoon-influenced humid subtropical', Cwb: 'Subtropical highland',
+  Cfa: 'Humid subtropical', Cfb: 'Oceanic', Cfc: 'Subpolar oceanic',
+  Dfa: 'Hot-summer continental', Dfb: 'Warm-summer continental', Dfc: 'Subarctic', Dfd: 'Extreme subarctic',
+  ET: 'Tundra', EF: 'Ice cap',
+};
+
+const FALLBACK_CLIMATES: ClimateOption[] = [
   { value: 'Csa', label: 'Csa', desc: 'Hot-summer Mediterranean' },
   { value: 'BSk', label: 'BSk', desc: 'Cold semi-arid' },
   { value: 'Cfb', label: 'Cfb', desc: 'Oceanic' },
@@ -16,8 +35,8 @@ const CLIMATES: { value: ClimateClass; label: string; desc: string }[] = [
   { value: 'Dfb', label: 'Dfb', desc: 'Warm-summer continental' },
 ];
 
-const SOIL_TYPES = [
-  { value: '', labelKey: 'varietyFinder.anySoil' },
+const FALLBACK_SOILS: SoilOption[] = [
+  { value: '', label: 'Any soil' },
   { value: 'Calcisol', label: 'Calcisol' },
   { value: 'Cambisol', label: 'Cambisol' },
   { value: 'Chernozem', label: 'Chernozem' },
@@ -50,9 +69,11 @@ const VarietyFinder: React.FC = () => {
   const { selectedParcel, loading: parcelLoading, error: parcelError } = useParcelContext();
 
   const [crop, setCrop] = useState('');
-  const [climate, setClimate] = useState<ClimateClass>('Csa');
+  const [climate, setClimate] = useState<string>('Csa');
   const [soil, setSoil] = useState('');
   const [cropOptions, setCropOptions] = useState<CropOption[]>([]);
+  const [climates, setClimates] = useState<ClimateOption[]>([]);
+  const [soils, setSoils] = useState<SoilOption[]>([]);
   const [results, setResults] = useState<VarietyResult[]>([]);
   const [similarSites, setSimilarSites] = useState<string[]>([]);
   const [targetEnv, setTargetEnv] = useState<Record<string, any>>({});
@@ -64,6 +85,36 @@ const VarietyFinder: React.FC = () => {
     api.getAgricultureCrops?.()
       .then((d: any) => setCropOptions(d?.crops || []))
       .catch(() => {});
+  }, []);
+
+  // Fetch reference data on mount
+  useEffect(() => {
+    api.getClimateClasses?.()
+      .then((d: any) => {
+        if (d?.climate_classes) {
+          setClimates(d.climate_classes.map((c: string) => ({
+            value: c,
+            label: c,
+            desc: KOPPEN_DESCRIPTIONS[c] || '',
+          })));
+        }
+      })
+      .catch(() => {
+        setClimates(FALLBACK_CLIMATES);
+      });
+
+    api.getSoilTypes?.()
+      .then((d: any) => {
+        if (d?.soil_types) {
+          setSoils([
+            { value: '', label: 'Any soil' },
+            ...d.soil_types.map((s: string) => ({ value: s, label: s })),
+          ]);
+        }
+      })
+      .catch(() => {
+        setSoils(FALLBACK_SOILS);
+      });
   }, []);
 
   const handleSearch = async () => {
@@ -147,8 +198,8 @@ const VarietyFinder: React.FC = () => {
             <label className="block text-nkz-xs font-medium text-nkz-text-secondary mb-1">{t('varietyFinder.climate')}</label>
             <Select
               value={climate}
-              onValueChange={(v) => setClimate(v as ClimateClass)}
-              options={CLIMATES.map(c => ({ value: c.value, label: `${c.label} — ${c.desc}` }))}
+              onValueChange={(v) => setClimate(v)}
+              options={climates.length > 0 ? climates.map(c => ({ value: c.value, label: `${c.label}${c.desc ? ` — ${c.desc}` : ''}` })) : [{ value: 'Csa', label: 'Csa' }]}
             />
           </div>
 
@@ -159,7 +210,7 @@ const VarietyFinder: React.FC = () => {
               value={soil}
               onValueChange={setSoil}
               placeholder={t('varietyFinder.anySoil')}
-              options={SOIL_TYPES.map(s => ({ value: s.value, label: s.labelKey ? t(s.labelKey) : s.label! }))}
+              options={soils.length > 0 ? soils.map(s => ({ value: s.value, label: s.label })) : [{ value: '', label: 'Any soil' }]}
             />
           </div>
 
