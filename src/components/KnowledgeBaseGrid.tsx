@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useTranslation } from '@nekazari/sdk';
 import { Card, Stack, Badge } from '@nekazari/ui-kit';
 import {
   Leaf, Globe, Sprout, Thermometer, Droplets, RefreshCw,
   FlaskRound, GitBranch, Activity, Database, Mountain,
 } from 'lucide-react';
+import { useBioApi } from '../services/api';
 
 interface KBItem {
   id: string;
@@ -13,7 +14,7 @@ interface KBItem {
 }
 
 const KB_ITEMS: KBItem[] = [
-  { id: 'catalog', icon: Leaf, countBadge: '48' },
+  { id: 'catalog', icon: Leaf, countBadge: undefined },
   { id: 'climate', icon: Globe },
   { id: 'phenology', icon: Sprout },
   { id: 'thermal', icon: Thermometer },
@@ -22,7 +23,7 @@ const KB_ITEMS: KBItem[] = [
   { id: 'rotation', icon: RefreshCw },
   { id: 'organic', icon: FlaskRound },
   { id: 'pipeline', icon: GitBranch },
-  { id: 'sources', icon: Activity, countBadge: '29' },
+  { id: 'sources', icon: Activity, countBadge: undefined },
   { id: 'dadis', icon: Database },
 ];
 
@@ -32,6 +33,46 @@ interface Props {
 
 export default function KnowledgeBaseGrid({ onSelect }: Props) {
   const { t } = useTranslation('bioorchestrator');
+  const api = useBioApi();
+
+  // Fetch real stats from backend
+  const [catalogCount, setCatalogCount] = useState<number | null>(null);
+  const [sourcesCount, setSourcesCount] = useState<number | null>(null);
+
+  useEffect(() => {
+    // Fetch species count from /api/graph/species
+    api.getSpecies()
+      .then((d: any) => {
+        if (Array.isArray(d)) {
+          setCatalogCount(d.length);
+        } else if (d?.length) {
+          setCatalogCount(d.length);
+        }
+      })
+      .catch(() => {
+        // Silently fall back — no badge shown
+      });
+
+    // Fetch sources count from /api/graph/agriculture/sources
+    api.getSources()
+      .then((d: any) => {
+        if (d?.total !== undefined) {
+          setSourcesCount(d.total);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  // Build items with dynamic badges
+  const items = KB_ITEMS.map(item => {
+    if (item.id === 'catalog' && catalogCount !== null) {
+      return { ...item, countBadge: String(catalogCount) };
+    }
+    if (item.id === 'sources' && sourcesCount !== null) {
+      return { ...item, countBadge: String(sourcesCount) };
+    }
+    return item;
+  });
 
   return (
     <Stack gap="section">
@@ -39,7 +80,7 @@ export default function KnowledgeBaseGrid({ onSelect }: Props) {
         {t('app.sections.knowledgeBase')}
       </h2>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-        {KB_ITEMS.map(item => {
+        {items.map(item => {
           const Icon = item.icon;
           return (
             <Card
