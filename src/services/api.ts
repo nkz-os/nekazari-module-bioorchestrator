@@ -208,6 +208,8 @@ export function useBioApi() {
       const qs = new URLSearchParams(params).toString();
       return get(`${GRAPH}/graph/agriculture/regenerative-sequence?${qs}`);
     },
+    getClimateClasses: () => get(`${GRAPH}/graph/reference/climate-classes`),
+    getSoilTypes: () => get(`${GRAPH}/graph/reference/soil-types`),
   };
 }
 
