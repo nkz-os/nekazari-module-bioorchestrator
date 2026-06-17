@@ -985,3 +985,26 @@ async def agriculture_sources(request: Request):
         "by_domain": {},
         "sources": [],
     }
+
+
+# ── Reference Data ─────────────────────────────────────────────────────────
+
+
+@router.get("/reference/climate-classes")
+async def reference_climate_classes(
+    driver: DriverDep,
+):
+    """Return unique K\u00f6ppen climate classes available in the knowledge graph."""
+    dao = GraphDAO(driver)
+    classes = await dao.get_climate_classes()
+    return {"climate_classes": classes, "total": len(classes)}
+
+
+@router.get("/reference/soil-types")
+async def reference_soil_types(
+    driver: DriverDep,
+):
+    """Return unique WRB soil types available in the knowledge graph."""
+    dao = GraphDAO(driver)
+    types = await dao.get_soil_types()
+    return {"soil_types": types, "total": len(types)}

@@ -135,6 +135,30 @@ class GraphDAO:
                 async for record in result
             ]
 
+    # ── Reference Data ─────────────────────────────────────────────────────
+
+    async def get_climate_classes(self) -> list[str]:
+        """Return unique K\u00f6ppen climate classes from TrialSite nodes."""
+        async with self._driver.session() as session:
+            result = await session.run("""
+                MATCH (ts:TrialSite)
+                WHERE ts.climateClass IS NOT NULL AND ts.climateClass <> ''
+                RETURN DISTINCT ts.climateClass AS climate_class
+                ORDER BY climate_class
+            """)
+            return [r["climate_class"] async for r in result]
+
+    async def get_soil_types(self) -> list[str]:
+        """Return unique WRB soil types from TrialSite nodes."""
+        async with self._driver.session() as session:
+            result = await session.run("""
+                MATCH (ts:TrialSite)
+                WHERE ts.soilType IS NOT NULL AND ts.soilType <> ''
+                RETURN DISTINCT ts.soilType AS soil_type
+                ORDER BY soil_type
+            """)
+            return [r["soil_type"] async for r in result]
+
     async def get_phenology_params(
         self,
         species: str,
