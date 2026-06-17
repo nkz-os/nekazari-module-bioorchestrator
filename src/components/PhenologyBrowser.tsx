@@ -14,25 +14,25 @@ interface PhenologyParams {
   provenance?: { doi?: string; short?: string; author?: string; year?: number; institution?: string; method?: string; conditions?: string; };
   alternatives?: Array<{ kc: number; sourceShort?: string; sourceDoi?: string; conditions?: string; }>;
 }
-interface SpeciesInfo { name: string; scientific_name?: string; stage_count: number; params_count: number; has_phenology: boolean; }
 
 const MATCH_STYLES: Record<string, string> = {
   exact: 'border-nkz-success bg-nkz-success-soft', management: 'border-nkz-info bg-nkz-info-soft',
   generic: 'border-nkz-warning bg-nkz-warning-soft', species_only: 'border-nkz-danger bg-nkz-danger-soft',
 };
-const FALLBACK = ['olive', 'almond', 'grapevine', 'wheat'];
-const STAGES = ['vegetative', 'pit_hardening', 'fruit_growth', 'kernel_fill', 'veraison', 'stem_elongation'];
-const CULTIVARS = ['Picual', 'Nonpareil', 'Tempranillo'];
-const MGMT = ['', 'deficit_irrigation', 'regulated_deficit_irrigation'];
-const MGMT_LABELS: Record<string, string> = { '': 'Standard (full/rainfed)', deficit_irrigation: 'Deficit Irrigation', regulated_deficit_irrigation: 'Regulated Deficit (RDI)' };
 
-const selectCls = "w-full h-9 rounded-nkz-md border border-nkz-border bg-nkz-surface px-nkz-stack text-nkz-sm text-nkz-text-primary focus-visible:ring-2 focus-visible:ring-nkz-accent-base";
+const MGMT_LABELS: Record<string, string> = {
+  '': 'Standard (full/rainfed)',
+  deficit_irrigation: 'Deficit Irrigation',
+  regulated_deficit_irrigation: 'Regulated Deficit (RDI)',
+};
+
+const inputCls = "w-full h-9 rounded-nkz-md border border-nkz-border bg-nkz-surface px-nkz-stack text-nkz-sm text-nkz-text-primary focus-visible:ring-2 focus-visible:ring-nkz-accent-base";
 
 const PhenologyBrowser: React.FC = () => {
   const { t } = useTranslation('bioorchestrator');
   const api = useBioApi();
-  const [speciesList, setSpeciesList] = useState<SpeciesInfo[]>([]);
-  const [species, setSpecies] = useState('olive');
+  const [speciesList, setSpeciesList] = useState<Array<{ name: string; scientific_name?: string }>>([]);
+  const [species, setSpecies] = useState('');
   const [stage, setStage] = useState('');
   const [cultivar, setCultivar] = useState('');
   const [management, setManagement] = useState('');
@@ -41,7 +41,16 @@ const PhenologyBrowser: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [showContribute, setShowContribute] = useState(false);
 
-  useEffect(() => { api.getSpecies().then((d: any) => { if (d) { const list = Array.isArray(d) ? d : (d?.species || []); setSpeciesList(list); } }).catch(() => {}); }, []);
+  useEffect(() => {
+    api.getSpecies().then((d: any) => {
+      if (d) {
+        const list = Array.isArray(d) ? d : (d?.species || []);
+        setSpeciesList(list);
+        // Auto-select first species
+        if (list.length > 0 && !species) setSpecies(list[0].name);
+      }
+    }).catch(() => {});
+  }, []);
 
   const fetchParams = useCallback(async () => {
     setLoading(true); setError(null);
@@ -57,7 +66,7 @@ const PhenologyBrowser: React.FC = () => {
 
   useEffect(() => { fetchParams(); }, [fetchParams]);
 
-  const speciesOptions = speciesList.length > 0 ? speciesList : FALLBACK.map((n) => ({ name: n, scientific_name: undefined, stage_count: 0, params_count: 0, has_phenology: false }));
+  const speciesOptions = speciesList;
   const ml = data?.match_level || '';
   const paramAvailable = data ? {
     kc: data.kc != null && !isNaN(data.kc),
@@ -79,10 +88,37 @@ const PhenologyBrowser: React.FC = () => {
       </div>
 
       <div className="flex flex-wrap gap-3 items-end">
-        <div className="min-w-[160px]"><label className="text-nkz-xs font-medium text-nkz-text-muted block mb-1">{t('phenology.species')}</label><select className={selectCls} value={species} onChange={(e) => setSpecies(e.target.value)}>{speciesOptions.map((s: any) => <option key={s.name} value={s.name}>{s.scientific_name ? `${s.name} (${s.scientific_name})` : s.name}{s.has_phenology ? ` — ${s.params_count} params` : ` — ${t('varietyFinder.noDataAvailable')}`}</option>)}</select></div>
-        <div className="min-w-[140px]"><label className="text-nkz-xs font-medium text-nkz-text-muted block mb-1">{t('phenology.stage')}</label><select className={selectCls} value={stage} onChange={(e) => setStage(e.target.value)}><option value="">{t('phenology.anyStage')}</option>{STAGES.map((s) => <option key={s} value={s}>{s}</option>)}</select></div>
-        <div className="min-w-[140px]"><label className="text-nkz-xs font-medium text-nkz-text-muted block mb-1">{t('phenology.cultivar')}</label><select className={selectCls} value={cultivar} onChange={(e) => setCultivar(e.target.value)}><option value="">{t('phenology.anyCultivar')}</option>{CULTIVARS.map((c) => <option key={c} value={c}>{c}</option>)}</select></div>
-        <div className="min-w-[160px]"><label className="text-nkz-xs font-medium text-nkz-text-muted block mb-1">{t('phenology.management')}</label><select className={selectCls} value={management} onChange={(e) => setManagement(e.target.value)}>{MGMT.map((m) => <option key={m} value={m}>{MGMT_LABELS[m] || m || t('phenology.standardIrrigation')}</option>)}</select></div>
+        <div className="min-w-[160px]">
+          <label className="text-nkz-xs font-medium text-nkz-text-muted block mb-1">{t('phenology.species')}</label>
+          <select className={inputCls} value={species} onChange={(e) => setSpecies(e.target.value)}>
+            {speciesOptions.length === 0 && <option value="">{t('common.loading') || 'Loading…'}</option>}
+            {speciesOptions.map((s: any) => (
+              <option key={s.name} value={s.name}>
+                {s.scientific_name ? `${s.name} (${s.scientific_name})` : s.name}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="min-w-[140px]">
+          <label className="text-nkz-xs font-medium text-nkz-text-muted block mb-1">{t('phenology.stage')}</label>
+          <input type="text" className={inputCls} value={stage}
+            onChange={(e) => setStage(e.target.value)}
+            placeholder={t('phenology.anyStage') || 'e.g. vegetative, flowering…'} />
+        </div>
+        <div className="min-w-[140px]">
+          <label className="text-nkz-xs font-medium text-nkz-text-muted block mb-1">{t('phenology.cultivar')}</label>
+          <input type="text" className={inputCls} value={cultivar}
+            onChange={(e) => setCultivar(e.target.value)}
+            placeholder={t('phenology.anyCultivar') || 'e.g. Picual, Tempranillo…'} />
+        </div>
+        <div className="min-w-[160px]">
+          <label className="text-nkz-xs font-medium text-nkz-text-muted block mb-1">{t('phenology.management')}</label>
+          <select className={inputCls} value={management} onChange={(e) => setManagement(e.target.value)}>
+            <option value="">{t('phenology.standardIrrigation')}</option>
+            <option value="deficit_irrigation">{MGMT_LABELS['deficit_irrigation']}</option>
+            <option value="regulated_deficit_irrigation">{MGMT_LABELS['regulated_deficit_irrigation']}</option>
+          </select>
+        </div>
       </div>
 
       <button className="inline-flex items-center gap-1.5 rounded-nkz-md border border-nkz-border bg-nkz-surface px-nkz-stack py-nkz-tight text-nkz-xs font-medium text-nkz-accent-base hover:bg-nkz-accent-soft transition-colors duration-nkz-fast" onClick={() => setShowContribute(true)}><BookOpen className="w-3.5 h-3.5" />{t('phenology.contribute.button')}</button>
