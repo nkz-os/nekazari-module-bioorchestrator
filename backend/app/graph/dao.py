@@ -211,7 +211,7 @@ class GraphDAO:
                 LIMIT 1
 
                 // ── Find best-matching stage ─────────────────────────────
-                // Priority: explicit stage name > GDD range match > any stage
+                // Priority: explicit stage name > GDD range match > any stage with params
                 OPTIONAL MATCH (s)-[:HAS_STAGE]->(st:PhenologyStage)
                 WHERE $stage IS NOT NULL AND st.name CONTAINS $stage
 
@@ -224,7 +224,13 @@ class GraphDAO:
                   AND st_gdd.gddMax IS NOT NULL
                   AND st_gdd.gddMin <= gdd
                   AND st_gdd.gddMax > gdd
-                WITH s, COALESCE(st, st_gdd) AS st
+                WITH s, st, st_gdd
+
+                // If no stage matched yet, pick any stage that has parameters
+                OPTIONAL MATCH (s)-[:HAS_STAGE]->(st_any:PhenologyStage)
+                WHERE st IS NULL AND st_gdd IS NULL
+                  AND (st_any)-[:HAS_PARAMETER]->()
+                WITH s, COALESCE(st, st_gdd, st_any) AS st
 
                 // ── Find best parameter by context cascade ───────────────
                 OPTIONAL MATCH (st)-[:HAS_PARAMETER]->(p:PhenologyParams)
