@@ -281,7 +281,8 @@ export async function fetchParcels(): Promise<ParcelItem[]> {
       id: e.id,
       name: e.name?.value || e.name || e.id?.split(":")?.pop() || e.id,
     }));
-  } catch {
+  } catch (err) {
+    console.warn('[fetchParcels] Failed to fetch parcels:', err instanceof Error ? err.message : String(err));
     return [];
   }
 }
