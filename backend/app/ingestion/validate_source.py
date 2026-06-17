@@ -20,8 +20,6 @@ import sys
 
 from app.ingestion.normalization_registry import (
     TRAIT_REGISTRY,
-    DISEASE_REGISTRY,
-    normalize_variety_name,
     normalize_location,
     eppo_to_scientific,
 )
@@ -158,7 +156,7 @@ def validate_source(source_id: str, jsonld_path: str, strict: bool = False) -> i
         print(f"  ❌ {missing_req} missing required fields (cropEppo, variety, year)")
         errors += 1
     else:
-        print(f"  ✅ All required fields present")
+        print("  ✅ All required fields present")
     print()
 
     # ── Summary ─────────────────────────────────────────────────────────
