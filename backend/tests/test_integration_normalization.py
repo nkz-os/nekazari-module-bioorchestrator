@@ -5,14 +5,10 @@ produces correctly unified data, using realistic JSON-LD fragments.
 """
 
 import json
-import hashlib
 
 from app.ingestion.base_ingester import BaseIngester
 from app.ingestion.normalization_registry import (
     TRAIT_REGISTRY,
-    normalize_variety_name,
-    normalize_location,
-    eppo_to_scientific,
     normalize_merge_key,
 )
 
@@ -354,12 +350,6 @@ class TestRegistryWithRealData:
 
     def test_bsl_disease_key_mapped(self):
         """Disease score key from BSL should be mapped."""
-        bsl_disease_keys = set()
-        for canonical, config in TRAIT_REGISTRY.items():
-            pass
-        for canonical, config in TRAIT_REGISTRY.items():
-            _ = canonical
-        # Check specifically
         from app.ingestion.normalization_registry import DISEASE_REGISTRY
         bsl_keys = set()
         for canonical, config in DISEASE_REGISTRY.items():
