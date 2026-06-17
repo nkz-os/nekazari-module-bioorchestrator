@@ -23,6 +23,8 @@ COPY backend/app/ app/
 COPY backend/scripts/ scripts/
 COPY backend/cypher_migrations/ cypher_migrations/
 COPY data/ data/
+# Overwrite phenology_sources.yaml with the curated 9-species version
+COPY backend/data/phenology_sources.yaml data/phenology_sources.yaml
 
 # Copy IkerKeta sources config to where the library expects it
 # (ikerketa/config.py resolves _PROJECT_ROOT from __file__, ending up at site-packages)
