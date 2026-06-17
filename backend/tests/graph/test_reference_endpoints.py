@@ -5,7 +5,6 @@ from __future__ import annotations
 import asyncio
 from unittest.mock import AsyncMock, MagicMock
 
-import pytest
 from neo4j import AsyncDriver
 
 from app.graph.dao import GraphDAO
