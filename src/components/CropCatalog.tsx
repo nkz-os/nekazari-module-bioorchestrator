@@ -14,7 +14,7 @@ export default function CropCatalog({ onSelectCrop }: CropCatalogProps) {
   const [crops, setCrops] = useState<CropItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [source, setSource] = useState<string>('');
+  const [source, setSource] = useState<string>('all');
   const [search, setSearch] = useState('');
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
@@ -24,7 +24,7 @@ export default function CropCatalog({ onSelectCrop }: CropCatalogProps) {
       setLoading(true);
       setError(null);
       try {
-        const result = await getCatalog({ source: source || undefined, q: search || undefined });
+        const result = await getCatalog({ source: source === 'all' ? undefined : source, q: search || undefined });
         if (!cancelled) setCrops(result?.crops || []);
       } catch (e: any) {
         if (!cancelled) setError(e.message || 'Failed to load catalog');
@@ -60,7 +60,7 @@ export default function CropCatalog({ onSelectCrop }: CropCatalogProps) {
           value={source}
           onValueChange={(v: string) => setSource(v)}
           options={[
-            { value: '', label: t('catalog.sources.ecocrop') + ' + ' + t('catalog.sources.cpvo') },
+            { value: 'all', label: t('catalog.sources.ecocrop') + ' + ' + t('catalog.sources.cpvo') },
             { value: 'ecocrop', label: t('catalog.sources.ecocrop') },
             { value: 'cpvo', label: t('catalog.sources.cpvo') },
           ]}

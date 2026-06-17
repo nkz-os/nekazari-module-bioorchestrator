@@ -36,7 +36,7 @@ const FALLBACK_CLIMATES: ClimateOption[] = [
 ];
 
 const FALLBACK_SOILS: SoilOption[] = [
-  { value: '', label: 'Any soil' },
+  { value: 'any', label: 'Any soil' },
   { value: 'Calcisol', label: 'Calcisol' },
   { value: 'Cambisol', label: 'Cambisol' },
   { value: 'Chernozem', label: 'Chernozem' },
@@ -70,7 +70,7 @@ const VarietyFinder: React.FC = () => {
 
   const [crop, setCrop] = useState('');
   const [climate, setClimate] = useState<string>('Csa');
-  const [soil, setSoil] = useState('');
+  const [soil, setSoil] = useState('any');
   const [cropOptions, setCropOptions] = useState<CropOption[]>([]);
   const [climates, setClimates] = useState<ClimateOption[]>([]);
   const [soils, setSoils] = useState<SoilOption[]>([]);
@@ -113,7 +113,7 @@ const VarietyFinder: React.FC = () => {
       .then((d: any) => {
         if (d?.soil_types) {
           setSoils([
-            { value: '', label: 'Any soil' },
+            { value: 'any', label: 'Any soil' },
             ...d.soil_types.map((s: string) => ({ value: s, label: s })),
           ]);
         }
@@ -132,7 +132,7 @@ const VarietyFinder: React.FC = () => {
         crop,
         climate_class: climate,
         top_n: '15',
-        ...(soil ? { soil_type: soil } : {}),
+        ...(soil && soil !== 'any' ? { soil_type: soil } : {}),
       });
       setResults(data.ranked_varieties || []);
       setSimilarSites(data.similar_sites || []);
@@ -216,7 +216,7 @@ const VarietyFinder: React.FC = () => {
               value={soil}
               onValueChange={setSoil}
               placeholder={t('varietyFinder.anySoil')}
-              options={soils.length > 0 ? soils.map(s => ({ value: s.value, label: s.label })) : [{ value: '', label: 'Any soil' }]}
+              options={soils.length > 0 ? soils.map(s => ({ value: s.value, label: s.label })) : [{ value: 'any', label: 'Any soil' }]}
             />
           </div>
 
