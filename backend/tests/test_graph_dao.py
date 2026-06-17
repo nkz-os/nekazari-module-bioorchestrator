@@ -110,3 +110,67 @@ class TestPhenologyParams:
             dao.get_phenology_params("unknown_species", "flowering")
         )
         assert result is None
+
+
+class _AsyncRecordIter:
+    """Helper for mocking async iteration over Neo4j results.
+
+    Supports async for: async for record in result
+    """
+    def __init__(self, records: list[dict]):
+        self._records = list(records)
+
+    def __aiter__(self):
+        return self
+
+    async def __anext__(self):
+        if not self._records:
+            raise StopAsyncIteration
+        r = self._records.pop(0)
+        # Capture r by value to avoid closure-in-loop bug
+        record_data = dict(r)
+        m = MagicMock()
+        m.__getitem__ = lambda self_, k, data=record_data: data[k]
+        m.get = lambda k, default=None, data=record_data: data.get(k, default)
+        return m
+
+
+class TestSpeciesCommonNames:
+
+    def test_common_name_present(self, dao):
+        """get_all_species() includes common_name for every species."""
+        records = [
+            {"name": "TRZAX", "scientific_name": "Triticum aestivum", "stage_count": 4, "params_count": 8},
+            {"name": "HORVX", "scientific_name": "Hordeum vulgare", "stage_count": 0, "params_count": 0},
+        ]
+        driver = MagicMock(spec=AsyncDriver)
+        session = MagicMock()
+        session.__aenter__ = AsyncMock(return_value=session)
+        session.__aexit__ = AsyncMock(return_value=None)
+        session.run = AsyncMock(return_value=_AsyncRecordIter(records))
+        driver.session = MagicMock(return_value=session)
+        dao._driver = driver
+
+        result = asyncio.run(dao.get_all_species())
+        assert len(result) == 2
+        assert result[0]["name"] == "TRZAX"
+        assert result[0]["common_name"] == "Wheat"
+        assert result[1]["name"] == "HORVX"
+        assert result[1]["common_name"] == "Barley"
+
+    def test_unknown_species_fallback(self, dao):
+        """Unknown EPPO codes get capitalized name as fallback."""
+        records = [
+            {"name": "UNKNW", "scientific_name": "Unknownus sp.", "stage_count": 0, "params_count": 0},
+        ]
+        driver = MagicMock(spec=AsyncDriver)
+        session = MagicMock()
+        session.__aenter__ = AsyncMock(return_value=session)
+        session.__aexit__ = AsyncMock(return_value=None)
+        session.run = AsyncMock(return_value=_AsyncRecordIter(records))
+        driver.session = MagicMock(return_value=session)
+        dao._driver = driver
+
+        result = asyncio.run(dao.get_all_species())
+        assert len(result) == 1
+        assert result[0]["common_name"] == "Unknw"
