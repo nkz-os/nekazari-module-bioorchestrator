@@ -124,16 +124,19 @@ class GraphDAO:
                        count(DISTINCT p) AS params_count
                 ORDER BY s.name
             """)
-            return [
-                {
-                    "name": record["name"],
+            from app.data.eppo_common_names import get_common_name
+            species_list = []
+            async for record in result:
+                name = record["name"]
+                species_list.append({
+                    "name": name,
                     "scientific_name": record["scientific_name"],
+                    "common_name": get_common_name(name) or name.capitalize(),
                     "stage_count": record["stage_count"],
                     "params_count": record["params_count"],
                     "has_phenology": record["params_count"] > 0,
-                }
-                async for record in result
-            ]
+                })
+            return species_list
 
     # ── Reference Data ─────────────────────────────────────────────────────
 
