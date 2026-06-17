@@ -1,8 +1,15 @@
 # BioOrchestrator — Data Sources & Knowledge Graph Reference
 
-> **Last updated:** 2026-06-01  
-> **Neo4j nodes:** ~10,500 | **VarietyTrials:** 9,738 | **TrialSites:** 107 | **ArticleSources:** 405  
-> **Climate coverage:** 7/7 Köppen zones (BSk, Csa, Cfb, BSh, Dfb, Dfa, Csb)
+> **Last updated:** 2026-06-17  
+> **Neo4j VarietyTrials:** 33,378 | **ManagementTrials:** 181 | **TrialSites:** 206 | **Species:** 27  
+> **Unique varieties:** 5,854 | **Climate coverage:** BSk, Csa, Cfb, BSh, Dfb, Dfa  
+> **Data sources:** 12 | **Relationships:** 43,318
+>
+> 🔄 **Data normalization**: All ingested data now passes through
+> `normalize_nodes()` in `BaseIngester`. Traits are translated to AGROVOC,
+> variety names are standardised to uppercase, locations are resolved to
+> canonical names, and mergeKeys use a unified format.
+> See `app/ingestion/normalization_registry.py` and `ESPECIFICACION_SCRAPER_INGESTA.md`.
 
 ---
 
@@ -43,14 +50,20 @@
 
 ### Active sources (7 climates covered)
 
-| # | Source | Country | Crops | Period | Trials | Sites | Köppen |
+| # | Source | Country | Crops | Period | Trials (agg.) | Sites | Köppen |
 |---|--------|---------|-------|--------|--------|-------|--------|
-| 1 | **Navarra Agraria** (INTIA) | Spain | Wheat, barley, oats, triticale, pea, faba bean | 2004–2024 | 505 | 40 | BSk, Cfb |
-| 2 | **GENVCE** | Spain | Wheat (soft + durum), barley, oats, triticale, rye, rapeseed, sunflower, legumes | 2005–2025 | 4,569 | 12 | Csa, BSk, Cfb, BSh |
-| 3 | **CTIFL** | France | Strawberry, tomato, peach, apricot, cherry, apple, pear, blueberry, melon, leek | 2019–2025 | 455 | 12 | Csa, Cfb |
-| 4 | **LfL Bayern** | Germany | Winter/spring wheat, barley, oats, rye, triticale, rapeseed, maize, potato | 2025 | 497 | 11 | Dfb, Cfb |
-| 5 | **NÉBIH / VSZT** | Hungary | Winter wheat, maize, rapeseed | 2014–2025 | 838 | 33 | Dfa, Dfb, Cfb |
-| 6 | **CerealTech / ANPOC** | Portugal | Soft wheat, durum wheat, barley | 2019–2025 | 545 | 4 | Csb, Csa |
+| 1 | **BSL Bundessortenamt** | Germany | Maize, wheat, barley, rapeseed, rye, oats, triticale, potato | 2019–2026 | ~15,500 | 6+ (multiple per climate) | Cfb, Dfb |
+| 2 | **GENVCE** | Spain | Wheat, barley, oats, triticale, rye, rapeseed, sunflower, legumes | 2005–2025 | ~2,711 | 12 | Csa, BSk, Cfb, BSh |
+| 3 | **Navarra Agraria** (INTIA) | Spain | Wheat, barley, oats, triticale, pea, faba bean | 2004–2024 | ~97 | 40 | BSk, Cfb |
+| 4 | **NÉBIH / VSZT** | Hungary | Winter wheat, maize, rapeseed | 2014–2025 | ~838 | 33 | Dfa, Dfb, Cfb |
+| 5 | **INIAV / CerealTech** | Portugal | Soft wheat, durum wheat, barley | 2019–2025 | ~545 | 4 | Csb, Csa |
+| 6 | **ITACyL** | Spain | Wheat, barley, rapeseed | 2020–2025 | ~525 | 15 | Cfb, BSkg |
+| 7 | **LfL Bayern** | Germany | Winter/spring wheat, barley, oats, rye, triticale, rapeseed, maize, potato | 2025 | ~517 | 11 | Dfb, Cfb |
+| 8 | **CREA** | Italy | Durum wheat, barley | 2020–2025 | ~320 | 8 | Csa, Cfa |
+| 9 | **AHDB** | UK | Wheat, barley, oats, rapeseed | 2020–2025 | ~350 | 15 | Cfb |
+| 10 | **CTIFL** | France | Strawberry, tomato, peach, apricot, cherry, apple, pear | 2019–2025 | ~455 | 12 | Csa, Cfb |
+| 11 | **IFAPA** | Spain | Wheat, barley, sunflower, legumes | 2020–2025 | ~58 | 5 | Csa |
+| 12 | **FAO EcoCrop** | International | 2,500+ species (environmental envelopes) | Static | — | — | All |
 
 ### Pipeline per source
 

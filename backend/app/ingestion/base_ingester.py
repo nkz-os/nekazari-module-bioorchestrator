@@ -28,6 +28,13 @@ from typing import Optional
 from neo4j import AsyncDriver, AsyncGraphDatabase
 
 from app.common.source_registry import get_source
+from app.ingestion.normalization_registry import (
+    normalize_variety_name,
+    normalize_location,
+    eppo_to_scientific,
+    normalize_merge_key,
+    transform_traits_to_unified,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -85,6 +92,8 @@ class BaseIngester(ABC):
         """
         data = self._load_jsonld(jsonld_path)
         nodes = await self._parse_nodes(data)
+        # ── Normalise all nodes (traits, locations, varieties, scales) ──
+        nodes = await self.normalize_nodes(nodes)
         self._enrich_article_sources(nodes.get("article_sources", []))
         return nodes
 
@@ -134,6 +143,127 @@ class BaseIngester(ABC):
             stats["relationships"],
         )
         return stats
+
+    # ── Normalisation layer ──────────────────────────────────────────────
+
+    async def normalize_nodes(self, nodes: dict[str, list[dict]]) -> dict[str, list[dict]]:
+        """Normalise all nodes: translate traits, standardise locations, etc.
+
+        Called automatically from ``transform()`` after ``_parse_nodes()``.
+        Subclasses may override to add source-specific normalisation, but
+        should call ``super().normalize_nodes()`` first.
+        """
+        source_id = self.SOURCE_ID
+        logger.info("[%s] Normalising %d VT + %d MT + %d sites",
+                    source_id,
+                    len(nodes.get("variety_trials", [])),
+                    len(nodes.get("management_trials", [])),
+                    len(nodes.get("trial_sites", [])))
+
+        # ── Variety trials ────────────────────────────────────────────
+        normalised_vts: list[dict] = []
+        for vt in nodes.get("variety_trials", []):
+            if vt.get("skip_ingestion"):
+                normalised_vts.append(vt)
+                continue
+
+            raw_variety = vt.get("variety")
+            vt["varietyNormalized"] = normalize_variety_name(raw_variety)
+
+            if not vt.get("cropScientific") and vt.get("cropEppo"):
+                vt["cropScientific"] = eppo_to_scientific(vt["cropEppo"])
+
+            raw_loc = vt.get("trialLocation")
+            loc_info = normalize_location(raw_loc)
+            if loc_info:
+                vt["locationNormalized"] = loc_info["name"]
+                vt["locationCountry"] = loc_info["country"]
+                vt["climateClass"] = loc_info["climateClass"]
+            else:
+                vt["locationNormalized"] = raw_loc
+
+            traits_raw = vt.get("agronomicTraits")
+            disease_raw = vt.get("diseaseScores")
+            traits_norm, disease_norm = transform_traits_to_unified(
+                traits_raw, disease_raw, source_id,
+            )
+            if traits_norm:
+                vt["agronomicTraitsUnified"] = traits_norm
+            if disease_norm:
+                vt["diseaseScoresUnified"] = disease_norm
+
+            vt["mergeKeyNormalized"] = normalize_merge_key(
+                source_id=source_id,
+                eppo=vt.get("cropEppo"),
+                variety=raw_variety,
+                year=vt.get("year"),
+                location=raw_loc,
+            )
+
+            missing = []
+            if not vt.get("cropEppo"):
+                missing.append("cropEppo")
+            if not raw_variety:
+                missing.append("variety")
+            if not vt.get("year") or vt.get("year", 0) <= 1900:
+                missing.append("year")
+            vt["_validation"] = {"missing": missing, "valid": len(missing) == 0}
+
+            normalised_vts.append(vt)
+
+        # ── Management trials ──────────────────────────────────────────
+        normalised_mts: list[dict] = []
+        for mt in nodes.get("management_trials", []):
+            if mt.get("skip_ingestion"):
+                normalised_mts.append(mt)
+                continue
+
+            mt["varietyNormalized"] = normalize_variety_name(mt.get("variety"))
+
+            if not mt.get("cropEppo"):
+                mt["cropEppo"] = "UNKN"
+
+            raw_loc = mt.get("trialLocation")
+            loc_info = normalize_location(raw_loc)
+            if loc_info:
+                mt["locationNormalized"] = loc_info["name"]
+                mt["locationCountry"] = loc_info["country"]
+
+            # Resolve unit to canonical QUDT/UCUM form
+            unit_str = mt.get("resultUnit")
+            if unit_str:
+                try:
+                    from app.ingestion.semantic_mappings import get_qudt_unit
+                    qudt_info = get_qudt_unit(unit_str)
+                except ImportError:
+                    qudt_info = None
+                if qudt_info:
+                    mt["unitQudtUri"] = qudt_info.get("qudt_uri")
+                    mt["unitUcum"] = qudt_info.get("ucum")
+
+            normalised_mts.append(mt)
+
+        # ── Trial sites ────────────────────────────────────────────────
+        normalised_sites: list[dict] = []
+        for site in nodes.get("trial_sites", []):
+            site["source_id"] = source_id
+            normalised_sites.append(site)
+
+        # Log validation warnings
+        invalid = [v for v in normalised_vts
+                   if not v.get("_validation", {}).get("valid", True)]
+        if invalid:
+            logger.warning(
+                "[%s] %d/%d variety trials failed validation (missing fields)",
+                source_id, len(invalid), len(normalised_vts),
+            )
+
+        return {
+            "trial_sites": normalised_sites,
+            "article_sources": nodes.get("article_sources", []),
+            "variety_trials": normalised_vts,
+            "management_trials": normalised_mts,
+        }
 
     @abstractmethod
     async def _parse_nodes(self, data: dict) -> dict[str, list[dict]]:
@@ -317,14 +447,39 @@ class BaseIngester(ABC):
                         vt.agroclimaticZone = $agro_zone,
                         vt.productionSystem = $production,
                         vt.confidence = $confidence,
+                        vt.mergeKeyNormalized = $merge_key_norm,
+                        vt.cropScientific = $sci_name,
+                        vt.variety = $variety,
+                        vt.varietyNormalized = $variety_norm,
+                        vt.year = $year,
+                        vt.yieldKgHa = $yield_kg,
+                        vt.yieldNoteS1 = $yield_s1,
+                        vt.yieldNoteS2 = $yield_s2,
+                        vt.yieldRelativePct = $yield_rel,
+                        vt.qualityParams = $quality,
+                        vt.diseaseScores = $disease,
+                        vt.diseaseScoresUnified = $disease_unified,
+                        vt.agronomicTraits = $agro_traits,
+                        vt.agronomicTraitsUnified = $agro_traits_unified,
+                        vt.irrigationRegime = $irrigation,
+                        vt.trialLocation = $location,
+                        vt.locationNormalized = $loc_norm,
+                        vt.locationCountry = $loc_country,
+                        vt.climateClass = $climate,
+                        vt.agroclimaticZone = $agro_zone,
+                        vt.productionSystem = $production,
+                        vt.confidence = $confidence,
+                        vt._validationPassed = $valid,
                         vt.updatedAt = datetime()
                     """,
                     unique_key=unique_key,
                     merge_key=merge_key,
+                    merge_key_norm=node.get("mergeKeyNormalized"),
                     source=node.get("source_id", self.SOURCE_ID),
                     eppo=eppo_raw.replace("eppo:", ""),
                     sci_name=node.get("cropScientific"),
                     variety=node.get("variety"),
+                    variety_norm=node.get("varietyNormalized"),
                     year=node.get("year"),
                     yield_kg=node.get("yieldKgHa"),
                     yield_s1=node.get("yieldNoteS1"),
@@ -332,12 +487,18 @@ class BaseIngester(ABC):
                     yield_rel=node.get("yieldRelativePct"),
                     quality=node.get("qualityParams"),
                     disease=node.get("diseaseScores"),
+                    disease_unified=node.get("diseaseScoresUnified"),
                     agro_traits=node.get("agronomicTraits"),
+                    agro_traits_unified=node.get("agronomicTraitsUnified"),
                     irrigation=node.get("irrigationRegime"),
                     location=node.get("trialLocation"),
+                    loc_norm=node.get("locationNormalized"),
+                    loc_country=node.get("locationCountry"),
+                    climate=node.get("climateClass"),
                     agro_zone=node.get("agroclimaticZone"),
                     production=node.get("productionSystem"),
                     confidence=node.get("confidence", "medium"),
+                    valid=node.get("_validation", {}).get("valid", True),
                 )
                 count += 1
         return count
@@ -373,12 +534,18 @@ class BaseIngester(ABC):
                         mt.year = $year,
                         mt.trialLocation = $location,
                         mt.confidence = $confidence,
+                        mt.varietyNormalized = $variety_norm,
+                        mt.locationNormalized = $loc_norm,
+                        mt.locationCountry = $loc_country,
+                        mt.unitQudtUri = $qudt_uri,
+                        mt.unitUcum = $ucum,
                         mt.updatedAt = datetime()
                     """,
                     merge_key=merge_key,
                     source=node.get("source_id", self.SOURCE_ID),
                     eppo=eppo_raw.replace("eppo:", ""),
                     variety=node.get("variety"),
+                    variety_norm=node.get("varietyNormalized"),
                     exp_type=node.get("experimentType"),
                     treatment=node.get("treatment"),
                     metric=node.get("resultMetric"),
@@ -386,6 +553,10 @@ class BaseIngester(ABC):
                     unit=node.get("resultUnit"),
                     year=node.get("year"),
                     location=node.get("trialLocation"),
+                    loc_norm=node.get("locationNormalized"),
+                    loc_country=node.get("locationCountry"),
+                    qudt_uri=node.get("unitQudtUri"),
+                    ucum=node.get("unitUcum"),
                     confidence=node.get("confidence", "medium"),
                 )
                 count += 1
