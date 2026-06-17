@@ -42,14 +42,18 @@ const PhenologyBrowser: React.FC = () => {
   const [showContribute, setShowContribute] = useState(false);
 
   useEffect(() => {
-    api.getSpecies().then((d: any) => {
-      if (d) {
-        const list = Array.isArray(d) ? d : (d?.species || []);
-        setSpeciesList(list);
-        // Auto-select first species
-        if (list.length > 0 && !species) setSpecies(list[0].name);
-      }
-    }).catch(() => {});
+    api.getSpecies()
+      .then((d: any) => {
+        if (d) {
+          const list = Array.isArray(d) ? d : (d?.species || []);
+          setSpeciesList(list);
+          // Auto-select first species
+          if (list.length > 0 && !species) setSpecies(list[0].name);
+        }
+      })
+      .catch((err: Error) => {
+        console.warn('[PhenologyBrowser] Failed to load species list:', err.message);
+      });
   }, []);
 
   const fetchParams = useCallback(async () => {
@@ -177,7 +181,14 @@ const PhenologyBrowser: React.FC = () => {
 
 const HeatToleranceSection: React.FC<{ species: string; t: any }> = ({ species, t }) => {
   const api = useBioApi(); const [ht, setHt] = useState<any>(null);
-  useEffect(() => { api.getHeatTolerance(species).then(setHt).catch(() => {}); }, [species]);
+  useEffect(() => {
+    api.getHeatTolerance(species)
+      .then(setHt)
+      .catch((err: Error) => {
+        console.warn('[HeatTolerance] No data for ' + species + ': ' + err.message);
+        // Silent — this is expected for species without thermal data
+      });
+  }, [species]);
   if (!ht) return null;
   return (
     <Panel>
@@ -189,7 +200,13 @@ const HeatToleranceSection: React.FC<{ species: string; t: any }> = ({ species, 
 
 const NutrientProfileSection: React.FC<{ species: string; stage?: string; t: any }> = ({ species, stage, t }) => {
   const api = useBioApi(); const [items, setItems] = useState<any[]>([]);
-  useEffect(() => { api.getNutrientProfile(species, stage).then((d: any) => setItems(Array.isArray(d) ? d : [])).catch(() => {}); }, [species, stage]);
+  useEffect(() => {
+    api.getNutrientProfile(species, stage)
+      .then((d: any) => setItems(Array.isArray(d) ? d : []))
+      .catch((err: Error) => {
+        console.warn('[NutrientProfile] No data for ' + species + ': ' + err.message);
+      });
+  }, [species, stage]);
   if (!items.length) return null;
   return (
     <Panel>

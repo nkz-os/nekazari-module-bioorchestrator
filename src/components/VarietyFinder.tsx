@@ -83,8 +83,14 @@ const VarietyFinder: React.FC = () => {
   // Load crop list on mount
   useEffect(() => {
     api.getAgricultureCrops?.()
-      .then((d: any) => setCropOptions(d?.crops || []))
-      .catch(() => {});
+      .then((d: any) => {
+        if (Array.isArray(d?.crops)) {
+          setCropOptions(d.crops);
+        }
+      })
+      .catch((err: Error) => {
+        console.warn('[VarietyFinder] Failed to load crop list:', err.message);
+      });
   }, []);
 
   // Fetch reference data on mount
