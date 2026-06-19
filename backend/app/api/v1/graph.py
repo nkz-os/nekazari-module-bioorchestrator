@@ -121,6 +121,25 @@ async def phenology_params(
     return params
 
 
+@router.get("/phenology-stages")
+async def phenology_stages(
+    driver: DriverDep,
+    species: str = Query(
+        ...,
+        description="Species name or scientific name (e.g. 'olive', 'Olea europaea')",
+    ),
+):
+    """Full ordered phenology stage table for a species (for crop-health).
+
+    Returns all PhenologyStage nodes for the species ordered ascending by
+    gddMin. Returns an empty `stages` list (not 404) when the species has
+    no stage nodes — the caller falls back to its own default table.
+    """
+    dao = GraphDAO(driver)
+    stages = await dao.get_phenology_stages(species)
+    return {"species": species, "stages": stages}
+
+
 @router.post("/phenology-params/contribute")
 async def contribute_phenology_params(
     driver: DriverDep,

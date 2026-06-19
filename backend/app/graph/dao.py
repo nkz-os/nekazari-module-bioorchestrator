@@ -370,6 +370,31 @@ class GraphDAO:
                 "match_level": record["match_level"],
             }
 
+    async def get_phenology_stages(self, species: str) -> list[dict]:
+        """Return the full ordered stage table for a species (ascending gddMin).
+
+        Empty list when the species has no PhenologyStage nodes — callers
+        (e.g. crop-health) fall back to their own default table.
+        """
+        async with self._driver.session() as session:
+            result = await session.run(
+                """
+                MATCH (s:Species)-[:HAS_STAGE]->(st:PhenologyStage)
+                WHERE toLower(s.name) = toLower($species)
+                   OR toLower(s.scientificName) = toLower($species)
+                RETURN st.name AS stage, st.gddMin AS gddMin,
+                       st.gddMax AS gddMax, st.baseTemp AS baseTemp
+                """,
+                species=species,
+            )
+            rows = await result.data()
+
+        rows = [
+            r for r in rows
+            if r.get("gddMin") is not None and r.get("gddMax") is not None
+        ]
+        return sorted(rows, key=lambda r: r["gddMin"])
+
     async def contribute_phenology(
         self,
         species: str,
