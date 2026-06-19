@@ -48,7 +48,7 @@ class _MockAsyncResult:
     async def fetch(self, n: int = -1) -> list[dict]:
         return list(self._records)
 
-    def data(self) -> list[dict[str, Any]]:
+    async def data(self) -> list[dict[str, Any]]:
         return self._records
 
     def __aiter__(self):
@@ -145,6 +145,19 @@ def test_phenology_params_public(client):
     resp = client.get("/api/graph/phenology-params", params={"species": "olive"})
     assert resp.status_code in (200, 404, 422, 500), (
         f"Expected 200/404/422/500, got {resp.status_code}"
+    )
+
+
+def test_phenology_stages_public(client):
+    """Phenology stages (/api/graph/phenology-stages) must be accessible.
+
+    Note: Returns 200 with an empty stages list when Neo4j returns no data
+    (standard for mock env) — this endpoint never 404s. The key test is
+    that it does NOT return 401/403.
+    """
+    resp = client.get("/api/graph/phenology-stages", params={"species": "olive"})
+    assert resp.status_code in (200, 422, 500), (
+        f"Expected 200/422/500, got {resp.status_code}"
     )
 
 
