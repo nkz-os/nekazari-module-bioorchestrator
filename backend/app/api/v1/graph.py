@@ -140,6 +140,35 @@ async def phenology_stages(
     return {"species": species, "stages": stages}
 
 
+@router.get("/action-rules")
+async def list_action_rules(driver: DriverDep,
+                            species: str | None = Query(None),
+                            stage: str | None = Query(None),
+                            role: str | None = Query(None)):
+    return await GraphDAO(driver).get_action_rules(species=species, stage=stage, role=role)
+
+
+@router.get("/action-rules/{rule_id}")
+async def get_action_rule_route(rule_id: str, driver: DriverDep):
+    rule = await GraphDAO(driver).get_action_rule(rule_id)
+    if rule is None:
+        raise HTTPException(status_code=404, detail="Rule not found")
+    return rule
+
+
+@router.post("/action-rules")
+async def create_action_rule_route(driver: DriverDep, request: Request):
+    body = await request.json()
+    if not body.get("id") or not body.get("category"):
+        raise HTTPException(status_code=400, detail="id and category are required")
+    return await GraphDAO(driver).create_action_rule(body)
+
+
+@router.put("/action-rules/{rule_id}")
+async def update_action_rule_route(rule_id: str, driver: DriverDep, request: Request):
+    return await GraphDAO(driver).update_action_rule(rule_id, await request.json())
+
+
 @router.post("/phenology-params/contribute")
 async def contribute_phenology_params(
     driver: DriverDep,
