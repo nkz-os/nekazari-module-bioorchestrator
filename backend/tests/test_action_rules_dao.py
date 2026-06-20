@@ -1,4 +1,5 @@
-import json, pytest
+import json
+import pytest
 from app.graph.dao import GraphDAO
 
 
@@ -8,8 +9,12 @@ class _Res:
 
 
 class _Session:
-    def __init__(self, rows): self._rows = rows; self.ran = []
-    async def run(self, q, **kw): self.ran.append((q, kw)); return _Res(self._rows)
+    def __init__(self, rows):
+        self._rows = rows
+        self.ran = []
+    async def run(self, q, **kw):
+        self.ran.append((q, kw))
+        return _Res(self._rows)
     async def __aenter__(self): return self
     async def __aexit__(self, *a): return False
 

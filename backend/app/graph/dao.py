@@ -3177,10 +3177,12 @@ class GraphDAO:
         sets, params = [], {"id": rule_id}
         for k in ("name", "category", "priority", "active", "source_doi", "source_short"):
             if k in patch:
-                sets.append(f"r.{k} = ${k}"); params[k] = patch[k]
+                sets.append(f"r.{k} = ${k}")
+                params[k] = patch[k]
         for jk in ("conditions", "action"):
             if jk in patch:
-                sets.append(f"r.{jk} = ${jk}"); params[jk] = json.dumps(patch[jk])
+                sets.append(f"r.{jk} = ${jk}")
+                params[jk] = json.dumps(patch[jk])
         if not sets:
             return {"status": "noop", "id": rule_id}
         async with self._driver.session() as session:
