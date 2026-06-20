@@ -2097,6 +2097,44 @@ class GraphDAO:
         active = next((r["id"] for r in rows if r.get("status") == "active"), None)
         return {"parcel_id": parcel_id, "season": season, "active": active, "segments": rows}
 
+    async def advance_segment(self, parcel_id, season, seq, planting_date, tenant_id) -> dict:
+        """Mark a segment sown: set actual plantingDate + activate; demote prior active."""
+        from app.graph.crop_plan import segment_urn
+        target_id = segment_urn(tenant_id, parcel_id, season, int(seq))
+        _date = {"type": "Property", "value": {"@type": "Date", "@value": planting_date}}
+        client = OrionClient(tenant_id=tenant_id)
+        try:
+            # find currently-active segment to demote
+            try:
+                rows = await client.query_entities(
+                    type="AgriCrop",
+                    q=f'hasAgriParcel=="{parcel_id}";cropSeason=="{season}";status=="active"',
+                    limit=5, options="keyValues",
+                )
+            except Exception:
+                rows = []
+            for prior in rows:
+                if prior.get("id") == target_id:
+                    continue
+                method = prior.get("terminationMethod")
+                final = "harvested" if method == "harvest" else "terminated"
+                await client.update_entity_attrs(prior["id"], {
+                    "status": {"type": "Property", "value": final},
+                    "terminationDate": _date,
+                })
+            # activate target with real plantingDate
+            await client.update_entity_attrs(target_id, {
+                "status": {"type": "Property", "value": "active"},
+                "plantingDate": _date,
+            })
+            # project to parcel commitment
+            await client.update_entity_attrs(parcel_id, {
+                "hasAgriCrop": {"type": "Relationship", "object": target_id},
+            })
+            return {"status": "advanced", "active": target_id, "season": season}
+        finally:
+            await client.close()
+
     async def get_crop_context(
         self, parcel_id: str, tenant_id: str = "", gdd: float | None = None
     ) -> dict:
