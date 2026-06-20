@@ -26,6 +26,9 @@ COPY data/ data/
 # Overwrite phenology_sources.yaml with the curated 9-species version
 COPY backend/data/phenology_sources.yaml data/phenology_sources.yaml
 
+# Copy action_rules.yaml seed data for SP2 Action Rules Engine
+COPY backend/data/action_rules.yaml data/action_rules.yaml
+
 # Copy IkerKeta sources config to where the library expects it
 # (ikerketa/config.py resolves _PROJECT_ROOT from __file__, ending up at site-packages)
 COPY backend/sources.yaml /tmp/sources.yaml
