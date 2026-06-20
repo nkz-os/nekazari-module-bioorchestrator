@@ -18,6 +18,7 @@ Tenant model:
 from __future__ import annotations
 
 import asyncio
+import json
 import logging
 import os
 import re
@@ -3106,6 +3107,85 @@ class GraphDAO:
                 logger.warning("FiBL lookup failed: %s", e)
 
         return result
+
+    # ── Action Rules (agronomist-editable, evaluated by crop-health) ────────────
+
+    async def get_action_rules(
+        self, species: str | None = None, stage: str | None = None, role: str | None = None
+    ) -> list[dict]:
+        """Candidate ActionRules: species-linked (active) + generic (no species link).
+
+        Filtering by stage/role is intentionally permissive — this returns the
+        candidate set; the crop-health engine performs the precise condition match.
+        """
+        async with self._driver.session() as session:
+            result = await session.run(
+                """
+                MATCH (r:ActionRule) WHERE r.active = true
+                OPTIONAL MATCH (s:Species)-[:HAS_RULE]->(r)
+                WITH r, collect(s.name) AS linked
+                WHERE size(linked) = 0
+                   OR ($species IS NOT NULL AND any(n IN linked WHERE toLower(n) = toLower($species)))
+                RETURN r.id AS id, r.name AS name, r.category AS category,
+                       r.priority AS priority, r.active AS active,
+                       r.conditions AS conditions, r.action AS action,
+                       r.source_doi AS source_doi, r.source_short AS source_short
+                """,
+                species=species,
+            )
+            rows = await result.data()
+        out = []
+        for r in rows:
+            r = dict(r)
+            try:
+                r["conditions"] = json.loads(r.get("conditions") or "{}")
+                r["action"] = json.loads(r.get("action") or "{}")
+            except (TypeError, ValueError):
+                r["conditions"], r["action"] = {}, {}
+            out.append(r)
+        return out
+
+    async def get_action_rule(self, rule_id: str) -> dict | None:
+        """Fetch a single ActionRule by id from the active candidate set."""
+        rules = await self.get_action_rules()
+        return next((r for r in rules if r["id"] == rule_id), None)
+
+    async def create_action_rule(self, rule: dict) -> dict:
+        """Create (or replace) an ActionRule node, optionally linked to species."""
+        async with self._driver.session() as session:
+            await session.run(
+                """
+                MERGE (r:ActionRule {id: $id})
+                SET r.name=$name, r.category=$category, r.priority=$priority, r.active=$active,
+                    r.conditions=$conditions, r.action=$action,
+                    r.source_doi=$source_doi, r.source_short=$source_short, r.created_at=$created_at
+                WITH r
+                FOREACH (sp IN $species_links |
+                  MERGE (s:Species {name: sp}) MERGE (s)-[:HAS_RULE]->(r))
+                """,
+                id=rule["id"], name=rule.get("name", ""), category=rule.get("category", ""),
+                priority=rule.get("priority", 0), active=rule.get("active", True),
+                conditions=json.dumps(rule.get("conditions", {})),
+                action=json.dumps(rule.get("action", {})),
+                source_doi=rule.get("source_doi"), source_short=rule.get("source_short"),
+                created_at=rule.get("created_at"), species_links=rule.get("species_links", []),
+            )
+        return {"status": "created", "id": rule["id"]}
+
+    async def update_action_rule(self, rule_id: str, patch: dict) -> dict:
+        """Partially update an ActionRule's scalar fields and/or JSON blobs."""
+        sets, params = [], {"id": rule_id}
+        for k in ("name", "category", "priority", "active", "source_doi", "source_short"):
+            if k in patch:
+                sets.append(f"r.{k} = ${k}"); params[k] = patch[k]
+        for jk in ("conditions", "action"):
+            if jk in patch:
+                sets.append(f"r.{jk} = ${jk}"); params[jk] = json.dumps(patch[jk])
+        if not sets:
+            return {"status": "noop", "id": rule_id}
+        async with self._driver.session() as session:
+            await session.run(f"MATCH (r:ActionRule {{id: $id}}) SET {', '.join(sets)}", **params)
+        return {"status": "updated", "id": rule_id}
 
 
 def _extract_prop_value(prop: dict | str | None):
