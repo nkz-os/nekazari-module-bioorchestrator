@@ -5,7 +5,13 @@
     "institution": "INTIA — Instituto Navarro de Tecnologías e Infraestructuras Agroalimentarias",
     "institution_short": "INTIA",
     "country": "ES",
-    "country_name": {"en": "Spain", "es": "España", "eu": "Espainia", "fr": "Espagne", "pt": "Espanha"},
+    "country_name": {
+      "en": "Spain",
+      "es": "España",
+      "eu": "Espainia",
+      "fr": "Espagne",
+      "pt": "Espanha"
+    },
     "url": "https://www.intiasa.es",
     "document_url_template": null,
     "license_class": "public-sector-psi",
@@ -28,8 +34,16 @@
       "fr": "Ces essais sont menés par INTIA à titre informatif. NKZ extrapole les résultats à des environnements similaires — cela ne constitue pas une recommandation officielle d'INTIA.",
       "pt": "Estes ensaios são realizados pela INTIA para fins informativos. A NKZ extrapola os resultados para ambientes semelhantes — isto não constitui uma recomendação oficial da INTIA."
     },
-    "site_urls": ["https://www.intiasa.es"],
-    "tags": ["cereals", "legumes", "horticulture", "variety-trials", "navarre"]
+    "site_urls": [
+      "https://www.intiasa.es"
+    ],
+    "tags": [
+      "cereals",
+      "legumes",
+      "horticulture",
+      "variety-trials",
+      "navarre"
+    ]
   },
   {
     "source_id": "GENVCE",
@@ -37,7 +51,13 @@
     "institution": "GENVCE — Grupo para la Evaluación de Nuevas Variedades de Cultivos Extensivos en España",
     "institution_short": "GENVCE",
     "country": "ES",
-    "country_name": {"en": "Spain", "es": "España", "eu": "Espainia", "fr": "Espagne", "pt": "Espanha"},
+    "country_name": {
+      "en": "Spain",
+      "es": "España",
+      "eu": "Espainia",
+      "fr": "Espagne",
+      "pt": "Espanha"
+    },
     "url": "https://genvce.org",
     "document_url_template": null,
     "license_class": "public-sector-psi",
@@ -60,8 +80,16 @@
       "fr": "Les essais GENVCE sont menés par les communautés autonomes participantes. NKZ extrapole les résultats — cela ne constitue pas une recommandation officielle de GENVCE ni d'aucune autorité participante.",
       "pt": "Os ensaios GENVCE são realizados pelas comunidades autónomas participantes. A NKZ extrapola os resultados — isto não constitui uma recomendação oficial da GENVCE ou de qualquer autoridade participante."
     },
-    "site_urls": ["https://genvce.org"],
-    "tags": ["cereals", "oilseeds", "legumes", "maize", "variety-trials"]
+    "site_urls": [
+      "https://genvce.org"
+    ],
+    "tags": [
+      "cereals",
+      "oilseeds",
+      "legumes",
+      "maize",
+      "variety-trials"
+    ]
   },
   {
     "source_id": "CTIFL",
@@ -69,7 +97,12 @@
     "institution": "CTIFL — Centre Technique Interprofessionnel des Fruits et Légumes",
     "institution_short": "CTIFL",
     "country": "FR",
-    "country_name": {"en": "France", "es": "Francia", "fr": "France", "pt": "França"},
+    "country_name": {
+      "en": "France",
+      "es": "Francia",
+      "fr": "France",
+      "pt": "França"
+    },
     "url": "https://www.ctifl.fr",
     "document_url_template": null,
     "license_class": "editorial-restricted",
@@ -90,8 +123,18 @@
       "fr": "Les données CTIFL incluent uniquement les fiches techniques en accès libre. Certaines publications CTIFL sont commerciales et sont exclues. Les résultats NKZ ne constituent pas une recommandation officielle du CTIFL.",
       "pt": "Os dados CTIFL incluem apenas fichas técnicas de acesso público. Algumas publicações CTIFL são comerciais e estão excluídas. Os resultados NKZ não constituem uma recomendação oficial do CTIFL."
     },
-    "site_urls": ["https://www.ctifl.fr"],
-    "tags": ["fruits", "vegetables", "strawberry", "tomato", "peach", "apple", "variety-trials"]
+    "site_urls": [
+      "https://www.ctifl.fr"
+    ],
+    "tags": [
+      "fruits",
+      "vegetables",
+      "strawberry",
+      "tomato",
+      "peach",
+      "apple",
+      "variety-trials"
+    ]
   },
   {
     "source_id": "LFL-BAYERN",
@@ -99,7 +142,13 @@
     "institution": "Bayerische Landesanstalt für Landwirtschaft (LfL)",
     "institution_short": "LfL",
     "country": "DE",
-    "country_name": {"en": "Germany", "es": "Alemania", "de": "Deutschland", "fr": "Allemagne", "pt": "Alemanha"},
+    "country_name": {
+      "en": "Germany",
+      "es": "Alemania",
+      "de": "Deutschland",
+      "fr": "Allemagne",
+      "pt": "Alemanha"
+    },
     "url": "https://www.lfl.bayern.de",
     "document_url_template": null,
     "license_class": "public-sector-psi",
@@ -122,8 +171,17 @@
       "fr": "Les essais variétaux LfL sont menés par le Centre de recherche agricole bavarois. NKZ extrapole les résultats — cela ne constitue pas une recommandation officielle du LfL.",
       "pt": "Os ensaios varietais LfL são realizados pelo Centro de Pesquisa Agrícola da Baviera. A NKZ extrapola os resultados — isto não constitui uma recomendação oficial da LfL."
     },
-    "site_urls": ["https://www.lfl.bayern.de"],
-    "tags": ["cereals", "maize", "rapeseed", "potato", "variety-trials", "bavaria"]
+    "site_urls": [
+      "https://www.lfl.bayern.de"
+    ],
+    "tags": [
+      "cereals",
+      "maize",
+      "rapeseed",
+      "potato",
+      "variety-trials",
+      "bavaria"
+    ]
   },
   {
     "source_id": "NEBIH",
@@ -131,7 +189,13 @@
     "institution": "NÉBIH — Nemzeti Élelmiszerlánc-biztonsági Hivatal / VSZT — Vetőmag Szövetség",
     "institution_short": "NÉBIH",
     "country": "HU",
-    "country_name": {"en": "Hungary", "es": "Hungría", "fr": "Hongrie", "hu": "Magyarország", "pt": "Hungria"},
+    "country_name": {
+      "en": "Hungary",
+      "es": "Hungría",
+      "fr": "Hongrie",
+      "hu": "Magyarország",
+      "pt": "Hungria"
+    },
     "url": "https://portal.nebih.gov.hu",
     "document_url_template": null,
     "license_class": "public-sector-psi",
@@ -154,8 +218,17 @@
       "hu": "A NÉBIH/VSZT kísérletek a magyar nemzeti fajtakísérleti rendszer részét képezik. NKZ az eredményeket hasonló környezetekre extrapolálja — ez nem minősül a NÉBIH vagy a VSZT hivatalos ajánlásának.",
       "pt": "Os ensaios NÉBIH/VSZT fazem parte do sistema nacional húngaro de ensaios varietais. A NKZ extrapola os resultados — isto não constitui uma recomendação oficial da NÉBIH ou VSZT."
     },
-    "site_urls": ["https://portal.nebih.gov.hu", "https://vszt.hu"],
-    "tags": ["winter-wheat", "maize", "rapeseed", "variety-trials", "hungary"]
+    "site_urls": [
+      "https://portal.nebih.gov.hu",
+      "https://vszt.hu"
+    ],
+    "tags": [
+      "winter-wheat",
+      "maize",
+      "rapeseed",
+      "variety-trials",
+      "hungary"
+    ]
   },
   {
     "source_id": "INIAV-LVR",
@@ -163,7 +236,12 @@
     "institution": "INIAV — Instituto Nacional de Investigação Agrária e Veterinária / LVR — Lista de Variedades Recomendadas / CerealTech-ANPOC",
     "institution_short": "INIAV",
     "country": "PT",
-    "country_name": {"en": "Portugal", "es": "Portugal", "fr": "Portugal", "pt": "Portugal"},
+    "country_name": {
+      "en": "Portugal",
+      "es": "Portugal",
+      "fr": "Portugal",
+      "pt": "Portugal"
+    },
     "url": "https://www.iniav.pt",
     "document_url_template": null,
     "license_class": "public-sector-psi",
@@ -184,8 +262,16 @@
       "fr": "La LVR est une liste nationale de variétés recommandées tenue par l'INIAV. NKZ extrapole les résultats — cela ne remplace pas la LVR officielle pour l'enregistrement commercial des semences.",
       "pt": "A LVR é uma lista nacional de variedades recomendadas mantida pelo INIAV. A NKZ extrapola os resultados — isto não substitui a LVR oficial para o registo comercial de sementes."
     },
-    "site_urls": ["https://www.iniav.pt"],
-    "tags": ["durum-wheat", "soft-wheat", "barley", "variety-trials", "portugal"]
+    "site_urls": [
+      "https://www.iniav.pt"
+    ],
+    "tags": [
+      "durum-wheat",
+      "soft-wheat",
+      "barley",
+      "variety-trials",
+      "portugal"
+    ]
   },
   {
     "source_id": "ITACYL",
@@ -193,7 +279,13 @@
     "institution": "ITACyL — Instituto Tecnológico Agrario de Castilla y León",
     "institution_short": "ITACyL",
     "country": "ES",
-    "country_name": {"en": "Spain", "es": "España", "eu": "Espainia", "fr": "Espagne", "pt": "Espanha"},
+    "country_name": {
+      "en": "Spain",
+      "es": "España",
+      "eu": "Espainia",
+      "fr": "Espagne",
+      "pt": "Espanha"
+    },
     "url": "https://www.itacyl.es",
     "document_url_template": null,
     "license_class": "public-sector-psi",
@@ -214,8 +306,19 @@
       "fr": "Les essais ITACyL sont menés par l'Institut. NKZ extrapole les résultats — cela ne constitue pas une recommandation officielle de l'ITACyL.",
       "pt": "Os ensaios ITACyL são realizados pelo Instituto. A NKZ extrapola os resultados — isto não constitui uma recomendação oficial do ITACyL."
     },
-    "site_urls": ["https://www.itacyl.es"],
-    "tags": ["legumes", "pea", "vetch", "chickpea", "lentil", "soybean", "variety-trials", "castile-leon"]
+    "site_urls": [
+      "https://www.itacyl.es"
+    ],
+    "tags": [
+      "legumes",
+      "pea",
+      "vetch",
+      "chickpea",
+      "lentil",
+      "soybean",
+      "variety-trials",
+      "castile-leon"
+    ]
   },
   {
     "source_id": "IFAPA",
@@ -223,7 +326,13 @@
     "institution": "IFAPA — Instituto Andaluz de Investigación y Formación Agraria, Pesquera, Alimentaria y de la Producción Ecológica",
     "institution_short": "IFAPA",
     "country": "ES",
-    "country_name": {"en": "Spain", "es": "España", "eu": "Espainia", "fr": "Espagne", "pt": "Espanha"},
+    "country_name": {
+      "en": "Spain",
+      "es": "España",
+      "eu": "Espainia",
+      "fr": "Espagne",
+      "pt": "Espanha"
+    },
     "url": "https://www.juntadeandalucia.es/agriculturaypesca/ifapa",
     "document_url_template": null,
     "license_class": "public-sector-psi",
@@ -244,8 +353,16 @@
       "fr": "Les essais IFAPA sont menés par l'Institut. NKZ extrapole les résultats — cela ne constitue pas une recommandation officielle de l'IFAPA.",
       "pt": "Os ensaios IFAPA são realizados pelo Instituto. A NKZ extrapola os resultados — isto não constitui uma recomendação oficial do IFAPA."
     },
-    "site_urls": ["https://www.juntadeandalucia.es/agriculturaypesca/ifapa"],
-    "tags": ["legumes", "organic", "rotations", "management-trials", "andalusia"]
+    "site_urls": [
+      "https://www.juntadeandalucia.es/agriculturaypesca/ifapa"
+    ],
+    "tags": [
+      "legumes",
+      "organic",
+      "rotations",
+      "management-trials",
+      "andalusia"
+    ]
   },
   {
     "source_id": "INTIA-EXP",
@@ -253,7 +370,13 @@
     "institution": "INTIA — Instituto Navarro de Tecnologías e Infraestructuras Agroalimentarias",
     "institution_short": "INTIA",
     "country": "ES",
-    "country_name": {"en": "Spain", "es": "España", "eu": "Espainia", "fr": "Espagne", "pt": "Espanha"},
+    "country_name": {
+      "en": "Spain",
+      "es": "España",
+      "eu": "Espainia",
+      "fr": "Espagne",
+      "pt": "Espanha"
+    },
     "url": "https://www.intiasa.es/es/experimentacion",
     "document_url_template": null,
     "license_class": "public-sector-psi",
@@ -275,8 +398,17 @@
       "fr": "Les essais INTIA Experimentación sont menés à titre informatif. NKZ extrapole les résultats — cela ne constitue pas une recommandation officielle d'INTIA.",
       "pt": "Os ensaios INTIA Experimentación são realizados para fins informativos. A NKZ extrapola os resultados — isto não constitui uma recomendação oficial da INTIA."
     },
-    "site_urls": ["https://www.intiasa.es/es/experimentacion"],
-    "tags": ["cover-crops", "legumes", "rotations", "biomass", "management-trials", "navarre"]
+    "site_urls": [
+      "https://www.intiasa.es/es/experimentacion"
+    ],
+    "tags": [
+      "cover-crops",
+      "legumes",
+      "rotations",
+      "biomass",
+      "management-trials",
+      "navarre"
+    ]
   },
   {
     "source_id": "CREA",
@@ -284,7 +416,13 @@
     "institution": "CREA — Consiglio per la Ricerca in Agricoltura e l'Analisi dell'Economia Agraria",
     "institution_short": "CREA",
     "country": "IT",
-    "country_name": {"en": "Italy", "es": "Italia", "fr": "Italie", "it": "Italia", "pt": "Itália"},
+    "country_name": {
+      "en": "Italy",
+      "es": "Italia",
+      "fr": "Italie",
+      "it": "Italia",
+      "pt": "Itália"
+    },
     "url": "https://www.crea.gov.it",
     "document_url_template": null,
     "license_class": "public-sector-psi",
@@ -307,8 +445,14 @@
       "it": "Le prove CREA sono condotte dal consiglio di ricerca italiano. NKZ estrapola i risultati ad ambienti simili — ciò non costituisce una raccomandazione ufficiale del CREA.",
       "pt": "Os ensaios CREA são realizados pelo conselho de investigação italiano. A NKZ extrapola os resultados — isto não constitui uma recomendação oficial do CREA."
     },
-    "site_urls": ["https://www.crea.gov.it"],
-    "tags": ["maize", "variety-trials", "italy"]
+    "site_urls": [
+      "https://www.crea.gov.it"
+    ],
+    "tags": [
+      "maize",
+      "variety-trials",
+      "italy"
+    ]
   },
   {
     "source_id": "BSL",
@@ -316,7 +460,13 @@
     "institution": "Bundessortenamt — Federal Plant Variety Office",
     "institution_short": "BSL",
     "country": "DE",
-    "country_name": {"en": "Germany", "es": "Alemania", "de": "Deutschland", "fr": "Allemagne", "pt": "Alemanha"},
+    "country_name": {
+      "en": "Germany",
+      "es": "Alemania",
+      "de": "Deutschland",
+      "fr": "Allemagne",
+      "pt": "Alemanha"
+    },
     "url": "https://www.bundessortenamt.de",
     "document_url_template": null,
     "license_class": "public-sector-psi",
@@ -334,8 +484,18 @@
       "en": "BSL variety trials are the official German variety testing system. NKZ extrapolates results — this does not constitute an official BSL recommendation.",
       "de": "Die BSL-Sortenversuche sind das offizielle deutsche Sortenprüfungssystem. NKZ extrapoliert Ergebnisse — dies stellt keine offizielle Empfehlung des BSL dar."
     },
-    "site_urls": ["https://www.bundessortenamt.de"],
-    "tags": ["cereals", "maize", "rapeseed", "potato", "variety-trials", "germany", "official"]
+    "site_urls": [
+      "https://www.bundessortenamt.de"
+    ],
+    "tags": [
+      "cereals",
+      "maize",
+      "rapeseed",
+      "potato",
+      "variety-trials",
+      "germany",
+      "official"
+    ]
   },
   {
     "source_id": "AHDB",
@@ -343,7 +503,12 @@
     "institution": "AHDB — Agriculture and Horticulture Development Board",
     "institution_short": "AHDB",
     "country": "GB",
-    "country_name": {"en": "United Kingdom", "es": "Reino Unido", "fr": "Royaume-Uni", "pt": "Reino Unido"},
+    "country_name": {
+      "en": "United Kingdom",
+      "es": "Reino Unido",
+      "fr": "Royaume-Uni",
+      "pt": "Reino Unido"
+    },
     "url": "https://ahdb.org.uk",
     "document_url_template": null,
     "license_class": "public-sector-psi",
@@ -360,7 +525,106 @@
     "disclaimer": {
       "en": "AHDB Recommended Lists are produced by AHDB. NKZ extrapolates results — this does not constitute an official AHDB recommendation."
     },
-    "site_urls": ["https://ahdb.org.uk"],
-    "tags": ["cereals", "oilseeds", "wheat", "barley", "variety-trials", "uk"]
+    "site_urls": [
+      "https://ahdb.org.uk"
+    ],
+    "tags": [
+      "cereals",
+      "oilseeds",
+      "wheat",
+      "barley",
+      "variety-trials",
+      "uk"
+    ]
+  },
+  {
+    "source_id": "ECOCROP-GAEZ-V4",
+    "name": "EcoCrop / GAEZ v4",
+    "institution": "FAO/IIASA Global Agro-Ecological Zones v4 (EcoCrop crop requirements)",
+    "institution_short": "FAO/IIASA",
+    "country": "INT",
+    "country_name": {
+      "en": "International",
+      "es": "Internacional",
+      "eu": "Nazioartekoa",
+      "fr": "International",
+      "pt": "Internacional"
+    },
+    "url": "https://gaez.fao.org/",
+    "document_url_template": null,
+    "license_class": "open-cc-by",
+    "use_type": "crop-requirements-reference",
+    "official_status": true,
+    "data_format": "database",
+    "extraction_method": "structured",
+    "confidence_default": "medium",
+    "attribution": {
+      "en": "Crop environmental requirements derived from FAO EcoCrop and the FAO/IIASA Global Agro-Ecological Zones (GAEZ) v4.",
+      "es": "Requerimientos ambientales de los cultivos derivados de FAO EcoCrop y de las Zonas Agroecológicas Globales (GAEZ) v4 de FAO/IIASA.",
+      "eu": "FAO EcoCrop-etik eta FAO/IIASAren Mundu mailako Zona Agroekologikoetatik (GAEZ) v4-tik eratorritako laboreen ingurumen-eskakizunak.",
+      "fr": "Exigences environnementales des cultures issues de FAO EcoCrop et des Zones Agro-Écologiques Mondiales (GAEZ) v4 de la FAO/IIASA.",
+      "pt": "Requisitos ambientais das culturas derivados do FAO EcoCrop e das Zonas Agroecológicas Globais (GAEZ) v4 da FAO/IIASA."
+    },
+    "disclaimer": {
+      "en": "GAEZ/EcoCrop are global-scale models for informational purposes. NKZ applies them as reference defaults — they do not replace local agronomic trials.",
+      "es": "GAEZ/EcoCrop son modelos de escala global con fines divulgativos. NKZ los aplica como valores de referencia — no sustituyen ensayos agronómicos locales.",
+      "eu": "GAEZ/EcoCrop mundu-eskalako ereduak dira, informazio-helburuekin. NKZk erreferentziazko balio gisa erabiltzen ditu — ez dituzte tokiko entsegu agronomikoak ordezkatzen.",
+      "fr": "GAEZ/EcoCrop sont des modèles à l'échelle mondiale à titre informatif. NKZ les applique comme valeurs de référence — ils ne remplacent pas les essais agronomiques locaux.",
+      "pt": "GAEZ/EcoCrop são modelos de escala global para fins informativos. A NKZ aplica-os como valores de referência — não substituem ensaios agronómicos locais."
+    },
+    "site_urls": [
+      "https://gaez.fao.org/",
+      "https://www.fao.org/land-water/databases-and-software/ecocrop/en/"
+    ],
+    "tags": [
+      "crop-requirements",
+      "agro-ecological-zoning",
+      "global",
+      "fao"
+    ]
+  },
+  {
+    "source_id": "CPVO",
+    "name": "Community Plant Variety Office",
+    "institution": "Community Plant Variety Office (European Union)",
+    "institution_short": "CPVO",
+    "country": "EU",
+    "country_name": {
+      "en": "European Union",
+      "es": "Unión Europea",
+      "eu": "Europar Batasuna",
+      "fr": "Union européenne",
+      "pt": "União Europeia"
+    },
+    "url": "https://cpvo.europa.eu/",
+    "document_url_template": null,
+    "license_class": "public-sector-psi",
+    "use_type": "variety-registry",
+    "official_status": true,
+    "data_format": "register",
+    "extraction_method": "structured",
+    "confidence_default": "high",
+    "attribution": {
+      "en": "Plant variety identity and protection data sourced from the EU Community Plant Variety Office (CPVO) register.",
+      "es": "Datos de identidad y protección de variedades vegetales obtenidos del registro de la Oficina Comunitaria de Variedades Vegetales (CPVO) de la UE.",
+      "eu": "Landare-barietateen identitate- eta babes-datuak EBko Landare Barietateen Bulego Komunitarioaren (CPVO) erregistrotik lortuak.",
+      "fr": "Données d'identité et de protection des variétés végétales issues du registre de l'Office communautaire des variétés végétales (OCVV/CPVO) de l'UE.",
+      "pt": "Dados de identidade e proteção de variedades vegetais obtidos do registo do Instituto Comunitário das Variedades Vegetais (ICVV/CPVO) da UE."
+    },
+    "disclaimer": {
+      "en": "The CPVO register is the official EU source for plant variety rights. NKZ uses it for variety identification only — it does not confer any commercial right.",
+      "es": "El registro CPVO es la fuente oficial de la UE para los derechos de obtención vegetal. NKZ lo usa solo para identificación de variedades — no confiere ningún derecho comercial.",
+      "eu": "CPVO erregistroa EBko iturri ofiziala da landare-barietateen eskubideetarako. NKZk barietateak identifikatzeko soilik erabiltzen du — ez du merkataritza-eskubiderik ematen.",
+      "fr": "Le registre CPVO est la source officielle de l'UE pour les droits d'obtention végétale. NKZ l'utilise uniquement pour l'identification des variétés — il ne confère aucun droit commercial.",
+      "pt": "O registo CPVO é a fonte oficial da UE para os direitos de variedades vegetais. A NKZ usa-o apenas para identificação de variedades — não confere qualquer direito comercial."
+    },
+    "site_urls": [
+      "https://cpvo.europa.eu/"
+    ],
+    "tags": [
+      "varieties",
+      "plant-variety-rights",
+      "eu-registry"
+    ]
   }
 ]
