@@ -2033,6 +2033,64 @@ class GraphDAO:
         finally:
             await client.close()
 
+    async def create_crop_plan(self, parcel_id, season, segments, tenant_id) -> dict:
+        """Create one planned AgriCrop per segment + patch parcel season bounds.
+
+        No segment is auto-activated (actual planting happens via advance).
+        """
+        from app.graph.crop_plan import build_segment_entity
+        import httpx
+        client = OrionClient(tenant_id=tenant_id)
+        ids, warnings = [], []
+        try:
+            for seq, seg in enumerate(segments):
+                entity = build_segment_entity(tenant_id, parcel_id, season, seq, seg)
+                try:
+                    await client.create_entity(entity)
+                except httpx.HTTPStatusError as e:
+                    if e.response.status_code == 409:  # idempotent re-commit
+                        await client.update_entity_attrs(entity["id"], {
+                            k: v for k, v in entity.items() if k not in ("id", "type", "@context")
+                        })
+                    else:
+                        warnings.append({"seq": seq, "error": str(e)[:160]})
+                        continue
+                ids.append(entity["id"])
+            # patch parcel campaign bounds from first/last windows
+            starts = [s.get("sowing_window", [None])[0] for s in segments if s.get("sowing_window")]
+            ends = [s.get("expected_termination") for s in segments if s.get("expected_termination")]
+            if starts or ends:
+                patch = {}
+                if starts:
+                    patch["cropSeasonStart"] = {"type": "Property", "value": {"@type": "Date", "@value": min(starts)}}
+                if ends:
+                    patch["cropSeasonEnd"] = {"type": "Property", "value": {"@type": "Date", "@value": max(ends)}}
+                try:
+                    await client.update_entity_attrs(parcel_id, patch)
+                except Exception:
+                    warnings.append({"parcel": "season-bounds patch failed"})
+            return {"status": "committed", "parcel_id": parcel_id, "season": season,
+                    "segments": ids, "warnings": warnings}
+        finally:
+            await client.close()
+
+    async def get_crop_plan(self, parcel_id, season, tenant_id) -> dict:
+        """Return the parcel's plan segments for a season, ordered by seq."""
+        client = OrionClient(tenant_id=tenant_id)
+        try:
+            rows = await client.query_entities(
+                type="AgriCrop",
+                q=f'hasAgriParcel=="{parcel_id}";cropSeason=="{season}"',
+                limit=50, options="keyValues",
+            )
+        except Exception:
+            rows = []
+        finally:
+            await client.close()
+        rows = sorted(rows, key=lambda r: r.get("seq", 0))
+        active = next((r["id"] for r in rows if r.get("status") == "active"), None)
+        return {"parcel_id": parcel_id, "season": season, "active": active, "segments": rows}
+
     async def get_crop_context(
         self, parcel_id: str, tenant_id: str = "", gdd: float | None = None
     ) -> dict:
