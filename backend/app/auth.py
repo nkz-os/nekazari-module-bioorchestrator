@@ -25,6 +25,7 @@ SKIP_AUTH_PREFIXES = [
     "/api/graph/agriculture/",
     "/api/graph/species",
     "/api/graph/phenology-params",
+    "/api/graph/phenology-stages",
     "/api/graph/heat-tolerance",
     "/api/graph/nutrient-profile",
     "/api/graph/soil-suitability",
