@@ -47,6 +47,33 @@ def _phenology_agronomic(params: dict) -> dict:
     return out
 
 
+_WATER_FIELDS = ("irrigation_required_mm", "etc_weekly_mm", "kc")
+_WATER_BOILERPLATE = "All data sources available"
+
+
+def _water_budget_agronomic(result: dict) -> dict:
+    """Build the additive `agronomic` map for water-budget (P1 contract).
+
+    Reuses the dao's aggregate confidence (already weakest-link over AWC/ET0/
+    Kc inputs). The human reason rides in `notes` — it never blocks the
+    irrigation suggestion.
+    """
+    conf = result.get("confidence") or "low"
+    raw_note = result.get("confidence_notes") or ""
+    notes = (
+        [] if not raw_note or raw_note == _WATER_BOILERPLATE
+        else [n.strip() for n in raw_note.split(";") if n.strip()]
+    )
+    source = Source(short="FAO-56 water balance")
+    out: dict[str, dict] = {}
+    for field in _WATER_FIELDS:
+        out[field] = AgronomicValue(
+            value=result.get(field), source=source,
+            confidence=conf, notes=list(notes),
+        ).model_dump()
+    return out
+
+
 def _get_tenant_id(request: Request) -> str:
     """Extract tenant_id from auth middleware state."""
     return getattr(request.state, "tenant_id", "")
@@ -919,6 +946,7 @@ async def agriculture_water_budget(
     )
     if "error" in result:
         raise HTTPException(status_code=404, detail=result["error"])
+    result["agronomic"] = _water_budget_agronomic(result)
     return result
 
 
