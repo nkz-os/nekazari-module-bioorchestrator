@@ -21,28 +21,40 @@ SKIP_AUTH_PATHS = {"/healthz", "/readyz", "/docs", "/openapi.json"}
 # Public reference data endpoints — global knowledge graph, no tenant-specific data.
 # These are scientific reference data (EPPO codes, phenology params, crop catalog)
 # available to all users regardless of auth state.
-SKIP_AUTH_PREFIXES = [
-    "/api/graph/agriculture/",
-    "/api/graph/species",
-    "/api/graph/phenology-params",
-    "/api/graph/phenology-stages",
-    "/api/graph/action-rules",
-    "/api/graph/heat-tolerance",
-    "/api/graph/nutrient-profile",
-    "/api/graph/soil-suitability",
-    "/api/graph/rotation-constraints",
-    "/api/graph/recommendations/",
-    "/api/graph/varieties",
-    "/api/crop/catalog",
-    "/api/v1/sources",
-    "/api/v1/catalog",
-    "/api/v1/capability",
-    "/ngsi-ld/",
+#
+# Each prefix maps to the set of HTTP methods exempted from auth for that prefix.
+# "*" means all methods are exempt — this is the legacy default, preserved here
+# for every pre-existing entry so today's behavior is unchanged (the broader
+# audit of which of these should also be method-restricted is a separate,
+# deliberate follow-up — NOT part of this fix).
+#
+# "/api/graph/action-rules" is the one entry that is intentionally NOT "*":
+# it carries the life-critical agronomic action-rule catalog. GET (read) stays
+# public for the crop-health worker, but POST/PUT (agronomist edits) must
+# require auth — an unauthenticated in-cluster pod must not be able to mutate
+# the rule catalog.
+SKIP_AUTH_PREFIXES: dict[str, set[str]] = {
+    "/api/graph/agriculture/": {"*"},
+    "/api/graph/species": {"*"},
+    "/api/graph/phenology-params": {"*"},
+    "/api/graph/phenology-stages": {"*"},
+    "/api/graph/action-rules": {"GET"},
+    "/api/graph/heat-tolerance": {"*"},
+    "/api/graph/nutrient-profile": {"*"},
+    "/api/graph/soil-suitability": {"*"},
+    "/api/graph/rotation-constraints": {"*"},
+    "/api/graph/recommendations/": {"*"},
+    "/api/graph/varieties": {"*"},
+    "/api/crop/catalog": {"*"},
+    "/api/v1/sources": {"*"},
+    "/api/v1/catalog": {"*"},
+    "/api/v1/capability": {"*"},
+    "/ngsi-ld/": {"*"},
     # Orion-LD subscription notifications POST here directly (in-cluster, no
     # api-gateway, no JWT). NetworkPolicy gates ingress. Without this the
     # production auth branch 401s every notification and the catalog sync dies.
-    "/api/ngsi-ld/",
-]
+    "/api/ngsi-ld/": {"*"},
+}
 
 
 class NKZAuthMiddleware(BaseHTTPMiddleware):
@@ -56,8 +68,10 @@ class NKZAuthMiddleware(BaseHTTPMiddleware):
         # Skip auth for health checks and public reference data
         if request.url.path in SKIP_AUTH_PATHS:
             return await call_next(request)
-        for prefix in SKIP_AUTH_PREFIXES:
-            if request.url.path.startswith(prefix):
+        for prefix, methods in SKIP_AUTH_PREFIXES.items():
+            if request.url.path.startswith(prefix) and (
+                "*" in methods or request.method in methods
+            ):
                 return await call_next(request)
 
         # Trust gateway-injected headers (request already passed api-gateway auth)
