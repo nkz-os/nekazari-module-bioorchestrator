@@ -7,12 +7,44 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from neo4j import AsyncDriver
 
+from nkz_platform_sdk.agronomy import (
+    AgronomicValue, Source, confidence_from_match,
+)
+
 from app.core.dependencies import get_neo4j_driver
 from app.graph.dao import GraphDAO
 
 router = APIRouter()
 
 DriverDep = Annotated[AsyncDriver, Depends(get_neo4j_driver)]
+
+_PHENO_FIELDS = ("kc", "d1", "d2", "mds_ref", "ky")
+
+
+def _phenology_agronomic(params: dict) -> dict:
+    """Build the additive `agronomic` map for phenology-params (P1 contract)."""
+    is_default = bool(params.get("is_default"))
+    match_level = params.get("match_level") or "none"
+    prov = params.get("provenance") or {}
+    source = Source(
+        short=prov.get("short") or "default",
+        doi=prov.get("doi"),
+        institution=prov.get("institution"),
+    )
+    base_conf = confidence_from_match(match_level, is_default)
+    out: dict[str, dict] = {}
+    for field in _PHENO_FIELDS:
+        value = params.get(field)
+        if value is None:
+            out[field] = AgronomicValue(
+                value=None, source=Source(short="default"),
+                confidence="low", notes=[f"Sin {field} para esta especie/estadio"],
+            ).model_dump()
+        else:
+            out[field] = AgronomicValue(
+                value=value, source=source, confidence=base_conf,
+            ).model_dump()
+    return out
 
 
 def _get_tenant_id(request: Request) -> str:
@@ -118,6 +150,7 @@ async def phenology_params(
         "mds": params.get("mds_ref") is not None,
     }
 
+    params["agronomic"] = _phenology_agronomic(params)
     return params
 
 

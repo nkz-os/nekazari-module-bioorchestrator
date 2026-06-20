@@ -1,5 +1,5 @@
 # NKZ Platform SDK (OrionClient, SyncOrionClient, inject_fiware_headers)
-nkz-platform-sdk>=0.4.4
+nkz-platform-sdk>=0.6.0
 
 # IkerKeta pipeline library
 ikerketa @ git+https://github.com/nkz-os/ikerketa.git@main
