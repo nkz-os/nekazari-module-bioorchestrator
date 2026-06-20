@@ -1,5 +1,7 @@
 import httpx
 import pytest
+from fastapi import HTTPException
+
 from app.graph.dao import GraphDAO
 
 
@@ -9,12 +11,16 @@ class _FakeOrion:
         self.patched = []
         self.entities = []
         self.fail_create_on_seq = None
+        self.fail_query = None
     async def create_entity(self, e):
         if self.fail_create_on_seq is not None and e["seq"]["value"] == self.fail_create_on_seq:
             raise httpx.ConnectError("boom")
         self.created.append(e)
     async def update_entity_attrs(self, eid, attrs): self.patched.append((eid, attrs))
-    async def query_entities(self, **kw): return self.entities
+    async def query_entities(self, **kw):
+        if self.fail_query is not None:
+            raise self.fail_query
+        return self.entities
     async def close(self): pass
 
 
@@ -72,6 +78,28 @@ async def test_create_plan_segment_transport_error_is_collected_not_aborted(dao)
 
 
 @pytest.mark.asyncio
+async def test_create_plan_includes_sanity_warnings_in_output(dao):
+    d, fake = dao
+    segs = [
+        {"crop": "Vicia sativa", "role": "bogus_role", "sowing_window": ["2025-11-01", "2025-12-20"],
+         "termination_method": "roller_crimper", "expected_termination": "2026-03-15"},
+        {"crop": "Zea mays", "variety": "MAS 26 T", "role": "main_crop",
+         "sowing_window": ["2025-12-01", "2026-05-01"], "termination_method": "bogus_method",
+         "expected_termination": "2026-09-20"},
+    ]
+    out = await d.create_crop_plan("urn:ngsi-ld:AgriParcel:montiko:p-1", "2026", segs, "montiko")
+
+    # never blocks — segments still committed
+    assert out["status"] == "committed"
+    assert len(out["segments"]) == 2
+
+    types = {w.get("type") for w in out["warnings"]}
+    assert "invalid_role" in types
+    assert "invalid_termination_method" in types
+    assert "window_overlap" in types
+
+
+@pytest.mark.asyncio
 async def test_get_crop_plan_orders_by_seq_and_resolves_active(dao):
     d, fake = dao
     fake.entities = [
@@ -108,3 +136,20 @@ async def test_advance_activates_target_demotes_prior_patches_hasagricrop(dao):
     parcel = patched["urn:ngsi-ld:AgriParcel:montiko:p-1"]
     assert parcel["hasAgriCrop"]["object"] == "urn:ngsi-ld:AgriCrop:montiko:p-1:2026:1"
     assert out["status"] == "advanced"
+
+
+@pytest.mark.asyncio
+async def test_advance_aborts_if_active_query_fails(dao):
+    d, fake = dao
+    fake.fail_query = Exception("orion down")
+
+    with pytest.raises(HTTPException):
+        await d.advance_segment("urn:ngsi-ld:AgriParcel:montiko:p-1", "2026", 1, "2026-04-15", "montiko")
+
+    # target must NOT have been activated, and parcel hasAgriCrop must NOT have been patched —
+    # failing safe means we never proceed past an unreadable "currently active" state.
+    assert not any(
+        attrs.get("status", {}).get("value") == "active" or "hasAgriCrop" in attrs
+        for _, attrs in fake.patched
+    )
+    assert fake.patched == []

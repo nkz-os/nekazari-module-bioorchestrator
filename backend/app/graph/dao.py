@@ -2038,10 +2038,11 @@ class GraphDAO:
 
         No segment is auto-activated (actual planting happens via advance).
         """
-        from app.graph.crop_plan import build_segment_entity
+        from app.graph.crop_plan import build_segment_entity, sanity_warnings
         import httpx
         client = OrionClient(tenant_id=tenant_id)
         ids, warnings = [], []
+        warnings.extend(sanity_warnings(segments))
         try:
             for seq, seg in enumerate(segments):
                 entity = build_segment_entity(tenant_id, parcel_id, season, seq, seg)
@@ -2089,7 +2090,12 @@ class GraphDAO:
                 q=f'hasAgriParcel=="{parcel_id}";cropSeason=="{season}"',
                 limit=50, options="keyValues",
             )
-        except Exception:
+        except Exception as exc:
+            logger.warning(
+                "get_crop_plan: query failed for parcel=%s season=%s (returning empty plan, "
+                "not necessarily an empty plan — Orion may be unreachable): %s",
+                parcel_id, season, exc,
+            )
             rows = []
         finally:
             await client.close()
@@ -2099,6 +2105,8 @@ class GraphDAO:
 
     async def advance_segment(self, parcel_id, season, seq, planting_date, tenant_id) -> dict:
         """Mark a segment sown: set actual plantingDate + activate; demote prior active."""
+        from fastapi import HTTPException
+
         from app.graph.crop_plan import segment_urn
         target_id = segment_urn(tenant_id, parcel_id, season, int(seq))
         _date = {"type": "Property", "value": {"@type": "Date", "@value": planting_date}}
@@ -2111,8 +2119,16 @@ class GraphDAO:
                     q=f'hasAgriParcel=="{parcel_id}";cropSeason=="{season}";status=="active"',
                     limit=5, options="keyValues",
                 )
-            except Exception:
-                rows = []
+            except Exception as exc:
+                logger.warning(
+                    "advance_segment: failed to read active segment for parcel=%s season=%s; "
+                    "aborting to avoid dual-active corruption: %s",
+                    parcel_id, season, exc,
+                )
+                raise HTTPException(
+                    status_code=502,
+                    detail="Could not read active segment to demote; advance aborted",
+                ) from exc
             for prior in rows:
                 if prior.get("id") == target_id:
                     continue
