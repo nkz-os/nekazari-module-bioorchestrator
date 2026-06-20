@@ -82,3 +82,29 @@ async def test_get_crop_plan_orders_by_seq_and_resolves_active(dao):
 
     assert [s["seq"] for s in out["segments"]] == [0, 1]
     assert out["active"] == "urn:ngsi-ld:AgriCrop:montiko:p-1:2026:0"
+
+
+@pytest.mark.asyncio
+async def test_advance_activates_target_demotes_prior_patches_hasagricrop(dao):
+    d, fake = dao
+    # prior active = seg 0 (cover_crop, roller_crimper); advancing to seg 1 (main, harvest)
+    fake.entities = [
+        {"id": "urn:ngsi-ld:AgriCrop:montiko:p-1:2026:0", "seq": 0, "status": "active",
+         "terminationMethod": "roller_crimper"},
+        {"id": "urn:ngsi-ld:AgriCrop:montiko:p-1:2026:1", "seq": 1, "status": "planned",
+         "terminationMethod": "harvest"},
+    ]
+    out = await d.advance_segment("urn:ngsi-ld:AgriParcel:montiko:p-1", "2026", 1, "2026-04-15", "montiko")
+    patched = dict((eid, attrs) for eid, attrs in fake.patched)
+    # target activated with real plantingDate
+    tgt = patched["urn:ngsi-ld:AgriCrop:montiko:p-1:2026:1"]
+    assert tgt["status"]["value"] == "active"
+    assert tgt["plantingDate"]["value"]["@value"] == "2026-04-15"
+    # prior demoted: roller_crimper -> terminated, terminationDate set
+    prior = patched["urn:ngsi-ld:AgriCrop:montiko:p-1:2026:0"]
+    assert prior["status"]["value"] == "terminated"
+    assert prior["terminationDate"]["value"]["@value"] == "2026-04-15"
+    # parcel hasAgriCrop -> target
+    parcel = patched["urn:ngsi-ld:AgriParcel:montiko:p-1"]
+    assert parcel["hasAgriCrop"]["object"] == "urn:ngsi-ld:AgriCrop:montiko:p-1:2026:1"
+    assert out["status"] == "advanced"
