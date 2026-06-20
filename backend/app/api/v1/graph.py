@@ -971,6 +971,53 @@ async def agriculture_assign_crop(
     return result
 
 
+@router.post("/agriculture/crop-plan")
+async def agriculture_commit_crop_plan(driver: DriverDep, request: Request):
+    """Commit a multi-segment crop plan (rotation) for a parcel/season."""
+    body = await request.json()
+    parcel_id = body.get("parcel_id")
+    season = body.get("season")
+    segments = body.get("segments")
+    if not parcel_id or not season or not isinstance(segments, list) or not segments:
+        raise HTTPException(status_code=400, detail="parcel_id, season and non-empty segments[] are required")
+    dao = GraphDAO(driver)
+    return await dao.create_crop_plan(
+        parcel_id=parcel_id, season=season, segments=segments,
+        tenant_id=getattr(request.state, "tenant_id", "") or request.headers.get("X-Tenant-ID", ""),
+    )
+
+
+@router.get("/agriculture/crop-plan")
+async def agriculture_get_crop_plan(
+    driver: DriverDep, request: Request,
+    parcel_id: str = Query(..., description="AgriParcel URN"),
+    season: str = Query(..., description="Campaign id, e.g. 2026"),
+):
+    """Read the committed plan (ordered segments + status) for a parcel/season."""
+    dao = GraphDAO(driver)
+    return await dao.get_crop_plan(
+        parcel_id=parcel_id, season=season,
+        tenant_id=getattr(request.state, "tenant_id", "") or request.headers.get("X-Tenant-ID", ""),
+    )
+
+
+@router.post("/agriculture/crop-plan/{parcel_id:path}/segments/{seq}/advance")
+async def agriculture_advance_segment(parcel_id: str, seq: int, driver: DriverDep, request: Request):
+    """Manual advance: record the REAL sowing date, activate the segment, demote the prior."""
+    body = await request.json()
+    planting_date = body.get("planting_date")
+    season = body.get("season")
+    if not planting_date:
+        raise HTTPException(status_code=400, detail="planting_date (real sowing date) is required")
+    if not season:
+        raise HTTPException(status_code=400, detail="season is required")
+    dao = GraphDAO(driver)
+    return await dao.advance_segment(
+        parcel_id=parcel_id, season=season, seq=seq, planting_date=planting_date,
+        tenant_id=getattr(request.state, "tenant_id", "") or request.headers.get("X-Tenant-ID", ""),
+    )
+
+
 @router.get("/agriculture/alerts")
 async def agriculture_alerts(
     request: Request,

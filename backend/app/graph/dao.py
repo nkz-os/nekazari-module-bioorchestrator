@@ -2033,6 +2033,124 @@ class GraphDAO:
         finally:
             await client.close()
 
+    async def create_crop_plan(self, parcel_id, season, segments, tenant_id) -> dict:
+        """Create one planned AgriCrop per segment + patch parcel season bounds.
+
+        No segment is auto-activated (actual planting happens via advance).
+        """
+        from app.graph.crop_plan import build_segment_entity, sanity_warnings
+        import httpx
+        client = OrionClient(tenant_id=tenant_id)
+        ids, warnings = [], []
+        warnings.extend(sanity_warnings(segments))
+        try:
+            for seq, seg in enumerate(segments):
+                entity = build_segment_entity(tenant_id, parcel_id, season, seq, seg)
+                try:
+                    try:
+                        await client.create_entity(entity)
+                    except httpx.HTTPStatusError as e:
+                        if e.response.status_code == 409:  # idempotent re-commit
+                            await client.update_entity_attrs(entity["id"], {
+                                k: v for k, v in entity.items() if k not in ("id", "type", "@context")
+                            })
+                        else:
+                            warnings.append({"seq": seq, "error": str(e)[:160]})
+                            continue
+                except Exception as e:
+                    # Never abort the batch on a single-segment failure
+                    # (e.g. httpx.ConnectError, timeout, or any transport error).
+                    warnings.append({"seq": seq, "error": str(e)[:160]})
+                    continue
+                ids.append(entity["id"])
+            # patch parcel campaign bounds from first/last windows
+            starts = [s.get("sowing_window", [None])[0] for s in segments if s.get("sowing_window")]
+            ends = [s.get("expected_termination") for s in segments if s.get("expected_termination")]
+            if starts or ends:
+                patch = {}
+                if starts:
+                    patch["cropSeasonStart"] = {"type": "Property", "value": {"@type": "Date", "@value": min(starts)}}
+                if ends:
+                    patch["cropSeasonEnd"] = {"type": "Property", "value": {"@type": "Date", "@value": max(ends)}}
+                try:
+                    await client.update_entity_attrs(parcel_id, patch)
+                except Exception:
+                    warnings.append({"parcel": "season-bounds patch failed"})
+            return {"status": "committed", "parcel_id": parcel_id, "season": season,
+                    "segments": ids, "warnings": warnings}
+        finally:
+            await client.close()
+
+    async def get_crop_plan(self, parcel_id, season, tenant_id) -> dict:
+        """Return the parcel's plan segments for a season, ordered by seq."""
+        client = OrionClient(tenant_id=tenant_id)
+        try:
+            rows = await client.query_entities(
+                type="AgriCrop",
+                q=f'hasAgriParcel=="{parcel_id}";cropSeason=="{season}"',
+                limit=50, options="keyValues",
+            )
+        except Exception as exc:
+            logger.warning(
+                "get_crop_plan: query failed for parcel=%s season=%s (returning empty plan, "
+                "not necessarily an empty plan — Orion may be unreachable): %s",
+                parcel_id, season, exc,
+            )
+            rows = []
+        finally:
+            await client.close()
+        rows = sorted(rows, key=lambda r: r.get("seq", 0))
+        active = next((r["id"] for r in rows if r.get("status") == "active"), None)
+        return {"parcel_id": parcel_id, "season": season, "active": active, "segments": rows}
+
+    async def advance_segment(self, parcel_id, season, seq, planting_date, tenant_id) -> dict:
+        """Mark a segment sown: set actual plantingDate + activate; demote prior active."""
+        from fastapi import HTTPException
+
+        from app.graph.crop_plan import segment_urn
+        target_id = segment_urn(tenant_id, parcel_id, season, int(seq))
+        _date = {"type": "Property", "value": {"@type": "Date", "@value": planting_date}}
+        client = OrionClient(tenant_id=tenant_id)
+        try:
+            # find currently-active segment to demote
+            try:
+                rows = await client.query_entities(
+                    type="AgriCrop",
+                    q=f'hasAgriParcel=="{parcel_id}";cropSeason=="{season}";status=="active"',
+                    limit=5, options="keyValues",
+                )
+            except Exception as exc:
+                logger.warning(
+                    "advance_segment: failed to read active segment for parcel=%s season=%s; "
+                    "aborting to avoid dual-active corruption: %s",
+                    parcel_id, season, exc,
+                )
+                raise HTTPException(
+                    status_code=502,
+                    detail="Could not read active segment to demote; advance aborted",
+                ) from exc
+            for prior in rows:
+                if prior.get("id") == target_id:
+                    continue
+                method = prior.get("terminationMethod")
+                final = "harvested" if method == "harvest" else "terminated"
+                await client.update_entity_attrs(prior["id"], {
+                    "status": {"type": "Property", "value": final},
+                    "terminationDate": _date,
+                })
+            # activate target with real plantingDate
+            await client.update_entity_attrs(target_id, {
+                "status": {"type": "Property", "value": "active"},
+                "plantingDate": _date,
+            })
+            # project to parcel commitment
+            await client.update_entity_attrs(parcel_id, {
+                "hasAgriCrop": {"type": "Relationship", "object": target_id},
+            })
+            return {"status": "advanced", "active": target_id, "season": season}
+        finally:
+            await client.close()
+
     async def get_crop_context(
         self, parcel_id: str, tenant_id: str = "", gdd: float | None = None
     ) -> dict:
