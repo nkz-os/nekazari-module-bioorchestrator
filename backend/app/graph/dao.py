@@ -2046,15 +2046,21 @@ class GraphDAO:
             for seq, seg in enumerate(segments):
                 entity = build_segment_entity(tenant_id, parcel_id, season, seq, seg)
                 try:
-                    await client.create_entity(entity)
-                except httpx.HTTPStatusError as e:
-                    if e.response.status_code == 409:  # idempotent re-commit
-                        await client.update_entity_attrs(entity["id"], {
-                            k: v for k, v in entity.items() if k not in ("id", "type", "@context")
-                        })
-                    else:
-                        warnings.append({"seq": seq, "error": str(e)[:160]})
-                        continue
+                    try:
+                        await client.create_entity(entity)
+                    except httpx.HTTPStatusError as e:
+                        if e.response.status_code == 409:  # idempotent re-commit
+                            await client.update_entity_attrs(entity["id"], {
+                                k: v for k, v in entity.items() if k not in ("id", "type", "@context")
+                            })
+                        else:
+                            warnings.append({"seq": seq, "error": str(e)[:160]})
+                            continue
+                except Exception as e:
+                    # Never abort the batch on a single-segment failure
+                    # (e.g. httpx.ConnectError, timeout, or any transport error).
+                    warnings.append({"seq": seq, "error": str(e)[:160]})
+                    continue
                 ids.append(entity["id"])
             # patch parcel campaign bounds from first/last windows
             starts = [s.get("sowing_window", [None])[0] for s in segments if s.get("sowing_window")]
