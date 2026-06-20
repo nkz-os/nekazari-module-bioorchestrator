@@ -1,3 +1,5 @@
+import pytest
+
 from app.ingestion.builders import build_agri_crop_entity
 
 
@@ -17,3 +19,16 @@ def test_build_merges_extra_attrs():
         "urn:ngsi-ld:AgriCrop:wheat", "Wheat", "Triticum aestivum", "x",
         extra_attrs={"phMin": {"type": "Property", "value": 5.5}})
     assert e["phMin"] == {"type": "Property", "value": 5.5}
+
+
+@pytest.mark.parametrize("bad_provider", [None, "", "   "])
+def test_provenance_is_mandatory(bad_provider):
+    """Life-critical invariant: no AgriCrop catalog entity without a source.
+
+    A provenance-less agronomic entity must never be constructed — the builder
+    refuses an empty/whitespace provider so a future ingester change cannot
+    silently ship sourceless crop data into Orion/Neo4j.
+    """
+    with pytest.raises(ValueError):
+        build_agri_crop_entity(
+            "urn:ngsi-ld:AgriCrop:wheat", "Wheat", "Triticum aestivum", bad_provider)

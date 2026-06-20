@@ -9,7 +9,16 @@ def build_agri_crop_entity(
     provider: str,
     extra_attrs: dict | None = None,
 ) -> dict:
-    """Build a minimal AgriCrop NGSI-LD entity (ld+json, @context inline)."""
+    """Build a minimal AgriCrop NGSI-LD entity (ld+json, @context inline).
+
+    Provenance is mandatory (life-critical data fabric): a sourceless agronomic
+    entity must never be constructed, so an empty/whitespace ``provider`` raises.
+    """
+    if not provider or not str(provider).strip():
+        raise ValueError(
+            "build_agri_crop_entity: provenance (provider) is mandatory — "
+            f"refusing to build sourceless AgriCrop {uri!r}"
+        )
     entity = {
         "id": uri,
         "type": "AgriCrop",
