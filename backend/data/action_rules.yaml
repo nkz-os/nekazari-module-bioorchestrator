@@ -1,0 +1,35 @@
+rules:
+  - id: cover_crop_termination_flowering
+    name: "Terminar cubierta al alcanzar floración"
+    category: termination
+    priority: 10
+    active: true
+    species_links: ["Vicia sativa", "Avena sativa", "Secale cereale"]
+    conditions:
+      all:
+        - {field: crop.role, op: eq, value: cover_crop}
+        - {field: crop.status, op: eq, value: active}
+        - {field: crop.termination_method, op: eq, value: roller_crimper}
+        - {field: phenology.current_stage, op: eq, value: flowering}
+    action:
+      operation_type: tillage
+      description_template: "Tumbar la cubierta de {crop.species} con roller crimper — ha alcanzado floración"
+      urgency: high
+      window_days: 7
+    source_doi: "10.1016/j.fcr.2020.107789"
+    source_short: "INTIA Navarra - Cubiertas vegetales"
+  - id: main_crop_sowing_window_open
+    name: "Sembrar cultivo principal en ventana"
+    category: sowing
+    priority: 8
+    active: true
+    conditions:
+      all:
+        - {field: crop.status, op: eq, value: planned}
+        - {field: crop.days_until_sowing_window, op: lte, value: 7}
+    action:
+      operation_type: sowing
+      description_template: "Sembrar {crop.species} — ventana de siembra abierta"
+      urgency: medium
+      window_days: 14
+    source_short: "SP1 plan (ventana de siembra)"
