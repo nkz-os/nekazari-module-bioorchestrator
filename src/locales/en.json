@@ -638,5 +638,62 @@
     "noParcels": "No parcels available",
     "error": "Failed to load parcels",
     "loading": "Loading parcels..."
+  },
+  "badge": {
+    "source": "Source",
+    "confidence": {
+      "high": "High",
+      "medium": "Medium",
+      "low": "Low"
+    }
+  },
+  "cropPlan": {
+    "title": "Plan & actions",
+    "actions": {
+      "title": "Recommended actions",
+      "empty": "No pending actions",
+      "dueBy": "Do before {{date}}"
+    },
+    "timeline": {
+      "title": "Campaign",
+      "empty": "No campaign plan",
+      "today": "today",
+      "aria": "Campaign timeline"
+    },
+    "segments": {
+      "title": "Rotation plan",
+      "empty": "This parcel has no plan.",
+      "create": "Create plan",
+      "planned": "Planned",
+      "actual": "Actual",
+      "stage": "Stage"
+    },
+    "params": {
+      "title": "Agronomic parameters",
+      "empty": "No parameters available",
+      "irrigation": "Irrigation (mm)",
+      "etc": "Weekly ETc (mm)",
+      "kc": "Kc",
+      "d1": "d1",
+      "d2": "d2"
+    },
+    "status": {
+      "planned": "Planned",
+      "active": "Active",
+      "harvested": "Harvested",
+      "terminated": "Terminated"
+    },
+    "urgency": {
+      "high": "High",
+      "medium": "Medium",
+      "low": "Low"
+    },
+    "err": {
+      "plan": "Could not load the plan",
+      "ops": "Could not load actions",
+      "params": "Could not load parameters"
+    },
+    "opType": {},
+    "stage": {}
   }
 }
