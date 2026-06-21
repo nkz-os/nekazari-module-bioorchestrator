@@ -163,7 +163,10 @@ export function useCropApi() {
     return post('/api/crop/catalog/derive-thermal');
   }
 
-  return { getCatalog, getCropDetail, triggerIngest, contributeParameter, getThermalSummary, getNpkSummary, triggerDeriveThermal };
+  const getPhenologyStatus = (parcelId: string) =>
+    get(`/api/crop-health/parcels/${encodeURIComponent(parcelId)}/phenology-status`);
+
+  return { getCatalog, getCropDetail, triggerIngest, contributeParameter, getThermalSummary, getNpkSummary, triggerDeriveThermal, getPhenologyStatus };
 }
 
 // ── Hook (no useAuth — relies on httpOnly cookie) ───────────────────────────
@@ -175,6 +178,12 @@ export function useBioApi() {
     getPipelineHistory: (limit = 5) => get(`/api/pipeline/history?limit=${limit}`),
     getSpecies: () => get(`${GRAPH}/graph/species`),
     getPhenologyParams: (params: URLSearchParams) => get(`${GRAPH}/graph/phenology-params?${params.toString()}`),
+    getCropPlan: (parcelUrn: string) =>
+      get(`${GRAPH}/graph/agriculture/crop-plan?parcel_id=${encodeURIComponent(parcelUrn)}`),
+    getWaterBudget: (parcelUrn: string) =>
+      get(`${GRAPH}/graph/agriculture/water-budget?parcel_id=${encodeURIComponent(parcelUrn)}`),
+    getIssuedOperations: (parcelUrn: string) =>
+      get(`/api/field-operations/operations?parcel_id=${encodeURIComponent(parcelUrn)}&status=issued`),
     contributePhenology: (params: URLSearchParams) => post(`/api/graph/phenology-params/contribute?${params.toString()}`),
     getHeatTolerance: (species: string) => get(`${GRAPH}/graph/heat-tolerance?species=${encodeURIComponent(species)}`),
     getNutrientProfile: (species: string, stage?: string) => get(`${GRAPH}/graph/nutrient-profile?species=${encodeURIComponent(species)}${stage ? `&stage=${encodeURIComponent(stage)}` : ''}`),
