@@ -69,8 +69,20 @@ const RecommendationsPanel: React.FC<Props> = ({ parcelId, parcelName, cropType,
   useEffect(() => {
     if (!cropType) return;
     setCropNotFound(false);
-    getCropDetail(`urn:ngsi-ld:AgriCrop:${cropType.replace(/ /g, '_')}`)
-      .then(detail => {
+    (async () => {
+      try {
+        // Look up the crop URI from the species catalog first
+        const species = await api.getSpecies();
+        const match = Array.isArray(species)
+          ? species.find((s: any) =>
+              (s.name || '').toLowerCase() === cropType.toLowerCase() ||
+              (s.scientificName || '').toLowerCase() === cropType.toLowerCase() ||
+              (s.eppoCode || '').toLowerCase() === cropType.toLowerCase() ||
+              (s.uri || '').endsWith(cropType.replace(/ /g, '_'))
+            )
+          : null;
+        const cropId = match?.uri || cropType;
+        const detail = await getCropDetail(cropId);
         if (detail?.data_available) {
           setDataAvail(detail.data_available);
           const gaps: string[] = [];
@@ -80,9 +92,11 @@ const RecommendationsPanel: React.FC<Props> = ({ parcelId, parcelName, cropType,
           if (!detail.data_available.npk) gaps.push('npk');
           setDataGaps(gaps);
         }
-      })
-      .catch(() => { setCropNotFound(true); });
-  }, [cropType]);
+      } catch {
+        setCropNotFound(true);
+      }
+    })();
+  }, [cropType, api]);
 
   useEffect(() => {
     const crop = cropType;
