@@ -281,7 +281,14 @@ export async function fetchParcels(): Promise<ParcelItem[]> {
   try {
     const resp = await fetch(
       `${API_BASE}/ngsi-ld/v1/entities?type=AgriParcel&options=keyValues&limit=500`,
-      { headers: { "Accept": "application/ld+json", ...authHeaders() }, credentials: "include" }
+      {
+        headers: {
+          "Accept": "application/json",
+          "Link": '<https://nekazari.robotika.cloud/ngsi-ld-context.json>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"',
+          ...authHeaders(),
+        },
+        credentials: "include",
+      }
     );
     if (!resp.ok) return [];
     const entities = await resp.json();
@@ -291,7 +298,7 @@ export async function fetchParcels(): Promise<ParcelItem[]> {
       name: e.name?.value || e.name || e.id?.split(":")?.pop() || e.id,
     }));
   } catch (err) {
-    console.warn('[fetchParcels] Failed to fetch parcels:', err instanceof Error ? err.message : String(err));
+    console.warn('[fetchParcels] Failed:', err instanceof Error ? err.message : String(err));
     return [];
   }
 }
