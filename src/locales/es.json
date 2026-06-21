@@ -636,5 +636,62 @@
     "noParcels": "No hay parcelas disponibles",
     "error": "Error al cargar parcelas",
     "loading": "Cargando parcelas..."
+  },
+  "badge": {
+    "source": "Fuente",
+    "confidence": {
+      "high": "Alta",
+      "medium": "Media",
+      "low": "Baja"
+    }
+  },
+  "cropPlan": {
+    "title": "Plan y acciones",
+    "actions": {
+      "title": "Acciones recomendadas",
+      "empty": "Sin acciones pendientes",
+      "dueBy": "Hacer antes del {{date}}"
+    },
+    "timeline": {
+      "title": "Campaña",
+      "empty": "Sin plan de campaña",
+      "today": "hoy",
+      "aria": "Línea de tiempo de la campaña"
+    },
+    "segments": {
+      "title": "Plan de rotación",
+      "empty": "Esta parcela no tiene plan.",
+      "create": "Crear plan",
+      "planned": "Planificado",
+      "actual": "Real",
+      "stage": "Estadio"
+    },
+    "params": {
+      "title": "Parámetros agronómicos",
+      "empty": "Sin parámetros disponibles",
+      "irrigation": "Riego (mm)",
+      "etc": "ETc semanal (mm)",
+      "kc": "Kc",
+      "d1": "d1",
+      "d2": "d2"
+    },
+    "status": {
+      "planned": "Planificado",
+      "active": "Activo",
+      "harvested": "Cosechado",
+      "terminated": "Terminado"
+    },
+    "urgency": {
+      "high": "Alta",
+      "medium": "Media",
+      "low": "Baja"
+    },
+    "err": {
+      "plan": "No se pudo cargar el plan",
+      "ops": "No se pudieron cargar las acciones",
+      "params": "No se pudieron cargar los parámetros"
+    },
+    "opType": {},
+    "stage": {}
   }
 }
