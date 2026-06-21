@@ -3,6 +3,7 @@ import { useTranslation } from '@nekazari/sdk';
 import { Card, Stack } from '@nekazari/ui-kit';
 import {
   Search, Heart, Activity, RefreshCw, Droplets, Dna,
+  Leaf, Globe, Sprout, Thermometer, FlaskRound, GitBranch, Database, Mountain,
 } from 'lucide-react';
 import { useParcelContext } from '../context/ParcelContext';
 import KnowledgeBaseGrid from './KnowledgeBaseGrid';
@@ -16,6 +17,8 @@ interface ToolCard {
 const PREDICT_TOOLS: ToolCard[] = [
   { id: 'varietyFinder', icon: Search, section: 'predict' },
   { id: 'parcelStatus', icon: Heart, section: 'predict' },
+  { id: 'catalog', icon: Leaf, section: 'predict' },
+  { id: 'climate', icon: Globe, section: 'predict' },
 ];
 
 const COMPARE_TOOLS: ToolCard[] = [
@@ -23,6 +26,14 @@ const COMPARE_TOOLS: ToolCard[] = [
   { id: 'rotationPlanner', icon: RefreshCw, section: 'compare' },
   { id: 'waterBudget', icon: Droplets, section: 'compare' },
   { id: 'regenerative', icon: Dna, section: 'compare' },
+  { id: 'phenology', icon: Sprout, section: 'compare' },
+  { id: 'thermal', icon: Thermometer, section: 'compare' },
+  { id: 'npk', icon: Droplets, section: 'compare' },
+  { id: 'soil', icon: Mountain, section: 'compare' },
+  { id: 'rotation', icon: RefreshCw, section: 'compare' },
+  { id: 'organic', icon: FlaskRound, section: 'compare' },
+  { id: 'pipeline', icon: GitBranch, section: 'compare' },
+  { id: 'dadis', icon: Database, section: 'compare' },
 ];
 
 interface DashboardProps {

@@ -106,6 +106,11 @@ const CropPlanPanel: React.FC<Props> = ({ parcelId }) => {
       .catch(() => {});
   }, [plan, bio]);
 
+  const handleCreatePlan = useCallback(() => {
+    // Navigate to the module page with rotation planner tool
+    window.location.href = '/modules/bioorchestrator';
+  }, []);
+
   if (!parcelId) return null;
 
   return (
@@ -119,7 +124,7 @@ const CropPlanPanel: React.FC<Props> = ({ parcelId }) => {
           {plan && <CampaignTimeline plan={plan} status={status ?? {}} />}
         </Section>
         <Section title={t('cropPlan.segments.title')} loading={loading} error={err.plan} onRetry={load}>
-          {plan && <PlanSegments plan={plan} status={status ?? {}} />}
+          {plan && <PlanSegments plan={plan} status={status ?? {}} onCreatePlan={handleCreatePlan} />}
         </Section>
         <Section title={t('cropPlan.params.title')} loading={loading} error={err.params} onRetry={load}>
           <AgroParams water={water} phenoParams={phenoParams} />
