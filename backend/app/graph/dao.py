@@ -615,7 +615,7 @@ class GraphDAO:
             """
             params: dict = {"species": species}
             if stage:
-                query += " WHERE st.name = $stage"
+                query += " AND st.name = $stage"
                 params["stage"] = stage
             query += """
                 RETURN st.name AS stage, n.nitrogenUptake AS n_uptake,
