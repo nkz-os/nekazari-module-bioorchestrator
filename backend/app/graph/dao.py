@@ -608,8 +608,10 @@ class GraphDAO:
         """Return NPK uptake curve per phenological stage."""
         async with self._driver.session() as session:
             query = """
-                MATCH (s:Species {name: $species})-[:HAS_STAGE]->
+                MATCH (s:Species)-[:HAS_STAGE]->
                       (st:PhenologyStage)-[:HAS_NUTRIENT_PROFILE]->(n:CropNutrientProfile)
+                WHERE toLower(s.name) = toLower($species)
+                   OR toLower(s.scientificName) = toLower($species)
             """
             params: dict = {"species": species}
             if stage:
@@ -695,8 +697,10 @@ class GraphDAO:
         async with self._driver.session() as session:
             result = await session.run(
                 """
-                MATCH (s:Species {name: $species})-[:HAS_STAGE]->(st:PhenologyStage {name: $stage})
+                MATCH (s:Species)-[:HAS_STAGE]->(st:PhenologyStage {name: $stage})
                      -[:HAS_NUTRIENT_PROFILE]->(n:CropNutrientProfile)
+                WHERE toLower(s.name) = toLower($species)
+                   OR toLower(s.scientificName) = toLower($species)
                 RETURN n.element AS element, n.uptakeKgHaDay AS uptake
                 """,
                 species=species, stage=stage,
