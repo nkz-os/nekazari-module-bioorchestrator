@@ -33,3 +33,51 @@ rules:
       urgency: medium
       window_days: 14
     source_short: "SP1 plan (ventana de siembra)"
+
+  - id: riego_deficit_severo
+    name: "Riego por déficit hídrico severo"
+    category: irrigation
+    priority: 80
+    active: true
+    conditions:
+      all:
+        - {field: water_deficit_mm, op: gt, value: 30}
+        - {field: phenology.current_stage, op: nin, value: ["maturity", "dormant"]}
+    action:
+      operation_type: irrigation
+      description_template: "Riego: déficit de {water_deficit_mm} mm — aplicar inmediatamente"
+      urgency: high
+    source_doi: "FAO-56"
+    source_short: "FAO"
+
+  - id: cobertera_nitrogenada
+    name: "Cobertura nitrogenada"
+    category: fertilization
+    priority: 70
+    active: true
+    conditions:
+      all:
+        - {field: n_requirement_kg_ha, op: gt, value: 1.0}
+        - {field: phenology.current_stage, op: in, value: ["tillering", "stem_elongation", "vegetative"]}
+    action:
+      operation_type: fertilization
+      description_template: "Aplicar {n_requirement_kg_ha} kg N/ha — cobertera nitrogenada"
+      urgency: medium
+    source_doi: "MITECO-GUIA-2024"
+    source_short: "MITECO"
+
+  - id: fosforo_presiembra
+    name: "Fósforo en presiembra"
+    category: fertilization
+    priority: 60
+    active: true
+    conditions:
+      all:
+        - {field: phenology.current_stage, op: eq, value: pre_sowing}
+        - {field: p_requirement_kg_ha, op: gt, value: 1.0}
+    action:
+      operation_type: fertilization
+      description_template: "Aplicar {p_requirement_kg_ha} kg P2O5/ha en fondo (presiembra)"
+      urgency: medium
+    source_doi: "MITECO-GUIA-2024"
+    source_short: "MITECO"
