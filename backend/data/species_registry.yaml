@@ -1,0 +1,352 @@
+# =============================================================================
+# Nekazari Species Registry — canonical source of truth
+# =============================================================================
+# Single registry for all species referenced anywhere in the platform
+# (Neo4j, seed_phenology.py, stage_detection, trial ingestion, frontend).
+#
+# Add new species HERE. All subsystems resolve through resolve_species().
+# Never duplicate a species entry in module-specific YAMLs.
+# =============================================================================
+
+species:
+
+  # ===========================================================================
+  # CEREALS & PSEUDOCEREALS
+  # ===========================================================================
+
+  wheat:
+    scientific_name: "Triticum aestivum"
+    eppo_code: "TRZAX"
+    agrovoc_uri: "http://aims.fao.org/aos/agrovoc/c_7951"
+    common_names: { es: "trigo", en: "wheat", eu: "gari", fr: "blé", ca: "blat", pt: "trigo" }
+
+  barley:
+    scientific_name: "Hordeum vulgare"
+    eppo_code: "HORVX"
+    agrovoc_uri: "http://aims.fao.org/aos/agrovoc/c_3665"
+    common_names: { es: "cebada", en: "barley", eu: "garagar", fr: "orge", ca: "ordi", pt: "cevada" }
+
+  maize:
+    scientific_name: "Zea mays"
+    eppo_code: "ZEAMA"
+    agrovoc_uri: "http://aims.fao.org/aos/agrovoc/c_8509"
+    common_names: { es: "maíz", en: "maize", eu: "arto", fr: "maïs", ca: "blat de moro", pt: "milho" }
+
+  rice:
+    scientific_name: "Oryza sativa"
+    eppo_code: "ORYSA"
+    agrovoc_uri: "http://aims.fao.org/aos/agrovoc/c_5438"
+    common_names: { es: "arroz", en: "rice", eu: "arroza", fr: "riz", ca: "arròs", pt: "arroz" }
+
+  oat:
+    scientific_name: "Avena sativa"
+    eppo_code: "AVESA"
+    agrovoc_uri: "http://aims.fao.org/aos/agrovoc/c_728"
+    common_names: { es: "avena", en: "oat", eu: "oloa", fr: "avoine", ca: "civada", pt: "aveia" }
+
+  rye:
+    scientific_name: "Secale cereale"
+    eppo_code: "SECCE"
+    agrovoc_uri: "http://aims.fao.org/aos/agrovoc/c_6914"
+    common_names: { es: "centeno", en: "rye", eu: "zekalea", fr: "seigle", ca: "sègol", pt: "centeio" }
+
+  buckwheat:
+    scientific_name: "Fagopyrum esculentum"
+    eppo_code: "FAGES"
+    agrovoc_uri: "http://aims.fao.org/aos/agrovoc/c_2881"
+    common_names: { es: "trigo sarraceno", en: "buckwheat", eu: "artobeltz", fr: "sarrasin", ca: "fajol", pt: "trigo-sarraceno" }
+
+  # ===========================================================================
+  # LEGUMES
+  # ===========================================================================
+
+  soybean:
+    scientific_name: "Glycine max"
+    eppo_code: "GLXMA"
+    agrovoc_uri: "http://aims.fao.org/aos/agrovoc/c_3301"
+    common_names: { es: "soja", en: "soybean", eu: "soja", fr: "soja", ca: "soja", pt: "soja" }
+
+  chickpea:
+    scientific_name: "Cicer arietinum"
+    eppo_code: "CIEAR"
+    agrovoc_uri: "http://aims.fao.org/aos/agrovoc/c_1612"
+    common_names: { es: "garbanzo", en: "chickpea", eu: "txixtirio", fr: "pois chiche", ca: "cigró", pt: "grão-de-bico" }
+
+  lentil:
+    scientific_name: "Lens culinaris"
+    eppo_code: "LENCU"
+    agrovoc_uri: "http://aims.fao.org/aos/agrovoc/c_4289"
+    common_names: { es: "lenteja", en: "lentil", eu: "dilista", fr: "lentille", ca: "llentia", pt: "lentilha" }
+
+  pea:
+    scientific_name: "Pisum sativum"
+    eppo_code: "PIBSX"
+    agrovoc_uri: "http://aims.fao.org/aos/agrovoc/c_5933"
+    common_names: { es: "guisante", en: "pea", eu: "ilar", fr: "pois", ca: "pèsol", pt: "ervilha" }
+
+  faba_bean:
+    scientific_name: "Vicia faba"
+    eppo_code: "VICFX"
+    agrovoc_uri: "http://aims.fao.org/aos/agrovoc/c_8217"
+    common_names: { es: "haba", en: "faba bean", eu: "baba", fr: "fève", ca: "fava", pt: "fava" }
+
+  vetch:
+    scientific_name: "Vicia sativa"
+    eppo_code: "VICSA"
+    agrovoc_uri: "http://aims.fao.org/aos/agrovoc/c_8222"
+    common_names: { es: "veza", en: "vetch", eu: "zalke", fr: "vesce", ca: "veça", pt: "ervilhaca" }
+
+  bitter_vetch:
+    scientific_name: "Vicia ervilia"
+    eppo_code: "VICER"
+    agrovoc_uri: "http://aims.fao.org/aos/agrovoc/c_8219"
+    common_names: { es: "yero", en: "bitter vetch", eu: "txitxirio", fr: "ers", ca: "erb", pt: "ervilha-de-pombo" }
+
+  grass_pea:
+    scientific_name: "Lathyrus sativus"
+    eppo_code: "LTHSA"
+    agrovoc_uri: "http://aims.fao.org/aos/agrovoc/c_4218"
+    common_names: { es: "almorta", en: "grass pea", eu: "aizkol", fr: "gesse", ca: "guixa", pt: "chícharo" }
+
+  bean:
+    scientific_name: "Phaseolus vulgaris"
+    eppo_code: "PHSVX"
+    agrovoc_uri: "http://aims.fao.org/aos/agrovoc/c_5767"
+    common_names: { es: "judía", en: "bean", eu: "babarrun", fr: "haricot", ca: "mongeta", pt: "feijão" }
+
+  alfalfa:
+    scientific_name: "Medicago sativa"
+    eppo_code: "MEDSA"
+    agrovoc_uri: "http://aims.fao.org/aos/agrovoc/c_4692"
+    common_names: { es: "alfalfa", en: "alfalfa", eu: "alfalfa", fr: "luzerne", ca: "alfals", pt: "alfafa" }
+
+  # ===========================================================================
+  # INDUSTRIAL & OILSEEDS
+  # ===========================================================================
+
+  sunflower:
+    scientific_name: "Helianthus annuus"
+    eppo_code: "HELAN"
+    agrovoc_uri: "http://aims.fao.org/aos/agrovoc/c_3541"
+    common_names: { es: "girasol", en: "sunflower", eu: "ekilore", fr: "tournesol", ca: "gira-sol", pt: "girassol" }
+
+  rapeseed:
+    scientific_name: "Brassica napus"
+    eppo_code: "BRSNN"
+    agrovoc_uri: "http://aims.fao.org/aos/agrovoc/c_1066"
+    common_names: { es: "colza", en: "rapeseed", eu: "koltza", fr: "colza", ca: "colza", pt: "colza" }
+
+  sugar_beet:
+    scientific_name: "Beta vulgaris"
+    eppo_code: "BEAVX"
+    agrovoc_uri: "http://aims.fao.org/aos/agrovoc/c_891"
+    common_names: { es: "remolacha azucarera", en: "sugar beet", eu: "azukre-erremolatxa", fr: "betterave sucrière", ca: "remolatxa sucrera", pt: "beterraba-sacarina" }
+
+  hemp:
+    scientific_name: "Cannabis sativa"
+    eppo_code: "CNISA"
+    agrovoc_uri: "http://aims.fao.org/aos/agrovoc/c_1257"
+    common_names: { es: "cáñamo", en: "hemp", eu: "kalamu", fr: "chanvre", ca: "cànem", pt: "cânhamo" }
+
+  flax:
+    scientific_name: "Linum usitatissimum"
+    eppo_code: "LIUUT"
+    agrovoc_uri: "http://aims.fao.org/aos/agrovoc/c_4355"
+    common_names: { es: "lino", en: "flax", eu: "liho", fr: "lin", ca: "lli", pt: "linho" }
+
+  # ===========================================================================
+  # VEGETABLES, ROOTS & BULBS
+  # ===========================================================================
+
+  potato:
+    scientific_name: "Solanum tuberosum"
+    eppo_code: "SOLTU"
+    agrovoc_uri: "http://aims.fao.org/aos/agrovoc/c_7227"
+    common_names: { es: "patata", en: "potato", eu: "patata", fr: "pomme de terre", ca: "patata", pt: "batata" }
+
+  tomato:
+    scientific_name: "Solanum lycopersicum"
+    eppo_code: "LYPES"
+    agrovoc_uri: "http://aims.fao.org/aos/agrovoc/c_7223"
+    common_names: { es: "tomate", en: "tomato", eu: "tomate", fr: "tomate", ca: "tomàquet", pt: "tomate" }
+
+  pepper:
+    scientific_name: "Capsicum annuum"
+    eppo_code: "CPSAN"
+    agrovoc_uri: "http://aims.fao.org/aos/agrovoc/c_1282"
+    common_names: { es: "pimiento", en: "pepper", eu: "piper", fr: "poivron", ca: "pebrot", pt: "pimento" }
+
+  eggplant:
+    scientific_name: "Solanum melongena"
+    eppo_code: "SOLME"
+    agrovoc_uri: "http://aims.fao.org/aos/agrovoc/c_7218"
+    common_names: { es: "berenjena", en: "eggplant", eu: "alberjinia", fr: "aubergine", ca: "albergínia", pt: "beringela" }
+
+  broccoli:
+    scientific_name: "Brassica oleracea var. italica"
+    eppo_code: "BRSOK"
+    agrovoc_uri: "http://aims.fao.org/aos/agrovoc/c_1093"
+    common_names: { es: "brócoli", en: "broccoli", eu: "brokoli", fr: "brocoli", ca: "bròquil", pt: "brócolos" }
+
+  leek:
+    scientific_name: "Allium porrum"
+    eppo_code: "ALLPO"
+    agrovoc_uri: "http://aims.fao.org/aos/agrovoc/c_296"
+    common_names: { es: "puerro", en: "leek", eu: "porru", fr: "poireau", ca: "porro", pt: "alho-porro" }
+
+  garlic:
+    scientific_name: "Allium sativum"
+    eppo_code: "ALLSA"
+    agrovoc_uri: "http://aims.fao.org/aos/agrovoc/c_284"
+    common_names: { es: "ajo", en: "garlic", eu: "baratxuri", fr: "ail", ca: "all", pt: "alho" }
+
+  onion:
+    scientific_name: "Allium cepa"
+    eppo_code: "ALLCE"
+    agrovoc_uri: "http://aims.fao.org/aos/agrovoc/c_289"
+    common_names: { es: "cebolla", en: "onion", eu: "tipula", fr: "oignon", ca: "ceba", pt: "cebola" }
+
+  artichoke:
+    scientific_name: "Cynara cardunculus var. scolymus"
+    eppo_code: "CYUCA"
+    agrovoc_uri: "http://aims.fao.org/aos/agrovoc/c_2048"
+    common_names: { es: "alcachofa", en: "artichoke", eu: "alkatxofa", fr: "artichaut", ca: "carxofa", pt: "alcachofra" }
+
+  cardoon:
+    scientific_name: "Cynara cardunculus"
+    eppo_code: "CYUCD"
+    agrovoc_uri: "http://aims.fao.org/aos/agrovoc/c_2047"
+    common_names: { es: "cardo", en: "cardoon", eu: "kardu", fr: "cardon", ca: "card", pt: "cardo" }
+
+  asparagus:
+    scientific_name: "Asparagus officinalis"
+    eppo_code: "ASPOF"
+    agrovoc_uri: "http://aims.fao.org/aos/agrovoc/c_673"
+    common_names: { es: "espárrago", en: "asparagus", eu: "zainzuri", fr: "asperge", ca: "espàrrec", pt: "espargo" }
+
+  melon:
+    scientific_name: "Cucumis melo"
+    eppo_code: "CUMME"
+    agrovoc_uri: "http://aims.fao.org/aos/agrovoc/c_2003"
+    common_names: { es: "melón", en: "melon", eu: "meloi", fr: "melon", ca: "meló", pt: "melão" }
+
+  # ===========================================================================
+  # FRUITS, NUTS & VINES
+  # ===========================================================================
+
+  grapevine:
+    scientific_name: "Vitis vinifera"
+    eppo_code: "VITVI"
+    agrovoc_uri: "http://aims.fao.org/aos/agrovoc/c_8283"
+    common_names: { es: "vid", en: "grapevine", eu: "mahatsondo", fr: "vigne", ca: "vinya", pt: "videira" }
+
+  olive:
+    scientific_name: "Olea europaea"
+    eppo_code: "OLVEU"
+    agrovoc_uri: "http://aims.fao.org/aos/agrovoc/c_5339"
+    common_names: { es: "olivo", en: "olive", eu: "olibondo", fr: "olivier", ca: "olivera", pt: "oliveira" }
+
+  almond:
+    scientific_name: "Prunus dulcis"
+    eppo_code: "PRNDU"
+    agrovoc_uri: "http://aims.fao.org/aos/agrovoc/c_6180"
+    common_names: { es: "almendro", en: "almond", eu: "arbendol", fr: "amandier", ca: "ametller", pt: "amendoeira" }
+
+  pistachio:
+    scientific_name: "Pistacia vera"
+    eppo_code: "PIAVE"
+    agrovoc_uri: "http://aims.fao.org/aos/agrovoc/c_5981"
+    common_names: { es: "pistacho", en: "pistachio", eu: "pistatxo", fr: "pistachier", ca: "pistatxer", pt: "pistacheiro" }
+
+  apple:
+    scientific_name: "Malus domestica"
+    eppo_code: "MABSD"
+    agrovoc_uri: "http://aims.fao.org/aos/agrovoc/c_4555"
+    common_names: { es: "manzano", en: "apple", eu: "sagar", fr: "pommier", ca: "pomera", pt: "macieira" }
+
+  pear:
+    scientific_name: "Pyrus communis"
+    eppo_code: "PYUCO"
+    agrovoc_uri: "http://aims.fao.org/aos/agrovoc/c_6393"
+    common_names: { es: "peral", en: "pear", eu: "udare", fr: "poirier", ca: "perera", pt: "pereira" }
+
+  peach:
+    scientific_name: "Prunus persica"
+    eppo_code: "PRNPS"
+    agrovoc_uri: "http://aims.fao.org/aos/agrovoc/c_6281"
+    common_names: { es: "melocotonero", en: "peach", eu: "mertxika", fr: "pêcher", ca: "presseguer", pt: "pessegueiro" }
+
+  apricot:
+    scientific_name: "Prunus armeniaca"
+    eppo_code: "PRNAR"
+    agrovoc_uri: "http://aims.fao.org/aos/agrovoc/c_6196"
+    common_names: { es: "albaricoquero", en: "apricot", eu: "abrikot", fr: "abricotier", ca: "albercoquer", pt: "damasqueiro" }
+
+  plum:
+    scientific_name: "Prunus domestica"
+    eppo_code: "PRNDO"
+    agrovoc_uri: "http://aims.fao.org/aos/agrovoc/c_6284"
+    common_names: { es: "ciruelo", en: "plum", eu: "aran", fr: "prunier", ca: "prunera", pt: "ameixeira" }
+
+  cherry:
+    scientific_name: "Prunus avium"
+    eppo_code: "PRNAV"
+    agrovoc_uri: "http://aims.fao.org/aos/agrovoc/c_6278"
+    common_names: { es: "cerezo", en: "cherry", eu: "gerezi", fr: "cerisier", ca: "cirerer", pt: "cerejeira" }
+
+  strawberry:
+    scientific_name: "Fragaria × ananassa"
+    eppo_code: "FRAAN"
+    agrovoc_uri: "http://aims.fao.org/aos/agrovoc/c_3082"
+    common_names: { es: "fresa", en: "strawberry", eu: "marrubi", fr: "fraisier", ca: "maduixera", pt: "morangueiro" }
+
+# =============================================================================
+# EPPO CODE INDEX — resolves EPPO codes to canonical slugs
+# Auto-generated from species entries above. DO NOT EDIT MANUALLY.
+# =============================================================================
+_eppo_index:
+  TRZAX: wheat
+  HORVX: barley
+  ZEAMA: maize
+  ORYSA: rice
+  AVESA: oat
+  SECCE: rye
+  FAGES: buckwheat
+  GLXMA: soybean
+  CIEAR: chickpea
+  LENCU: lentil
+  PIBSX: pea
+  VICFX: faba_bean
+  VICSA: vetch
+  VICER: bitter_vetch
+  LTHSA: grass_pea
+  PHSVX: bean
+  MEDSA: alfalfa
+  HELAN: sunflower
+  BRSNN: rapeseed
+  BEAVX: sugar_beet
+  CNISA: hemp
+  LIUUT: flax
+  SOLTU: potato
+  LYPES: tomato
+  CPSAN: pepper
+  SOLME: eggplant
+  BRSOK: broccoli
+  ALLPO: leek
+  ALLSA: garlic
+  ALLCE: onion
+  CYUCA: artichoke
+  CYUCD: cardoon
+  ASPOF: asparagus
+  CUMME: melon
+  VITVI: grapevine
+  OLVEU: olive
+  PRNDU: almond
+  PIAVE: pistachio
+  MABSD: apple
+  PYUCO: pear
+  PRNPS: peach
+  PRNAR: apricot
+  PRNDO: plum
+  PRNAV: cherry
+  FRAAN: strawberry
