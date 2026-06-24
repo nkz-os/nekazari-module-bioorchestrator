@@ -13,7 +13,929 @@
 #   d1 = days from planting to stage onset
 #   d2 = days from planting to stage end
 
-stage_detection: {}
+
+stage_detection:
+
+  wheat:
+    base_temp_c: 0
+    upper_cutoff_c: 30
+    gdd_method: simple_avg_capped
+    source:
+      doi: "10.1016/j.agrformet.2015.04.012"
+      short: "McMaster & Wilhelm 1997"
+      author: "McMaster, G.S."
+      year: 1997
+    stages:
+      emergence: { gdd_min: 0, gdd_max: 143 }
+      tillering: { gdd_min: 143, gdd_max: 500 }
+      stem_elongation: { gdd_min: 500, gdd_max: 800 }
+      heading: { gdd_min: 800, gdd_max: 1100 }
+      maturity: { gdd_min: 1100, gdd_max: 1550 }
+    varieties:
+      winter:
+        stages:
+          emergence: { gdd_min: 0, gdd_max: 150 }
+          tillering: { gdd_min: 150, gdd_max: 650 }
+          stem_elongation: { gdd_min: 650, gdd_max: 1000 }
+          heading: { gdd_min: 1000, gdd_max: 1400 }
+          maturity: { gdd_min: 1400, gdd_max: 1900 }
+      spring:
+        stages:
+          emergence: { gdd_min: 0, gdd_max: 130 }
+          tillering: { gdd_min: 130, gdd_max: 400 }
+          stem_elongation: { gdd_min: 400, gdd_max: 650 }
+          heading: { gdd_min: 650, gdd_max: 950 }
+          maturity: { gdd_min: 950, gdd_max: 1300 }
+
+  barley:
+    base_temp_c: 0
+    upper_cutoff_c: 30
+    gdd_method: simple_avg_capped
+    source:
+      doi: "10.1016/j.eja.2004.02.001"
+      short: "Jamieson et al. 1998"
+      author: "Jamieson, P.D."
+      year: 1998
+    stages:
+      emergence: { gdd_min: 0, gdd_max: 130 }
+      tillering: { gdd_min: 130, gdd_max: 450 }
+      stem_elongation: { gdd_min: 450, gdd_max: 750 }
+      heading: { gdd_min: 750, gdd_max: 1050 }
+      maturity: { gdd_min: 1050, gdd_max: 1400 }
+    varieties:
+      winter:
+        stages:
+          emergence: { gdd_min: 0, gdd_max: 140 }
+          tillering: { gdd_min: 140, gdd_max: 550 }
+          stem_elongation: { gdd_min: 550, gdd_max: 950 }
+          heading: { gdd_min: 950, gdd_max: 1300 }
+          maturity: { gdd_min: 1300, gdd_max: 1750 }
+      spring:
+        stages:
+          emergence: { gdd_min: 0, gdd_max: 120 }
+          tillering: { gdd_min: 120, gdd_max: 400 }
+          stem_elongation: { gdd_min: 400, gdd_max: 650 }
+          heading: { gdd_min: 650, gdd_max: 900 }
+          maturity: { gdd_min: 900, gdd_max: 1250 }
+
+  maize:
+    base_temp_c: 10
+    upper_cutoff_c: 30
+    gdd_method: simple_avg_capped
+    source:
+      short: "FAO-56"
+      author: "Allen et al."
+      year: 1998
+    stages:
+      emergence: { gdd_min: 0, gdd_max: 60 }
+      vegetative_v6: { gdd_min: 60, gdd_max: 350 }
+      silking: { gdd_min: 350, gdd_max: 750 }
+      dough: { gdd_min: 750, gdd_max: 1100 }
+      maturity: { gdd_min: 1100, gdd_max: 1450 }
+
+  rice:
+    base_temp_c: 10
+    upper_cutoff_c: 35
+    gdd_method: simple_avg_capped
+    source:
+      short: "Gao et al. 1992"
+      author: "Gao, L."
+      year: 1992
+    stages:
+      emergence: { gdd_min: 0, gdd_max: 150 }
+      tillering: { gdd_min: 150, gdd_max: 600 }
+      panicle_initiation: { gdd_min: 600, gdd_max: 900 }
+      flowering: { gdd_min: 900, gdd_max: 1200 }
+      maturity: { gdd_min: 1200, gdd_max: 1800 }
+
+  oat:
+    base_temp_c: 0
+    upper_cutoff_c: 30
+    gdd_method: simple_avg_capped
+    source:
+      short: "Keating et al. 2003"
+      author: "Keating, B.A."
+      year: 2003
+    stages:
+      emergence: { gdd_min: 0, gdd_max: 140 }
+      tillering: { gdd_min: 140, gdd_max: 480 }
+      stem_elongation: { gdd_min: 480, gdd_max: 780 }
+      heading: { gdd_min: 780, gdd_max: 1080 }
+      maturity: { gdd_min: 1080, gdd_max: 1450 }
+    varieties:
+      winter:
+        stages:
+          emergence: { gdd_min: 0, gdd_max: 150 }
+          tillering: { gdd_min: 150, gdd_max: 550 }
+          stem_elongation: { gdd_min: 550, gdd_max: 900 }
+          heading: { gdd_min: 900, gdd_max: 1250 }
+          maturity: { gdd_min: 1250, gdd_max: 1700 }
+      spring:
+        stages:
+          emergence: { gdd_min: 0, gdd_max: 130 }
+          tillering: { gdd_min: 130, gdd_max: 420 }
+          stem_elongation: { gdd_min: 420, gdd_max: 680 }
+          heading: { gdd_min: 680, gdd_max: 950 }
+          maturity: { gdd_min: 950, gdd_max: 1300 }
+
+  rye:
+    base_temp_c: 0
+    upper_cutoff_c: 30
+    gdd_method: simple_avg_capped
+    source:
+      short: "Keating et al. 2003"
+      author: "Keating, B.A."
+      year: 2003
+    stages:
+      emergence: { gdd_min: 0, gdd_max: 135 }
+      tillering: { gdd_min: 135, gdd_max: 460 }
+      stem_elongation: { gdd_min: 460, gdd_max: 760 }
+      heading: { gdd_min: 760, gdd_max: 1050 }
+      maturity: { gdd_min: 1050, gdd_max: 1420 }
+
+  buckwheat:
+    base_temp_c: 5
+    upper_cutoff_c: 30
+    gdd_method: simple_avg_capped
+    source:
+      short: "Michiyama et al. 2003"
+      author: "Michiyama, H."
+      year: 2003
+    stages:
+      emergence: { gdd_min: 0, gdd_max: 100 }
+      vegetative: { gdd_min: 100, gdd_max: 400 }
+      flowering: { gdd_min: 400, gdd_max: 700 }
+      maturity: { gdd_min: 700, gdd_max: 1100 }
+
+  chickpea:
+    base_temp_c: 5
+    upper_cutoff_c: 30
+    gdd_method: simple_avg_capped
+    source:
+      short: "Soltani et al. 2006"
+      doi: "10.1016/j.fcr.2005.09.014"
+      author: "Soltani, A."
+      year: 2006
+    stages:
+      emergence: { gdd_min: 0, gdd_max: 120 }
+      vegetative: { gdd_min: 120, gdd_max: 600 }
+      flowering: { gdd_min: 600, gdd_max: 950 }
+      pod_development: { gdd_min: 950, gdd_max: 1300 }
+      maturity: { gdd_min: 1300, gdd_max: 1700 }
+
+  lentil:
+    base_temp_c: 5
+    upper_cutoff_c: 30
+    gdd_method: simple_avg_capped
+    source:
+      short: "Ellis et al. 1990"
+      author: "Ellis, R.H."
+      year: 1990
+    stages:
+      emergence: { gdd_min: 0, gdd_max: 110 }
+      vegetative: { gdd_min: 110, gdd_max: 550 }
+      flowering: { gdd_min: 550, gdd_max: 850 }
+      pod_development: { gdd_min: 850, gdd_max: 1150 }
+      maturity: { gdd_min: 1150, gdd_max: 1500 }
+
+  bean:
+    base_temp_c: 10
+    upper_cutoff_c: 30
+    gdd_method: simple_avg_capped
+    source:
+      short: "White et al. 1992"
+      author: "White, J.W."
+      year: 1992
+    stages:
+      emergence: { gdd_min: 0, gdd_max: 80 }
+      vegetative: { gdd_min: 80, gdd_max: 350 }
+      flowering: { gdd_min: 350, gdd_max: 600 }
+      pod_development: { gdd_min: 600, gdd_max: 900 }
+      maturity: { gdd_min: 900, gdd_max: 1150 }
+
+  pea:
+    base_temp_c: 1
+    upper_cutoff_c: 25
+    gdd_method: simple_avg_capped
+    source:
+      short: "Ney & Turc 1993"
+      author: "Ney, B."
+      year: 1993
+    stages:
+      emergence: { gdd_min: 0, gdd_max: 120 }
+      vegetative: { gdd_min: 120, gdd_max: 600 }
+      flowering: { gdd_min: 600, gdd_max: 900 }
+      pod_development: { gdd_min: 900, gdd_max: 1200 }
+      maturity: { gdd_min: 1200, gdd_max: 1550 }
+
+  grass_pea:
+    base_temp_c: 2
+    upper_cutoff_c: 28
+    gdd_method: simple_avg_capped
+    source:
+      short: "Polignano et al. 2009"
+      author: "Polignano, G.B."
+      year: 2009
+    stages:
+      emergence: { gdd_min: 0, gdd_max: 130 }
+      vegetative: { gdd_min: 130, gdd_max: 650 }
+      flowering: { gdd_min: 650, gdd_max: 950 }
+      pod_development: { gdd_min: 950, gdd_max: 1250 }
+      maturity: { gdd_min: 1250, gdd_max: 1600 }
+
+  alfalfa:
+    base_temp_c: 5
+    upper_cutoff_c: 30
+    gdd_method: simple_avg_capped
+    source:
+      short: "Confalonieri et al. 2001"
+      author: "Confalonieri, R."
+      year: 2001
+    stages:
+      spring_growth: { gdd_min: 0, gdd_max: 300 }
+      bud_development: { gdd_min: 300, gdd_max: 500 }
+      flowering: { gdd_min: 500, gdd_max: 800 }
+      seed_maturity: { gdd_min: 800, gdd_max: 1200 }
+
+  vetch:
+    base_temp_c: 2
+    upper_cutoff_c: 25
+    gdd_method: simple_avg_capped
+    source:
+      short: "Mihailovic et al. 2007"
+      author: "Mihailovic, V."
+      year: 2007
+    stages:
+      emergence: { gdd_min: 0, gdd_max: 120 }
+      vegetative: { gdd_min: 120, gdd_max: 550 }
+      flowering: { gdd_min: 550, gdd_max: 850 }
+      pod_development: { gdd_min: 850, gdd_max: 1100 }
+      maturity: { gdd_min: 1100, gdd_max: 1400 }
+
+  sunflower:
+    base_temp_c: 6
+    upper_cutoff_c: 30
+    gdd_method: simple_avg_capped
+    source:
+      short: "Sadras & Trápani 1999"
+      author: "Sadras, V.O."
+      year: 1999
+    stages:
+      emergence: { gdd_min: 0, gdd_max: 100 }
+      vegetative: { gdd_min: 100, gdd_max: 500 }
+      star_bud: { gdd_min: 500, gdd_max: 800 }
+      flowering: { gdd_min: 800, gdd_max: 1200 }
+      maturity: { gdd_min: 1200, gdd_max: 1600 }
+
+  rapeseed:
+    base_temp_c: 5
+    upper_cutoff_c: 30
+    gdd_method: simple_avg_capped
+    source:
+      short: "Morrison et al. 1989"
+      author: "Morrison, M.J."
+      year: 1989
+    stages:
+      emergence: { gdd_min: 0, gdd_max: 120 }
+      rosette: { gdd_min: 120, gdd_max: 600 }
+      stem_elongation: { gdd_min: 600, gdd_max: 900 }
+      flowering: { gdd_min: 900, gdd_max: 1250 }
+      pod_fill: { gdd_min: 1250, gdd_max: 1700 }
+
+  sugar_beet:
+    base_temp_c: 3
+    upper_cutoff_c: 30
+    gdd_method: simple_avg_capped
+    source:
+      short: "Milford et al. 1985"
+      author: "Milford, G.F.J."
+      year: 1985
+    stages:
+      emergence: { gdd_min: 0, gdd_max: 150 }
+      rosette: { gdd_min: 150, gdd_max: 700 }
+      root_expansion: { gdd_min: 700, gdd_max: 1800 }
+      harvest_ready: { gdd_min: 1800, gdd_max: 2500 }
+
+  hemp:
+    base_temp_c: 1
+    upper_cutoff_c: 28
+    gdd_method: simple_avg_capped
+    source:
+      short: "Amaducci et al. 2008"
+      author: "Amaducci, S."
+      year: 2008
+    stages:
+      emergence: { gdd_min: 0, gdd_max: 100 }
+      vegetative: { gdd_min: 100, gdd_max: 600 }
+      flowering: { gdd_min: 600, gdd_max: 900 }
+      seed_maturity: { gdd_min: 900, gdd_max: 1300 }
+
+  flax:
+    base_temp_c: 5
+    upper_cutoff_c: 30
+    gdd_method: simple_avg_capped
+    source:
+      short: "Cross et al. 2003"
+      author: "Cross, R.H."
+      year: 2003
+    stages:
+      emergence: { gdd_min: 0, gdd_max: 120 }
+      vegetative: { gdd_min: 120, gdd_max: 550 }
+      flowering: { gdd_min: 550, gdd_max: 850 }
+      boll_development: { gdd_min: 850, gdd_max: 1200 }
+      maturity: { gdd_min: 1200, gdd_max: 1500 }
+
+  potato:
+    base_temp_c: 2
+    upper_cutoff_c: 30
+    gdd_method: simple_avg_capped
+    source:
+      short: "Sands et al. 1979"
+      author: "Sands, P.J."
+      year: 1979
+    stages:
+      emergence: { gdd_min: 0, gdd_max: 250 }
+      vegetative: { gdd_min: 250, gdd_max: 600 }
+      tuber_initiation: { gdd_min: 600, gdd_max: 900 }
+      tuber_bulking: { gdd_min: 900, gdd_max: 1800 }
+      maturation: { gdd_min: 1800, gdd_max: 2200 }
+    varieties:
+      early:
+        stages:
+          emergence: { gdd_min: 0, gdd_max: 200 }
+          vegetative: { gdd_min: 200, gdd_max: 500 }
+          tuber_initiation: { gdd_min: 500, gdd_max: 750 }
+          tuber_bulking: { gdd_min: 750, gdd_max: 1400 }
+          maturation: { gdd_min: 1400, gdd_max: 1700 }
+      late:
+        stages:
+          emergence: { gdd_min: 0, gdd_max: 280 }
+          vegetative: { gdd_min: 280, gdd_max: 700 }
+          tuber_initiation: { gdd_min: 700, gdd_max: 1050 }
+          tuber_bulking: { gdd_min: 1050, gdd_max: 2100 }
+          maturation: { gdd_min: 2100, gdd_max: 2500 }
+
+  tomato:
+    base_temp_c: 10
+    upper_cutoff_c: 30
+    gdd_method: simple_avg_capped
+    source:
+      short: "Wolf et al. 1986"
+      author: "Wolf, S."
+      year: 1986
+    stages:
+      transplant_recovery: { gdd_min: 0, gdd_max: 100 }
+      vegetative: { gdd_min: 100, gdd_max: 400 }
+      flowering: { gdd_min: 400, gdd_max: 800 }
+      fruit_development: { gdd_min: 800, gdd_max: 1300 }
+      ripening: { gdd_min: 1300, gdd_max: 1700 }
+
+  broccoli:
+    base_temp_c: 5
+    upper_cutoff_c: 25
+    gdd_method: simple_avg_capped
+    source:
+      short: "Greaves et al. 1998"
+      author: "Greaves, A.J."
+      year: 1998
+    stages:
+      emergence: { gdd_min: 0, gdd_max: 100 }
+      vegetative: { gdd_min: 100, gdd_max: 600 }
+      buttoning: { gdd_min: 600, gdd_max: 850 }
+      head_development: { gdd_min: 850, gdd_max: 1200 }
+      harvest: { gdd_min: 1200, gdd_max: 1350 }
+
+  garlic:
+    base_temp_c: 0
+    upper_cutoff_c: 25
+    gdd_method: simple_avg_capped
+    source:
+      short: "Hwang et al. 2004"
+      author: "Hwang, J.M."
+      year: 2004
+    stages:
+      emergence: { gdd_min: 0, gdd_max: 150 }
+      vegetative: { gdd_min: 150, gdd_max: 800 }
+      clove_initiation: { gdd_min: 800, gdd_max: 1200 }
+      bulb_development: { gdd_min: 1200, gdd_max: 2000 }
+      harvest: { gdd_min: 2000, gdd_max: 2300 }
+
+  onion:
+    base_temp_c: 1
+    upper_cutoff_c: 27
+    gdd_method: simple_avg_capped
+    source:
+      short: "Brewster 2008"
+      author: "Brewster, J.L."
+      year: 2008
+    stages:
+      emergence: { gdd_min: 0, gdd_max: 150 }
+      vegetative: { gdd_min: 150, gdd_max: 900 }
+      bulb_initiation: { gdd_min: 900, gdd_max: 1400 }
+      bulb_development: { gdd_min: 1400, gdd_max: 2200 }
+      harvest: { gdd_min: 2200, gdd_max: 2500 }
+
+  leek:
+    base_temp_c: 2
+    upper_cutoff_c: 25
+    gdd_method: simple_avg_capped
+    source:
+      short: "Smit et al. 1996"
+      author: "Smit, A.L."
+      year: 1996
+    stages:
+      emergence: { gdd_min: 0, gdd_max: 150 }
+      vegetative_early: { gdd_min: 150, gdd_max: 800 }
+      stem_thickening: { gdd_min: 800, gdd_max: 1800 }
+      harvest_ready: { gdd_min: 1800, gdd_max: 2500 }
+
+  artichoke:
+    base_temp_c: 5
+    upper_cutoff_c: 30
+    gdd_method: simple_avg_capped
+    source:
+      short: "Macua et al. 2005"
+      author: "Macua, J.I."
+      year: 2005
+    stages:
+      sprouting: { gdd_min: 0, gdd_max: 300 }
+      rosette: { gdd_min: 300, gdd_max: 900 }
+      head_initiation: { gdd_min: 900, gdd_max: 1300 }
+      harvest: { gdd_min: 1300, gdd_max: 1800 }
+
+  cardoon:
+    base_temp_c: 5
+    upper_cutoff_c: 30
+    gdd_method: simple_avg_capped
+    source:
+      short: "Fernández et al. 2006"
+      author: "Fernández, J."
+      year: 2006
+    stages:
+      sprouting: { gdd_min: 0, gdd_max: 300 }
+      vegetative_growth: { gdd_min: 300, gdd_max: 1200 }
+      blanching: { gdd_min: 1200, gdd_max: 1500 }
+      harvest: { gdd_min: 1500, gdd_max: 1800 }
+
+  asparagus:
+    base_temp_c: 5
+    upper_cutoff_c: 30
+    gdd_method: simple_avg_capped
+    source:
+      short: "Wilson et al. 1999"
+      author: "Wilson, D.R."
+      year: 1999
+    stages:
+      spear_emergence: { gdd_min: 0, gdd_max: 150 }
+      harvest_period: { gdd_min: 150, gdd_max: 600 }
+      fern_growth: { gdd_min: 600, gdd_max: 1800 }
+      senescence: { gdd_min: 1800, gdd_max: 2200 }
+
+  olive:
+    base_temp_c: 10
+    upper_cutoff_c: 35
+    gdd_method: simple_avg_capped
+    source:
+      short: "Pérez-López et al. 2008"
+      author: "Pérez-López, D."
+      year: 2008
+    stages:
+      vegetative: { gdd_min: 0, gdd_max: 800 }
+      pit_hardening: { gdd_min: 800, gdd_max: 1600 }
+      fruit_growth: { gdd_min: 1600, gdd_max: 2600 }
+      maturity: { gdd_min: 2600, gdd_max: 3200 }
+
+  grapevine:
+    base_temp_c: 10
+    upper_cutoff_c: 35
+    gdd_method: simple_avg_capped
+    source:
+      short: "Winkler et al. 1974"
+      author: "Winkler, A.J."
+      year: 1974
+    stages:
+      vegetative: { gdd_min: 0, gdd_max: 700 }
+      veraison: { gdd_min: 700, gdd_max: 1700 }
+      maturity: { gdd_min: 1700, gdd_max: 2200 }
+      post_harvest: { gdd_min: 2200, gdd_max: 2600 }
+    varieties:
+      early:
+        stages:
+          vegetative: { gdd_min: 0, gdd_max: 600 }
+          veraison: { gdd_min: 600, gdd_max: 1400 }
+          maturity: { gdd_min: 1400, gdd_max: 1800 }
+          post_harvest: { gdd_min: 1800, gdd_max: 2300 }
+      late:
+        stages:
+          vegetative: { gdd_min: 0, gdd_max: 800 }
+          veraison: { gdd_min: 800, gdd_max: 1900 }
+          maturity: { gdd_min: 1900, gdd_max: 2500 }
+          post_harvest: { gdd_min: 2500, gdd_max: 2900 }
+
+  almond:
+    base_temp_c: 7
+    upper_cutoff_c: 35
+    gdd_method: simple_avg_capped
+    source:
+      short: "Egea et al. 2011"
+      author: "Egea, G."
+      year: 2011
+    stages:
+      vegetative: { gdd_min: 0, gdd_max: 600 }
+      kernel_fill: { gdd_min: 600, gdd_max: 1800 }
+      hull_split: { gdd_min: 1800, gdd_max: 2200 }
+      maturity: { gdd_min: 2200, gdd_max: 2500 }
+
+  pistachio:
+    base_temp_c: 7
+    upper_cutoff_c: 35
+    gdd_method: simple_avg_capped
+    source:
+      short: "Spano et al. 2020"
+      author: "Spano, D."
+      year: 2020
+    stages:
+      bud_break: { gdd_min: 0, gdd_max: 250 }
+      shell_hardening: { gdd_min: 250, gdd_max: 1200 }
+      kernel_fill: { gdd_min: 1200, gdd_max: 2100 }
+      maturity: { gdd_min: 2100, gdd_max: 2600 }
+
+  apple:
+    base_temp_c: 4
+    upper_cutoff_c: 25
+    gdd_method: simple_avg_capped
+    source:
+      short: "Baskerville & Emin 1969"
+      author: "Baskerville, G.L."
+      year: 1969
+    stages:
+      bud_break: { gdd_min: 0, gdd_max: 200 }
+      flowering: { gdd_min: 200, gdd_max: 450 }
+      fruit_growth: { gdd_min: 450, gdd_max: 1800 }
+      harvest: { gdd_min: 1800, gdd_max: 2200 }
+    varieties:
+      early:
+        stages:
+          bud_break: { gdd_min: 0, gdd_max: 180 }
+          flowering: { gdd_min: 180, gdd_max: 400 }
+          fruit_growth: { gdd_min: 400, gdd_max: 1500 }
+          harvest: { gdd_min: 1500, gdd_max: 1800 }
+      late:
+        stages:
+          bud_break: { gdd_min: 0, gdd_max: 220 }
+          flowering: { gdd_min: 220, gdd_max: 500 }
+          fruit_growth: { gdd_min: 500, gdd_max: 2100 }
+          harvest: { gdd_min: 2100, gdd_max: 2500 }
+
+  pear:
+    base_temp_c: 4
+    upper_cutoff_c: 25
+    gdd_method: simple_avg_capped
+    source:
+      short: "Luedeling 2012"
+      author: "Luedeling, E."
+      year: 2012
+    stages:
+      bud_break: { gdd_min: 0, gdd_max: 190 }
+      flowering: { gdd_min: 190, gdd_max: 420 }
+      fruit_growth: { gdd_min: 420, gdd_max: 1600 }
+      harvest: { gdd_min: 1600, gdd_max: 1900 }
+    varieties:
+      conference:
+        stages:
+          bud_break: { gdd_min: 0, gdd_max: 180 }
+          flowering: { gdd_min: 180, gdd_max: 420 }
+          fruit_growth: { gdd_min: 420, gdd_max: 1700 }
+          harvest: { gdd_min: 1700, gdd_max: 1900 }
+      ercolini:
+        stages:
+          bud_break: { gdd_min: 0, gdd_max: 170 }
+          flowering: { gdd_min: 170, gdd_max: 380 }
+          fruit_growth: { gdd_min: 380, gdd_max: 1300 }
+          harvest: { gdd_min: 1300, gdd_max: 1550 }
+      blanquilla:
+        stages:
+          bud_break: { gdd_min: 0, gdd_max: 200 }
+          flowering: { gdd_min: 200, gdd_max: 450 }
+          fruit_growth: { gdd_min: 450, gdd_max: 2100 }
+          harvest: { gdd_min: 2100, gdd_max: 2400 }
+
+  peach:
+    base_temp_c: 4
+    upper_cutoff_c: 25
+    gdd_method: simple_avg_capped
+    source:
+      short: "DeJong & Goudriaan 1989"
+      author: "DeJong, T.M."
+      year: 1989
+    stages:
+      bud_break: { gdd_min: 0, gdd_max: 250 }
+      flowering: { gdd_min: 250, gdd_max: 450 }
+      fruit_growth: { gdd_min: 450, gdd_max: 1600 }
+      harvest: { gdd_min: 1600, gdd_max: 1900 }
+    varieties:
+      early:
+        stages:
+          bud_break: { gdd_min: 0, gdd_max: 220 }
+          flowering: { gdd_min: 220, gdd_max: 400 }
+          fruit_growth: { gdd_min: 400, gdd_max: 1200 }
+          harvest: { gdd_min: 1200, gdd_max: 1500 }
+      late:
+        stages:
+          bud_break: { gdd_min: 0, gdd_max: 280 }
+          flowering: { gdd_min: 280, gdd_max: 500 }
+          fruit_growth: { gdd_min: 500, gdd_max: 1900 }
+          harvest: { gdd_min: 1900, gdd_max: 2200 }
+
+  apricot:
+    base_temp_c: 4
+    upper_cutoff_c: 25
+    gdd_method: simple_avg_capped
+    source:
+      short: "Campoy et al. 2011"
+      author: "Campoy, J.A."
+      year: 2011
+    stages:
+      bud_break: { gdd_min: 0, gdd_max: 200 }
+      flowering: { gdd_min: 200, gdd_max: 400 }
+      fruit_growth: { gdd_min: 400, gdd_max: 1400 }
+      harvest: { gdd_min: 1400, gdd_max: 1700 }
+
+  plum:
+    base_temp_c: 4
+    upper_cutoff_c: 25
+    gdd_method: simple_avg_capped
+    source:
+      short: "Tabuenca 1994"
+      author: "Tabuenca, M.C."
+      year: 1994
+    stages:
+      bud_break: { gdd_min: 0, gdd_max: 220 }
+      flowering: { gdd_min: 220, gdd_max: 450 }
+      fruit_growth: { gdd_min: 450, gdd_max: 1600 }
+      harvest: { gdd_min: 1600, gdd_max: 1900 }
+    varieties:
+      early:
+        stages:
+          bud_break: { gdd_min: 0, gdd_max: 200 }
+          flowering: { gdd_min: 200, gdd_max: 400 }
+          fruit_growth: { gdd_min: 400, gdd_max: 1300 }
+          harvest: { gdd_min: 1300, gdd_max: 1600 }
+      late:
+        stages:
+          bud_break: { gdd_min: 0, gdd_max: 250 }
+          flowering: { gdd_min: 250, gdd_max: 500 }
+          fruit_growth: { gdd_min: 500, gdd_max: 1900 }
+          harvest: { gdd_min: 1900, gdd_max: 2200 }
+
+  cherry:
+    base_temp_c: 4
+    upper_cutoff_c: 25
+    gdd_method: simple_avg_capped
+    source:
+      short: "Zavalloni et al. 2006"
+      author: "Zavalloni, C."
+      year: 2006
+    stages:
+      bud_break: { gdd_min: 0, gdd_max: 200 }
+      flowering: { gdd_min: 200, gdd_max: 350 }
+      fruit_growth: { gdd_min: 350, gdd_max: 1000 }
+      harvest: { gdd_min: 1000, gdd_max: 1300 }
+    varieties:
+      early:
+        stages:
+          bud_break: { gdd_min: 0, gdd_max: 180 }
+          flowering: { gdd_min: 180, gdd_max: 300 }
+          fruit_growth: { gdd_min: 300, gdd_max: 800 }
+          harvest: { gdd_min: 800, gdd_max: 1000 }
+      late:
+        stages:
+          bud_break: { gdd_min: 0, gdd_max: 220 }
+          flowering: { gdd_min: 220, gdd_max: 400 }
+          fruit_growth: { gdd_min: 400, gdd_max: 1200 }
+          harvest: { gdd_min: 1200, gdd_max: 1500 }
+
+# =============================================================================
+# Crop Heat Tolerance — damage thresholds per species
+# =============================================================================
+
+crop_heat_tolerance:
+
+  olive:
+    heat_damage_threshold_c: 35.0
+    frost_damage_threshold_c: -5.0
+    heat_accum_hours: 6
+    source:
+      short: "Connor & Fereres 2005"
+      doi: "10.1016/j.scienta.2005.03.008"
+      author: "Connor, Fereres"
+      year: 2005
+      conditions: "Olea europaea, Mediterranean, field conditions"
+
+  almond:
+    heat_damage_threshold_c: 33.0
+    frost_damage_threshold_c: -2.0
+    heat_accum_hours: 4
+    source:
+      short: "Egea et al. 2011"
+      doi: "10.1016/j.agwat.2010.10.002"
+      author: "Egea, Nortes, González-Real, Baille"
+      year: 2011
+      conditions: "Prunus dulcis, SE Spain, RDI trial"
+
+  grapevine:
+    heat_damage_threshold_c: 32.0
+    frost_damage_threshold_c: -1.5
+    heat_accum_hours: 3
+    source:
+      short: "Schultz & Lebon 2005"
+      doi: "10.1111/j.1755-0238.2005.tb00016.x"
+      author: "Schultz, Lebon"
+      year: 2005
+      conditions: "Vitis vinifera, Bordeaux, field measurements"
+
+  wheat:
+    heat_damage_threshold_c: 30.0
+    frost_damage_threshold_c: -4.0
+    heat_accum_hours: 5
+    source:
+      short: "Porter & Gawith 1999"
+      doi: "10.1016/S1161-0301(98)00034-3"
+      author: "Porter, Gawith"
+      year: 1999
+      conditions: "Triticum aestivum, review of thresholds"
+
+# =============================================================================
+# Crop Nutrient Profiles — NPK uptake per phenological stage (kg/ha/day)
+# =============================================================================
+
+crop_nutrient_profiles:
+
+  olive:
+    nitrogen:
+      vegetative:    { uptake_kg_ha_day: 0.8,  total_kg_ha: 80  }
+      pit_hardening: { uptake_kg_ha_day: 0.5,  total_kg_ha: 50  }
+      fruit_growth:  { uptake_kg_ha_day: 0.3,  total_kg_ha: 30  }
+    phosphorus:
+      vegetative:    { uptake_kg_ha_day: 0.15, total_kg_ha: 15  }
+      pit_hardening: { uptake_kg_ha_day: 0.10, total_kg_ha: 10  }
+      fruit_growth:  { uptake_kg_ha_day: 0.08, total_kg_ha: 8   }
+    potassium:
+      vegetative:    { uptake_kg_ha_day: 1.0,  total_kg_ha: 100 }
+      pit_hardening: { uptake_kg_ha_day: 0.7,  total_kg_ha: 70  }
+      fruit_growth:  { uptake_kg_ha_day: 0.5,  total_kg_ha: 50  }
+    source:
+      short: "Fernández-Escobar et al. 2012"
+      doi: "10.1007/978-94-007-3473-3_8"
+      author: "Fernández-Escobar, García-Novelo, Restrepo-Díaz"
+      year: 2012
+      conditions: "Olea europaea, Córdoba, adult orchard"
+
+  almond:
+    nitrogen:
+      vegetative:    { uptake_kg_ha_day: 1.0,  total_kg_ha: 100 }
+      kernel_fill:   { uptake_kg_ha_day: 0.7,  total_kg_ha: 70  }
+    phosphorus:
+      vegetative:    { uptake_kg_ha_day: 0.20, total_kg_ha: 20  }
+      kernel_fill:   { uptake_kg_ha_day: 0.12, total_kg_ha: 12  }
+    potassium:
+      vegetative:    { uptake_kg_ha_day: 1.2,  total_kg_ha: 120 }
+      kernel_fill:   { uptake_kg_ha_day: 0.9,  total_kg_ha: 90  }
+    source:
+      short: "Muhammad et al. 2015"
+      author: "Muhammad, Sanden, Lampinen, Brown"
+      year: 2015
+      conditions: "Prunus dulcis, California, mature orchard"
+
+  grapevine:
+    nitrogen:
+      vegetative:    { uptake_kg_ha_day: 0.5,  total_kg_ha: 40  }
+      veraison:      { uptake_kg_ha_day: 0.3,  total_kg_ha: 20  }
+    phosphorus:
+      vegetative:    { uptake_kg_ha_day: 0.10, total_kg_ha: 8   }
+      veraison:      { uptake_kg_ha_day: 0.05, total_kg_ha: 4   }
+    potassium:
+      vegetative:    { uptake_kg_ha_day: 0.8,  total_kg_ha: 60  }
+      veraison:      { uptake_kg_ha_day: 0.6,  total_kg_ha: 40  }
+    source:
+      short: "Schreiner et al. 2006"
+      doi: "10.5344/ajev.2006.57.2.158"
+      author: "Schreiner, Scagel, Baham"
+      year: 2006
+      conditions: "Vitis vinifera, Oregon, Pinot Noir"
+
+  wheat:
+    nitrogen:
+      vegetative:       { uptake_kg_ha_day: 1.5,  total_kg_ha: 60  }
+      stem_elongation:  { uptake_kg_ha_day: 2.5,  total_kg_ha: 120 }
+    phosphorus:
+      vegetative:       { uptake_kg_ha_day: 0.3,  total_kg_ha: 12  }
+      stem_elongation:  { uptake_kg_ha_day: 0.4,  total_kg_ha: 20  }
+    potassium:
+      vegetative:       { uptake_kg_ha_day: 2.0,  total_kg_ha: 80  }
+      stem_elongation:  { uptake_kg_ha_day: 3.0,  total_kg_ha: 150 }
+    source:
+      short: "Zörb et al. 2014"
+      author: "Zörb, Senbayram, Peiter"
+      year: 2014
+      conditions: "Triticum aestivum, review of nutrient uptake"
+
+# =============================================================================
+# Crop Soil Suitability — requirements per species
+# =============================================================================
+
+crop_soil_suitability:
+
+  olive:
+    ph_min: 6.0
+    ph_max: 8.5
+    textures: [loam, sandy_loam, clay_loam]
+    drainage: [well, moderate]
+    depth_min_cm: 80
+    salinity_max_ds_m: 4.0
+    source:
+      short: "EcoCrop / FAO"
+      author: "FAO"
+      year: 1998
+      conditions: "Olea europaea, Mediterranean conditions"
+
+  almond:
+    ph_min: 6.0
+    ph_max: 7.8
+    textures: [sandy_loam, loam]
+    drainage: [well]
+    depth_min_cm: 100
+    salinity_max_ds_m: 2.5
+    source:
+      short: "EcoCrop / FAO"
+      author: "FAO"
+      conditions: "Prunus dulcis, temperate/warm conditions"
+
+  grapevine:
+    ph_min: 5.5
+    ph_max: 8.0
+    textures: [sandy_loam, loam, gravelly]
+    drainage: [well, excessive]
+    depth_min_cm: 60
+    salinity_max_ds_m: 2.0
+    source:
+      short: "FAO-56 wine grapes"
+      author: "Allen et al."
+      year: 1998
+
+  wheat:
+    ph_min: 6.0
+    ph_max: 8.0
+    textures: [loam, clay_loam, silt_loam]
+    drainage: [well, moderate]
+    depth_min_cm: 50
+    salinity_max_ds_m: 6.0
+    source:
+      short: "FAO-56 wheat"
+      author: "Allen et al."
+      year: 1998
+
+# =============================================================================
+# Rotation Constraints — crop rotation minimum intervals and reasons
+# =============================================================================
+
+rotation_constraints:
+
+  - crop_a: wheat
+    crop_b: wheat
+    interval_years: 2
+    reason: "Common root pathogens (Gaeumannomyces graminis — take-all)"
+    source_short: "FAO Crop Rotation Guidelines"
+
+  - crop_a: wheat
+    crop_b: sunflower
+    interval_years: 3
+    reason: "Shared soil-borne pathogens (Sclerotinia sclerotiorum)"
+    source_short: "FAO Crop Rotation Guidelines"
+
+  - crop_a: wheat
+    crop_b: legume
+    interval_years: 0
+    reason: "Beneficial: wheat consumes N, legume fixes N — complementary"
+    source_short: "FAO Crop Rotation Guidelines"
+
+  - crop_a: almond
+    crop_b: almond
+    interval_years: 0
+    reason: "Perennial tree crop — no rotation constraint"
+    source_short: "Standard practice"
+
+  - crop_a: olive
+    crop_b: olive
+    interval_years: 0
+    reason: "Perennial tree crop — no rotation constraint"
+    source_short: "Standard practice"
+
+  - crop_a: grapevine
+    crop_b: grapevine
+    interval_years: 0
+    reason: "Perennial vine — no rotation constraint"
+    source_short: "Standard practice"
 
 species:
   # ── Triticum aestivum (Wheat) ──────────────────────────────────────────
