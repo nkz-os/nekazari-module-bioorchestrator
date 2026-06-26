@@ -1213,6 +1213,15 @@ class GraphDAO:
                 target_env["reference_lon"] = ref["lon"]
                 target_env["reference_elevation"] = ref["elevation"]
 
+        # Map human-readable irrigation regime to AGROVOC URIs stored in DB
+        irrigation_uri = None
+        if irrigation_regime:
+            irr_lower = irrigation_regime.lower().strip()
+            if irr_lower in ("secano", "rainfed", "secano/rainfed"):
+                irrigation_uri = "http://aims.fao.org/aos/agrovoc/c_6436"
+            elif irr_lower in ("regadío", "regadio", "irrigated", "irrigado"):
+                irrigation_uri = "http://aims.fao.org/aos/agrovoc/c_3954"
+
         # ── Step 2: find similar sites ──────────────────────────────────
         similar_sites_result = await self.get_similar_sites(
             climate_class=target_env.get("climate_class"),
@@ -1243,34 +1252,19 @@ class GraphDAO:
                       OR vt.cropScientific CONTAINS $crop
                       OR toLower(vt.cropScientific) = toLower($crop)
                   )
-                WITH vt.variety AS variety,
-                     COALESCE(vt.yieldKgHa, vt.yieldNoteS1 * 1000) AS yield_val,
-                     vt.year AS year,
-                     ts.name AS site_name,
-                     vt.irrigationRegime AS irrigation,
-                     vt.productionSystem AS production_system
-                ORDER BY variety, year
-                WITH variety,
-                     collect(DISTINCT year) AS years,
-                     collect(DISTINCT site_name) AS sites,
-                     collect(DISTINCT irrigation) AS irrigation_regimes,
-                     collect(DISTINCT production_system) AS production_systems,
-                     avg(yield_val) AS mean_yield,
-                     min(yield_val) AS min_yield,
-                     max(yield_val) AS max_yield,
-                     stDev(yield_val) AS stddev_yield,
+                WITH vt.varietyNormalized AS variety,
+                     collect(DISTINCT vt.year) AS years,
+                     collect(DISTINCT ts.name) AS sites,
+                     collect(DISTINCT vt.irrigationRegime) AS irrigation_regimes,
+                     collect(DISTINCT vt.productionSystem) AS production_systems,
+                     avg(COALESCE(vt.yieldKgHa, vt.yieldNoteS1 * 1000)) AS mean_yield,
+                     min(COALESCE(vt.yieldKgHa, vt.yieldNoteS1 * 1000)) AS min_yield,
+                     max(COALESCE(vt.yieldKgHa, vt.yieldNoteS1 * 1000)) AS max_yield,
+                     stDev(COALESCE(vt.yieldKgHa, vt.yieldNoteS1 * 1000)) AS stddev_yield,
                      count(*) AS trial_count
                 WHERE trial_count >= 1
-                  AND ($irrigation_regime IS NULL
-                       OR $irrigation_regime IN irrigation_regimes
-                       OR irrigation_regimes = []
-                       OR irrigation_regimes = [null]
-                       OR irrigation_regimes = [""])
-                  AND ($production_system IS NULL
-                       OR $production_system IN production_systems
-                       OR production_systems = []
-                       OR production_systems = [null]
-                       OR production_systems = [""])
+                  AND ($irrigation_uri IS NULL OR $irrigation_uri IN irrigation_regimes)
+                  AND ($production_system IS NULL OR $production_system IN production_systems)
                 RETURN variety,
                        mean_yield,
                        min_yield,
@@ -1286,7 +1280,7 @@ class GraphDAO:
                 """,
                 site_names=similar_site_names,
                 crop=crop,
-                irrigation_regime=irrigation_regime,
+                irrigation_uri=irrigation_uri,
                 production_system=None,  # Placeholder: future use when data exists
                 top_n=top_n,
             )
