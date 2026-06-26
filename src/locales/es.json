@@ -31,6 +31,18 @@
       "comparePlan": "Comparar y Planificar",
       "knowledgeBase": "Base de Conocimiento"
     },
+    "hubs": {
+      "navLabel": "Hubs de BioOrchestrator",
+      "planning": "Planificación",
+      "campaign": "Campaña",
+      "codex": "Codex",
+      "planningDescription": "Elige cultivos y variedades antes de la siembra.",
+      "campaignDescription": "Monitoriza estrés, proyección de rendimiento e riego durante la campaña.",
+      "codexDescription": "Consulta parámetros de especies, ensayos y datos de referencia.",
+      "activeCampaign": "Cultivo activo: {{crop}}",
+      "noCampaign": "Sin cultivo asignado en esta parcela",
+      "alertsAwareness": "{{count}} alerta(s) activa(s) — ver notificaciones de la plataforma"
+    },
     "cards": {
       "varietyFinder": {
         "title": "Buscador de Variedades",
@@ -99,10 +111,35 @@
       "dadis": {
         "title": "Explorador DAD-IS",
         "subtitle": "Descubrimiento de razas FAO — biodiversidad ganadera."
+      },
+      "wofostSimulation": {
+        "title": "Simulación WOFOST",
+        "subtitle": "Curva diaria de LAI y biomasa mecanicista para la parcela seleccionada."
       }
     },
     "backToDashboard": "← Volver al panel",
     "selectParcelPrompt": "Selecciona una parcela arriba para empezar"
+  },
+  "scenarioMode": {
+    "enabled": "Cultivo de exploración (qué pasaría si)",
+    "cropPlaceholder": "Selecciona cultivo a explorar…",
+    "pickCrop": "Elige un cultivo para el modo exploración",
+    "bannerTitle": "MODO EXPLORACIÓN — no es la campaña real",
+    "bannerBody": "Las herramientas de planificación usan el cultivo hipotético indicado abajo. No se modifica la asignación en la parcela.",
+    "bannerCampaignHint": "Las herramientas de campaña están desactivadas hasta que desactives el modo exploración.",
+    "campaignBlocked": "Herramientas de campaña no disponibles en modo exploración",
+    "campaignBlockedDetail": "Desactiva el modo exploración en la barra de parcela para ver la campaña real en curso.",
+    "campaignCardsBlocked": "Herramientas de campaña en pausa mientras el modo exploración está activo."
+  },
+  "wofostSimulation": {
+    "title": "Simulación WOFOST",
+    "subtitle": "Modelo mecanicista PCSE — LAI y biomasa diaria para esta parcela.",
+    "intro": "Ejecuta WOFOST con tiempo, suelo y fecha de siembra resueltos desde el contexto de la parcela.",
+    "checkReady": "Comprobar disponibilidad",
+    "selectParcel": "Selecciona una parcela para ejecutar WOFOST",
+    "deployPendingTitle": "Endpoint WOFOST en despliegue",
+    "deployPendingBody": "La API de simulación se está desplegando. Vuelve a intentarlo cuando termine el backend.",
+    "phase2Note": "El endpoint está activo — la UI completa llegará en la siguiente fase."
   },
   "varietyFinder": {
     "anySoil": "Cualquier tipo de suelo",

@@ -2,8 +2,10 @@ import React, { useState, lazy, Suspense, Component, ErrorInfo } from 'react';
 import { useTranslation } from '@nekazari/sdk';
 import { Card, Stack, Spinner, Button } from '@nekazari/ui-kit';
 import { ArrowLeft, FlaskConical } from 'lucide-react';
-import { ParcelProvider, useParcelContext } from './context/ParcelContext';
+import { ParcelProvider } from './context/ParcelContext';
+import { PlanningScenarioProvider } from './context/PlanningScenarioContext';
 import GlobalParcelSelector from './components/GlobalParcelSelector';
+import ExplorationModeBanner from './components/ExplorationModeBanner';
 import Dashboard from './components/Dashboard';
 import DisclaimerFooter from './components/DisclaimerFooter';
 import './i18n';
@@ -24,6 +26,7 @@ const RotationConstraints = lazy(() => import('./components/RotationConstraints'
 const OrganicInputs = lazy(() => import('./components/OrganicInputs'));
 const PipelineRunner = lazy(() => import('./components/PipelineRunner'));
 const SourcesDashboard = lazy(() => import('./components/SourcesDashboard'));
+const WofostSimulation = lazy(() => import('./components/WofostSimulation'));
 const BreedDiscovery = lazy(() => import('./components/DADIS/BreedDiscovery').then(m => ({ default: m.BreedDiscovery })));
 
 type ViewState = { mode: 'dashboard' } | { mode: 'tool'; toolId: string };
@@ -35,6 +38,7 @@ const TOOL_MAP: Record<string, React.LazyExoticComponent<React.ComponentType<any
   rotationPlanner: RotationPlanner,
   waterBudget: WaterBudget,
   regenerative: RegenerativeSequence,
+  wofostSimulation: WofostSimulation,
   catalog: CropCatalog,
   climate: ClimateExplorer,
   phenology: PhenologyBrowser,
@@ -136,6 +140,8 @@ function AppInner() {
         {/* Global parcel selector */}
         <GlobalParcelSelector />
 
+        <ExplorationModeBanner />
+
         {/* Content: Dashboard or Tool */}
         {view.mode === 'dashboard' ? (
           <Dashboard onSelectTool={handleSelectTool} />
@@ -151,7 +157,9 @@ function AppInner() {
 
 const App: React.FC = () => (
   <ParcelProvider>
-    <AppInner />
+    <PlanningScenarioProvider>
+      <AppInner />
+    </PlanningScenarioProvider>
   </ParcelProvider>
 );
 

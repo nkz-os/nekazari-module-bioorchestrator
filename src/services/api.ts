@@ -217,6 +217,33 @@ export function useBioApi() {
       const qs = new URLSearchParams(params).toString();
       return get(`${GRAPH}/graph/agriculture/regenerative-sequence?${qs}`);
     },
+    compareCrops: (
+      parcelId: string,
+      crops: string[],
+      opts?: { seedPrice?: number; harvestPrice?: number; operationCost?: number },
+    ) => {
+      const params = new URLSearchParams({
+        parcel_id: parcelId,
+        crops: crops.join(','),
+      });
+      if (opts?.seedPrice != null) params.set('seed_price', String(opts.seedPrice));
+      if (opts?.harvestPrice != null) params.set('harvest_price', String(opts.harvestPrice));
+      if (opts?.operationCost != null) params.set('operation_cost', String(opts.operationCost));
+      return get(`${GRAPH}/graph/agriculture/compare-crops?${params.toString()}`);
+    },
+    getYieldProjection: (parcelId: string, initialYieldKgHa?: number) => {
+      const params = new URLSearchParams({ parcel_id: parcelId });
+      if (initialYieldKgHa != null) {
+        params.set('initial_yield_kg_ha', String(initialYieldKgHa));
+      }
+      return get(`${GRAPH}/graph/agriculture/yield-projection?${params.toString()}`);
+    },
+    runWofostSimulation: (parcelId: string, cropSlug?: string, sowingDate?: string) => {
+      const params = new URLSearchParams({ parcel_id: parcelId });
+      if (cropSlug) params.set('crop_slug', cropSlug);
+      if (sowingDate) params.set('sowing_date', sowingDate);
+      return post(`${GRAPH}/graph/agriculture/wofost-simulation?${params.toString()}`);
+    },
     getClimateClasses: () => get(`${GRAPH}/graph/reference/climate-classes`),
     getSoilTypes: () => get(`${GRAPH}/graph/reference/soil-types`),
   };

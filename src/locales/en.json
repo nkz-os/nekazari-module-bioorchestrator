@@ -31,6 +31,18 @@
       "comparePlan": "Compare & Plan",
       "knowledgeBase": "Knowledge Base"
     },
+    "hubs": {
+      "navLabel": "BioOrchestrator hubs",
+      "planning": "Planning",
+      "campaign": "Campaign",
+      "codex": "Codex",
+      "planningDescription": "Choose crops and varieties before sowing.",
+      "campaignDescription": "Monitor stress, yield trajectory, and irrigation during the season.",
+      "codexDescription": "Browse species parameters, trials, and reference data.",
+      "activeCampaign": "Active crop: {{crop}}",
+      "noCampaign": "No crop assigned on this parcel",
+      "alertsAwareness": "{{count}} active alert(s) — see platform notifications"
+    },
     "cards": {
       "varietyFinder": {
         "title": "Variety Finder",
@@ -99,10 +111,35 @@
       "dadis": {
         "title": "DAD-IS Explorer",
         "subtitle": "FAO breed discovery — livestock biodiversity."
+      },
+      "wofostSimulation": {
+        "title": "WOFOST Simulation",
+        "subtitle": "Mechanistic daily LAI and biomass curve for the selected parcel."
       }
     },
     "backToDashboard": "← Back to dashboard",
     "selectParcelPrompt": "Select a parcel above to get started"
+  },
+  "scenarioMode": {
+    "enabled": "Exploration crop (what-if)",
+    "cropPlaceholder": "Select crop to explore…",
+    "pickCrop": "Choose a crop for exploration mode",
+    "bannerTitle": "EXPLORATION MODE — not the real campaign",
+    "bannerBody": "Planning tools use the hypothetical crop below. Nothing is written to the parcel assignment.",
+    "bannerCampaignHint": "Campaign tools are disabled until you turn off exploration mode.",
+    "campaignBlocked": "Campaign tools unavailable in exploration mode",
+    "campaignBlockedDetail": "Turn off exploration mode in the parcel bar to view the real in-season campaign.",
+    "campaignCardsBlocked": "Campaign tools are paused while exploration mode is active."
+  },
+  "wofostSimulation": {
+    "title": "WOFOST Simulation",
+    "subtitle": "PCSE mechanistic model — daily LAI and biomass for this parcel.",
+    "intro": "Runs WOFOST with weather, soil, and sowing date resolved from your parcel context.",
+    "checkReady": "Check availability",
+    "selectParcel": "Select a parcel to run WOFOST",
+    "deployPendingTitle": "WOFOST endpoint deploying",
+    "deployPendingBody": "The simulation API is being rolled out. Try again after the backend deploy completes.",
+    "phase2Note": "Endpoint is live — full simulation UI ships in the next phase."
   },
   "varietyFinder": {
     "anySoil": "Any soil type",

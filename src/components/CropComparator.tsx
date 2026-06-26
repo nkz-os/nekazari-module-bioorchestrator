@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
-import { useTranslation } from "react-i18next";
+import { useTranslation } from "@nekazari/sdk";
 import { useParcelContext } from '../context/ParcelContext';
 import { Card, Button, Stack, EmptyState, Skeleton } from '@nekazari/ui-kit';
 import { AlertTriangle, Activity } from 'lucide-react';
+import { useBioApi } from '../services/api';
 
 interface CropItem { eppo_code: string; scientific_name: string; }
 interface ComparisonRow {
@@ -18,8 +19,9 @@ interface ComparisonRow {
 interface Result { comparisons: ComparisonRow[]; ranking: { by_margin: string[]; by_carbon: string[]; by_score: string[] }; target_environment: any; economic_inputs: any; }
 
 export default function CropComparator() {
-  const { t } = useTranslation();
+  const { t } = useTranslation('bioorchestrator');
   const { selectedParcel, loading: parcelLoading, error: parcelError } = useParcelContext();
+  const { getAgricultureCrops, compareCrops } = useBioApi();
   const [availableCrops, setAvailableCrops] = useState<CropItem[]>([]);
   const [selectedCrops, setSelectedCrops] = useState<Set<string>>(new Set());
   const [seedPrice, setSeedPrice] = useState(1);
@@ -30,11 +32,10 @@ export default function CropComparator() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    const API_BASE = (import.meta as any).env?.VITE_API_URL || "https://nkz.robotika.cloud";
-    fetch(`${API_BASE}/api/graph/agriculture/crops`, { credentials: "include" })
-      .then(r => r.json())
-      .then(d => setAvailableCrops(d.crops || []))
+    getAgricultureCrops()
+      .then((d: { crops?: CropItem[] }) => setAvailableCrops(d?.crops || []))
       .catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- mount-once crop list
   }, []);
 
   const toggleCrop = (eppo: string) => {
@@ -46,17 +47,18 @@ export default function CropComparator() {
   const handleCompare = async () => {
     if (!selectedParcel || selectedCrops.size === 0) return;
     setLoading(true); setError("");
-    const API_BASE = (import.meta as any).env?.VITE_API_URL || "https://nkz.robotika.cloud";
-    const crops = Array.from(selectedCrops).join(",");
     try {
-      const res = await fetch(
-        `${API_BASE}/api/graph/agriculture/compare-crops?parcel_id=${selectedParcel}&crops=${crops}&seed_price=${seedPrice}&harvest_price=${harvestPrice}&operation_cost=${operationCost}`,
-        { credentials: "include" }
+      const data = await compareCrops(
+        selectedParcel,
+        Array.from(selectedCrops),
+        { seedPrice, harvestPrice, operationCost },
       );
-      if (!res.ok) throw new Error((await res.json()).detail || "Error");
-      setResult(await res.json());
-    } catch (e: any) { setError(e.message); }
-    finally { setLoading(false); }
+      setResult(data);
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setLoading(false);
+    }
   };
 
   const pricesAreDefault = seedPrice === 1 && harvestPrice === 1 && operationCost === 1;
