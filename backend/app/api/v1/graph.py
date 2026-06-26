@@ -950,6 +950,36 @@ async def agriculture_water_budget(
     return result
 
 
+@router.get("/agriculture/yield-projection")
+async def agriculture_yield_projection(
+    driver: DriverDep,
+    request: Request,
+    parcel_id: str = Query(..., description="AgriParcel URN"),
+    initial_yield_kg_ha: float | None = Query(
+        default=None,
+        description="Override initial yield estimate (kg/ha). If omitted, derived from variety trials.",
+    ),
+):
+    """Project current-season yield with FAO-33 water stress correction.
+
+    Combines the initial yield estimate from variety trials (Phase A)
+    with accumulated water stress per growth stage using the FAO-33
+    methodology: Y = Y_potential × Π(1 - Ky × (1 - ETa/ETc)).
+
+    Returns the projected yield, cumulative stress factor, and per-stage
+    breakdown of water stress contributions.
+    """
+    tenant_id = getattr(request.state, "tenant_id", "")
+    dao = GraphDAO(driver)
+    result = await dao.get_yield_projection(
+        parcel_id=parcel_id, tenant_id=tenant_id,
+        initial_yield_kg_ha=initial_yield_kg_ha,
+    )
+    if "error" in result:
+        raise HTTPException(status_code=404, detail=result["error"])
+    return result
+
+
 @router.get("/agriculture/compare-crops")
 async def agriculture_compare_crops(
     driver: DriverDep, request: Request,
