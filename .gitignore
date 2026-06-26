@@ -35,3 +35,4 @@ docs/superpowers/
 
 # ── Secrets (template only in repo; real values applied via kubectl) ──
 k8s/secret.yaml
+.githooks/
