@@ -59,9 +59,12 @@ def seed(driver: Driver, data: dict[str, Any]) -> dict[str, int]:
             for stage in sp["stages"]:
                 st_name = stage["name"]
                 st_desc = stage.get("description", "")
-                # GDD thresholds
+                # GDD thresholds — stages can be a dict (keyed by stage name) or list
                 st_cfg_list = sp_stages_cfg.get("stages", [])
-                st_cfg = next((s for s in st_cfg_list if s["name"] == st_name), {})
+                if isinstance(st_cfg_list, dict):
+                    st_cfg = st_cfg_list.get(st_name, {})
+                else:
+                    st_cfg = next((s for s in st_cfg_list if s.get("name") == st_name), {})
                 gdd_range = st_cfg.get("gdd_from_budbreak") or st_cfg.get("gdd_from_emergence")
                 base_temp = sp_stages_cfg.get("base_temp_c")
 
@@ -256,6 +259,8 @@ def seed(driver: Driver, data: dict[str, Any]) -> dict[str, int]:
         # ── Seed Rotation Constraints ───────────────────────────────────
         rc_data = data.get("rotation_constraints", [])
         for rc in rc_data:
+            if not rc.get("crop_a") or not rc.get("crop_b"):
+                continue
             session.run(
                 """
                 MERGE (r:RotationConstraint {cropA: $crop_a, cropB: $crop_b})
