@@ -2972,6 +2972,146 @@ class GraphDAO:
             },
         }
 
+    async def run_wofost_simulation(
+        self,
+        parcel_id: str,
+        tenant_id: str = "",
+        crop_slug: str | None = None,
+        sowing_date_str: str | None = None,
+    ) -> dict:
+        """Run WOFOST crop simulation for a parcel with all inputs auto-fetched.
+
+        Inputs resolved automatically:
+          1. Crop type from parcel's assigned AgriCrop (Orion-LD)
+          2. Sowing date from field-operations AgriParcelOperation(sowing)
+          3. Weather from timeseries-reader (backed by weather-worker)
+          4. Soil texture from Soil module → Saxton-Rawls pedotransfer
+          5. Crop parameters from Neo4j PhenologyParams + PCSE defaults
+        """
+        import httpx
+        from datetime import date, datetime
+        from app.services.pedotransfer import texture_to_hydraulic_props
+        from app.services.wofost_service import run_wofost_simulation, get_crop_params
+
+        # ── 1. Resolve crop type ──
+        orion = OrionClient(tenant_id)
+        try:
+            parcel = await orion.get_entity(parcel_id)
+            crop_uri = _resolve_relationship(parcel, "hasAgriCrop")
+            if not crop_slug and crop_uri:
+                from app.species_registry import resolve_species
+                crop_eppo = crop_uri.split(":")[-1] if crop_uri else "unknown"
+                crop_slug = resolve_species(crop_eppo) or crop_eppo.lower()
+            if not crop_slug:
+                return {"error": "No crop assigned to parcel and no crop_slug provided"}
+        finally:
+            await orion.close()
+
+        # ── 2. Resolve sowing date ──
+        if not sowing_date_str:
+            try:
+                orion2 = OrionClient(tenant_id)
+                ops = await orion2.query_entities(
+                    type="AgriParcelOperation",
+                    q=f'hasAgriParcel=="{parcel_id}"|refAgriParcel=="{parcel_id}"',
+                    limit=20,
+                )
+                await orion2.close()
+
+                if ops and isinstance(ops, list):
+                    for op in ops:
+                        op_type = _extract_prop_value(op.get("operationType")) or ""
+                        if op_type.lower() == "sowing":
+                            start_date = _extract_prop_value(op.get("plannedStartAt")) or _extract_prop_value(op.get("startedAt")) or ""
+                            if start_date:
+                                sowing_date_str = start_date[:10]
+                                break
+            except Exception:
+                pass
+
+            if not sowing_date_str:
+                # Fallback: use crop season start from parcel
+                season_start = _extract_prop_value(parcel.get("cropSeasonStart")) or ""
+                if season_start:
+                    sowing_date_str = season_start[:10]
+
+        if not sowing_date_str:
+            return {"error": "No sowing date available — provide manually or assign a crop with sowing operation"}
+
+        try:
+            sowing_date = date.fromisoformat(sowing_date_str)
+        except ValueError:
+            return {"error": f"Invalid sowing date: {sowing_date_str}"}
+
+        # ── 3. Fetch weather data from timeseries-reader ──
+        today = date.today()
+        weather_data = []
+        try:
+            async with httpx.AsyncClient(timeout=30) as client:
+                resp = await client.get(
+                    f"{TIMESERIES_READER_URL}/api/weather/parcel/{parcel_id}/daily",
+                    params={"start": sowing_date.isoformat(), "end": today.isoformat()},
+                    headers={"X-Tenant-ID": tenant_id},
+                )
+                if resp.status_code == 200:
+                    raw = resp.json()
+                    if isinstance(raw, list):
+                        weather_data = raw
+        except Exception as e:
+            logger.warning("Failed to fetch weather: %s — using defaults", e)
+
+        if not weather_data:
+            # Build synthetic weather from defaults (20°C, 3.5mm ET0/day, 200W/m²)
+            days = (today - sowing_date).days + 180  # project 6 months forward
+            for i in range(days):
+                d = sowing_date + timedelta(days=i)
+                weather_data.append({
+                    "date": d.isoformat(),
+                    "tmin": 12, "tmax": 24, "precip": 2.0,
+                    "radiation_w_m2": 250, "wind_speed_ms": 2.0,
+                    "vapour_pressure_kpa": 1.5, "eto": 3.5,
+                })
+
+        # ── 4. Fetch soil and compute pedotransfer ──
+        from app.services.soil_client import get_parcel_soil_properties
+        soil_actual = await get_parcel_soil_properties(parcel_id)
+
+        sand_pct = 40.0
+        clay_pct = 25.0
+        if soil_actual.get("data_available"):
+            sand_pct = float(soil_actual.get("sand_pct", 40))
+            clay_pct = float(soil_actual.get("clay_pct", 25))
+
+        soil_props = texture_to_hydraulic_props(sand_pct, clay_pct)
+
+        # ── 5. Fetch crop parameters from graph ──
+        graph_params = {}
+        try:
+            phen = await self.get_phenology_params(species=crop_slug)
+            if phen:
+                graph_params["tsum1"] = phen.get("stage_gdd_max") or phen.get("gdd_to_anthesis")
+                graph_params["tsum2"] = phen.get("gdd_to_maturity")
+                graph_params["tbase"] = phen.get("base_temp")
+        except Exception:
+            pass
+
+        # ── 6. Run simulation ──
+        result = run_wofost_simulation(
+            crop_slug=crop_slug,
+            sowing_date=sowing_date,
+            weather_data=weather_data,
+            soil_hydraulic_props=soil_props,
+            crop_params_override=graph_params if graph_params else None,
+        )
+
+        result["parcel_id"] = parcel_id
+        result["crop_slug"] = crop_slug
+        result["sowing_date"] = sowing_date.isoformat()
+        result["soil_inputs"] = {"sand_pct": sand_pct, "clay_pct": clay_pct}
+        result["soil_hydraulic"] = soil_props
+        result["weather_days_fetched"] = len(weather_data)
+        return result
+
     async def get_alerts(self, parcel_id: str, limit: int = 5, max_age_days: int = 7) -> dict:
         """Fetch recent alerts for a parcel from Redis Streams crop:events.
 

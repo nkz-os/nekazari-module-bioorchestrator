@@ -980,6 +980,44 @@ async def agriculture_yield_projection(
     return result
 
 
+@router.post("/agriculture/wofost-simulation")
+async def agriculture_wofost_simulation(
+    driver: DriverDep,
+    request: Request,
+    parcel_id: str = Query(..., description="AgriParcel URN"),
+    crop_slug: str | None = Query(
+        default=None,
+        description="Canonical crop slug (e.g. 'wheat', 'maize'). Auto-detected if omitted.",
+    ),
+    sowing_date: str | None = Query(
+        default=None,
+        description="Sowing date (YYYY-MM-DD). Auto-detected from field-operations if omitted.",
+    ),
+):
+    """Run WOFOST/PCSE mechanistic simulation for a parcel.
+
+    Fetches all inputs automatically:
+      - Weather from timeseries-reader (backed by weather-worker Open-Meteo)
+      - Soil hydraulic properties via pedotransfer (Saxton-Rawls) from AgriSoil texture
+      - Sowing date from field-operations AgriParcelOperation(sowing)
+      - Crop parameters from Neo4j graph (PhenologyParams) with PCSE defaults
+
+    Falls back to FAO-33 simplified simulation if PCSE is not installed.
+    Returns daily LAI, biomass, and yield projection.
+    """
+    tenant_id = getattr(request.state, "tenant_id", "")
+    dao = GraphDAO(driver)
+    result = await dao.run_wofost_simulation(
+        parcel_id=parcel_id,
+        tenant_id=tenant_id,
+        crop_slug=crop_slug,
+        sowing_date_str=sowing_date,
+    )
+    if "error" in result:
+        raise HTTPException(status_code=404, detail=result["error"])
+    return result
+
+
 @router.get("/agriculture/compare-crops")
 async def agriculture_compare_crops(
     driver: DriverDep, request: Request,

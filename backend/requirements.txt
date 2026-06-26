@@ -30,3 +30,8 @@ psycopg2-binary>=2.9
 pytest>=8.0.0
 pytest-asyncio>=0.23.0
 httpx>=0.27.0  # also used by TestClient
+
+# WOFOST/PCSE crop simulation (optional — simulation falls back gracefully)
+pcse>=5.5.0
+numpy>=1.24.0
+pandas>=2.0.0
