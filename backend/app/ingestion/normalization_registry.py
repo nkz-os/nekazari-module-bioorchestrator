@@ -67,7 +67,7 @@ TRAIT_REGISTRY: dict[str, dict] = {
         "canonical": "cold_sensitivity_juvenile",
         "agrovoc": None,
         "description": "Sensibilidad al frio juvenil / Juvenile cold sensitivity",
-        "sources": {"BSL": "kaelteempfindlichkeit_jugend"},
+        "sources": {"BSL": ["kaelteempfindlichkeit_jugend", "kaelteempfindlichkeit_i_d_jugend"]},
         "scale": "1-9_bsl",
         "higherIs": "worse",
         "domain": [1, 9],
@@ -981,7 +981,7 @@ DISEASE_REGISTRY: dict[str, dict] = {
     "crown_rust_resistance": {
         "canonical": "crown_rust_resistance",
         "description": "Resistencia a roya coronada / Crown rust resistance",
-        "sources": {"BSL": "kronenrost"},
+        "sources": {"BSL": ["kronenrost", "anfaelligkeit_fuer_kronenrost"]},
         "scale": "1-9_bsl",
         "higherIs": "better",
         "domain": [1, 9],
@@ -1109,7 +1109,7 @@ DISEASE_REGISTRY: dict[str, dict] = {
     "helminthosporium_resistance": {
         "canonical": "helminthosporium_resistance",
         "description": "Resistencia a helmintosporiosis / Helminthosporium resistance",
-        "sources": {"BSL": "helminthosporium", "GENVCE": "helmintosporiosis", "INTIA-EXP": "helmintosporiosis"},
+        "sources": {"BSL": "helminthosporium", "GENVCE": ["helmintosporiosis", "helmintosporium"], "INTIA-EXP": "helmintosporiosis"},
         "scale": "1-9_bsl",
         "higherIs": "better",
         "domain": [1, 9],
@@ -1157,7 +1157,7 @@ DISEASE_REGISTRY: dict[str, dict] = {
     "lodging_pct": {
         "canonical": "lodging_pct",
         "description": "Encamado % / Lodging pct",
-        "sources": {"GENVCE": "encamado_pct"},
+        "sources": {"GENVCE": "encamado_pct", "NEBIH": "lodging_pct"},
         "scale": "1-9_bsl",
         "higherIs": "worse",
         "domain": [1, 9],
@@ -1269,7 +1269,7 @@ DISEASE_REGISTRY: dict[str, dict] = {
     "powdery_mildew_resistance": {
         "canonical": "powdery_mildew_resistance",
         "description": "Resistencia a oidio / Powdery mildew resistance",
-        "sources": {"AHDB": "mildew", "BSL": "mehltau", "GENVCE": "oidio", "INTIA-EXP": "oidio", "LFL-BAYERN": "mehltau"},
+        "sources": {"AHDB": "mildew", "BSL": ["mehltau", "anfaelligkeit_fuer_mehltau"], "GENVCE": "oidio", "INTIA-EXP": "oidio", "LFL-BAYERN": "mehltau"},
         "scale": "1-9_bsl",
         "higherIs": "better",
         "domain": [1, 9],
@@ -1285,7 +1285,7 @@ DISEASE_REGISTRY: dict[str, dict] = {
     "rhynchosporium_resistance": {
         "canonical": "rhynchosporium_resistance",
         "description": "Resistencia a rincosporiosis / Rhynchosporium resistance",
-        "sources": {"BSL": "rhynchosporium", "GENVCE": "rincosporiosis", "INTIA-EXP": "rinchosporiosis"},
+        "sources": {"BSL": "rhynchosporium", "GENVCE": ["rincosporiosis", "rynchosporium", "rincosporium"], "INTIA-EXP": "rinchosporiosis"},
         "scale": "1-9_bsl",
         "higherIs": "better",
         "domain": [1, 9],
@@ -1413,7 +1413,7 @@ DISEASE_REGISTRY: dict[str, dict] = {
     "stem_rot_resistance": {
         "canonical": "stem_rot_resistance",
         "description": "Resistencia a podredumbre de tallo / Stem rot resistance",
-        "sources": {"BSL": "staengelfaeule", "GENVCE": "podredumbre_tallo_pct"},
+        "sources": {"BSL": ["staengelfaeule", "anfaelligkeit_fuer_staengelfaeule", "anfaelligkeit_staengelfaeule"], "GENVCE": ["podredumbre_tallo_pct", "podredumbres_tallo_pct"]},
         "scale": "1-9_bsl",
         "higherIs": "better",
         "domain": [1, 9],
@@ -1421,7 +1421,7 @@ DISEASE_REGISTRY: dict[str, dict] = {
     "stem_rust_resistance": {
         "canonical": "stem_rust_resistance",
         "description": "Resistencia a roya de tallo / Stem rust resistance",
-        "sources": {"BSL": "rost"},
+        "sources": {"BSL": "rost", "GENVCE": "roya"},
         "scale": "1-9_bsl",
         "higherIs": "better",
         "domain": [1, 9],
@@ -2061,13 +2061,20 @@ def _parse_json_field(value: str | dict | None) -> dict:
     return {}
 
 
-def _fuzzy_match_key(source_key: str, raw_map: dict) -> str | None:
+def _fuzzy_match_key(source_key: str | list[str], raw_map: dict) -> str | None:
     """Find a source key in raw_map, trying exact match then common variant suffixes.
 
     Handles GENVCE-style suffixes (_pct, _escala, _escala_0_9, _0_9, _scale)
     and BSL umlaut/spelling variants so the registry doesn't need duplicate entries.
     """
     if not source_key or not raw_map:
+        return None
+
+    if isinstance(source_key, list):
+        for sk in source_key:
+            res = _fuzzy_match_key(sk, raw_map)
+            if res is not None:
+                return res
         return None
 
     # 1. Exact match
