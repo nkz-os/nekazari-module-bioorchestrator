@@ -2096,7 +2096,25 @@ def _fuzzy_match_key(source_key: str, raw_map: dict) -> str | None:
                 if base == source_key:
                     return raw_key
 
-    # 4. Umlaut/spelling variants (BSL German only)
+    # 5. Spanish/genvce plural variants: "podredumbres_tallo_pct" → "podredumbre_tallo_pct"
+    spanish_plural_map = {"podredumbres": "podredumbre", "plantas": "planta"}
+    for raw_key in raw_map:
+        for plural, singular in spanish_plural_map.items():
+            if plural in raw_key:
+                singular_key = raw_key.replace(plural, singular)
+                if singular_key == source_key:
+                    return raw_key
+    for prefix in ["anfaelligkeit_fuer_", "anfaelligkeit_"]:
+        if source_key.startswith(prefix):
+            base = source_key[len(prefix):]
+            if base in raw_map:
+                return base
+        # Also try: raw_key without prefix matches source_key
+        for raw_key in raw_map:
+            if raw_key.startswith(prefix):
+                base = raw_key[len(prefix):]
+                if base == source_key:
+                    return raw_key
     umlaut_map_source = {"ä": "ae", "ö": "oe", "ü": "ue", "ß": "ss"}
     umlaut_map_raw = {"ae": "ä", "oe": "ö", "ue": "ü", "ss": "ß"}
     source_key_ascii = source_key
