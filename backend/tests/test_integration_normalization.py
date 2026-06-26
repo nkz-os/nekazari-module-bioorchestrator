@@ -329,9 +329,12 @@ class TestRegistryWithRealData:
         """All BSL trait keys should have a canonical mapping."""
         bsl_keys_in_registry = set()
         for canonical, config in TRAIT_REGISTRY.items():
-            src_key = config["sources"].get("BSL")
-            if src_key:
-                bsl_keys_in_registry.add(src_key)
+            src_val = config["sources"].get("BSL")
+            if src_val:
+                if isinstance(src_val, list):
+                    bsl_keys_in_registry.update(src_val)
+                else:
+                    bsl_keys_in_registry.add(src_val)
 
         # These are all the BSL trait keys observed in the real data
         known_bsl_keys = {
@@ -353,9 +356,12 @@ class TestRegistryWithRealData:
         from app.ingestion.normalization_registry import DISEASE_REGISTRY
         bsl_keys = set()
         for canonical, config in DISEASE_REGISTRY.items():
-            src_key = config["sources"].get("BSL")
-            if src_key:
-                bsl_keys.add(src_key)
+            src_val = config["sources"].get("BSL")
+            if src_val:
+                if isinstance(src_val, list):
+                    bsl_keys.update(src_val)
+                else:
+                    bsl_keys.add(src_val)
         assert "staengelfaeule" in bsl_keys
 
     def test_normalize_merge_key_unified_format(self):

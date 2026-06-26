@@ -1714,6 +1714,7 @@ crop_nutrient_profiles:
       short: IPNI/FAO
       author: IPNI
       year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
     nitrogen:
       initial:
         uptake_kg_ha_day: 0.56
@@ -1797,6 +1798,7 @@ crop_nutrient_profiles:
       short: IPNI/FAO
       author: IPNI
       year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
   apple:
     nitrogen:
       initial:
@@ -1841,6 +1843,7 @@ crop_nutrient_profiles:
       short: IPNI/FAO
       author: IPNI
       year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
   apricot:
     nitrogen:
       initial:
@@ -1885,6 +1888,7 @@ crop_nutrient_profiles:
       short: IPNI/FAO
       author: IPNI
       year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
   artichoke:
     nitrogen:
       initial:
@@ -1929,6 +1933,7 @@ crop_nutrient_profiles:
       short: IPNI/FAO
       author: IPNI
       year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
   asparagus:
     nitrogen:
       initial:
@@ -1973,6 +1978,7 @@ crop_nutrient_profiles:
       short: IPNI/FAO
       author: IPNI
       year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
   barley:
     nitrogen:
       initial:
@@ -2017,6 +2023,7 @@ crop_nutrient_profiles:
       short: IPNI/FAO
       author: IPNI
       year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
   bean:
     nitrogen:
       initial:
@@ -2061,6 +2068,7 @@ crop_nutrient_profiles:
       short: IPNI/FAO
       author: IPNI
       year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
   broccoli:
     nitrogen:
       initial:
@@ -2105,6 +2113,7 @@ crop_nutrient_profiles:
       short: IPNI/FAO
       author: IPNI
       year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
   buckwheat:
     nitrogen:
       initial:
@@ -2149,6 +2158,7 @@ crop_nutrient_profiles:
       short: IPNI/FAO
       author: IPNI
       year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
   cardoon:
     nitrogen:
       initial:
@@ -2193,6 +2203,7 @@ crop_nutrient_profiles:
       short: IPNI/FAO
       author: IPNI
       year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
   cherry:
     nitrogen:
       initial:
@@ -2237,6 +2248,7 @@ crop_nutrient_profiles:
       short: IPNI/FAO
       author: IPNI
       year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
   chickpea:
     nitrogen:
       initial:
@@ -2281,6 +2293,7 @@ crop_nutrient_profiles:
       short: IPNI/FAO
       author: IPNI
       year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
   flax:
     nitrogen:
       initial:
@@ -2325,6 +2338,7 @@ crop_nutrient_profiles:
       short: IPNI/FAO
       author: IPNI
       year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
   garlic:
     nitrogen:
       initial:
@@ -2369,11 +2383,13 @@ crop_nutrient_profiles:
       short: IPNI/FAO
       author: IPNI
       year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
   grapevine:
     source:
       short: IPNI/FAO
       author: IPNI
       year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
     nitrogen:
       initial:
         uptake_kg_ha_day: 0.89
@@ -2457,6 +2473,7 @@ crop_nutrient_profiles:
       short: IPNI/FAO
       author: IPNI
       year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
   hemp:
     nitrogen:
       initial:
@@ -2501,6 +2518,7 @@ crop_nutrient_profiles:
       short: IPNI/FAO
       author: IPNI
       year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
   leek:
     nitrogen:
       initial:
@@ -2545,6 +2563,7 @@ crop_nutrient_profiles:
       short: IPNI/FAO
       author: IPNI
       year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
   lentil:
     nitrogen:
       initial:
@@ -2589,6 +2608,7 @@ crop_nutrient_profiles:
       short: IPNI/FAO
       author: IPNI
       year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
   oat:
     nitrogen:
       initial:
@@ -2633,6 +2653,7 @@ crop_nutrient_profiles:
       short: IPNI/FAO
       author: IPNI
       year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
   onion:
     nitrogen:
       initial:
@@ -2677,6 +2698,7 @@ crop_nutrient_profiles:
       short: IPNI/FAO
       author: IPNI
       year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
   pea:
     nitrogen:
       initial:
@@ -2721,6 +2743,7 @@ crop_nutrient_profiles:
       short: IPNI/FAO
       author: IPNI
       year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
   peach:
     nitrogen:
       initial:
@@ -2765,6 +2788,7 @@ crop_nutrient_profiles:
       short: IPNI/FAO
       author: IPNI
       year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
   pear:
     nitrogen:
       initial:
@@ -2809,6 +2833,7 @@ crop_nutrient_profiles:
       short: IPNI/FAO
       author: IPNI
       year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
   pistachio:
     nitrogen:
       initial:
@@ -2853,6 +2878,7 @@ crop_nutrient_profiles:
       short: IPNI/FAO
       author: IPNI
       year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
   plum:
     nitrogen:
       initial:
@@ -2897,11 +2923,13 @@ crop_nutrient_profiles:
       short: IPNI/FAO
       author: IPNI
       year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
   potato:
     source:
       short: IPNI/FAO
       author: IPNI
       year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
     nitrogen:
       initial:
         uptake_kg_ha_day: 2.0
@@ -2985,11 +3013,13 @@ crop_nutrient_profiles:
       short: IPNI/FAO
       author: IPNI
       year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
   rice:
     source:
       short: IPNI/FAO
       author: IPNI
       year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
     nitrogen:
       initial:
         uptake_kg_ha_day: 1.33
@@ -3073,11 +3103,13 @@ crop_nutrient_profiles:
       short: IPNI/FAO
       author: IPNI
       year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
   soybean:
     source:
       short: IPNI/FAO
       author: IPNI
       year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
     nitrogen:
       initial:
         uptake_kg_ha_day: 0.89
@@ -3161,11 +3193,13 @@ crop_nutrient_profiles:
       short: IPNI/FAO
       author: IPNI
       year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
   sunflower:
     source:
       short: IPNI/FAO
       author: IPNI
       year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
     nitrogen:
       initial:
         uptake_kg_ha_day: 1.11
@@ -3249,6 +3283,7 @@ crop_nutrient_profiles:
       short: IPNI/FAO
       author: IPNI
       year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
   vetch:
     nitrogen:
       initial:
@@ -3293,11 +3328,13 @@ crop_nutrient_profiles:
       short: IPNI/FAO
       author: IPNI
       year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
   wheat:
     source:
       short: IPNI/FAO
       author: IPNI
       year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
     nitrogen:
       initial:
         uptake_kg_ha_day: 1.56
@@ -3342,6 +3379,7 @@ crop_nutrient_profiles:
       short: IPNI/FAO
       author: IPNI
       year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
     nitrogen:
       initial:
         uptake_kg_ha_day: 2.22
@@ -3386,6 +3424,7 @@ crop_nutrient_profiles:
       short: IPNI/FAO
       author: IPNI
       year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
     nitrogen:
       initial:
         uptake_kg_ha_day: 1.0
@@ -3430,6 +3469,7 @@ crop_nutrient_profiles:
       short: IPNI/FAO
       author: IPNI
       year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
     nitrogen:
       initial:
         uptake_kg_ha_day: 2.22
@@ -3474,6 +3514,7 @@ crop_nutrient_profiles:
       short: IPNI/FAO
       author: IPNI
       year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
     nitrogen:
       initial:
         uptake_kg_ha_day: 2.0
@@ -3518,6 +3559,7 @@ crop_nutrient_profiles:
       short: IPNI/FAO
       author: IPNI
       year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
     nitrogen:
       initial:
         uptake_kg_ha_day: 1.33
@@ -3562,6 +3604,7 @@ crop_nutrient_profiles:
       short: IPNI/FAO
       author: IPNI
       year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
     nitrogen:
       initial:
         uptake_kg_ha_day: 1.56
@@ -3606,6 +3649,7 @@ crop_nutrient_profiles:
       short: IPNI/FAO
       author: IPNI
       year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
     nitrogen:
       initial:
         uptake_kg_ha_day: 0.67
@@ -3650,6 +3694,7 @@ crop_nutrient_profiles:
       short: IPNI/FAO
       author: IPNI
       year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
     nitrogen:
       initial:
         uptake_kg_ha_day: 1.11
@@ -3691,564 +3736,699 @@ crop_nutrient_profiles:
         total_kg_ha: 26
 crop_soil_suitability:
   alfalfa:
-    ph_range:
-    - 6.5
-    - 8.0
-    texture: loam
-    drainage: well_drained
     salinity_tolerance_ds_m: 3.0
     source:
       short: FAO/ECOCROP
       author: FAO
       year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+    ph_min: 6.5
+    ph_max: 8.0
+    textures:
+    - loam
+    drainage:
+    - well_drained
+    depth_min_cm: 60
   almond:
-    ph_range:
-    - 6.0
-    - 8.0
-    texture: sandy_loam
-    drainage: well_drained
     salinity_tolerance_ds_m: 2.5
     source:
       short: FAO/ECOCROP
       author: FAO
       year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+    ph_min: 6.0
+    ph_max: 8.0
+    textures:
+    - sandy_loam
+    drainage:
+    - well_drained
+    depth_min_cm: 60
   apple:
-    ph_range:
-    - 5.5
-    - 7.5
-    texture: loam
-    drainage: well_drained
     salinity_tolerance_ds_m: 1.5
     source:
       short: FAO/ECOCROP
       author: FAO
       year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+    ph_min: 5.5
+    ph_max: 7.5
+    textures:
+    - loam
+    drainage:
+    - well_drained
+    depth_min_cm: 60
   apricot:
-    ph_range:
-    - 6.0
-    - 8.0
-    texture: sandy_loam
-    drainage: well_drained
     salinity_tolerance_ds_m: 2.5
     source:
       short: FAO/ECOCROP
       author: FAO
       year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+    ph_min: 6.0
+    ph_max: 8.0
+    textures:
+    - sandy_loam
+    drainage:
+    - well_drained
+    depth_min_cm: 60
   artichoke:
-    ph_range:
-    - 6.0
-    - 8.0
-    texture: loam
-    drainage: well_drained
     salinity_tolerance_ds_m: 4.0
     source:
       short: FAO/ECOCROP
       author: FAO
       year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+    ph_min: 6.0
+    ph_max: 8.0
+    textures:
+    - loam
+    drainage:
+    - well_drained
+    depth_min_cm: 60
   asparagus:
-    ph_range:
-    - 6.0
-    - 7.5
-    texture: sandy_loam
-    drainage: well_drained
     salinity_tolerance_ds_m: 3.0
     source:
       short: FAO/ECOCROP
       author: FAO
       year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+    ph_min: 6.0
+    ph_max: 7.5
+    textures:
+    - sandy_loam
+    drainage:
+    - well_drained
+    depth_min_cm: 60
   barley:
-    ph_range:
-    - 6.0
-    - 8.5
-    texture: loam
-    drainage: moderate
     salinity_tolerance_ds_m: 8.0
     source:
       short: FAO/ECOCROP
       author: FAO
       year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+    ph_min: 6.0
+    ph_max: 8.5
+    textures:
+    - loam
+    drainage:
+    - moderate
+    depth_min_cm: 60
   bean:
-    ph_range:
-    - 5.5
-    - 7.5
-    texture: loam
-    drainage: well_drained
     salinity_tolerance_ds_m: 1.5
     source:
       short: FAO/ECOCROP
       author: FAO
       year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+    ph_min: 5.5
+    ph_max: 7.5
+    textures:
+    - loam
+    drainage:
+    - well_drained
+    depth_min_cm: 60
   broccoli:
-    ph_range:
-    - 6.0
-    - 7.5
-    texture: loam
-    drainage: well_drained
     salinity_tolerance_ds_m: 3.0
     source:
       short: FAO/ECOCROP
       author: FAO
       year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+    ph_min: 6.0
+    ph_max: 7.5
+    textures:
+    - loam
+    drainage:
+    - well_drained
+    depth_min_cm: 60
   buckwheat:
-    ph_range:
-    - 5.0
-    - 7.0
-    texture: sandy_loam
-    drainage: well_drained
     salinity_tolerance_ds_m: 1.0
     source:
       short: FAO/ECOCROP
       author: FAO
       year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+    ph_min: 5.0
+    ph_max: 7.0
+    textures:
+    - sandy_loam
+    drainage:
+    - well_drained
+    depth_min_cm: 60
   cardoon:
-    ph_range:
-    - 6.0
-    - 8.0
-    texture: loam
-    drainage: well_drained
     salinity_tolerance_ds_m: 4.0
     source:
       short: FAO/ECOCROP
       author: FAO
       year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+    ph_min: 6.0
+    ph_max: 8.0
+    textures:
+    - loam
+    drainage:
+    - well_drained
+    depth_min_cm: 60
   cherry:
-    ph_range:
-    - 5.5
-    - 7.5
-    texture: loam
-    drainage: well_drained
     salinity_tolerance_ds_m: 1.5
     source:
       short: FAO/ECOCROP
       author: FAO
       year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+    ph_min: 5.5
+    ph_max: 7.5
+    textures:
+    - loam
+    drainage:
+    - well_drained
+    depth_min_cm: 60
   chickpea:
-    ph_range:
-    - 6.0
-    - 8.0
-    texture: sandy_loam
-    drainage: well_drained
     salinity_tolerance_ds_m: 3.0
     source:
       short: FAO/ECOCROP
       author: FAO
       year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+    ph_min: 6.0
+    ph_max: 8.0
+    textures:
+    - sandy_loam
+    drainage:
+    - well_drained
+    depth_min_cm: 60
   flax:
-    ph_range:
-    - 5.5
-    - 7.5
-    texture: loam
-    drainage: well_drained
     salinity_tolerance_ds_m: 2.0
     source:
       short: FAO/ECOCROP
       author: FAO
       year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+    ph_min: 5.5
+    ph_max: 7.5
+    textures:
+    - loam
+    drainage:
+    - well_drained
+    depth_min_cm: 60
   garlic:
-    ph_range:
-    - 6.0
-    - 7.5
-    texture: sandy_loam
-    drainage: well_drained
     salinity_tolerance_ds_m: 2.5
     source:
       short: FAO/ECOCROP
       author: FAO
       year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+    ph_min: 6.0
+    ph_max: 7.5
+    textures:
+    - sandy_loam
+    drainage:
+    - well_drained
+    depth_min_cm: 60
   grapevine:
-    ph_range:
-    - 5.5
-    - 8.0
-    texture: sandy_loam
-    drainage: well_drained
     salinity_tolerance_ds_m: 2.5
     source:
       short: FAO/ECOCROP
       author: FAO
       year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+    ph_min: 5.5
+    ph_max: 8.0
+    textures:
+    - sandy_loam
+    drainage:
+    - well_drained
+    depth_min_cm: 60
   grass_pea:
-    ph_range:
-    - 5.5
-    - 8.0
-    texture: loam
-    drainage: moderate
     salinity_tolerance_ds_m: 3.0
     source:
       short: FAO/ECOCROP
       author: FAO
       year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+    ph_min: 5.5
+    ph_max: 8.0
+    textures:
+    - loam
+    drainage:
+    - moderate
+    depth_min_cm: 60
   hemp:
-    ph_range:
-    - 6.0
-    - 7.5
-    texture: loam
-    drainage: well_drained
     salinity_tolerance_ds_m: 1.5
     source:
       short: FAO/ECOCROP
       author: FAO
       year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+    ph_min: 6.0
+    ph_max: 7.5
+    textures:
+    - loam
+    drainage:
+    - well_drained
+    depth_min_cm: 60
   leek:
-    ph_range:
-    - 6.0
-    - 7.5
-    texture: loam
-    drainage: well_drained
     salinity_tolerance_ds_m: 2.5
     source:
       short: FAO/ECOCROP
       author: FAO
       year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+    ph_min: 6.0
+    ph_max: 7.5
+    textures:
+    - loam
+    drainage:
+    - well_drained
+    depth_min_cm: 60
   lentil:
-    ph_range:
-    - 6.0
-    - 8.0
-    texture: loam
-    drainage: well_drained
     salinity_tolerance_ds_m: 2.5
     source:
       short: FAO/ECOCROP
       author: FAO
       year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+    ph_min: 6.0
+    ph_max: 8.0
+    textures:
+    - loam
+    drainage:
+    - well_drained
+    depth_min_cm: 60
   oat:
-    ph_range:
-    - 5.5
-    - 7.5
-    texture: loam
-    drainage: moderate
     salinity_tolerance_ds_m: 4.0
     source:
       short: FAO/ECOCROP
       author: FAO
       year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+    ph_min: 5.5
+    ph_max: 7.5
+    textures:
+    - loam
+    drainage:
+    - moderate
+    depth_min_cm: 60
   onion:
-    ph_range:
-    - 6.0
-    - 7.5
-    texture: sandy_loam
-    drainage: well_drained
     salinity_tolerance_ds_m: 2.0
     source:
       short: FAO/ECOCROP
       author: FAO
       year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+    ph_min: 6.0
+    ph_max: 7.5
+    textures:
+    - sandy_loam
+    drainage:
+    - well_drained
+    depth_min_cm: 60
   pea:
-    ph_range:
-    - 5.5
-    - 7.5
-    texture: loam
-    drainage: well_drained
     salinity_tolerance_ds_m: 2.0
     source:
       short: FAO/ECOCROP
       author: FAO
       year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+    ph_min: 5.5
+    ph_max: 7.5
+    textures:
+    - loam
+    drainage:
+    - well_drained
+    depth_min_cm: 60
   peach:
-    ph_range:
-    - 6.0
-    - 7.5
-    texture: sandy_loam
-    drainage: well_drained
     salinity_tolerance_ds_m: 2.0
     source:
       short: FAO/ECOCROP
       author: FAO
       year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+    ph_min: 6.0
+    ph_max: 7.5
+    textures:
+    - sandy_loam
+    drainage:
+    - well_drained
+    depth_min_cm: 60
   pear:
-    ph_range:
-    - 5.5
-    - 7.5
-    texture: loam
-    drainage: well_drained
     salinity_tolerance_ds_m: 1.5
     source:
       short: FAO/ECOCROP
       author: FAO
       year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+    ph_min: 5.5
+    ph_max: 7.5
+    textures:
+    - loam
+    drainage:
+    - well_drained
+    depth_min_cm: 60
   pistachio:
-    ph_range:
-    - 7.0
-    - 8.5
-    texture: sandy_loam
-    drainage: well_drained
     salinity_tolerance_ds_m: 6.0
     source:
       short: FAO/ECOCROP
       author: FAO
       year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+    ph_min: 7.0
+    ph_max: 8.5
+    textures:
+    - sandy_loam
+    drainage:
+    - well_drained
+    depth_min_cm: 60
   plum:
-    ph_range:
-    - 5.5
-    - 7.5
-    texture: loam
-    drainage: well_drained
     salinity_tolerance_ds_m: 2.0
     source:
       short: FAO/ECOCROP
       author: FAO
       year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+    ph_min: 5.5
+    ph_max: 7.5
+    textures:
+    - loam
+    drainage:
+    - well_drained
+    depth_min_cm: 60
   potato:
-    ph_range:
-    - 5.0
-    - 7.0
-    texture: sandy_loam
-    drainage: well_drained
     salinity_tolerance_ds_m: 2.0
     source:
       short: FAO/ECOCROP
       author: FAO
       year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+    ph_min: 5.0
+    ph_max: 7.0
+    textures:
+    - sandy_loam
+    drainage:
+    - well_drained
+    depth_min_cm: 60
   rapeseed:
-    ph_range:
-    - 5.5
-    - 8.0
-    texture: loam
-    drainage: moderate
     salinity_tolerance_ds_m: 4.0
     source:
       short: FAO/ECOCROP
       author: FAO
       year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+    ph_min: 5.5
+    ph_max: 8.0
+    textures:
+    - loam
+    drainage:
+    - moderate
+    depth_min_cm: 60
   rice:
-    ph_range:
-    - 5.0
-    - 7.5
-    texture: clay
-    drainage: poor
     salinity_tolerance_ds_m: 3.0
     source:
       short: FAO/ECOCROP
       author: FAO
       year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+    ph_min: 5.0
+    ph_max: 7.5
+    textures:
+    - clay
+    drainage:
+    - poor
+    depth_min_cm: 60
   rye:
-    ph_range:
-    - 4.5
-    - 7.5
-    texture: sandy_loam
-    drainage: moderate
     salinity_tolerance_ds_m: 6.0
     source:
       short: FAO/ECOCROP
       author: FAO
       year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+    ph_min: 4.5
+    ph_max: 7.5
+    textures:
+    - sandy_loam
+    drainage:
+    - moderate
+    depth_min_cm: 60
   soybean:
-    ph_range:
-    - 6.0
-    - 7.5
-    texture: loam
-    drainage: well_drained
     salinity_tolerance_ds_m: 3.0
     source:
       short: FAO/ECOCROP
       author: FAO
       year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+    ph_min: 6.0
+    ph_max: 7.5
+    textures:
+    - loam
+    drainage:
+    - well_drained
+    depth_min_cm: 60
   sugar_beet:
-    ph_range:
-    - 6.5
-    - 8.0
-    texture: loam
-    drainage: well_drained
     salinity_tolerance_ds_m: 5.0
     source:
       short: FAO/ECOCROP
       author: FAO
       year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+    ph_min: 6.5
+    ph_max: 8.0
+    textures:
+    - loam
+    drainage:
+    - well_drained
+    depth_min_cm: 60
   sunflower:
-    ph_range:
-    - 6.0
-    - 8.0
-    texture: loam
-    drainage: well_drained
     salinity_tolerance_ds_m: 5.0
     source:
       short: FAO/ECOCROP
       author: FAO
       year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+    ph_min: 6.0
+    ph_max: 8.0
+    textures:
+    - loam
+    drainage:
+    - well_drained
+    depth_min_cm: 60
   tomato:
-    ph_range:
-    - 5.5
-    - 7.5
-    texture: loam
-    drainage: well_drained
     salinity_tolerance_ds_m: 3.0
     source:
       short: FAO/ECOCROP
       author: FAO
       year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+    ph_min: 5.5
+    ph_max: 7.5
+    textures:
+    - loam
+    drainage:
+    - well_drained
+    depth_min_cm: 60
   vetch:
-    ph_range:
-    - 5.5
-    - 7.5
-    texture: loam
-    drainage: moderate
     salinity_tolerance_ds_m: 2.5
     source:
       short: FAO/ECOCROP
       author: FAO
       year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+    ph_min: 5.5
+    ph_max: 7.5
+    textures:
+    - loam
+    drainage:
+    - moderate
+    depth_min_cm: 60
   wheat:
-    ph_range:
-    - 5.5
-    - 8.5
-    texture: loam
-    drainage: well_drained
     salinity_tolerance_ds_m: 6.0
     source:
       short: FAO
       author: FAO
       year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+    ph_min: 5.5
+    ph_max: 8.5
+    textures:
+    - loam
+    drainage:
+    - well_drained
+    depth_min_cm: 60
   maize:
-    ph_range:
-    - 5.0
-    - 8.0
-    texture: loam
-    drainage: well_drained
     salinity_tolerance_ds_m: 2.5
     source:
       short: FAO
       author: FAO
       year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+    ph_min: 5.0
+    ph_max: 8.0
+    textures:
+    - loam
+    drainage:
+    - well_drained
+    depth_min_cm: 60
   olive:
-    ph_range:
-    - 5.5
-    - 8.5
-    texture: sandy_loam
-    drainage: well_drained
     salinity_tolerance_ds_m: 4.0
     source:
       short: FAO
       author: FAO
       year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+    ph_min: 5.5
+    ph_max: 8.5
+    textures:
+    - sandy_loam
+    drainage:
+    - well_drained
+    depth_min_cm: 60
   pepper:
-    ph_range:
-    - 5.5
-    - 7.0
-    texture: sandy_loam
-    drainage: well_drained
     salinity_tolerance_ds_m: 2.0
     source:
       short: FAO/ECOCROP
       author: FAO
       year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+    ph_min: 5.5
+    ph_max: 7.0
+    textures:
+    - sandy_loam
+    drainage:
+    - well_drained
+    depth_min_cm: 60
   eggplant:
-    ph_range:
-    - 5.5
-    - 7.0
-    texture: loam
-    drainage: well_drained
     salinity_tolerance_ds_m: 2.5
     source:
       short: FAO/ECOCROP
       author: FAO
       year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+    ph_min: 5.5
+    ph_max: 7.0
+    textures:
+    - loam
+    drainage:
+    - well_drained
+    depth_min_cm: 60
   strawberry:
-    ph_range:
-    - 5.0
-    - 7.0
-    texture: sandy_loam
-    drainage: well_drained
     salinity_tolerance_ds_m: 1.0
     source:
       short: FAO/ECOCROP
       author: FAO
       year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+    ph_min: 5.0
+    ph_max: 7.0
+    textures:
+    - sandy_loam
+    drainage:
+    - well_drained
+    depth_min_cm: 60
   melon:
-    ph_range:
-    - 6.0
-    - 7.5
-    texture: sandy_loam
-    drainage: well_drained
     salinity_tolerance_ds_m: 2.5
     source:
       short: FAO/ECOCROP
       author: FAO
       year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+    ph_min: 6.0
+    ph_max: 7.5
+    textures:
+    - sandy_loam
+    drainage:
+    - well_drained
+    depth_min_cm: 60
   bitter_vetch:
-    ph_range:
-    - 6.0
-    - 8.0
-    texture: loam
-    drainage: moderate
     salinity_tolerance_ds_m: 3.0
     source:
       short: FAO/ECOCROP
       author: FAO
       year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+    ph_min: 6.0
+    ph_max: 8.0
+    textures:
+    - loam
+    drainage:
+    - moderate
+    depth_min_cm: 60
   faba_bean:
-    ph_range:
-    - 6.0
-    - 8.0
-    texture: loam
-    drainage: well_drained
     salinity_tolerance_ds_m: 2.0
     source:
       short: FAO/ECOCROP
       author: FAO
       year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+    ph_min: 6.0
+    ph_max: 8.0
+    textures:
+    - loam
+    drainage:
+    - well_drained
+    depth_min_cm: 60
 rotation_constraints:
 - crop_a: chickpea
   crop_b: wheat
-  interval_years: 0
+  interval_years: 1
   reason: N fixation benefit for following cereal
   source_short: FAO rotation guidelines
 - crop_a: lentil
   crop_b: wheat
-  interval_years: 0
+  interval_years: 1
   reason: N fixation benefit for following cereal
   source_short: FAO rotation guidelines
 - crop_a: pea
   crop_b: wheat
-  interval_years: 0
+  interval_years: 1
   reason: N fixation benefit for following cereal
   source_short: FAO rotation guidelines
 - crop_a: bean
   crop_b: maize
-  interval_years: 0
+  interval_years: 1
   reason: N fixation benefit for following cereal
   source_short: FAO rotation guidelines
 - crop_a: vetch
   crop_b: wheat
-  interval_years: 0
+  interval_years: 1
   reason: N fixation benefit for following cereal
   source_short: FAO rotation guidelines
 - crop_a: grass_pea
   crop_b: wheat
-  interval_years: 0
+  interval_years: 1
   reason: N fixation benefit for following cereal
   source_short: FAO rotation guidelines
 - crop_a: alfalfa
   crop_b: maize
-  interval_years: 0
+  interval_years: 1
   reason: Deep N fixation, soil structure improvement
   source_short: FAO rotation guidelines
 - crop_a: soybean
   crop_b: maize
-  interval_years: 0
+  interval_years: 1
   reason: N fixation benefit for following cereal
   source_short: FAO rotation guidelines
 - crop_a: wheat
   crop_b: chickpea
-  interval_years: 0
+  interval_years: 1
   reason: Cereal residue benefits legume establishment
   source_short: FAO rotation guidelines
 - crop_a: wheat
   crop_b: lentil
-  interval_years: 0
+  interval_years: 1
   reason: Cereal residue benefits legume establishment
   source_short: FAO rotation guidelines
 - crop_a: wheat
   crop_b: pea
-  interval_years: 0
+  interval_years: 1
   reason: Cereal residue benefits legume establishment
   source_short: FAO rotation guidelines
 - crop_a: maize
   crop_b: bean
-  interval_years: 0
+  interval_years: 1
   reason: Cereal residue benefits legume establishment
   source_short: FAO rotation guidelines
 - crop_a: maize
   crop_b: soybean
-  interval_years: 0
+  interval_years: 1
   reason: Standard US Corn Belt rotation
   source_short: FAO rotation guidelines
 - crop_a: rapeseed
@@ -4313,7 +4493,7 @@ rotation_constraints:
   source_short: FAO
 - crop_a: rice
   crop_b: rice
-  interval_years: 0
+  interval_years: 1
   reason: Continuous rice is common in paddies
   source_short: IRRI/FAO
 - crop_a: apple
