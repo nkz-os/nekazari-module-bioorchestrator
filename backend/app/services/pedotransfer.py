@@ -51,7 +51,6 @@ def texture_to_hydraulic_props(
     # Normalise
     sand = max(0.1, min(99.9, sand_pct)) / 100.0
     clay = max(0.1, min(99.9, clay_pct)) / 100.0
-    silt = max(0.0, 1.0 - sand - clay)
     om = max(0.1, min(10.0, om_pct)) / 100.0
 
     # ── θ_1500 (wilting point, 1500 kPa) ──

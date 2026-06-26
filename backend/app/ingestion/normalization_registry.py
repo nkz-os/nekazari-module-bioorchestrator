@@ -2123,7 +2123,6 @@ def _fuzzy_match_key(source_key: str | list[str], raw_map: dict) -> str | None:
                 if base == source_key:
                     return raw_key
     umlaut_map_source = {"ä": "ae", "ö": "oe", "ü": "ue", "ß": "ss"}
-    umlaut_map_raw = {"ae": "ä", "oe": "ö", "ue": "ü", "ss": "ß"}
     source_key_ascii = source_key
     for uml, ascii in umlaut_map_source.items():
         source_key_ascii = source_key_ascii.replace(uml, ascii)

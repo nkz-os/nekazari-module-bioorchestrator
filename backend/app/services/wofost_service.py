@@ -145,10 +145,8 @@ def run_wofost_simulation(
     # ── Full PCSE simulation ──
     try:
         from pcse.base import ParameterProvider
-        from pcse.fileinput import CABOFileReader
         from pcse.models import Wofost71_WLP_FD
-        from pcse.util import WOFOST71SiteDataProvider
-        import tempfile, os
+        import os
 
         crop_params = get_crop_params(crop_slug, crop_params_override)
 
@@ -312,7 +310,9 @@ def _run_fallback_simulation(
 def _build_weather_for_pcse(weather_data: list[dict], start_date: date) -> Any:
     """Build PCSE weather data provider from timeseries-reader format."""
     from pcse.util import WOFOST71SiteDataProvider
-    import tempfile, os, csv
+    import tempfile
+    import os
+    import csv
 
     # PCSE expects a CSV with columns: DAY, IRRAD, TMIN, TMAX, VAP, WIND, RAIN
     fd, path = tempfile.mkstemp(suffix=".csv", text=True)
@@ -354,7 +354,8 @@ def _build_soil_for_pcse(props: dict) -> dict:
 
 def _build_crop_file(crop_params: dict) -> str:
     """Build a temporary PCSE CABO crop file from parameters."""
-    import tempfile, os
+    import tempfile
+    import os
 
     fd, path = tempfile.mkstemp(suffix=".crop", text=True)
     with os.fdopen(fd, "w") as f:

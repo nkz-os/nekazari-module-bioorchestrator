@@ -2920,7 +2920,6 @@ class GraphDAO:
 
                 # Estimate ETa: assume 80% effective rainfall + AWC contribution
                 # In absence of per-stage precipitation data, use conservative estimate
-                awc = (ctx.get("soil", {}).get("actual", {}).get("awc_mm") or 120)
                 etc_with_stress = etc_stage * 0.85  # 15% stress assumption for past stages
 
                 if reached_current:
@@ -2989,9 +2988,9 @@ class GraphDAO:
           5. Crop parameters from Neo4j PhenologyParams + PCSE defaults
         """
         import httpx
-        from datetime import date, datetime
+        from datetime import date, timedelta
         from app.services.pedotransfer import texture_to_hydraulic_props
-        from app.services.wofost_service import run_wofost_simulation, get_crop_params
+        from app.services.wofost_service import run_wofost_simulation
 
         # ── 1. Resolve crop type ──
         orion = OrionClient(tenant_id)
