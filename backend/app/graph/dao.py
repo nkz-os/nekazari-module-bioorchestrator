@@ -751,7 +751,8 @@ class GraphDAO:
         async with self._driver.session() as session:
             # Check rotation constraint
             rc = await session.run(
-                "MATCH (r:RotationConstraint {cropA: $baseline, cropB: $scenario}) "
+                "MATCH (r:RotationConstraint) "
+                "WHERE toLower(r.cropA) = toLower($baseline) AND toLower(r.cropB) = toLower($scenario) "
                 "RETURN r.intervalYears AS years, r.reason AS reason",
                 baseline=baseline_crop, scenario=scenario_crop,
             )
@@ -764,7 +765,8 @@ class GraphDAO:
 
             # Check soil suitability for scenario crop
             ss = await session.run(
-                "MATCH (s:Species {name: $crop})-[:HAS_SOIL_SUITABILITY]->(ss:CropSoilSuitability) "
+                "MATCH (s:Species)-[:HAS_SOIL_SUITABILITY]->(ss:CropSoilSuitability) "
+                "WHERE toLower(s.name) = toLower($crop) OR toLower(s.scientificName) = toLower($crop) "
                 "RETURN ss.phMin, ss.phMax, ss.textures, ss.drainage, ss.depthMinCm, ss.salinityMaxDsM",
                 crop=scenario_crop,
             )
@@ -775,14 +777,16 @@ class GraphDAO:
 
             # Compare fertilizer needs (simplified: total NPK per season)
             base_n = await session.run(
-                "MATCH (s:Species {name: $crop})-[:HAS_STAGE]->(:PhenologyStage)-[:HAS_NUTRIENT_PROFILE]->(n:CropNutrientProfile {element: 'nitrogen'}) "
+                "MATCH (s:Species)-[:HAS_STAGE]->(:PhenologyStage)-[:HAS_NUTRIENT_PROFILE]->(n:CropNutrientProfile {element: 'nitrogen'}) "
+                "WHERE toLower(s.name) = toLower($crop) OR toLower(s.scientificName) = toLower($crop) "
                 "RETURN sum(n.uptakeKgHaDay) AS total", crop=baseline_crop,
             )
             base_total = (await base_n.single())
             base_n_val = float(base_total["total"] or 0) if base_total else 0
 
             sc_n = await session.run(
-                "MATCH (s:Species {name: $crop})-[:HAS_STAGE]->(:PhenologyStage)-[:HAS_NUTRIENT_PROFILE]->(n:CropNutrientProfile {element: 'nitrogen'}) "
+                "MATCH (s:Species)-[:HAS_STAGE]->(:PhenologyStage)-[:HAS_NUTRIENT_PROFILE]->(n:CropNutrientProfile {element: 'nitrogen'}) "
+                "WHERE toLower(s.name) = toLower($crop) OR toLower(s.scientificName) = toLower($crop) "
                 "RETURN sum(n.uptakeKgHaDay) AS total", crop=scenario_crop,
             )
             sc_total = (await sc_n.single())
@@ -997,6 +1001,8 @@ class GraphDAO:
                    vt.yieldRelativePct AS yield_relative_pct,
                    vt.qualityParams AS quality_params,
                    vt.diseaseScores AS disease_scores,
+                   vt.diseaseScoresUnified AS disease_scores_unified,
+                   vt.agronomicTraitsUnified AS agronomic_traits_unified,
                    vt.irrigationRegime AS irrigation_regime,
                    vt.year AS year,
                    vt.confidence AS confidence,
@@ -1257,6 +1263,9 @@ class GraphDAO:
                      collect(DISTINCT ts.name) AS sites,
                      collect(DISTINCT vt.irrigationRegime) AS irrigation_regimes,
                      collect(DISTINCT vt.productionSystem) AS production_systems,
+                     collect(DISTINCT vt.diseaseScoresUnified) AS disease_scores_list,
+                     collect(DISTINCT vt.agronomicTraitsUnified) AS agronomic_traits_list,
+                     collect(DISTINCT vt.confidence) AS confidence_levels,
                      avg(COALESCE(vt.yieldKgHa, vt.yieldNoteS1 * 1000)) AS mean_yield,
                      min(COALESCE(vt.yieldKgHa, vt.yieldNoteS1 * 1000)) AS min_yield,
                      max(COALESCE(vt.yieldKgHa, vt.yieldNoteS1 * 1000)) AS max_yield,
@@ -1274,7 +1283,10 @@ class GraphDAO:
                        years,
                        sites,
                        irrigation_regimes,
-                       production_systems
+                       production_systems,
+                       disease_scores_list,
+                       agronomic_traits_list,
+                       confidence_levels
                 ORDER BY mean_yield DESC
                 LIMIT $top_n
                 """,
@@ -1287,8 +1299,44 @@ class GraphDAO:
 
             ranked = []
             async for record in result:
+                # Merge disease scores across trials: take best (highest) per disease
+                merged_diseases: dict[str, dict] = {}
+                ds_list = record.get("disease_scores_list") or []
+                for ds_raw in ds_list:
+                    if not ds_raw:
+                        continue
+                    try:
+                        ds = json.loads(ds_raw) if isinstance(ds_raw, str) else ds_raw
+                        for dk, dv in ds.items():
+                            if isinstance(dv, dict) and dv.get("value") is not None:
+                                if dk not in merged_diseases or dv["value"] > merged_diseases[dk]["value"]:
+                                    merged_diseases[dk] = dv
+                    except (json.JSONDecodeError, TypeError):
+                        pass
+
+                # Merge agronomic traits: take first non-null
+                merged_traits: dict[str, dict] = {}
+                at_list = record.get("agronomic_traits_list") or []
+                for at_raw in at_list:
+                    if not at_raw:
+                        continue
+                    try:
+                        at = json.loads(at_raw) if isinstance(at_raw, str) else at_raw
+                        for tk, tv in at.items():
+                            if tk not in merged_traits:
+                                merged_traits[tk] = tv
+                    except (json.JSONDecodeError, TypeError):
+                        pass
+
+                # Confidence provenance
+                conf_list = [c for c in (record.get("confidence_levels") or []) if c]
+                best_confidence = "high" if "high" in conf_list else ("medium" if "medium" in conf_list else (conf_list[0] if conf_list else None))
+
+                variety_name = record["variety"]
                 ranked.append({
-                    "variety": record["variety"],
+                    "variety": variety_name,
+                    "crop_uri": f"urn:ngsi-ld:AgriCrop:{crop}",
+                    "variety_uri": f"urn:ngsi-ld:AgriCrop:{crop}:{variety_name}",
                     "mean_yield_kg_ha": round(record["mean_yield"], 1) if record["mean_yield"] else None,
                     "min_yield_kg_ha": round(record["min_yield"], 1) if record["min_yield"] else None,
                     "max_yield_kg_ha": round(record["max_yield"], 1) if record["max_yield"] else None,
@@ -1298,6 +1346,9 @@ class GraphDAO:
                     "trial_sites": sorted(record["sites"]),
                     "irrigation_regimes": record["irrigation_regimes"],
                     "production_systems": record["production_systems"],
+                    "disease_scores": merged_diseases,
+                    "agronomic_traits": merged_traits,
+                    "confidence": best_confidence,
                 })
 
         # ── Soil suitability filter (post-ranking) ─────────────────
@@ -2316,6 +2367,40 @@ class GraphDAO:
         if phenology:
             result["stage_ky"] = {phenology.get("stage", "vegetative"): phenology.get("ky", 0.45)}
         result["limiting_factor"] = "water" if climate_class and climate_class in ("BSk", "BSh", "Csa", "Csb") else "unknown"
+
+        # Enrich with disease resistance and agronomic traits from trial data
+        merged_diseases: dict[str, dict] = {}
+        merged_traits: dict[str, dict] = {}
+        conf_levels: list[str] = []
+        for t in variety_trials:
+            ds_raw = t.get("disease_scores_unified")
+            if ds_raw:
+                try:
+                    ds = json.loads(ds_raw) if isinstance(ds_raw, str) else ds_raw
+                    for dk, dv in ds.items():
+                        if isinstance(dv, dict) and dv.get("value") is not None:
+                            if dk not in merged_diseases or dv["value"] > merged_diseases[dk]["value"]:
+                                merged_diseases[dk] = dv
+                except (json.JSONDecodeError, TypeError):
+                    pass
+            at_raw = t.get("agronomic_traits_unified")
+            if at_raw:
+                try:
+                    at = json.loads(at_raw) if isinstance(at_raw, str) else at_raw
+                    for tk, tv in at.items():
+                        if tk not in merged_traits:
+                            merged_traits[tk] = tv
+                except (json.JSONDecodeError, TypeError):
+                    pass
+            if t.get("confidence") and t["confidence"] not in conf_levels:
+                conf_levels.append(t["confidence"])
+        if merged_diseases:
+            result["disease_scores"] = merged_diseases
+        if merged_traits:
+            result["agronomic_traits"] = merged_traits
+        if conf_levels:
+            result["confidence"] = "high" if "high" in conf_levels else ("medium" if "medium" in conf_levels else conf_levels[0])
+
         return result
 
     async def compare_crops(

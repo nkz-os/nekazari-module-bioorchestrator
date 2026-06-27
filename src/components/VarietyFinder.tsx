@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { Card, Badge, Button, Skeleton, DetailGrid, DetailItem, Select, Stack, EmptyState } from '@nekazari/ui-kit';
+import { Card, Badge, Button, Skeleton, DetailGrid, DetailItem, Select, Stack, EmptyState, ProgressBar } from '@nekazari/ui-kit';
 import { useTranslation } from '@nekazari/sdk';
-import { Search, Sprout, MapPin, Thermometer, Globe, TrendingUp, AlertTriangle } from 'lucide-react';
+import { Search, Sprout, MapPin, Thermometer, Globe, TrendingUp, AlertTriangle, CheckCircle } from 'lucide-react';
 import { useBioApi } from '../services/api';
 import { useParcelContext } from '../context/ParcelContext';
+import AssignVarietyModal from './AssignVarietyModal';
 
 interface ClimateOption {
   value: string;
@@ -52,6 +53,8 @@ const FALLBACK_SOILS: SoilOption[] = [
 interface CropOption { eppo_code: string; scientific_name: string; trial_count: number; }
 interface VarietyResult {
   variety: string;
+  crop_uri?: string;
+  variety_uri?: string;
   mean_yield_kg_ha: number;
   min_yield_kg_ha: number;
   max_yield_kg_ha: number;
@@ -59,6 +62,9 @@ interface VarietyResult {
   trial_count: number;
   trial_years: number[];
   trial_sites: string[];
+  disease_scores?: Record<string, { value: number; agrovoc?: string; rawValue?: number }>;
+  agronomic_traits?: Record<string, { value: number | string; agrovoc?: string; rawValue?: number }>;
+  confidence?: string;
 }
 
 type ViewState = 'input' | 'loading' | 'results' | 'error';
@@ -79,6 +85,17 @@ const VarietyFinder: React.FC = () => {
   const [targetEnv, setTargetEnv] = useState<Record<string, any>>({});
   const [view, setView] = useState<ViewState>('input');
   const [error, setError] = useState('');
+
+  // Assign modal state
+  const [assignVariety, setAssignVariety] = useState<{
+    name: string;
+    cropUri: string;
+    varietyUri: string;
+    expectedYield: number;
+    confidenceInterval: [number, number];
+    trialCount: number;
+  } | null>(null);
+  const [assignedMessage, setAssignedMessage] = useState('');
 
   // Load crop list on mount
   useEffect(() => {
@@ -299,12 +316,14 @@ const VarietyFinder: React.FC = () => {
                       <th className="text-right py-2 pr-3">Max</th>
                       <th className="text-right py-2 pr-3">±</th>
                       <th className="text-center py-2 pr-3">{t('varietyFinder.trials')}</th>
-                      <th className="text-left py-2">{t('varietyFinder.sites')}</th>
+                      <th className="text-left py-2 pr-3">{t('varietyFinder.sites')}</th>
+                      <th className="text-center py-2">{t('varietyFinder.actions')}</th>
                     </tr>
                   </thead>
                   <tbody>
                     {results.map((v, i) => (
-                      <tr key={v.variety} className="border-b border-nkz-border-subtle hover:bg-nkz-surface-sunken">
+                      <React.Fragment key={v.variety}>
+                      <tr className="border-b border-nkz-border-subtle hover:bg-nkz-surface-sunken">
                         <td className="py-2 pr-3 text-nkz-text-muted">{i + 1}</td>
                         <td className="py-2 pr-3 font-medium text-nkz-text-primary">{v.variety}</td>
                         <td className="py-2 pr-3 text-right font-semibold text-nkz-accent-base">
@@ -328,7 +347,82 @@ const VarietyFinder: React.FC = () => {
                           {v.trial_sites?.slice(0, 3).join(', ')}
                           {(v.trial_sites?.length || 0) > 3 ? ` +${v.trial_sites.length - 3}` : ''}
                         </td>
+                        <td className="py-2 text-center">
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            onClick={() => setAssignVariety({
+                              name: v.variety,
+                              cropUri: v.crop_uri || '',
+                              varietyUri: v.variety_uri || '',
+                              expectedYield: v.mean_yield_kg_ha,
+                              confidenceInterval: [v.min_yield_kg_ha, v.max_yield_kg_ha],
+                              trialCount: v.trial_count,
+                            })}
+                          >
+                            {t('varietyFinder.assign')}
+                          </Button>
+                        </td>
                       </tr>
+                      {/* Disease resistance row */}
+                      {v.disease_scores && Object.keys(v.disease_scores).length > 0 && (
+                        <tr className="border-b border-nkz-border-subtle bg-nkz-surface-sunken">
+                          <td className="py-1.5 pr-3" colSpan={9}>
+                            <div className="flex flex-wrap items-center gap-1.5 ml-6">
+                              <span className="text-nkz-xs text-nkz-text-muted font-medium">{t('varietyFinder.diseaseResistance')}:</span>
+                              {Object.entries(v.disease_scores).map(([dk, dv]) => {
+                                const displayName = dk.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+                                const score = typeof dv.value === 'number' ? Math.round(dv.value * 10) : null;
+                                return (
+                                  <Badge key={dk} intent={score !== null && score >= 7 ? 'positive' : score !== null && score >= 4 ? 'warning' : 'negative'}>
+                                    {displayName}: {score !== null ? `${score}/10` : '?'}
+                                  </Badge>
+                                );
+                              })}
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                      {/* Agronomic traits row */}
+                      {v.agronomic_traits && Object.keys(v.agronomic_traits).length > 0 && (
+                        <tr className="border-b border-nkz-border-subtle bg-nkz-surface-sunken">
+                          <td className="py-1.5 pr-3" colSpan={9}>
+                            <div className="flex flex-wrap items-center gap-2 ml-6">
+                              <span className="text-nkz-xs text-nkz-text-muted font-medium">{t('varietyFinder.traits')}:</span>
+                              {Object.entries(v.agronomic_traits).slice(0, 5).map(([tk, tv]) => {
+                                const displayName = tk.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+                                if (typeof tv.value === 'string') {
+                                  return <Badge key={tk} intent="info">{displayName}: {tv.value}</Badge>;
+                                }
+                                const pct = Math.round((typeof tv.value === 'number' ? tv.value : 0) * 100);
+                                return (
+                                  <div key={tk} className="flex items-center gap-1">
+                                    <span className="text-nkz-xs text-nkz-text-secondary w-[110px] truncate">{displayName}</span>
+                                    <ProgressBar value={pct} intent={pct >= 70 ? 'positive' : pct >= 40 ? 'warning' : 'negative'} />
+                                  </div>
+                                );
+                              })}
+                              {Object.keys(v.agronomic_traits).length > 5 && (
+                                <Badge intent="default">+{Object.keys(v.agronomic_traits).length - 5} more</Badge>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                      {/* Confidence provenance */}
+                      {v.confidence && (
+                        <tr className="border-b border-nkz-border-subtle bg-nkz-surface-sunken">
+                          <td className="py-1.5 pr-3" colSpan={9}>
+                            <div className="flex items-center gap-1.5 ml-6">
+                              <span className="text-nkz-xs text-nkz-text-muted">{t('varietyFinder.confidence')}:</span>
+                              <Badge intent={v.confidence === 'high' ? 'positive' : v.confidence === 'medium' ? 'warning' : 'default'}>
+                                {t(`badge.confidence.${v.confidence}`, { defaultValue: v.confidence })}
+                              </Badge>
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                      </React.Fragment>
                     ))}
                   </tbody>
                 </table>
@@ -336,6 +430,30 @@ const VarietyFinder: React.FC = () => {
             )}
           </Card>
         </>
+      )}
+
+      {/* Assign modal */}
+      {assignVariety && (
+        <AssignVarietyModal
+          variety={assignVariety}
+          parcelId={selectedParcel}
+          onClose={() => setAssignVariety(null)}
+          onAssigned={(pid) => {
+            setAssignVariety(null);
+            setAssignedMessage(t('varietyFinder.assigned', { variety: assignVariety.name, parcel: pid.split(':').pop() || pid }));
+            setTimeout(() => setAssignedMessage(''), 5000);
+          }}
+        />
+      )}
+
+      {/* Post-assign feedback */}
+      {assignedMessage && (
+        <Card padding="md">
+          <div className="flex items-center gap-2 text-nkz-success">
+            <CheckCircle className="w-5 h-5" />
+            <span>{assignedMessage}</span>
+          </div>
+        </Card>
       )}
     </Stack>
   );

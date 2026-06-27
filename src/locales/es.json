@@ -115,6 +115,14 @@
       "wofostSimulation": {
         "title": "Simulación WOFOST",
         "subtitle": "Curva diaria de LAI y biomasa mecanicista para la parcela seleccionada."
+      },
+      "yieldProjection": {
+        "title": "Proyección de Rendimiento",
+        "subtitle": "Estimaciones de rendimiento desde ensayos y proyecciones corregidas por estrés en campaña."
+      },
+      "speciesExplorer": {
+        "title": "Explorador de Especies",
+        "subtitle": "Explora más de 45 especies con fenología, tolerancia térmica, requisitos de suelo y perfiles NPK completos."
       }
     },
     "backToDashboard": "← Volver al panel",
@@ -139,11 +147,36 @@
     "selectParcel": "Selecciona una parcela para ejecutar WOFOST",
     "deployPendingTitle": "Endpoint WOFOST en despliegue",
     "deployPendingBody": "La API de simulación se está desplegando. Vuelve a intentarlo cuando termine el backend.",
-    "phase2Note": "El endpoint está activo — la UI completa llegará en la siguiente fase."
+    "phase2Note": "El endpoint está activo — la UI completa llegará en la siguiente fase.",
+    "cropSlug": "Cultivo (slug)",
+    "sowingDate": "Fecha de siembra",
+    "run": "Ejecutar Simulación",
+    "running": "Ejecutando...",
+    "crop": "Cultivo",
+    "simulatedYield": "Rendimiento simulado",
+    "totalBiomass": "Biomasa total",
+    "maxLai": "LAI máx.",
+    "daysSimulated": "Días simulados",
+    "sand": "Arena",
+    "clay": "Arcilla",
+    "awc": "AWC",
+    "kSat": "K Sat",
+    "thetaFc": "θ CC",
+    "thetaWp": "θ PMP",
+    "weatherDays": "Días meteorológicos obtenidos",
+    "dailyOutput": "Salida diaria",
+    "daysSinceSowing": "Días desde siembra",
+    "biomass": "Biomasa"
   },
   "varietyFinder": {
     "anySoil": "Cualquier tipo de suelo",
-    "noDataAvailable": "Sin datos disponibles para esta especie"
+    "noDataAvailable": "Sin datos disponibles para esta especie",
+    "diseaseResistance": "Resistencia",
+    "traits": "Rasgos",
+    "confidence": "Confianza",
+    "assign": "Asignar",
+    "actions": "Acciones",
+    "assigned": "{{variety}} asignada a {{parcel}}"
   },
   "climateExplorer": {
     "legend": "Clasificación Köppen-Geiger",
@@ -494,6 +527,7 @@
     "soilAndEnvironment": "Suelo y Entorno",
     "rotationAndCrop": "Rotación y Cultivo",
     "scenarioSimulator": "Simulador de Escenarios",
+    "alternativeCrop": "Cultivo alternativo...",
     "compareAction": "Comparar",
     "scenarioIncomplete": "Ambos cultivos tienen datos incompletos. La comparativa puede no ser concluyente.",
     "sectionError": "No se pudieron cargar los datos de {{section}}.",
@@ -560,12 +594,89 @@
     "assigned_badge": "Asignada a {{parcel}}",
     "reassign": "Reasignar",
     "clear": "Quitar asignación",
-    "noParcels": "No hay parcelas disponibles. Crea una parcela primero."
+    "noParcels": "No hay parcelas disponibles. Crea una parcela primero.",
+    "noParcelSelected": "No hay parcela seleccionada — selecciona una en la plataforma"
   },
   "common": {
     "loading": "Cargando..."
   },
+  "yieldProjection": {
+    "title": "Proyección de Rendimiento",
+    "subtitle": "Estimaciones de rendimiento desde ensayos (Fase A) y proyecciones corregidas por estrés en campaña (Fase B).",
+    "selectParcel": "Selecciona una parcela para ver proyecciones",
+    "crop": "Cultivo",
+    "selectCrop": "Seleccionar cultivo...",
+    "climateClass": "Clase climática",
+    "search": "Buscar",
+    "trialsAnalyzed": "Ensayos analizados",
+    "similarSites": "Sitios similares",
+    "topVarieties": "Mejores variedades",
+    "noResults": "No se encontraron variedades para esta combinación de cultivo y clima.",
+    "pickCrop": "Selecciona un cultivo y clima",
+    "pickCropDesc": "Elige un cultivo y zona climática Köppen para ver las variedades con mejor rendimiento en entornos similares.",
+    "variety": "Variedad",
+    "meanYield": "Rendimiento medio",
+    "trials": "Ensayos",
+    "confidence": "Confianza",
+    "selectCrops": "Selecciona cultivos a comparar",
+    "compare": "Comparar",
+    "comparisonResults": "Resultados de la comparación",
+    "bestVariety": "Mejor variedad",
+    "margin": "Margen neto",
+    "carbon": "Carbono fijado",
+    "soil": "Idoneidad del suelo",
+    "suitable": "Adecuado",
+    "pickCrops": "Selecciona 2+ cultivos para comparar",
+    "inCampaignDesc": "Carga la proyección de rendimiento corregida por estrés (FAO-33) para el cultivo actual.",
+    "loadProjection": "Cargar proyección",
+    "currentStage": "Etapa actual",
+    "daysSincePlanting": "Días desde siembra",
+    "potential": "Rendimiento potencial",
+    "projected": "Rendimiento proyectado",
+    "loss": "pérdida",
+    "stressFactor": "Factor de estrés acumulado",
+    "perStage": "Desglose por etapa",
+    "stage": "Etapa",
+    "etc": "ETc (mm)",
+    "stress": "Estrés",
+    "status": "Estado",
+    "noProjection": "Sin proyección disponible",
+    "noProjectionDesc": "Carga una proyección de rendimiento para ver estimaciones en campaña.",
+    "tabs": {
+      "extrapolate": "Estimación inicial",
+      "compare": "Comparativa",
+      "inCampaign": "En campaña"
+    }
+  },
+  "speciesExplorer": {
+    "title": "Explorador de Especies",
+    "subtitle": "Explora más de 45 especies con fenología, tolerancia térmica, requisitos de suelo y perfiles NPK completos.",
+    "searchPlaceholder": "Buscar por nombre, código EPPO o nombre científico...",
+    "selectSpecies": "Selecciona una especie de la lista para ver su perfil agronómico.",
+    "noResults": "Ninguna especie coincide con tu búsqueda.",
+    "stage": "Etapa",
+    "source": "Fuente",
+    "heatThreshold": "Umbral de calor",
+    "frostThreshold": "Umbral de helada",
+    "accumHours": "Acum. (h)",
+    "texture": "Textura",
+    "drainage": "Drenaje",
+    "element": "Elemento",
+    "uptake": "Absorción",
+    "noPhenology": "Sin datos de fenología para esta especie.",
+    "noThermal": "Sin datos de tolerancia térmica para esta especie.",
+    "noSoil": "Sin datos de idoneidad de suelo para esta especie.",
+    "noNutrients": "Sin datos NPK para esta especie.",
+    "tabs": {
+      "phenology": "Fenología",
+      "thermal": "Térmica",
+      "soil": "Suelo",
+      "nutrients": "Nutrientes"
+    }
+  },
   "parcelHealth": {
+    "projectedYield": "Rendimiento proyectado",
+    "ofPotential": "del potencial",
     "title": "Salud de la Parcela",
     "selectParcel": "Seleccionar parcela...",
     "selectPrompt": "Selecciona una parcela para ver su estado de salud",

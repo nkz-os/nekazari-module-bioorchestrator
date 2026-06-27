@@ -26,7 +26,9 @@ const RotationConstraints = lazy(() => import('./components/RotationConstraints'
 const OrganicInputs = lazy(() => import('./components/OrganicInputs'));
 const PipelineRunner = lazy(() => import('./components/PipelineRunner'));
 const SourcesDashboard = lazy(() => import('./components/SourcesDashboard'));
+const YieldProjection = lazy(() => import('./components/YieldProjection'));
 const WofostSimulation = lazy(() => import('./components/WofostSimulation'));
+const SpeciesExplorer = lazy(() => import('./components/SpeciesExplorer'));
 const BreedDiscovery = lazy(() => import('./components/DADIS/BreedDiscovery').then(m => ({ default: m.BreedDiscovery })));
 
 type ViewState = { mode: 'dashboard' } | { mode: 'tool'; toolId: string };
@@ -38,7 +40,9 @@ const TOOL_MAP: Record<string, React.LazyExoticComponent<React.ComponentType<any
   rotationPlanner: RotationPlanner,
   waterBudget: WaterBudget,
   regenerative: RegenerativeSequence,
+  yieldProjection: YieldProjection,
   wofostSimulation: WofostSimulation,
+  speciesExplorer: SpeciesExplorer,
   catalog: CropCatalog,
   climate: ClimateExplorer,
   phenology: PhenologyBrowser,

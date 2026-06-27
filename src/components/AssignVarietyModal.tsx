@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { fetchParcels, assignCrop, AssignCropRequest, ParcelItem } from "../services/api";
+import { assignCrop, AssignCropRequest } from "../services/api";
+import { useParcelContext } from "../context/ParcelContext";
 
 interface VarietyInfo {
   name: string;
   scientificName?: string;
-  cropEppo: string;
+  cropEppo?: string;
   cropUri: string;
   varietyUri: string;
   expectedYield: number;
@@ -15,14 +16,15 @@ interface VarietyInfo {
 
 interface Props {
   variety: VarietyInfo;
+  parcelId?: string;
   onClose: () => void;
   onAssigned: (parcelId: string) => void;
 }
 
-export default function AssignVarietyModal({ variety, onClose, onAssigned }: Props) {
+export default function AssignVarietyModal({ variety, parcelId: propParcelId, onClose, onAssigned }: Props) {
   const { t } = useTranslation();
-  const [parcels, setParcels] = useState<ParcelItem[]>([]);
-  const [selectedParcel, setSelectedParcel] = useState("");
+  const { selectedParcel: ctxParcelId } = useParcelContext();
+  const selectedParcel = propParcelId || ctxParcelId;
   const [management, setManagement] = useState<"conventional" | "organic">("conventional");
   const [seasonStart, setSeasonStart] = useState("");
   const [seasonEnd, setSeasonEnd] = useState("");
@@ -30,16 +32,16 @@ export default function AssignVarietyModal({ variety, onClose, onAssigned }: Pro
   const [error, setError] = useState("");
 
   useEffect(() => {
-    let cancelled = false;
-    fetchParcels()
-      .then((p: ParcelItem[]) => { if (!cancelled) setParcels(p); })
-      .catch(() => { if (!cancelled) setParcels([]); });
-    return () => { cancelled = true; };
+    // Default season: current year for start, next year for end
+    const now = new Date();
+    const y = now.getFullYear();
+    if (!seasonStart) setSeasonStart(`${y}-10-15`);
+    if (!seasonEnd) setSeasonEnd(`${y + 1}-06-30`);
   }, []);
 
   const handleAssign = async () => {
     if (!selectedParcel) {
-      setError(t("assign.noParcels"));
+      setError(t("assign.noParcels", { defaultValue: "No parcel selected" }));
       return;
     }
     setLoading(true);
@@ -102,18 +104,9 @@ export default function AssignVarietyModal({ variety, onClose, onAssigned }: Pro
 
         <div style={{ marginBottom: 16 }}>
           <label>{t("assign.parcelLabel")}</label>
-          <select
-            value={selectedParcel}
-            onChange={(e) => setSelectedParcel(e.target.value)}
-            style={{ width: "100%", padding: 8, marginTop: 4 }}
-          >
-            <option value="">{t("assign.parcelPlaceholder")}</option>
-            {parcels.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name}
-              </option>
-            ))}
-          </select>
+          <div style={{ padding: 8, marginTop: 4, background: "#f5f5f5", borderRadius: 4, fontSize: 14 }}>
+            {selectedParcel || t("assign.noParcelSelected", { defaultValue: "No parcel selected — please select one in the platform" })}
+          </div>
         </div>
 
         <div style={{ marginBottom: 16 }}>

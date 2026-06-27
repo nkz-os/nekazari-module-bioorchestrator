@@ -4,7 +4,7 @@ import { Badge, Card, Stack, Spinner } from '@nekazari/ui-kit';
 import {
   Search, Heart, Activity, RefreshCw, Droplets, Dna, Microscope,
   Leaf, Globe, Sprout, Thermometer, FlaskRound, GitBranch, Database, Mountain,
-  Bell,
+  Bell, TrendingUp,
 } from 'lucide-react';
 import { useParcelContext } from '../context/ParcelContext';
 import { usePlanningScenario } from '../context/PlanningScenarioContext';
@@ -27,6 +27,7 @@ const ALL_TOOLS: ToolCardDef[] = [
   { id: 'rotationPlanner', icon: RefreshCw, hub: 'planning' },
   { id: 'regenerative', icon: Dna, hub: 'planning' },
   { id: 'parcelStatus', icon: Heart, hub: 'campaign' },
+  { id: 'yieldProjection', icon: TrendingUp, hub: 'campaign' },
   { id: 'wofostSimulation', icon: Microscope, hub: 'campaign' },
   { id: 'waterBudget', icon: Droplets, hub: 'campaign' },
   { id: 'catalog', icon: Leaf, hub: 'codex', compact: true },
@@ -40,6 +41,7 @@ const ALL_TOOLS: ToolCardDef[] = [
   { id: 'pipeline', icon: GitBranch, hub: 'codex', compact: true },
   { id: 'sources', icon: Activity, hub: 'codex', compact: true },
   { id: 'dadis', icon: Database, hub: 'codex', compact: true },
+  { id: 'speciesExplorer', icon: Leaf, hub: 'codex', compact: true },
 ];
 
 interface DashboardProps {

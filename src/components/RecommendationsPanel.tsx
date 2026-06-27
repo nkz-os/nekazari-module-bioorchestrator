@@ -17,7 +17,6 @@ interface CropSoilReq { ph_min: number; ph_max: number; textures: string[]; drai
 interface Props { parcelId?: string; parcelName?: string; cropType?: string; lat?: number; lon?: number; }
 
 const PESTICIDE_INTENT: Record<string, 'positive' | 'negative' | 'warning'> = { approved: 'positive', not_approved: 'negative', withdrawn: 'warning' };
-const SCENARIO_CROPS = ['wheat', 'sunflower', 'almond', 'olive', 'grapevine', 'legume'];
 
 const RecommendationsPanel: React.FC<Props> = ({ parcelId, parcelName, cropType, lat, lon }) => {
   const { t } = useTranslation('bioorchestrator');
@@ -127,6 +126,7 @@ const RecommendationsPanel: React.FC<Props> = ({ parcelId, parcelName, cropType,
         <ContextEmptyState
           message={t('panel.noCrop')}
           actionLabel={t('panel.assignCrop')}
+          onAction={() => { window.location.href = '/modules/bioorchestrator'; }}
           variant="warning"
         />
       </SlotShell>
@@ -306,14 +306,37 @@ const ClimateSection: React.FC<{ lat: number; lon: number }> = ({ lat, lon }) =>
 
 const ScenarioSimulator: React.FC<{ currentCrop: string }> = ({ currentCrop }) => {
   const { t } = useTranslation('bioorchestrator');
-  const api = useBioApi(); const [scenario, setScenario] = useState(''); const [result, setResult] = useState<any>(null); const [loading, setLoading] = useState(false);
+  const api = useBioApi();
+  const [scenario, setScenario] = useState('');
+  const [result, setResult] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
+  const [speciesList, setSpeciesList] = useState<{ name: string; scientificName: string }[]>([]);
+
+  useEffect(() => {
+    api.getGraphSpecies()
+      .then((data: any) => {
+        const crops = Array.isArray(data) ? data : (data?.crops || []);
+        setSpeciesList(crops.map((c: any) => ({
+          name: c.name || c.scientificName || '',
+          scientificName: c.scientificName || c.name || '',
+        })).filter((c: { name: string }) => c.name));
+      })
+      .catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const run = async () => { if (!scenario) return; setLoading(true); try { setResult(await api.simulateCrop(currentCrop, scenario)); } catch {} finally { setLoading(false); } };
+
+  const scenarioOptions = speciesList.filter((c) => c.name !== currentCrop);
+
   return (
     <Stack gap="stack">
       <div className="flex gap-2 items-center">
         <select className="h-9 rounded-nkz-md border border-nkz-border bg-nkz-surface px-nkz-stack text-nkz-sm" value={scenario} onChange={(e) => setScenario(e.target.value)}>
-          <option value="">Alternative...</option>
-          {SCENARIO_CROPS.filter((c) => c !== currentCrop).map((c) => <option key={c} value={c}>{c}</option>)}
+          <option value="">{t('panel.alternativeCrop')}</option>
+          {scenarioOptions.map((c) => (
+            <option key={c.name} value={c.name}>{c.scientificName || c.name}</option>
+          ))}
         </select>
         <Button variant="secondary" size="sm" onClick={run} disabled={!scenario || loading} loading={loading}>{t('panel.compareAction')}</Button>
       </div>

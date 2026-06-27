@@ -115,6 +115,14 @@
       "wofostSimulation": {
         "title": "WOFOST Simulation",
         "subtitle": "Mechanistic daily LAI and biomass curve for the selected parcel."
+      },
+      "yieldProjection": {
+        "title": "Yield Projection",
+        "subtitle": "Yield estimates from trial data and stress-corrected in-campaign projections."
+      },
+      "speciesExplorer": {
+        "title": "Species Explorer",
+        "subtitle": "Browse 45+ species with full phenology, thermal tolerance, soil requirements and NPK profiles."
       }
     },
     "backToDashboard": "← Back to dashboard",
@@ -139,11 +147,36 @@
     "selectParcel": "Select a parcel to run WOFOST",
     "deployPendingTitle": "WOFOST endpoint deploying",
     "deployPendingBody": "The simulation API is being rolled out. Try again after the backend deploy completes.",
-    "phase2Note": "Endpoint is live — full simulation UI ships in the next phase."
+    "phase2Note": "Endpoint is live — full simulation UI ships in the next phase.",
+    "cropSlug": "Crop slug",
+    "sowingDate": "Sowing date",
+    "run": "Run Simulation",
+    "running": "Running...",
+    "crop": "Crop",
+    "simulatedYield": "Simulated Yield",
+    "totalBiomass": "Total Biomass",
+    "maxLai": "Max LAI",
+    "daysSimulated": "Days Simulated",
+    "sand": "Sand",
+    "clay": "Clay",
+    "awc": "AWC",
+    "kSat": "K Sat",
+    "thetaFc": "θ FC",
+    "thetaWp": "θ WP",
+    "weatherDays": "Weather days fetched",
+    "dailyOutput": "Daily Output",
+    "daysSinceSowing": "Days since sowing",
+    "biomass": "Biomass"
   },
   "varietyFinder": {
     "anySoil": "Any soil type",
-    "noDataAvailable": "No data available for this species yet"
+    "noDataAvailable": "No data available for this species yet",
+    "diseaseResistance": "Resistance",
+    "traits": "Traits",
+    "confidence": "Confidence",
+    "assign": "Assign",
+    "actions": "Actions",
+    "assigned": "{{variety}} assigned to {{parcel}}"
   },
   "climateExplorer": {
     "legend": "Köppen-Geiger Classification",
@@ -494,6 +527,7 @@
     "soilAndEnvironment": "Soil & Environment",
     "rotationAndCrop": "Rotation & Crop",
     "scenarioSimulator": "Scenario Simulator",
+    "alternativeCrop": "Alternative crop...",
     "compareAction": "Compare",
     "scenarioIncomplete": "Both crops have incomplete data. The comparison may be inconclusive.",
     "sectionError": "Could not load {{section}} data.",
@@ -560,12 +594,89 @@
     "assigned_badge": "Assigned to {{parcel}}",
     "reassign": "Reassign",
     "clear": "Remove assignment",
-    "noParcels": "No parcels available. Create a parcel first."
+    "noParcels": "No parcels available. Create a parcel first.",
+    "noParcelSelected": "No parcel selected — please select one in the platform"
   },
   "common": {
     "loading": "Loading..."
   },
+  "yieldProjection": {
+    "title": "Yield Projection",
+    "subtitle": "Yield estimates from trial data (Phase A) and stress-corrected in-campaign projections (Phase B).",
+    "selectParcel": "Select a parcel to view yield projections",
+    "crop": "Crop",
+    "selectCrop": "Select crop...",
+    "climateClass": "Climate class",
+    "search": "Search",
+    "trialsAnalyzed": "Trials analyzed",
+    "similarSites": "Similar sites",
+    "topVarieties": "Top varieties",
+    "noResults": "No varieties found for this crop and climate combination.",
+    "pickCrop": "Select a crop and climate",
+    "pickCropDesc": "Choose a crop and Köppen climate zone to see top-performing varieties from trial sites in similar environments.",
+    "variety": "Variety",
+    "meanYield": "Mean yield",
+    "trials": "Trials",
+    "confidence": "Confidence",
+    "selectCrops": "Select crops to compare",
+    "compare": "Compare",
+    "comparisonResults": "Comparison results",
+    "bestVariety": "Best variety",
+    "margin": "Net margin",
+    "carbon": "Carbon fixed",
+    "soil": "Soil suitability",
+    "suitable": "Suitable",
+    "pickCrops": "Select 2+ crops to compare",
+    "inCampaignDesc": "Load the FAO-33 stress-corrected yield projection for the current crop.",
+    "loadProjection": "Load projection",
+    "currentStage": "Current stage",
+    "daysSincePlanting": "Days since planting",
+    "potential": "Potential Yield",
+    "projected": "Projected Yield",
+    "loss": "loss",
+    "stressFactor": "Cumulative Stress Factor",
+    "perStage": "Per-stage breakdown",
+    "stage": "Stage",
+    "etc": "ETc (mm)",
+    "stress": "Stress",
+    "status": "Status",
+    "noProjection": "No projection available",
+    "noProjectionDesc": "Load a yield projection to see in-campaign estimates.",
+    "tabs": {
+      "extrapolate": "Initial Estimate",
+      "compare": "Multi-Crop Compare",
+      "inCampaign": "In-Campaign"
+    }
+  },
+  "speciesExplorer": {
+    "title": "Species Explorer",
+    "subtitle": "Browse 45+ species with full phenology, thermal tolerance, soil requirements and NPK profiles.",
+    "searchPlaceholder": "Search by name, EPPO code, or scientific name...",
+    "selectSpecies": "Select a species from the list to see its agronomic profile.",
+    "noResults": "No species match your search.",
+    "stage": "Stage",
+    "source": "Source",
+    "heatThreshold": "Heat threshold",
+    "frostThreshold": "Frost threshold",
+    "accumHours": "Accum. (h)",
+    "texture": "Texture",
+    "drainage": "Drainage",
+    "element": "Element",
+    "uptake": "Uptake",
+    "noPhenology": "No phenology data for this species.",
+    "noThermal": "No thermal tolerance data for this species.",
+    "noSoil": "No soil suitability data for this species.",
+    "noNutrients": "No NPK data for this species.",
+    "tabs": {
+      "phenology": "Phenology",
+      "thermal": "Thermal",
+      "soil": "Soil",
+      "nutrients": "Nutrients"
+    }
+  },
   "parcelHealth": {
+    "projectedYield": "Projected yield",
+    "ofPotential": "of potential",
     "title": "Parcel Health",
     "selectParcel": "Select parcel...",
     "selectPrompt": "Select a parcel to view its health status",

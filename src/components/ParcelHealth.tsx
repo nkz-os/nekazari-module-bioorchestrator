@@ -6,13 +6,13 @@ import {
   Stack, Badge, Card, EmptyState, Skeleton, DetailGrid, DetailItem,
 } from "@nekazari/ui-kit";
 import {
-  Heart, Droplets, Thermometer, Activity, AlertTriangle, Sprout, Monitor,
+  Heart, Droplets, Thermometer, Activity, AlertTriangle, Sprout, Monitor, TrendingUp,
 } from "lucide-react";
 import {
   getCropContext, getYieldPotential,
   CropContextResponse, YieldPotentialResponse,
   fetchAssessmentHistory, fetchAlerts,
-  HistoryPoint, AlertItem,
+  HistoryPoint, AlertItem, authHeaders,
 } from "../services/api";
 import ParcelHealthChart from "./ParcelHealthChart";
 
@@ -45,6 +45,7 @@ export default function ParcelHealth() {
   const [error, setError] = useState("");
   const [history, setHistory] = useState<HistoryPoint[]>([]);
   const [alerts, setAlerts] = useState<AlertItem[]>([]);
+  const [yieldProj, setYieldProj] = useState<{ projected_yield_kg_ha: number; potential_yield_kg_ha: number; yield_loss_pct: number } | null>(null);
 
   useEffect(() => {
     if (!selectedParcel) return;
@@ -74,6 +75,18 @@ export default function ParcelHealth() {
         }
         if (histPromise.status === "fulfilled") setHistory(histPromise.value);
         if (alertPromise.status === "fulfilled") setAlerts(alertPromise.value);
+        // Fetch yield projection for compact summary
+        try {
+          const API_BASE2 = (import.meta as any).env?.VITE_API_URL || "https://nkz.robotika.cloud";
+          const ypResp = await fetch(
+            `${API_BASE2}/api/graph/agriculture/yield-projection?parcel_id=${encodeURIComponent(selectedParcel)}`,
+            { credentials: "include", headers: authHeaders() }
+          );
+          if (ypResp.ok) {
+            const ypData = await ypResp.json();
+            if (ypData.projected_yield_kg_ha != null) setYieldProj(ypData);
+          }
+        } catch { /* optional, don't block */ }
       } catch (e: any) { setError(e.message || "unknown"); }
       finally { setLoading(false); }
     })();
@@ -268,6 +281,21 @@ export default function ParcelHealth() {
                 <DetailItem label="pH" value={(ctx.soil_sensors as any).ph} />
                 <DetailItem label="Moisture" value={`${(ctx.soil_sensors as any).moisture_pct}%`} />
               </DetailGrid>
+            </Card>
+          )}
+
+          {/* Yield projection summary */}
+          {yieldProj && (
+            <Card padding="md" className="border-nkz-accent-base bg-nkz-accent-soft">
+              <div className="flex items-center gap-2">
+                <TrendingUp className="w-4 h-4 text-nkz-accent-base" />
+                <span className="text-nkz-sm font-semibold text-nkz-text-primary">
+                  {t("parcelHealth.projectedYield")}: {yieldProj.projected_yield_kg_ha?.toLocaleString()} kg/ha
+                </span>
+                <Badge intent={yieldProj.yield_loss_pct > 10 ? 'warning' : 'positive'}>
+                  {((yieldProj.projected_yield_kg_ha / yieldProj.potential_yield_kg_ha) * 100).toFixed(0)}% {t("parcelHealth.ofPotential")}
+                </Badge>
+              </div>
             </Card>
           )}
 
