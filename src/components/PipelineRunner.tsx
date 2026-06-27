@@ -5,6 +5,8 @@ import { SlotShell } from '@nekazari/viewer-kit';
 import { Play, CheckCircle, XCircle } from 'lucide-react';
 import { useBioApi } from '../services/api';
 
+const API_BASE = (import.meta as any).env?.VITE_API_URL || 'https://nkz.robotika.cloud';
+
 const bioAccent = { base: '#14B8A6', soft: '#CCFBF1', strong: '#0D9488' };
 
 interface PipelineResult { success: boolean; entities_before_dedup: number; entities_after_dedup: number; relationships: number; crossref_matches: number; duration_seconds: number; errors: string[]; }
@@ -30,7 +32,7 @@ const PipelineRunner: React.FC = () => {
 
   const handleRun = async () => {
     setRunning(true); setError(null); setResult(null); setProgress(null);
-    const es = new EventSource('/api/bioorchestrator/api/pipeline/progress');
+    const es = new EventSource(`${API_BASE}/api/bioorchestrator/api/pipeline/progress`);
     eventSourceRef.current = es;
     es.onmessage = (event) => { try { setProgress(JSON.parse(event.data)); } catch {} };
     es.onerror = () => { es.close(); };
