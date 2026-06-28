@@ -39,6 +39,7 @@ interface SuggestResult {
 }
 
 type ViewState = 'idle' | 'loading' | 'results' | 'error';
+type PlannerTab = 'ranking' | 'optimize';
 
 const DEFAULT_ECONOMICS: EconomicInputs = {
   seedPrice: 0,
@@ -71,6 +72,7 @@ const CropPlanner: React.FC = () => {
   const [glutenFreeOnly, setGlutenFreeOnly] = useState(false);
   const [inferredIrrigation, setInferredIrrigation] = useState<string | null>(null);
   const [economics, setEconomics] = useState<EconomicInputs>(DEFAULT_ECONOMICS);
+  const [activeTab, setActiveTab] = useState<PlannerTab>('ranking');
   const [view, setView] = useState<ViewState>('idle');
   const [result, setResult] = useState<SuggestResult | null>(null);
   const [error, setError] = useState('');
@@ -167,7 +169,28 @@ const CropPlanner: React.FC = () => {
         {envBadge && <Badge intent="info">{envBadge}</Badge>}
       </Stack>
 
-      {/* Filters */}
+      {/* Tab bar */}
+      <div className="flex gap-1 p-1 rounded-nkz-lg border border-nkz-border bg-nkz-surface-raised">
+        <button
+          className={`flex-1 px-4 py-2 rounded-nkz-md text-nkz-sm font-semibold transition-colors ${
+            activeTab === 'ranking' ? 'bg-nkz-accent-base text-nkz-text-on-accent' : 'text-nkz-text-secondary hover:text-nkz-text-primary'
+          }`}
+          onClick={() => setActiveTab('ranking')}
+        >
+          {t('planning.recommendCrops', { defaultValue: 'Recomendar' })}
+        </button>
+        <button
+          className={`flex-1 px-4 py-2 rounded-nkz-md text-nkz-sm font-semibold transition-colors ${
+            activeTab === 'optimize' ? 'bg-nkz-accent-base text-nkz-text-on-accent' : 'text-nkz-text-secondary hover:text-nkz-text-primary'
+          }`}
+          onClick={() => setActiveTab('optimize')}
+        >
+          🔄 Optimizar
+        </button>
+      </div>
+
+      {activeTab === 'ranking' && (
+      <>
       <Card padding="md">
         <h3 className="text-nkz-sm font-semibold text-nkz-text-primary mb-2">
           {t('planning.filtersTitle', { defaultValue: 'Condiciones de cultivo' })}
@@ -388,7 +411,192 @@ const CropPlanner: React.FC = () => {
           </div>
         </Card>
       )}
+      </>
+      )}
+
+      {activeTab === 'optimize' && (
+        <OptimizerPanel
+          parcelId={selectedParcel}
+          management={management}
+          irrigation={irrigation || (inferredIrrigation || '')}
+          economics={economics}
+          glutenFreeOnly={glutenFreeOnly}
+          api={api}
+        />
+      )}
     </Stack>
+  );
+};
+
+// ── Optimizer sub-component ──────────────────────────────────────────────
+
+interface OptimizerProps {
+  parcelId: string;
+  management: string;
+  irrigation: string;
+  economics: EconomicInputs;
+  glutenFreeOnly: boolean;
+  api: ReturnType<typeof useBioApi>;
+}
+
+const OptimizerPanel: React.FC<OptimizerProps> = ({ parcelId, management, irrigation, economics, glutenFreeOnly, api }) => {
+  const { t } = useTranslation('bioorchestrator');
+  const [years, setYears] = useState(4);
+  const [optGlutenFree, setOptGlutenFree] = useState(glutenFreeOnly);
+  const [optManagement, setOptManagement] = useState(management);
+  const [optIrrigation, setOptIrrigation] = useState(irrigation);
+  const [priorities, setPriorities] = useState<Record<number, Record<string, number>>>({
+    1: { protein: 40, carbon: 10, n_fixation: 60, margin: 20, yield: 20 },
+    2: { protein: 30, carbon: 50, n_fixation: 20, margin: 40, yield: 10 },
+    3: { protein: 20, carbon: 70, n_fixation: 10, margin: 50, yield: 30 },
+    4: { protein: 50, carbon: 20, n_fixation: 40, margin: 30, yield: 10 },
+  });
+  const [optResult, setOptResult] = useState<any>(null);
+  const [optLoading, setOptLoading] = useState(false);
+  const [optError, setOptError] = useState('');
+
+  const dims = [
+    { key: 'protein', label: 'Proteína', icon: '🧪' },
+    { key: 'carbon', label: 'Carbono', icon: '🌍' },
+    { key: 'n_fixation', label: 'Nitrógeno', icon: '🧪' },
+    { key: 'margin', label: 'Margen', icon: '💰' },
+    { key: 'yield', label: 'Rendimiento', icon: '🌾' },
+  ];
+
+  const handleOptimize = async () => {
+    setOptLoading(true); setOptError('');
+    try {
+      const prioArray = Array.from({ length: years }, (_, i) => ({
+        year: i + 1,
+        ...priorities[i + 1] || { protein: 20, carbon: 20, n_fixation: 20, margin: 20, yield: 20 },
+      }));
+      const body = JSON.stringify({
+        parcel_id: parcelId,
+        years,
+        constraints: {
+          gluten_free_only: optGlutenFree,
+          management: optManagement,
+          irrigation_regime: optIrrigation || undefined,
+        },
+        priorities: prioArray,
+        seed_price: economics.seedPrice,
+        harvest_price: economics.harvestPrice,
+        price_unit: economics.priceUnit,
+        operation_cost: economics.operationCost,
+      });
+      const API_BASE = (import.meta as any).env?.VITE_API_URL || 'https://nkz.robotika.cloud';
+      const res = await fetch(`${API_BASE}/api/graph/agriculture/rotation-optimize`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body,
+        credentials: 'include',
+      });
+      if (!res.ok) throw new Error((await res.json().catch(() => ({}))).detail || `HTTP ${res.status}`);
+      setOptResult(await res.json());
+    } catch (e: any) {
+      setOptError(e.message);
+    } finally {
+      setOptLoading(false);
+    }
+  };
+
+  return (
+    <>
+      <Card padding="md">
+        <h3 className="text-nkz-sm font-semibold mb-2">{t('rotationOptimizer.constraints', { defaultValue: 'Restricciones' })}</h3>
+        <div className="flex flex-wrap gap-3 items-center">
+          <label className="flex items-center gap-1 text-nkz-sm">
+            <input type="checkbox" checked={optGlutenFree} onChange={e => setOptGlutenFree(e.target.checked)} />
+            🌾 {t('rotationOptimizer.glutenFree', { defaultValue: 'Sin gluten' })}
+          </label>
+          <select value={optManagement} onChange={e => setOptManagement(e.target.value)} className="rounded-md border border-nkz-border px-2 py-1 text-nkz-sm">
+            <option value="any">Cualquiera</option>
+            <option value="conventional">Convencional</option>
+            <option value="organic">Ecológico</option>
+          </select>
+        </div>
+      </Card>
+
+      <Card padding="md">
+        <h3 className="text-nkz-sm font-semibold mb-2">{t('rotationOptimizer.priorities', { defaultValue: 'Prioridades por año' })}</h3>
+        <div className="flex gap-1 mb-3">
+          {[2, 3, 4, 5, 6].map(n => (
+            <Button key={n} variant={years === n ? 'primary' : 'ghost'} size="sm" onClick={() => setYears(n)}>{n}a</Button>
+          ))}
+        </div>
+        {Array.from({ length: years }, (_, i) => {
+          const yr = i + 1;
+          const p = priorities[yr] || { protein: 20, carbon: 20, n_fixation: 20, margin: 20, yield: 20 };
+          return (
+            <div key={yr} className="mb-2">
+              <div className="text-nkz-xs font-medium text-nkz-text-secondary mb-1">{t('rotationOptimizer.year', { n: yr, defaultValue: `Año ${yr}` })}</div>
+              <div className="flex flex-wrap gap-2">
+                {dims.map(d => (
+                  <div key={d.key} className="flex items-center gap-1" style={{ minWidth: '160px' }}>
+                    <span className="text-nkz-xs w-20 truncate">{d.icon} {d.label}</span>
+                    <input
+                      type="range"
+                      min="0"
+                      max="100"
+                      value={p[d.key] || 0}
+                      onChange={e => setPriorities(prev => ({ ...prev, [yr]: { ...prev[yr], [d.key]: Number(e.target.value) } }))}
+                      className="flex-1 h-2"
+                    />
+                    <span className="text-nkz-xs w-8 text-right">{p[d.key] || 0}%</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })}
+      </Card>
+
+      <Button size="lg" onClick={handleOptimize} disabled={optLoading} loading={optLoading}>
+        🔄 {t('rotationOptimizer.optimize', { defaultValue: 'Optimizar' })}
+      </Button>
+
+      {optError && <div className="text-nkz-error text-nkz-sm">{optError}</div>}
+
+      {optResult && optResult.plan && (
+        <>
+          {optResult.plan.map((year: any) => (
+            <Card key={year.year} padding="md">
+              <div className="flex items-center gap-2 mb-2">
+                <Badge intent="info">{t('rotationOptimizer.year', { n: year.year, defaultValue: `Año ${year.year}` })}</Badge>
+                {year.locked && <Badge intent="warning">🔒 {t('rotationOptimizer.lockedYear', { defaultValue: 'Bloqueado' })}</Badge>}
+              </div>
+              <div className="grid grid-cols-2 gap-2 text-nkz-sm">
+                <div>
+                  <div className="text-nkz-xs text-nkz-text-muted">{t('rotationOptimizer.coverCrop', { defaultValue: 'Cobertura' })}</div>
+                  <div className="font-medium">🌱 {year.cover_crop?.name || '—'} {year.cover_crop?.termination_method === 'roller_crimper' ? '🔄' : ''}</div>
+                </div>
+                <div>
+                  <div className="text-nkz-xs text-nkz-text-muted">{t('rotationOptimizer.cashCrop', { defaultValue: 'Cultivo' })}</div>
+                  <div className="font-medium">
+                    🌾 {year.cash_crop?.name} · {year.cash_crop?.expected_yield_kg_ha?.toLocaleString()} kg/ha
+                  </div>
+                  <div className="text-nkz-xs text-nkz-text-secondary">
+                    🧪 {year.cash_crop?.protein_kg_ha} kg prot · 🌍 {year.cash_crop?.carbon_fixed_tco2e_ha} tCO₂e · 💰 {year.cash_crop?.net_margin_eur_ha?.toFixed(0)} €/ha
+                  </div>
+                </div>
+              </div>
+              {year.rotation_warning && <div className="text-nkz-xs text-nkz-warning mt-1">⚠️ {year.rotation_warning}</div>}
+            </Card>
+          ))}
+          {optResult.cumulative && (
+            <Card padding="md" className="bg-nkz-positive-soft">
+              <strong className="text-nkz-sm">{t('rotationOptimizer.cumulative', { defaultValue: 'Acumulado' })}</strong>
+              <div className="grid grid-cols-2 gap-2 mt-2 text-nkz-sm">
+                <div>🧪 {optResult.cumulative.total_protein_kg_ha} kg proteína</div>
+                <div>🌍 {optResult.cumulative.total_carbon_fixed_tco2e} tCO₂e</div>
+                <div>🧪 {optResult.cumulative.total_n_fixation_kg_ha} kg N fijado</div>
+                <div>💰 {optResult.cumulative.total_net_margin_eur_ha?.toLocaleString()} €/ha</div>
+              </div>
+            </Card>
+          )}
+        </>
+      )}
+    </>
   );
 };
 

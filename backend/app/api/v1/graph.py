@@ -1129,6 +1129,32 @@ async def agriculture_rotation_plan(
     return result
 
 
+@router.post("/agriculture/rotation-optimize")
+async def agriculture_rotation_optimize(
+    driver: DriverDep,
+    request: Request,
+):
+    """Priority-driven rotation optimizer with cover crops."""
+    body = await request.json()
+    tenant_id = getattr(request.state, "tenant_id", "")
+    dao = GraphDAO(driver)
+    result = await dao.optimize_rotation(
+        parcel_id=body.get("parcel_id", ""),
+        years=body.get("years", 4),
+        constraints=body.get("constraints"),
+        priorities=body.get("priorities"),
+        locked_years=body.get("locked_years"),
+        seed_price=body.get("seed_price", 1.0),
+        harvest_price=body.get("harvest_price", 1.0),
+        price_unit=body.get("price_unit", "eur_per_t"),
+        operation_cost=body.get("operation_cost", 1.0),
+        tenant_id=tenant_id,
+    )
+    if "error" in result:
+        raise HTTPException(status_code=400, detail=result["error"])
+    return result
+
+
 # ═══════════════════════════════════════════════════════════════════════════════
 # F4: Crop-Health Integration — Endpoints
 # ═══════════════════════════════════════════════════════════════════════════════
