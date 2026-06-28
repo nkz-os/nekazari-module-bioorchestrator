@@ -353,6 +353,35 @@
     "deprecatedSoilNote": "Deprecated data — coming soon from Soil module",
     "title": "Recomendações"
   },
+  "rotationOptimizer": {
+    "title": "Otimizador de rotação",
+    "optimize": "Otimizar",
+    "constraints": "Restrições",
+    "glutenFree": "Apenas sem glúten",
+    "priorities": "Prioridades por ano",
+    "year": "Ano {{n}}",
+    "yearsShort": "{{n}}a",
+    "protein": "Proteína",
+    "carbon": "Carbono",
+    "nitrogen": "Azoto",
+    "margin": "Margem",
+    "yield": "Rendimento",
+    "coverCrop": "Cultura de cobertura",
+    "cashCrop": "Cultura principal",
+    "alternatives": "Ver alternativas",
+    "cumulative": "Acumulado",
+    "lockedYear": "Bloqueado",
+    "unlock": "Desbloquear",
+    "scores": "Pontuação"
+  },
+  "planning": {
+    "rotationTitle": "Rotação PAC (4 anos)",
+    "addToRotation": "Adicionar à rotação",
+    "managementAny": "Qualquer",
+    "managementConventional": "Convencional",
+    "managementOrganic": "Ecológico",
+    "glutenFreeOnly": "Apenas sem glúten"
+  },
   "disclaimer": {
     "text": "As recomendações baseiam-se em modelos agronómicos e dados científicos de terceiros. Não substituem o julgamento profissional. Consulte o seu técnico agrícola local antes de tomar decisões de cultivo."
   },

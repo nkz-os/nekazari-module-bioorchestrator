@@ -394,6 +394,16 @@ const CropPlanner: React.FC<CropPlannerProps> = ({ onNavigateTool }) => {
             </Card>
           );
           })()}
+
+          {rankingSelection && view === 'results' && (
+            <RotationPacPanel
+              parcelId={selectedParcel}
+              startingCrop={rankingSelection}
+              management={management}
+              economics={economics}
+              api={api}
+            />
+          )}
         </>
       )}
 
@@ -450,6 +460,109 @@ const CropPlanner: React.FC<CropPlannerProps> = ({ onNavigateTool }) => {
         />
       )}
     </Stack>
+  );
+};
+
+// ── PAC rotation panel (US-5: embedded in ranking tab) ─────────────────
+
+interface RotationPacPanelProps {
+  parcelId: string;
+  startingCrop: string;
+  management: string;
+  economics: EconomicInputs;
+  api: ReturnType<typeof useBioApi>;
+}
+
+const RotationPacPanel: React.FC<RotationPacPanelProps> = ({
+  parcelId, startingCrop, management, economics, api,
+}) => {
+  const { t } = useTranslation('bioorchestrator');
+  const [plan, setPlan] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    setError('');
+    api.rotationPlan?.({
+      parcel_id: parcelId,
+      years: 4,
+      starting_crop: startingCrop,
+      management,
+      seed_price: economics.seedPrice,
+      harvest_price: economics.harvestPrice,
+      operation_cost: economics.operationCost,
+    })
+      .then((data: any) => {
+        if (cancelled) return;
+        if (data?.error) {
+          setError(data.error);
+          setPlan(null);
+        } else {
+          setPlan(data);
+        }
+      })
+      .catch((e: Error) => {
+        if (!cancelled) setError(e.message);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => { cancelled = true; };
+  }, [parcelId, startingCrop, management, economics.seedPrice, economics.harvestPrice, economics.operationCost]);
+
+  return (
+    <Card padding="md">
+      <h3 className="text-nkz-sm font-semibold mb-2">
+        🇪🇺 {t('planning.rotationTitle', { defaultValue: 'Rotación PAC (4 años)' })}
+      </h3>
+      <div className="text-nkz-xs text-nkz-text-muted mb-2">
+        {t('planning.addToRotation', { defaultValue: 'Añadir a rotación' })}: <strong>{startingCrop}</strong>
+      </div>
+      {loading && <Skeleton variant="rect" height="80px" />}
+      {error && <div className="text-nkz-error text-nkz-sm">{error}</div>}
+      {plan?.plan && (
+        <>
+          <div className="flex gap-2 flex-wrap mb-3">
+            {plan.plan.map((entry: any) => (
+              <div
+                key={entry.year}
+                className={`flex-1 min-w-[140px] p-2 rounded-nkz-md border text-nkz-xs ${
+                  entry.rotation_warning
+                    ? 'bg-nkz-warning-soft border-nkz-warning'
+                    : 'bg-nkz-info-soft border-nkz-border'
+                }`}
+              >
+                <div className="text-nkz-text-muted">{t('rotationPlanner.year', { defaultValue: 'Año' })} {entry.year}</div>
+                <div className="font-semibold">{entry.crop}</div>
+                <div>{entry.expected_yield_kg_ha?.toLocaleString()} kg/ha</div>
+                {entry.rotation_warning && (
+                  <div className="text-nkz-warning mt-1">⚠️ {entry.rotation_warning}</div>
+                )}
+              </div>
+            ))}
+          </div>
+          {plan.pac_compliance && (
+            <div>
+              <div className="flex items-center gap-3 mb-2">
+                <span className="text-nkz-lg font-bold">{plan.pac_compliance.score}%</span>
+                <ProgressBar
+                  value={plan.pac_compliance.score}
+                  intent={plan.pac_compliance.score >= 80 ? 'positive' : plan.pac_compliance.score >= 50 ? 'warning' : 'negative'}
+                  showLabel
+                />
+              </div>
+              {plan.pac_compliance.rules?.map((rule: any) => (
+                <div key={rule.id} className="text-nkz-xs mb-1">
+                  {rule.pass ? '✅' : '❌'} {t(`rotationPlanner.pac.rule.${rule.id}`, { defaultValue: rule.id })} — {rule.detail}
+                </div>
+              ))}
+            </div>
+          )}
+        </>
+      )}
+    </Card>
   );
 };
 

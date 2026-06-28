@@ -353,6 +353,35 @@
     "deprecatedSoilNote": "Deprecated data — coming soon from Soil module",
     "title": "Gomendiosk"
   },
+  "rotationOptimizer": {
+    "title": "Errotazio optimizatzailea",
+    "optimize": "Optimizatu",
+    "constraints": "Mugak",
+    "glutenFree": "Glutenik gabe soilik",
+    "priorities": "Urteko lehentasunak",
+    "year": "{{n}}. urtea",
+    "yearsShort": "{{n}}u",
+    "protein": "Proteina",
+    "carbon": "Karbono",
+    "nitrogen": "Nitrogeno",
+    "margin": "Marjina",
+    "yield": "Emanaldia",
+    "coverCrop": "Estalki kultura",
+    "cashCrop": "Kultura nagusia",
+    "alternatives": "Ikusi alternatibak",
+    "cumulative": "Metatua",
+    "lockedYear": "Blokeatua",
+    "unlock": "Desblokeatu",
+    "scores": "Puntuazioa"
+  },
+  "planning": {
+    "rotationTitle": "PAC errotazioa (4 urte)",
+    "addToRotation": "Errotaziora gehitu",
+    "managementAny": "Edozein",
+    "managementConventional": "Konbentzionala",
+    "managementOrganic": "Ekologikoa",
+    "glutenFreeOnly": "Glutenik gabe soilik"
+  },
   "disclaimer": {
     "text": "Recommendations are based on agronomic models and third-party scientific data. They do not replace professional judgment. Consult your local agricultural technician before making crop decisions."
   },

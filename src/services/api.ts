@@ -266,6 +266,13 @@ export function useBioApi() {
       }
       return res.json();
     },
+    rotationPlan: (params: Record<string, string | number>) => {
+      const qs = new URLSearchParams();
+      Object.entries(params).forEach(([k, v]) => {
+        if (v !== undefined && v !== null && v !== '') qs.set(k, String(v));
+      });
+      return get(`${GRAPH}/graph/agriculture/rotation-plan?${qs.toString()}`);
+    },
   };
 }
 
