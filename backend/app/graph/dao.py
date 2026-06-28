@@ -2201,6 +2201,172 @@ class GraphDAO:
         finally:
             await client.close()
 
+    async def get_parcel_environment(
+        self, parcel_id: str, tenant_id: str = ""
+    ) -> dict:
+        """Resolve parcel environmental profile WITHOUT requiring assigned crop.
+
+        Used by CropPlanner planning phase. Contrast with get_crop_context()
+        which requires AgriParcel.hasAgriCrop.
+
+        Returns: climate_class, soil, irrigation inference, area, centroid,
+        campaign status, and inputs_used provenance tags.
+        """
+        import httpx
+        from fastapi import HTTPException
+
+        orion = OrionClient(tenant_id)
+        try:
+            # ── 1. Fetch parcel entity ──────────────────────────────────
+            try:
+                parcel = await orion.get_entity(parcel_id)
+            except httpx.HTTPStatusError as exc:
+                if exc.response.status_code == 404:
+                    return {"error": f"Parcel not found: {parcel_id}"}
+                raise
+            except httpx.ConnectError:
+                raise HTTPException(status_code=502, detail="Orion-LD unreachable")
+        finally:
+            await orion.close()
+
+        # ── 2. Extract geometry / centroid ──────────────────────────────
+        centroid = {"lat": None, "lon": None}
+        area_ha = None
+        location = parcel.get("location")
+        if isinstance(location, dict):
+            val = location.get("value", location)
+            if isinstance(val, dict):
+                coords = val.get("coordinates", [])
+                if isinstance(coords, list) and coords:
+                    # GeoJSON: [lon, lat] or [[[lon, lat], ...]]
+                    first = coords
+                    # Drill into nested arrays for Polygon
+                    while isinstance(first, list) and first and isinstance(first[0], list):
+                        first = first[0] if not isinstance(first[0][0], (int, float)) or len(first) < 2 else first
+                        if isinstance(first[0], (int, float)):
+                            break
+                    if isinstance(first, list) and len(first) >= 2 and isinstance(first[0], (int, float)):
+                        centroid["lon"] = first[0]
+                        centroid["lat"] = first[1]
+
+        area_raw = _extract_prop_value(parcel.get("area"))
+        if area_raw is not None:
+            try:
+                area_ha = float(area_raw)
+            except (TypeError, ValueError):
+                pass
+
+        # ── 3. Irrigation inference ─────────────────────────────────────
+        irrigation_inferred = None
+        irrigation_source = None
+        # FIWARE SDM irrigationSystemType (e.g. "drip", "sprinkler")
+        irrig_sys = _extract_prop_value(parcel.get("irrigationSystemType"))
+        if irrig_sys:
+            irrig_lower = str(irrig_sys).lower().strip()
+            if any(w in irrig_lower for w in ("drip", "sprinkler", "flood", "pivot", "irrigat")):
+                irrigation_inferred = "regadío"
+            else:
+                irrigation_inferred = "secano"
+            irrigation_source = "irrigationSystemType"
+        else:
+            # Platform custom Property
+            irrig_regime = _extract_prop_value(parcel.get("irrigationRegime"))
+            if irrig_regime:
+                regime_lower = str(irrig_regime).lower().strip()
+                if "regad" in regime_lower or "irrig" in regime_lower:
+                    irrigation_inferred = "regadío"
+                else:
+                    irrigation_inferred = "secano"
+                irrigation_source = "irrigationRegime"
+            else:
+                irrigation_inferred = None
+                irrigation_source = "unknown"
+
+        # ── 4. Soil ─────────────────────────────────────────────────────
+        from app.services.soil_client import get_parcel_soil_properties
+        soil_input = "unavailable"
+        try:
+            soil_data = await get_parcel_soil_properties(parcel_id)
+            if soil_data.get("data_available"):
+                soil_input = "soil_module"
+                wrb_type = None
+                # Try to map texture to a WRB reference group via Neo4j
+                if soil_data.get("texture"):
+                    async with self._driver.session() as session:
+                        wrb_result = await session.run(
+                            "MATCH (ts:TrialSite) WHERE ts.soilTexture CONTAINS $texture "
+                            "RETURN ts.soilType AS wrb LIMIT 1",
+                            texture=soil_data["texture"],
+                        )
+                        wrb_rec = await wrb_result.single()
+                        if wrb_rec and wrb_rec["wrb"]:
+                            wrb_type = wrb_rec["wrb"]
+                soil_data["wrb_type"] = wrb_type
+            else:
+                soil_data = {"texture": None, "wrb_type": None, "ph": None,
+                             "data_available": False, "source": soil_data.get("source", "unavailable")}
+        except Exception:
+            soil_data = {"texture": None, "wrb_type": None, "ph": None,
+                         "data_available": False, "source": "unavailable"}
+
+        # ── 5. Climate class ────────────────────────────────────────────
+        climate_class = None
+        climate_input = "unavailable"
+        climate_lat = centroid["lat"]
+        climate_lon = centroid["lon"]
+        if climate_lat is not None and climate_lon is not None:
+            # Find nearest TrialSite by haversine (capped ~50km radius)
+            async with self._driver.session() as session:
+                from math import radians, cos, sin, asin, sqrt
+                lat_r, lon_r = radians(float(climate_lat)), radians(float(climate_lon))
+                result = await session.run(
+                    "MATCH (ts:TrialSite) WHERE ts.latitude IS NOT NULL AND ts.longitude IS NOT NULL "
+                    "AND ts.climateClass IS NOT NULL "
+                    "RETURN ts.climateClass AS cc, ts.latitude AS tlat, ts.longitude AS tlon "
+                    "LIMIT 500"
+                )
+                best_dist = float("inf")
+                best_cc = None
+                async for rec in result:
+                    tlat, tlon = rec["tlat"], rec["tlon"]
+                    if tlat is None or tlon is None:
+                        continue
+                    dlat = radians(float(tlat)) - lat_r
+                    dlon = radians(float(tlon)) - lon_r
+                    a = sin(dlat / 2) ** 2 + cos(lat_r) * cos(radians(float(tlat))) * sin(dlon / 2) ** 2
+                    c = 2 * asin(sqrt(a))
+                    dist_km = 6371 * c
+                    if dist_km < best_dist:
+                        best_dist = dist_km
+                        best_cc = rec["cc"]
+                if best_cc and best_dist <= 50.0:
+                    climate_class = best_cc
+                    climate_input = "trial_proxy"
+
+        # ── 6. Campaign status ──────────────────────────────────────────
+        has_crop = _resolve_relationship(parcel, "hasAgriCrop") is not None
+
+        return {
+            "parcel_id": parcel_id,
+            "area_ha": area_ha,
+            "centroid": centroid,
+            "climate_class": climate_class,
+            "soil": soil_data,
+            "irrigation": {
+                "inferred": irrigation_inferred,
+                "source": irrigation_source or "unknown",
+                "overridable": True,
+            },
+            "campaign": {
+                "assigned": has_crop,
+                "crop_eppo": None,  # resolved by crop-context when assigned
+            },
+            "inputs_used": {
+                "soil": soil_input,
+                "climate": climate_input,
+            },
+        }
+
     async def get_crop_context(
         self, parcel_id: str, tenant_id: str = "", gdd: float | None = None
     ) -> dict:

@@ -1,5 +1,5 @@
 import React from 'react';
-import { useTranslation } from 'react-i18next';
+import { useTranslation } from '@nekazari/sdk';
 import { Card, Button } from '@nekazari/ui-kit';
 import type { CropPlan, PhenologyStatus } from '../../types/cropplan';
 import { pickActiveSegment } from './cropplan.utils';

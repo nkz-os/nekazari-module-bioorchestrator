@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { useTranslation } from "react-i18next";
+import { useTranslation } from '@nekazari/sdk';
 import { useParcelContext } from "../context/ParcelContext";
 import { Card, Badge, Button, Stack } from "@nekazari/ui-kit";
 import ContextEmptyState from "./shared/ContextEmptyState";
@@ -14,7 +14,7 @@ const SEVERITY_INTENTS: Record<string, "negative" | "warning" | "info"> = {
 };
 
 export default function AlertsView() {
-  const { t } = useTranslation();
+  const { t } = useTranslation('bioorchestrator');
   const { selectedParcel, loading: parcelLoading, error: parcelError } = useParcelContext();
   const [alerts, setAlerts] = useState<AlertItem[]>([]);
   const [loading, setLoading] = useState(false);

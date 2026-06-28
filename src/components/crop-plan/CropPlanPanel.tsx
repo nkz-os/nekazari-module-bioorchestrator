@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { useTranslation } from 'react-i18next';
+import { useTranslation } from '@nekazari/sdk';
 import { SlotShell } from '@nekazari/viewer-kit';
 import { Card, Skeleton, Button } from '@nekazari/ui-kit';
 import { CalendarRange, AlertTriangle } from 'lucide-react';

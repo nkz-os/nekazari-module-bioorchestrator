@@ -1,5 +1,5 @@
 import React from 'react';
-import { useTranslation } from 'react-i18next';
+import { useTranslation } from '@nekazari/sdk';
 import type { CropPlan, PhenologyStatus } from '../../types/cropplan';
 import { buildTimeline } from './cropplan.utils';
 

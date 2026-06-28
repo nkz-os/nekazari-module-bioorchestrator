@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useTranslation } from "react-i18next";
+import { useTranslation } from '@nekazari/sdk';
 import { useParcelContext } from '../context/ParcelContext';
 import { Card, Stack, EmptyState, Skeleton, Spinner, ProgressBar } from '@nekazari/ui-kit';
 import { AlertTriangle, Activity } from 'lucide-react';
@@ -15,7 +15,7 @@ interface BudgetData {
 }
 
 export default function WaterBudget() {
-  const { t } = useTranslation();
+  const { t } = useTranslation('bioorchestrator');
   const { selectedParcel, loading: parcelLoading, error: parcelError } = useParcelContext();
   const [ctx, setCtx] = useState<CropContextResponse | null>(null);
   const [budget, setBudget] = useState<BudgetData | null>(null);

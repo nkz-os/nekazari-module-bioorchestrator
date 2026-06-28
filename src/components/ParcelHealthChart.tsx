@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useTranslation } from "react-i18next";
+import { useTranslation } from '@nekazari/sdk';
 import { HistoryPoint } from "../services/api";
 
 interface Props {
@@ -30,7 +30,7 @@ function svgPath(
 }
 
 export default function ParcelHealthChart({ data }: Props) {
-  const { t } = useTranslation();
+  const { t } = useTranslation('bioorchestrator');
   const [days, setDays] = useState(14);
 
   const filtered = data.slice(-days);

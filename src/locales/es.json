@@ -126,7 +126,13 @@
       }
     },
     "backToDashboard": "← Volver al panel",
-    "selectParcelPrompt": "Selecciona una parcela arriba para empezar"
+    "selectParcelPrompt": "Selecciona una parcela arriba para empezar",
+    "advanced": {
+      "title": "Herramientas avanzadas",
+      "subtitle": "Consulta científica, datos de referencia y herramientas técnicas",
+      "expand": "Mostrar herramientas avanzadas",
+      "collapse": "Ocultar herramientas avanzadas"
+    }
   },
   "scenarioMode": {
     "enabled": "Cultivo de exploración (qué pasaría si)",
@@ -169,6 +175,23 @@
     "biomass": "Biomasa"
   },
   "varietyFinder": {
+    "title": "Buscador de variedades",
+    "crop": "Cultivo",
+    "climate": "Clima",
+    "soil": "Suelo",
+    "optional": "opcional",
+    "search": "Buscar especie...",
+    "selectCrop": "Seleccionar cultivo",
+    "selectParcel": "Seleccionar parcela",
+    "selectParcelDesc": "Elige una parcela para usar su entorno en las recomendaciones",
+    "targetEnvironment": "Entorno objetivo",
+    "similarSites": "Sitios similares",
+    "rankedVarieties": "Variedades ordenadas",
+    "noResults": "Sin variedades para esta selección",
+    "variety": "Variedad",
+    "meanYield": "Rendimiento medio",
+    "trials": "Ensayos",
+    "sites": "Sitios",
     "anySoil": "Cualquier tipo de suelo",
     "noDataAvailable": "Sin datos disponibles para esta especie",
     "diseaseResistance": "Resistencia",
@@ -599,6 +622,40 @@
   },
   "common": {
     "loading": "Cargando..."
+  },
+  "planning": {
+    "recommendCrops": "Recomendar cultivos",
+    "assignCrop": "Adjudicar cultivo",
+    "addToRotation": "Añadir a rotación",
+    "seasonWinter": "Cultivo de invierno",
+    "seasonSummer": "Cultivo de verano",
+    "seasonAll": "Todas las campañas",
+    "filtersTitle": "Condiciones de cultivo",
+    "irrigationInferred": "Riego inferido de la parcela",
+    "irrigationOverride": "Cambiar régimen hídrico",
+    "noSuggestions": "Sin datos de ensayo para este perfil",
+    "yieldUnitKgHa": "kg/ha",
+    "yieldUnitTHa": "t/ha",
+    "pricePerKg": "€/kg",
+    "pricePerT": "€/t",
+    "marginPerHa": "Margen neto €/ha",
+    "marginParcel": "Margen neto (parcela)",
+    "viewVarieties": "Ver variedades",
+    "rotationTitle": "Rotación PAC (4 años)",
+    "trustHigh": "Alta fiabilidad",
+    "trustMedium": "Fiabilidad media",
+    "trustLow": "Baja fiabilidad",
+    "trustWhy": "¿Por qué esta recomendación?",
+    "trustTrials": "{{count}} ensayos analizados",
+    "trustSites": "{{count}} entornos similares",
+    "trustOrganicWarning": "Datos de ensayo convencional — rendimiento ecológico estimado",
+    "trustDataGap": "Datos limitados para este perfil",
+    "postAssignHealth": "Ver salud de parcela",
+    "postAssignWater": "Balance hídrico",
+    "npkGapTitle": "Balance NPK orientativo",
+    "npkDisclaimer": "Estimación basada en suelo y demanda del cultivo — no sustituye análisis de campo",
+    "pestRiskTitle": "Riesgo de plagas compartidas",
+    "rotationWarning": "Restricción de rotación"
   },
   "yieldProjection": {
     "title": "Proyección de Rendimiento",

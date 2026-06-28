@@ -1,5 +1,5 @@
 import React from 'react';
-import { useTranslation } from 'react-i18next';
+import { useTranslation } from '@nekazari/sdk';
 import { Card } from '@nekazari/ui-kit';
 import { AlertTriangle, Clock } from 'lucide-react';
 import type { IssuedOp } from '../../types/cropplan';

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useTranslation } from "react-i18next";
+import { useTranslation } from '@nekazari/sdk';
 import { useParcelContext } from '../context/ParcelContext';
 import { Card, Button, Stack, EmptyState, Skeleton, Slider, ProgressBar } from '@nekazari/ui-kit';
 import { AlertTriangle, Activity } from 'lucide-react';
@@ -17,7 +17,7 @@ interface PacCompliance { score: number; max_score: number; rules: PacRule[]; di
 interface PlanResult { plan: YearEntry[]; cumulative: { total_yield_kg_ha: number; total_carbon_fixed_tco2e: number; total_net_margin_eur_ha: number; final_soil_n_pool_kg_ha: number }; pac_compliance?: PacCompliance; }
 
 export default function RotationPlanner() {
-  const { t } = useTranslation();
+  const { t } = useTranslation('bioorchestrator');
   const { selectedParcel, loading: parcelLoading, error: parcelError } = useParcelContext();
   const [years, setYears] = useState(3);
   const [seedPrice, setSeedPrice] = useState(1);

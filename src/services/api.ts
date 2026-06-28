@@ -246,6 +246,8 @@ export function useBioApi() {
     },
     getClimateClasses: () => get(`${GRAPH}/graph/reference/climate-classes`),
     getSoilTypes: () => get(`${GRAPH}/graph/reference/soil-types`),
+    parcelEnvironment: (parcelId: string) =>
+      get(`${GRAPH}/graph/agriculture/parcel-environment?parcel_id=${encodeURIComponent(parcelId)}`),
   };
 }
 

@@ -149,6 +149,7 @@ const VarietyFinder: React.FC = () => {
         crop,
         climate_class: climate,
         top_n: '15',
+        ...(selectedParcel ? { parcel_id: selectedParcel } : {}),
         ...(soil && soil !== 'any' ? { soil_type: soil } : {}),
       });
       setResults(data.ranked_varieties || []);
@@ -160,6 +161,29 @@ const VarietyFinder: React.FC = () => {
       setView('error');
     }
   };
+
+  // Auto-resolve climate and soil from parcel environment when selected
+  useEffect(() => {
+    if (!selectedParcel) return;
+    api.parcelEnvironment?.(selectedParcel)
+      .then((env: any) => {
+        if (!env || env.error) return;
+        if (env.climate_class) {
+          setClimate(env.climate_class);
+        }
+        if (env.soil?.wrb_type) {
+          setSoil(env.soil.wrb_type);
+        } else if (env.soil?.texture) {
+          const textureSoil = soils.find(
+            s => s.value.toLowerCase() === env.soil.texture.toLowerCase()
+          );
+          if (textureSoil) setSoil(textureSoil.value);
+        }
+      })
+      .catch((err: Error) => {
+        console.warn('[VarietyFinder] parcel-environment fetch failed:', err.message);
+      });
+  }, [selectedParcel]);
 
   if (parcelLoading) {
     return (

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useTranslation } from "react-i18next";
+import { useTranslation } from '@nekazari/sdk';
 import { assignCrop, AssignCropRequest } from "../services/api";
 import { useParcelContext } from "../context/ParcelContext";
 
@@ -22,7 +22,7 @@ interface Props {
 }
 
 export default function AssignVarietyModal({ variety, parcelId: propParcelId, onClose, onAssigned }: Props) {
-  const { t } = useTranslation();
+  const { t } = useTranslation('bioorchestrator');
   const { selectedParcel: ctxParcelId } = useParcelContext();
   const selectedParcel = propParcelId || ctxParcelId;
   const [management, setManagement] = useState<"conventional" | "organic">("conventional");

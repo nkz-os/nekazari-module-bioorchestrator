@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useTranslation } from 'react-i18next';
+import { useTranslation } from '@nekazari/sdk';
 import { Stack, Card, Button, Input, Select, FormField, FormGrid } from '@nekazari/ui-kit';
 import { useCropApi } from '../services/api';
 

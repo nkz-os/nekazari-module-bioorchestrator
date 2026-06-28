@@ -126,7 +126,13 @@
       }
     },
     "backToDashboard": "← Back to dashboard",
-    "selectParcelPrompt": "Select a parcel above to get started"
+    "selectParcelPrompt": "Select a parcel above to get started",
+    "advanced": {
+      "title": "Advanced tools",
+      "subtitle": "Scientific reference, data sources and technical tools",
+      "expand": "Show advanced tools",
+      "collapse": "Hide advanced tools"
+    }
   },
   "scenarioMode": {
     "enabled": "Exploration crop (what-if)",
@@ -169,6 +175,23 @@
     "biomass": "Biomass"
   },
   "varietyFinder": {
+    "title": "Variety Finder",
+    "crop": "Crop",
+    "climate": "Climate",
+    "soil": "Soil",
+    "optional": "optional",
+    "search": "Search species...",
+    "selectCrop": "Select crop",
+    "selectParcel": "Select parcel",
+    "selectParcelDesc": "Choose a parcel to use its environment for variety recommendations",
+    "targetEnvironment": "Target environment",
+    "similarSites": "Similar sites",
+    "rankedVarieties": "Ranked varieties",
+    "noResults": "No varieties found for this selection",
+    "variety": "Variety",
+    "meanYield": "Mean yield",
+    "trials": "Trials",
+    "sites": "Sites",
     "anySoil": "Any soil type",
     "noDataAvailable": "No data available for this species yet",
     "diseaseResistance": "Resistance",
@@ -599,6 +622,40 @@
   },
   "common": {
     "loading": "Loading..."
+  },
+  "planning": {
+    "recommendCrops": "Recommend crops",
+    "assignCrop": "Assign this crop",
+    "addToRotation": "Add to rotation plan",
+    "seasonWinter": "Winter crop",
+    "seasonSummer": "Summer crop",
+    "seasonAll": "All campaigns",
+    "filtersTitle": "Growing conditions",
+    "irrigationInferred": "Irrigation inferred from parcel",
+    "irrigationOverride": "Change water regime",
+    "noSuggestions": "No trial data for this parcel profile",
+    "yieldUnitKgHa": "kg/ha",
+    "yieldUnitTHa": "t/ha",
+    "pricePerKg": "€/kg",
+    "pricePerT": "€/t",
+    "marginPerHa": "Net margin €/ha",
+    "marginParcel": "Net margin (parcel)",
+    "viewVarieties": "View varieties",
+    "rotationTitle": "PAC Rotation (4 years)",
+    "trustHigh": "High confidence",
+    "trustMedium": "Medium confidence",
+    "trustLow": "Low confidence",
+    "trustWhy": "Why this recommendation?",
+    "trustTrials": "{{count}} trials analyzed",
+    "trustSites": "{{count}} similar environments",
+    "trustOrganicWarning": "Conventional trial data — estimated organic yield",
+    "trustDataGap": "Limited data for this profile",
+    "postAssignHealth": "View parcel health",
+    "postAssignWater": "Water budget",
+    "npkGapTitle": "Indicative NPK balance",
+    "npkDisclaimer": "Estimate based on soil and crop demand — does not replace field analysis",
+    "pestRiskTitle": "Shared pest risk",
+    "rotationWarning": "Rotation constraint"
   },
   "yieldProjection": {
     "title": "Yield Projection",

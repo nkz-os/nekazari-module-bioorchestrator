@@ -1,5 +1,5 @@
 import React from 'react';
-import { useTranslation } from 'react-i18next';
+import { useTranslation } from '@nekazari/sdk';
 import type { WaterBudget } from '../../types/cropplan';
 import type { AgronomicValue } from '../../types/agronomic';
 import AgronomicBadge from '../shared/AgronomicBadge';

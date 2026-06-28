@@ -1,5 +1,5 @@
 import React from 'react';
-import { useTranslation } from 'react-i18next';
+import { useTranslation } from '@nekazari/sdk';
 import type { AgronomicValue } from '../../types/agronomic';
 import { confidenceToken } from './agronomic.utils';
 

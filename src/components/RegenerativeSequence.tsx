@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useTranslation } from "react-i18next";
+import { useTranslation } from '@nekazari/sdk';
 import { useParcelContext } from "../context/ParcelContext";
 import { Card, Button, Select, Stack } from "@nekazari/ui-kit";
 import ContextEmptyState from "./shared/ContextEmptyState";
@@ -9,7 +9,7 @@ const CLIMATE_ZONES = ["Csa", "Csb", "BSk", "Cfb", "Dfb", "Dfc", "BSh", "Cfa", "
 const MANAGEMENT_OPTIONS = ["any", "conventional", "organic"] as const;
 
 export default function RegenerativeSequence() {
-  const { t } = useTranslation();
+  const { t } = useTranslation('bioorchestrator');
   const { selectedParcel, loading: parcelLoading, error: parcelError } = useParcelContext();
   const [climate, setClimate] = useState("Csa");
   const [targetProtein, setTargetProtein] = useState("VICFX");

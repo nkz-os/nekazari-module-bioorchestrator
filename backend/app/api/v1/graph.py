@@ -879,6 +879,32 @@ async def agriculture_regenerative_sequence(
     return result
 
 
+@router.get("/agriculture/parcel-environment")
+async def agriculture_parcel_environment(
+    driver: DriverDep,
+    request: Request,
+    parcel_id: str = Query(
+        ...,
+        description="AgriParcel URN (e.g. 'urn:ngsi-ld:AgriParcel:parcela-42')",
+    ),
+):
+    """Resolve parcel environmental profile WITHOUT requiring assigned crop.
+
+    Returns climate class, soil, irrigation inference, area, and centroid.
+    Used by CropPlanner planning phase — contrast with crop-context which
+    requires AgriParcel.hasAgriCrop.
+    """
+    tenant_id = getattr(request.state, "tenant_id", "")
+    dao = GraphDAO(driver)
+    result = await dao.get_parcel_environment(
+        parcel_id=parcel_id,
+        tenant_id=tenant_id,
+    )
+    if "error" in result:
+        raise HTTPException(status_code=404, detail=result["error"])
+    return result
+
+
 @router.get("/agriculture/crop-context")
 async def agriculture_crop_context(
     driver: DriverDep,
