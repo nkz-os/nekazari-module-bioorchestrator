@@ -137,6 +137,17 @@
         "rotationViolation": "Restricción de rotación",
         "dataGaps": "Datos faltantes (cultivo alternativo)"
       },
+      "rotationOptimizer": {
+        "constraints": "Restricciones",
+        "glutenFree": "Sin gluten solamente",
+        "priorities": "Prioridades por año",
+        "year": "Año {{n}}",
+        "optimize": "Optimizar",
+        "coverCrop": "Cultivo de cobertura",
+        "cashCrop": "Cultivo principal",
+        "lockedYear": "Bloqueado",
+        "cumulative": "Acumulado"
+      },
       "yieldProjection": {
         "title": "Proyección de Rendimiento",
         "subtitle": "Estimaciones de rendimiento desde ensayos y proyecciones corregidas por estrés en campaña."

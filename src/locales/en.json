@@ -137,6 +137,17 @@
         "rotationViolation": "Rotation constraint",
         "dataGaps": "Missing data (alternative crop)"
       },
+      "rotationOptimizer": {
+        "constraints": "Constraints",
+        "glutenFree": "Gluten-free only",
+        "priorities": "Priorities per year",
+        "year": "Year {{n}}",
+        "optimize": "Optimize",
+        "coverCrop": "Cover crop",
+        "cashCrop": "Cash crop",
+        "lockedYear": "Locked",
+        "cumulative": "Cumulative"
+      },
       "yieldProjection": {
         "title": "Yield Projection",
         "subtitle": "Yield estimates from trial data and stress-corrected in-campaign projections."

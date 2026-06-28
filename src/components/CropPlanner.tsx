@@ -185,7 +185,7 @@ const CropPlanner: React.FC = () => {
           }`}
           onClick={() => setActiveTab('optimize')}
         >
-          🔄 Optimizar
+          🔄 {t('rotationOptimizer.optimize', { defaultValue: 'Optimizar' })}
         </button>
       </div>
 
@@ -510,9 +510,9 @@ const OptimizerPanel: React.FC<OptimizerProps> = ({ parcelId, management, irriga
             🌾 {t('rotationOptimizer.glutenFree', { defaultValue: 'Sin gluten' })}
           </label>
           <select value={optManagement} onChange={e => setOptManagement(e.target.value)} className="rounded-md border border-nkz-border px-2 py-1 text-nkz-sm">
-            <option value="any">Cualquiera</option>
-            <option value="conventional">Convencional</option>
-            <option value="organic">Ecológico</option>
+            <option value="any">{t('planning.seasonAll', { defaultValue: 'Cualquiera' })}</option>
+            <option value="conventional">{t('assign.conventional', { defaultValue: 'Convencional' })}</option>
+            <option value="organic">{t('assign.organic', { defaultValue: 'Ecológico' })}</option>
           </select>
         </div>
       </Card>
