@@ -23,7 +23,6 @@ const HUB_ORDER: HubId[] = ['planning', 'campaign'];
 
 const ALL_TOOLS: ToolCardDef[] = [
   { id: 'cropPlanner', icon: Sparkles, hub: 'planning' },
-  { id: 'regenerative', icon: Dna, hub: 'planning' },
   { id: 'parcelStatus', icon: Heart, hub: 'campaign' },
   { id: 'yieldProjection', icon: TrendingUp, hub: 'campaign' },
   { id: 'waterBudget', icon: Droplets, hub: 'campaign' },
@@ -32,6 +31,7 @@ const ALL_TOOLS: ToolCardDef[] = [
 ];
 
 const ADVANCED_TOOLS: ToolCardDef[] = [
+  { id: 'regenerative', icon: Dna, hub: 'codex', compact: true },
   { id: 'catalog', icon: Leaf, hub: 'codex', compact: true },
   { id: 'climate', icon: Globe, hub: 'codex', compact: true },
   { id: 'phenology', icon: Sprout, hub: 'codex', compact: true },

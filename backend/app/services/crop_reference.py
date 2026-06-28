@@ -191,6 +191,31 @@ def get_gluten_status(eppo: str) -> str:
     """Return 'gluten_free', 'contains_gluten', 'gluten_free_caveat', or 'unknown'."""
     return GLUTEN_FREE_CROPS.get(eppo.upper(), "unknown")
 
+
+HARVEST_INDEX_DEFAULT = 0.45
+GENERIC_GRAIN_PROTEIN_PCT = 12.0
+
+
+def compute_grain_protein_kg_ha(yield_kg_ha: float, variety: dict | None = None) -> tuple[float, str]:
+    """Grain protein from trial crude_protein_pct or 12% generic fallback."""
+    variety = variety or {}
+    crude = variety.get("crude_protein_pct")
+    if crude is not None and float(crude) > 0:
+        protein = yield_kg_ha * HARVEST_INDEX_DEFAULT * float(crude) / 100
+        return round(protein, 1), "variety_trials"
+    return round(yield_kg_ha * GENERIC_GRAIN_PROTEIN_PCT / 100, 1), "generic_12pct"
+
+
+def is_legume_cash_crop(eppo: str, crop_ref: dict | None = None) -> bool:
+    """True when cash crop is a protein legume (Fabaceae / PROTEIN_CROPS catalog)."""
+    from app.services.cover_crops import PROTEIN_CROPS
+
+    code = eppo.upper()
+    if code in PROTEIN_CROPS and PROTEIN_CROPS[code].get("type") == "legume":
+        return True
+    ref = crop_ref or CROP_REFERENCE.get(code, {})
+    return ref.get("n_fixation_kg_ha", 0) >= 40
+
 # ── Caches ──────────────────────────────────────────────────────────────────
 
 _eppo_taxonomy_cache: TTLCache[str, Optional[dict]] = TTLCache(maxsize=200, ttl=86400 * 7)

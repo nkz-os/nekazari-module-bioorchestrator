@@ -253,6 +253,19 @@ export function useBioApi() {
       Object.entries(params).forEach(([k, v]) => { if (v !== undefined && v !== null && v !== '') qs.set(k, String(v)); });
       return get(`${GRAPH}/graph/agriculture/suggest-crops?${qs.toString()}`);
     },
+    optimizeRotation: async (body: Record<string, unknown>) => {
+      const res = await fetch(`${GRAPH}/graph/agriculture/rotation-optimize`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...authHeaders() },
+        body: JSON.stringify(body),
+        credentials: 'include',
+      });
+      if (!res.ok) {
+        const errBody = await res.json().catch(() => ({}));
+        throw new Error(errBody.detail || `HTTP ${res.status}`);
+      }
+      return res.json();
+    },
   };
 }
 

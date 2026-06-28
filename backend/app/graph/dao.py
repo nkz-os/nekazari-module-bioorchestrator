@@ -2406,8 +2406,7 @@ class GraphDAO:
         Orchestrates get_parcel_environment + get_available_crops +
         extrapolate_varieties + economics. No new Neo4j relationship types.
         """
-        from app.services.crop_reference import CROP_SEASON_SLOT, DEFAULT_REFERENCE, get_season_slots, get_gluten_status
-        from app.services.soil_client import get_parcel_soil_properties
+        from app.services.crop_reference import DEFAULT_REFERENCE, get_season_slots, get_gluten_status
 
         # ── 1. Resolve environment ─────────────────────────────────────
         env = await self.get_parcel_environment(parcel_id, tenant_id)
@@ -3008,6 +3007,7 @@ class GraphDAO:
                         pass
         initial_soil_n = soil_n_pool
         previous_crop = None
+        plan: list[dict] = []
         cumulative_yield = 0.0
         cumulative_carbon = 0.0
         cumulative_margin = 0.0
@@ -3117,9 +3117,11 @@ class GraphDAO:
         No new Neo4j queries. No Orion writes. Pure DAO orchestration.
         """
         from app.services.crop_reference import (
-            CROP_SEASON_SLOT, DEFAULT_REFERENCE, get_crop_ref,
+            DEFAULT_REFERENCE, get_crop_ref,
             get_season_slots, get_gluten_status,
+            compute_grain_protein_kg_ha, is_legume_cash_crop,
         )
+        from app.services.cover_crops import select_cover_crops
 
         if years < 2 or years > 6:
             return {"error": "Years must be between 2 and 6"}
@@ -3145,7 +3147,6 @@ class GraphDAO:
         management = constraints.get("management", "any")
         gluten_free_only = constraints.get("gluten_free_only", False)
         season_slot = constraints.get("season_slot", "all")
-        area_ha = env.get("area_ha")
         climate_lat = (env.get("centroid") or {}).get("lat")
         climate_lon = (env.get("centroid") or {}).get("lon")
 
@@ -3203,67 +3204,105 @@ class GraphDAO:
 
         price_per_t = harvest_price if price_unit == "eur_per_t" else harvest_price * 1000
 
+        def _alternative_reason(winner: dict, alt: dict) -> str:
+            parts: list[str] = []
+            if alt.get("protein", 0) < winner.get("protein", 0) - 5:
+                parts.append("lower protein")
+            if alt.get("margin", 0) > winner.get("margin", 0):
+                parts.append("higher margin")
+            if alt.get("yield", 0) < winner.get("yield", 0) - 100:
+                parts.append("lower yield in this climate")
+            return ", ".join(parts) if parts else "lower composite score"
+
+        async def _resolve_generic_cover() -> dict:
+            cc = climate_class or "Csa"
+            mgmt = management if management in ("organic", "conventional") else "any"
+            covers = select_cover_crops(cc, mgmt)
+            chosen = None
+            for c in covers:
+                if c.get("suitable") and c.get("type") == "grass" and c.get("kill_method") == "roller_crimper":
+                    chosen = c
+                    break
+            if not chosen and covers:
+                chosen = covers[0]
+            if not chosen:
+                return {
+                    "eppo": "SECCE", "name": "Rye", "type": "generic_cover",
+                    "biomass_t_ha": 3.5, "n_contribution_kg_ha": 20,
+                    "termination_method": "roller_crimper", "sowing_date": None, "termination_date": None,
+                }
+            n_entry = chosen.get("n_content_pct", {})
+            n_pct = n_entry.get("value", 1.2) if isinstance(n_entry, dict) else 1.2
+            biomass = chosen.get("target_biomass_t_ha", 3.5)
+            n_contrib = round(biomass * 1000 * n_pct / 100 * 0.5, 1)
+            if management == "organic":
+                n_contrib = round(n_contrib * 1.1, 1)
+            return {
+                "eppo": chosen["eppo"],
+                "name": chosen.get("common_name", chosen["eppo"]),
+                "type": "generic_cover",
+                "biomass_t_ha": biomass,
+                "n_contribution_kg_ha": n_contrib,
+                "termination_method": chosen.get("kill_method", "roller_crimper"),
+                "sowing_date": None,
+                "termination_date": None,
+            }
+
         for year_idx in range(years):
             year_num = year_idx + 1
             weights = normalized_weights.get(year_num, default_weights)
+            alternatives: list[dict] = []
+            best_variety: dict = {}
 
             # Check if year is locked
             locked_eppo = locked_years.get(str(year_num)) or locked_years.get(year_num)
             if locked_eppo:
                 selected_eppo = locked_eppo
-                # Skip scoring — just compute values for locked crop
                 ref = await get_crop_ref(locked_eppo)
                 extrapolated = await self.extrapolate_varieties(
                     crop=locked_eppo, climate_class=climate_class, soil_type=soil_type,
                     irrigation_regime=irrigation_regime, parcel_id=parcel_id,
                     tenant_id=tenant_id, top_n=1,
                 )
-                best = (extrapolated.get("ranked_varieties") or [{}])[0] if isinstance(extrapolated, dict) else {}
-                conv_yield = best.get("mean_yield_kg_ha", 0) or 0
+                best_variety = (extrapolated.get("ranked_varieties") or [{}])[0] if isinstance(extrapolated, dict) else {}
+                conv_yield = best_variety.get("mean_yield_kg_ha", 0) or 0
                 if management == "organic":
                     conv_yield *= 0.80
-                protein_kg_ha = round(conv_yield * 0.12, 1)  # 12% generic
+                protein_kg_ha, protein_source = compute_grain_protein_kg_ha(conv_yield, best_variety)
                 carbon = ref.get("carbon_fixed_tco2e_ha", DEFAULT_REFERENCE["carbon_fixed_tco2e_ha"])
                 n_fix = ref.get("n_fixation_kg_ha", 0)
                 n_req = ref.get("n_requirement_kg_ha", DEFAULT_REFERENCE["n_requirement_kg_ha"])
                 costs = seed_price + operation_cost * ref.get("operations_count", DEFAULT_REFERENCE["operations_count"])
                 margin = (conv_yield / 1000 * price_per_t) - costs
+                if management == "organic":
+                    margin *= 0.80
                 scores = {"composite": 0, "locked": True}
             else:
-                # Resolve compatible successors via recommend_next_crop
-                successor_names: set[str] = set()
+                successor_eppos: set[str] = set()
                 if previous_crop:
                     try:
                         recs = await self.recommend_next_crop(previous_crop)
+                        successor_names: set[str] = set()
                         for r in recs:
-                            n = (r.get("name") or "").lower()
-                            s = (r.get("scientific_name") or "").lower()
-                            if n:
-                                successor_names.add(n)
-                            if s:
-                                successor_names.add(s)
+                            for key in ("name", "scientific_name", "eppo_code"):
+                                val = (r.get(key) or "").lower()
+                                if val:
+                                    successor_names.add(val)
+                        if successor_names:
+                            for eppo in filtered_pool:
+                                name = (eppo_to_name.get(eppo, eppo) or "").lower()
+                                if name in successor_names or eppo.lower() in successor_names:
+                                    successor_eppos.add(eppo)
                     except Exception:
                         pass
 
-                # Build candidates: match by EPPO, common name, or scientific name
-                candidates = []
-                for eppo in filtered_pool:
-                    name = (eppo_to_name.get(eppo, eppo) or "").lower()
-                    if successor_names:
-                        eppo_lower = eppo.lower()
-                        if eppo_lower not in successor_names and name not in successor_names:
-                            continue  # not a compatible successor
-                    if eppo == previous_crop:
-                        continue
-                    candidates.append(eppo)
-
-                if not candidates:
+                if successor_eppos:
+                    candidates = [e for e in filtered_pool if e in successor_eppos and e != previous_crop]
+                else:
                     candidates = [e for e in filtered_pool if e != previous_crop]
 
-                # Cap at 20
                 candidates = candidates[:20]
 
-                # Score all candidates (parallel extrapolate per crop inside loop — sequential per year, parallel per candidate within year)
                 async def _score_candidate(eppo: str) -> dict | None:
                     try:
                         ref = await get_crop_ref(eppo)
@@ -3276,18 +3315,21 @@ class GraphDAO:
                         conv_yield_c = best.get("mean_yield_kg_ha", 0) or 0
                         if management == "organic":
                             conv_yield_c *= 0.80
-                        protein = round(conv_yield_c * 0.12, 1)
+                        protein, psrc = compute_grain_protein_kg_ha(conv_yield_c, best)
                         carbon_c = ref.get("carbon_fixed_tco2e_ha", DEFAULT_REFERENCE["carbon_fixed_tco2e_ha"])
                         n_fix_c = ref.get("n_fixation_kg_ha", 0)
                         n_req_c = ref.get("n_requirement_kg_ha", DEFAULT_REFERENCE["n_requirement_kg_ha"])
                         ops = ref.get("operations_count", DEFAULT_REFERENCE["operations_count"])
                         costs_c = seed_price + operation_cost * ops
                         margin_c = (conv_yield_c / 1000 * price_per_t) - costs_c
+                        if management == "organic":
+                            margin_c *= 0.80
                         return {
                             "eppo": eppo,
                             "variety": best.get("variety"),
                             "yield": conv_yield_c,
                             "protein": protein,
+                            "protein_source": psrc,
                             "carbon": carbon_c,
                             "n_fix": n_fix_c,
                             "n_req": n_req_c,
@@ -3323,9 +3365,11 @@ class GraphDAO:
 
                 scored.sort(key=lambda x: x["composite"], reverse=True)
                 best_scored = scored[0]
+                best_variety = {"variety": best_scored.get("variety")}
                 selected_eppo = best_scored["eppo"]
                 conv_yield = best_scored["yield"]
                 protein_kg_ha = best_scored["protein"]
+                protein_source = best_scored.get("protein_source", "generic_12pct")
                 carbon = best_scored["carbon"]
                 n_fix = best_scored["n_fix"]
                 n_req = best_scored["n_req"]
@@ -3340,15 +3384,18 @@ class GraphDAO:
                 }
                 # Store alternatives
                 alternatives = [
-                    {"eppo": s["eppo"], "composite_score": s["composite"]}
+                    {
+                        "eppo": s["eppo"],
+                        "composite_score": s["composite"],
+                        "reason": _alternative_reason(best_scored, s),
+                    }
                     for s in scored[1:4]
                 ]
 
             # ── 5. Cover crop ─────────────────────────────────────────
             cover_crop = None
-            # Determine if legume (for regenerative-sequence)
-            is_legume = n_fix > 10  # heuristic: legumes fix >10 kg N/ha
-            if is_legume:
+            crop_ref_for_legume = await get_crop_ref(selected_eppo)
+            if is_legume_cash_crop(selected_eppo, crop_ref_for_legume):
                 try:
                     regen = await self.get_regenerative_sequence(
                         climate_class=climate_class,
@@ -3374,21 +3421,7 @@ class GraphDAO:
                     pass
 
             if not cover_crop:
-                # Generic cover: pick a Poaceae cover for roller crimper
-                generic_cover = "SECCE"  # rye as default cover crop
-                cover_crop = {
-                    "eppo": generic_cover,
-                    "name": "Rye",
-                    "type": "generic_cover",
-                    "biomass_t_ha": 3.5,
-                    "n_contribution_kg_ha": 20,
-                    "termination_method": "roller_crimper",
-                    "sowing_date": None,
-                    "termination_date": None,
-                }
-                # Adjust N contribution based on organic management
-                if management == "organic":
-                    cover_crop["n_contribution_kg_ha"] = round(cover_crop["n_contribution_kg_ha"] * 1.1, 1)
+                cover_crop = await _resolve_generic_cover()
 
             # ── 6. Rotation constraints ───────────────────────────────
             rotation_warning = None
@@ -3413,10 +3446,10 @@ class GraphDAO:
                 "cash_crop": {
                     "eppo": selected_eppo,
                     "name": eppo_to_name.get(selected_eppo, selected_eppo),
-                    "variety": best_scored.get("variety") if not locked_eppo else best.get("variety"),
+                    "variety": best_variety.get("variety"),
                     "expected_yield_kg_ha": round(conv_yield, 1),
                     "protein_kg_ha": protein_kg_ha,
-                    "protein_source": "generic_12pct",
+                    "protein_source": protein_source,
                     "carbon_fixed_tco2e_ha": carbon,
                     "n_fixation_kg_ha": n_fix,
                     "n_requirement_kg_ha": n_req,

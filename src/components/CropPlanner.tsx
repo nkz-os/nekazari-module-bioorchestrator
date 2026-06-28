@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useTranslation } from '@nekazari/sdk';
-import { Card, Badge, Button, Stack, EmptyState, Skeleton, Select } from '@nekazari/ui-kit';
+import { Card, Badge, Button, Stack, EmptyState, Skeleton, Select, ProgressBar } from '@nekazari/ui-kit';
 import { Search, Sprout, MapPin, TrendingUp, CheckCircle, AlertTriangle } from 'lucide-react';
 import { useBioApi } from '../services/api';
 import { useParcelContext } from '../context/ParcelContext';
@@ -55,12 +55,16 @@ const SEASON_TABS = [
 ] as const;
 
 const MANAGEMENT_OPTIONS = [
-  { value: 'any', key: 'Cualquiera' },
-  { value: 'conventional', key: 'Convencional' },
-  { value: 'organic', key: 'Ecológico' },
+  { value: 'any', key: 'planning.managementAny' },
+  { value: 'conventional', key: 'planning.managementConventional' },
+  { value: 'organic', key: 'planning.managementOrganic' },
 ];
 
-const CropPlanner: React.FC = () => {
+interface CropPlannerProps {
+  onNavigateTool?: (toolId: string) => void;
+}
+
+const CropPlanner: React.FC<CropPlannerProps> = ({ onNavigateTool }) => {
   const { t } = useTranslation('bioorchestrator');
   const api = useBioApi();
   const { selectedParcel, loading: parcelLoading, error: parcelError } = useParcelContext();
@@ -82,6 +86,7 @@ const CropPlanner: React.FC = () => {
   const [assignVariety, setAssignVariety] = useState<any>(null);
   const [assignedMessage, setAssignedMessage] = useState('');
   const [expandedEppo, setExpandedEppo] = useState<string | null>(null);
+  const [rankingSelection, setRankingSelection] = useState<string | null>(null);
 
   // Load parcel environment on select
   useEffect(() => {
@@ -215,7 +220,10 @@ const CropPlanner: React.FC = () => {
             <Select
               value={management}
               onValueChange={setManagement}
-              options={MANAGEMENT_OPTIONS.map(o => ({ value: o.value, label: o.key }))}
+              options={MANAGEMENT_OPTIONS.map(o => ({
+                value: o.value,
+                label: t(o.key, { defaultValue: o.value }),
+              }))}
             />
           </div>
 
@@ -247,7 +255,7 @@ const CropPlanner: React.FC = () => {
             className="rounded border-nkz-border"
           />
           <label htmlFor="glutenFree" className="text-nkz-sm text-nkz-text-secondary cursor-pointer">
-            🌾 Sin gluten solamente
+            🌾 {t('planning.glutenFreeOnly', { defaultValue: 'Sin gluten solamente' })}
           </label>
         </div>
 
@@ -316,7 +324,10 @@ const CropPlanner: React.FC = () => {
                     {filtered.map((s: any, i: number) => (
                       <React.Fragment key={s.crop_eppo}>
                       <tr className="border-b border-nkz-border-subtle hover:bg-nkz-surface-sunken cursor-pointer"
-                          onClick={() => setExpandedEppo(expandedEppo === s.crop_eppo ? null : s.crop_eppo)}>
+                          onClick={() => {
+                            setExpandedEppo(expandedEppo === s.crop_eppo ? null : s.crop_eppo);
+                            setRankingSelection(s.crop_eppo);
+                          }}>
                         <td className="py-2 pr-2 text-nkz-text-muted">{i + 1}</td>
                         <td className="py-2 pr-3">
                           <div className="font-medium text-nkz-text-primary">{s.best_variety || s.crop_eppo}</div>
@@ -405,9 +416,21 @@ const CropPlanner: React.FC = () => {
       {/* Post-assign success */}
       {assignedMessage && (
         <Card padding="md">
-          <div className="flex items-center gap-2 text-nkz-success">
-            <CheckCircle className="w-5 h-5" />
-            <span className="font-medium">{assignedMessage}</span>
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center gap-2 text-nkz-success">
+              <CheckCircle className="w-5 h-5" />
+              <span className="font-medium">{assignedMessage}</span>
+            </div>
+            {onNavigateTool && (
+              <div className="flex flex-wrap gap-2">
+                <Button variant="ghost" size="sm" onClick={() => onNavigateTool('parcelStatus')}>
+                  {t('planning.postAssignHealth', { defaultValue: 'Ver salud de parcela' })}
+                </Button>
+                <Button variant="ghost" size="sm" onClick={() => onNavigateTool('waterBudget')}>
+                  {t('planning.postAssignWater', { defaultValue: 'Balance hídrico' })}
+                </Button>
+              </div>
+            )}
           </div>
         </Card>
       )}
@@ -422,6 +445,8 @@ const CropPlanner: React.FC = () => {
           economics={economics}
           glutenFreeOnly={glutenFreeOnly}
           api={api}
+          initialLockEppo={rankingSelection}
+          onAssign={(variety) => setAssignVariety(variety)}
         />
       )}
     </Stack>
@@ -437,14 +462,23 @@ interface OptimizerProps {
   economics: EconomicInputs;
   glutenFreeOnly: boolean;
   api: ReturnType<typeof useBioApi>;
+  initialLockEppo?: string | null;
+  onAssign?: (variety: { name: string; crop_eppo: string; variety_uri?: string; crop_uri?: string }) => void;
 }
 
-const OptimizerPanel: React.FC<OptimizerProps> = ({ parcelId, management, irrigation, economics, glutenFreeOnly, api }) => {
+const OPT_DIMS = ['protein', 'carbon', 'n_fixation', 'margin', 'yield'] as const;
+
+const OptimizerPanel: React.FC<OptimizerProps> = ({
+  parcelId, management, irrigation, economics, glutenFreeOnly, api, initialLockEppo, onAssign,
+}) => {
   const { t } = useTranslation('bioorchestrator');
   const [years, setYears] = useState(4);
   const [optGlutenFree, setOptGlutenFree] = useState(glutenFreeOnly);
   const [optManagement, setOptManagement] = useState(management);
   const [optIrrigation, setOptIrrigation] = useState(irrigation);
+  const [lockedYears, setLockedYears] = useState<Record<number, string>>({});
+  const [lockDraft, setLockDraft] = useState<Record<number, string>>({});
+  const [expandedAlts, setExpandedAlts] = useState<number | null>(null);
   const [priorities, setPriorities] = useState<Record<number, Record<string, number>>>({
     1: { protein: 40, carbon: 10, n_fixation: 60, margin: 20, yield: 20 },
     2: { protein: 30, carbon: 50, n_fixation: 20, margin: 40, yield: 10 },
@@ -455,22 +489,55 @@ const OptimizerPanel: React.FC<OptimizerProps> = ({ parcelId, management, irriga
   const [optLoading, setOptLoading] = useState(false);
   const [optError, setOptError] = useState('');
 
-  const dims = [
-    { key: 'protein', label: 'Proteína', icon: '🧪' },
-    { key: 'carbon', label: 'Carbono', icon: '🌍' },
-    { key: 'n_fixation', label: 'Nitrógeno', icon: '🧪' },
-    { key: 'margin', label: 'Margen', icon: '💰' },
-    { key: 'yield', label: 'Rendimiento', icon: '🌾' },
-  ];
+  useEffect(() => {
+    if (initialLockEppo) {
+      setLockedYears(prev => ({ ...prev, 1: initialLockEppo }));
+      setLockDraft(prev => ({ ...prev, 1: initialLockEppo }));
+    }
+  }, [initialLockEppo]);
+
+  const dimLabel = (key: string) => {
+    const map: Record<string, string> = {
+      protein: t('rotationOptimizer.protein', { defaultValue: 'Proteína' }),
+      carbon: t('rotationOptimizer.carbon', { defaultValue: 'Carbono' }),
+      n_fixation: t('rotationOptimizer.nitrogen', { defaultValue: 'Nitrógeno' }),
+      margin: t('rotationOptimizer.margin', { defaultValue: 'Margen' }),
+      yield: t('rotationOptimizer.yield', { defaultValue: 'Rendimiento' }),
+    };
+    return map[key] || key;
+  };
+
+  const toggleLockYear = (yr: number) => {
+    const eppo = (lockDraft[yr] || '').trim().toUpperCase();
+    if (!eppo) return;
+    setLockedYears(prev => {
+      const next = { ...prev };
+      if (next[yr] === eppo) {
+        delete next[yr];
+      } else {
+        next[yr] = eppo;
+      }
+      return next;
+    });
+  };
+
+  const unlockYear = (yr: number) => {
+    setLockedYears(prev => {
+      const next = { ...prev };
+      delete next[yr];
+      return next;
+    });
+  };
 
   const handleOptimize = async () => {
-    setOptLoading(true); setOptError('');
+    setOptLoading(true);
+    setOptError('');
     try {
       const prioArray = Array.from({ length: years }, (_, i) => ({
         year: i + 1,
-        ...priorities[i + 1] || { protein: 20, carbon: 20, n_fixation: 20, margin: 20, yield: 20 },
+        ...(priorities[i + 1] || { protein: 20, carbon: 20, n_fixation: 20, margin: 20, yield: 20 }),
       }));
-      const body = JSON.stringify({
+      const data = await api.optimizeRotation?.({
         parcel_id: parcelId,
         years,
         constraints: {
@@ -479,22 +546,16 @@ const OptimizerPanel: React.FC<OptimizerProps> = ({ parcelId, management, irriga
           irrigation_regime: optIrrigation || undefined,
         },
         priorities: prioArray,
+        locked_years: Object.keys(lockedYears).length ? lockedYears : undefined,
         seed_price: economics.seedPrice,
         harvest_price: economics.harvestPrice,
         price_unit: economics.priceUnit,
         operation_cost: economics.operationCost,
       });
-      const API_BASE = (import.meta as any).env?.VITE_API_URL || 'https://nkz.robotika.cloud';
-      const res = await fetch(`${API_BASE}/api/graph/agriculture/rotation-optimize`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body,
-        credentials: 'include',
-      });
-      if (!res.ok) throw new Error((await res.json().catch(() => ({}))).detail || `HTTP ${res.status}`);
-      setOptResult(await res.json());
+      if (!data || data.error) throw new Error(data?.error || t('rotationOptimizer.noValidRotation', { defaultValue: 'No valid rotation' }));
+      setOptResult(data);
     } catch (e: any) {
-      setOptError(e.message);
+      setOptError(e.message || String(e));
     } finally {
       setOptLoading(false);
     }
@@ -510,9 +571,9 @@ const OptimizerPanel: React.FC<OptimizerProps> = ({ parcelId, management, irriga
             🌾 {t('rotationOptimizer.glutenFree', { defaultValue: 'Sin gluten' })}
           </label>
           <select value={optManagement} onChange={e => setOptManagement(e.target.value)} className="rounded-md border border-nkz-border px-2 py-1 text-nkz-sm">
-            <option value="any">{t('planning.seasonAll', { defaultValue: 'Cualquiera' })}</option>
-            <option value="conventional">{t('assign.conventional', { defaultValue: 'Convencional' })}</option>
-            <option value="organic">{t('assign.organic', { defaultValue: 'Ecológico' })}</option>
+            <option value="any">{t('planning.managementAny', { defaultValue: 'Cualquiera' })}</option>
+            <option value="conventional">{t('planning.managementConventional', { defaultValue: 'Convencional' })}</option>
+            <option value="organic">{t('planning.managementOrganic', { defaultValue: 'Ecológico' })}</option>
           </select>
         </div>
       </Card>
@@ -521,28 +582,53 @@ const OptimizerPanel: React.FC<OptimizerProps> = ({ parcelId, management, irriga
         <h3 className="text-nkz-sm font-semibold mb-2">{t('rotationOptimizer.priorities', { defaultValue: 'Prioridades por año' })}</h3>
         <div className="flex gap-1 mb-3">
           {[2, 3, 4, 5, 6].map(n => (
-            <Button key={n} variant={years === n ? 'primary' : 'ghost'} size="sm" onClick={() => setYears(n)}>{n}a</Button>
+            <Button key={n} variant={years === n ? 'primary' : 'ghost'} size="sm" onClick={() => setYears(n)}>
+              {t('rotationOptimizer.yearsShort', { n, defaultValue: `${n}a` })}
+            </Button>
           ))}
         </div>
         {Array.from({ length: years }, (_, i) => {
           const yr = i + 1;
           const p = priorities[yr] || { protein: 20, carbon: 20, n_fixation: 20, margin: 20, yield: 20 };
+          const isLocked = Boolean(lockedYears[yr]);
           return (
-            <div key={yr} className="mb-2">
-              <div className="text-nkz-xs font-medium text-nkz-text-secondary mb-1">{t('rotationOptimizer.year', { n: yr, defaultValue: `Año ${yr}` })}</div>
+            <div key={yr} className="mb-3 pb-2 border-b border-nkz-border-subtle last:border-0">
+              <div className="flex flex-wrap items-center gap-2 mb-1">
+                <div className="text-nkz-xs font-medium text-nkz-text-secondary">
+                  {t('rotationOptimizer.year', { n: yr, defaultValue: `Año ${yr}` })}
+                </div>
+                {isLocked && (
+                  <Badge intent="warning">
+                    🔒 {lockedYears[yr]} — <button type="button" className="underline ml-1" onClick={() => unlockYear(yr)}>
+                      {t('rotationOptimizer.unlock', { defaultValue: 'Desbloquear' })}
+                    </button>
+                  </Badge>
+                )}
+                <input
+                  type="text"
+                  placeholder="EPPO"
+                  value={lockDraft[yr] || ''}
+                  onChange={e => setLockDraft(prev => ({ ...prev, [yr]: e.target.value.toUpperCase() }))}
+                  className="w-20 rounded border border-nkz-border px-1 py-0.5 text-nkz-xs"
+                />
+                <Button variant="ghost" size="sm" onClick={() => toggleLockYear(yr)}>
+                  {isLocked ? t('rotationOptimizer.unlock', { defaultValue: 'Desbloquear' }) : '🔒'}
+                </Button>
+              </div>
               <div className="flex flex-wrap gap-2">
-                {dims.map(d => (
-                  <div key={d.key} className="flex items-center gap-1" style={{ minWidth: '160px' }}>
-                    <span className="text-nkz-xs w-20 truncate">{d.icon} {d.label}</span>
+                {OPT_DIMS.map(d => (
+                  <div key={d} className="flex items-center gap-1" style={{ minWidth: '160px' }}>
+                    <span className="text-nkz-xs w-20 truncate">{dimLabel(d)}</span>
                     <input
                       type="range"
                       min="0"
                       max="100"
-                      value={p[d.key] || 0}
-                      onChange={e => setPriorities(prev => ({ ...prev, [yr]: { ...prev[yr], [d.key]: Number(e.target.value) } }))}
+                      value={p[d] || 0}
+                      onChange={e => setPriorities(prev => ({ ...prev, [yr]: { ...prev[yr], [d]: Number(e.target.value) } }))}
                       className="flex-1 h-2"
+                      disabled={isLocked}
                     />
-                    <span className="text-nkz-xs w-8 text-right">{p[d.key] || 0}%</span>
+                    <span className="text-nkz-xs w-8 text-right">{p[d] || 0}%</span>
                   </div>
                 ))}
               </div>
@@ -551,24 +637,32 @@ const OptimizerPanel: React.FC<OptimizerProps> = ({ parcelId, management, irriga
         })}
       </Card>
 
-      <Button size="lg" onClick={handleOptimize} disabled={optLoading} loading={optLoading}>
+      <Button size="lg" onClick={handleOptimize} disabled={optLoading || !parcelId} loading={optLoading}>
         🔄 {t('rotationOptimizer.optimize', { defaultValue: 'Optimizar' })}
       </Button>
 
       {optError && <div className="text-nkz-error text-nkz-sm">{optError}</div>}
 
-      {optResult && optResult.plan && (
+      {optResult?.plan && (
         <>
           {optResult.plan.map((year: any) => (
             <Card key={year.year} padding="md">
-              <div className="flex items-center gap-2 mb-2">
+              <div className="flex items-center gap-2 mb-2 flex-wrap">
                 <Badge intent="info">{t('rotationOptimizer.year', { n: year.year, defaultValue: `Año ${year.year}` })}</Badge>
                 {year.locked && <Badge intent="warning">🔒 {t('rotationOptimizer.lockedYear', { defaultValue: 'Bloqueado' })}</Badge>}
+                {year.scores && (
+                  <span className="text-nkz-xs text-nkz-text-muted">
+                    {t('rotationOptimizer.scores', { defaultValue: 'Puntuación' })}: {year.scores.composite}
+                  </span>
+                )}
               </div>
               <div className="grid grid-cols-2 gap-2 text-nkz-sm">
                 <div>
                   <div className="text-nkz-xs text-nkz-text-muted">{t('rotationOptimizer.coverCrop', { defaultValue: 'Cobertura' })}</div>
-                  <div className="font-medium">🌱 {year.cover_crop?.name || '—'} {year.cover_crop?.termination_method === 'roller_crimper' ? '🔄' : ''}</div>
+                  <div className="font-medium">
+                    🌱 {year.cover_crop?.name || '—'}
+                    {year.cover_crop?.termination_method === 'roller_crimper' ? ' 🔄' : ''}
+                  </div>
                 </div>
                 <div>
                   <div className="text-nkz-xs text-nkz-text-muted">{t('rotationOptimizer.cashCrop', { defaultValue: 'Cultivo' })}</div>
@@ -576,22 +670,88 @@ const OptimizerPanel: React.FC<OptimizerProps> = ({ parcelId, management, irriga
                     🌾 {year.cash_crop?.name} · {year.cash_crop?.expected_yield_kg_ha?.toLocaleString()} kg/ha
                   </div>
                   <div className="text-nkz-xs text-nkz-text-secondary">
-                    🧪 {year.cash_crop?.protein_kg_ha} kg prot · 🌍 {year.cash_crop?.carbon_fixed_tco2e_ha} tCO₂e · 💰 {year.cash_crop?.net_margin_eur_ha?.toFixed(0)} €/ha
+                    🧪 {year.cash_crop?.protein_kg_ha} {t('rotationOptimizer.proteinUnit', { defaultValue: 'kg prot' })} ·
+                    🌍 {year.cash_crop?.carbon_fixed_tco2e_ha} tCO₂e ·
+                    💰 {year.cash_crop?.net_margin_eur_ha?.toFixed(0)} €/ha
                   </div>
+                  {year.cash_crop?.protein_source && (
+                    <div className="text-nkz-xs text-nkz-text-muted">
+                      {t('rotationOptimizer.proteinSource', { source: year.cash_crop.protein_source, defaultValue: year.cash_crop.protein_source })}
+                    </div>
+                  )}
                 </div>
               </div>
-              {year.rotation_warning && <div className="text-nkz-xs text-nkz-warning mt-1">⚠️ {year.rotation_warning}</div>}
+              {year.scores && !year.locked && (
+                <div className="flex flex-wrap gap-2 mt-2 text-nkz-xs">
+                  {OPT_DIMS.map(d => (
+                    <Badge key={d} intent="info">{dimLabel(d)}: {year.scores[d === 'n_fixation' ? 'n_fixation' : d] ?? '—'}</Badge>
+                  ))}
+                </div>
+              )}
+              {year.alternatives?.length > 0 && (
+                <div className="mt-2">
+                  <Button variant="ghost" size="sm" onClick={() => setExpandedAlts(expandedAlts === year.year ? null : year.year)}>
+                    {t('rotationOptimizer.alternatives', { defaultValue: 'Ver alternativas' })}
+                  </Button>
+                  {expandedAlts === year.year && (
+                    <ul className="mt-1 text-nkz-xs text-nkz-text-secondary list-disc pl-4">
+                      {year.alternatives.map((alt: any) => (
+                        <li key={alt.eppo}>
+                          {alt.eppo} ({alt.composite_score}) — {alt.reason}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              )}
+              {onAssign && year.cash_crop && (
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  className="mt-2"
+                  onClick={() => onAssign({
+                    name: year.cash_crop.variety || year.cash_crop.name,
+                    crop_eppo: year.cash_crop.eppo,
+                  })}
+                >
+                  {t('planning.assignCrop', { defaultValue: 'Adjudicar' })}
+                </Button>
+              )}
+              {year.rotation_warning && (
+                <div className="text-nkz-xs text-nkz-warning mt-1">⚠️ {year.rotation_warning}</div>
+              )}
             </Card>
           ))}
+
           {optResult.cumulative && (
             <Card padding="md" className="bg-nkz-positive-soft">
               <strong className="text-nkz-sm">{t('rotationOptimizer.cumulative', { defaultValue: 'Acumulado' })}</strong>
               <div className="grid grid-cols-2 gap-2 mt-2 text-nkz-sm">
-                <div>🧪 {optResult.cumulative.total_protein_kg_ha} kg proteína</div>
+                <div>🧪 {optResult.cumulative.total_protein_kg_ha} {t('rotationOptimizer.totalProtein', { defaultValue: 'kg proteína' })}</div>
                 <div>🌍 {optResult.cumulative.total_carbon_fixed_tco2e} tCO₂e</div>
-                <div>🧪 {optResult.cumulative.total_n_fixation_kg_ha} kg N fijado</div>
+                <div>🧪 {optResult.cumulative.total_n_fixation_kg_ha} {t('rotationOptimizer.totalNitrogen', { defaultValue: 'kg N fijado' })}</div>
                 <div>💰 {optResult.cumulative.total_net_margin_eur_ha?.toLocaleString()} €/ha</div>
+                <div>{t('rotationOptimizer.nPool', { defaultValue: 'N pool final' })}: {optResult.cumulative.final_soil_n_pool_kg_ha} kg/ha</div>
               </div>
+            </Card>
+          )}
+
+          {optResult.pac_compliance && (
+            <Card padding="md">
+              <strong className="text-nkz-sm">🇪🇺 {t('rotationPlanner.pac.title', { defaultValue: 'Cumplimiento PAC' })}</strong>
+              <div className="flex items-center gap-4 mt-2">
+                <div className="text-nkz-xl font-bold">{optResult.pac_compliance.score}%</div>
+                <ProgressBar
+                  value={optResult.pac_compliance.score}
+                  intent={optResult.pac_compliance.score >= 80 ? 'positive' : optResult.pac_compliance.score >= 50 ? 'warning' : 'negative'}
+                  showLabel
+                />
+              </div>
+              {optResult.pac_compliance.rules?.map((rule: any) => (
+                <div key={rule.id} className="text-nkz-xs mt-1">
+                  {rule.pass ? '✅' : '❌'} {t(`rotationPlanner.pac.rule.${rule.id}`, { defaultValue: rule.id })} — {rule.detail}
+                </div>
+              ))}
             </Card>
           )}
         </>

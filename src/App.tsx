@@ -90,7 +90,7 @@ class ToolErrorBoundary extends Component<
   }
 }
 
-function ToolView({ toolId, onBack }: { toolId: string; onBack: () => void }) {
+function ToolView({ toolId, onBack, onNavigateTool }: { toolId: string; onBack: () => void; onNavigateTool: (id: string) => void }) {
   const { t } = useTranslation('bioorchestrator');
   const ToolComponent = TOOL_MAP[toolId];
 
@@ -103,6 +103,8 @@ function ToolView({ toolId, onBack }: { toolId: string; onBack: () => void }) {
     );
   }
 
+  const extraProps = toolId === 'cropPlanner' ? { onNavigateTool } : {};
+
   return (
     <Stack gap="section">
       <Button variant="ghost" onClick={onBack} leadingIcon={<ArrowLeft className="w-4 h-4" />}>
@@ -110,7 +112,7 @@ function ToolView({ toolId, onBack }: { toolId: string; onBack: () => void }) {
       </Button>
       <Suspense fallback={<Spinner size="lg" />}>
         <ToolErrorBoundary fallback={<ToolErrorFallback toolId={toolId} onBack={onBack} />}>
-          <ToolComponent />
+          <ToolComponent {...extraProps} />
         </ToolErrorBoundary>
       </Suspense>
     </Stack>
@@ -154,7 +156,7 @@ function AppInner() {
         {view.mode === 'dashboard' ? (
           <Dashboard onSelectTool={handleSelectTool} />
         ) : (
-          <ToolView toolId={view.toolId} onBack={handleBack} />
+          <ToolView toolId={view.toolId} onBack={handleBack} onNavigateTool={handleSelectTool} />
         )}
 
         <DisclaimerFooter />
