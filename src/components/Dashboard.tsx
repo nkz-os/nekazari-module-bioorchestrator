@@ -4,7 +4,7 @@ import { Badge, Card, Stack, Spinner } from '@nekazari/ui-kit';
 import {
   Search, Heart, Activity, RefreshCw, Droplets, Dna, Microscope,
   Leaf, Globe, Sprout, Thermometer, FlaskRound, GitBranch, Database, Mountain,
-  Bell, TrendingUp,
+  Bell, TrendingUp, Sparkles,
 } from 'lucide-react';
 import { useParcelContext } from '../context/ParcelContext';
 import { usePlanningScenario } from '../context/PlanningScenarioContext';
@@ -22,9 +22,7 @@ interface ToolCardDef {
 const HUB_ORDER: HubId[] = ['planning', 'campaign', 'codex'];
 
 const ALL_TOOLS: ToolCardDef[] = [
-  { id: 'varietyFinder', icon: Search, hub: 'planning' },
-  { id: 'comparator', icon: Activity, hub: 'planning' },
-  { id: 'rotationPlanner', icon: RefreshCw, hub: 'planning' },
+  { id: 'cropPlanner', icon: Sparkles, hub: 'planning' },
   { id: 'regenerative', icon: Dna, hub: 'planning' },
   { id: 'parcelStatus', icon: Heart, hub: 'campaign' },
   { id: 'yieldProjection', icon: TrendingUp, hub: 'campaign' },

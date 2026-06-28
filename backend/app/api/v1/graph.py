@@ -905,6 +905,44 @@ async def agriculture_parcel_environment(
     return result
 
 
+@router.get("/agriculture/suggest-crops")
+async def agriculture_suggest_crops(
+    driver: DriverDep,
+    request: Request,
+    parcel_id: str = Query(..., description="AgriParcel URN"),
+    season_slot: str = Query("all", description="winter | summer | all"),
+    management: str = Query("any", description="organic | conventional | any"),
+    irrigation_regime: str | None = Query(None, description="secano | regadío | any"),
+    top_n: int = Query(15, le=30, description="Max suggestions to return"),
+    seed_price: float = Query(1.0, description="Seed cost €/ha"),
+    harvest_price: float = Query(1.0, description="Harvest price"),
+    price_unit: str = Query("eur_per_t", description="eur_per_kg | eur_per_t"),
+    operation_cost: float = Query(1.0, description="Cost per field operation €"),
+):
+    """Suggest best crops for a parcel ranked by composite score.
+
+    Orchestrates get_parcel_environment + get_available_crops +
+    extrapolate_varieties + economics. No new Neo4j relationship types.
+    """
+    tenant_id = getattr(request.state, "tenant_id", "")
+    dao = GraphDAO(driver)
+    result = await dao.suggest_crops_for_parcel(
+        parcel_id=parcel_id,
+        tenant_id=tenant_id,
+        season_slot=season_slot,
+        management=management,
+        irrigation_regime=irrigation_regime,
+        top_n=top_n,
+        seed_price=seed_price,
+        harvest_price=harvest_price,
+        price_unit=price_unit,
+        operation_cost=operation_cost,
+    )
+    if "error" in result:
+        raise HTTPException(status_code=404, detail=result["error"])
+    return result
+
+
 @router.get("/agriculture/crop-context")
 async def agriculture_crop_context(
     driver: DriverDep,

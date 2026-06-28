@@ -2367,6 +2367,260 @@ class GraphDAO:
             },
         }
 
+    async def suggest_crops_for_parcel(
+        self,
+        parcel_id: str,
+        tenant_id: str = "",
+        season_slot: str = "all",
+        management: str = "any",
+        irrigation_regime: str | None = None,
+        top_n: int = 15,
+        seed_price: float = 1.0,
+        harvest_price: float = 1.0,
+        price_unit: str = "eur_per_t",
+        operation_cost: float = 1.0,
+    ) -> dict:
+        """Suggest best crops for a parcel, ranked by composite score.
+
+        Orchestrates get_parcel_environment + get_available_crops +
+        extrapolate_varieties + economics. No new Neo4j relationship types.
+        """
+        from app.services.crop_reference import CROP_SEASON_SLOT, DEFAULT_REFERENCE, get_season_slots
+        from app.services.soil_client import get_parcel_soil_properties
+
+        # ── 1. Resolve environment ─────────────────────────────────────
+        env = await self.get_parcel_environment(parcel_id, tenant_id)
+        if "error" in env:
+            return {"error": env["error"]}
+
+        climate_class = env.get("climate_class")
+        soil_data = env.get("soil", {})
+        soil_type = soil_data.get("wrb_type") if soil_data.get("data_available") else None
+        area_ha = env.get("area_ha")
+
+        # Apply irrigation override
+        effective_irrigation = irrigation_regime
+        if not effective_irrigation:
+            inferred = (env.get("irrigation") or {}).get("inferred")
+            if inferred:
+                effective_irrigation = inferred
+
+        # ── 2. Get available crops ──────────────────────────────────────
+        available = await self.get_available_crops()
+        if not available:
+            return {"parcel_id": parcel_id, "suggestions": [], "target_environment": env,
+                    "data_quality": {"crops_evaluated": 0, "crops_with_trials": 0,
+                                     "season_filter_excluded": 0}}
+
+        # ── 3. Filter by season ────────────────────────────────────────
+        crops_to_evaluate = []
+        season_excluded = 0
+        for c in available:
+            eppo = c.get("eppo_code", "")
+            slots = get_season_slots(eppo)
+            if season_slot != "all" and season_slot not in slots:
+                season_excluded += 1
+                continue
+            crops_to_evaluate.append(c)
+
+        # Cap at 30 to avoid hitting Neo4j too hard in parallel
+        crops_to_evaluate = crops_to_evaluate[:30]
+
+        # ── 4. Extrapolate best variety per crop (parallel) ────────────
+        async def _eval_one(crop_entry: dict) -> dict | None:
+            eppo = crop_entry["eppo_code"]
+            try:
+                result = await self.extrapolate_varieties(
+                    crop=eppo,
+                    climate_class=climate_class,
+                    soil_type=soil_type,
+                    irrigation_regime=effective_irrigation,
+                    parcel_id=parcel_id,
+                    tenant_id=tenant_id,
+                    top_n=1,
+                )
+                ranked = result.get("ranked_varieties", [])
+                if not ranked:
+                    return None
+                best = ranked[0]
+
+                # ── 5. Soil suitability ────────────────────────────────
+                soil_req = await self.get_soil_suitability(eppo)
+                suitability = {"overall": "unknown", "warnings": []}
+                if soil_req and soil_data.get("data_available"):
+                    ph = soil_data.get("ph")
+                    texture = soil_data.get("texture")
+                    if ph is not None and soil_req.get("ph_min") is not None:
+                        if not (soil_req["ph_min"] <= ph <= soil_req["ph_max"]):
+                            suitability["warnings"].append(
+                                f"pH {ph} fuera del rango [{soil_req['ph_min']}, {soil_req['ph_max']}]")
+                    if texture and soil_req.get("textures"):
+                        match = any(t.lower() in texture.lower() for t in soil_req["textures"])
+                        if not match:
+                            suitability["warnings"].append(
+                                f"Textura '{texture}' no coincide con {soil_req['textures']}")
+                    suitability["overall"] = "suitable" if not suitability["warnings"] else "warning"
+
+                # ── 6. Thermal risk ────────────────────────────────────
+                thermal_risk = "none"
+                heat_tol = await self.get_heat_tolerance(eppo)
+                climate_detail = env.get("climate_detail") or {}
+                frost_days = climate_detail.get("frost_days_per_year")
+                if heat_tol:
+                    frost_threshold = heat_tol.get("frost_damage_c")
+                    if frost_threshold is not None and frost_days and frost_days > 0:
+                        if frost_threshold > -5 and frost_days > 5:
+                            thermal_risk = "frost"
+
+                # ── 7. Water demand (if ERA5 data available) ───────────
+                water_demand = None
+                if climate_detail:
+                    gsd = crop_entry.get("growing_season_days", 180)
+                    annual_et0 = climate_detail.get("annual_et0_mm")
+                    annual_rain = climate_detail.get("annual_rainfall_mm")
+                    if annual_et0 and annual_rain:
+                        season_etc = (gsd / 365) * annual_et0
+                        effective_rain = annual_rain * 0.7
+                        deficit = max(0, season_etc - effective_rain)
+                        soil_awc = soil_data.get("awc_mm", 100) if soil_data.get("data_available") else 100
+                        ratio = deficit / soil_awc if soil_awc > 0 else 999
+                        water_demand = {
+                            "level": "low" if ratio < 0.5 else ("medium" if ratio < 1.5 else "high"),
+                            "ratio": round(ratio, 2),
+                            "season_etc_mm": round(season_etc, 0),
+                            "effective_rainfall_mm": round(effective_rain, 0),
+                            "deficit_mm": round(deficit, 0),
+                        }
+
+                # ── 8. Economics ───────────────────────────────────────
+                conv_yield = best.get("mean_yield_kg_ha", 0)
+                # Price unit conversion
+                price_per_t = harvest_price if price_unit == "eur_per_t" else harvest_price * 1000
+                gross_revenue_ha = conv_yield / 1000 * price_per_t if price_per_t else 0
+                # Seed cost estimate: seed_price €/ha * 1.0 (placeholder scaling)
+                total_cost = seed_price + operation_cost * DEFAULT_REFERENCE.get(
+                    "operations_count", 5)
+                net_margin_ha = gross_revenue_ha - total_cost
+
+                # Organic adjustment
+                organic_yield = None
+                organic_margin = None
+                organic_warning = None
+                if management == "organic":
+                    organic_yield = round(conv_yield * 0.80, 0)
+                    org_gross = organic_yield / 1000 * price_per_t if price_per_t else 0
+                    organic_margin = round(org_gross - total_cost, 2)
+                    organic_warning = (
+                        "Datos de ensayo convencional — rendimiento ecológico estimado al 80% "
+                        "del convencional (Seufert et al. 2012, Ponisio et al. 2015)"
+                    )
+
+                # ── 9. Recommendation trust ───────────────────────────
+                data_quality = result.get("data_quality", {})
+                trials_analyzed = data_quality.get("total_trials_analyzed", best.get("trial_count", 0))
+                confidence = best.get("confidence") or "medium"
+                trust = {
+                    "confidence": confidence,
+                    "trials_analyzed": trials_analyzed,
+                    "similar_sites_count": len(result.get("similar_sites", [])),
+                    "yield_source": "variety_trials",
+                    "confidence_interval": best.get("confidence_interval"),
+                    "organic_warning": organic_warning,
+                    "weather_adjusted": bool(env.get("climate_detail")),
+                    "inputs_used": {
+                        "soil": env["inputs_used"].get("soil", "unavailable"),
+                        "climate": env["inputs_used"].get("climate", "unavailable"),
+                        "trials": "neo4j",
+                        "irrigation_filter": effective_irrigation or "any",
+                    },
+                    "data_gaps": [],
+                }
+                if trials_analyzed < 3:
+                    trust["data_gaps"].append("low_trial_count")
+                if management == "organic" and organic_warning:
+                    trust["data_gaps"].append("conventional_only_trials")
+                if not soil_data.get("data_available"):
+                    trust["data_gaps"].append("soil_unavailable")
+
+                return {
+                    "crop_eppo": eppo,
+                    "crop_name": crop_entry.get("scientific_name", eppo),
+                    "season_slot": list(get_season_slots(eppo)),
+                    "best_variety": best.get("variety"),
+                    "crop_uri": best.get("crop_uri"),
+                    "variety_uri": best.get("variety_uri"),
+                    "agronomics": {
+                        "expected_yield_kg_ha": round(conv_yield, 1),
+                        "confidence_interval": best.get("confidence_interval"),
+                        "trials_analyzed": trials_analyzed,
+                        "confidence": confidence,
+                    },
+                    "yield_conventional_kg_ha": round(conv_yield, 1),
+                    "yield_organic_kg_ha": organic_yield,
+                    "economic": {
+                        "harvest_price_eur_t": round(price_per_t, 2),
+                        "gross_revenue_eur_ha": round(gross_revenue_ha, 2),
+                        "net_margin_eur_ha": round(net_margin_ha, 2),
+                        "organic_net_margin_eur_ha": organic_margin,
+                        "parcel_net_margin_eur": round(net_margin_ha * area_ha, 2) if area_ha else None,
+                    },
+                    "suitability": suitability,
+                    "thermal_risk": thermal_risk,
+                    "water_demand": water_demand,
+                    "recommendation_trust": trust,
+                }
+            except Exception as e:
+                logger.warning("suggest_crops: failed to evaluate %s: %s", eppo, e)
+                return None
+
+        # Run evaluations in parallel (cap concurrency at 10)
+        tasks = [_eval_one(c) for c in crops_to_evaluate]
+        results = []
+        for coro in asyncio.as_completed(tasks):
+            try:
+                r = await coro
+                if r:
+                    results.append(r)
+            except Exception:
+                pass
+
+        # ── 10. Composite score ────────────────────────────────────────
+        if results:
+            max_yield = max(r["agronomics"]["expected_yield_kg_ha"] for r in results) or 1
+            max_margin = max(r["economic"]["net_margin_eur_ha"] for r in results) or 1
+            for r in results:
+                y_score = r["agronomics"]["expected_yield_kg_ha"] / max_yield * 40
+                m_score = r["economic"]["net_margin_eur_ha"] / max_margin * 30
+                c_score = 20  # carbon placeholder when no reference
+                s_score = 10 if r["suitability"]["overall"] == "suitable" else (5 if r["suitability"]["overall"] == "warning" else 0)
+                r["composite_score"] = round(y_score + m_score + c_score + s_score, 1)
+
+            results.sort(key=lambda r: r["composite_score"], reverse=True)
+            results = results[:top_n]
+
+        return {
+            "parcel_id": parcel_id,
+            "target_environment": {
+                "climate_class": env.get("climate_class"),
+                "climate_detail": env.get("climate_detail"),
+                "soil": {"texture": soil_data.get("texture"), "wrb_type": soil_data.get("wrb_type"),
+                         "ph": soil_data.get("ph"), "data_available": soil_data.get("data_available")},
+                "area_ha": area_ha,
+                "irrigation": env.get("irrigation"),
+            },
+            "filters_applied": {
+                "season_slot": season_slot,
+                "management": management,
+                "irrigation_regime": effective_irrigation,
+            },
+            "suggestions": results,
+            "data_quality": {
+                "crops_evaluated": len(crops_to_evaluate),
+                "crops_with_trials": len(results),
+                "season_filter_excluded": season_excluded,
+            },
+        }
+
     async def get_crop_context(
         self, parcel_id: str, tenant_id: str = "", gdd: float | None = None
     ) -> dict:

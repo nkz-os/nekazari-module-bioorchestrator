@@ -10,6 +10,7 @@ import Dashboard from './components/Dashboard';
 import DisclaimerFooter from './components/DisclaimerFooter';
 import './i18n';
 
+const CropPlanner = lazy(() => import('./components/CropPlanner'));
 const VarietyFinder = lazy(() => import('./components/VarietyFinder'));
 const ParcelHealth = lazy(() => import('./components/ParcelHealth'));
 const CropComparator = lazy(() => import('./components/CropComparator'));
@@ -34,6 +35,7 @@ const BreedDiscovery = lazy(() => import('./components/DADIS/BreedDiscovery').th
 type ViewState = { mode: 'dashboard' } | { mode: 'tool'; toolId: string };
 
 const TOOL_MAP: Record<string, React.LazyExoticComponent<React.ComponentType<any>>> = {
+  cropPlanner: CropPlanner,
   varietyFinder: VarietyFinder,
   parcelStatus: ParcelHealth,
   comparator: CropComparator,

@@ -79,6 +79,62 @@ CROP_REFERENCE: dict[str, dict] = {
 
 DEFAULT_REFERENCE = {"carbon_fixed_tco2e_ha": 1.5, "operations_count": 5, "n_requirement_kg_ha": 100, "n_fixation_kg_ha": 0, "growing_season_days": 180}
 
+# ── Season slot classification (EcoCrop sowing windows) ────────────────────
+# Maps EPPO codes to winter/summer/both. Winter crops are sown in autumn,
+# summer crops in spring. Perennials and multi-cut forages are both.
+# Source: EcoCrop CycleLow/CycleHigh + Mediterranean agronomic practice.
+
+CROP_SEASON_SLOT: dict[str, set[str]] = {
+    # Winter cereals (autumn sowing)
+    "TRZAX": {"winter"}, "TRZDU": {"winter"}, "TRZAW": {"winter"},
+    "HORVX": {"winter"}, "HORVW": {"winter"}, "AVESA": {"winter"},
+    "SECCE": {"winter"}, "TTLSS": {"winter"},
+    # Winter legumes
+    "CIEAR": {"winter"}, "VICFX": {"winter"}, "VICSA": {"winter"},
+    "VICER": {"winter"}, "LENCU": {"winter"}, "LTHSA": {"winter"},
+    "PISSA": {"winter"}, "PIBSX": {"winter"}, "LUPAL": {"winter"},
+    "LUPAN": {"winter"}, "PHVUX": {"winter"},
+    # Winter oilseeds
+    "BRSNW": {"winter"}, "BRSNN": {"winter"}, "BRPNA": {"winter"},
+    # Summer cereals (spring sowing)
+    "ZEAXX": {"summer"}, "ZEAMX": {"summer"},
+    "SORVU": {"summer"}, "ORYSA": {"summer"},
+    # Summer legumes
+    "GLXMA": {"summer"},
+    # Summer oilseeds
+    "HELAN": {"summer"},
+    # Summer vegetables / tubers
+    "SOLTU": {"summer"}, "BETVU": {"summer"},
+    "SOLLC": {"summer"}, "SOLME": {"summer"},
+    "CAPAN": {"summer"}, "CPSAN": {"summer"},
+    "CUMSA": {"summer"}, "CUCUM": {"summer"},
+    "ALLCE": {"summer"}, "ALLPO": {"summer"},
+    "LYPES": {"summer"}, "CUMME": {"summer"},
+    "FRAAN": {"summer"},
+    # Perennials / fruits (both seasons)
+    "OLEU": {"winter", "summer"},
+    "VITIS": {"winter", "summer"},
+    "PRMDO": {"winter", "summer"},
+    "PRNAR": {"winter", "summer"},
+    "PRNDU": {"winter", "summer"},
+    "MABSD": {"winter", "summer"},
+    "BRUn": {"winter", "summer"},
+    "CITRU": {"winter", "summer"},
+    "PRMPE": {"winter", "summer"},
+    # Multi-cut forage (both)
+    "MEDSA": {"winter", "summer"},
+    "MEDLU": {"winter", "summer"},
+    "TRFPR": {"winter", "summer"},
+}
+
+
+def get_season_slots(eppo: str) -> set[str]:
+    """Return {"winter"}, {"summer"}, or {"winter", "summer"} for a crop.
+
+    Falls back to {"winter", "summer"} when unknown (conservative — show all).
+    """
+    return CROP_SEASON_SLOT.get(eppo.upper(), {"winter", "summer"})
+
 # ── Caches ──────────────────────────────────────────────────────────────────
 
 _eppo_taxonomy_cache: TTLCache[str, Optional[dict]] = TTLCache(maxsize=200, ttl=86400 * 7)

@@ -44,6 +44,10 @@
       "alertsAwareness": "{{count}} alerta(s) activa(s) — ver notificaciones de la plataforma"
     },
     "cards": {
+      "cropPlanner": {
+        "title": "Recomendar cultivos",
+        "subtitle": "Analiza tu parcela para encontrar los mejores cultivos de invierno y verano."
+      },
       "varietyFinder": {
         "title": "Buscador de Variedades",
         "subtitle": "Variedades mejor adaptadas para tu parcela, clima y suelo. Ordenadas por rendimiento en sitios similares."

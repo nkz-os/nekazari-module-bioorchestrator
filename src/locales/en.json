@@ -44,6 +44,10 @@
       "alertsAwareness": "{{count}} active alert(s) — see platform notifications"
     },
     "cards": {
+      "cropPlanner": {
+        "title": "Recommend crops",
+        "subtitle": "Analyze your parcel to find the best crops for winter and summer."
+      },
       "varietyFinder": {
         "title": "Variety Finder",
         "subtitle": "Best-adapted varieties for your parcel, climate and soil. Ranked by yield from similar trial sites."
