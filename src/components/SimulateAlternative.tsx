@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTranslation } from '@nekazari/sdk';
 import { Card, Badge, Button, Stack, EmptyState, Select, Skeleton } from '@nekazari/ui-kit';
 import { TrendingUp, AlertTriangle, RefreshCw } from 'lucide-react';
-import { useBioApi } from '../services/api';
+import { useBioApi, getCropContext } from '../services/api';
 import { useParcelContext } from '../context/ParcelContext';
 
 interface SimResult {
@@ -29,12 +29,15 @@ const SimulateAlternative: React.FC = () => {
   const [result, setResult] = useState<SimResult | null>(null);
   const [error, setError] = useState('');
 
-  // Load baseline crop from parcel context
-  React.useEffect(() => {
+  useEffect(() => {
     if (!selectedParcel) return;
-    api.parcelEnvironment?.(selectedParcel).then((env: any) => {
-      if (env?.campaign?.crop_eppo) setBaselineCrop(env.campaign.crop_eppo);
-    }).catch(() => {});
+    getCropContext(selectedParcel)
+      .then(ctx => {
+        if (ctx?.crop?.eppo && ctx.crop.eppo !== 'unknown') {
+          setBaselineCrop(ctx.crop.eppo);
+        }
+      })
+      .catch(() => {});
   }, [selectedParcel]);
 
   const handleSimulate = async () => {
@@ -59,16 +62,18 @@ const SimulateAlternative: React.FC = () => {
     <Stack gap="section">
       <h2 className="text-nkz-lg font-bold text-nkz-text-primary flex items-center gap-2">
         <RefreshCw className="w-5 h-5 text-nkz-accent-base" />
-        Simular cultivo alternativo
+        {t('simulateAlternative.title', { defaultValue: 'Simular cultivo alternativo' })}
       </h2>
       <p className="text-nkz-sm text-nkz-text-muted">
-        Compara qué habría pasado si hubieras plantado otro cultivo en tu parcela, con el clima y suelo reales de esta campaña.
+        {t('simulateAlternative.desc', { defaultValue: 'Compara qué habría pasado si hubieras plantado otro cultivo.' })}
       </p>
 
       <Card padding="md">
         <div className="flex flex-wrap gap-3 items-end">
           <div className="flex-1 min-w-[180px]">
-            <label className="block text-nkz-xs font-medium text-nkz-text-secondary mb-1">Cultivo actual</label>
+            <label className="block text-nkz-xs font-medium text-nkz-text-secondary mb-1">
+              {t('simulateAlternative.baselineCrop', { defaultValue: 'Cultivo actual' })}
+            </label>
             <input
               type="text"
               value={baselineCrop}
@@ -78,7 +83,9 @@ const SimulateAlternative: React.FC = () => {
             />
           </div>
           <div className="flex-1 min-w-[180px]">
-            <label className="block text-nkz-xs font-medium text-nkz-text-secondary mb-1">Cultivo alternativo</label>
+            <label className="block text-nkz-xs font-medium text-nkz-text-secondary mb-1">
+              {t('simulateAlternative.scenarioCrop', { defaultValue: 'Cultivo alternativo' })}
+            </label>
             <input
               type="text"
               value={scenarioCrop}
@@ -88,7 +95,8 @@ const SimulateAlternative: React.FC = () => {
             />
           </div>
           <Button onClick={handleSimulate} disabled={!baselineCrop || !scenarioCrop || loading} loading={loading}>
-            <RefreshCw className="w-4 h-4 mr-1" /> Comparar
+            <RefreshCw className="w-4 h-4 mr-1" />
+            {t('simulateAlternative.compare', { defaultValue: 'Comparar' })}
           </Button>
         </div>
       </Card>
@@ -112,7 +120,9 @@ const SimulateAlternative: React.FC = () => {
           <div className="space-y-2 text-nkz-sm">
             {result.yield_delta_kg_ha != null && (
               <div className="flex items-center gap-2">
-                <span className="text-nkz-text-secondary">Delta rendimiento:</span>
+                <span className="text-nkz-text-secondary">
+                  {t('simulateAlternative.yieldDelta', { defaultValue: 'Delta rendimiento' })}:
+                </span>
                 <Badge intent={result.yield_delta_kg_ha > 0 ? 'positive' : 'negative'}>
                   {result.yield_delta_kg_ha > 0 ? '+' : ''}{result.yield_delta_kg_ha?.toLocaleString()} kg/ha
                 </Badge>
@@ -120,7 +130,9 @@ const SimulateAlternative: React.FC = () => {
             )}
             {result.fertilizer_delta && result.fertilizer_delta.length > 0 && (
               <div className="flex flex-wrap items-center gap-2">
-                <span className="text-nkz-text-secondary">Delta fertilizante:</span>
+                <span className="text-nkz-text-secondary">
+                  {t('simulateAlternative.fertilizerDelta', { defaultValue: 'Delta fertilizante' })}:
+                </span>
                 {result.fertilizer_delta.map(f => (
                   <Badge key={f.element} intent={f.delta_kg_ha > 0 ? 'warning' : 'positive'}>
                     {f.element}: {f.delta_kg_ha > 0 ? '+' : ''}{f.delta_kg_ha} kg/ha
@@ -130,21 +142,22 @@ const SimulateAlternative: React.FC = () => {
             )}
             {result.soil_ok != null && (
               <div className="flex items-center gap-2">
-                <span className="text-nkz-text-secondary">Suelo:</span>
                 <Badge intent={result.soil_ok ? 'positive' : 'negative'}>
-                  {result.soil_ok ? 'Compatible' : 'No compatible'}
+                  {result.soil_ok
+                    ? t('simulateAlternative.soilCompatible', { defaultValue: 'Compatible' })
+                    : t('simulateAlternative.soilNotCompatible', { defaultValue: 'No compatible' })}
                 </Badge>
               </div>
             )}
             {result.rotation_violations && result.rotation_violations.length > 0 && (
               <div className="text-nkz-text-warning flex items-center gap-1">
                 <AlertTriangle className="w-3 h-3" />
-                Restricción rotación: {result.rotation_violations.join(', ')}
+                {t('simulateAlternative.rotationViolation', { defaultValue: 'Restricción de rotación' })}: {result.rotation_violations.join(', ')}
               </div>
             )}
             {result.scenario_data_gaps && result.scenario_data_gaps.length > 0 && (
               <div className="text-nkz-text-muted text-nkz-xs">
-                Datos faltantes en cultivo alternativo: {result.scenario_data_gaps.join(', ')}
+                {t('simulateAlternative.dataGaps', { defaultValue: 'Datos faltantes' })}: {result.scenario_data_gaps.join(', ')}
               </div>
             )}
           </div>

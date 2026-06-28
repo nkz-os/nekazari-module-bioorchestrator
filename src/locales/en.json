@@ -124,6 +124,19 @@
         "title": "Simulate alternative",
         "subtitle": "What if you had planted a different crop? Compare yield, fertilizer, and rotation with real parcel data."
       },
+      "simulateAlternative": {
+        "title": "Simulate alternative crop",
+        "desc": "Compare what would have happened if you had planted a different crop on your parcel, with this season's actual climate and soil.",
+        "baselineCrop": "Current crop",
+        "scenarioCrop": "Alternative crop",
+        "compare": "Compare",
+        "yieldDelta": "Yield delta",
+        "fertilizerDelta": "Fertilizer delta",
+        "soilCompatible": "Compatible",
+        "soilNotCompatible": "Not compatible",
+        "rotationViolation": "Rotation constraint",
+        "dataGaps": "Missing data (alternative crop)"
+      },
       "yieldProjection": {
         "title": "Yield Projection",
         "subtitle": "Yield estimates from trial data and stress-corrected in-campaign projections."

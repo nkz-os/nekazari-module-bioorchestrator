@@ -124,6 +124,19 @@
         "title": "Simular alternativa",
         "subtitle": "¿Y si hubieras plantado otro cultivo? Compara rendimiento, fertilizante y rotación con datos reales de la parcela."
       },
+      "simulateAlternative": {
+        "title": "Simular cultivo alternativo",
+        "desc": "Compara qué habría pasado si hubieras plantado otro cultivo en tu parcela, con el clima y suelo reales de esta campaña.",
+        "baselineCrop": "Cultivo actual",
+        "scenarioCrop": "Cultivo alternativo",
+        "compare": "Comparar",
+        "yieldDelta": "Delta rendimiento",
+        "fertilizerDelta": "Delta fertilizante",
+        "soilCompatible": "Compatible",
+        "soilNotCompatible": "No compatible",
+        "rotationViolation": "Restricción de rotación",
+        "dataGaps": "Datos faltantes (cultivo alternativo)"
+      },
       "yieldProjection": {
         "title": "Proyección de Rendimiento",
         "subtitle": "Estimaciones de rendimiento desde ensayos y proyecciones corregidas por estrés en campaña."

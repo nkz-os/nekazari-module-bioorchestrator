@@ -2311,37 +2311,58 @@ class GraphDAO:
 
         # ── 5. Climate class ────────────────────────────────────────────
         climate_class = None
+        climate_detail = None
         climate_input = "unavailable"
         climate_lat = centroid["lat"]
         climate_lon = centroid["lon"]
         if climate_lat is not None and climate_lon is not None:
-            # Find nearest TrialSite by haversine (capped ~50km radius)
-            async with self._driver.session() as session:
-                from math import radians, cos, sin, asin, sqrt
-                lat_r, lon_r = radians(float(climate_lat)), radians(float(climate_lon))
-                result = await session.run(
-                    "MATCH (ts:TrialSite) WHERE ts.latitude IS NOT NULL AND ts.longitude IS NOT NULL "
-                    "AND ts.climateClass IS NOT NULL "
-                    "RETURN ts.climateClass AS cc, ts.latitude AS tlat, ts.longitude AS tlon "
-                    "LIMIT 500"
-                )
-                best_dist = float("inf")
-                best_cc = None
-                async for rec in result:
-                    tlat, tlon = rec["tlat"], rec["tlon"]
-                    if tlat is None or tlon is None:
-                        continue
-                    dlat = radians(float(tlat)) - lat_r
-                    dlon = radians(float(tlon)) - lon_r
-                    a = sin(dlat / 2) ** 2 + cos(lat_r) * cos(radians(float(tlat))) * sin(dlon / 2) ** 2
-                    c = 2 * asin(sqrt(a))
-                    dist_km = 6371 * c
-                    if dist_km < best_dist:
-                        best_dist = dist_km
-                        best_cc = rec["cc"]
-                if best_cc and best_dist <= 50.0:
-                    climate_class = best_cc
-                    climate_input = "trial_proxy"
+            # Try ERA5 reanalysis first (higher fidelity)
+            try:
+                from ikerketa.connectors.era5_climate import ERA5ClimateConnector
+                era5 = ERA5ClimateConnector()
+                era5_result = era5.fetch(lat=float(climate_lat), lon=float(climate_lon))
+                if era5_result.entities:
+                    era5_data = era5_result.entities[0]
+                    climate_class = era5_data.get("koppenClass") or climate_class
+                    climate_detail = {
+                        "frost_days_per_year": era5_data.get("frostDays"),
+                        "annual_rainfall_mm": era5_data.get("annualRainfall"),
+                        "annual_et0_mm": era5_data.get("annualET0"),
+                        "mean_temp_c": era5_data.get("meanTemperature"),
+                        "source": "era5_reanalysis",
+                    }
+                    climate_input = "era5_reanalysis"
+            except Exception:
+                pass  # fall through to TrialSite proxy
+
+            # Fallback: nearest TrialSite by haversine (capped ~50km)
+            if climate_input == "unavailable":
+                async with self._driver.session() as session:
+                    from math import radians, cos, sin, asin, sqrt
+                    lat_r, lon_r = radians(float(climate_lat)), radians(float(climate_lon))
+                    result = await session.run(
+                        "MATCH (ts:TrialSite) WHERE ts.latitude IS NOT NULL AND ts.longitude IS NOT NULL "
+                        "AND ts.climateClass IS NOT NULL "
+                        "RETURN ts.climateClass AS cc, ts.latitude AS tlat, ts.longitude AS tlon "
+                        "LIMIT 500"
+                    )
+                    best_dist = float("inf")
+                    best_cc = None
+                    async for rec in result:
+                        tlat, tlon = rec["tlat"], rec["tlon"]
+                        if tlat is None or tlon is None:
+                            continue
+                        dlat = radians(float(tlat)) - lat_r
+                        dlon = radians(float(tlon)) - lon_r
+                        a = sin(dlat / 2) ** 2 + cos(lat_r) * cos(radians(float(tlat))) * sin(dlon / 2) ** 2
+                        c = 2 * asin(sqrt(a))
+                        dist_km = 6371 * c
+                        if dist_km < best_dist:
+                            best_dist = dist_km
+                            best_cc = rec["cc"]
+                    if best_cc and best_dist <= 50.0:
+                        climate_class = best_cc
+                        climate_input = "trial_proxy"
 
         # ── 6. Campaign status ──────────────────────────────────────────
         has_crop = _resolve_relationship(parcel, "hasAgriCrop") is not None
@@ -2351,6 +2372,7 @@ class GraphDAO:
             "area_ha": area_ha,
             "centroid": centroid,
             "climate_class": climate_class,
+            "climate_detail": climate_detail,
             "soil": soil_data,
             "irrigation": {
                 "inferred": irrigation_inferred,

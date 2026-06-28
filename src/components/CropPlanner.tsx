@@ -343,25 +343,9 @@ const CropPlanner: React.FC = () => {
       {/* Post-assign success */}
       {assignedMessage && (
         <Card padding="md">
-          <div className="flex flex-col gap-2">
-            <div className="flex items-center gap-2 text-nkz-success">
-              <CheckCircle className="w-5 h-5" />
-              <span className="font-medium">{assignedMessage}</span>
-            </div>
-            <div className="flex gap-2 text-nkz-sm">
-              <Button variant="ghost" size="sm" onClick={() => {
-                const app = (window as any).__NKZ_APP__;
-                if (app?.navigateToTool) app.navigateToTool('parcelStatus');
-              }}>
-                {t('planning.postAssignHealth', { defaultValue: 'Ver salud de parcela' })}
-              </Button>
-              <Button variant="ghost" size="sm" onClick={() => {
-                const app = (window as any).__NKZ_APP__;
-                if (app?.navigateToTool) app.navigateToTool('waterBudget');
-              }}>
-                {t('planning.postAssignWater', { defaultValue: 'Balance hídrico' })}
-              </Button>
-            </div>
+          <div className="flex items-center gap-2 text-nkz-success">
+            <CheckCircle className="w-5 h-5" />
+            <span className="font-medium">{assignedMessage}</span>
           </div>
         </Card>
       )}
