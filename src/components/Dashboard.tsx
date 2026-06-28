@@ -19,15 +19,19 @@ interface ToolCardDef {
   compact?: boolean;
 }
 
-const HUB_ORDER: HubId[] = ['planning', 'campaign', 'codex'];
+const HUB_ORDER: HubId[] = ['planning', 'campaign'];
 
 const ALL_TOOLS: ToolCardDef[] = [
   { id: 'cropPlanner', icon: Sparkles, hub: 'planning' },
   { id: 'regenerative', icon: Dna, hub: 'planning' },
   { id: 'parcelStatus', icon: Heart, hub: 'campaign' },
   { id: 'yieldProjection', icon: TrendingUp, hub: 'campaign' },
-  { id: 'wofostSimulation', icon: Microscope, hub: 'campaign' },
   { id: 'waterBudget', icon: Droplets, hub: 'campaign' },
+  { id: 'wofostSimulation', icon: Microscope, hub: 'campaign' },
+  { id: 'simulateScenario', icon: Activity, hub: 'campaign' },
+];
+
+const ADVANCED_TOOLS: ToolCardDef[] = [
   { id: 'catalog', icon: Leaf, hub: 'codex', compact: true },
   { id: 'climate', icon: Globe, hub: 'codex', compact: true },
   { id: 'phenology', icon: Sprout, hub: 'codex', compact: true },
@@ -47,7 +51,7 @@ interface DashboardProps {
 }
 
 function defaultHubForParcel(hasCampaign: boolean, hasParcel: boolean): HubId {
-  if (!hasParcel) return 'codex';
+  if (!hasParcel) return 'planning';
   return hasCampaign ? 'campaign' : 'planning';
 }
 
@@ -57,13 +61,14 @@ export default function Dashboard({ onSelectTool }: DashboardProps) {
   const { enabled: scenarioEnabled } = usePlanningScenario();
   const api = useBioApi();
 
-  const [activeHub, setActiveHub] = useState<HubId>('codex');
+  const [activeHub, setActiveHub] = useState<HubId>('planning');
   const [hubAnimating, setHubAnimating] = useState(false);
   const [campaignCrop, setCampaignCrop] = useState<string | null>(null);
   const [alertCount, setAlertCount] = useState(0);
   const [catalogCount, setCatalogCount] = useState<number | null>(null);
   const [sourcesCount, setSourcesCount] = useState<number | null>(null);
   const [contextLoading, setContextLoading] = useState(false);
+  const [advancedOpen, setAdvancedOpen] = useState(false);
 
   useEffect(() => {
     api.getSpecies()
@@ -140,9 +145,7 @@ export default function Dashboard({ onSelectTool }: DashboardProps) {
     return undefined;
   };
 
-  const gridCols = activeHub === 'codex'
-    ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'
-    : 'grid-cols-1 md:grid-cols-2';
+  const gridCols = 'grid-cols-1 md:grid-cols-2';
 
   const renderCard = (tool: ToolCardDef) => {
     const Icon = tool.icon;
@@ -243,7 +246,7 @@ export default function Dashboard({ onSelectTool }: DashboardProps) {
         </div>
       )}
 
-      {!selectedParcel && activeHub !== 'codex' && (
+      {!selectedParcel && (
         <p className="text-nkz-sm text-nkz-text-muted">{t('app.selectParcelPrompt')}</p>
       )}
 
@@ -262,6 +265,29 @@ export default function Dashboard({ onSelectTool }: DashboardProps) {
         <div className={`grid ${gridCols} gap-3 md:gap-4`}>
           {toolsForHub.map(renderCard)}
         </div>
+      </section>
+
+      {/* Advanced section (collapsible) */}
+      <section className="border-t border-nkz-border pt-3">
+        <button
+          type="button"
+          className="flex items-center gap-2 text-nkz-sm font-medium text-nkz-text-secondary hover:text-nkz-text-primary transition-colors w-full text-left"
+          onClick={() => setAdvancedOpen(!advancedOpen)}
+          aria-expanded={advancedOpen}
+        >
+          <span className={`transition-transform ${advancedOpen ? 'rotate-90' : ''}`}>▸</span>
+          {t('app.advanced.title', { defaultValue: 'Advanced tools' })}
+        </button>
+        {!advancedOpen && (
+          <p className="text-nkz-xs text-nkz-text-muted mt-1 ml-5">
+            {t('app.advanced.subtitle', { defaultValue: 'Scientific reference, data and technical tools' })}
+          </p>
+        )}
+        {advancedOpen && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4 mt-3">
+            {ADVANCED_TOOLS.map(tool => renderCard(tool))}
+          </div>
+        )}
       </section>
     </Stack>
   );

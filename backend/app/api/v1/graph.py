@@ -1108,17 +1108,21 @@ async def agriculture_compare_crops(
 async def agriculture_rotation_plan(
     driver: DriverDep, request: Request,
     parcel_id: str = Query(..., description="AgriParcel URN"),
-    years: int = Query(3, ge=2, le=6, description="Planning horizon in years"),
+    years: int = Query(4, ge=2, le=6, description="Planning horizon in years"),
     seed_price: float = Query(1, description="Seed cost €/ha"),
     harvest_price: float = Query(1, description="Harvest price €/t"),
     operation_cost: float = Query(1, description="Cost per field operation €"),
+    starting_crop: str | None = Query(None, description="EPPO code for year 1 crop"),
+    management: str = Query("any", description="organic | conventional | any"),
 ):
-    """Generate multi-year rotation plan with carbon and N tracking."""
+    """Generate multi-year rotation plan with carbon, N, pest, and PAC tracking."""
     dao = GraphDAO(driver)
     result = await dao.rotation_plan(
         parcel_id=parcel_id, years=years,
         seed_price=seed_price, harvest_price=harvest_price, operation_cost=operation_cost,
         tenant_id=getattr(request.state, "tenant_id", ""),
+        starting_crop=starting_crop,
+        management=management,
     )
     if "error" in result:
         raise HTTPException(status_code=400, detail=result["error"])

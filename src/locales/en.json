@@ -120,6 +120,10 @@
         "title": "WOFOST Simulation",
         "subtitle": "Mechanistic daily LAI and biomass curve for the selected parcel."
       },
+      "simulateScenario": {
+        "title": "Simulate alternative",
+        "subtitle": "What if you had planted a different crop? Compare yield, fertilizer, and rotation with real parcel data."
+      },
       "yieldProjection": {
         "title": "Yield Projection",
         "subtitle": "Yield estimates from trial data and stress-corrected in-campaign projections."

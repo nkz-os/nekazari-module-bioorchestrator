@@ -2953,32 +2953,32 @@ class GraphDAO:
         }
 
     async def rotation_plan(
-        self, parcel_id: str, years: int = 3,
+        self, parcel_id: str, years: int = 4,
         seed_price: float = 1, harvest_price: float = 1, operation_cost: float = 1,
         tenant_id: str = "",
+        starting_crop: str | None = None,
+        management: str = "any",
     ) -> dict:
-        """Generate multi-year rotation plan with carbon and N tracking."""
+        """Generate multi-year rotation plan with carbon, N, pest, and PAC tracking.
+
+        When starting_crop is provided, it becomes year 1 and successors are
+        suggested via recommend_next_crop. Otherwise falls back to crop pool.
+        """
         from app.services.crop_reference import get_crop_ref
 
         if years < 2 or years > 6:
             return {"error": "Years must be between 2 and 6"}
 
-        ctx = await self.get_crop_context(parcel_id=parcel_id, tenant_id=tenant_id)
-        plan = []
-        # Estimate initial soil N from Soil module data
-        soil_n_pool = 50  # fallback
-        if ctx and "soil" in ctx:
-            actual = ctx.get("soil", {}).get("actual", {})
-            if isinstance(actual, dict):
-                total_n = actual.get("totalN_kg_ha") or actual.get("total_n")
-                if total_n is not None:
+        # Resolve environment (try parcel-environment first, fall back to crop-context)
+        env = await self.get_parcel_environment(parcel_id, tenant_id)
+        soil_n_pool = 50
+        if "error" not in env:
+            soil_data = env.get("soil", {})
+            if soil_data.get("data_available"):
+                om = soil_data.get("organic_matter_pct")
+                if om is not None:
                     try:
-                        soil_n_pool = float(total_n)
-                    except (ValueError, TypeError):
-                        pass
-                elif actual.get("soilOrganicMatterPct") is not None:
-                    try:
-                        soil_n_pool = round(float(actual["soilOrganicMatterPct"]) * 15, 1)
+                        soil_n_pool = round(float(om) * 15, 1)
                     except (ValueError, TypeError):
                         pass
         initial_soil_n = soil_n_pool
@@ -2987,9 +2987,15 @@ class GraphDAO:
         cumulative_carbon = 0.0
         cumulative_margin = 0.0
 
-        # Available crops to rotate
-        available = await self.recommend_next_crop("none" if not previous_crop else previous_crop)
-        crop_pool = [c["name"] for c in available[:10]] if available else ["TRZAX", "PIBSX", "CIEAR", "HORVX"]
+        # Build crop pool: starting_crop first if provided, then successors
+        if starting_crop:
+            crop_pool = [starting_crop]
+            successors = await self.recommend_next_crop(starting_crop)
+            if successors:
+                crop_pool += [c["crop_eppo"] if isinstance(c, dict) and "crop_eppo" in c else c.get("name", c) for c in successors[:10]]
+        else:
+            available = await self.recommend_next_crop("none")
+            crop_pool = [c.get("crop_eppo", c.get("name", c)) if isinstance(c, dict) else c for c in available[:10]] if available else ["TRZAX", "PIBSX", "CIEAR", "HORVX"]
 
         for year_idx in range(years):
             if not crop_pool:

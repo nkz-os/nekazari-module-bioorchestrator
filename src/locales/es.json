@@ -120,6 +120,10 @@
         "title": "Simulación WOFOST",
         "subtitle": "Curva diaria de LAI y biomasa mecanicista para la parcela seleccionada."
       },
+      "simulateScenario": {
+        "title": "Simular alternativa",
+        "subtitle": "¿Y si hubieras plantado otro cultivo? Compara rendimiento, fertilizante y rotación con datos reales de la parcela."
+      },
       "yieldProjection": {
         "title": "Proyección de Rendimiento",
         "subtitle": "Estimaciones de rendimiento desde ensayos y proyecciones corregidas por estrés en campaña."
