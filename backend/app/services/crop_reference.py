@@ -135,6 +135,62 @@ def get_season_slots(eppo: str) -> set[str]:
     """
     return CROP_SEASON_SLOT.get(eppo.upper(), {"winter", "summer"})
 
+# ── Gluten-free crop classification (botanical, static) ─────────────────────
+# Source: celiac disease medical guidelines. Oats marked with caveat
+# (botanically gluten-free but high cross-contamination risk in supply chains).
+
+GLUTEN_FREE_CROPS: dict[str, str] = {
+    # Gluten-containing cereals (Triticeae tribe)
+    "TRZAX": "contains_gluten", "TRZDU": "contains_gluten", "TRZAW": "contains_gluten",
+    "HORVX": "contains_gluten", "HORVW": "contains_gluten",
+    "SECCE": "contains_gluten",
+    "TTLSS": "contains_gluten",  # triticale (wheat × rye hybrid)
+    # Oats — botanically GF but cross-contamination risk
+    "AVESA": "gluten_free_caveat",
+    # Naturally gluten-free
+    "ZEAXX": "gluten_free", "ZEAMX": "gluten_free",  # maize
+    "SORVU": "gluten_free",  # sorghum
+    "ORYSA": "gluten_free",  # rice
+    # Legumes (all GF)
+    "CIEAR": "gluten_free", "PIBSX": "gluten_free", "PISSA": "gluten_free",
+    "VICFX": "gluten_free", "VICSA": "gluten_free", "VICER": "gluten_free",
+    "LENCU": "gluten_free", "LTHSA": "gluten_free",
+    "GLXMA": "gluten_free",  # soybean
+    "LUPAL": "gluten_free", "LUPAN": "gluten_free",
+    "PHVUX": "gluten_free",  # common bean
+    # Oilseeds
+    "BRSNW": "gluten_free", "BRSNN": "gluten_free", "BRPNA": "gluten_free",
+    "HELAN": "gluten_free",
+    # Vegetables & tubers
+    "SOLTU": "gluten_free", "BETVU": "gluten_free",
+    "SOLLC": "gluten_free", "SOLME": "gluten_free",
+    "CAPAN": "gluten_free", "CPSAN": "gluten_free",
+    "CUMSA": "gluten_free", "CUCUM": "gluten_free",
+    "ALLCE": "gluten_free", "ALLPO": "gluten_free",
+    "LYPES": "gluten_free", "CUMME": "gluten_free",
+    "FRAAN": "gluten_free",
+    # Perennials
+    "OLEU": "gluten_free", "VITIS": "gluten_free",
+    "PRMDO": "gluten_free", "PRNAR": "gluten_free", "PRNDU": "gluten_free",
+    "MABSD": "gluten_free", "BRUn": "gluten_free",
+    "CITRU": "gluten_free", "PRMPE": "gluten_free",
+    # Forage
+    "MEDSA": "gluten_free", "MEDLU": "gluten_free", "TRFPR": "gluten_free",
+}
+
+
+def is_gluten_free(eppo: str) -> bool | None:
+    """Return True if gluten-free, False if contains gluten, None if unknown."""
+    status = GLUTEN_FREE_CROPS.get(eppo.upper())
+    if status is None:
+        return None
+    return status in ("gluten_free", "gluten_free_caveat")
+
+
+def get_gluten_status(eppo: str) -> str:
+    """Return 'gluten_free', 'contains_gluten', 'gluten_free_caveat', or 'unknown'."""
+    return GLUTEN_FREE_CROPS.get(eppo.upper(), "unknown")
+
 # ── Caches ──────────────────────────────────────────────────────────────────
 
 _eppo_taxonomy_cache: TTLCache[str, Optional[dict]] = TTLCache(maxsize=200, ttl=86400 * 7)

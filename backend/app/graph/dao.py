@@ -2406,7 +2406,7 @@ class GraphDAO:
         Orchestrates get_parcel_environment + get_available_crops +
         extrapolate_varieties + economics. No new Neo4j relationship types.
         """
-        from app.services.crop_reference import CROP_SEASON_SLOT, DEFAULT_REFERENCE, get_season_slots
+        from app.services.crop_reference import CROP_SEASON_SLOT, DEFAULT_REFERENCE, get_season_slots, get_gluten_status
         from app.services.soil_client import get_parcel_soil_properties
 
         # ── 1. Resolve environment ─────────────────────────────────────
@@ -2588,6 +2588,7 @@ class GraphDAO:
                     "suitability": suitability,
                     "thermal_risk": thermal_risk,
                     "water_demand": water_demand,
+                    "gluten_status": get_gluten_status(eppo),
                     "recommendation_trust": trust,
                 }
             except Exception as e:

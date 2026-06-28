@@ -24,6 +24,7 @@ interface CropSuggestion {
   suitability: { overall: string; warnings: string[] };
   thermal_risk: string;
   water_demand?: { level: string; ratio: number } | null;
+  gluten_status?: string;
   composite_score: number;
   recommendation_trust: any;
 }
@@ -67,6 +68,7 @@ const CropPlanner: React.FC = () => {
   const [seasonSlot, setSeasonSlot] = useState('all');
   const [management, setManagement] = useState('any');
   const [irrigation, setIrrigation] = useState('');
+  const [glutenFreeOnly, setGlutenFreeOnly] = useState(false);
   const [inferredIrrigation, setInferredIrrigation] = useState<string | null>(null);
   const [economics, setEconomics] = useState<EconomicInputs>(DEFAULT_ECONOMICS);
   const [view, setView] = useState<ViewState>('idle');
@@ -212,6 +214,20 @@ const CropPlanner: React.FC = () => {
           </div>
         </div>
 
+        {/* Gluten-free toggle */}
+        <div className="flex items-center gap-2 mt-2">
+          <input
+            type="checkbox"
+            id="glutenFree"
+            checked={glutenFreeOnly}
+            onChange={e => setGlutenFreeOnly(e.target.checked)}
+            className="rounded border-nkz-border"
+          />
+          <label htmlFor="glutenFree" className="text-nkz-sm text-nkz-text-secondary cursor-pointer">
+            🌾 Sin gluten solamente
+          </label>
+        </div>
+
         {/* Economics */}
         <EconomicInputsPanel value={economics} onChange={setEconomics} />
       </Card>
@@ -246,8 +262,12 @@ const CropPlanner: React.FC = () => {
       {/* Results */}
       {view === 'results' && result && (
         <>
-          {/* Ranking table */}
-          {result.suggestions.length === 0 ? (
+          {(() => {
+            const filtered = glutenFreeOnly
+              ? result.suggestions.filter(s => s.gluten_status !== 'contains_gluten')
+              : result.suggestions;
+
+            return filtered.length === 0 ? (
             <EmptyState
               icon={<Search className="w-8 h-8" />}
               title={t('planning.noSuggestions', { defaultValue: 'Sin datos de ensayo para este perfil' })}
@@ -270,7 +290,7 @@ const CropPlanner: React.FC = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {result.suggestions.map((s, i) => (
+                    {filtered.map((s: any, i: number) => (
                       <React.Fragment key={s.crop_eppo}>
                       <tr className="border-b border-nkz-border-subtle hover:bg-nkz-surface-sunken cursor-pointer"
                           onClick={() => setExpandedEppo(expandedEppo === s.crop_eppo ? null : s.crop_eppo)}>
@@ -283,6 +303,12 @@ const CropPlanner: React.FC = () => {
                           <Badge intent="info">
                             {s.season_slot?.includes('winter') ? '❄️' : ''}{s.season_slot?.includes('summer') ? '☀️' : ''}
                           </Badge>
+                          {s.gluten_status === 'gluten_free' && (
+                            <Badge intent="positive" className="ml-1">🌾 GF</Badge>
+                          )}
+                          {s.gluten_status === 'gluten_free_caveat' && (
+                            <Badge intent="warning" className="ml-1">🌾 GF*</Badge>
+                          )}
                         </td>
                         <td className="py-2 pr-3 text-right font-semibold text-nkz-accent-base">
                           {s.yield_conventional_kg_ha?.toLocaleString()}
@@ -332,7 +358,8 @@ const CropPlanner: React.FC = () => {
                 </table>
               </div>
             </Card>
-          )}
+          );
+          })()}
         </>
       )}
 
