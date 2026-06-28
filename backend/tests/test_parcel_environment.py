@@ -95,7 +95,6 @@ class TestParcelEnvironment:
             assert result["area_ha"] == 12.4
             assert result["centroid"] == {"lat": 42.1, "lon": -1.8}
             assert result["campaign"]["assigned"] is False
-            assert result["campaign"]["crop_eppo"] is None
             assert result["soil"]["data_available"] is True
             assert result["soil"]["texture"] == "loam"
             assert result["inputs_used"]["soil"] == "soil_module"

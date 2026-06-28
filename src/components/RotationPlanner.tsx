@@ -16,13 +16,20 @@ interface PacRule { id: string; pass: boolean | null; detail: string; }
 interface PacCompliance { score: number; max_score: number; rules: PacRule[]; disclaimer: string; }
 interface PlanResult { plan: YearEntry[]; cumulative: { total_yield_kg_ha: number; total_carbon_fixed_tco2e: number; total_net_margin_eur_ha: number; final_soil_n_pool_kg_ha: number }; pac_compliance?: PacCompliance; }
 
-export default function RotationPlanner() {
+interface Props {
+  startingCrop?: string;
+  management?: string;
+}
+
+export default function RotationPlanner({ startingCrop: initialCrop, management: initialMgmt }: Props = {}) {
   const { t } = useTranslation('bioorchestrator');
   const { selectedParcel, loading: parcelLoading, error: parcelError } = useParcelContext();
-  const [years, setYears] = useState(3);
+  const [years, setYears] = useState(4);
   const [seedPrice, setSeedPrice] = useState(1);
   const [harvestPrice, setHarvestPrice] = useState(1);
   const [operationCost, setOperationCost] = useState(1);
+  const [startingCrop, setStartingCrop] = useState(initialCrop || '');
+  const [management, setManagement] = useState(initialMgmt || 'any');
   const [result, setResult] = useState<PlanResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -32,8 +39,17 @@ export default function RotationPlanner() {
     setLoading(true); setError("");
     const API_BASE = (import.meta as any).env?.VITE_API_URL || "https://nkz.robotika.cloud";
     try {
+      const params = new URLSearchParams({
+        parcel_id: selectedParcel,
+        years: String(years),
+        seed_price: String(seedPrice),
+        harvest_price: String(harvestPrice),
+        operation_cost: String(operationCost),
+        management,
+      });
+      if (startingCrop) params.set('starting_crop', startingCrop);
       const res = await fetch(
-        `${API_BASE}/api/graph/agriculture/rotation-plan?parcel_id=${selectedParcel}&years=${years}&seed_price=${seedPrice}&harvest_price=${harvestPrice}&operation_cost=${operationCost}`,
+        `${API_BASE}/api/graph/agriculture/rotation-plan?${params.toString()}`,
         { credentials: "include" }
       );
       if (!res.ok) throw new Error((await res.json()).detail || "Error");

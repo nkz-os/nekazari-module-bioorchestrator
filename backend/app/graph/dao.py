@@ -2381,7 +2381,6 @@ class GraphDAO:
             },
             "campaign": {
                 "assigned": has_crop,
-                "crop_eppo": None,  # resolved by crop-context when assigned
             },
             "inputs_used": {
                 "soil": soil_input,
@@ -2607,6 +2606,9 @@ class GraphDAO:
                 pass
 
         # ── 10. Composite score ────────────────────────────────────────
+        if not results and crops_to_evaluate:
+            return {"error": "All crop evaluations failed — Neo4j or Orion may be degraded"}
+
         if results:
             max_yield = max(r["agronomics"]["expected_yield_kg_ha"] for r in results) or 1
             max_margin = max(r["economic"]["net_margin_eur_ha"] for r in results) or 1

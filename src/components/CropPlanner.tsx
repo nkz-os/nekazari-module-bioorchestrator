@@ -7,6 +7,7 @@ import { useParcelContext } from '../context/ParcelContext';
 import { usePlanningScenario } from '../context/PlanningScenarioContext';
 import EconomicInputsPanel, { EconomicInputs } from './EconomicInputsPanel';
 import RecommendationTrustBadge from './RecommendationTrustBadge';
+import CropExpandPanel from './CropExpandPanel';
 import AssignVarietyModal from './AssignVarietyModal';
 
 interface CropSuggestion {
@@ -46,15 +47,15 @@ const DEFAULT_ECONOMICS: EconomicInputs = {
 };
 
 const SEASON_TABS = [
-  { value: 'all', label: 'Todas las campañas' },
-  { value: 'winter', label: 'Cultivo de invierno' },
-  { value: 'summer', label: 'Cultivo de verano' },
+  { value: 'all', key: 'planning.seasonAll' },
+  { value: 'winter', key: 'planning.seasonWinter' },
+  { value: 'summer', key: 'planning.seasonSummer' },
 ] as const;
 
 const MANAGEMENT_OPTIONS = [
-  { value: 'any', label: 'Cualquiera' },
-  { value: 'conventional', label: 'Convencional' },
-  { value: 'organic', label: 'Ecológico' },
+  { value: 'any', key: 'Cualquiera' },
+  { value: 'conventional', key: 'Convencional' },
+  { value: 'organic', key: 'Ecológico' },
 ];
 
 const CropPlanner: React.FC = () => {
@@ -76,6 +77,7 @@ const CropPlanner: React.FC = () => {
   // Assign modal
   const [assignVariety, setAssignVariety] = useState<any>(null);
   const [assignedMessage, setAssignedMessage] = useState('');
+  const [expandedEppo, setExpandedEppo] = useState<string | null>(null);
 
   // Load parcel environment on select
   useEffect(() => {
@@ -178,7 +180,7 @@ const CropPlanner: React.FC = () => {
                 size="sm"
                 onClick={() => setSeasonSlot(tab.value)}
               >
-                {tab.label}
+                {t(tab.key, { defaultValue: tab.value === 'all' ? 'Todas' : tab.value === 'winter' ? 'Invierno' : 'Verano' })}
               </Button>
             ))}
           </div>
@@ -188,7 +190,7 @@ const CropPlanner: React.FC = () => {
             <Select
               value={management}
               onValueChange={setManagement}
-              options={MANAGEMENT_OPTIONS.map(o => ({ value: o.value, label: o.label }))}
+              options={MANAGEMENT_OPTIONS.map(o => ({ value: o.value, label: o.key }))}
             />
           </div>
 
@@ -203,8 +205,8 @@ const CropPlanner: React.FC = () => {
               }
               options={[
                 { value: '', label: inferredIrrigation ? `${t('planning.irrigationInferred', { defaultValue: 'Inferido' })} (${inferredIrrigation})` : t('planning.irrigationOverride', { defaultValue: 'Régimen' }) },
-                { value: 'secano', label: 'Secano' },
-                { value: 'regadío', label: 'Regadío' },
+                { value: 'secano', label: t('planning.irrigationOverride', { defaultValue: 'Secano' }) },
+                { value: 'regadío', label: t('planning.irrigationOverride', { defaultValue: 'Regadío' }) },
               ]}
             />
           </div>
@@ -259,8 +261,8 @@ const CropPlanner: React.FC = () => {
                       <th className="text-left py-2 pr-2">#</th>
                       <th className="text-left py-2 pr-3">{t('varietyFinder.variety', { defaultValue: 'Variedad' })}</th>
                       <th className="text-left py-2 pr-3">{t('planning.seasonAll', { defaultValue: 'Temp.' })}</th>
-                      <th className="text-right py-2 pr-3">kg/ha</th>
-                      {management === 'organic' && <th className="text-right py-2 pr-3">Eco kg/ha</th>}
+                      <th className="text-right py-2 pr-3">{t('yieldProjection.meanYield', { defaultValue: 'kg/ha' })}</th>
+                      {management === 'organic' && <th className="text-right py-2 pr-3">{t('planning.pricePerKg', { defaultValue: 'Eco kg/ha' })}</th>}
                       <th className="text-right py-2 pr-3">{t('planning.marginPerHa', { defaultValue: 'Margen €/ha' })}</th>
                       <th className="text-center py-2 pr-2">{t('varietyFinder.confidence', { defaultValue: 'Fiab.' })}</th>
                       <th className="text-center py-2">💧</th>
@@ -269,7 +271,9 @@ const CropPlanner: React.FC = () => {
                   </thead>
                   <tbody>
                     {result.suggestions.map((s, i) => (
-                      <tr key={s.crop_eppo} className="border-b border-nkz-border-subtle hover:bg-nkz-surface-sunken">
+                      <React.Fragment key={s.crop_eppo}>
+                      <tr className="border-b border-nkz-border-subtle hover:bg-nkz-surface-sunken cursor-pointer"
+                          onClick={() => setExpandedEppo(expandedEppo === s.crop_eppo ? null : s.crop_eppo)}>
                         <td className="py-2 pr-2 text-nkz-text-muted">{i + 1}</td>
                         <td className="py-2 pr-3">
                           <div className="font-medium text-nkz-text-primary">{s.best_variety || s.crop_eppo}</div>
@@ -296,7 +300,7 @@ const CropPlanner: React.FC = () => {
                         <td className="py-2 pr-3 text-right">
                           <div className="font-medium text-nkz-text-primary">{s.economic.net_margin_eur_ha?.toFixed(0)} €</div>
                           {s.economic.parcel_net_margin_eur != null && (
-                            <div className="text-nkz-xs text-nkz-text-secondary">{s.economic.parcel_net_margin_eur.toFixed(0)} € parcela</div>
+                            <div className="text-nkz-xs text-nkz-text-secondary">{s.economic.parcel_net_margin_eur.toFixed(0)} € {t('planning.marginParcel', { defaultValue: 'parcela' })}</div>
                           )}
                         </td>
                         <td className="py-2 pr-2 text-center">
@@ -315,6 +319,14 @@ const CropPlanner: React.FC = () => {
                           </Button>
                         </td>
                       </tr>
+                      {expandedEppo === s.crop_eppo &&
+                        <tr key={`${s.crop_eppo}-expand`} className="border-b border-nkz-border-subtle bg-nkz-surface-sunken">
+                          <td colSpan={9} className="py-2 px-3">
+                            <CropExpandPanel suggestion={s} />
+                          </td>
+                        </tr>
+                      }
+                      </React.Fragment>
                     ))}
                   </tbody>
                 </table>
