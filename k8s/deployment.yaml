@@ -21,7 +21,7 @@ spec:
     spec:
       containers:
         - name: backend
-          image: ghcr.io/nkz-os/bioorchestrator-backend@sha256:fbd04ca8615e156e8a73626db5d87f5a70a9c612cfac4671ee53550578d48208  # f0256a3 add data normalisation pipeline
+          image: ghcr.io/nkz-os/bioorchestrator-backend:64471eda9511e7000ae12dd4a6a6c4a8e051ee6d  # CI auto-bump on push
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8420
