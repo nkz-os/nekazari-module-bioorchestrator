@@ -402,19 +402,45 @@ async def variety_catalogue(
     return {"varieties": [{"uri": u} for u in variety_uris]}
 
 
-@router.get("/pesticides")
-async def pesticide_validation(crop: str = Query(..., description="Crop name")):
-    """Return authorized active substances for a crop from EU Pesticides DB."""
+@router.get("/agriculture/pesticides")
+async def pesticide_validation(
+    request: Request,
+    crop_eppo: str = Query(..., description="EPPO crop code (e.g. 'TRZAX')"),
+    substance: str | None = Query(None, description="Active substance name or CAS to validate"),
+):
+    """Return authorized active substances for a crop from EU Pesticides DB.
+
+    When substance is provided, checks if it's in the authorized list.
+    """
+    import httpx
+
+    eppo = crop_eppo.strip().upper()
     try:
-        from ikerketa.connectors.eu_pesticides import EUPesticidesConnector
-        connector = EUPesticidesConnector()
-        result = connector.fetch()
-        substances = [s for s in result.entities if crop.lower() in (s.get("crop", "")).lower()]
-        return {"substances": substances[:20]}
-    except ImportError:
-        return {"substances": []}
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            resp = await client.get(
+                "https://ec.europa.eu/food/plant/pesticides/eu-pesticides-database/api/public/products",
+                params={"crop": eppo, "limit": 50},
+            )
+            if resp.status_code != 200:
+                return {"substances": [], "crop_eppo": eppo, "error": f"EU API returned {resp.status_code}"}
+            products = resp.json().get("products", [])
     except Exception as e:
-        return {"substances": [], "error": str(e)}
+        return {"substances": [], "crop_eppo": eppo, "error": str(e)}
+
+    if substance:
+        needle = substance.strip().lower()
+        authorized = any(
+            needle in (str(p.get("name", "")).lower()) or needle in (str(p.get("activeSubstance", "")).lower())
+            for p in products
+        )
+        return {
+            "crop_eppo": eppo,
+            "substance": substance,
+            "authorized": authorized,
+            "substances": products[:20],
+        }
+
+    return {"crop_eppo": eppo, "substances": products[:20]}
 
 
 @router.get("/pollinators")
