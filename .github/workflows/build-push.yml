@@ -93,7 +93,9 @@ jobs:
           context: .
           file: ./backend/Dockerfile
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
+          tags: |
+            ${{ steps.meta.outputs.tags }}
+            ${{ env.BACKEND_IMAGE }}:${{ github.sha }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
@@ -113,7 +115,7 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
       - name: Bump backend SHA in k8s
         run: |
-          sed -i "s|bioorchestrator-backend:[a-f0-9]\{40\}|bioorchestrator-backend:${{ github.sha }}|g" \
+          sed -i "s|bioorchestrator-backend:[a-f0-9]\{7,40\}|bioorchestrator-backend:${{ github.sha }}|g" \
             k8s/deployment.yaml
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
