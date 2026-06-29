@@ -25,6 +25,15 @@ def _veg_unavailable(index: str, period: str) -> dict:
     }
 
 
+def _climate_unavailable(reason: str = "") -> dict:
+    return {
+        "available": False,
+        "landSurfaceTemperature": None,
+        "soilMoistureIndex": None,
+        "message": reason or "No satellite climate data for this parcel yet.",
+    }
+
+
 @router.get("/{parcel_id}/vegetation")
 async def parcel_vegetation(
     parcel_id: str,
@@ -124,5 +133,66 @@ async def parcel_soil(parcel_id: str, request: Request):
             "hydrologicGroup": hydro_group,
             "source": "SoilGrids 2.0 + LUCAS 2018",
         }
+    finally:
+        await orion.close()
+
+
+@router.get("/{parcel_id}/climate")
+async def parcel_climate(parcel_id: str, request: Request):
+    """Get LST + SMI time series for a parcel from EOProduct entities.
+
+    Returns land surface temperature (°C) and soil moisture index (0–1)
+    from satellite observations. Used by crop planner for climate-risk
+    assessment and rotation recommendations.
+    """
+    tenant_id = getattr(request.state, "tenant_id", "") or request.headers.get("X-Tenant-ID", "")
+    orion = OrionClient(tenant_id)
+    parcel_urn = f"urn:ngsi-ld:AgriParcel:{parcel_id}"
+
+    try:
+        entities = await orion.query_entities(
+            type="EOProduct",
+            q=f'hasAgriParcel=="{parcel_urn}"|refAgriParcel=="{parcel_urn}"',
+            limit=200,
+            options="keyValues",
+        )
+        if not entities:
+            return _climate_unavailable()
+
+        lst_series = []
+        smi_series = []
+        for e in entities:
+            date_val = str(e.get("sensingDate", "") or "")
+            lst_raw = e.get("lst")
+            smi_raw = e.get("sarMoisture")
+            lst = float(lst_raw) if lst_raw is not None and str(lst_raw).replace(".", "").replace("-", "").isdigit() else None
+            smi = float(smi_raw) if smi_raw is not None and str(smi_raw).replace(".", "").replace("-", "").isdigit() else None
+            if date_val and lst is not None:
+                lst_series.append({"date": date_val, "value": lst})
+            if date_val and smi is not None:
+                smi_series.append({"date": date_val, "value": smi})
+
+        lst_series.sort(key=lambda x: x["date"])
+        smi_series.sort(key=lambda x: x["date"])
+
+        lst_current = lst_series[-1]["value"] if lst_series else None
+        smi_current = smi_series[-1]["value"] if smi_series else None
+
+        return {
+            "available": True,
+            "landSurfaceTemperature": {
+                "current": lst_current,
+                "observations": lst_series,
+                "count": len(lst_series),
+            },
+            "soilMoistureIndex": {
+                "current": smi_current,
+                "observations": smi_series,
+                "count": len(smi_series),
+            },
+            "source": "Landsat C2L2-ST + CLMS LST + Sentinel-1 SAR (ESA Copernicus)",
+        }
+    except Exception as exc:
+        return _climate_unavailable(str(exc))
     finally:
         await orion.close()
