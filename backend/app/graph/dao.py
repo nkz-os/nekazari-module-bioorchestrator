@@ -2104,7 +2104,9 @@ class GraphDAO:
                     "value": {"@type": "Date", "@value": season_end},
                 },
             }
-            await client.update_entity_attrs(parcel_id, patch_body)
+            # POST /attrs (append): PATCH /attrs only updates EXISTING attrs, so a
+            # first-time hasAgriCrop assignment lands in notUpdated and silently no-ops.
+            await client.append_entity_attrs(parcel_id, patch_body)
 
             return {
                 "status": "assigned",
@@ -2164,7 +2166,7 @@ class GraphDAO:
                 if ends:
                     patch["cropSeasonEnd"] = {"type": "Property", "value": {"@type": "Date", "@value": max(ends)}}
                 try:
-                    await client.update_entity_attrs(parcel_id, patch)
+                    await client.append_entity_attrs(parcel_id, patch)
                 except Exception:
                     warnings.append({"parcel": "season-bounds patch failed"})
             return {"status": "committed", "parcel_id": parcel_id, "season": season,
@@ -2234,8 +2236,8 @@ class GraphDAO:
                 "status": {"type": "Property", "value": "active"},
                 "plantingDate": _date,
             })
-            # project to parcel commitment
-            await client.update_entity_attrs(parcel_id, {
+            # project to parcel commitment (append: may be the parcel's first hasAgriCrop)
+            await client.append_entity_attrs(parcel_id, {
                 "hasAgriCrop": {"type": "Relationship", "object": target_id},
             })
             return {"status": "advanced", "active": target_id, "season": season}

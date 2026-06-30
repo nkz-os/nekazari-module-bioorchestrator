@@ -16,6 +16,7 @@ async def test_assign_crop_creates_entity():
         instance.create_entity = AsyncMock(return_value={"id": "new-id", "status": "created"})
         instance.get_entity = AsyncMock(side_effect=Exception("not found"))
         instance.update_entity_attrs = AsyncMock()
+        instance.append_entity_attrs = AsyncMock()
         instance.close = AsyncMock()
 
         result = await dao.assign_crop_to_parcel(
@@ -34,8 +35,9 @@ async def test_assign_crop_creates_entity():
         MockClient.assert_called_once_with(tenant_id="test-tenant")
         instance.create_entity.assert_called_once()
         # Should patch both the parcel (hasAgriCrop) and NOT mark old crop (no old crop)
-        # update_entity_attrs should be called for the parcel patch
-        parcel_patch_call = [c for c in instance.update_entity_attrs.call_args_list
+        # parcel commitment must be APPENDED (POST /attrs), not PATCHed, so a
+        # first-time hasAgriCrop actually persists instead of landing in notUpdated.
+        parcel_patch_call = [c for c in instance.append_entity_attrs.call_args_list
                             if c[0][0] == "urn:ngsi-ld:AgriParcel:test-parcel"]
         assert len(parcel_patch_call) == 1
         patch_body = parcel_patch_call[0][0][1]
@@ -57,6 +59,7 @@ async def test_assign_crop_marks_old_harvested():
             "hasAgriCrop": {"type": "Relationship", "object": old_crop_id},
         })
         instance.update_entity_attrs = AsyncMock()
+        instance.append_entity_attrs = AsyncMock()
         instance.close = AsyncMock()
 
         await dao.assign_crop_to_parcel(
@@ -96,6 +99,7 @@ async def test_assign_crop_409_upserts():
         ))
         instance.get_entity = AsyncMock(side_effect=Exception("not found"))
         instance.update_entity_attrs = AsyncMock()
+        instance.append_entity_attrs = AsyncMock()
         instance.close = AsyncMock()
 
         result = await dao.assign_crop_to_parcel(

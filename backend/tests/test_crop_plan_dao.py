@@ -17,6 +17,7 @@ class _FakeOrion:
             raise httpx.ConnectError("boom")
         self.created.append(e)
     async def update_entity_attrs(self, eid, attrs): self.patched.append((eid, attrs))
+    async def append_entity_attrs(self, eid, attrs): self.patched.append((eid, attrs))
     async def query_entities(self, **kw):
         if self.fail_query is not None:
             raise self.fail_query
