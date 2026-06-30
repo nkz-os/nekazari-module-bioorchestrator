@@ -409,7 +409,7 @@ async def crop_name(
     lang: str = Query("es", description="Language for the common name"),
 ):
     """Resolve an EPPO crop code to its common name (single source: species_registry)."""
-    slug = resolve_species(eppo)
+    slug = resolve_species(eppo.strip().upper())
     if not slug:
         raise HTTPException(status_code=404, detail=f"Unknown crop: {eppo}")
     info = get_species_info(slug) or {}
