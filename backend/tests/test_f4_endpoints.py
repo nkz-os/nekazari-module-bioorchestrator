@@ -135,3 +135,31 @@ class TestYieldPotential:
                 resp = client.get("/api/graph/agriculture/yield-potential")
                 # 404 until endpoint is registered (Task 7)
                 assert resp.status_code in (422, 404)
+
+
+class TestTenantResolution:
+    """`_get_tenant_id` must fall back to the X-Tenant-ID header on the
+    auth-exempt /agriculture/ path (request.state.tenant_id is never set there).
+    Guards every parcel-scoped endpoint routed through the shared helper."""
+
+    @staticmethod
+    def _helper():
+        with patch.dict("sys.modules", {"ikerketa": MagicMock()}):
+            from app.api.v1.graph import _get_tenant_id
+        return _get_tenant_id
+
+    def test_falls_back_to_header(self):
+        from types import SimpleNamespace
+        req = SimpleNamespace(state=SimpleNamespace(), headers={"X-Tenant-ID": "montiko"})
+        assert self._helper()(req) == "montiko"
+
+    def test_prefers_state_when_set(self):
+        from types import SimpleNamespace
+        req = SimpleNamespace(state=SimpleNamespace(tenant_id="state-t"),
+                              headers={"X-Tenant-ID": "montiko"})
+        assert self._helper()(req) == "state-t"
+
+    def test_empty_when_neither(self):
+        from types import SimpleNamespace
+        req = SimpleNamespace(state=SimpleNamespace(), headers={})
+        assert self._helper()(req) == ""
