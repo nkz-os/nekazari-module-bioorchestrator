@@ -13,6 +13,7 @@ from nkz_platform_sdk.agronomy import (
 
 from app.core.dependencies import get_neo4j_driver
 from app.graph.dao import GraphDAO
+from app.species_registry import get_species_info, resolve_species
 
 router = APIRouter()
 
@@ -400,6 +401,22 @@ async def variety_catalogue(
             variety_uris = uris
 
     return {"varieties": [{"uri": u} for u in variety_uris]}
+
+
+@router.get("/agriculture/crop-name")
+async def crop_name(
+    eppo: str = Query(..., description="EPPO crop code, e.g. TRZAX"),
+    lang: str = Query("es", description="Language for the common name"),
+):
+    """Resolve an EPPO crop code to its common name (single source: species_registry)."""
+    slug = resolve_species(eppo)
+    if not slug:
+        raise HTTPException(status_code=404, detail=f"Unknown crop: {eppo}")
+    info = get_species_info(slug) or {}
+    name = (info.get("common_names") or {}).get(lang)
+    if not name:
+        raise HTTPException(status_code=404, detail=f"No '{lang}' name for {slug}")
+    return {"eppo": eppo.strip().upper(), "slug": slug, "name": name}
 
 
 @router.get("/agriculture/pesticides")
