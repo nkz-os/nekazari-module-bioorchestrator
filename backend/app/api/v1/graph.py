@@ -13,6 +13,7 @@ from nkz_platform_sdk.agronomy import (
 
 from app.core.dependencies import get_neo4j_driver
 from app.graph.dao import GraphDAO
+from app.species_registry import get_species_info, resolve_species
 
 router = APIRouter()
 
@@ -402,45 +403,20 @@ async def variety_catalogue(
     return {"varieties": [{"uri": u} for u in variety_uris]}
 
 
-@router.get("/agriculture/pesticides")
-async def pesticide_validation(
-    request: Request,
-    crop_eppo: str = Query(..., description="EPPO crop code (e.g. 'TRZAX')"),
-    substance: str | None = Query(None, description="Active substance name or CAS to validate"),
+@router.get("/agriculture/crop-name")
+async def crop_name(
+    eppo: str = Query(..., description="EPPO crop code, e.g. TRZAX"),
+    lang: str = Query("es", description="Language for the common name"),
 ):
-    """Return authorized active substances for a crop from EU Pesticides DB.
-
-    When substance is provided, checks if it's in the authorized list.
-    """
-    import httpx
-
-    eppo = crop_eppo.strip().upper()
-    try:
-        async with httpx.AsyncClient(timeout=10.0) as client:
-            resp = await client.get(
-                "https://ec.europa.eu/food/plant/pesticides/eu-pesticides-database/api/public/products",
-                params={"crop": eppo, "limit": 50},
-            )
-            if resp.status_code != 200:
-                return {"substances": [], "crop_eppo": eppo, "error": f"EU API returned {resp.status_code}"}
-            products = resp.json().get("products", [])
-    except Exception as e:
-        return {"substances": [], "crop_eppo": eppo, "error": str(e)}
-
-    if substance:
-        needle = substance.strip().lower()
-        authorized = any(
-            needle in (str(p.get("name", "")).lower()) or needle in (str(p.get("activeSubstance", "")).lower())
-            for p in products
-        )
-        return {
-            "crop_eppo": eppo,
-            "substance": substance,
-            "authorized": authorized,
-            "substances": products[:20],
-        }
-
-    return {"crop_eppo": eppo, "substances": products[:20]}
+    """Resolve an EPPO crop code to its common name (single source: species_registry)."""
+    slug = resolve_species(eppo.strip().upper())
+    if not slug:
+        raise HTTPException(status_code=404, detail=f"Unknown crop: {eppo}")
+    info = get_species_info(slug) or {}
+    name = (info.get("common_names") or {}).get(lang)
+    if not name:
+        raise HTTPException(status_code=404, detail=f"No '{lang}' name for {slug}")
+    return {"eppo": eppo.strip().upper(), "slug": slug, "name": name}
 
 
 @router.get("/pollinators")

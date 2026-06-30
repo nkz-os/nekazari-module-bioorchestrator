@@ -52,6 +52,13 @@ spec:
                   key: connection-string
             - name: LOG_LEVEL
               value: "info"
+            - name: CUE_API_URL
+              value: "http://cue-service:5000"
+            - name: INTERNAL_SERVICE_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: internal-service-secret
+                  key: INTERNAL_SERVICE_SECRET
           volumeMounts:
             - name: data
               mountPath: /data
