@@ -1220,7 +1220,7 @@ async def agriculture_assign_crop(
         management=management,
         season_start=body["season_start"],
         season_end=body["season_end"],
-        tenant_id=getattr(request.state, "tenant_id", ""),
+        tenant_id=getattr(request.state, "tenant_id", "") or request.headers.get("X-Tenant-ID", ""),
     )
     return result
 

@@ -70,6 +70,42 @@ class TestAssignCrop:
                 assert resp.status_code == 400
                 assert "missing" in resp.json()["detail"].lower()
 
+    def test_assign_crop_forwards_tenant_from_header(self, mock_neo4j_driver):
+        """The agriculture prefix is auth-exempt (SKIP_AUTH_PREFIXES), so
+        request.state.tenant_id is never set. The route MUST fall back to the
+        X-Tenant-ID header (mirroring crop-plan) or multi-tenant parcels 404.
+        Regression test for the bug where assign-crop queried the catalog
+        (default) tenant instead of the parcel's tenant.
+        """
+        captured = {}
+
+        async def fake_assign(self, **kwargs):
+            captured.update(kwargs)
+            return {"status": "assigned", "entity_id": "x", "crop": "wheat",
+                    "variety": "V", "management": "conventional", "parcel_id": kwargs["parcel_id"]}
+
+        with patch.dict("sys.modules", {"ikerketa": MagicMock()}), \
+             patch("app.core.dependencies.get_driver", return_value=mock_neo4j_driver), \
+             patch("app.graph.dao.GraphDAO.assign_crop_to_parcel", fake_assign):
+            from app.main import app
+            client = TestClient(app)
+            resp = client.post(
+                "/api/graph/agriculture/assign-crop",
+                headers={"X-Tenant-ID": "montiko", "X-User-ID": "smoke-test"},
+                json={
+                    "parcel_id": "urn:ngsi-ld:AgriParcel:test-1",
+                    "variety_uri": "urn:ngsi-ld:AgriCropVariety:V",
+                    "crop_uri": "urn:ngsi-ld:AgriCrop:wheat",
+                    "management": "conventional",
+                    "season_start": "2026-01-01",
+                    "season_end": "2026-06-01",
+                },
+            )
+            assert resp.status_code == 200, resp.text
+            assert captured.get("tenant_id") == "montiko", (
+                f"tenant_id not forwarded from X-Tenant-ID header: got {captured.get('tenant_id')!r}"
+            )
+
 
 class TestCropContext:
     """GET /api/graph/agriculture/crop-context (endpoint added in Task 4)"""
