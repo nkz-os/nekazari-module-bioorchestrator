@@ -27,7 +27,30 @@ from typing import Any
 from neo4j import AsyncDriver
 from nkz_platform_sdk.orion import OrionClient
 
+from app.species_registry import get_species_info, resolve_species
+
 logger = logging.getLogger(__name__)
+
+
+async def _fetch_ropo_products(cultivo: str, tenant_id: str) -> list[dict]:
+    """Query CUE national ROPO catalog for a crop. Internal-service auth. Never raises."""
+    import httpx
+
+    cue_url = os.getenv("CUE_API_URL", "http://cue-service:5000").rstrip("/")
+    secret = os.getenv("INTERNAL_SERVICE_SECRET", "")
+    try:
+        async with httpx.AsyncClient(timeout=8.0) as client:
+            resp = await client.get(
+                f"{cue_url}/api/modules/cue/productos-ropo",
+                params={"cultivo": cultivo, "estado": "autorizado"},
+                headers={"X-Internal-Service-Secret": secret, "X-Tenant-ID": tenant_id},
+            )
+            if resp.status_code == 200:
+                data = resp.json()
+                return data if isinstance(data, list) else []
+    except Exception:
+        pass
+    return []
 
 TIMESERIES_READER_URL = os.getenv("TIMESERIES_READER_URL", "http://timeseries-reader-service:5000")
 
@@ -4131,11 +4154,11 @@ class GraphDAO:
                 pass
             return {"alerts": []}
 
-    async def _enrich_eco_impact(self, parcel_id: str) -> dict:
+    async def _enrich_eco_impact(self, parcel_id: str, tenant_id: str = "") -> dict:
         """Enrich alert with biodiversity impact data.
 
         Fetches pollinator presence via GBIF and authorized pesticides
-        from EU Pesticides DB. Never raises — returns partial data.
+        from CUE ROPO. Never raises — returns partial data.
         """
         eco: dict = {
             "pollinator_species": [],
@@ -4163,39 +4186,28 @@ class GraphDAO:
         except Exception:
             pass  # non-blocking
 
-        # Fetch safer pesticide alternatives (non-blocking)
+        # Fetch safer pesticide alternatives from CUE ROPO (non-blocking)
         try:
-            # Get crop from context to search authorized products
             crop_eppo = None
             if ctx:
                 crop_data = ctx.get("crop", {})
                 if isinstance(crop_data, dict):
                     crop_eppo = crop_data.get("eppo")
             if crop_eppo:
-                pesticides = await self._query_pesticides(crop_eppo)
-                # Filter for low bee-toxicity products
+                slug = resolve_species(crop_eppo)
+                info = get_species_info(slug) if slug else None
+                cultivo = (info or {}).get("common_names", {}).get("es") if info else None
+                products = await _fetch_ropo_products(cultivo, tenant_id) if cultivo else []
+                # ROPO has no toxicity data → list authorized products
+                # (bee-toxicity filtering deferred to a future source).
                 eco["safer_alternatives"] = [
-                    p.get("name", "") for p in pesticides[:3]
-                    if "bee" not in str(p.get("hazards", "")).lower()
+                    p.get("nombre_comercial", "") for p in products[:3]
+                    if p.get("nombre_comercial")
                 ]
         except Exception:
             pass
 
         return eco
-
-    async def _query_pesticides(self, crop: str) -> list[dict]:
-        """Query EU Pesticides DB for authorized products per crop. Non-blocking."""
-        try:
-            async with __import__("httpx").AsyncClient(timeout=8.0) as client:
-                resp = await client.get(
-                    "https://ec.europa.eu/food/plant/pesticides/eu-pesticides-database/api/public/products",
-                    params={"crop": crop, "limit": 10},
-                )
-                if resp.status_code == 200:
-                    return resp.json().get("products", [])
-        except Exception:
-            pass
-        return []
 
     async def get_shared_pests(self, crop_a: str, crop_b: str) -> dict:
         """Find pests shared between two crops via EPPO API.
