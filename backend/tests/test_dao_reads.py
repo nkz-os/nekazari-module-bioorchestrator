@@ -1,109 +1,84 @@
-"""TDD: SDK OrionClient migration for fetch_parcel_weather_stats (Site A)
+"""TDD: weather-map HTTP contract for fetch_parcel_weather_stats (Site A)
 and get_yield_potential CropHealthAssessment lookup (Site B)."""
 from __future__ import annotations
 
 import asyncio
 from unittest.mock import AsyncMock, patch
 
+import httpx
 import pytest
+import respx
 
 from app.graph.dao import GraphDAO
 
 
-# ── Shared stub factory ────────────────────────────────────────────────────────
+WEATHER_MAP_URL = "http://weather-map-backend:8080"
 
-class _FakeOrionClientWeather:
-    """Stub for Site A: get_entity returns normalized AgriParcel with weatherStats."""
-
-    _constructed_with: list[str] = []
-
-    def __init__(self, tenant_id: str) -> None:
-        _FakeOrionClientWeather._constructed_with.append(tenant_id)
-
-    async def get_entity(self, entity_id: str) -> dict:
-        return {
-            "id": entity_id,
-            "type": "AgriParcel",
-            "weatherStats": {
-                "type": "Property",
-                "value": {"eto": 4.2, "temperature_avg": 21.5},
-            },
-        }
-
-    async def close(self) -> None:
-        pass
-
-
-class _FakeOrionClientWeatherMissing:
-    """Stub for Site A: entity has no weatherStats."""
-
-    _constructed_with: list[str] = []
-
-    def __init__(self, tenant_id: str) -> None:
-        _FakeOrionClientWeatherMissing._constructed_with.append(tenant_id)
-
-    async def get_entity(self, entity_id: str) -> dict:
-        return {"id": entity_id, "type": "AgriParcel"}
-
-    async def close(self) -> None:
-        pass
-
-
-class _FakeOrionClientWeatherError:
-    """Stub for Site A: get_entity raises (simulates 404 or network error)."""
-
-    def __init__(self, tenant_id: str) -> None:
-        pass
-
-    async def get_entity(self, entity_id: str) -> dict:
-        import httpx
-        raise httpx.ConnectError("unreachable")
-
-    async def close(self) -> None:
-        pass
-
-
-# ── Site A fixtures ────────────────────────────────────────────────────────────
 
 @pytest.fixture(autouse=True)
-def _reset_stubs():
-    _FakeOrionClientWeather._constructed_with = []
-    _FakeOrionClientWeatherMissing._constructed_with = []
-    yield
+def _weather_map_url(monkeypatch):
+    from app.core.config import settings
+    monkeypatch.setattr(settings, "weather_map_url", WEATHER_MAP_URL)
 
 
-# ── Site A tests ───────────────────────────────────────────────────────────────
+# ── Site A tests (weather-map HTTP contract) ──────────────────────────────────
 
-def test_fetch_parcel_weather_stats_uses_sdk_and_unwraps(mock_driver):
-    """SDK path: OrionClient built with correct tenant; normalized value unwrapped."""
-    with patch("app.graph.dao.OrionClient", _FakeOrionClientWeather):
-        result = asyncio.run(
-            GraphDAO.fetch_parcel_weather_stats("urn:ngsi-ld:AgriParcel:P1", "asociacion-allotarra")
-        )
-
-    assert result == {"eto": 4.2, "temperature_avg": 21.5}, f"Got: {result!r}"
-    assert _FakeOrionClientWeather._constructed_with == ["asociacion-allotarra"], (
-        f"OrionClient built with wrong tenant: {_FakeOrionClientWeather._constructed_with}"
+@respx.mock
+@pytest.mark.usefixtures("mock_driver")
+def test_fetch_parcel_weather_stats_calls_weather_map_and_returns_metrics():
+    """weather-map path: GET /stats/{id}?metrics=... returns the metrics sub-dict."""
+    parcel = "urn:ngsi-ld:AgriParcel:P1"
+    route = respx.get(f"{WEATHER_MAP_URL}/api/weather-map/stats/{parcel}").mock(
+        return_value=httpx.Response(200, json={
+            "parcel_geojson": {},
+            "date": "2026-06-30",
+            "metrics": {
+                "temperature_avg": {"heat_stress_pct": 5.0, "mean": 22.0},
+                "water_balance": {"deficit_area_pct": 40.0, "mean": -10.0},
+                "frost_risk": {"high_risk_pct": 0.0, "mean": 5.0},
+            },
+        })
     )
+    result = asyncio.run(
+        GraphDAO.fetch_parcel_weather_stats(parcel, "asociacion-allotarra")
+    )
+    assert result == {
+        "temperature_avg": {"heat_stress_pct": 5.0, "mean": 22.0},
+        "water_balance": {"deficit_area_pct": 40.0, "mean": -10.0},
+        "frost_risk": {"high_risk_pct": 0.0, "mean": 5.0},
+    }, f"Got: {result!r}"
+    assert route.called, "weather-map GET was not called"
+    request = respx.calls[0].request
+    assert request.url.params["metrics"] == "temperature_avg,water_balance,frost_risk"
+    assert request.headers["x-tenant-id"] == "asociacion-allotarra"
+    assert request.headers["x-user-id"] == "bioorchestrator-worker"
 
 
-def test_fetch_parcel_weather_stats_returns_none_when_attribute_absent(mock_driver):
-    """Returns None gracefully when weatherStats not present on entity."""
-    with patch("app.graph.dao.OrionClient", _FakeOrionClientWeatherMissing):
-        result = asyncio.run(
-            GraphDAO.fetch_parcel_weather_stats("urn:ngsi-ld:AgriParcel:P2", "test-tenant")
-        )
-
+@respx.mock
+@pytest.mark.usefixtures("mock_driver")
+def test_fetch_parcel_weather_stats_returns_none_on_404():
+    """Returns None when weather-map has no parcel/COG (404 or empty metrics)."""
+    parcel = "urn:ngsi-ld:AgriParcel:P2"
+    respx.get(f"{WEATHER_MAP_URL}/api/weather-map/stats/{parcel}").mock(
+        return_value=httpx.Response(404, json={"detail": "Parcel not found"})
+    )
+    result = asyncio.run(
+        GraphDAO.fetch_parcel_weather_stats(parcel, "test-tenant")
+    )
     assert result is None, f"Expected None, got {result!r}"
 
 
-def test_fetch_parcel_weather_stats_returns_none_on_orion_error(mock_driver):
-    """Returns None (no exception propagated) when Orion is unreachable."""
-    with patch("app.graph.dao.OrionClient", _FakeOrionClientWeatherError):
-        result = asyncio.run(
-            GraphDAO.fetch_parcel_weather_stats("urn:ngsi-ld:AgriParcel:P3", "tenant-x")
-        )
-
+@respx.mock
+@pytest.mark.usefixtures("mock_driver")
+def test_fetch_parcel_weather_stats_returns_none_when_unreachable():
+    """Returns None (no exception) when weather-map is unreachable."""
+    parcel = "urn:ngsi-ld:AgriParcel:P3"
+    respx.get(f"{WEATHER_MAP_URL}/api/weather-map/stats/{parcel}").mock(
+        side_effect=httpx.ConnectError("unreachable")
+    )
+    result = asyncio.run(
+        GraphDAO.fetch_parcel_weather_stats(parcel, "tenant-x")
+    )
     assert result is None, f"Expected None, got {result!r}"
 
 

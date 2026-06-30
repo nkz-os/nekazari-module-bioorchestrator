@@ -45,6 +45,9 @@ class Settings(BaseSettings):
     # bioorch is the SOLE writer; other modules consume via /api/crop/catalog.
     catalog_tenant: str = "default"
 
+    # ── Weather-Map (per-parcel meteo stats: temperature_avg, water_balance, frost_risk) ─
+    weather_map_url: str = "http://weather-map-backend:8080"
+
     # ── TimescaleDB ───────────────────────────────────────────────────────────
     timescale_dsn: str = ""
 
