@@ -2,7 +2,7 @@ from unittest.mock import patch
 
 import pytest
 
-from app.services.timescale import PERIOD_MAP, compute_trend
+from app.services.timescale import compute_trend
 
 
 def test_compute_trend_up():
@@ -43,11 +43,9 @@ def test_compute_trend_insufficient_data():
     assert "insuficientes" in trend["label"].lower()
 
 
-def test_period_map_values():
-    assert PERIOD_MAP["1m"].days == 30
-    assert PERIOD_MAP["3m"].days == 90
-    assert PERIOD_MAP["6m"].days == 180
-    assert PERIOD_MAP["1y"].days == 365
+def test_period_window_days():
+    from app.api.v1.parcel_data import _PERIOD_DAYS
+    assert _PERIOD_DAYS == {"1m": 30, "3m": 90, "6m": 180, "1y": 365}
 
 
 def test_soil_unavailable_response_structure():
@@ -84,11 +82,44 @@ class _RecordingOrion:
         _RecordingOrion.constructed_tenants.append(tenant_id)
         self.tenant_id = tenant_id
 
-    async def query_entities(self, type=None, q=None, limit=100, offset=0, attrs=None):
+    async def query_entities(self, type=None, q=None, limit=100, offset=0, attrs=None, options=None):
         return []  # no entities → endpoint returns "unavailable"
 
     async def close(self):
         return None
+
+
+class _EOProductOrion:
+    """Returns EOProduct entities (keyValues) for the vegetation read."""
+
+    def __init__(self, tenant_id, *a, **k):
+        self.tenant_id = tenant_id
+
+    async def query_entities(self, type=None, q=None, limit=100, offset=0, attrs=None, options=None):
+        if type == "EOProduct":
+            return [
+                {"id": "urn:ngsi-ld:EOProduct:t:P1:2026-06-11", "sensingDate": "2026-06-11", "ndvi": 0.55},
+                {"id": "urn:ngsi-ld:EOProduct:t:P1:2026-06-01", "sensingDate": "2026-06-01", "ndvi": 0.42},
+            ]
+        return []
+
+    async def close(self):
+        return None
+
+
+def test_vegetation_reads_eoproduct(client):
+    with patch("app.api.v1.parcel_data.OrionClient", _EOProductOrion):
+        resp = client.get(
+            "/api/parcel/P1/vegetation?index=ndvi&period=1y",
+            headers={"X-Tenant-ID": "montiko", "X-User-ID": "u1", "X-User-Roles": "Tecnico"},
+        )
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["available"] is True
+    assert body["index"] == "ndvi"
+    assert body["count"] == 2
+    assert body["current"] == 0.55
+    assert [o["value"] for o in body["observations"]] == [0.42, 0.55]  # sorted by date
 
 
 def test_vegetation_uses_request_tenant(client):
