@@ -1896,29 +1896,47 @@ class GraphDAO:
 
     @staticmethod
     async def fetch_parcel_weather_stats(parcel_id: str, tenant_id: str = "") -> dict | None:
-        """Fetch weatherStats from an AgriParcel entity in Orion-LD.
+        """Fetch per-parcel weather stats from the Weather-Map module.
 
-        Queries Orion-LD for the parcel entity with keyValues format
-        and extracts the weatherStats attribute written by Weather-Map.
+        Calls GET {WEATHER_MAP_URL}/api/weather-map/stats/{parcel_id}?metrics=...
+        and returns the ``metrics`` sub-dict, whose keys
+        (temperature_avg/water_balance/frost_risk) and nested pct fields
+        (heat_stress_pct/deficit_area_pct/high_risk_pct) are exactly what
+        app.graph.recommendation.apply_weather_penalties() reads via _safe_get.
 
-        Returns:
-            Parsed weather stats dict (temperature_avg, water_balance, eto, frost_risk),
-            or None if the parcel has no weatherStats or Orion-LD is unreachable.
+        Contract (frozen 2026-06-30): BioOrch and Crop-Health MUST consume the
+        same weather source so yield_potential/yield_gap stay comparable.
+
+        Returns None on any error, non-200, or empty metrics → no weather
+        penalties applied (fail-safe: ranking unchanged).
         """
+        import httpx
+        from app.core.config import settings
+
+        url = f"{settings.weather_map_url}/api/weather-map/stats/{parcel_id}"
         try:
-            orion = OrionClient(tenant_id)
-            try:
-                entity = await orion.get_entity(parcel_id)
-            finally:
-                await orion.close()
-            weather_stats = _extract_prop_value(entity.get("weatherStats"))
-            if weather_stats is not None:
-                return weather_stats
-        except Exception as exc:
-            logger.warning(
-                "Failed to fetch weatherStats for parcel %s: %s",
-                parcel_id, exc,
-            )
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                resp = await client.get(
+                    url,
+                    params={"metrics": "temperature_avg,water_balance,frost_risk"},
+                    headers={
+                        "X-Tenant-ID": tenant_id,
+                        "X-User-ID": "bioorchestrator-worker",
+                    },
+                )
+            if resp.status_code != 200:
+                logger.info(
+                    "weather-map stats for %s returned %d", parcel_id, resp.status_code,
+                )
+                return None
+            metrics = (resp.json() or {}).get("metrics")
+            if not metrics:
+                return None
+            return metrics
+        except (httpx.ConnectError, httpx.TimeoutException, httpx.HTTPError) as exc:
+            logger.warning("weather-map stats failed for parcel %s: %s", parcel_id, exc)
+        except Exception as exc:  # noqa: BLE001 — never break ranking on weather failure
+            logger.warning("weather-map stats unexpected error for %s: %s", parcel_id, exc)
         return None
 
     @staticmethod
