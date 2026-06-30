@@ -18,3 +18,8 @@ def test_crop_name_known_eppo():
 def test_crop_name_unknown_eppo():
     r = client.get("/api/graph/agriculture/crop-name", params={"eppo": "ZZZZZ"})
     assert r.status_code == 404
+
+
+def test_old_pesticides_endpoint_removed():
+    r = client.get("/api/graph/agriculture/pesticides", params={"crop_eppo": "TRZAX"})
+    assert r.status_code == 404
