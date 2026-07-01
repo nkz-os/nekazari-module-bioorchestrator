@@ -4641,6 +4641,28 @@ species:
         institution: FAO
         method: FAO-56 Table 12
         conditions: Semi-arid, no stress
+  - name: stem_elongation
+    description: Stem elongation to heading
+    parameters:
+    - cultivar: null
+      management: deficit_irrigation
+      climate_zone: semi_arid
+      kc: 0.9
+      kc_ci:
+      - 0.8
+      - 1.0
+      d1: 2.0
+      d2: 7.0
+      mds_ref: null
+      source:
+        source_type: peer_reviewed_study
+        doi: null
+        short: Kang et al. 2003
+        author: Kang, Zhang, Liang
+        year: 2003
+        institution: China Agricultural University
+        method: CWSI field trial, North China Plain
+        conditions: Winter wheat, deficit irrigation, North China Plain
 - name: maize
   scientific_name: Zea mays
   agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_8487
@@ -4949,6 +4971,28 @@ species:
         short: FAO-56
         author: Allen et al.
         year: 1998
+    - cultivar: Tempranillo
+      management: deficit_irrigation
+      climate_zone: mediterranean
+      kc: 0.25
+      kc_ci:
+      - 0.15
+      - 0.35
+      d1: 1.3
+      d2: 5.5
+      mds_ref: 90.0
+      mds_ref_ci:
+      - 70.0
+      - 110.0
+      source:
+        source_type: peer_reviewed_study
+        doi: 10.1007/s00271-005-0005-9
+        short: Intrigliolo & Castel 2006
+        author: Intrigliolo, Castel
+        year: 2006
+        institution: IVIA, Valencia
+        method: Dendrometer + lysimeter, RDI trial
+        conditions: Tempranillo, Valencia, RDI pre-veraison
   - name: development
     parameters:
     - kc: 0.7
@@ -4997,6 +5041,28 @@ species:
         short: FAO-56
         author: Allen et al.
         year: 1998
+    - cultivar: Picual
+      management: deficit_irrigation
+      climate_zone: mediterranean
+      kc: 0.5
+      kc_ci:
+      - 0.45
+      - 0.55
+      d1: 1.8
+      d2: 7.5
+      mds_ref: 130.0
+      mds_ref_ci:
+      - 100.0
+      - 160.0
+      source:
+        source_type: peer_reviewed_study
+        doi: 10.1016/j.agwat.2004.12.005
+        short: Orgaz et al. 2005
+        author: Orgaz, Testi, Villalobos, Fereres
+        year: 2005
+        institution: IAS-CSIC, Universidad de Córdoba
+        method: Eddy covariance + sap flow, 3-year field trial
+        conditions: Olive, cv. Picual, Córdoba, deficit irrigation 30% ETc, 4×6m
   - name: development
     parameters:
     - kc: 0.7
@@ -5030,6 +5096,31 @@ species:
         short: FAO-56
         author: Allen et al.
         year: 1998
+  - name: pit_hardening
+    description: Endocarp hardening — critical period for water stress sensitivity
+    parameters:
+    - cultivar: Picual
+      management: regulated_deficit_irrigation
+      climate_zone: mediterranean
+      kc: 0.45
+      kc_ci:
+      - 0.4
+      - 0.5
+      d1: 2.0
+      d2: 8.0
+      mds_ref: 190.0
+      mds_ref_ci:
+      - 160.0
+      - 220.0
+      source:
+        source_type: peer_reviewed_study
+        doi: 10.21273/JASHS.128.3.0425
+        short: Moriana et al. 2003
+        author: Moriana, Orgaz, Pastor, Fereres
+        year: 2003
+        institution: Universidad de Sevilla, IAS-CSIC
+        method: Dendrometer + water balance, RDI trial, 5-year
+        conditions: Olive, cv. Picual, Seville, RDI (30% ETc at pit hardening)
 - name: almond
   scientific_name: Prunus dulcis
   agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_334
@@ -5049,6 +5140,28 @@ species:
         institution: FAO
         method: FAO-56 Table 12
         conditions: Mediterranean, no ground cover
+    - cultivar: Nonpareil
+      management: deficit_irrigation
+      climate_zone: mediterranean
+      kc: 0.65
+      kc_ci:
+      - 0.55
+      - 0.75
+      d1: 2.3
+      d2: 8.5
+      mds_ref: 140.0
+      mds_ref_ci:
+      - 110.0
+      - 170.0
+      source:
+        source_type: peer_reviewed_study
+        doi: null
+        short: Goldhamer & Fereres 2001
+        author: Goldhamer, Fereres
+        year: 2001
+        institution: UC Davis, IAS-CSIC
+        method: RDI field trial, dendrometer + water balance
+        conditions: Almond, cv. Nonpareil, California, RDI
   - name: development
     description: FAO-56 development stage for almond
     parameters:

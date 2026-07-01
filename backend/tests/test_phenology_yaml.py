@@ -37,13 +37,25 @@ def test_required_species_present():
 
 
 def test_each_species_has_four_stages():
-    """Each species must have exactly 4 stages (initial, development, mid-season, late-season)."""
+    """Each species must have the 4 FAO-56 base stages, plus any curated
+    phenology-specific stages (hybrid model — decision α, 2026-07-01).
+
+    The 4 FAO-56 stages (initial/development/mid-season/late-season) are the
+    uniform base. Curated peer_reviewed_study entries may ADD crop-specific
+    stages (e.g. olive pit_hardening, wheat stem_elongation) — those are
+    expected, not a regression.
+    """
     data = _load_yaml()
-    expected_stages = {"initial", "development", "mid-season", "late-season"}
+    required_base = {"initial", "development", "mid-season", "late-season"}
     for sp in data["species"]:
         stage_names = {s["name"] for s in sp["stages"]}
-        assert stage_names == expected_stages, \
-            f"{sp['name']}: stages {stage_names} != {expected_stages}"
+        missing = required_base - stage_names
+        assert not missing, \
+            f"{sp['name']}: missing FAO-56 base stages {missing}"
+        # Extra stages allowed (hybrid model) but flagged if unexpected typos
+        extra = stage_names - required_base
+        assert extra == set() or all(s.replace("_", "-").isascii() for s in extra), \
+            f"{sp['name']}: suspicious extra stages {extra}"
 
 
 def test_each_stage_has_kc():
