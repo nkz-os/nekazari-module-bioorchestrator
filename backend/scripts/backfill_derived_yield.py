@@ -138,7 +138,7 @@ def main() -> int:
                 plan.append((crop, r["factor"], r["n_dual"], r["group"], n_fill))
         total_fill = sum(p[4] for p in plan)
         print()
-        print(f"=== summary ===")
+        print("=== summary ===")
         print(f"  total VarietyTrial:        {total}")
         print(f"  yieldKgHa BEFORE:          {with_yield_before} ({with_yield_before/total:.0%})")
         print(f"  would-fill (dry-run):      {total_fill}")
@@ -178,7 +178,7 @@ def main() -> int:
             print(f"  {crop} (factor={factor:.0f}, group={group}): set {set_n}")
 
         _, with_yield_after = coverage(session)
-        print(f"\n=== DONE ===")
+        print("\n=== DONE ===")
         print(f"  set this run:              {total_set}")
         print(f"  yieldKgHa AFTER (actual):  {with_yield_after} ({with_yield_after/total:.0%})")
     driver.close()
