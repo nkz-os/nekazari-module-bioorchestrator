@@ -22,6 +22,9 @@ def test_missing_field_is_false_not_error():
 def test_numeric_and_membership_ops():
     ctx = {"n": 5, "stage": "tillering"}
     assert evaluate_conditions({"all": [{"field": "n", "op": "lte", "value": 7}]}, ctx) is True
+    assert evaluate_conditions({"all": [{"field": "n", "op": "gte", "value": 5}]}, ctx) is True
+    assert evaluate_conditions({"all": [{"field": "n", "op": "lt", "value": 7}]}, ctx) is True
+    assert evaluate_conditions({"all": [{"field": "n", "op": "lt", "value": 5}]}, ctx) is False
     assert evaluate_conditions({"all": [{"field": "n", "op": "gt", "value": 7}]}, ctx) is False
     assert evaluate_conditions({"all": [{"field": "stage", "op": "in", "value": ["tillering", "vegetative"]}]}, ctx) is True
     assert evaluate_conditions({"all": [{"field": "stage", "op": "nin", "value": ["maturity"]}]}, ctx) is True
@@ -64,3 +67,18 @@ def test_build_advisory_shape_and_deterministic_id():
     assert adv["urgency"]["value"] == "high"
     assert adv["phenologyStage"]["value"] == "flowering"
     assert adv["status"]["value"] == "open"
+
+def test_build_advisory_omits_missing_action_fields_no_null_props():
+    # A malformed rule missing operation_type/urgency must NOT yield value:null
+    # properties (Orion-LD rejects null → whole advisory silently dropped).
+    rule = {"id": "r1", "action": {"description_template": "do something"}}
+    adv = build_advisory(rule, {}, "montiko", "urn:ngsi-ld:AgriParcel:montiko:p1",
+                         "urn:ngsi-ld:AgriCrop:montiko:p1:2026", "flowering", now="2026-06-30T10:00:00Z")
+    assert "operationType" not in adv
+    assert "urgency" not in adv
+    assert "cropSpecies" not in adv
+    assert adv["id"].endswith("r1:flowering")
+    assert adv["type"] == "CropAdvisory"
+    assert adv["status"]["value"] == "open"
+    assert all(not (isinstance(v, dict) and v.get("type") == "Property" and v.get("value") is None)
+               for v in adv.values())

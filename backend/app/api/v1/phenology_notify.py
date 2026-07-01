@@ -42,12 +42,14 @@ async def phenology_update(request: Request):
         key = (tenant_id, parcel_id)
         if _LAST_STAGE.get(key) == stage:
             continue  # dedup: stage unchanged since last notification
-        _LAST_STAGE[key] = stage
         observed = {"phenology.current_stage": stage}
         for extra in ("waterDeficitMm", "nRequirementKgHa"):
             if extra in entity:
                 observed[_SNAKE[extra]] = _kv(entity[extra])
         await background_queue.enqueue("evaluate_action_rules", tenant_id, parcel_id, observed)
+        # Record the stage only AFTER a successful enqueue, so a failed enqueue
+        # (Redis mode) isn't deduped away on Orion's retry.
+        _LAST_STAGE[key] = stage
         queued += 1
     return {"status": "accepted", "queued": queued}
 

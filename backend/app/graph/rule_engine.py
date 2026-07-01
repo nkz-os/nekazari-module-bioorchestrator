@@ -6,6 +6,7 @@ writes phenologyStage to the broker. Missing context field → clause is False
 """
 from __future__ import annotations
 import logging
+from datetime import date, datetime, timezone
 
 logger = logging.getLogger(__name__)
 
@@ -45,9 +46,6 @@ def evaluate_conditions(tree: dict, context: dict) -> bool:
     return True
 
 
-from datetime import date, datetime, timezone
-
-
 def flatten_context(crop: dict, observed: dict, *, today: date | None = None) -> dict:
     ctx = dict(observed)
     ctx["crop.role"] = crop.get("role")
@@ -83,14 +81,19 @@ def build_advisory(rule: dict, context: dict, tenant_id: str, parcel_id: str,
         "hasAgriParcel": {"type": "Relationship", "object": parcel_id},
         "hasAgriCrop": {"type": "Relationship", "object": crop_id},
         "ruleId": {"type": "Property", "value": rule["id"]},
-        "operationType": {"type": "Property", "value": action.get("operation_type")},
         "description": {"type": "Property", "value": _render(action.get("description_template", ""), context)},
-        "urgency": {"type": "Property", "value": action.get("urgency")},
         "phenologyStage": {"type": "Property", "value": stage},
-        "cropSpecies": {"type": "Property", "value": context.get("crop.species")},
         "status": {"type": "Property", "value": "open"},
         "dateCreated": {"type": "Property", "value": {"@type": "DateTime", "@value": now}},
     }
+    # Only include these when non-None: Orion-LD rejects a Property with value:null,
+    # which would drop the whole advisory silently (a malformed rule must not do that).
+    if action.get("operation_type") is not None:
+        adv["operationType"] = {"type": "Property", "value": action["operation_type"]}
+    if action.get("urgency") is not None:
+        adv["urgency"] = {"type": "Property", "value": action["urgency"]}
+    if context.get("crop.species") is not None:
+        adv["cropSpecies"] = {"type": "Property", "value": context["crop.species"]}
     if action.get("window_days") is not None:
         adv["windowDays"] = {"type": "Property", "value": action["window_days"]}
     if rule.get("source_doi"):
@@ -121,5 +124,8 @@ async def evaluate(dao, orion, tenant_id: str, parcel_id: str, observed: dict) -
             logger.info("action-rule matched: rule=%s parcel=%s stage=%s urgency=%s",
                         rule["id"], parcel_id, stage, rule.get("action", {}).get("urgency"))
     if advisories:
-        await orion.upsert_entities_batch(advisories)
+        result = await orion.upsert_entities_batch(advisories)
+        if result.get("errors"):
+            logger.warning("advisory upsert reported errors: parcel=%s errors=%s",
+                           parcel_id, result["errors"])
     return advisories

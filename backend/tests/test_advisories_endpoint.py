@@ -1,5 +1,4 @@
 # tests/test_advisories_endpoint.py
-import pytest
 from unittest.mock import AsyncMock, patch
 from fastapi import FastAPI
 from fastapi.testclient import TestClient

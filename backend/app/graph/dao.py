@@ -2138,7 +2138,7 @@ class GraphDAO:
         try:
             registrar = SubscriptionRegistrar(
                 orion_url=settings.orion_ld_url,
-                notification_url="http://bioorchestrator-service:8420/api/graph/internal/phenology-update",
+                notification_url="http://bioorchestrator-api-service:8420/api/graph/internal/phenology-update",
                 subscriptions=[SubscriptionDef(
                     type="CropHealthAssessment",
                     watched_attributes=["phenologyStage"],

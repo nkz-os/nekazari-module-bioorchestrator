@@ -14,6 +14,7 @@ async def test_ensure_phenology_subscription_uses_watched_attrs():
         assert subs[0].type == "CropHealthAssessment"
         assert subs[0].watched_attributes == ["phenologyStage"]
         assert subs[0].condition == {"attrs": ["phenologyStage"]}
+        assert "bioorchestrator-api-service:8420" in kwargs["notification_url"]
         assert "phenology-update" in kwargs["notification_url"]
         MockReg.return_value.ensure_all.assert_awaited_once_with(["montiko"])
 
