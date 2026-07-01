@@ -64,6 +64,24 @@ def test_convert_article_maps_title_and_year():
 
 
 @pytest.mark.asyncio
+async def test_merge_relationships_links_by_location_deterministic():
+    from unittest.mock import AsyncMock, MagicMock
+    session = AsyncMock()
+    session.run.return_value.single = AsyncMock(return_value={"c": 810})
+    driver = MagicMock()
+    driver.session.return_value.__aenter__ = AsyncMock(return_value=session)
+    driver.session.return_value.__aexit__ = AsyncMock(return_value=False)
+
+    n = await _ing()._merge_relationships(driver, [], [])
+
+    assert n == 810
+    cypher = session.run.call_args[0][0]
+    assert "TRIAL_AT" in cypher
+    assert "trialLocation" in cypher and "t.name" in cypher  # link by location==name
+    assert session.run.call_args.kwargs["sid"] == "EU-TRIAL-REPORTS"  # source-scoped
+
+
+@pytest.mark.asyncio
 async def test_parse_nodes_routes_by_type():
     data = {"@graph": [
         {"@type": "ArticleSource", "article_title": "x", "year": 2025},
