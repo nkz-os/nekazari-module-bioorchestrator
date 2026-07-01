@@ -120,7 +120,9 @@ async def _start_background_tasks():
     try:
         from app.workers.queue import background_queue
         from app.workers.sync_worker import handle_sync_agri_crop
+        from app.workers.rule_worker import handle_evaluate_action_rules
         background_queue.register("sync_agri_crop", handle_sync_agri_crop)
+        background_queue.register("evaluate_action_rules", handle_evaluate_action_rules)
         asyncio.create_task(background_queue.run_loop())
         asyncio.create_task(_ensure_catalog_subscription())
         async def _reconcile_guarded():
