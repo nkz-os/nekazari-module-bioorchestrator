@@ -13,7 +13,8 @@ async def test_ensure_phenology_subscription_uses_watched_attrs():
         subs = kwargs["subscriptions"]
         assert subs[0].type == "CropHealthAssessment"
         assert subs[0].watched_attributes == ["phenologyStage"]
-        assert subs[0].condition == {"attrs": ["phenologyStage"]}
+        # NGSI-LD has no top-level `condition` field (Orion 400s on it) — watchedAttributes alone.
+        assert subs[0].condition is None
         assert "bioorchestrator-api-service:8420" in kwargs["notification_url"]
         assert "phenology-update" in kwargs["notification_url"]
         MockReg.return_value.ensure_all.assert_awaited_once_with(["montiko"])
