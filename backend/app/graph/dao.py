@@ -2142,7 +2142,6 @@ class GraphDAO:
                 subscriptions=[SubscriptionDef(
                     type="CropHealthAssessment",
                     watched_attributes=["phenologyStage"],
-                    condition={"attrs": ["phenologyStage"]},
                 )],
                 module_name="bioorchestrator",
                 context_url=settings.context_url,
