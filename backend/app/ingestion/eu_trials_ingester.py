@@ -102,6 +102,29 @@ class EuTrialsIngester(BaseIngester):
         }
 
 
+    async def _merge_relationships(self, driver, variety_trials, management_trials) -> int:
+        """Link VarietyTrials to TrialSites deterministically by location == name.
+
+        The base implementation matches trials by a content-hash-suffixed
+        unique_key that is unstable across processes, so it created 0 TRIAL_AT
+        for this source. Link by the stable (source_id, trialLocation == name)
+        pair instead — the scraper guarantees one TrialSite whose name equals
+        each trial_location. Without TRIAL_AT the trials orphan and never surface
+        in extrapolate.
+        """
+        async with driver.session() as session:
+            result = await session.run(
+                "MATCH (v:VarietyTrial {source_id: $sid}), "
+                "      (t:TrialSite {source_id: $sid}) "
+                "WHERE toLower(v.trialLocation) = toLower(t.name) "
+                "MERGE (v)-[:TRIAL_AT]->(t) "
+                "RETURN count(*) AS c",
+                sid=self.SOURCE_ID,
+            )
+            row = await result.single()
+        return row["c"] if row else 0
+
+
 async def main():
     parser = argparse.ArgumentParser(description="EU-TRIAL-REPORTS → transform nodes")
     parser.add_argument("--jsonld", required=True, help="Path to JSON-LD")

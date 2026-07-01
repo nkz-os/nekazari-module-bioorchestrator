@@ -23,11 +23,10 @@ COPY backend/app/ app/
 COPY backend/scripts/ scripts/
 COPY backend/cypher_migrations/ cypher_migrations/
 COPY data/ data/
-# Overwrite phenology_sources.yaml with the curated 9-species version
-COPY backend/data/phenology_sources.yaml data/phenology_sources.yaml
-
-# Copy action_rules.yaml seed data for SP2 Action Rules Engine
-COPY backend/data/action_rules.yaml data/action_rules.yaml
+# Ship the whole backend/data/ dir: sources_registry.json, species_registry.yaml,
+# phenology_sources.yaml, action_rules.yaml — needed by ingesters + registries.
+# Without this get_source() raises KeyError and no ingester can run in the pod.
+COPY backend/data/ data/
 
 # Copy IkerKeta sources config to where the library expects it
 # (ikerketa/config.py resolves _PROJECT_ROOT from __file__, ending up at site-packages)
