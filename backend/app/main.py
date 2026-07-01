@@ -169,9 +169,10 @@ async def lifespan(app: FastAPI):
 
     # Seed external capability registrations (best-effort)
     try:
+        from app.core.dependencies import get_driver
         from app.graph.capability_dao import CapabilityDao
         from app.services.capability_loader import seed_external_capabilities
-        seeded = await seed_external_capabilities(CapabilityDao())
+        seeded = await seed_external_capabilities(CapabilityDao(get_driver()))
         print(f"[bioorchestrator] Seeded {seeded} external capabilities")
     except Exception as exc:
         print(f"[bioorchestrator] WARNING: capability seed failed: {exc}")
