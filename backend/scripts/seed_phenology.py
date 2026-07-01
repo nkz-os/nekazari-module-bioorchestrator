@@ -21,6 +21,28 @@ import yaml
 from neo4j import Driver, GraphDatabase
 
 
+VALID_SOURCE_TYPES = {"global_standard", "peer_reviewed_study", "extension_advisory"}
+
+
+def infer_source_type(src: dict) -> str:
+    """Infer the 3-tier source type from a source block.
+
+    Explicit ``source_type`` wins. Otherwise inferred:
+      - short starts with 'FAO-' (FAO-56, FAO-33, Steduto/FAO Paper 66) -> global_standard
+      - doi present -> peer_reviewed_study
+      - else -> extension_advisory
+    """
+    explicit = src.get("source_type")
+    if explicit in VALID_SOURCE_TYPES:
+        return explicit
+    short = (src.get("short") or "").strip()
+    if short.upper().startswith("FAO") or "Steduto" in short:
+        return "global_standard"
+    if src.get("doi"):
+        return "peer_reviewed_study"
+    return "extension_advisory"
+
+
 def connect(uri: str, user: str, password: str) -> Driver:
     driver = GraphDatabase.driver(uri, auth=(user, password))
     driver.verify_connectivity()
@@ -119,6 +141,7 @@ def seed(driver: Driver, data: dict[str, Any]) -> dict[str, int]:
                             p.sourceInstitution = $src_institution,
                             p.sourceMethod = $src_method,
                             p.sourceConditions = $src_conditions,
+                            p.sourceType = $src_type,
                             p.isDefault = $is_default
                         RETURN p
                         """,
@@ -146,6 +169,7 @@ def seed(driver: Driver, data: dict[str, Any]) -> dict[str, int]:
                         src_institution=src.get("institution"),
                         src_method=src.get("method"),
                         src_conditions=src.get("conditions"),
+                        src_type=infer_source_type(src),
                         is_default=(i == 0),  # first param per stage = default
                     )
                     counts["params"] += 1
