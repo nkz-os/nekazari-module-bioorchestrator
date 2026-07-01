@@ -48,9 +48,6 @@ class Settings(BaseSettings):
     # ── Weather-Map (per-parcel meteo stats: temperature_avg, water_balance, frost_risk) ─
     weather_map_url: str = "http://weather-map-backend:8080"
 
-    # ── TimescaleDB ───────────────────────────────────────────────────────────
-    timescale_dsn: str = ""
-
     # ── IkerKeta data paths ───────────────────────────────────────────────────
     ikerketa_data_dir: Path = Path("./data/processed")
 
