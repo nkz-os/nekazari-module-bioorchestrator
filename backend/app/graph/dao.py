@@ -1937,6 +1937,12 @@ class GraphDAO:
         """
         import httpx
         from app.core.config import settings
+        from app.services.weather_stats_cache import weather_stats_cache
+
+        cache_key = (tenant_id, parcel_id)
+        cached = weather_stats_cache.get(cache_key)
+        if cached is not None:
+            return cached
 
         url = f"{settings.weather_map_url}/api/weather-map/stats/{parcel_id}"
         try:
@@ -1957,6 +1963,7 @@ class GraphDAO:
             metrics = (resp.json() or {}).get("metrics")
             if not metrics:
                 return None
+            weather_stats_cache.set(cache_key, metrics)
             return metrics
         except (httpx.ConnectError, httpx.TimeoutException, httpx.HTTPError) as exc:
             logger.warning("weather-map stats failed for parcel %s: %s", parcel_id, exc)
