@@ -1295,7 +1295,8 @@ class GraphDAO:
                      min(COALESCE(vt.yieldKgHa, vt.yieldNoteS1 * 1000)) AS min_yield,
                      max(COALESCE(vt.yieldKgHa, vt.yieldNoteS1 * 1000)) AS max_yield,
                      stDev(COALESCE(vt.yieldKgHa, vt.yieldNoteS1 * 1000)) AS stddev_yield,
-                     count(*) AS trial_count
+                     count(*) AS trial_count,
+                     sum(CASE WHEN vt.yieldDerivationMethod IS NOT NULL THEN 1 ELSE 0 END) AS derived_count
                 WHERE trial_count >= 1
                   AND ($irrigation_uri IS NULL OR $irrigation_uri IN irrigation_regimes)
                   AND ($production_system IS NULL OR $production_system IN production_systems)
@@ -1305,6 +1306,7 @@ class GraphDAO:
                        max_yield,
                        stddev_yield,
                        trial_count,
+                       derived_count,
                        years,
                        sites,
                        irrigation_regimes,
@@ -1367,6 +1369,8 @@ class GraphDAO:
                     "max_yield_kg_ha": round(record["max_yield"], 1) if record["max_yield"] else None,
                     "stddev_yield_kg_ha": round(record["stddev_yield"], 1) if record["stddev_yield"] else None,
                     "trial_count": record["trial_count"],
+                    "derived_trial_count": record["derived_count"],
+                    "yield_provenance": _yield_provenance(record["derived_count"], record["trial_count"]),
                     "trial_years": sorted(record["years"]),
                     "trial_sites": sorted(record["sites"]),
                     "irrigation_regimes": record["irrigation_regimes"],
@@ -4493,6 +4497,23 @@ class GraphDAO:
         async with self._driver.session() as session:
             await session.run(f"MATCH (r:ActionRule {{id: $id}}) SET {', '.join(sets)}", **params)
         return {"status": "updated", "id": rule_id}
+
+
+def _yield_provenance(derived_count: int | None, trial_count: int | None) -> str:
+    """Provenance of a variety's aggregated yield: 'measured' | 'partial' | 'derived'.
+
+    'derived' trials carry a persisted yieldKgHa estimated from BSL notes via an
+    empirical per-crop factor (yieldDerivationMethod set). extrapolate ranks
+    derived and measured yields identically; this flag surfaces to consumers when
+    a ranking rests on approximations rather than field measurements.
+    """
+    d = derived_count or 0
+    t = trial_count or 0
+    if d <= 0:
+        return "measured"
+    if d >= t:
+        return "derived"
+    return "partial"
 
 
 def _extract_prop_value(prop: dict | str | None):
