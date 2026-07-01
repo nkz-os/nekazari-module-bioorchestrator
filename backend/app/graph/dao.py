@@ -26,7 +26,9 @@ from typing import Any
 
 from neo4j import AsyncDriver
 from nkz_platform_sdk.orion import OrionClient
+from nkz_platform_sdk.subscriptions import SubscriptionRegistrar, SubscriptionDef
 
+from app.core.config import settings
 from app.species_registry import get_species_info, resolve_species
 
 logger = logging.getLogger(__name__)
@@ -2107,6 +2109,7 @@ class GraphDAO:
             # POST /attrs (append): PATCH /attrs only updates EXISTING attrs, so a
             # first-time hasAgriCrop assignment lands in notUpdated and silently no-ops.
             await client.append_entity_attrs(parcel_id, patch_body)
+            await self._ensure_phenology_subscription(tenant_id)
 
             return {
                 "status": "assigned",
@@ -2125,6 +2128,29 @@ class GraphDAO:
             raise HTTPException(status_code=502, detail="Orion-LD unreachable")
         finally:
             await client.close()
+
+    async def _ensure_phenology_subscription(self, tenant_id: str) -> None:
+        """Idempotently ensure the per-tenant CropHealthAssessment subscription.
+
+        Registered lazily at assign-crop (no crop → no phenology → no sub needed).
+        Fail-soft: a subscription error must never fail the crop assignment.
+        """
+        try:
+            registrar = SubscriptionRegistrar(
+                orion_url=settings.orion_ld_url,
+                notification_url="http://bioorchestrator-service:8420/api/graph/internal/phenology-update",
+                subscriptions=[SubscriptionDef(
+                    type="CropHealthAssessment",
+                    watched_attributes=["phenologyStage"],
+                    condition={"attrs": ["phenologyStage"]},
+                )],
+                module_name="bioorchestrator",
+                context_url=settings.context_url,
+            )
+            result = await registrar.ensure_all([tenant_id])
+            logger.info("phenology subscription ensured for %s: %s", tenant_id, result)
+        except Exception as exc:
+            logger.warning("phenology subscription setup failed for %s: %s", tenant_id, exc)
 
     async def create_crop_plan(self, parcel_id, season, segments, tenant_id) -> dict:
         """Create one planned AgriCrop per segment + patch parcel season bounds.
