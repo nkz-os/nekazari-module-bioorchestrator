@@ -626,5 +626,47 @@
       "plant-variety-rights",
       "eu-registry"
     ]
+  },
+  {
+    "source_id": "EU-TRIAL-REPORTS",
+    "name": "European Institutional Trial Reports",
+    "institution": "Multiple European public-sector institutions (LfL Bayern, COBORU, SLU, Arvalis, CSIC, IFAPA, BRESOV, orgprints)",
+    "institution_short": "EU Trials",
+    "country": "EU",
+    "country_name": {
+      "en": "European Union",
+      "es": "Unión Europea",
+      "fr": "Union européenne",
+      "it": "Unione Europea",
+      "pt": "União Europeia"
+    },
+    "url": null,
+    "document_url_template": null,
+    "license_class": "public-sector-psi",
+    "use_type": "variety-trial-network",
+    "official_status": false,
+    "data_format": "pdf-extracted",
+    "extraction_method": "llm-enhanced",
+    "confidence_default": "medium",
+    "attribution": {
+      "en": "Data aggregated from variety trial reports published by European public-sector institutions (LfL, COBORU, SLU, Arvalis, CSIC, IFAPA, BRESOV and others).",
+      "es": "Datos agregados de informes de ensayos varietales publicados por instituciones públicas europeas (LfL, COBORU, SLU, Arvalis, CSIC, IFAPA, BRESOV y otras).",
+      "fr": "Données agrégées de rapports d'essais variétaux publiés par des institutions publiques européennes (LfL, COBORU, SLU, Arvalis, CSIC, IFAPA, BRESOV et autres).",
+      "it": "Dati aggregati da rapporti di prove varietali pubblicati da istituzioni pubbliche europee (LfL, COBORU, SLU, Arvalis, CSIC, IFAPA, BRESOV e altre).",
+      "pt": "Dados agregados de relatórios de ensaios varietais publicados por instituições públicas europeias (LfL, COBORU, SLU, Arvalis, CSIC, IFAPA, BRESOV e outras)."
+    },
+    "disclaimer": {
+      "en": "Trials are conducted by independent European institutions. NKZ aggregates and extrapolates results to similar environments — this does not constitute an official recommendation by any of the source institutions.",
+      "es": "Los ensayos son realizados por instituciones europeas independientes. NKZ agrega y extrapola los resultados — esto no constituye una recomendación oficial de ninguna de las instituciones fuente.",
+      "fr": "Les essais sont menés par des institutions européennes indépendantes. NKZ agrège et extrapole les résultats — cela ne constitue pas une recommandation officielle.",
+      "it": "Le prove sono condotte da istituzioni europee indipendenti. NKZ aggrega ed estrapola i risultati — ciò non costituisce una raccomandazione ufficiale.",
+      "pt": "Os ensaios são realizados por instituições europeias independentes. A NKZ agrega e extrapola os resultados — isto não constitui uma recomendação oficial."
+    },
+    "site_urls": [],
+    "tags": [
+      "variety-trial",
+      "multi-institution",
+      "europe"
+    ]
   }
 ]
