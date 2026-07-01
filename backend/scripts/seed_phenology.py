@@ -63,15 +63,17 @@ def seed(driver: Driver, data: dict[str, Any]) -> dict[str, int]:
             sp_name = sp["name"]
             sp_sci = sp["scientific_name"]
             sp_uri = sp.get("agrovoc_uri", "")
+            sp_eppo = sp.get("eppo_code")
 
             # Upsert Species
             session.run(
                 """
                 MERGE (s:Species {name: $name})
                 SET s.scientificName = $sci,
-                    s.agrovocUri = $uri
+                    s.agrovocUri = $uri,
+                    s.eppoCode = COALESCE($eppo, s.eppoCode)
                 """,
-                name=sp_name, sci=sp_sci, uri=sp_uri,
+                name=sp_name, sci=sp_sci, uri=sp_uri, eppo=sp_eppo,
             )
             counts["species"] += 1
 
@@ -142,6 +144,7 @@ def seed(driver: Driver, data: dict[str, Any]) -> dict[str, int]:
                             p.sourceMethod = $src_method,
                             p.sourceConditions = $src_conditions,
                             p.sourceType = $src_type,
+                            p.ky = $ky,
                             p.isDefault = $is_default
                         RETURN p
                         """,
@@ -151,6 +154,7 @@ def seed(driver: Driver, data: dict[str, Any]) -> dict[str, int]:
                         mgmt=param.get("management"),
                         climate_zone=param.get("climate_zone"),
                         kc=param.get("kc"),
+                        ky=param.get("ky"),
                         kc_ci_low=param["kc_ci"][0] if param.get("kc_ci") else None,
                         kc_ci_high=param["kc_ci"][1] if param.get("kc_ci") else None,
                         d1=param.get("d1"),

@@ -4663,6 +4663,7 @@ species:
         institution: China Agricultural University
         method: CWSI field trial, North China Plain
         conditions: Winter wheat, deficit irrigation, North China Plain
+  eppo_code: TRZAX
 - name: maize
   scientific_name: Zea mays
   agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_8487
@@ -4716,6 +4717,7 @@ species:
         author: Allen et al.
         year: 1998
         institution: FAO
+  eppo_code: ZEAMX
 - name: rice
   scientific_name: Oryza sativa
   agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_6639
@@ -4764,6 +4766,7 @@ species:
         short: FAO-56
         author: Allen et al.
         year: 1998
+  eppo_code: ORYSA
 - name: soybean
   scientific_name: Glycine max
   agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_6706
@@ -4812,6 +4815,7 @@ species:
         short: FAO-56
         author: Allen et al.
         year: 1998
+  eppo_code: GLXMA
 - name: sunflower
   scientific_name: Helianthus annuus
   agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_7205
@@ -4860,6 +4864,7 @@ species:
         short: FAO-56
         author: Allen et al.
         year: 1998
+  eppo_code: HELAN
 - name: potato
   scientific_name: Solanum tuberosum
   agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_7249
@@ -4908,6 +4913,7 @@ species:
         short: FAO-56
         author: Allen et al.
         year: 1998
+  eppo_code: SOLTU
 - name: alfalfa
   scientific_name: Medicago sativa
   agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_4682
@@ -4956,6 +4962,7 @@ species:
         short: FAO-56
         author: Allen et al.
         year: 1998
+  eppo_code: MEDSA
 - name: grapevine
   scientific_name: Vitis vinifera
   agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_8237
@@ -5026,6 +5033,7 @@ species:
         short: FAO-56
         author: Allen et al.
         year: 1998
+  eppo_code: VITVI
 - name: olive
   scientific_name: Olea europaea
   agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_5323
@@ -5121,6 +5129,7 @@ species:
         institution: Universidad de Sevilla, IAS-CSIC
         method: Dendrometer + water balance, RDI trial, 5-year
         conditions: Olive, cv. Picual, Seville, RDI (30% ETc at pit hardening)
+  eppo_code: OLIEU
 - name: almond
   scientific_name: Prunus dulcis
   agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_334
@@ -5207,6 +5216,7 @@ species:
         institution: FAO
         method: FAO-56 Table 12
         conditions: Mediterranean, no ground cover
+  eppo_code: PRNDU
 - name: apple
   scientific_name: Malus domestica
   agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_4558
@@ -5271,6 +5281,7 @@ species:
         institution: FAO
         method: FAO-56 Table 12
         conditions: Temperate, no ground cover, no frost
+  eppo_code: MABSD
 - name: apricot
   scientific_name: Prunus armeniaca
   agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_543
@@ -5335,6 +5346,7 @@ species:
         institution: FAO
         method: FAO-56 Table 12
         conditions: Mediterranean, no ground cover
+  eppo_code: PRNAR
 - name: artichoke
   scientific_name: Cynara cardunculus var. scolymus
   agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_638
@@ -5399,6 +5411,7 @@ species:
         institution: FAO
         method: FAO-56 Table 12
         conditions: Mediterranean, no stress
+  eppo_code: CYNSC
 - name: asparagus
   scientific_name: Asparagus officinalis
   agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_669
@@ -5463,6 +5476,7 @@ species:
         institution: FAO
         method: FAO-56 Table 12
         conditions: Temperate, perennial, no stress
+  eppo_code: ASPOF
 - name: barley
   scientific_name: Hordeum vulgare
   agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_3660
@@ -5527,6 +5541,7 @@ species:
         institution: FAO
         method: FAO-56 Table 12
         conditions: Semi-arid, no stress
+  eppo_code: HORVX
 - name: bean
   scientific_name: Phaseolus vulgaris
   agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_5762
@@ -5591,6 +5606,7 @@ species:
         institution: FAO
         method: FAO-56 Table 12
         conditions: Semi-arid, no stress
+  eppo_code: PHSVX
 - name: broccoli
   scientific_name: Brassica oleracea var. italica
   agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_10877
@@ -5655,6 +5671,7 @@ species:
         institution: FAO
         method: FAO-56 Table 12
         conditions: Temperate, no stress
+  eppo_code: BROOL
 - name: buckwheat
   scientific_name: Fagopyrum esculentum
   agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_2879
@@ -5719,6 +5736,7 @@ species:
         institution: FAO
         method: FAO-56 Table 12
         conditions: Temperate, no stress
+  eppo_code: FAGES
 - name: cardoon
   scientific_name: Cynara cardunculus
   agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_2015
@@ -5783,6 +5801,7 @@ species:
         institution: FAO
         method: FAO-56 Table 12
         conditions: Mediterranean, no stress
+  eppo_code: CYNCA
 - name: cherry
   scientific_name: Prunus avium
   agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_6286
@@ -5847,6 +5866,7 @@ species:
         institution: FAO
         method: FAO-56 Table 12
         conditions: Temperate, no ground cover
+  eppo_code: PRNAV
 - name: chickpea
   scientific_name: Cicer arietinum
   agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_1612
@@ -5911,6 +5931,7 @@ species:
         institution: FAO
         method: FAO-56 Table 12
         conditions: Semi-arid, no stress
+  eppo_code: CIEAR
 - name: flax
   scientific_name: Linum usitatissimum
   agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_4355
@@ -5975,6 +5996,7 @@ species:
         institution: FAO
         method: FAO-56 Table 12
         conditions: Temperate, no stress
+  eppo_code: LINUS
 - name: garlic
   scientific_name: Allium sativum
   agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_261
@@ -6039,6 +6061,7 @@ species:
         institution: FAO
         method: FAO-56 Table 12
         conditions: Temperate, no stress
+  eppo_code: ALLSA
 - name: grass_pea
   scientific_name: Lathyrus sativus
   agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_4219
@@ -6103,6 +6126,7 @@ species:
         institution: FAO
         method: FAO-56 Table 12
         conditions: Semi-arid, no stress
+  eppo_code: LTHSA
 - name: hemp
   scientific_name: Cannabis sativa
   agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_1257
@@ -6167,6 +6191,7 @@ species:
         institution: FAO
         method: FAO-56 Table 12
         conditions: Temperate, no stress
+  eppo_code: CNUSA
 - name: leek
   scientific_name: Allium porrum
   agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_425
@@ -6231,6 +6256,7 @@ species:
         institution: FAO
         method: FAO-56 Table 12
         conditions: Temperate, no stress
+  eppo_code: ALLPO
 - name: lentil
   scientific_name: Lens culinaris
   agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_4261
@@ -6295,6 +6321,7 @@ species:
         institution: FAO
         method: FAO-56 Table 12
         conditions: Semi-arid, no stress
+  eppo_code: LENCU
 - name: oat
   scientific_name: Avena sativa
   agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_728
@@ -6359,6 +6386,7 @@ species:
         institution: FAO
         method: FAO-56 Table 12
         conditions: Semi-arid, no stress
+  eppo_code: AVESA
 - name: onion
   scientific_name: Allium cepa
   agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_362
@@ -6423,6 +6451,7 @@ species:
         institution: FAO
         method: FAO-56 Table 12
         conditions: Semi-arid, no stress, dry
+  eppo_code: ALLCE
 - name: pea
   scientific_name: Pisum sativum
   agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_5933
@@ -6487,6 +6516,7 @@ species:
         institution: FAO
         method: FAO-56 Table 12
         conditions: Semi-arid, no stress
+  eppo_code: PIBSX
 - name: peach
   scientific_name: Prunus persica
   agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_6357
@@ -6551,6 +6581,7 @@ species:
         institution: FAO
         method: FAO-56 Table 12
         conditions: Mediterranean, no ground cover
+  eppo_code: PRNPS
 - name: pear
   scientific_name: Pyrus communis
   agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_6369
@@ -6615,6 +6646,7 @@ species:
         institution: FAO
         method: FAO-56 Table 12
         conditions: Temperate, no ground cover
+  eppo_code: PYUCO
 - name: pistachio
   scientific_name: Pistacia vera
   agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_13438
@@ -6679,6 +6711,7 @@ species:
         institution: FAO
         method: FAO-56 Table 12
         conditions: Mediterranean, no ground cover
+  eppo_code: PIAVE
 - name: plum
   scientific_name: Prunus domestica
   agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_6282
@@ -6743,6 +6776,7 @@ species:
         institution: FAO
         method: FAO-56 Table 12
         conditions: Temperate, no ground cover
+  eppo_code: PRNDO
 - name: rapeseed
   scientific_name: Brassica napus
   agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_1066
@@ -6807,6 +6841,7 @@ species:
         institution: FAO
         method: FAO-56 Table 12
         conditions: Temperate, no stress
+  eppo_code: BRSNN
 - name: rye
   scientific_name: Secale cereale
   agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_6913
@@ -6871,6 +6906,7 @@ species:
         institution: FAO
         method: FAO-56 Table 12
         conditions: Semi-arid, no stress
+  eppo_code: SECCE
 - name: sugar_beet
   scientific_name: Beta vulgaris
   agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_891
@@ -6935,6 +6971,7 @@ species:
         institution: FAO
         method: FAO-56 Table 12
         conditions: Temperate, no stress
+  eppo_code: BEAVX
 - name: tomato
   scientific_name: Solanum lycopersicum
   agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_7805
@@ -6999,6 +7036,7 @@ species:
         institution: FAO
         method: FAO-56 Table 12
         conditions: Semi-arid, no stress, field
+  eppo_code: LYPES
 - name: vetch
   scientific_name: Vicia sativa
   agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_8222
@@ -7063,6 +7101,7 @@ species:
         institution: FAO
         method: FAO-56 Table 12
         conditions: Temperate, no stress
+  eppo_code: VICSA
 - name: faba_bean
   scientific_name: Vicia faba
   agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_8217
@@ -7127,6 +7166,7 @@ species:
         institution: FAO
         method: FAO-56 Table 12
         conditions: Temperate, no stress
+  eppo_code: VICFX
 - name: pepper
   scientific_name: Capsicum annuum
   agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_1282
@@ -7191,6 +7231,7 @@ species:
         institution: FAO
         method: FAO-56 Table 12
         conditions: Semi-arid, field, no stress
+  eppo_code: CPSAN
 - name: eggplant
   scientific_name: Solanum melongena
   agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_7218
@@ -7255,6 +7296,7 @@ species:
         institution: FAO
         method: FAO-56 Table 12
         conditions: Semi-arid, no stress
+  eppo_code: SOLME
 - name: strawberry
   scientific_name: Fragaria x ananassa
   agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_3082
@@ -7319,6 +7361,7 @@ species:
         institution: FAO
         method: FAO-56 Table 12
         conditions: Temperate, perennial, no stress
+  eppo_code: FRAAN
 - name: melon
   scientific_name: Cucumis melo
   agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_2003
@@ -7383,6 +7426,7 @@ species:
         institution: FAO
         method: FAO-56 Table 12
         conditions: Semi-arid, no stress
+  eppo_code: CUMME
 - name: bitter_vetch
   scientific_name: Vicia ervilia
   agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_8219
@@ -7447,3 +7491,4 @@ species:
         institution: FAO
         method: FAO-56 Table 12
         conditions: Semi-arid, no stress
+  eppo_code: VICER
