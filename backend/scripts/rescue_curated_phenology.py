@@ -160,12 +160,14 @@ def main() -> int:
                 existing = stage_by_name[new_stage["name"]]
                 if _has_source(existing.get("parameters", []), short):
                     skipped += 1
-                    continue
-                existing.setdefault("parameters", []).extend(new_stage["parameters"])
-                added_params += len(new_stage["parameters"])
+                else:
+                    existing.setdefault("parameters", []).extend(new_stage["parameters"])
+                    added_params += len(new_stage["parameters"])
             else:
                 stages.append(new_stage)
                 added_stages += 1
+                # refresh index so a later add_param_to_stage on this new stage works
+                stage_by_name[new_stage["name"]] = new_stage
 
         if "add_param_to_stage" in spec:
             ap = spec["add_param_to_stage"]
