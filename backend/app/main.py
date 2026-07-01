@@ -34,6 +34,9 @@ from app.ingestion.sync import sync_all_agri_crops
 # K8s probes hit /healthz and /readyz every 10-30s — must be fast and never rate-limited.
 _ikerketa_available = False
 
+# Strong refs to long-lived background tasks (prevents GC of run_loop et al.).
+_BG_TASKS: set = set()
+
 
 async def _ensure_catalog_subscription():
     """Ensure the AgriCrop subscription exists in the canonical catalog tenant.
@@ -44,7 +47,7 @@ async def _ensure_catalog_subscription():
     """
     registrar = SubscriptionRegistrar(
         orion_url=settings.orion_ld_url,
-        notification_url="http://bioorchestrator-service:8420/api/ngsi-ld/notify",
+        notification_url="http://bioorchestrator-api-service:8420/api/ngsi-ld/notify",
         subscriptions=[{"type": "AgriCrop"}],
         module_name="bioorchestrator",
         context_url=settings.context_url,
@@ -123,14 +126,16 @@ async def _start_background_tasks():
         from app.workers.rule_worker import handle_evaluate_action_rules
         background_queue.register("sync_agri_crop", handle_sync_agri_crop)
         background_queue.register("evaluate_action_rules", handle_evaluate_action_rules)
-        asyncio.create_task(background_queue.run_loop())
-        asyncio.create_task(_ensure_catalog_subscription())
+        # Keep strong refs: a bare create_task can be garbage-collected, which
+        # silently kills the forever-running run_loop (queue then never dispatches).
+        _BG_TASKS.add(asyncio.create_task(background_queue.run_loop()))
+        _BG_TASKS.add(asyncio.create_task(_ensure_catalog_subscription()))
         async def _reconcile_guarded():
             try:
                 await _reconcile_catalog()
             except Exception as exc:
                 print(f"[bioorchestrator] WARNING: catalog reconcile failed: {exc}")
-        asyncio.create_task(_reconcile_guarded())
+        _BG_TASKS.add(asyncio.create_task(_reconcile_guarded()))
         print("[bioorchestrator] background tasks started")
     except Exception as exc:
         print(f"[bioorchestrator] WARNING: background tasks init failed: {exc}")
