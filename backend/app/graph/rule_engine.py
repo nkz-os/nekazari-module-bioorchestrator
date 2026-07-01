@@ -5,6 +5,9 @@ writes phenologyStage to the broker. Missing context field → clause is False
 (fail-safe: never fire a management recommendation on absent data).
 """
 from __future__ import annotations
+import logging
+
+logger = logging.getLogger(__name__)
 
 _MISSING = object()
 
@@ -95,3 +98,28 @@ def build_advisory(rule: dict, context: dict, tenant_id: str, parcel_id: str,
     if rule.get("source_short"):
         adv["sourceShort"] = {"type": "Property", "value": rule["source_short"]}
     return adv
+
+
+async def evaluate(dao, orion, tenant_id: str, parcel_id: str, observed: dict) -> list[dict]:
+    """Fetch the parcel's assigned crop, evaluate action rules, upsert advisories.
+
+    Returns the advisories produced (idempotent upsert; empty if no crop/no match).
+    """
+    parcel = await orion.get_entity(parcel_id, options="keyValues")
+    crop_id = parcel.get("hasAgriCrop") or parcel.get("refAgriCrop")
+    if not crop_id:
+        return []
+    crop = await orion.get_entity(crop_id, options="keyValues")
+    stage = observed.get("phenology.current_stage")
+    context = flatten_context(crop, observed)
+    rules = await dao.get_action_rules(species=crop.get("species"))
+    advisories = []
+    for rule in rules:
+        if evaluate_conditions(rule.get("conditions", {}), context):
+            adv = build_advisory(rule, context, tenant_id, parcel_id, crop_id, stage)
+            advisories.append(adv)
+            logger.info("action-rule matched: rule=%s parcel=%s stage=%s urgency=%s",
+                        rule["id"], parcel_id, stage, rule.get("action", {}).get("urgency"))
+    if advisories:
+        await orion.upsert_entities_batch(advisories)
+    return advisories

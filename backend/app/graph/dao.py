@@ -4380,7 +4380,7 @@ class GraphDAO:
 
         return result
 
-    # ── Action Rules (agronomist-editable, evaluated by crop-health) ────────────
+    # ── Action Rules (agronomist-editable, evaluated by BioOrchestrator) ─────────
 
     async def get_action_rules(
         self, species: str | None = None, stage: str | None = None, role: str | None = None
@@ -4388,7 +4388,8 @@ class GraphDAO:
         """Candidate ActionRules: species-linked (active) + generic (no species link).
 
         Filtering by stage/role is intentionally permissive — this returns the
-        candidate set; the crop-health engine performs the precise condition match.
+        candidate set; BioOrchestrator's rule_engine performs the precise
+        condition match (Contract 2: bioorch evaluates, crop-health observes).
         """
         async with self._driver.session() as session:
             result = await session.run(
