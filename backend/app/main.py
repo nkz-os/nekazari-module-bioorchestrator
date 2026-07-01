@@ -120,7 +120,9 @@ async def _start_background_tasks():
     try:
         from app.workers.queue import background_queue
         from app.workers.sync_worker import handle_sync_agri_crop
+        from app.workers.rule_worker import handle_evaluate_action_rules
         background_queue.register("sync_agri_crop", handle_sync_agri_crop)
+        background_queue.register("evaluate_action_rules", handle_evaluate_action_rules)
         asyncio.create_task(background_queue.run_loop())
         asyncio.create_task(_ensure_catalog_subscription())
         async def _reconcile_guarded():
@@ -208,10 +210,12 @@ app.include_router(api_router, prefix="/api")
 from app.api.v1.catalog import router as catalog_router  # noqa: E402
 from app.api.v1.notify import router as notify_router  # noqa: E402
 from app.api.v1.parcel_data import router as parcel_data_router  # noqa: E402
+from app.api.v1.phenology_notify import router as phenology_notify_router  # noqa: E402
 
 app.include_router(catalog_router, prefix="/api/crop")
 app.include_router(notify_router, prefix="/api/ngsi-ld")
 app.include_router(parcel_data_router, prefix="/api")
+app.include_router(phenology_notify_router, prefix="/api/graph/internal")
 
 # Register IkerKeta API routes directly on the main app
 # (don't use app.mount() — it double-prefixes and / mount kills healthz)

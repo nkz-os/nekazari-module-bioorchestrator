@@ -54,6 +54,9 @@ SKIP_AUTH_PREFIXES: dict[str, set[str]] = {
     # api-gateway, no JWT). NetworkPolicy gates ingress. Without this the
     # production auth branch 401s every notification and the catalog sync dies.
     "/api/ngsi-ld/": {"*"},
+    # Internal in-cluster receivers (e.g. phenology-update from crop-health Orion sub).
+    # No JWT in sub notifications; NetworkPolicy gates ingress.
+    "/api/graph/internal/": {"*"},
 }
 
 

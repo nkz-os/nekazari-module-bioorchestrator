@@ -10,6 +10,7 @@ from neo4j import AsyncDriver
 from nkz_platform_sdk.agronomy import (
     AgronomicValue, Source, confidence_from_match,
 )
+from nkz_platform_sdk.orion import OrionClient
 
 from app.core.dependencies import get_neo4j_driver
 from app.graph.dao import GraphDAO
@@ -381,7 +382,6 @@ async def variety_catalogue(
 ):
     """Return varieties for a species from Orion-LD via hasSubCrop."""
     from app.ingestion.uri import agri_crop_uri
-    from nkz_platform_sdk.orion import OrionClient
     from app.core.config import settings
 
     parent_uri = agri_crop_uri(species)
@@ -423,6 +423,22 @@ async def crop_name(
     if not name:
         raise HTTPException(status_code=404, detail=f"No '{lang}' name for {slug}")
     return {"eppo": eppo.strip().upper(), "slug": slug, "name": name}
+
+
+@router.get("/agriculture/advisories")
+async def list_advisories(request: Request, parcel_id: str = Query(...)):
+    """CropAdvisory recommendations for a parcel (bioorch-owned, read from the broker)."""
+    tenant_id = _get_tenant_id(request)
+    client = OrionClient(tenant_id)
+    try:
+        rows = await client.query_entities(
+            type="CropAdvisory",
+            q=f'hasAgriParcel=="{parcel_id}"',
+            limit=100, options="keyValues",
+        )
+    finally:
+        await client.close()
+    return {"parcel_id": parcel_id, "advisories": rows}
 
 
 @router.get("/pollinators")
