@@ -1,15 +1,16 @@
 """Per-parcel data aggregation endpoints (vegetation, soil)."""
-from datetime import datetime as dt
+from datetime import datetime as dt, timedelta
 
 from fastapi import APIRouter, HTTPException, Query, Request
 from nkz_platform_sdk.orion import OrionClient
 
-from app.services.timescale import compute_trend, query_vegetation_timeseries
+from app.services.timescale import compute_trend
 
 router = APIRouter(prefix="/parcel", tags=["parcel-data"])
 
 VALID_INDICES = ("ndvi", "evi", "savi", "gndvi", "ndre", "ndwi")
 VALID_PERIODS = ("1m", "3m", "6m", "1y", "season")
+_PERIOD_DAYS = {"1m": 30, "3m": 90, "6m": 180, "1y": 365}
 
 
 def _veg_unavailable(index: str, period: str) -> dict:
@@ -53,15 +54,19 @@ async def parcel_vegetation(
 
     try:
         try:
-            entities = await orion.query_entities(type="VegetationIndex", q=f'hasAgriParcel=="{parcel_urn}"|refAgriParcel=="{parcel_urn}"', limit=1)
+            entities = await orion.query_entities(
+                type="EOProduct",
+                q=f'hasAgriParcel=="{parcel_urn}"|refAgriParcel=="{parcel_urn}"',
+                limit=200,
+                options="keyValues",
+            )
         except Exception:
             return _veg_unavailable(index, period)
 
         if not entities:
             return _veg_unavailable(index, period)
 
-        entity_id = entities[0].get("id", "")
-
+        # Window start (YYYY-MM-DD): crop season start, or a fixed lookback.
         since = None
         if period == "season":
             try:
@@ -70,17 +75,35 @@ async def parcel_vegetation(
                 )
                 if seasons:
                     start_raw = seasons[0].get("startDate", {})
-                    if isinstance(start_raw, dict):
-                        start_val = start_raw.get("value")
-                        if start_val:
-                            since = dt.fromisoformat(start_val.replace("Z", "+00:00"))
+                    start_val = start_raw.get("value") if isinstance(start_raw, dict) else start_raw
+                    if start_val:
+                        since = str(start_val)[:10]
             except Exception:
                 since = None
+        elif period in _PERIOD_DAYS:
+            since = (dt.utcnow() - timedelta(days=_PERIOD_DAYS[period])).strftime("%Y-%m-%d")
 
-        attr_name = f"{index}Mean"
-        observations = query_vegetation_timeseries(entity_id, attr_name, period, since)
+        # EOProduct = one entity per sensingDate; the index (lowercased) is a named
+        # Property whose keyValues value is the zonal mean.
+        observations = []
+        for e in entities:
+            date_val = str(e.get("sensingDate", "") or "")[:10]
+            raw = e.get(index)
+            if not date_val or raw is None:
+                continue
+            try:
+                val = float(raw)
+            except (TypeError, ValueError):
+                continue
+            if since and date_val < since:
+                continue
+            observations.append({"date": date_val, "value": val})
 
-        current_value = observations[-1]["value"] if observations else None
+        observations.sort(key=lambda o: o["date"])
+        if not observations:
+            return _veg_unavailable(index, period)
+
+        current_value = observations[-1]["value"]
         trend = compute_trend(observations)
 
         return {
@@ -92,7 +115,7 @@ async def parcel_vegetation(
             "trend": trend,
             "count": len(observations),
             "source": "Sentinel-2 L2A (ESA Copernicus)",
-            "processor": "vegetation-health v2.0.0",
+            "processor": "vegetation-health",
         }
     finally:
         await orion.close()
