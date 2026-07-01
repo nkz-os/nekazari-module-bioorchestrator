@@ -1,4 +1,5 @@
-from app.graph.rule_engine import evaluate_conditions
+from datetime import date
+from app.graph.rule_engine import evaluate_conditions, flatten_context, build_advisory
 
 BASE = {"crop.role": "cover_crop", "crop.status": "active",
         "crop.termination_method": "roller_crimper", "phenology.current_stage": "flowering"}
@@ -28,3 +29,38 @@ def test_numeric_and_membership_ops():
 def test_empty_tree_is_true():
     assert evaluate_conditions({}, BASE) is True
     assert evaluate_conditions({"all": []}, BASE) is True
+
+
+def test_flatten_maps_crop_and_phenology():
+    crop = {"role": "cover_crop", "status": "active", "species": "VICSA",
+            "terminationMethod": "roller_crimper", "sowingWindowStart": "2026-10-20"}
+    ctx = flatten_context(crop, {"phenology.current_stage": "flowering", "water_deficit_mm": 12},
+                          today=date(2026, 10, 15))
+    assert ctx["crop.role"] == "cover_crop"
+    assert ctx["crop.termination_method"] == "roller_crimper"
+    assert ctx["crop.days_until_sowing_window"] == 5
+    assert ctx["phenology.current_stage"] == "flowering"
+    assert ctx["water_deficit_mm"] == 12
+
+def test_flatten_tolerates_missing_sowing_window():
+    ctx = flatten_context({"role": "main_crop", "status": "active"}, {}, today=date(2026, 1, 1))
+    assert "crop.days_until_sowing_window" not in ctx
+    assert ctx["crop.role"] == "main_crop"
+
+def test_build_advisory_shape_and_deterministic_id():
+    rule = {"id": "cover_crop_termination_flowering",
+            "action": {"operation_type": "tillage", "urgency": "high", "window_days": 7,
+                       "description_template": "Tumbar la cubierta de {crop.species} con roller crimper"},
+            "source_doi": "10.x", "source_short": "INTIA"}
+    ctx = {"crop.species": "VICSA", "phenology.current_stage": "flowering"}
+    adv = build_advisory(rule, ctx, "montiko", "urn:ngsi-ld:AgriParcel:montiko:p1",
+                         "urn:ngsi-ld:AgriCrop:montiko:p1:2026", "flowering", now="2026-06-30T10:00:00Z")
+    assert adv["id"] == "urn:ngsi-ld:CropAdvisory:montiko:p1:cover_crop_termination_flowering:flowering"
+    assert adv["type"] == "CropAdvisory"
+    assert adv["hasAgriParcel"]["object"] == "urn:ngsi-ld:AgriParcel:montiko:p1"
+    assert adv["hasAgriCrop"]["object"] == "urn:ngsi-ld:AgriCrop:montiko:p1:2026"
+    assert adv["operationType"]["value"] == "tillage"
+    assert adv["description"]["value"] == "Tumbar la cubierta de VICSA con roller crimper"
+    assert adv["urgency"]["value"] == "high"
+    assert adv["phenologyStage"]["value"] == "flowering"
+    assert adv["status"]["value"] == "open"
