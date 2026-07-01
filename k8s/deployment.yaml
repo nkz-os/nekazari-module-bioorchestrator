@@ -21,7 +21,7 @@ spec:
     spec:
       containers:
         - name: backend
-          image: ghcr.io/nkz-os/bioorchestrator-backend:6e2cf5459d008c7779f2f22c824a403387f7076f  # CI auto-bump on push
+          image: ghcr.io/nkz-os/bioorchestrator-backend:a7643e9ffaa6f7f3cd8d7e5b9c4c410f20960f2a  # CI auto-bump on push
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8420
