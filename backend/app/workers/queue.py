@@ -1,9 +1,12 @@
 """Simple background task queue with Redis or in-memory fallback."""
 import asyncio
 import json
+import logging
 import os
 from collections import deque
 from typing import Any, Callable, Awaitable
+
+logger = logging.getLogger(__name__)
 
 
 class BackgroundQueue:
@@ -60,6 +63,9 @@ class BackgroundQueue:
             try:
                 await self.process_one()
             except Exception:
+                # Never let one bad task kill the loop — but DO surface it;
+                # a silent swallow here once hid a fully non-dispatching queue.
+                logger.warning("background task failed", exc_info=True)
                 await asyncio.sleep(1)
             await asyncio.sleep(0.1)  # Yield to event loop, prevent CPU starvation
 
