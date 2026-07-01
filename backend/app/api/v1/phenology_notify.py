@@ -1,20 +1,24 @@
 """Receiver for Orion-LD notifications on CropHealthAssessment.phenologyStage.
 
 Auth-exempt (/api/graph/internal/ in SKIP_AUTH_PREFIXES). Responds 200 fast and
-enqueues rule evaluation. bioorch reads the state crop-health wrote; it never
-recomputes it. In-process dedup collapses repeated same-stage notifications.
+dispatches rule evaluation on the serving event loop. bioorch reads the state
+crop-health wrote; it never recomputes it. In-process dedup collapses repeated
+same-stage notifications.
 """
+import asyncio
 import logging
 
 from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
 
-from app.workers.queue import background_queue
+from app.workers.rule_worker import handle_evaluate_action_rules
 
 router = APIRouter(tags=["internal"])
 logger = logging.getLogger(__name__)
 
 _LAST_STAGE: dict[tuple[str, str], str] = {}
+# Keep strong refs to in-flight tasks so the loop doesn't GC them mid-run.
+_BG_TASKS: set = set()
 
 
 def _kv(prop):
@@ -22,6 +26,18 @@ def _kv(prop):
     if isinstance(prop, dict):
         return prop.get("value", prop.get("object"))
     return prop
+
+
+def _dispatch(tenant_id: str, parcel_id: str, observed: dict) -> None:
+    """Fire-and-forget rule evaluation on the current serving loop.
+
+    Uses create_task (not the shared background_queue) so the Neo4j/Orion
+    clients run on the same loop that owns them, and failures surface in the
+    handler's own logging instead of being swallowed by the queue loop.
+    """
+    task = asyncio.create_task(handle_evaluate_action_rules(tenant_id, parcel_id, observed))
+    _BG_TASKS.add(task)
+    task.add_done_callback(_BG_TASKS.discard)
 
 
 @router.post("/phenology-update")
@@ -46,9 +62,7 @@ async def phenology_update(request: Request):
         for extra in ("waterDeficitMm", "nRequirementKgHa"):
             if extra in entity:
                 observed[_SNAKE[extra]] = _kv(entity[extra])
-        await background_queue.enqueue("evaluate_action_rules", tenant_id, parcel_id, observed)
-        # Record the stage only AFTER a successful enqueue, so a failed enqueue
-        # (Redis mode) isn't deduped away on Orion's retry.
+        _dispatch(tenant_id, parcel_id, observed)
         _LAST_STAGE[key] = stage
         queued += 1
     return {"status": "accepted", "queued": queued}
