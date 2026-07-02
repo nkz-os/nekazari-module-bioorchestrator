@@ -17,11 +17,12 @@
 
 BioOrchestrator is the **agronomic intelligence layer** of the Nekazari precision agriculture platform. It combines a Neo4j knowledge graph with 29 federated scientific data sources to deliver:
 
-- **Crop knowledge** — variety trials, phenology parameters, thermal limits, NPK profiles, soil requirements, rotation constraints
-- **Parcel intelligence** — crop comparator, rotation planner, regenerative sequence designer, water budget, alerts
+- **Crop knowledge** — 34k+ variety trials, phenology parameters, thermal limits, NPK profiles, soil requirements, rotation constraints
+- **Parcel intelligence** — crop comparator, rotation planner, multi-segment crop plan, regenerative sequence designer, water budget, alerts
+- **Closed-loop advisories** — when Crop-Health writes a new phenological stage to the broker, BioOrchestrator evaluates agronomist-editable action rules and emits a `CropAdvisory` (e.g. *terminate the cover crop at flowering with a roller crimper*) — the crop-health ⇄ bioorch feedback loop (Contract 2)
 - **Reference data** — crop catalog, climate explorer, phenology browser, organic inputs, DAD-IS livestock breeds
 
-All parameters carry **full scientific provenance** (DOI, institution, method, conditions) so every recommendation is auditable.
+All parameters carry **full scientific provenance** (`sourceType`: global_standard / peer_reviewed_study / extension_advisory, plus DOI, institution, method) so every recommendation is auditable. Trial yields distinguish **measured vs derived** (`yield_provenance`) so approximations are never presented as measurements.
 
 ---
 
@@ -49,7 +50,7 @@ All parameters carry **full scientific provenance** (DOI, institution, method, c
                     │       BioOrchestrator Backend            │
                     │           FastAPI :8420                  │
                     │  ┌──────────────────────────────────────┐│
-                    │  │ /api/graph/*       — 34 endpoints    ││
+                    │  │ /api/graph/*       — 49 endpoints    ││
                     │  │ /api/crop/catalog  — 7 endpoints     ││
                     │  │ /api/bioorchestrator — sources, pipe ││
                     │  │ /api/dadis/*       — 4 endpoints     ││
@@ -87,6 +88,7 @@ All parameters carry **full scientific provenance** (DOI, institution, method, c
 | **Parcel Health** | Real-time CWSI/MDS/water balance from Crop-Health module with historical chart |
 | **Water Budget** | ETc × Kc irrigation demand using real ET0 from timeseries-reader |
 | **Regenerative Sequence** | Cover crop → protein crop design with N fixation, water balance, **carbon projection** (SOC, CO₂e, €) |
+| **Crop Plan & Advisories** | Multi-segment rotation (cover → main → catch) committed as an `AgriCrop` set; **`CropAdvisory`** recommendations auto-triggered when Crop-Health reports a phenology change (Contract 2 action-rule loop) |
 | **Alerts** | Redis-sourced parcel alerts with severity filter, **🐝 eco-warnings** (GBIF pollinators + pesticide safety) |
 
 ### 📚 Reference Data
@@ -124,6 +126,21 @@ BioOrchestrator enriches agronomic decisions with real-time environmental intell
 | 🇪🇺 **PAC Compliance** | Evaluates rotation plans against CAP eco-scheme rules: winter cover on slopes >10% (Copernicus DEM), Natura 2000 buffer zones, crop diversity minimums, winter soil cover, pesticide limits — produces a 0-100% compliance score |
 | 🌱 **Carbon Projection** | Calculates SOC increase from cover crop biomass using IPCC 2019 Tier 1 humification coefficients, projects years to reach optimal SOC by soil texture, and estimates fertilizer savings (€/ha) from biological N fixation |
 
+### 🔄 Closed-Loop Advisories (Contract 2)
+
+BioOrchestrator plans and recommends; Crop-Health observes real state. The two close a loop through the Orion-LD broker — no polling, no HTTP push:
+
+```
+Crop-Health writes CropHealthAssessment.phenologyStage=flowering  (broker, per-tenant)
+        │  NGSI-LD subscription (watchedAttributes: phenologyStage)
+        ▼
+POST /api/graph/internal/phenology-update  →  evaluate agronomist-editable ActionRules (Neo4j)
+        ▼
+CropAdvisory upserted to the broker  →  GET /api/graph/agriculture/advisories
+```
+
+BioOrchestrator **reads** the state Crop-Health computed — it never recomputes phenology. A matched rule (e.g. *cover crop reached flowering + roller-crimper termination*) produces a `CropAdvisory` (a recommendation in the Plan layer), never an `AgriParcelOperation` (the actual event, owned by Field-Operations). The subscription is registered lazily, per-tenant, when a crop is assigned.
+
 ### 🌍 Multi-language
 
 Full i18n support in **6 languages**: English, Spanish, Basque, French, Portuguese, Catalan.
@@ -140,14 +157,18 @@ Full i18n support in **6 languages**: English, Spanish, Basque, French, Portugue
 | `GET /trial-sites` | List trial sites with climate metadata |
 | `GET /variety-trials` | Raw variety trial results with env filters |
 | `GET /similar-sites` | Find sites similar to a target environment |
-| `GET /extrapolate` | Rank varieties for a crop+climate+soil combination |
+| `GET /extrapolate` | Rank varieties for a crop+climate+soil combination — each variety carries `yield_provenance` (measured/partial/derived) and optional weather-adjusted penalties |
+| `GET /crop-name` | Localized crop name from EPPO code (used by Field-Operations/ROPO) |
 | `GET /compare-crops` | Multi-crop comparison (agronomic, environmental, economic) |
 | `GET /rotation-plan` | Multi-year rotation + PAC compliance evaluation (eco-schemes) |
 | `GET /regenerative-sequence` | Cover crop → protein crop + carbon projection (SOC, CO₂e) |
 | `GET /crop-context` | Full crop context for a parcel (phenology, thermal, soil) |
 | `GET /yield-potential` | Expected yield with confidence interval from trials |
 | `GET /water-budget` | ETc-based irrigation demand per parcel |
-| `POST /assign-crop` | Assign variety + management to a parcel |
+| `POST /assign-crop` | Assign variety + management — single source of truth for `AgriParcel.hasAgriCrop`; registers the per-tenant phenology subscription |
+| `POST /crop-plan` · `GET /crop-plan` | Multi-segment crop plan (cover/main/catch) as a dated `AgriCrop` set |
+| `POST /crop-plan/{parcel}/segments/{seq}/advance` | Mark a segment sown — planned → active → harvested transition |
+| `GET /advisories` | `CropAdvisory` recommendations for a parcel (output of the Contract-2 action-rule loop) |
 | `GET /alerts` | Redis-sourced alerts + eco-impact enrichment (pollinators, pesticides) |
 | `GET /organic-inputs` | FiBL authorized inputs per crop pest |
 
@@ -156,8 +177,10 @@ Full i18n support in **6 languages**: English, Spanish, Basque, French, Portugue
 | Endpoint | Description |
 |----------|-------------|
 | `GET /species` | List species in graph |
-| `GET /phenology-params` | Kc/D1/D2/MDS with GDD stage matching |
+| `GET /phenology-params` | Kc/D1/D2/MDS with GDD stage matching + `sourceType` provenance tier |
+| `GET /phenology-stages` | Phenological stages per species |
 | `POST /phenology-params/contribute` | Submit parameter for review |
+| `GET · POST · PUT /action-rules` | Agronomist-editable rules evaluated by the Contract-2 loop |
 | `GET /heat-tolerance` | Thermal damage thresholds |
 | `GET /nutrient-profile` | NPK uptake per stage |
 | `GET /soil-suitability` | Soil requirements per species |
@@ -168,7 +191,6 @@ Full i18n support in **6 languages**: English, Spanish, Basque, French, Portugue
 | `GET /soil-data` | SoilGrids 2.0 + LUCAS 2018 proxy |
 | `GET /protected-area-check` | Natura 2000 proximity |
 | `GET /varieties` | CPVO registered varieties |
-| `GET /pesticides` | EU authorized substances |
 | `GET /pollinators` | GBIF pollinator species |
 | `GET /terrain` | Copernicus DEM elevation |
 | `GET /climate-reference` | ERA5-Land climate normals |
@@ -210,6 +232,7 @@ Full i18n support in **6 languages**: English, Spanish, Basque, French, Portugue
 | **AGROVOC** | Thesaurus | Entity linking |
 | **JRC MARS Bulletins** | Crop monitoring | Cover crop reference |
 | **INTIA Navarra** | Field trials | Cover crop + N fixation |
+| **EU Trial Reports** | Variety trials (LfL, COBORU, SLU, Arvalis, CSIC, IFAPA, BRESOV…) | Extrapolate, Comparator (real measured yields) |
 | **Legumes Translated** | H2020 practice notes | Cover crop management |
 | **DAD-IS** | Livestock breeds | Breed discovery |
 | **GlobalTreeSearch** | Tree species | Forestry domain |
@@ -282,6 +305,19 @@ kubectl apply -f k8s/service.yaml -n nekazari
 kubectl exec -n nekazari deploy/bioorchestrator-backend -- \
   python scripts/seed_phenology.py --neo4j-uri bolt://bioorchestrator-neo4j:7687
 ```
+
+### Ingest variety trials
+
+Each source has a `BaseIngester` subclass under `app/ingestion/` that maps its
+JSON-LD `@graph` to canonical nodes (dry-run by default):
+
+```bash
+python -m app.ingestion.eu_trials_ingester \
+  --jsonld ../nkz-cpvo-scraper/data/jsonld/eu_trials_v1.jsonld --apply
+```
+
+The scraper emits one `TrialSite` per distinct `trial_location` (name matched
+exactly) so trials link via `TRIAL_AT` and become visible to `extrapolate`.
 
 ---
 
