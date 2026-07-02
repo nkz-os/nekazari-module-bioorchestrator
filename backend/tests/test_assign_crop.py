@@ -125,6 +125,69 @@ async def test_assign_crop_409_upserts():
         MockClient.assert_called_once_with(tenant_id="test-tenant")
 
 
+@pytest.mark.asyncio
+async def test_assign_crop_populates_name_and_scientific_name():
+    """AgriCrop must carry a human-readable name + scientificName resolved from EPPO.
+
+    Without these, frontends reading AgriCrop.name see an empty label (audit
+    2026-07-01). name follows the platform convention (crop-name defaults to es).
+    """
+    mock_driver = AsyncMock()
+    dao = GraphDAO(mock_driver)
+
+    with patch("app.graph.dao.OrionClient") as MockClient:
+        instance = MockClient.return_value
+        instance.create_entity = AsyncMock(return_value={"id": "new-id"})
+        instance.get_entity = AsyncMock(side_effect=Exception("not found"))
+        instance.update_entity_attrs = AsyncMock()
+        instance.append_entity_attrs = AsyncMock()
+        instance.close = AsyncMock()
+
+        await dao.assign_crop_to_parcel(
+            parcel_id="urn:ngsi-ld:AgriParcel:test-parcel",
+            crop_uri="urn:ngsi-ld:AgriCrop:TRZAX",
+            variety_uri="urn:ngsi-ld:AgriCropVariety:LG_AURUS",
+            management="conventional",
+            season_start="2026-03-01",
+            season_end="2026-06-30",
+            tenant_id="test-tenant",
+        )
+
+        body = instance.create_entity.call_args[0][0]
+        assert body["scientificName"]["value"] == "Triticum aestivum"
+        assert body["name"]["value"] == "trigo"          # es common name (platform default)
+        assert body["name"]["value"] != "TRZAX"           # never the raw EPPO code
+
+
+@pytest.mark.asyncio
+async def test_assign_crop_unknown_eppo_omits_labels():
+    """Unknown EPPO must not crash nor emit empty/garbage name/scientificName."""
+    mock_driver = AsyncMock()
+    dao = GraphDAO(mock_driver)
+
+    with patch("app.graph.dao.OrionClient") as MockClient:
+        instance = MockClient.return_value
+        instance.create_entity = AsyncMock(return_value={"id": "new-id"})
+        instance.get_entity = AsyncMock(side_effect=Exception("not found"))
+        instance.update_entity_attrs = AsyncMock()
+        instance.append_entity_attrs = AsyncMock()
+        instance.close = AsyncMock()
+
+        await dao.assign_crop_to_parcel(
+            parcel_id="urn:ngsi-ld:AgriParcel:test-parcel",
+            crop_uri="urn:ngsi-ld:AgriCrop:ZZZZZ",
+            variety_uri="urn:ngsi-ld:AgriCropVariety:X",
+            management="conventional",
+            season_start="2026-03-01",
+            season_end="2026-06-30",
+            tenant_id="test-tenant",
+        )
+
+        body = instance.create_entity.call_args[0][0]
+        assert "name" not in body
+        assert "scientificName" not in body
+
+
 # ── clear_crop_assignment ──────────────────────────────────────────────────────
 
 @pytest.mark.asyncio

@@ -2013,6 +2013,18 @@ class GraphDAO:
         crop_eppo = crop_uri.split(":")[-1] if crop_uri else "unknown"
         variety_name = variety_uri.split(":")[-1] if variety_uri else None
 
+        # Resolve a human-readable name + scientificName from the EPPO code so
+        # frontends reading AgriCrop.name/scientificName get a real label instead
+        # of an empty field (audit 2026-07-01). Platform convention: the
+        # crop-name endpoint defaults to Spanish, so prefer es → en → scientific.
+        from app.species_registry import get_species_info, resolve_species
+
+        _slug = resolve_species(crop_eppo) if crop_eppo and crop_eppo != "unknown" else None
+        _info = get_species_info(_slug) if _slug else None
+        _common = (_info.get("common_names") if _info else None) or {}
+        crop_scientific = _info.get("scientific_name") if _info else None
+        crop_name_label = _common.get("es") or _common.get("en") or crop_scientific
+
         # Build entity ID for the per-parcel AgriCrop
         new_crop_id = f"urn:ngsi-ld:AgriCrop:{tenant_id}:{parcel_short}:{season_year}"
 
@@ -2058,6 +2070,16 @@ class GraphDAO:
             agri_crop_body["variety"] = {
                 "type": "Property",
                 "value": variety_name,
+            }
+        if crop_name_label:
+            agri_crop_body["name"] = {
+                "type": "Property",
+                "value": crop_name_label,
+            }
+        if crop_scientific:
+            agri_crop_body["scientificName"] = {
+                "type": "Property",
+                "value": crop_scientific,
             }
 
         client = OrionClient(tenant_id=tenant_id)
