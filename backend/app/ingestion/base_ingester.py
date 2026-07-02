@@ -414,23 +414,14 @@ class BaseIngester(ABC):
         count = 0
         async with driver.session() as session:
             for node in active:
-                merge_key = self._get_merge_key(node)
-                if not merge_key:
+                unique_key = self._variety_unique_key(node)
+                if not unique_key:
                     continue
-                # Compute a content hash as suffix to guarantee uniqueness
-                # across all sources, even when @id or mergeKey have collisions
-                node_snapshot = {k: v for k, v in node.items()
-                                if k not in ("mergeKey", "trial_id", "source_id")}
-                content_hash = hashlib.md5(
-                    json.dumps(node_snapshot, sort_keys=True, default=str).encode()
-                ).hexdigest()[:12]
-                unique_key = f"{merge_key}|{content_hash}"
                 eppo_raw = node.get("cropEppo") or ""
                 await session.run(
                     """
                     MERGE (vt:VarietyTrial {mergeKey: $unique_key})
                     SET vt.source_id = $source,
-                        vt.mergeKey = $merge_key,
                         vt.cropEppo = $eppo,
                         vt.cropScientific = $sci_name,
                         vt.variety = $variety,
@@ -473,7 +464,6 @@ class BaseIngester(ABC):
                         vt.updatedAt = datetime()
                     """,
                     unique_key=unique_key,
-                    merge_key=merge_key,
                     merge_key_norm=node.get("mergeKeyNormalized"),
                     source=node.get("source_id", self.SOURCE_ID),
                     eppo=eppo_raw.replace("eppo:", ""),
@@ -568,74 +558,40 @@ class BaseIngester(ABC):
         variety_trials: list[dict],
         management_trials: list[dict],
     ) -> int:
-        """Create TRIAL_AT and SOURCED_FROM relationships.
+        """Create TRIAL_AT relationships deterministically.
 
-        Matches TrialSite by name (lowercase) and ArticleSource by mergeKey.
+        Links trials to TrialSites by the stable ``(source_id, trialLocation ==
+        TrialSite.name)`` pair, scoped to this source over the whole graph, in a
+        single query per node type. A re-ingest therefore re-links previously
+        orphaned trials of the source.
+
+        The former per-node match by a recomputed ``merge_key|content_hash``
+        unique_key produced 0 TRIAL_AT (~16k orphans, incl. all of BSL/AHDB):
+        the stored key had been overwritten with the short one, so the lookup
+        never matched. ``location == name`` is what the scrapers guarantee (one
+        TrialSite whose name equals each trialLocation) and mirrors the proven
+        ``EuTrialsIngester`` override.
         """
         count = 0
-        if not variety_trials and not management_trials:
-            return count
+
+        async def _link(session, label: str) -> int:
+            result = await session.run(
+                f"MATCH (n:{label} {{source_id: $sid}}), "
+                "      (t:TrialSite {source_id: $sid}) "
+                "WHERE toLower(n.trialLocation) = toLower(t.name) "
+                "   OR toLower(n.trialLocation) = toLower(t.municipality) "
+                "MERGE (n)-[:TRIAL_AT]->(t) "
+                "RETURN count(*) AS c",
+                sid=self.SOURCE_ID,
+            )
+            row = await result.single()
+            return row["c"] if row else 0
 
         async with driver.session() as session:
-            # ── VarietyTrial → TRIAL_AT → TrialSite ──────────────
-            for vt in variety_trials:
-                if vt.get("skip_ingestion"):
-                    continue
-                merge_key = self._get_merge_key(vt)
-                if not merge_key:
-                    continue
-                # Content hash for relationship lookup (same as in _merge_variety_trials)
-                node_snapshot = {k: v for k, v in vt.items()
-                                if k not in ("mergeKey", "trial_id", "source_id")}
-                content_hash = hashlib.md5(
-                    json.dumps(node_snapshot, sort_keys=True, default=str).encode()
-                ).hexdigest()[:12]
-                unique_key = f"{merge_key}|{content_hash}"
-
-                # Match by trial_location → TrialSite name
-                location = (vt.get("trialLocation") or "").strip().lower()
-                if location:
-                    result = await session.run(
-                        """
-                        MATCH (vt:VarietyTrial {mergeKey: $unique_key})
-                        MATCH (ts:TrialSite)
-                        WHERE toLower(ts.name) = $loc
-                           OR toLower(ts.municipality) = $loc
-                        MERGE (vt)-[:TRIAL_AT]->(ts)
-                        RETURN count(*) AS c
-                        """,
-                        unique_key=unique_key,
-                        loc=location,
-                    )
-                    row = await result.single()
-                    if row and row["c"] > 0:
-                        count += 1
-
-            # ── ManagementTrial → TRIAL_AT → TrialSite ───────────
-            for mt in management_trials:
-                if mt.get("skip_ingestion"):
-                    continue
-                mt_key = self._get_merge_key(mt)
-                if not mt_key:
-                    continue
-
-                location = (mt.get("trialLocation") or "").strip().lower()
-                if location:
-                    result = await session.run(
-                        """
-                        MATCH (mt:ManagementTrial {mergeKey: $mt_key})
-                        MATCH (ts:TrialSite)
-                        WHERE toLower(ts.name) = $loc
-                           OR toLower(ts.municipality) = $loc
-                        MERGE (mt)-[:TRIAL_AT]->(ts)
-                        RETURN count(*) AS c
-                        """,
-                        mt_key=mt_key,
-                        loc=location,
-                    )
-                    row = await result.single()
-                    if row and row["c"] > 0:
-                        count += 1
+            if any(not v.get("skip_ingestion") for v in variety_trials):
+                count += await _link(session, "VarietyTrial")
+            if any(not m.get("skip_ingestion") for m in management_trials):
+                count += await _link(session, "ManagementTrial")
 
         return count
 
@@ -669,6 +625,28 @@ class BaseIngester(ABC):
             logger.warning("Node missing mergeKey: %s", str(node.get("variety", "")))
             return None
         return str(mk)
+
+    @staticmethod
+    def _variety_unique_key(node: dict) -> str | None:
+        """Stable node identity for a VarietyTrial: ``mergeKey|content_hash``.
+
+        The content hash keeps legitimately distinct trials that share the short
+        mergeKey (same ``source|eppo|variety|location|year`` but different
+        yield/treatment) from collapsing into one node. Volatile fields (@id,
+        source_id, the short mergeKey itself) are excluded so a re-scrape with a
+        new @id maps to the same identity — the MERGE then updates in place
+        instead of creating a duplicate. This key is what is stored in
+        ``vt.mergeKey``; it must never be overwritten with the short key.
+        """
+        merge_key = BaseIngester._get_merge_key(node)
+        if not merge_key:
+            return None
+        snapshot = {k: v for k, v in node.items()
+                    if k not in ("mergeKey", "trial_id", "source_id")}
+        content_hash = hashlib.md5(
+            json.dumps(snapshot, sort_keys=True, default=str).encode()
+        ).hexdigest()[:12]
+        return f"{merge_key}|{content_hash}"
 
     @staticmethod
     def _load_jsonld(path: str) -> dict:
