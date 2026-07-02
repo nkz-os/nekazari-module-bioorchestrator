@@ -2365,7 +2365,7 @@ class GraphDAO:
         from app.services.soil_client import get_parcel_soil_properties
         soil_input = "unavailable"
         try:
-            soil_data = await get_parcel_soil_properties(parcel_id)
+            soil_data = await get_parcel_soil_properties(parcel_id, tenant_id)
             if soil_data.get("data_available"):
                 soil_input = "soil_module"
                 wrb_type = None
@@ -2773,7 +2773,7 @@ class GraphDAO:
             soil_req = await self.get_soil_suitability(species_query)
 
             from app.services.soil_client import compute_soil_suitability, get_parcel_soil_properties
-            soil_actual = await get_parcel_soil_properties(parcel_id)
+            soil_actual = await get_parcel_soil_properties(parcel_id, tenant_id)
             soil_suitability = None
             if soil_actual.get("data_available") and soil_req:
                 soil_suitability = compute_soil_suitability(soil_req, soil_actual)
@@ -4094,7 +4094,7 @@ class GraphDAO:
 
         # ── 4. Fetch soil and compute pedotransfer ──
         from app.services.soil_client import get_parcel_soil_properties
-        soil_actual = await get_parcel_soil_properties(parcel_id)
+        soil_actual = await get_parcel_soil_properties(parcel_id, tenant_id)
 
         sand_pct = 40.0
         clay_pct = 25.0

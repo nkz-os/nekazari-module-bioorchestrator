@@ -9,6 +9,8 @@ from typing import Any
 import httpx
 from cachetools import TTLCache
 
+from app.services.soil_headers import soil_module_headers
+
 logger = logging.getLogger(__name__)
 
 SOIL_API_URL = os.getenv("SOIL_API_URL", "http://soil-module-service:8000")
@@ -17,7 +19,7 @@ SOIL_API_URL = os.getenv("SOIL_API_URL", "http://soil-module-service:8000")
 _soil_cache: TTLCache[str, dict[str, Any]] = TTLCache(maxsize=256, ttl=86400)
 
 
-async def get_parcel_soil_properties(parcel_id: str) -> dict[str, Any]:
+async def get_parcel_soil_properties(parcel_id: str, tenant_id: str = "") -> dict[str, Any]:
     """Fetch actual soil properties for a parcel from the Soil module.
 
     Calls GET /v1/soil/parcel/{id}/summary (AgriSoilExtended entity)
@@ -30,22 +32,30 @@ async def get_parcel_soil_properties(parcel_id: str) -> dict[str, Any]:
     returns data_available=False.
     Results cached per parcel_id for 24h.
     """
-    cached = _soil_cache.get(parcel_id)
+    cache_key = f"{tenant_id}:{parcel_id}" if tenant_id else parcel_id
+    cached = _soil_cache.get(cache_key)
     if cached is not None:
         return cached
 
+    headers = soil_module_headers(tenant_id) if tenant_id else {}
     try:
         async with httpx.AsyncClient(timeout=10.0) as client:
             resp = await client.get(
                 f"{SOIL_API_URL}/v1/soil/parcel/{parcel_id}/summary",
+                headers=headers,
             )
             if resp.status_code == 200:
                 data = resp.json()
-                # NGSI-LD entity: horizons live inside {"type":"Property","value":[...]}
-                horizons = (data.get("horizons") or {}).get("value", [])
+                horizons_raw = data.get("horizons")
+                if isinstance(horizons_raw, dict):
+                    horizons = horizons_raw.get("value", [])
+                elif isinstance(horizons_raw, list):
+                    horizons = horizons_raw
+                else:
+                    horizons = []
                 if not horizons:
                     result: dict[str, Any] = {"data_available": False, "source": "no_horizons"}
-                    _soil_cache[parcel_id] = result
+                    _soil_cache[cache_key] = result
                     return result
                 h = horizons[0]
                 # Organic matter ≈ organic_carbon × 1.724 (van Bemmelen factor)
@@ -65,7 +75,7 @@ async def get_parcel_soil_properties(parcel_id: str) -> dict[str, Any]:
                     "source": (data.get("dataSource") or {}).get("value", "soilgrids"),
                     "data_available": True,
                 }
-                _soil_cache[parcel_id] = result
+                _soil_cache[cache_key] = result
                 return result
             elif resp.status_code == 404:
                 logger.info("No soil data for parcel %s (404)", parcel_id)
@@ -78,7 +88,7 @@ async def get_parcel_soil_properties(parcel_id: str) -> dict[str, Any]:
         logger.warning("Soil module unreachable for parcel %s: %s", parcel_id, e)
 
     result: dict[str, Any] = {"data_available": False, "source": "unavailable"}
-    _soil_cache[parcel_id] = result
+    _soil_cache[cache_key] = result
     return result
 
 
