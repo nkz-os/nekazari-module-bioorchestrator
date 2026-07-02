@@ -44,7 +44,7 @@ spec:
                   name: bioorchestrator-secrets
                   key: bioorchestrator-dadis-token
             - name: DATA_DIR
-              value: "/data"
+              value: "/app/data"
             - name: TIMESCALE_DSN
               valueFrom:
                 secretKeyRef:
