@@ -1101,8 +1101,6 @@ class GraphDAO:
                    vt.variety AS variety,
                    vt.yieldKgHa AS yield_kg_ha,
                    vt.yieldNoteS1 AS yield_note_s1,
-                   vt.yieldKgHa AS yield_kg_ha,
-                   vt.yieldNoteS1 AS yield_note_s1,
                    vt.yieldRelativePct AS yield_relative_pct,
                    vt.qualityParams AS quality_params,
                    vt.diseaseScores AS disease_scores,
@@ -1363,9 +1361,14 @@ class GraphDAO:
                       OR vt.cropScientific CONTAINS $crop
                       OR toLower(vt.cropScientific) = toLower($crop)
                   )
-                WITH vt.varietyNormalized AS variety,
+                // Dedupe stage: collapse each trial to ONE row regardless of how
+                // many (same-name duplicate) sites it links to, so the numeric
+                // aggregations below count every trial exactly once (G2/G9 guard).
+                WITH vt.varietyNormalized AS variety, vt,
+                     collect(DISTINCT ts.name) AS trial_sites
+                WITH variety,
                      collect(DISTINCT vt.year) AS years,
-                     collect(DISTINCT ts.name) AS sites,
+                     collect(trial_sites) AS site_lists,
                      collect(DISTINCT vt.irrigationRegime) AS irrigation_regimes,
                      collect(DISTINCT vt.productionSystem) AS production_systems,
                      collect(DISTINCT vt.diseaseScoresUnified) AS disease_scores_list,
@@ -1376,11 +1379,16 @@ class GraphDAO:
                      max(vt.yieldKgHa) AS max_yield,
                      stDev(vt.yieldKgHa) AS stddev_yield,
                      count(vt.yieldKgHa) AS numeric_yield_count,
-                     count(*) AS trial_count,
+                     count(vt) AS trial_count,
                      sum(CASE WHEN vt.yieldDerivationMethod IS NOT NULL THEN 1 ELSE 0 END) AS derived_count
                 WHERE trial_count >= 1
                   AND ($irrigation_uri IS NULL OR $irrigation_uri IN irrigation_regimes)
                   AND ($production_system IS NULL OR $production_system IN production_systems)
+                WITH variety, mean_yield, min_yield, max_yield, stddev_yield,
+                     numeric_yield_count, trial_count, derived_count, years,
+                     reduce(acc = [], sl IN site_lists | acc + [x IN sl WHERE NOT x IN acc]) AS sites,
+                     irrigation_regimes, production_systems, disease_scores_list,
+                     agronomic_traits_list, confidence_levels
                 RETURN variety,
                        mean_yield,
                        min_yield,
