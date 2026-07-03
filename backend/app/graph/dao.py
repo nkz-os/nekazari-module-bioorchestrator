@@ -1000,7 +1000,7 @@ class GraphDAO:
             params["irrigation"] = irrigation_regime
 
         if min_yield_kg_ha is not None:
-            where_clauses.append("COALESCE(vt.yieldKgHa, vt.yieldNoteS1 * 1000) >= $min_yield")
+            where_clauses.append("vt.yieldKgHa >= $min_yield")
             params["min_yield"] = min_yield_kg_ha
 
         if min_rainfall_mm is not None:
@@ -1022,7 +1022,8 @@ class GraphDAO:
                    vt.variety AS variety,
                    vt.yieldKgHa AS yield_kg_ha,
                    vt.yieldNoteS1 AS yield_note_s1,
-                   COALESCE(vt.yieldKgHa, vt.yieldNoteS1 * 1000) AS yield_effective_kg_ha,
+                   vt.yieldKgHa AS yield_kg_ha,
+                   vt.yieldNoteS1 AS yield_note_s1,
                    vt.yieldRelativePct AS yield_relative_pct,
                    vt.qualityParams AS quality_params,
                    vt.diseaseScores AS disease_scores,
@@ -1044,7 +1045,7 @@ class GraphDAO:
                    as_article.articleTitle AS source_title,
                    as_article.issueNumber AS source_issue,
                    as_article.year AS source_year
-            ORDER BY COALESCE(vt.yieldKgHa, vt.yieldNoteS1 * 1000) DESC
+            ORDER BY vt.yieldKgHa IS NULL, vt.yieldKgHa DESC
             LIMIT $limit
         """
 
@@ -1291,10 +1292,11 @@ class GraphDAO:
                      collect(DISTINCT vt.diseaseScoresUnified) AS disease_scores_list,
                      collect(DISTINCT vt.agronomicTraitsUnified) AS agronomic_traits_list,
                      collect(DISTINCT vt.confidence) AS confidence_levels,
-                     avg(COALESCE(vt.yieldKgHa, vt.yieldNoteS1 * 1000)) AS mean_yield,
-                     min(COALESCE(vt.yieldKgHa, vt.yieldNoteS1 * 1000)) AS min_yield,
-                     max(COALESCE(vt.yieldKgHa, vt.yieldNoteS1 * 1000)) AS max_yield,
-                     stDev(COALESCE(vt.yieldKgHa, vt.yieldNoteS1 * 1000)) AS stddev_yield,
+                     avg(vt.yieldKgHa) AS mean_yield,
+                     min(vt.yieldKgHa) AS min_yield,
+                     max(vt.yieldKgHa) AS max_yield,
+                     stDev(vt.yieldKgHa) AS stddev_yield,
+                     count(vt.yieldKgHa) AS numeric_yield_count,
                      count(*) AS trial_count,
                      sum(CASE WHEN vt.yieldDerivationMethod IS NOT NULL THEN 1 ELSE 0 END) AS derived_count
                 WHERE trial_count >= 1
@@ -1305,6 +1307,7 @@ class GraphDAO:
                        min_yield,
                        max_yield,
                        stddev_yield,
+                       numeric_yield_count,
                        trial_count,
                        derived_count,
                        years,
@@ -1314,7 +1317,7 @@ class GraphDAO:
                        disease_scores_list,
                        agronomic_traits_list,
                        confidence_levels
-                ORDER BY mean_yield DESC
+                ORDER BY mean_yield IS NULL, mean_yield DESC
                 LIMIT $top_n
                 """,
                 site_names=similar_site_names,
@@ -1369,6 +1372,7 @@ class GraphDAO:
                     "max_yield_kg_ha": round(record["max_yield"], 1) if record["max_yield"] else None,
                     "stddev_yield_kg_ha": round(record["stddev_yield"], 1) if record["stddev_yield"] else None,
                     "trial_count": record["trial_count"],
+                    "numeric_yield_count": record["numeric_yield_count"],
                     "derived_trial_count": record["derived_count"],
                     "yield_provenance": _yield_provenance(record["derived_count"], record["trial_count"]),
                     "trial_years": sorted(record["years"]),
