@@ -848,6 +848,25 @@ async def agriculture_graph_stats(
     return await dao.graph_quality_stats()
 
 
+@router.get("/agriculture/backtest-report")
+async def agriculture_backtest_report(
+    driver: DriverDep,
+):
+    """Accuracy backtest of the variety advisor (Task C.3) — the falsifiability gate.
+
+    Public, read-only. Leave-one-site-out cross-validation over MEASURED trials
+    (`yieldKgHa` present, `yieldDerivationMethod` null): each site is held out and
+    its variety ranking predicted from the rest via `extrapolate_varieties`, then
+    compared to what was observed there. Reports median absolute yield error,
+    top-3 variety rank-overlap, and coverage — overall and per crop / per climate.
+    Run before/after any ranking change (C.1/C.2/C.4) to prove no accuracy regression.
+    """
+    from app.eval.backtest import Backtester
+
+    dao = GraphDAO(driver)
+    return await Backtester(dao).run()
+
+
 @router.get("/agriculture/regenerative-sequence")
 async def agriculture_regenerative_sequence(
     driver: DriverDep,
