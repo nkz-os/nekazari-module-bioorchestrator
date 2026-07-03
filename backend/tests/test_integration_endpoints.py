@@ -177,6 +177,14 @@ def test_extrapolate_public(client):
     )
 
 
+def test_graph_stats_public(client):
+    """Quality-stats endpoint (Task 0.1) must be public and routable."""
+    resp = client.get("/api/graph/agriculture/graph-stats")
+    assert resp.status_code in (200, 422, 500), (
+        f"Expected 200/422/500, got {resp.status_code}"
+    )
+
+
 # ── Protected endpoints (auth required) ───────────────────────────────────────
 
 # These endpoints are NOT in SKIP_AUTH_PREFIXES — they must return

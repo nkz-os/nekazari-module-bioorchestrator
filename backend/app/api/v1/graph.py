@@ -833,6 +833,21 @@ async def agriculture_crops(
     return {"crops": crops, "total": len(crops)}
 
 
+@router.get("/agriculture/graph-stats")
+async def agriculture_graph_stats(
+    driver: DriverDep,
+):
+    """Quality-metrics snapshot of the trials sub-graph (Task 0.1).
+
+    Public, read-only regression gate: trials, yield coverage, orphans,
+    TRIAL_AT ratio, TrialSite dup-name groups, sites without climate,
+    trials-per-climate, and distinct source ids. Run before/after any
+    hygiene/canonicalization mutation and diff.
+    """
+    dao = GraphDAO(driver)
+    return await dao.graph_quality_stats()
+
+
 @router.get("/agriculture/regenerative-sequence")
 async def agriculture_regenerative_sequence(
     driver: DriverDep,
