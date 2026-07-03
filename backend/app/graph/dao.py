@@ -1234,6 +1234,7 @@ class GraphDAO:
         filter_soil_suitability: bool = False,
         parcel_id: str | None = None,
         tenant_id: str = "",
+        exclude_sites: list[str] | None = None,
     ) -> dict:
         """Extrapolate best varieties for a target environment.
 
@@ -1325,6 +1326,11 @@ class GraphDAO:
             limit=50,
         )
         similar_site_names = [s["name"] for s in similar_sites_result]
+
+        # Hold out sites from the training pool (leave-one-site-out backtest, C.3).
+        if exclude_sites:
+            _excluded = {s.lower() for s in exclude_sites}
+            similar_site_names = [n for n in similar_site_names if n.lower() not in _excluded]
 
         if not similar_site_names:
             return {
