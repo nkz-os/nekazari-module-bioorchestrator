@@ -34,6 +34,7 @@ from app.ingestion.normalization_registry import (
     eppo_to_scientific,
     normalize_merge_key,
     transform_traits_to_unified,
+    canonical_source_id,
 )
 
 logger = logging.getLogger(__name__)
@@ -153,7 +154,7 @@ class BaseIngester(ABC):
         Subclasses may override to add source-specific normalisation, but
         should call ``super().normalize_nodes()`` first.
         """
-        source_id = self.SOURCE_ID
+        source_id = canonical_source_id(self.SOURCE_ID) or self.SOURCE_ID
         logger.info("[%s] Normalising %d VT + %d MT + %d sites",
                     source_id,
                     len(nodes.get("variety_trials", [])),

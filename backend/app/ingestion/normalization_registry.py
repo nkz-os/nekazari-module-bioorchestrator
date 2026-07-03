@@ -1928,6 +1928,39 @@ LOCATION_NORMALIZATION: dict[str, dict] = {
 }
 
 
+# Raw dataSource / source variants → canonical source_id.
+# Keys are lowercased for case-insensitive matching. Extend as new sources land.
+_SOURCE_ALIASES: dict[str, str] = {
+    "bsa": "BSL",
+    "bsa bundessortenamt": "BSL",
+    "bundessortenamt": "BSL",
+    "itacyl": "ITACYL",
+    "ahdb": "AHDB",
+    "lfl_bayern": "LFL-BAYERN",
+    "lfl bayern": "LFL-BAYERN",
+    "legacy": "LEGACY",
+    "genvce": "GENVCE",
+    "navarra_agraria": "NAVARRA-AGRARIA",
+    "navarra agraria": "NAVARRA-AGRARIA",
+    "ctifl": "CTIFL",
+}
+
+
+def canonical_source_id(raw: str | None) -> str | None:
+    """Map a raw source/dataSource string to the canonical source_id.
+
+    Known variants resolve via ``_SOURCE_ALIASES`` (case-insensitive); an
+    unknown non-empty value is passed through upper-cased; empty/None → None.
+    Idempotent for already-canonical ids.
+    """
+    if raw is None:
+        return None
+    key = raw.strip()
+    if not key:
+        return None
+    return _SOURCE_ALIASES.get(key.lower(), key.upper())
+
+
 def normalize_location(raw_location: str | None) -> dict | None:
     """Resolve a raw trialLocation to its canonical form.
 

@@ -15,8 +15,38 @@ from app.ingestion.normalization_registry import (
     eppo_to_scientific,
     normalize_merge_key,
     transform_traits_to_unified,
+    canonical_source_id,
     EPPO_TO_SCIENTIFIC,
 )
+
+
+class TestCanonicalSourceId:
+    def test_bsa_variants_map_to_bsl(self):
+        assert canonical_source_id("bsa") == "BSL"
+        assert canonical_source_id("bsa bundessortenamt") == "BSL"
+        assert canonical_source_id("BSA Bundessortenamt") == "BSL"
+
+    def test_lowercase_aliases_of_existing_ids(self):
+        assert canonical_source_id("itacyl") == "ITACYL"
+        assert canonical_source_id("ahdb") == "AHDB"
+        assert canonical_source_id("lfl_bayern") == "LFL-BAYERN"
+        assert canonical_source_id("legacy") == "LEGACY"
+
+    def test_new_canonical_sources(self):
+        assert canonical_source_id("navarra_agraria") == "NAVARRA-AGRARIA"
+        assert canonical_source_id("ctifl") == "CTIFL"
+
+    def test_already_canonical_passthrough(self):
+        assert canonical_source_id("BSL") == "BSL"
+        assert canonical_source_id("GENVCE") == "GENVCE"
+
+    def test_unknown_uppercased(self):
+        assert canonical_source_id("weird_new_src") == "WEIRD_NEW_SRC"
+
+    def test_none_and_empty(self):
+        assert canonical_source_id(None) is None
+        assert canonical_source_id("") is None
+        assert canonical_source_id("   ") is None
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
