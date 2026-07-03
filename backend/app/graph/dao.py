@@ -121,6 +121,85 @@ class GraphDAO:
             "label_counts": label_counts,
         }
 
+    async def graph_quality_stats(self) -> dict[str, Any]:
+        """Quality-metrics snapshot of the trials sub-graph — the regression gate.
+
+        Run before/after any hygiene/canonicalization mutation and diff. Every
+        per-trial count is DISTINCT so a trial multi-linked to duplicate sites is
+        counted once (protects the metric while G2/G9 duplicates still exist).
+        """
+        async with self._driver.session() as session:
+            trials_rec = await (
+                await session.run(
+                    "MATCH (v:VarietyTrial) "
+                    "RETURN count(v) AS trials, count(v.yieldKgHa) AS with_yield"
+                )
+            ).single() or {}
+            trials = trials_rec.get("trials") or 0
+            with_yield = trials_rec.get("with_yield") or 0
+
+            orphan_rec = await (
+                await session.run(
+                    "MATCH (v:VarietyTrial) WHERE NOT (v)-[:TRIAL_AT]->() "
+                    "RETURN count(v) AS orphan"
+                )
+            ).single() or {}
+
+            rel_rec = await (
+                await session.run(
+                    "MATCH (:VarietyTrial)-[r:TRIAL_AT]->(:TrialSite) "
+                    "RETURN count(r) AS rels"
+                )
+            ).single() or {}
+
+            sites_rec = await (
+                await session.run(
+                    "MATCH (t:TrialSite) "
+                    "RETURN count(t) AS sites, count(t.climateClass) AS with_climate"
+                )
+            ).single() or {}
+
+            dup_rec = await (
+                await session.run(
+                    "MATCH (t:TrialSite) "
+                    "WITH toLower(trim(t.name)) AS n, count(*) AS c "
+                    "WHERE c > 1 "
+                    "RETURN count(*) AS dup_groups"
+                )
+            ).single() or {}
+
+            climate_res = await session.run(
+                "MATCH (v:VarietyTrial)-[:TRIAL_AT]->(t:TrialSite) "
+                "WHERE t.climateClass IS NOT NULL "
+                "RETURN t.climateClass AS climate, count(DISTINCT v) AS c "
+                "ORDER BY c DESC"
+            )
+            trials_per_climate = {r["climate"]: r["c"] async for r in climate_res}
+
+            src_res = await session.run(
+                "MATCH (v:VarietyTrial) WHERE v.source_id IS NOT NULL "
+                "RETURN DISTINCT v.source_id AS src ORDER BY src"
+            )
+            source_ids = [r["src"] async for r in src_res]
+
+        sites = sites_rec.get("sites") or 0
+        with_climate = sites_rec.get("with_climate") or 0
+        rels = rel_rec.get("rels") or 0
+        yield_pct = round(with_yield / trials * 100, 1) if trials else 0.0
+        trial_at_ratio = round(rels / trials, 2) if trials else 0.0
+        return {
+            "trials": trials,
+            "trials_with_yield": with_yield,
+            "yield_pct": yield_pct,
+            "orphan_trials": orphan_rec.get("orphan") or 0,
+            "trial_at_ratio": trial_at_ratio,
+            "trial_sites": sites,
+            "dup_name_sites": dup_rec.get("dup_groups") or 0,
+            "sites_without_climate": sites - with_climate,
+            "trials_per_climate": trials_per_climate,
+            "source_ids": source_ids,
+        }
+
     # ── Lookup (global reference data) ────────────────────────────────────────
 
     async def find_by_agrovoc_uri(self, uri: str) -> dict | None:
