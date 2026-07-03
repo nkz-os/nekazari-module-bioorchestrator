@@ -60,7 +60,7 @@ All parameters carry **full scientific provenance** (`sourceType`: global_standa
                            │ bolt://      │ HTTP
               ┌────────────▼───┐  ┌───────▼──────────────────┐
               │   Neo4j 5.26   │  │  29 External Data Sources │
-              │  + n10s plugin │  │  ┌───────────────────────┐│
+              │  + APOC plugin │  │  ┌───────────────────────┐│
               │                │  │  │EPPO · EcoCrop · FiBL  ││
               │ AgriCrop       │  │  │CPVO · GBIF · SoilGrids││
               │ TrialSite      │  │  │ERA5 · Copernicus DEM  ││
@@ -250,7 +250,7 @@ Full i18n support in **6 languages**: English, Spanish, Basque, French, Portugue
 
 ### Prerequisites
 
-- Neo4j 5.26+ with [n10s](https://neo4j.com/labs/neosemantics/) plugin
+- Neo4j 5.26+ with APOC plugin
 - Python 3.12+
 - Node.js 20+
 - pnpm
@@ -287,7 +287,7 @@ pnpm build      # production build → dist/
 # Backend
 docker build -t ghcr.io/nkz-os/bioorchestrator-backend:0.1.0 -f backend/Dockerfile .
 
-# Neo4j with n10s
+# Neo4j with APOC
 docker build -t ghcr.io/nkz-os/bioorchestrator-neo4j:5.26 -f backend/neo4j/Dockerfile backend/neo4j/
 ```
 

@@ -202,21 +202,6 @@ class GraphDAO:
 
     # ── Lookup (global reference data) ────────────────────────────────────────
 
-    async def find_by_agrovoc_uri(self, uri: str) -> dict | None:
-        """Find a Resource node by its AGROVOC URI.
-
-        Returns the node properties or None if not found.
-        """
-        async with self._driver.session() as session:
-            result = await session.run(
-                "MATCH (r:Resource {uri: $uri}) RETURN r",
-                uri=uri,
-            )
-            record = await result.single()
-            if record is None:
-                return None
-            return dict(record["r"])
-
     async def get_all_species(self) -> list[dict]:
         """Return all species in the knowledge graph with phenology availability."""
         async with self._driver.session() as session:
