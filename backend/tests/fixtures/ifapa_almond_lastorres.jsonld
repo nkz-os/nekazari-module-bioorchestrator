@@ -1,0 +1,18 @@
+{
+  "@context": "https://nkz.robotika.cloud/ngsi-ld/bioorchestrator-context.jsonld",
+  "@graph": [
+    {"@type": "TrialSite", "name": "Las Torres", "municipality": "Alcalá del Río",
+     "latitude": 37.516, "longitude": -5.966, "climate_class": "Csa"},
+    {"@type": "ArticleSource", "issue_number": "LT-ALM-2021",
+     "article_title": "Comportamiento agronómico de variedades de almendro en Las Torres", "year": 2021},
+    {"@type": "VarietyTrial", "crop_eppo": "PRNDU", "variety": "Guara", "rootstock": "Garnem",
+     "year": 2019, "yield_kg_ha": 2100, "yield_metric": "kernel_kg_ha", "planting_year": 2013,
+     "irrigation_regime": "regadío", "trial_location": "Las Torres", "@id": "urn:almond:guara-garnem-2019"},
+    {"@type": "VarietyTrial", "crop_eppo": "PRNDU", "variety": "Guara", "rootstock": "GF-677",
+     "year": 2019, "yield_kg_ha": 1850, "yield_metric": "kernel_kg_ha", "planting_year": 2013,
+     "irrigation_regime": "regadío", "trial_location": "Las Torres", "@id": "urn:almond:guara-gf677-2019"},
+    {"@type": "VarietyTrial", "crop_eppo": "PRNDU", "variety": "Lauranne", "rootstock": "Garnem",
+     "year": 2019, "yield_note_s1": 7, "planting_year": 2013,
+     "irrigation_regime": "regadío", "trial_location": "Las Torres", "@id": "urn:almond:lauranne-garnem-2019"}
+  ]
+}

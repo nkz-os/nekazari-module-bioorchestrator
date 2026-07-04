@@ -1095,6 +1095,11 @@ class GraphDAO:
                    vt.year AS year,
                    vt.confidence AS confidence,
                    vt.mergeKey AS trial_id,
+                   vt.rootstock AS rootstock,
+                   vt.trainingSystem AS training_system,
+                   vt.plantingYear AS planting_year,
+                   CASE WHEN vt.plantingYear IS NOT NULL AND vt.year IS NOT NULL
+                        THEN vt.year - vt.plantingYear ELSE null END AS orchard_age_years,
                    ts.name AS site_name,
                    ts.climateClass AS climate_class,
                    ts.soilType AS soil_type,
