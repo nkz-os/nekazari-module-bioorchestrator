@@ -31,6 +31,7 @@ from neo4j import AsyncGraphDatabase
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from app.ingestion.base_ingester import BaseIngester, NEO4J_PASSWORD, NEO4J_URI, NEO4J_USER
+from app.ingestion.genvce_ingester import GenvceIngester
 from app.ingestion.ifapa_ingester import IfapaIngester
 from app.ingestion.iniav_ingester import IniavIngester
 from app.ingestion.intia_exp_ingester import IntiaExpIngester
@@ -46,6 +47,7 @@ IngesterFactory = Callable[..., BaseIngester]
 SOURCES: dict[str, tuple[IngesterFactory, str]] = {
     "navarra": (NavarraIngester, NavarraIngester.SOURCE_ID),
     "iniav": (IniavIngester, IniavIngester.SOURCE_ID),
+    "genvce": (GenvceIngester, GenvceIngester.SOURCE_ID),
     "ifapa": (IfapaIngester, IfapaIngester.SOURCE_ID),
     "itacyl": (ItacylIngester, ItacylIngester.SOURCE_ID),
     "intia": (IntiaExpIngester, IntiaExpIngester.SOURCE_ID),

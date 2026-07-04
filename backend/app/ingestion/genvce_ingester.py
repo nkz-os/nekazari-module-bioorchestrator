@@ -65,11 +65,17 @@ class GenvceIngester(BaseIngester):
 
     # ── Converters ─────────────────────────────────────────────────────────
 
-    @staticmethod
-    def _convert_site(node: dict) -> dict:
+    def _convert_site(self, node: dict) -> dict:
+        name = node.get("name")
+        municipality = node.get("municipality")
+        default_mk = (
+            f"{self.SOURCE_ID.lower()}|"
+            f"{str(name or '').strip().lower()}|"
+            f"{str(municipality or '').strip().lower()}"
+        )
         return {
-            "name": node.get("name"),
-            "municipality": node.get("municipality"),
+            "name": name,
+            "municipality": municipality,
             "region": node.get("region"),
             "agroclimatic_zone": node.get("agroclimatic_zone"),
             "latitude": node.get("latitude"),
@@ -80,10 +86,8 @@ class GenvceIngester(BaseIngester):
             "soilType": node.get("soilType"),
             "soilTexture": node.get("soilTexture"),
             "soilPh": node.get("soilPh"),
-            "mergeKey": (
-                f"genvce|{str(node.get('name', '')).strip().lower()}|"
-                f"{str(node.get('municipality', '')).strip().lower()}"
-            ),
+            "source_id": self.SOURCE_ID,
+            "mergeKey": node.get("mergeKey") or default_mk,
         }
 
     @staticmethod
@@ -101,10 +105,16 @@ class GenvceIngester(BaseIngester):
             ),
         }
 
-    @staticmethod
-    def _convert_trial(node: dict) -> dict:
+    def _convert_trial(self, node: dict) -> dict:
         eppo = BaseIngester._normalize_eppo(node.get("crop_eppo"))
-        return {
+        irr = str(node.get("irrigation_regime") or "unknown")
+        loc = str(node.get("trial_location") or "unknown").strip().lower()
+        year = node.get("year") or 0
+        variety = str(node.get("variety") or "").strip().lower()
+        default_mk = (
+            f"{self.SOURCE_ID}|eppo:{eppo or 'unknown'}|{variety}|{loc}|{irr}|{year}|genvce"
+        )
+        out = {
             "cropEppo": eppo,
             "cropScientific": EPPO_TO_SPECIES.get(eppo) if eppo else None,
             "variety": node.get("variety"),
@@ -126,16 +136,13 @@ class GenvceIngester(BaseIngester):
                 else None
             ),
             "confidence": node.get("confidence", "high"),
-            "source_id": "GENVCE",
+            "source_id": self.SOURCE_ID,
             "trial_id": node.get("@id", ""),
-            "mergeKey": (
-                f"genvce|{eppo or 'unknown'}|"
-                f"{str(node.get('variety', '')).strip().lower()}|"
-                f"{str(node.get('trial_location', 'unknown')).strip().lower()}|"
-                f"{str(node.get('irrigation_regime', 'unknown'))}|"
-                f"{str(node.get('year', 0))}"
-            ),
+            "mergeKey": node.get("mergeKey") or default_mk,
+            "rankingEligible": node.get("ranking_eligible"),
+            "yieldDataType": node.get("yield_data_type"),
         }
+        return {k: v for k, v in out.items() if v is not None}
 
 
 # ── CLI ──────────────────────────────────────────────────────────────────────
