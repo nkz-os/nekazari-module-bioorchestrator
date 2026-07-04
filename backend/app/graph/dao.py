@@ -29,6 +29,7 @@ from nkz_platform_sdk.orion import OrionClient
 from nkz_platform_sdk.subscriptions import SubscriptionRegistrar, SubscriptionDef
 
 from app.core.config import settings
+from app.graph import agroclimatic
 from app.species_registry import get_species_info, resolve_species
 
 logger = logging.getLogger(__name__)
@@ -1133,25 +1134,22 @@ class GraphDAO:
         rainfall_min: float | None = None,
         rainfall_max: float | None = None,
         limit: int = 10,
+        target_features: dict[str, float | None] | None = None,
     ) -> list[dict]:
-        """Find TrialSites environmentally similar to a reference.
+        """Find TrialSites agro-climatically similar to a target (C.1).
 
-        Matching strategy (cascade):
-          1. Same Köppen climate class (exact match)
-          2. Similar soil type (WRB reference group)
-          3. Rainfall within ±200mm band
-          4. Elevation within ±300m
+        When a target agro-climatic vector is available (``target_features`` =
+        rainfall/et0/frost/elevation, or derived from ``reference_site``), sites are
+        ranked by **ascending agro-climatic distance** (aridity, rainfall, frost,
+        elevation — see ``agroclimatic``), and the ``distance`` is exposed. Köppen is
+        a **soft prior**, not a hard gate: a same-Köppen site lacking the numeric
+        vector is still returned, with a penalty distance, so coverage is preserved.
 
-        If a reference site name is given, its properties are used as filters.
-        Otherwise, explicit filters (climate_class, soil_type, rainfall range)
-        are used directly.
-
-        Returns sites ranked by environmental similarity score.
+        Without a target vector (only a climate label) it falls back to the legacy
+        Köppen/soil/rainfall filter (``distance`` = None).
         """
-        params: dict[str, Any] = {"limit": limit}
-
+        # Resolve a reference site's own vector + climate as the target.
         if reference_site:
-            # Look up the reference site first
             async with self._driver.session() as session:
                 ref_result = await session.run(
                     """
@@ -1161,9 +1159,9 @@ class GraphDAO:
                     RETURN ts.climateClass AS climate,
                            ts.soilType AS soil,
                            ts.annualRainfallMm AS rainfall,
-                           ts.elevationM AS elevation,
-                           ts.soilTexture AS texture,
-                           ts.name AS name
+                           ts.annualET0Mm AS et0,
+                           ts.frostDaysPerYear AS frost,
+                           ts.elevationM AS elevation
                     LIMIT 1
                     """,
                     name=reference_site,
@@ -1171,35 +1169,28 @@ class GraphDAO:
                 ref = await ref_result.single()
                 if not ref:
                     return []
-
                 climate_class = ref["climate"]
-                soil_type = ref["soil"]
-                rainfall_min = (ref["rainfall"] or 500) - 200
-                rainfall_max = (ref["rainfall"] or 500) + 200
+                soil_type = soil_type or ref["soil"]
+                if rainfall_min is None and ref["rainfall"] is not None:
+                    rainfall_min = ref["rainfall"] - 200
+                    rainfall_max = ref["rainfall"] + 200
+                if target_features is None:
+                    target_features = {
+                        "rainfall": ref["rainfall"], "et0": ref["et0"],
+                        "frost": ref["frost"], "elevation": ref["elevation"],
+                    }
 
-        where_clauses = ["ts.name IS NOT NULL"]  # ensure site has data
+        target_vec = None
+        if target_features:
+            target_vec = agroclimatic.feature_vector(
+                target_features.get("rainfall"), target_features.get("et0"),
+                target_features.get("frost"), target_features.get("elevation"),
+            )
 
-        if climate_class:
-            where_clauses.append("ts.climateClass = $climate")
-            params["climate"] = climate_class
-
-        if soil_type:
-            where_clauses.append("ts.soilType CONTAINS $soil")
-            params["soil"] = soil_type
-
-        if rainfall_min is not None:
-            where_clauses.append("ts.annualRainfallMm >= $rain_min")
-            params["rain_min"] = rainfall_min
-
-        if rainfall_max is not None:
-            where_clauses.append("ts.annualRainfallMm <= $rain_max")
-            params["rain_max"] = rainfall_max
-
-        where_str = " AND ".join(where_clauses)
-
-        query = f"""
+        # Pull every site once; scoring/filtering happens in Python (≤ a few hundred).
+        query = """
             MATCH (ts:TrialSite)
-            WHERE {where_str}
+            WHERE ts.name IS NOT NULL
             RETURN ts.name AS name,
                    ts.municipality AS municipality,
                    ts.agroclimaticZone AS agroclimatic_zone,
@@ -1215,16 +1206,52 @@ class GraphDAO:
                    ts.frostDaysPerYear AS frost_days,
                    ts.elevationM AS elevation_m,
                    ts.photoperiodSummerHours AS photoperiod_hours
-            ORDER BY ts.name
-            LIMIT $limit
         """
-
         async with self._driver.session() as session:
-            result = await session.run(query, params)
-            sites = []
-            async for record in result:
-                sites.append(dict(record))
-            return sites
+            result = await session.run(query)
+            rows = [dict(r) async for r in result]
+
+        # ── Distance path (C.1): rank by agro-climatic distance ─────────────
+        if target_vec is not None:
+            vectors = [
+                agroclimatic.feature_vector(
+                    r["annual_rainfall_mm"], r["annual_et0_mm"],
+                    r["frost_days"], r["elevation_m"],
+                )
+                for r in rows
+            ]
+            bounds = agroclimatic.normalize_bounds(vectors + [target_vec])
+            scored: list[dict] = []
+            for r, vec in zip(rows, vectors):
+                if vec is not None:
+                    d = agroclimatic.distance(target_vec, vec, bounds)
+                elif climate_class and r["climate_class"] == climate_class:
+                    # Same Köppen but no numeric vector → keep, ranked after real
+                    # analogs (soft prior, not a hard gate). Coverage preserved.
+                    d = agroclimatic.KOPPEN_FALLBACK_DISTANCE
+                else:
+                    continue  # can't judge (no vector, no matching climate)
+                r["distance"] = round(d, 4)
+                scored.append(r)
+            scored.sort(key=lambda s: (s["distance"], s["name"]))
+            return scored[:limit]
+
+        # ── Legacy path: Köppen / soil / rainfall filter, no distance ───────
+        filtered: list[dict] = []
+        for r in rows:
+            if climate_class and r["climate_class"] != climate_class:
+                continue
+            if soil_type and (not r["soil_type"] or soil_type not in r["soil_type"]):
+                continue
+            rain = r["annual_rainfall_mm"]
+            if rainfall_min is not None and (rain is None or rain < rainfall_min):
+                continue
+            if rainfall_max is not None and (rain is None or rain > rainfall_max):
+                continue
+            r["distance"] = None
+            filtered.append(r)
+        filtered.sort(key=lambda s: s["name"])
+        return filtered[:limit]
 
     async def extrapolate_varieties(
         self,
@@ -1240,6 +1267,7 @@ class GraphDAO:
         parcel_id: str | None = None,
         tenant_id: str = "",
         exclude_sites: list[str] | None = None,
+        target_features: dict[str, float | None] | None = None,
     ) -> dict:
         """Extrapolate best varieties for a target environment.
 
@@ -1292,6 +1320,8 @@ class GraphDAO:
                     RETURN ts.climateClass AS climate,
                            ts.soilType AS soil,
                            ts.annualRainfallMm AS rainfall,
+                           ts.annualET0Mm AS et0,
+                           ts.frostDaysPerYear AS frost,
                            ts.name AS name,
                            ts.latitude AS lat,
                            ts.longitude AS lon,
@@ -1312,6 +1342,12 @@ class GraphDAO:
                 target_env["reference_lat"] = ref["lat"]
                 target_env["reference_lon"] = ref["lon"]
                 target_env["reference_elevation"] = ref["elevation"]
+                # Derive the target agro-climatic vector for distance weighting (C.1).
+                if target_features is None:
+                    target_features = {
+                        "rainfall": ref["rainfall"], "et0": ref["et0"],
+                        "frost": ref["frost"], "elevation": ref["elevation"],
+                    }
 
         # Map human-readable irrigation regime to AGROVOC URIs stored in DB
         irrigation_uri = None
@@ -1329,8 +1365,18 @@ class GraphDAO:
             rainfall_min=target_env.get("rainfall_min"),
             rainfall_max=target_env.get("rainfall_max"),
             limit=50,
+            target_features=target_features,
         )
         similar_site_names = [s["name"] for s in similar_sites_result]
+
+        # Per-site weight for distance-weighted aggregation (C.1): nearer analog →
+        # higher weight. When there is no agro-climatic vector (legacy path,
+        # distance=None) every weight is 1.0, so the weighted mean below collapses
+        # exactly to a flat average — no behaviour change.
+        site_weights = {
+            s["name"]: (1.0 / (1.0 + s["distance"]) if s.get("distance") is not None else 1.0)
+            for s in similar_sites_result
+        }
 
         # Hold out sites from the training pool (leave-one-site-out backtest, C.3).
         # Drop them from the analog list AND exclude every trial *observed at* them
@@ -1371,6 +1417,12 @@ class GraphDAO:
                 // aggregations below count every trial exactly once (G2/G9 guard).
                 WITH vt.varietyNormalized AS variety, vt,
                      collect(DISTINCT ts.name) AS trial_sites
+                // Per-trial agro-climatic weight = nearest analog site it sits at
+                // (C.1). $site_weights are 1.0 on the legacy path → flat average.
+                WITH variety, vt, trial_sites,
+                     reduce(mw = 0.0, n IN trial_sites |
+                        CASE WHEN coalesce($site_weights[n], 0.0) > mw
+                             THEN $site_weights[n] ELSE mw END) AS w
                 WITH variety,
                      collect(DISTINCT vt.year) AS years,
                      collect(trial_sites) AS site_lists,
@@ -1379,7 +1431,9 @@ class GraphDAO:
                      collect(DISTINCT vt.diseaseScoresUnified) AS disease_scores_list,
                      collect(DISTINCT vt.agronomicTraitsUnified) AS agronomic_traits_list,
                      collect(DISTINCT vt.confidence) AS confidence_levels,
-                     avg(vt.yieldKgHa) AS mean_yield,
+                     avg(vt.yieldKgHa) AS mean_yield_flat,
+                     sum(CASE WHEN vt.yieldKgHa IS NOT NULL THEN w * vt.yieldKgHa ELSE 0.0 END) AS wsum,
+                     sum(CASE WHEN vt.yieldKgHa IS NOT NULL THEN w ELSE 0.0 END) AS wtot,
                      min(vt.yieldKgHa) AS min_yield,
                      max(vt.yieldKgHa) AS max_yield,
                      stDev(vt.yieldKgHa) AS stddev_yield,
@@ -1389,7 +1443,9 @@ class GraphDAO:
                 WHERE trial_count >= 1
                   AND ($irrigation_uri IS NULL OR $irrigation_uri IN irrigation_regimes)
                   AND ($production_system IS NULL OR $production_system IN production_systems)
-                WITH variety, mean_yield, min_yield, max_yield, stddev_yield,
+                WITH variety,
+                     CASE WHEN wtot > 0 THEN wsum / wtot ELSE mean_yield_flat END AS mean_yield,
+                     min_yield, max_yield, stddev_yield,
                      numeric_yield_count, trial_count, derived_count, years,
                      reduce(acc = [], sl IN site_lists | acc + [x IN sl WHERE NOT x IN acc]) AS sites,
                      irrigation_regimes, production_systems, disease_scores_list,
@@ -1418,6 +1474,7 @@ class GraphDAO:
                 production_system=None,  # Placeholder: future use when data exists
                 top_n=top_n,
                 excluded_sites=excluded_lower,
+                site_weights=site_weights,
             )
 
             ranked = []
