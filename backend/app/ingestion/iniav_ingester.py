@@ -86,9 +86,16 @@ class IniavIngester(BaseIngester):
 
     def _convert_trial(self, node: dict) -> dict:
         eppo = BaseIngester._normalize_eppo(node.get("crop_eppo"))
-        return {
+        irr = node.get("irrigation_regime") or "secano"
+        loc = str(node.get("trial_location", "unknown")).strip().lower()
+        year = node.get("year") or 0
+        variety = str(node.get("variety", "")).strip().lower()
+        default_mk = (
+            f"{self.SOURCE_ID}|eppo:{eppo or 'unknown'}|{variety}|{loc}|{irr}|{year}"
+        )
+        out = {
             "cropEppo": eppo,
-            "cropScientific": EPPO_TO_SPECIES.get(eppo),
+            "cropScientific": EPPO_TO_SPECIES.get(eppo or ""),
             "variety": node.get("variety"),
             "year": node.get("year"),
             "yieldKgHa": node.get("yield_kg_ha"),
@@ -97,14 +104,12 @@ class IniavIngester(BaseIngester):
             "confidence": node.get("confidence", self._registry_entry.get("confidence_default", "medium")),
             "source_id": self.SOURCE_ID,
             "trial_id": node.get("@id", ""),
-            "mergeKey": (
-                f"{self.SOURCE_ID.lower()}|{eppo or 'unknown'}|"
-                f"{str(node.get('variety', '')).strip().lower()}|"
-                f"{str(node.get('trial_location', 'unknown')).strip().lower()}|"
-                f"{str(node.get('irrigation_regime', 'unknown'))}|"
-                f"{str(node.get('year', 0))}"
-            ),
+            "mergeKey": node.get("mergeKey") or default_mk,
+            "rankingEligible": node.get("ranking_eligible"),
+            "relativeYieldRank": node.get("relative_yield_rank"),
+            "yieldDataType": node.get("yield_data_type"),
         }
+        return {k: v for k, v in out.items() if v is not None}
 
     def _convert_management(self, node: dict) -> dict:
         return {

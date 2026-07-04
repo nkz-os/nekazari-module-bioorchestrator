@@ -24,7 +24,7 @@ from typing import Optional
 
 from neo4j import AsyncDriver
 
-from app.ingestion.base_ingester import BaseIngester
+from app.ingestion.base_ingester import BaseIngester, NEO4J_PASSWORD, NEO4J_URI, NEO4J_USER
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -166,444 +166,46 @@ class NavarraIngester(BaseIngester):
     SOURCE_ID = "NAVARRA-AGRARIA"
 
     def __init__(self, driver: Optional[AsyncDriver] = None) -> None:
-        super().__init__()
-        self._driver = driver
+        super().__init__(driver=driver)
         self._stats: dict[str, int] = {}
 
     async def ingest(self, jsonld_path: str, dry_run: bool = False) -> dict:
-        """Transform JSON-LD to canonical nodes.
-
-        Args:
-            jsonld_path: Path to enriched JSON-LD file.
-            dry_run: If True, only print stats without Neo4j writes.
-
-        Returns:
-            Dict with per-type counts.
-        """
+        """Transform JSON-LD and optionally MERGE into Neo4j."""
         nodes = await self.transform(jsonld_path)
-        sites = nodes["trial_sites"]
-        articles = nodes["article_sources"]
-        variety_trials = nodes["variety_trials"]
-        management_trials = nodes["management_trials"]
-
         print(f"[navarra_ingester] Transformed {sum(len(v) for v in nodes.values())} nodes:")
-        print(f"  TrialSites:        {len(sites)}")
-        print(f"  ArticleSources:    {len(articles)}")
-        print(f"  VarietyTrials:     {len(variety_trials)}")
-        print(f"  ManagementTrials:  {len(management_trials)}")
+        for key in ("trial_sites", "article_sources", "variety_trials", "management_trials"):
+            print(f"  {key}: {len(nodes.get(key, []))}")
 
         if dry_run or not self._driver:
             return {"dry_run": True, "transformed": {k: len(v) for k, v in nodes.items()}}
 
-        # Neo4j MERGE — disabled until unified ingestion
-        raise NotImplementedError(
-            "Neo4j MERGE disabled until unified ingestion. "
-            "Use dry_run=True to preview."
-        )
-
-    async def merge(self, nodes: dict[str, list[dict]]) -> dict[str, int]:
-        """MERGE nodes into Neo4j — disabled until unified ingestion.
-
-        Raises:
-            NotImplementedError: Unified ingestion is pending.
-        """
-        raise NotImplementedError(
-            "Unified ingestion pending. "
-            "Use transform() to prepare nodes, then wait for the "
-            "unified ingestion pipeline."
-        )
-
-    # ── Node MERGE operations ────────────────────────────────────────────────
-
-    async def _merge_trial_sites(self, sites: list[dict]) -> int:
-        count = 0
-        async with self._driver.session() as s:
-            for node in sites:
-                merge_key = _merge_key_trial_site(node)
-                source = _resolve_source(node)
-                await s.run(
-                    """
-                    MERGE (ts:TrialSite {mergeKey: $merge_key})
-                    SET ts.dataSource = $source,
-                        ts.name = $name,
-                        ts.municipality = $municipality,
-                        ts.region = COALESCE($region, ts.region),
-                        ts.agroclimaticZone = $zone,
-                        ts.latitude = $lat,
-                        ts.longitude = $lon,
-                        ts.elevationM = $elevation,
-                        ts.climateClass = $climate_class,
-                        ts.annualRainfallMm = $rainfall,
-                        ts.annualET0Mm = $et0,
-                        ts.frostDaysPerYear = $frost_days,
-                        ts.soilType = $soil_type,
-                        ts.soilTexture = $soil_texture,
-                        ts.soilPh = $soil_ph,
-                        ts.soilOrganicMatterPct = $soil_om,
-                        ts.photoperiodSummerHours = $photoperiod,
-                        ts.updatedAt = datetime()
-                    """,
-                    merge_key=merge_key,
-                    source=source,
-                    name=node.get("name"),
-                    municipality=node.get("municipality"),
-                    region=node.get("region"),
-                    zone=node.get("agroclimatic_zone"),
-                    lat=node.get("latitude"),
-                    lon=node.get("longitude"),
-                    elevation=node.get("elevationM"),
-                    climate_class=node.get("climateClass"),
-                    rainfall=node.get("annualRainfallMm"),
-                    et0=node.get("annualET0Mm"),
-                    frost_days=node.get("frostDaysPerYear"),
-                    soil_type=node.get("soilType"),
-                    soil_texture=node.get("soilTexture"),
-                    soil_ph=node.get("soilPh"),
-                    soil_om=node.get("soilOrganicMatterPct"),
-                    photoperiod=node.get("photoperiodSummerHours"),
-                )
-                count += 1
-        return count
-
-    async def _merge_article_sources(self, articles: list[dict]) -> int:
-        count = 0
-        async with self._driver.session() as s:
-            for node in articles:
-                merge_key = _merge_key_article_source(node)
-                await s.run(
-                    """
-                    MERGE (as:ArticleSource {mergeKey: $merge_key})
-                    SET as.source = $source,
-                        as.issueNumber = $issue,
-                        as.issuePeriod = $period,
-                        as.articleTitle = $title,
-                        as.articleAuthor = $author,
-                        as.year = $year,
-                        as.topic = $topic,
-                        as.extractionModel = $model,
-                        as.extractionDate = $ext_date,
-                        as.updatedAt = datetime()
-                    """,
-                    merge_key=merge_key,
-                    source=node.get("source"),
-                    issue=node.get("issue_number"),
-                    period=node.get("issue_period"),
-                    title=node.get("article_title"),
-                    author=node.get("article_author"),
-                    year=node.get("year"),
-                    topic=node.get("topic"),
-                    model=node.get("extraction_model"),
-                    ext_date=node.get("extraction_date"),
-                )
-                count += 1
-        return count
-
-    async def _merge_variety_trials(self, trials: list[dict]) -> int:
-        count = 0
-        async with self._driver.session() as s:
-            for node in trials:
-                merge_key = _merge_key_variety_trial(node)
-                source = _resolve_source(node)
-                await s.run(
-                    """
-                    MERGE (vt:VarietyTrial {mergeKey: $merge_key})
-                    SET vt.dataSource = $source,
-                        vt.cropEppo = $crop_eppo,
-                        vt.cropScientific = $crop_sci,
-                        vt.variety = $variety,
-                        vt.agroclimaticZone = $zone,
-                        vt.year = $year,
-                        vt.yieldKgHa = $yield_val,
-                        vt.yieldRelativePct = $yield_rel,
-                        vt.qualityParams = $quality,
-                        vt.diseaseScores = $disease,
-                        vt.irrigationRegime = $irrigation,
-                        vt.productionSystem = $production_system,
-                        vt.trialLocation = $location,
-                        vt.confidence = $confidence,
-                        vt.pageInIssue = $page,
-                        vt.tableNumber = $table,
-                        vt.metadata = $metadata,
-                        vt.updatedAt = datetime()
-                    """,
-                    merge_key=merge_key,
-                    source=source,
-                    crop_eppo=(node.get("crop_eppo") or "").replace("eppo:", ""),
-                    crop_sci=_resolve_scientific_name(
-                        (node.get("crop_eppo") or "").replace("eppo:", ""),
-                        node.get("crop_scientific"),
-                    ),
-                    variety=node.get("variety"),
-                    zone=node.get("agroclimatic_zone"),
-                    year=node.get("year"),
-                    yield_val=node.get("yield_kg_ha"),
-                    yield_rel=node.get("yield_relative_pct"),
-                    quality=json.dumps(node.get("quality_params")) if node.get("quality_params") else None,
-                    disease=json.dumps(node.get("disease_scores")) if node.get("disease_scores") else None,
-                    irrigation=node.get("irrigation_regime"),
-                    production_system=node.get("production_system"),
-                    location=node.get("trial_location"),
-                    confidence=node.get("confidence"),
-                    page=node.get("page_in_issue"),
-                    table=str(node.get("table_number", "")) if node.get("table_number") else None,
-                    metadata=json.dumps(node.get("metadata")) if node.get("metadata") else None,
-                )
-                count += 1
-        return count
-
-    async def _merge_management_trials(self, trials: list[dict]) -> int:
-        count = 0
-        async with self._driver.session() as s:
-            for node in trials:
-                merge_key = _merge_key_management_trial(node)
-                source = _resolve_source(node)
-                await s.run(
-                    """
-                    MERGE (mt:ManagementTrial {mergeKey: $merge_key})
-                    SET mt.dataSource = $source,
-                        mt.cropEppo = $crop_eppo,
-                        mt.variety = $variety,
-                        mt.experimentType = $exp_type,
-                        mt.treatment = $treatment,
-                        mt.treatmentDescription = $treatment_desc,
-                        mt.resultMetric = $metric,
-                        mt.resultValue = $value,
-                        mt.resultUnit = $unit,
-                        mt.controlValue = $ctrl_value,
-                        mt.controlUnit = $ctrl_unit,
-                        mt.year = $year,
-                        mt.trialLocation = $location,
-                        mt.confidence = $confidence,
-                        mt.pageInIssue = $page,
-                        mt.tableNumber = $table,
-                        mt.metadata = $metadata,
-                        mt.updatedAt = datetime()
-                    """,
-                    merge_key=merge_key,
-                    source=source,
-                    crop_eppo=(node.get("crop_eppo") or "").replace("eppo:", ""),
-                    variety=node.get("variety"),
-                    exp_type=node.get("experiment_type"),
-                    treatment=node.get("treatment"),
-                    treatment_desc=node.get("treatment_description"),
-                    metric=node.get("result_metric"),
-                    value=node.get("result_value"),
-                    unit=node.get("result_unit"),
-                    ctrl_value=node.get("control_value"),
-                    ctrl_unit=node.get("control_unit"),
-                    year=node.get("year"),
-                    location=node.get("trial_location"),
-                    confidence=node.get("confidence"),
-                    page=node.get("page_in_issue"),
-                    table=str(node.get("table_number", "")) if node.get("table_number") else None,
-                    metadata=json.dumps(node.get("metadata")) if node.get("metadata") else None,
-                )
-                count += 1
-        return count
-
-    async def _merge_harvest_data(self, records: list[dict]) -> int:
-        count = 0
-        async with self._driver.session() as s:
-            for node in records:
-                merge_key = _merge_key_harvest_data(node)
-                source = _resolve_source(node)
-                await s.run(
-                    """
-                    MERGE (hd:HarvestData {mergeKey: $merge_key})
-                    SET hd.dataSource = $source,
-                        hd.cropEppo = $crop_eppo,
-                        hd.agroclimaticZone = $zone,
-                        hd.campaign = $campaign,
-                        hd.areaHa = $area,
-                        hd.totalProductionT = $production,
-                        hd.avgYieldKgHa = $avg_yield,
-                        hd.yieldVsPreviousPct = $vs_prev,
-                        hd.confidence = $confidence,
-                        hd.pageInIssue = $page,
-                        hd.updatedAt = datetime()
-                    """,
-                    merge_key=merge_key,
-                    source=source,
-                    crop_eppo=(node.get("crop_eppo") or "").replace("eppo:", ""),
-                    zone=node.get("agroclimatic_zone"),
-                    campaign=node.get("campaign"),
-                    area=node.get("area_ha"),
-                    production=node.get("total_production_t"),
-                    avg_yield=node.get("avg_yield_kg_ha"),
-                    vs_prev=node.get("yield_vs_previous_pct"),
-                    confidence=node.get("confidence"),
-                    page=node.get("page_in_issue"),
-                )
-                count += 1
-        return count
-
-    # ── Relationship MERGE ───────────────────────────────────────────────────
-
-    async def _merge_relationships(
-        self,
-        variety_trials: list[dict],
-        management_trials: list[dict],
-        harvest_data: list[dict],
-    ) -> int:
-        count = 0
-        async with self._driver.session() as s:
-            # VarietyTrial -[:TRIAL_AT]-> TrialSite
-            for vt in variety_trials:
-                location = (vt.get("trial_location") or "").strip().lower()
-                if location:
-                    await s.run(
-                        """
-                        MATCH (vt:VarietyTrial {mergeKey: $vt_key})
-                        MATCH (ts:TrialSite)
-                        WHERE toLower(ts.name) = $loc OR toLower(ts.municipality) = $loc
-                        MERGE (vt)-[:TRIAL_AT]->(ts)
-                        """,
-                        vt_key=_merge_key_variety_trial(vt),
-                        loc=location,
-                    )
-                    count += 1
-
-                # VarietyTrial -[:SOURCED_FROM]-> ArticleSource
-                meta = vt.get("metadata", {})
-                if isinstance(meta, str):
-                    try:
-                        meta = json.loads(meta)
-                    except json.JSONDecodeError:
-                        meta = {}
-                if meta:
-                    source_key = _merge_key_article_source({
-                        "source": meta.get("source", "Navarra Agraria"),
-                        "issue_number": meta.get("issue_number"),
-                        "article_title": meta.get("article_title", ""),
-                    })
-                    await s.run(
-                        """
-                        MATCH (vt:VarietyTrial {mergeKey: $vt_key})
-                        MATCH (as:ArticleSource {mergeKey: $as_key})
-                        MERGE (vt)-[:SOURCED_FROM]->(as)
-                        """,
-                        vt_key=_merge_key_variety_trial(vt),
-                        as_key=source_key,
-                    )
-                    count += 1
-
-                # VarietyTrial -[:TRIAL_OF]-> Species (when EPPO code matches)
-                eppo = (vt.get("crop_eppo") or "").replace("eppo:", "")
-                if eppo:
-                    await s.run(
-                        """
-                        MATCH (vt:VarietyTrial {mergeKey: $vt_key})
-                        MATCH (s:Species {eppoCode: $eppo})
-                        MERGE (vt)-[:TRIAL_OF]->(s)
-                        """,
-                        vt_key=_merge_key_variety_trial(vt),
-                        eppo=eppo,
-                    )
-                    count += 1
-
-            # ManagementTrial -[:TRIAL_AT]-> TrialSite
-            for mt in management_trials:
-                location = (mt.get("trial_location") or "").strip().lower()
-                if location:
-                    await s.run(
-                        """
-                        MATCH (mt:ManagementTrial {mergeKey: $mt_key})
-                        MATCH (ts:TrialSite)
-                        WHERE toLower(ts.name) = $loc OR toLower(ts.municipality) = $loc
-                        MERGE (mt)-[:TRIAL_AT]->(ts)
-                        """,
-                        mt_key=_merge_key_management_trial(mt),
-                        loc=location,
-                    )
-                    count += 1
-
-                meta = mt.get("metadata", {})
-                if isinstance(meta, str):
-                    try:
-                        meta = json.loads(meta)
-                    except json.JSONDecodeError:
-                        meta = {}
-                if meta:
-                    source_key = _merge_key_article_source({
-                        "source": meta.get("source", "Navarra Agraria"),
-                        "issue_number": meta.get("issue_number"),
-                        "article_title": meta.get("article_title", ""),
-                    })
-                    await s.run(
-                        """
-                        MATCH (mt:ManagementTrial {mergeKey: $mt_key})
-                        MATCH (as:ArticleSource {mergeKey: $as_key})
-                        MERGE (mt)-[:SOURCED_FROM]->(as)
-                        """,
-                        mt_key=_merge_key_management_trial(mt),
-                        as_key=source_key,
-                    )
-                    count += 1
-
-            # HarvestData -[:SOURCED_FROM]-> ArticleSource
-            for hd in harvest_data:
-                meta = hd.get("metadata", {})
-                if isinstance(meta, str):
-                    try:
-                        meta = json.loads(meta)
-                    except json.JSONDecodeError:
-                        meta = {}
-                if meta:
-                    source_key = _merge_key_article_source({
-                        "source": meta.get("source", "Navarra Agraria"),
-                        "issue_number": meta.get("issue_number"),
-                        "article_title": meta.get("article_title", ""),
-                    })
-                    await s.run(
-                        """
-                        MATCH (hd:HarvestData {mergeKey: $hd_key})
-                        MATCH (as:ArticleSource {mergeKey: $as_key})
-                        MERGE (hd)-[:SOURCED_FROM]->(as)
-                        """,
-                        hd_key=_merge_key_harvest_data(hd),
-                        as_key=source_key,
-                    )
-                    count += 1
-
-        return count
+        stats = await self.merge(nodes)
+        return {"dry_run": False, "merged": stats}
 
     # ── Parse ──────────────────────────────────────────────────────────────
 
     async def _parse_nodes(self, data: dict) -> dict[str, list[dict]]:
-        """Partition @graph by @type and set mergeKey on each node.
-
-        Args:
-            data: Parsed JSON-LD dict (with @graph key).
-
-        Returns:
-            Canonical node dicts keyed by type.
-        """
+        """Partition @graph by @type and map JSON-LD fields to canonical dicts."""
         graph = data.get("@graph", [])
 
-        sites = []
-        articles = []
-        variety_trials = []
-        management_trials = []
-        harvest_data = []
-        unknown = []
+        sites: list[dict] = []
+        articles: list[dict] = []
+        variety_trials: list[dict] = []
+        management_trials: list[dict] = []
+        unknown: list[str] = []
 
         for node in graph:
             t = node.get("@type", "")
             if t == "TrialSite":
-                node["mergeKey"] = _merge_key_trial_site(node)
-                sites.append(node)
+                sites.append(self._convert_site(node))
             elif t == "ArticleSource":
-                node["mergeKey"] = _merge_key_article_source(node)
-                articles.append(node)
+                articles.append(self._convert_article(node))
             elif t == "VarietyTrial":
-                node["mergeKey"] = _merge_key_variety_trial(node)
-                variety_trials.append(node)
+                variety_trials.append(self._convert_trial(node))
             elif t == "ManagementTrial":
-                node["mergeKey"] = _merge_key_management_trial(node)
-                management_trials.append(node)
+                management_trials.append(self._convert_management(node))
             elif t == "HarvestData":
-                node["mergeKey"] = _merge_key_harvest_data(node)
-                harvest_data.append(node)
+                continue
             else:
                 unknown.append(t)
 
@@ -615,7 +217,85 @@ class NavarraIngester(BaseIngester):
             "article_sources": articles,
             "variety_trials": variety_trials,
             "management_trials": management_trials,
-            "harvest_data": harvest_data,
+        }
+
+    def _convert_site(self, node: dict) -> dict:
+        return {
+            "name": node.get("name"),
+            "municipality": node.get("municipality"),
+            "region": node.get("region"),
+            "latitude": node.get("latitude"),
+            "longitude": node.get("longitude"),
+            "elevationM": node.get("elevationM"),
+            "climateClass": node.get("climateClass") or node.get("climate_class"),
+            "annualRainfallMm": node.get("annualRainfallMm"),
+            "annualET0Mm": node.get("annualET0Mm"),
+            "frostDaysPerYear": node.get("frostDaysPerYear"),
+            "soilType": node.get("soilType"),
+            "soilTexture": node.get("soilTexture"),
+            "soilPh": node.get("soilPh"),
+            "soilOrganicMatterPct": node.get("soilOrganicMatterPct"),
+            "photoperiodSummerHours": node.get("photoperiodSummerHours"),
+            "agroclimaticZone": node.get("agroclimatic_zone"),
+            "source_id": node.get("source_id") or self.SOURCE_ID,
+            "mergeKey": node.get("mergeKey") or _merge_key_trial_site(node),
+        }
+
+    def _convert_article(self, node: dict) -> dict:
+        return {
+            "source": node.get("source") or "Navarra Agraria",
+            "issueNumber": node.get("issue_number"),
+            "issuePeriod": node.get("issue_period"),
+            "articleTitle": node.get("article_title"),
+            "articleAuthor": node.get("article_author"),
+            "year": node.get("year"),
+            "topic": node.get("topic"),
+            "source_id": node.get("source_id") or self.SOURCE_ID,
+            "mergeKey": node.get("mergeKey") or _merge_key_article_source(node),
+        }
+
+    def _convert_trial(self, node: dict) -> dict:
+        eppo = BaseIngester._normalize_eppo(node.get("crop_eppo"))
+        eppo_bare = (eppo or "").replace("eppo:", "")
+        qp = node.get("quality_params")
+        ds = node.get("disease_scores")
+        return {
+            "cropEppo": eppo,
+            "cropScientific": _resolve_scientific_name(eppo_bare, node.get("crop_scientific")),
+            "variety": node.get("variety"),
+            "year": node.get("year"),
+            "yieldKgHa": node.get("yield_kg_ha"),
+            "yieldRelativePct": node.get("yield_relative_pct"),
+            "qualityParams": json.dumps(qp) if qp else None,
+            "diseaseScores": json.dumps(ds) if ds else None,
+            "irrigationRegime": node.get("irrigation_regime"),
+            "trialLocation": node.get("trial_location"),
+            "agroclimaticZone": node.get("agroclimatic_zone"),
+            "productionSystem": node.get("production_system"),
+            "confidence": node.get("confidence", self._registry_entry.get("confidence_default", "medium")),
+            "source_id": node.get("source_id") or self.SOURCE_ID,
+            "trial_id": node.get("@id", ""),
+            "mergeKey": node.get("mergeKey") or _merge_key_variety_trial(node),
+        }
+
+    def _convert_management(self, node: dict) -> dict:
+        return {
+            "cropEppo": BaseIngester._normalize_eppo(node.get("crop_eppo")),
+            "variety": node.get("variety"),
+            "experimentType": node.get("experiment_type"),
+            "treatment": node.get("treatment"),
+            "treatmentDescription": node.get("treatment_description"),
+            "resultMetric": node.get("result_metric"),
+            "resultValue": node.get("result_value"),
+            "resultUnit": node.get("result_unit"),
+            "controlValue": node.get("control_value"),
+            "controlUnit": node.get("control_unit"),
+            "year": node.get("year"),
+            "trialLocation": node.get("trial_location"),
+            "confidence": node.get("confidence", self._registry_entry.get("confidence_default", "medium")),
+            "source_id": node.get("source_id") or self.SOURCE_ID,
+            "trial_id": node.get("@id", ""),
+            "mergeKey": node.get("mergeKey") or _merge_key_management_trial(node),
         }
 
 
@@ -659,15 +339,26 @@ def _resolve_source(node: dict) -> str:
 async def main():
     import argparse
 
-    parser = argparse.ArgumentParser(description="Navarra Agraria → transform nodes")
-    parser.add_argument("--jsonld", required=True, help="Path to all_trials_enriched.jsonld")
+    parser = argparse.ArgumentParser(description="Navarra Agraria → transform / merge")
+    parser.add_argument("--jsonld", required=True, help="Path to adequate JSON-LD bundle")
     parser.add_argument("--dry-run", action="store_true", default=True)
-    parser.add_argument("--no-dry-run", action="store_true", help="Actually run (will fail — reserved for unified ingestion)")
+    parser.add_argument("--no-dry-run", action="store_true", help="MERGE into Neo4j (needs NEO4J_* env)")
     args = parser.parse_args()
 
-    ingester = NavarraIngester()
-    stats = await ingester.ingest(args.jsonld, dry_run=not args.no_dry_run)
-    print(json.dumps(stats, indent=2))
+    driver = None
+    if args.no_dry_run:
+        from neo4j import AsyncGraphDatabase
+        driver = AsyncGraphDatabase.driver(
+            NEO4J_URI, auth=(NEO4J_USER, NEO4J_PASSWORD)
+        )
+
+    ingester = NavarraIngester(driver=driver)
+    try:
+        stats = await ingester.ingest(args.jsonld, dry_run=not args.no_dry_run)
+        print(json.dumps(stats, indent=2))
+    finally:
+        if driver is not None:
+            await driver.close()
 
 
 if __name__ == "__main__":
