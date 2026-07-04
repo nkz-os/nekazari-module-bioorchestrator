@@ -1328,8 +1328,13 @@ class GraphDAO:
         similar_site_names = [s["name"] for s in similar_sites_result]
 
         # Hold out sites from the training pool (leave-one-site-out backtest, C.3).
+        # Drop them from the analog list AND exclude every trial *observed at* them
+        # (even one also linked to an analog site) — otherwise a multi-linked trial
+        # leaks the held-out observation back into the prediction.
+        excluded_lower: list[str] | None = None
         if exclude_sites:
-            _excluded = {s.lower() for s in exclude_sites}
+            excluded_lower = [s.lower() for s in exclude_sites]
+            _excluded = set(excluded_lower)
             similar_site_names = [n for n in similar_site_names if n.lower() not in _excluded]
 
         if not similar_site_names:
@@ -1352,6 +1357,10 @@ class GraphDAO:
                       OR vt.cropScientific CONTAINS $crop
                       OR toLower(vt.cropScientific) = toLower($crop)
                   )
+                  AND ($excluded_sites IS NULL OR NOT EXISTS {
+                      MATCH (vt)-[:TRIAL_AT]->(x:TrialSite)
+                      WHERE toLower(x.name) IN $excluded_sites
+                  })
                 // Dedupe stage: collapse each trial to ONE row regardless of how
                 // many (same-name duplicate) sites it links to, so the numeric
                 // aggregations below count every trial exactly once (G2/G9 guard).
@@ -1403,6 +1412,7 @@ class GraphDAO:
                 irrigation_uri=irrigation_uri,
                 production_system=None,  # Placeholder: future use when data exists
                 top_n=top_n,
+                excluded_sites=excluded_lower,
             )
 
             ranked = []

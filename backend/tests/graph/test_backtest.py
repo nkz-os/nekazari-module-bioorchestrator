@@ -82,6 +82,33 @@ def test_extrapolate_exclude_sites_removes_that_sites_trials(dao):
     assert v_excl["mean_yield_kg_ha"] == 5000.0  # SiteA's 9000 held out
 
 
+def test_exclude_sites_drops_multilinked_trials_observed_there(dao):
+    """Holding out a site must exclude EVERY trial observed there, even one also
+    linked to an analog site — otherwise leave-one-site-out leaks (the same yield
+    ends up in both the held-out observation and the training prediction)."""
+    _reset_and_seed(
+        dao,
+        """
+        CREATE (a:TrialSite {name:'SiteA', climateClass:'Csa', annualRainfallMm:500})
+        CREATE (b:TrialSite {name:'SiteB', climateClass:'Csa', annualRainfallMm:500})
+        CREATE (t2:VarietyTrial {cropEppo:'TRZAX', varietyNormalized:'V', variety:'V', year:2020, yieldKgHa:5000.0})
+        // t3 is observed at BOTH SiteA and SiteB (multi-linked).
+        CREATE (t3:VarietyTrial {cropEppo:'TRZAX', varietyNormalized:'V', variety:'V', year:2021, yieldKgHa:1000.0})
+        CREATE (t2)-[:TRIAL_AT]->(b)
+        CREATE (t3)-[:TRIAL_AT]->(a)
+        CREATE (t3)-[:TRIAL_AT]->(b)
+        """,
+    )
+    excl = _run(
+        dao.extrapolate_varieties(
+            crop="TRZAX", climate_class="Csa", top_n=5, exclude_sites=["SiteA"]
+        )
+    )
+    v = next(x for x in excl["ranked_varieties"] if x["variety"] == "V")
+    # t3 touches held-out SiteA → excluded entirely; only t2=5000 remains (not 3000).
+    assert v["mean_yield_kg_ha"] == 5000.0
+
+
 # ── Backtester: leave-one-site-out cross-validation ──────────────────────────
 
 _TWO_SITE_SEED = """
