@@ -56,8 +56,8 @@ def _seed(dao):
                 """
                 CREATE (site:TrialSite {name:'HonestSite', climateClass:'Csa', annualRainfallMm:500})
                 CREATE (a:VarietyTrial {cropEppo:'TRZAX', varietyNormalized:'HONESTVAR', variety:'HonestVar', year:2020, yieldKgHa:9000.0, confidence:'high'})
-                CREATE (b:VarietyTrial {cropEppo:'TRZAX', varietyNormalized:'HONESTVAR', variety:'HonestVar', year:2021, yieldKgHa:8000.0, confidence:'high'})
-                CREATE (c:VarietyTrial {cropEppo:'TRZAX', varietyNormalized:'HONESTVAR', variety:'HonestVar', year:2022, yieldNoteS1:9, confidence:'high'})
+                CREATE (b:VarietyTrial {cropEppo:'TRZAX', varietyNormalized:'HONESTVAR', variety:'HonestVar', year:2020, yieldKgHa:8000.0, confidence:'high'})
+                CREATE (c:VarietyTrial {cropEppo:'TRZAX', varietyNormalized:'HONESTVAR', variety:'HonestVar', year:2020, yieldNoteS1:9, confidence:'high'})
                 CREATE (a)-[:TRIAL_AT]->(site)
                 CREATE (b)-[:TRIAL_AT]->(site)
                 CREATE (c)-[:TRIAL_AT]->(site)

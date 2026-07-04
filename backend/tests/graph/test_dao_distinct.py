@@ -61,7 +61,7 @@ def _seed_multilink(dao):
                 CREATE (s1:TrialSite {name:'DupSite', climateClass:'Csa'})
                 CREATE (s2:TrialSite {name:'DupSite', climateClass:'Csa'})
                 CREATE (a:VarietyTrial {cropEppo:'TRZAX', varietyNormalized:'DUPVAR', variety:'DupVar', year:2020, yieldKgHa:9000.0, confidence:'high'})
-                CREATE (b:VarietyTrial {cropEppo:'TRZAX', varietyNormalized:'DUPVAR', variety:'DupVar', year:2021, yieldKgHa:3000.0, confidence:'high'})
+                CREATE (b:VarietyTrial {cropEppo:'TRZAX', varietyNormalized:'DUPVAR', variety:'DupVar', year:2020, yieldKgHa:3000.0, confidence:'high'})
                 CREATE (a)-[:TRIAL_AT]->(s1)
                 CREATE (a)-[:TRIAL_AT]->(s2)
                 CREATE (b)-[:TRIAL_AT]->(s1)
