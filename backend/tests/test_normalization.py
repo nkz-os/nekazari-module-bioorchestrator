@@ -101,7 +101,7 @@ class TestEppoToScientific:
             "ZEAMX", "TRZAX", "TRZAW", "TRZDU", "HORVX", "BRSNN", "BRSOX",
             "HELAN", "GLXMA", "PISSA", "VICSA", "LENCU", "CIEAR", "AVESA",
             "SECCE", "TTLSS", "SOLTU", "LYPES", "CAPAN", "VICFA", "LUPAL",
-            "MALDO", "FRAAN", "PRUDU", "OLEAE", "VITVI", "ORYSA",
+            "MALDO", "FRAAN", "PRNDU", "OLEAE", "VITVI", "ORYSA",
         ]
         for code in known:
             assert eppo_to_scientific(code) is not None, f"Missing mapping for {code}"

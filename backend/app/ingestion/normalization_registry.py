@@ -2031,7 +2031,7 @@ EPPO_TO_SCIENTIFIC: dict[str, str] = {
     "LUPAL": "Lupinus albus",
     "MALDO": "Malus domestica",
     "FRAAN": "Fragaria × ananassa",
-    "PRUDU": "Prunus dulcis",
+    "PRNDU": "Prunus dulcis",
     "OLEAE": "Olea europaea",
     "VITVI": "Vitis vinifera",
     "ORYSA": "Oryza sativa",

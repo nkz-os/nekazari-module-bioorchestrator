@@ -5129,7 +5129,7 @@ species:
         institution: Universidad de Sevilla, IAS-CSIC
         method: Dendrometer + water balance, RDI trial, 5-year
         conditions: Olive, cv. Picual, Seville, RDI (30% ETc at pit hardening)
-  eppo_code: OLIEU
+  eppo_code: OLVEU
 - name: almond
   scientific_name: Prunus dulcis
   agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_334

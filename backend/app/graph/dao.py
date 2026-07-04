@@ -750,10 +750,7 @@ class GraphDAO:
                 """
                 MATCH (s:Species {name: $species})-[:HAS_SOIL_SUITABILITY]->(ss:CropSoilSuitability)
                 RETURN ss.phMin AS ph_min, ss.phMax AS ph_max,
-                       ss.textures AS textures, ss.drainage AS drainage,
-                       ss.depthMinCm AS depth_min_cm,
-                       ss.salinityMaxDsM AS salinity_max_ds_m,
-                       ss.sourceShort AS source_short
+                       ss.textures AS textures, ss.drainage AS drainage
                 LIMIT 1
                 """,
                 species=species,
