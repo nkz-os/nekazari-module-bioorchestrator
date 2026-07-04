@@ -29,15 +29,18 @@ class AlmondIfapaIngester(BaseIngester):
 
     def _convert_site(self, node: dict) -> dict:
         # Schema §2/§3.2: scrapers emit snake_case `climate_class`
+        default_mk = (
+            f"{self.SOURCE_ID.lower()}|"
+            f"{str(node.get('name', '')).strip().lower()}|"
+            f"{str(node.get('municipality', '')).strip().lower()}"
+        )
         return {
             "name": node.get("name"),
             "municipality": node.get("municipality"),
             "latitude": node.get("latitude"),
             "longitude": node.get("longitude"),
             "climateClass": node.get("climate_class"),
-            "mergeKey": (f"{self.SOURCE_ID.lower()}|"
-                        f"{str(node.get('name', '')).strip().lower()}|"
-                        f"{str(node.get('municipality', '')).strip().lower()}"),
+            "mergeKey": node.get("mergeKey") or default_mk,
         }
 
     def _convert_article(self, node: dict) -> dict:
@@ -57,7 +60,14 @@ class AlmondIfapaIngester(BaseIngester):
         quality = node.get("quality_params") or {}
         if node.get("yield_metric"):
             quality = {**quality, "yield_metric": node.get("yield_metric")}
-        return {
+        loc = str(node.get("trial_location") or "unknown").strip().lower()
+        year = node.get("year") or 0
+        variety = str(node.get("variety") or "").strip().lower()
+        rootstock = str(node.get("rootstock") or "").strip().lower()
+        default_mk = (
+            f"{self.SOURCE_ID.lower()}|{eppo or 'unknown'}|{variety}|{rootstock}|{loc}|{year}"
+        )
+        out = {
             "cropEppo": eppo,
             "cropScientific": EPPO_TO_SPECIES.get(eppo),
             "variety": node.get("variety"),
@@ -75,12 +85,11 @@ class AlmondIfapaIngester(BaseIngester):
             "confidence": node.get("confidence", self._registry_entry.get("confidence_default", "medium")),
             "source_id": self.SOURCE_ID,
             "trial_id": node.get("@id", ""),
-            "mergeKey": (f"{self.SOURCE_ID.lower()}|{eppo or 'unknown'}|"
-                        f"{str(node.get('variety', '')).strip().lower()}|"
-                        f"{str(node.get('rootstock', '')).strip().lower()}|"
-                        f"{str(node.get('trial_location', 'unknown')).strip().lower()}|"
-                        f"{str(node.get('year', 0))}"),
+            "mergeKey": node.get("mergeKey") or default_mk,
+            "rankingEligible": node.get("ranking_eligible"),
+            "yieldDataType": node.get("yield_data_type"),
         }
+        return {k: v for k, v in out.items() if v is not None}
 
 
 async def _main():
