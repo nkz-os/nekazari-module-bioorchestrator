@@ -17,7 +17,10 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from app.services.soil_client import assess_soil_suitability
+from app.services.soil_client import (
+    assess_soil_suitability,
+    derive_drainage_class,
+)
 
 # ── Truth-set: (crop_tolerance, parcel_soil) → expected verdict ──────────────
 # Tolerance basis: EcoCrop/CropSoilSuitability pH ranges + USDA texture prefs.
@@ -33,11 +36,14 @@ ALFALFA = {"ph_min": 6.5, "ph_max": 8.0, "textures": ["loam"]}
 POTATO = {"ph_min": 5.0, "ph_max": 7.0, "textures": ["sandy_loam"]}
 
 
-def _soil(ph, texture, available=True, source="soilgrids"):
-    return {
+def _soil(ph, texture, available=True, source="soilgrids", drainage=None):
+    s = {
         "ph": ph, "texture": texture, "awc_mm": 120.0,
         "data_available": available, "source": source,
     }
+    if drainage is not None:
+        s["drainage"] = drainage
+    return s
 
 
 TRUTH_SET = [
@@ -82,6 +88,60 @@ def test_verdict_carries_ph_and_texture_detail():
     assert r["ph"]["min"] == 4.0 and r["ph"]["max"] == 5.5
     assert r["ph"]["verdict"] == "unsuitable"
     assert r["texture"]["value"] == "Clay loam"
+
+
+# ── Drainage (SCS hydrologic group → crop drainage class) ────────────────────
+# Parcel drainage read from the Soil module's `hydrologicGroup` (A/B/C/D), the
+# same field crop-health consumes. A (fast) → well_drained … D (slow) → poor.
+
+def test_derive_drainage_from_hydrologic_group():
+    assert derive_drainage_class({"hydrologicGroup": "A"}) == "well_drained"
+    assert derive_drainage_class({"hydrologicGroup": "B"}) == "well_drained"
+    assert derive_drainage_class({"hydrologicGroup": "C"}) == "moderate"
+    assert derive_drainage_class({"hydrologicGroup": "D"}) == "poor"
+
+
+def test_derive_drainage_falls_back_to_ksat():
+    # No group, but Ksat present → SCS thresholds (mm/h): >36 A, >3.6 B, >0.36 C.
+    assert derive_drainage_class({"saturatedHydraulicConductivity": 50.0}) == "well_drained"
+    assert derive_drainage_class({"saturatedHydraulicConductivity": 0.1}) == "poor"
+
+
+def test_derive_drainage_unknown_when_no_data():
+    assert derive_drainage_class({}) is None
+
+
+RICE_DRAIN = {**RICE, "drainage": ["poor"]}
+WHEAT_DRAIN = {**WHEAT, "drainage": ["well_drained"]}
+BARLEY_DRAIN = {"ph_min": 6.0, "ph_max": 8.5, "textures": ["loam"], "drainage": ["moderate"]}
+
+DRAINAGE_SET = [
+    # rice wants poor drainage; free-draining parcel → unsuitable
+    ("rice/well-drained", RICE_DRAIN, _soil(6.5, "Clay", drainage="well_drained"), "unsuitable"),
+    # rice on poorly-drained parcel → suitable
+    ("rice/poor", RICE_DRAIN, _soil(6.5, "Clay", drainage="poor"), "suitable"),
+    # wheat is waterlogging-sensitive; poorly-drained parcel → unsuitable
+    ("wheat/poor", WHEAT_DRAIN, _soil(7.0, "Loam", drainage="poor"), "unsuitable"),
+    # one drainage step off → marginal
+    ("barley/well-drained", BARLEY_DRAIN, _soil(7.0, "Loam", drainage="well_drained"), "marginal"),
+]
+
+
+@pytest.mark.parametrize(
+    "case_id,tolerance,parcel,expected",
+    DRAINAGE_SET, ids=[c[0] for c in DRAINAGE_SET],
+)
+def test_drainage_dimension(case_id, tolerance, parcel, expected):
+    r = assess_soil_suitability(tolerance, parcel)
+    assert r["verdict"] == expected, f"{case_id}: {r['reason']}"
+    assert r["drainage"]["value"] == parcel["drainage"]
+
+
+def test_drainage_absent_is_not_assessed():
+    # No parcel drainage → drainage dimension skipped, verdict from pH+texture only.
+    r = assess_soil_suitability(RICE_DRAIN, _soil(6.5, "Clay"))
+    assert r["verdict"] == "suitable"
+    assert r["drainage"]["verdict"] is None
 
 
 # ── Honest `unknown` paths — never silently treat unknown as suitable ────────
