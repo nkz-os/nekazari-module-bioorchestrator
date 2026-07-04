@@ -713,5 +713,52 @@
       "variety-trials",
       "mediterranean"
     ]
+  },
+  {
+    "source_id": "SCIENTIA-PIAVE",
+    "name": "Scientia Horticulturae — Pistachio Phenology",
+    "institution": "Scientia Horticulturae (Elsevier)",
+    "institution_short": "Scientia Hortic.",
+    "country": "ES",
+    "country_name": {
+      "en": "Spain",
+      "es": "España",
+      "eu": "Espainia",
+      "fr": "Espagne",
+      "pt": "Espanha"
+    },
+    "url": "https://www.sciencedirect.com/journal/scientia-horticulturae",
+    "document_url_template": null,
+    "license_class": "academic-published",
+    "use_type": "phenology-reference",
+    "official_status": false,
+    "data_format": "pdf-extracted",
+    "extraction_method": "structured",
+    "confidence_default": "high",
+    "attribution": {
+      "en": "Phenology data (GDD) extracted from pistachio field studies published in Scientia Horticulturae, central Spain 2019-2024.",
+      "es": "Datos de fenología (GDD) extraídos de estudios de campo de pistachero publicados en Scientia Horticulturae, Castilla central 2019-2024.",
+      "eu": "Fenologia datuak (GDD) Scientia Horticulturae-n argitaratutako pistatxo-landa-azterketetatik ateratakoak, Gaztela erdialdea 2019-2024.",
+      "fr": "Données phénologiques (GDD) extraites d'études de terrain sur le pistachier publiées dans Scientia Horticulturae, centre de l'Espagne 2019-2024.",
+      "pt": "Dados de fenologia (GDD) extraídos de estudos de campo de pistache publicados na Scientia Horticulturae, Castela central 2019-2024."
+    },
+    "disclaimer": {
+      "en": "Data from peer-reviewed journal article. NKZ uses this as phenology reference — this is not an official recommendation by the authors or the journal.",
+      "es": "Datos de artículo científico revisado por pares. NKZ los usa como referencia fenológica — esto no constituye una recomendación oficial de los autores ni de la revista.",
+      "eu": "Berrikusitako artikulu zientifikoko datuak. NKZk fenologia erreferentzia gisa erabiltzen ditu — hau ez da egileen edo aldizkariaren gomendio ofiziala.",
+      "fr": "Données d'un article scientifique évalué par des pairs. NKZ les utilise comme référence phénologique — ce n'est pas une recommandation officielle des auteurs ou de la revue.",
+      "pt": "Dados de artigo científico revisto por pares. A NKZ usa-os como referência fenológica — não é uma recomendação oficial dos autores ou da revista."
+    },
+    "site_urls": [
+      "https://www.sciencedirect.com/journal/scientia-horticulturae"
+    ],
+    "tags": [
+      "pistachio",
+      "perennial",
+      "phenology",
+      "gdd",
+      "academic"
+    ],
+    "_notes": "Registered 2026-07-04 for A3 gate unblock. Source is currently skipped in perennial canonical reingest — phenology-only, no variety trials. EPPO PIAVE (Pistacia vera), cv. Kerman & Golden Hills, central Spain."
   }
 ]
