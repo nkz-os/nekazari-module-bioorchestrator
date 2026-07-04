@@ -138,3 +138,149 @@ def compute_soil_suitability(
         "overall": "suitable" if (ph_match and texture_match) else "unsuitable",
         "warnings": warnings,
     }
+
+
+# ── Soil-suitability gate (C.5) ──────────────────────────────────────────────
+# Compares a crop's STANDARD tolerance (EcoCrop / CropSoilSuitability) against
+# a parcel's REAL soil (read live from the Soil module) and returns a graded
+# verdict: suitable / marginal / unsuitable / unknown.
+
+# pH band (units) outside the crop's [min, max] still counted as marginal
+# rather than unsuitable — soil pH is noisy and amendable at the margin.
+_PH_MARGIN = 0.5
+
+# USDA texture classes ordered by increasing fineness (clay content). Distance
+# on this scale is an agronomically-defensible proxy for texture mismatch:
+# sand↔clay is far (drainage/water-holding opposite), loam↔sandy_loam is near.
+_TEXTURE_ORDINAL: dict[str, int] = {
+    "sand": 0,
+    "loamy sand": 1,
+    "sandy loam": 2,
+    "loam": 3,
+    "silt loam": 3,
+    "silt": 3,
+    "sandy clay loam": 4,
+    "clay loam": 4,
+    "silty clay loam": 4,
+    "sandy clay": 5,
+    "silty clay": 5,
+    "clay": 6,
+}
+
+_RANK = {"suitable": 0, "marginal": 1, "unsuitable": 2}
+_BY_RANK = {0: "suitable", 1: "marginal", 2: "unsuitable"}
+
+
+def _normalize_texture(texture: str) -> str:
+    return texture.strip().lower().replace("_", " ").replace("-", " ")
+
+
+def _texture_ordinal(texture: str | None) -> int | None:
+    if not texture:
+        return None
+    return _TEXTURE_ORDINAL.get(_normalize_texture(texture))
+
+
+def _assess_ph(ph, ph_min, ph_max) -> tuple[str | None, str | None]:
+    """Return (verdict, reason) for pH, or (None, None) if not assessable."""
+    if ph is None or ph_min is None or ph_max is None:
+        return None, None
+    if ph_min <= ph <= ph_max:
+        return "suitable", None
+    if ph < ph_min:
+        gap, side, bound = ph_min - ph, "below", ph_min
+    else:
+        gap, side, bound = ph - ph_max, "above", ph_max
+    verdict = "marginal" if gap <= _PH_MARGIN else "unsuitable"
+    return verdict, f"Soil pH {ph} {side} crop {'min' if side == 'below' else 'max'} {bound}"
+
+
+def _assess_texture(texture, req_textures) -> tuple[str | None, str | None]:
+    """Return (verdict, reason) for texture, or (None, None) if not assessable."""
+    parcel_ord = _texture_ordinal(texture)
+    req_ords = [o for t in (req_textures or []) if (o := _texture_ordinal(t)) is not None]
+    if parcel_ord is None or not req_ords:
+        return None, None
+    dist = min(abs(parcel_ord - o) for o in req_ords)
+    if dist <= 1:
+        return "suitable", None
+    verdict = "marginal" if dist <= 3 else "unsuitable"
+    return verdict, f"Soil texture '{texture}' distant from crop preference {req_textures}"
+
+
+def assess_soil_suitability(crop_tolerance: dict | None, parcel_soil: dict | None) -> dict:
+    """Grade a crop's fit to a parcel's real soil.
+
+    Args:
+        crop_tolerance: crop STANDARD tolerance (from GraphDAO.get_soil_suitability):
+            {ph_min, ph_max, textures, drainage, ...}. None/empty → unknown.
+        parcel_soil: parcel's REAL soil (from get_parcel_soil_properties):
+            {ph, texture, ..., data_available}. Unavailable → unknown.
+
+    Returns:
+        {'verdict': 'suitable'|'marginal'|'unsuitable'|'unknown', 'reason': str,
+         'ph': {value, min, max, verdict}, 'texture': {value, preferred, verdict},
+         'confidence': 'high'|'medium'|'low', 'source': str}
+    Never silently treats unknown as suitable (fail-safe = honesty).
+    """
+    parcel_src = (parcel_soil or {}).get("source", "unknown")
+    source = f"crop tolerance (EcoCrop) × parcel soil ({parcel_src})"
+
+    ph_val = (parcel_soil or {}).get("ph")
+    texture_val = (parcel_soil or {}).get("texture")
+    ph_min = (crop_tolerance or {}).get("ph_min")
+    ph_max = (crop_tolerance or {}).get("ph_max")
+    req_textures = (crop_tolerance or {}).get("textures") or []
+
+    ph_detail = {"value": ph_val, "min": ph_min, "max": ph_max, "verdict": None}
+    texture_detail = {"value": texture_val, "preferred": req_textures, "verdict": None}
+
+    if not crop_tolerance:
+        return {
+            "verdict": "unknown",
+            "reason": "No soil tolerance data for this crop",
+            "ph": ph_detail, "texture": texture_detail,
+            "confidence": "low", "source": source,
+        }
+    if not parcel_soil or not parcel_soil.get("data_available"):
+        return {
+            "verdict": "unknown",
+            "reason": "Parcel soil unavailable from Soil module — gate cannot run",
+            "ph": ph_detail, "texture": texture_detail,
+            "confidence": "low", "source": source,
+        }
+
+    ph_verdict, ph_reason = _assess_ph(ph_val, ph_min, ph_max)
+    texture_verdict, texture_reason = _assess_texture(texture_val, req_textures)
+    ph_detail["verdict"] = ph_verdict
+    texture_detail["verdict"] = texture_verdict
+
+    assessed = [(v, r) for v, r in ((ph_verdict, ph_reason), (texture_verdict, texture_reason))
+                if v is not None]
+    if not assessed:
+        return {
+            "verdict": "unknown",
+            "reason": "No comparable soil dimension (pH/texture) for crop and parcel",
+            "ph": ph_detail, "texture": texture_detail,
+            "confidence": "low", "source": source,
+        }
+
+    worst_rank = max(_RANK[v] for v, _ in assessed)
+    verdict = _BY_RANK[worst_rank]
+    reasons = [r for v, r in assessed if r and _RANK[v] == worst_rank]
+    if verdict == "suitable":
+        reason = "Soil pH and texture within crop tolerance"
+    else:
+        reason = "; ".join(reasons) or f"Soil {verdict} for crop"
+
+    # Two agreeing dimensions → medium; a single dimension → low (thinner evidence).
+    confidence = "medium" if len(assessed) >= 2 else "low"
+
+    return {
+        "verdict": verdict,
+        "reason": reason,
+        "ph": ph_detail,
+        "texture": texture_detail,
+        "confidence": confidence,
+        "source": source,
+    }
