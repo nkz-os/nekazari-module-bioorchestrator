@@ -668,5 +668,50 @@
       "multi-institution",
       "europe"
     ]
+  },
+  {
+    "source_id": "IFAPA_ALMOND",
+    "name": "IFAPA Las Torres — Almond variety trials",
+    "institution": "IFAPA — Instituto Andaluz de Investigación y Formación Agraria y Pesquera",
+    "institution_short": "IFAPA",
+    "country": "ES",
+    "country_name": {
+      "en": "Spain",
+      "es": "España",
+      "eu": "Espainia",
+      "fr": "Espagne",
+      "pt": "Espanha"
+    },
+    "url": "https://www.juntadeandalucia.es/agriculturaypesca/ifapa",
+    "document_url_template": null,
+    "license_class": "public-sector-psi",
+    "use_type": "variety-trial-network",
+    "official_status": false,
+    "data_format": "pdf-extracted",
+    "extraction_method": "structured",
+    "confidence_default": "high",
+    "attribution": {
+      "en": "Data sourced from almond variety trials published by IFAPA (Andalusia, Spain), Las Torres research centre.",
+      "es": "Datos obtenidos de ensayos varietales de almendro publicados por el IFAPA (Andalucía, España), centro Las Torres.",
+      "eu": "IFAPAk (Andaluzia, Espainia) argitaratutako almendra-barietate entseguetatik lortutako datuak, Las Torres ikerketa-zentroa.",
+      "fr": "Données issues des essais variétaux d'amandier publiés par l'IFAPA (Andalousie, Espagne), centre Las Torres.",
+      "pt": "Dados obtidos de ensaios varietais de amendoeira publicados pelo IFAPA (Andaluzia, Espanha), centro Las Torres."
+    },
+    "disclaimer": {
+      "en": "IFAPA trials are conducted at Las Torres. NKZ extrapolates results to similar environments — this is not an official IFAPA recommendation.",
+      "es": "Los ensayos IFAPA se realizan en Las Torres. NKZ extrapola los resultados a entornos similares — esto no constituye una recomendación oficial del IFAPA.",
+      "eu": "IFAPA entseguak Las Torresen egiten dira. NKZk emaitzak antzeko inguruneetara estrapolatzen ditu — hau ez da IFAPAren gomendio ofiziala.",
+      "fr": "Les essais IFAPA sont menés à Las Torres. NKZ extrapole les résultats — ce n'est pas une recommandation officielle de l'IFAPA.",
+      "pt": "Os ensaios IFAPA são realizados em Las Torres. A NKZ extrapola os resultados — não é uma recomendação oficial do IFAPA."
+    },
+    "site_urls": [
+      "https://www.juntadeandalucia.es/agriculturaypesca/ifapa"
+    ],
+    "tags": [
+      "almond",
+      "perennial",
+      "variety-trials",
+      "mediterranean"
+    ]
   }
 ]

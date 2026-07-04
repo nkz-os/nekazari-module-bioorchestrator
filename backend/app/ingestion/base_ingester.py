@@ -120,12 +120,14 @@ class BaseIngester(ABC):
             "variety_trials": 0,
             "management_trials": 0,
             "relationships": 0,
+            "rootstocks": 0,
         }
 
         try:
             stats["sites"] = await self._merge_trial_sites(driver, nodes.get("trial_sites", []))
             stats["articles"] = await self._merge_article_sources(driver, nodes.get("article_sources", []))
             stats["variety_trials"] = await self._merge_variety_trials(driver, nodes.get("variety_trials", []))
+            stats["rootstocks"] = await self._merge_rootstocks(driver, nodes.get("variety_trials", []))
             stats["management_trials"] = await self._merge_management_trials(driver, nodes.get("management_trials", []))
             stats["relationships"] = await self._merge_relationships(
                 driver,
@@ -138,10 +140,10 @@ class BaseIngester(ABC):
                 await driver.close()
 
         logger.info(
-            "[%s] MERGE complete: %d sites, %d articles, %d VT, %d MT, %d rels",
+            "[%s] MERGE complete: %d sites, %d articles, %d VT, %d MT, %d rels, %d rootstocks",
             self.SOURCE_ID, stats["sites"], stats["articles"],
             stats["variety_trials"], stats["management_trials"],
-            stats["relationships"],
+            stats["relationships"], stats["rootstocks"],
         )
         return stats
 
@@ -209,6 +211,13 @@ class BaseIngester(ABC):
             if not vt.get("year") or vt.get("year", 0) <= 1900:
                 missing.append("year")
             vt["_validation"] = {"missing": missing, "valid": len(missing) == 0}
+
+            py = vt.get("plantingYear")
+            if py is not None:
+                try:
+                    vt["plantingYear"] = int(py)
+                except (TypeError, ValueError):
+                    vt["plantingYear"] = None
 
             normalised_vts.append(vt)
 
@@ -438,6 +447,11 @@ class BaseIngester(ABC):
                         vt.trialLocation = $location,
                         vt.agroclimaticZone = $agro_zone,
                         vt.productionSystem = $production,
+                        vt.rootstock = $rootstock,
+                        vt.scion = $scion,
+                        vt.trainingSystem = $training_system,
+                        vt.plantingYear = $planting_year,
+                        vt.plantingDensityTreesHa = $planting_density,
                         vt.confidence = $confidence,
                         vt.mergeKeyNormalized = $merge_key_norm,
                         vt.cropScientific = $sci_name,
@@ -488,8 +502,51 @@ class BaseIngester(ABC):
                     climate=node.get("climateClass"),
                     agro_zone=node.get("agroclimaticZone"),
                     production=node.get("productionSystem"),
+                    rootstock=node.get("rootstock"),
+                    scion=node.get("scion"),
+                    training_system=node.get("trainingSystem"),
+                    planting_year=node.get("plantingYear"),
+                    planting_density=node.get("plantingDensityTreesHa"),
                     confidence=node.get("confidence", "medium"),
                     valid=node.get("_validation", {}).get("valid", True),
+                )
+                count += 1
+        return count
+
+    @staticmethod
+    def _rootstock_key(node: dict) -> str | None:
+        name = (node.get("rootstock") or "").strip().lower()
+        if not name:
+            return None
+        scope = (node.get("cropEppo") or node.get("cropScientific") or "").strip().lower()
+        return f"rootstock|{name}|{scope}"
+
+    async def _merge_rootstocks(self, driver: AsyncDriver, trials: list[dict]) -> int:
+        keyed = [(self._rootstock_key(t), t) for t in trials
+                 if not t.get("skip_ingestion") and t.get("rootstock")]
+        keyed = [(k, t) for k, t in keyed if k]
+        if not keyed:
+            return 0
+        count = 0
+        seen: set[str] = set()
+        async with driver.session() as session:
+            for key, t in keyed:
+                if key in seen:
+                    continue
+                seen.add(key)
+                await session.run(
+                    """
+                    MERGE (rs:Rootstock {mergeKey: $key})
+                    SET rs.name = $name,
+                        rs.species = $species,
+                        rs.eppoCode = $eppo,
+                        rs.source_id = $source,
+                        rs.updatedAt = datetime()
+                    """,
+                    key=key, name=t.get("rootstock"),
+                    species=t.get("cropScientific"),
+                    eppo=t.get("cropEppo"),
+                    source=t.get("source_id", self.SOURCE_ID),
                 )
                 count += 1
         return count
@@ -593,6 +650,20 @@ class BaseIngester(ABC):
                 count += await _link(session, "VarietyTrial")
             if any(not m.get("skip_ingestion") for m in management_trials):
                 count += await _link(session, "ManagementTrial")
+
+            if any(not v.get("skip_ingestion") and v.get("rootstock") for v in variety_trials):
+                r = await session.run(
+                    "MATCH (vt:VarietyTrial {source_id: $sid}) "
+                    "WHERE vt.rootstock IS NOT NULL "
+                    "MATCH (rs:Rootstock {mergeKey: "
+                    "  'rootstock|' + toLower(trim(vt.rootstock)) + '|' + "
+                    "  toLower(coalesce(vt.cropEppo, vt.cropScientific, ''))}) "
+                    "MERGE (vt)-[:USES_ROOTSTOCK]->(rs) "
+                    "RETURN count(*) AS c",
+                    sid=self.SOURCE_ID,
+                )
+                row = await r.single()
+                count += row["c"] if row else 0
 
         return count
 
