@@ -21,7 +21,7 @@ spec:
     spec:
       containers:
         - name: backend
-          image: ghcr.io/nkz-os/bioorchestrator-backend:9253ad50de0204cdac5c9c1bfec08a487863e198  # reference only — prod pin: gitops-config/overlays/modules/bioorchestrator/
+          image: ghcr.io/nkz-os/bioorchestrator-backend:65566bbc259ebab6060414cfb1bef2bed8eac09d  # reference only — prod pin: gitops-config/overlays/modules/bioorchestrator/
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8420
