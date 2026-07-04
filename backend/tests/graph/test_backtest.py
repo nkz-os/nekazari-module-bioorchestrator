@@ -202,6 +202,31 @@ def test_backtest_top3_overlap_partial(dao):
     assert report["by_climate"]["Csa"]["top3_overlap"] == round(2 / 3, 3)
 
 
+def test_backtest_fold_carries_site_agroclimatic_features(dao):
+    """Each fold must expose the held-out site's agro-climatic vector so the
+    backtest can pass it as the target for C.1 distance weighting."""
+    from app.eval.backtest import Backtester
+
+    _reset_and_seed(
+        dao,
+        """
+        CREATE (a:TrialSite {name:'SiteA', climateClass:'Csa', annualRainfallMm:520, annualET0Mm:1000, frostDaysPerYear:38, elevationM:320})
+        CREATE (b:TrialSite {name:'SiteB', climateClass:'Csa', annualRainfallMm:900, annualET0Mm:1000, frostDaysPerYear:6, elevationM:60})
+        CREATE (a1:VarietyTrial {cropEppo:'TRZAX', varietyNormalized:'V', variety:'V', year:2020, yieldKgHa:8000.0})
+        CREATE (b1:VarietyTrial {cropEppo:'TRZAX', varietyNormalized:'V', variety:'V', year:2020, yieldKgHa:8000.0})
+        CREATE (a1)-[:TRIAL_AT]->(a)
+        CREATE (b1)-[:TRIAL_AT]->(b)
+        """,
+    )
+    folds = _run(Backtester(dao)._folds())
+    site_a = next(f for f in folds if f["site"] == "SiteA")
+    assert site_a["rainfall"] == 520 and site_a["et0"] == 1000
+    assert site_a["frost"] == 38 and site_a["elevation"] == 320
+    # And the full backtest runs over enriched sites without error.
+    report = _run(Backtester(dao).run())
+    assert report["overall"]["coverage"] == 1.0
+
+
 def test_backtest_report_route(dao):
     """The /agriculture/backtest-report route wires DAO → Backtester → report."""
     from app.api.v1.graph import agriculture_backtest_report

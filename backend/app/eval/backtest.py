@@ -72,8 +72,10 @@ class Backtester:
               AND v.cropEppo IS NOT NULL
               AND v.varietyNormalized IS NOT NULL
             WITH t.name AS site, t.climateClass AS climate, v.cropEppo AS crop,
+                 t.annualRainfallMm AS rainfall, t.annualET0Mm AS et0,
+                 t.frostDaysPerYear AS frost, t.elevationM AS elevation,
                  v.varietyNormalized AS variety, avg(v.yieldKgHa) AS obs_mean
-            RETURN site, climate, crop,
+            RETURN site, climate, crop, rainfall, et0, frost, elevation,
                    collect({variety: variety, obs: obs_mean}) AS observed
         """
         async with self._dao._driver.session() as session:
@@ -109,6 +111,10 @@ class Backtester:
                 climate_class=climate,
                 top_n=_RANK_DEPTH,
                 exclude_sites=[site],
+                target_features={
+                    "rainfall": fold["rainfall"], "et0": fold["et0"],
+                    "frost": fold["frost"], "elevation": fold["elevation"],
+                },
             )
             ranked = [
                 r for r in pred.get("ranked_varieties", [])
