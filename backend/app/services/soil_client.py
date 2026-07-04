@@ -72,6 +72,8 @@ async def get_parcel_soil_properties(parcel_id: str, tenant_id: str = "") -> dic
                     "organic_matter_pct": om_pct,
                     "bulk_density_g_cm3": h.get("bulkDensity"),
                     "depth_cm": f"{h.get('depthFrom', 0)}-{h.get('depthTo', 30)}",
+                    "drainage": derive_drainage_class(h),
+                    "hydrologic_group": h.get("hydrologicGroup"),
                     "source": (data.get("dataSource") or {}).get("value", "soilgrids"),
                     "data_available": True,
                 }
@@ -137,4 +139,211 @@ def compute_soil_suitability(
         "awc_sufficient": awc_match,
         "overall": "suitable" if (ph_match and texture_match) else "unsuitable",
         "warnings": warnings,
+    }
+
+
+# ── Soil-suitability gate (C.5) ──────────────────────────────────────────────
+# Compares a crop's STANDARD tolerance (EcoCrop / CropSoilSuitability) against
+# a parcel's REAL soil (read live from the Soil module) and returns a graded
+# verdict: suitable / marginal / unsuitable / unknown.
+
+# pH band (units) outside the crop's [min, max] still counted as marginal
+# rather than unsuitable — soil pH is noisy and amendable at the margin.
+_PH_MARGIN = 0.5
+
+# USDA texture classes ordered by increasing fineness (clay content). Distance
+# on this scale is an agronomically-defensible proxy for texture mismatch:
+# sand↔clay is far (drainage/water-holding opposite), loam↔sandy_loam is near.
+_TEXTURE_ORDINAL: dict[str, int] = {
+    "sand": 0,
+    "loamy sand": 1,
+    "sandy loam": 2,
+    "loam": 3,
+    "silt loam": 3,
+    "silt": 3,
+    "sandy clay loam": 4,
+    "clay loam": 4,
+    "silty clay loam": 4,
+    "sandy clay": 5,
+    "silty clay": 5,
+    "clay": 6,
+}
+
+_RANK = {"suitable": 0, "marginal": 1, "unsuitable": 2}
+_BY_RANK = {0: "suitable", 1: "marginal", 2: "unsuitable"}
+
+# SCS hydrologic soil group → crop drainage class. Group A drains fastest
+# (excessively/well drained), D slowest (poorly drained → waterlogging). The
+# Soil module derives the group from Ksat (Saxton-Rawls); crop-health consumes
+# the same `hydrologicGroup`/`ksat` for its (dynamic) waterlogging engine.
+_SCS_TO_DRAINAGE = {"A": "well_drained", "B": "well_drained", "C": "moderate", "D": "poor"}
+
+# Crop drainage vocabulary ordered from free-draining to waterlogged. Distance
+# on this scale grades a crop's drainage preference against the parcel's class.
+_DRAINAGE_ORDINAL = {"well_drained": 0, "moderate": 1, "poor": 2}
+
+
+def _scs_from_ksat(ksat: float) -> str:
+    """NRCS SCS hydrologic group from saturated conductivity (mm/h)."""
+    if ksat > 36:
+        return "A"
+    if ksat > 3.6:
+        return "B"
+    if ksat > 0.36:
+        return "C"
+    return "D"
+
+
+def derive_drainage_class(horizon: dict) -> str | None:
+    """Map a soil horizon to a crop drainage class (well_drained/moderate/poor).
+
+    Prefers the horizon's `hydrologicGroup`; falls back to deriving the SCS
+    group from `saturatedHydraulicConductivity`. Returns None if neither is
+    present (→ drainage dimension not assessable → honest `unknown`).
+    """
+    group = horizon.get("hydrologicGroup")
+    if group is None:
+        ksat = horizon.get("saturatedHydraulicConductivity")
+        if ksat is None:
+            return None
+        group = _scs_from_ksat(ksat)
+    return _SCS_TO_DRAINAGE.get(str(group).strip().upper())
+
+
+def _normalize_texture(texture: str) -> str:
+    return texture.strip().lower().replace("_", " ").replace("-", " ")
+
+
+def _texture_ordinal(texture: str | None) -> int | None:
+    if not texture:
+        return None
+    return _TEXTURE_ORDINAL.get(_normalize_texture(texture))
+
+
+def _assess_ph(ph, ph_min, ph_max) -> tuple[str | None, str | None]:
+    """Return (verdict, reason) for pH, or (None, None) if not assessable."""
+    if ph is None or ph_min is None or ph_max is None:
+        return None, None
+    if ph_min <= ph <= ph_max:
+        return "suitable", None
+    if ph < ph_min:
+        gap, side, bound = ph_min - ph, "below", ph_min
+    else:
+        gap, side, bound = ph - ph_max, "above", ph_max
+    verdict = "marginal" if gap <= _PH_MARGIN else "unsuitable"
+    return verdict, f"Soil pH {ph} {side} crop {'min' if side == 'below' else 'max'} {bound}"
+
+
+def _assess_texture(texture, req_textures) -> tuple[str | None, str | None]:
+    """Return (verdict, reason) for texture, or (None, None) if not assessable."""
+    parcel_ord = _texture_ordinal(texture)
+    req_ords = [o for t in (req_textures or []) if (o := _texture_ordinal(t)) is not None]
+    if parcel_ord is None or not req_ords:
+        return None, None
+    dist = min(abs(parcel_ord - o) for o in req_ords)
+    if dist <= 1:
+        return "suitable", None
+    verdict = "marginal" if dist <= 3 else "unsuitable"
+    return verdict, f"Soil texture '{texture}' distant from crop preference {req_textures}"
+
+
+def _assess_drainage(drainage, req_drainage) -> tuple[str | None, str | None]:
+    """Return (verdict, reason) for drainage, or (None, None) if not assessable."""
+    parcel_ord = _DRAINAGE_ORDINAL.get(drainage) if drainage else None
+    req_ords = [o for d in (req_drainage or []) if (o := _DRAINAGE_ORDINAL.get(d)) is not None]
+    if parcel_ord is None or not req_ords:
+        return None, None
+    dist = min(abs(parcel_ord - o) for o in req_ords)
+    if dist == 0:
+        return "suitable", None
+    verdict = "marginal" if dist == 1 else "unsuitable"
+    return verdict, f"Soil drainage '{drainage}' vs crop preference {req_drainage}"
+
+
+def assess_soil_suitability(crop_tolerance: dict | None, parcel_soil: dict | None) -> dict:
+    """Grade a crop's fit to a parcel's real soil.
+
+    Args:
+        crop_tolerance: crop STANDARD tolerance (from GraphDAO.get_soil_suitability):
+            {ph_min, ph_max, textures, drainage, ...}. None/empty → unknown.
+        parcel_soil: parcel's REAL soil (from get_parcel_soil_properties):
+            {ph, texture, ..., data_available}. Unavailable → unknown.
+
+    Returns:
+        {'verdict': 'suitable'|'marginal'|'unsuitable'|'unknown', 'reason': str,
+         'ph': {value, min, max, verdict}, 'texture': {value, preferred, verdict},
+         'confidence': 'high'|'medium'|'low', 'source': str}
+    Never silently treats unknown as suitable (fail-safe = honesty).
+    """
+    parcel_src = (parcel_soil or {}).get("source", "unknown")
+    source = f"crop tolerance (EcoCrop) × parcel soil ({parcel_src})"
+
+    ph_val = (parcel_soil or {}).get("ph")
+    texture_val = (parcel_soil or {}).get("texture")
+    drainage_val = (parcel_soil or {}).get("drainage")
+    ph_min = (crop_tolerance or {}).get("ph_min")
+    ph_max = (crop_tolerance or {}).get("ph_max")
+    req_textures = (crop_tolerance or {}).get("textures") or []
+    req_drainage = (crop_tolerance or {}).get("drainage") or []
+
+    ph_detail = {"value": ph_val, "min": ph_min, "max": ph_max, "verdict": None}
+    texture_detail = {"value": texture_val, "preferred": req_textures, "verdict": None}
+    drainage_detail = {"value": drainage_val, "preferred": req_drainage, "verdict": None}
+
+    if not crop_tolerance:
+        return {
+            "verdict": "unknown",
+            "reason": "No soil tolerance data for this crop",
+            "ph": ph_detail, "texture": texture_detail, "drainage": drainage_detail,
+            "confidence": "low", "source": source,
+        }
+    if not parcel_soil or not parcel_soil.get("data_available"):
+        return {
+            "verdict": "unknown",
+            "reason": "Parcel soil unavailable from Soil module — gate cannot run",
+            "ph": ph_detail, "texture": texture_detail, "drainage": drainage_detail,
+            "confidence": "low", "source": source,
+        }
+
+    ph_verdict, ph_reason = _assess_ph(ph_val, ph_min, ph_max)
+    texture_verdict, texture_reason = _assess_texture(texture_val, req_textures)
+    drainage_verdict, drainage_reason = _assess_drainage(drainage_val, req_drainage)
+    ph_detail["verdict"] = ph_verdict
+    texture_detail["verdict"] = texture_verdict
+    drainage_detail["verdict"] = drainage_verdict
+
+    assessed = [
+        (v, r) for v, r in (
+            (ph_verdict, ph_reason),
+            (texture_verdict, texture_reason),
+            (drainage_verdict, drainage_reason),
+        ) if v is not None
+    ]
+    if not assessed:
+        return {
+            "verdict": "unknown",
+            "reason": "No comparable soil dimension (pH/texture/drainage) for crop and parcel",
+            "ph": ph_detail, "texture": texture_detail, "drainage": drainage_detail,
+            "confidence": "low", "source": source,
+        }
+
+    worst_rank = max(_RANK[v] for v, _ in assessed)
+    verdict = _BY_RANK[worst_rank]
+    reasons = [r for v, r in assessed if r and _RANK[v] == worst_rank]
+    if verdict == "suitable":
+        reason = "Soil pH, texture and drainage within crop tolerance"
+    else:
+        reason = "; ".join(reasons) or f"Soil {verdict} for crop"
+
+    # Two+ agreeing dimensions → medium; a single dimension → low (thinner evidence).
+    confidence = "medium" if len(assessed) >= 2 else "low"
+
+    return {
+        "verdict": verdict,
+        "reason": reason,
+        "ph": ph_detail,
+        "texture": texture_detail,
+        "drainage": drainage_detail,
+        "confidence": confidence,
+        "source": source,
     }

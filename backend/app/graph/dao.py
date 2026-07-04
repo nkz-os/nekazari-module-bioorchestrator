@@ -26,11 +26,13 @@ from datetime import date
 from typing import Any
 
 from neo4j import AsyncDriver
+from nkz_platform_sdk.agronomy import AgronomicValue, Source
 from nkz_platform_sdk.orion import OrionClient
 from nkz_platform_sdk.subscriptions import SubscriptionRegistrar, SubscriptionDef
 
 from app.core.config import settings
 from app.graph import agroclimatic
+from app.services.soil_client import assess_soil_suitability, get_parcel_soil_properties
 from app.species_registry import get_species_info, resolve_species
 
 # C.2 — minimum numeric trials in a (crop, climate) cell for a "direct" (robust)
@@ -761,6 +763,30 @@ class GraphDAO:
                 return None
             return dict(record)
 
+    async def soil_suitability_coverage(self) -> dict:
+        """Report % of graph species with CropSoilSuitability tolerance data.
+
+        Gaps here are exactly where the soil gate must return `unknown`.
+        """
+        async with self._driver.session() as session:
+            result = await session.run(
+                """
+                MATCH (s:Species)
+                OPTIONAL MATCH (s)-[:HAS_SOIL_SUITABILITY]->(ss:CropSoilSuitability)
+                RETURN count(DISTINCT s) AS total,
+                       count(DISTINCT CASE WHEN ss IS NOT NULL THEN s END) AS with_tol
+                """
+            )
+            record = await result.single()
+            total = record["total"] if record else 0
+            with_tol = record["with_tol"] if record else 0
+            pct = round(100.0 * with_tol / total, 1) if total else 0.0
+            return {
+                "species_total": total,
+                "species_with_tolerance": with_tol,
+                "coverage_pct": pct,
+            }
+
     # ── Rotation Constraints ──────────────────────────────────────────────────
 
     async def get_rotation_constraints(self, crop: str) -> list[dict]:
@@ -1275,6 +1301,32 @@ class GraphDAO:
         filtered.sort(key=lambda s: s["name"])
         return filtered[:limit]
 
+    async def _soil_gate(self, crop: str, parcel_id: str | None, tenant_id: str) -> dict:
+        """Grade a crop against a parcel's REAL soil (C.5 soil-suitability gate).
+
+        crop tolerance ← CropSoilSuitability (graph, keyed by species slug);
+        parcel soil ← Soil module (live, HMAC). `crop` may be an EPPO code →
+        resolve to the canonical slug before reading tolerance. Emits the
+        verdict in the shared AgronomicValue envelope for downstream consumers.
+        """
+        species = resolve_species(crop) or crop
+        crop_tolerance = await self.get_soil_suitability(species)
+        parcel_soil = (
+            await get_parcel_soil_properties(parcel_id, tenant_id) if parcel_id else None
+        )
+        gate = assess_soil_suitability(crop_tolerance, parcel_soil)
+        gate["agronomic"] = AgronomicValue(
+            value=gate["verdict"],
+            source=Source(short=gate["source"]),
+            confidence=gate["confidence"],
+            notes=[gate["reason"]],
+        ).model_dump()
+        if parcel_soil and parcel_soil.get("data_available"):
+            gate["parcel_soil"] = {
+                "ph": parcel_soil.get("ph"), "texture": parcel_soil.get("texture"),
+            }
+        return gate
+
     async def extrapolate_varieties(
         self,
         crop: str,
@@ -1572,39 +1624,23 @@ class GraphDAO:
                     "confidence": best_confidence,
                 })
 
-        # ── Soil suitability filter (post-ranking) ─────────────────
+        # ── Soil-suitability gate (C.5) ────────────────────────────
+        # Gate = crop STANDARD tolerance (CropSoilSuitability, EcoCrop) × the
+        # parcel's REAL soil (read live from the Soil module). `unsuitable`
+        # drops the crop's varieties; `marginal`/`unknown` keep + flag.
         excluded_by_soil: list = []
-        target_ph = None
+        soil_gate: dict | None = None
         if filter_soil_suitability:
-            soil_ph_map = {
-                "Calcisol": 7.5, "Luvisol": 6.5, "Fluvisol": 7.0,
-                "Cambisol": 6.0, "Leptosol": 7.0, "Vertisol": 7.5,
-                "Chernozem": 7.0, "Phaeozem": 6.5, "Regosol": 6.5,
-                "Andosol": 5.5, "Podzol": 4.5, "Solonchak": 8.5,
-            }
-            tgt_soil = target_env.get("soil_type") or soil_type
-            if tgt_soil:
-                target_ph = soil_ph_map.get(tgt_soil)
-
-            if target_ph is not None:
-                filtered_ranked = []
-                for v in ranked:
-                    sr = await self.get_soil_suitability(crop)
-                    if not sr:
-                        filtered_ranked.append(v)
-                        continue
-                    ph_min = sr.get("ph_min")
-                    ph_max = sr.get("ph_max")
-                    if ph_min is not None and ph_max is not None:
-                        if not (ph_min <= target_ph <= ph_max):
-                            excluded_by_soil.append({
-                                "variety": v["variety"],
-                                "reason": f"pH {target_ph} outside range [{ph_min}, {ph_max}]",
-                                "soil_requirement": {"ph_min": ph_min, "ph_max": ph_max, "textures": sr.get("textures", [])},
-                            })
-                            continue
-                    filtered_ranked.append(v)
-                ranked = filtered_ranked
+            soil_gate = await self._soil_gate(crop, parcel_id, tenant_id)
+            for v in ranked:
+                v["soil_suitability"] = soil_gate["agronomic"]
+            if soil_gate["verdict"] == "unsuitable":
+                excluded_by_soil = [
+                    {"variety": v["variety"], "reason": soil_gate["reason"],
+                     "soil_requirement": soil_gate["ph"]}
+                    for v in ranked
+                ]
+                ranked = []
 
         # ── Weather-based scoring adjustment ─────────────────────
         weather_stats = None
@@ -1626,8 +1662,9 @@ class GraphDAO:
             "similar_sites_detail": similar_sites_result[:5],
             "ranked_varieties": ranked,
             "excluded_by_soil": excluded_by_soil,
-            "soil_filter_applied": filter_soil_suitability and target_ph is not None,
-            "target_soil": {"ph": target_ph} if filter_soil_suitability else None,
+            "soil_gate": soil_gate,
+            "soil_filter_applied": bool(soil_gate and soil_gate["verdict"] != "unknown"),
+            "target_soil": (soil_gate or {}).get("parcel_soil") if soil_gate else None,
             "irrigation_filter_applied": irrigation_regime is not None,
             "weather_stats": weather_stats,
             "weather_penalties": penalties_applied if weather_stats else None,
