@@ -32,4 +32,4 @@ ingestion/
 4. Valida: `python -m app.ingestion.validate_source NUEVA_FUENTE data/trials.jsonld`
 5. Ejecuta: `python -m app.ingestion.nueva_fuente_ingester --jsonld data/trials.jsonld`
 
-**Especificación completa:** `internal-docs-local/ESPECIFICACION_SCRAPER_INGESTA.md`
+**Canonical schema (public):** [`../../docs/INGESTION_SCHEMA.md`](../../docs/INGESTION_SCHEMA.md)

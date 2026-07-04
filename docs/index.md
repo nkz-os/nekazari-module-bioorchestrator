@@ -32,6 +32,12 @@ Multi-domain biodiversity ETL pipeline for regenerative agriculture intelligence
 | GET | `/api/dadis/species` | DAD-IS species |
 | * | `/api/v1/*` | IkerKeta native API (mounted) |
 
+## Data ingestion
+
+Scrapers (`nkz-*-scraper`) produce JSON-LD; ingesters in `backend/app/ingestion/` merge into Neo4j.
+
+**Canonical schema:** [INGESTION_SCHEMA.md](./INGESTION_SCHEMA.md) — node types, required fields, yield honesty rules, perennial extensions, checklist for new sources.
+
 ## Deployment
 
 See [deployment.md](./deployment.md) for the full production runbook.
