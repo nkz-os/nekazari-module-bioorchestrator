@@ -276,6 +276,11 @@ class NavarraIngester(BaseIngester):
             "source_id": node.get("source_id") or self.SOURCE_ID,
             "trial_id": node.get("@id", ""),
             "mergeKey": node.get("mergeKey") or _merge_key_variety_trial(node),
+            "rankingEligible": node.get("ranking_eligible"),
+            "yieldDataType": node.get("yield_data_type"),
+            "rootstock": node.get("rootstock"),
+            "plantingYear": node.get("planting_year"),
+            "trainingSystem": node.get("training_system"),
         }
 
     def _convert_management(self, node: dict) -> dict:
