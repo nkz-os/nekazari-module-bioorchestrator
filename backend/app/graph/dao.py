@@ -22,6 +22,7 @@ import json
 import logging
 import os
 import re
+from datetime import date
 from typing import Any
 
 from neo4j import AsyncDriver
@@ -31,6 +32,27 @@ from nkz_platform_sdk.subscriptions import SubscriptionRegistrar, SubscriptionDe
 from app.core.config import settings
 from app.graph import agroclimatic
 from app.species_registry import get_species_info, resolve_species
+
+# C.2 — minimum numeric trials in a (crop, climate) cell for a "direct" (robust)
+# ranking. Below it the response carries lowEvidence. Owner default (B2) = 5.
+EVIDENCE_THRESHOLD = 5
+
+
+def _assess_evidence(ranked: list[dict]) -> dict:
+    """C.2 evidence gate: how much trial evidence backs this ranking."""
+    n_numeric = sum(int(v.get("numeric_yield_count") or 0) for v in ranked)
+    if n_numeric == 0:
+        basis = "none"
+    elif n_numeric < EVIDENCE_THRESHOLD:
+        basis = "sparse"
+    else:
+        basis = "direct"
+    return {
+        "basis": basis,
+        "lowEvidence": n_numeric < EVIDENCE_THRESHOLD,
+        "numericTrials": n_numeric,
+        "threshold": EVIDENCE_THRESHOLD,
+    }
 
 logger = logging.getLogger(__name__)
 
@@ -1268,6 +1290,7 @@ class GraphDAO:
         tenant_id: str = "",
         exclude_sites: list[str] | None = None,
         target_features: dict[str, float | None] | None = None,
+        recency_half_life: float = 8.0,
     ) -> dict:
         """Extrapolate best varieties for a target environment.
 
@@ -1393,6 +1416,7 @@ class GraphDAO:
                 "target_environment": target_env,
                 "similar_sites": [],
                 "ranked_varieties": [],
+                "evidence": _assess_evidence([]),
                 "data_quality": {"total_trials_analyzed": 0, "unique_varieties": 0},
             }
 
@@ -1417,12 +1441,22 @@ class GraphDAO:
                 // aggregations below count every trial exactly once (G2/G9 guard).
                 WITH vt.varietyNormalized AS variety, vt,
                      collect(DISTINCT ts.name) AS trial_sites
-                // Per-trial agro-climatic weight = nearest analog site it sits at
-                // (C.1). $site_weights are 1.0 on the legacy path → flat average.
+                // Per-trial weight = nearest analog site (C.1) × recency (C.4) ×
+                // water-regime match (C.4). $site_weights are 1.0 on the legacy
+                // path; with no target year/regime the extra factors are 1.0 too,
+                // so the weighted mean collapses to a flat average.
                 WITH variety, vt, trial_sites,
                      reduce(mw = 0.0, n IN trial_sites |
                         CASE WHEN coalesce($site_weights[n], 0.0) > mw
-                             THEN $site_weights[n] ELSE mw END) AS w
+                             THEN $site_weights[n] ELSE mw END) AS w_site
+                WITH variety, vt, trial_sites,
+                     w_site
+                     * (CASE WHEN vt.year IS NOT NULL AND (toFloat($now_year) - toFloat(vt.year)) > 0
+                             THEN 0.5 ^ ((toFloat($now_year) - toFloat(vt.year)) / $half_life)
+                             ELSE 1.0 END)
+                     * (CASE WHEN $target_regime IS NULL OR vt.irrigationRegime IS NULL
+                                  OR vt.irrigationRegime = $target_regime
+                             THEN 1.0 ELSE $regime_penalty END) AS w
                 WITH variety,
                      collect(DISTINCT vt.year) AS years,
                      collect(trial_sites) AS site_lists,
@@ -1475,6 +1509,10 @@ class GraphDAO:
                 top_n=top_n,
                 excluded_sites=excluded_lower,
                 site_weights=site_weights,
+                now_year=date.today().year,
+                half_life=recency_half_life,
+                target_regime=irrigation_uri,
+                regime_penalty=0.4,
             )
 
             ranked = []
@@ -1593,6 +1631,7 @@ class GraphDAO:
             "irrigation_filter_applied": irrigation_regime is not None,
             "weather_stats": weather_stats,
             "weather_penalties": penalties_applied if weather_stats else None,
+            "evidence": _assess_evidence(ranked),
             "data_quality": {
                 "total_trials_analyzed": sum(v["trial_count"] for v in ranked),
                 "unique_varieties": len(ranked),
