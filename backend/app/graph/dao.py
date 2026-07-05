@@ -3021,11 +3021,10 @@ class GraphDAO:
             thermal = await self.get_heat_tolerance(species_query)
             soil_req = await self.get_soil_suitability(species_query)
 
-            from app.services.soil_client import compute_soil_suitability, get_parcel_soil_properties
+            from app.services.soil_client import assess_soil_suitability, get_parcel_soil_properties
             soil_actual = await get_parcel_soil_properties(parcel_id, tenant_id)
-            soil_suitability = None
-            if soil_actual.get("data_available") and soil_req:
-                soil_suitability = compute_soil_suitability(soil_req, soil_actual)
+            # C.5 graded verdict (assess handles missing tolerance / unavailable soil → unknown)
+            soil_suitability = assess_soil_suitability(soil_req, soil_actual)
 
             # ── 3. Fetch latest CropHealthAssessment (normalized NGSI-LD) ──
             soil_sensors: dict = {"available": False}
