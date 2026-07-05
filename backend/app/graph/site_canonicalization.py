@@ -45,7 +45,7 @@ def haversine_km(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
     return 6371.0 * 2 * math.asin(math.sqrt(a))
 
 # Fields that make a TrialSite "rich"; survivor = the node with most non-null.
-RICHNESS_FIELDS = ("climateClass", "latitude", "municipality", "soilTexture", "annualRainfallMm")
+RICHNESS_FIELDS = ("climateClass", "latitude", "longitude", "municipality", "soilTexture", "annualRainfallMm")
 
 
 def _norm(value: str | None) -> str:
@@ -146,9 +146,15 @@ def plan_site_canonicalization(sites: list[dict]) -> list[dict]:
 
 
 def fetch_trial_sites(driver) -> list[dict]:
-    """Load every TrialSite (element id + name + richness fields) from Neo4j."""
+    """Load every TrialSite from Neo4j — id, name, richness fields, and
+    source provenance (source_id, sourceIds) for the merge executor.
+    """
     fields = ", ".join("t.%s AS %s" % (f, f) for f in RICHNESS_FIELDS)
-    query = "MATCH (t:TrialSite) RETURN elementId(t) AS id, t.name AS name, " + fields
+    query = (
+        "MATCH (t:TrialSite) "
+        "RETURN elementId(t) AS id, t.name AS name, "
+        "t.source_id AS source_id, t.sourceIds AS sourceIds, " + fields
+    )
     with driver.session() as session:
         return [dict(r) for r in session.run(query)]
 
@@ -156,15 +162,23 @@ def fetch_trial_sites(driver) -> list[dict]:
 def apply_site_canonicalization(driver, plans: list[dict], dry_run: bool = True) -> dict:
     """Execute (or, when dry_run, only report) the canonicalization plan.
 
-    Merge: backfill survivor nulls, then apoc.refactor.mergeNodes keeping the
-    survivor first (mergeRels:true reattaches TRIAL_AT). Flag: mark all group
-    members needsHumanReview. Idempotent: canonical input yields an empty plan.
+    Merge: backfill survivor nulls, compute unified sourceIds, then
+    apoc.refactor.mergeNodes keeping the survivor first (mergeRels:true
+    reattaches TRIAL_AT). Sets ``siteKey`` and ``sourceIds`` on survivor.
+
+    Split: within each cluster, merge members into the richest survivor
+    and set a disambiguated ``siteKey`` + ``needsHumanReview = true``.
+    (Dormant path — the current prod graph has zero geo-far same-name
+    groups; the code path exists and is tested so future ingests are safe.)
+
+    Idempotent: canonical input yields an empty plan.
     """
     merge_plans = [p for p in plans if p["action"] == "merge"]
-    flag_plans = [p for p in plans if p["action"] == "flag"]
+    split_plans = [p for p in plans if p["action"] == "split"]
     summary = {
         "merged_groups": len(merge_plans),
-        "flagged_groups": len(flag_plans),
+        "split_groups": len(split_plans),
+        "flagged_groups": len(split_plans),
         "removed_nodes": sum(len(p["merge_ids"]) for p in merge_plans),
     }
     if dry_run:
@@ -180,17 +194,39 @@ def apply_site_canonicalization(driver, plans: list[dict], dry_run: bool = True)
             session.run(
                 """
                 MATCH (surv:TrialSite) WHERE elementId(surv)=$sid
-                MATCH (m:TrialSite) WHERE elementId(m) IN $mids
+                OPTIONAL MATCH (m:TrialSite) WHERE elementId(m) IN $mids
                 WITH surv, collect(m) AS ms
+                WITH surv, ms,
+                     apoc.coll.toSet(
+                         coalesce(surv.sourceIds, []) +
+                         [x IN [surv] + ms WHERE x.source_id IS NOT NULL | x.source_id]
+                     ) AS srcs
                 CALL apoc.refactor.mergeNodes([surv] + ms,
                     {mergeRels: true, properties: 'discard'}) YIELD node
+                SET node.siteKey = $key, node.sourceIds = srcs, node.source_id = srcs[0]
                 RETURN elementId(node)
                 """,
-                sid=p["survivor_id"], mids=p["merge_ids"],
+                sid=p["survivor_id"], mids=p["merge_ids"], key=p["site_key"],
             )
-        for p in flag_plans:
-            session.run(
-                "MATCH (t:TrialSite) WHERE elementId(t) IN $ids SET t.needsHumanReview = true",
-                ids=p["node_ids"],
-            )
+        for p in split_plans:
+            for c in p["clusters"]:
+                mids = [i for i in c["member_ids"] if i != c["survivor_id"]]
+                session.run(
+                    """
+                    MATCH (surv:TrialSite) WHERE elementId(surv)=$sid
+                    OPTIONAL MATCH (m:TrialSite) WHERE elementId(m) IN $mids
+                    WITH surv, collect(m) AS ms
+                    WITH surv, ms,
+                         apoc.coll.toSet(
+                             coalesce(surv.sourceIds, []) +
+                             [x IN [surv] + ms WHERE x.source_id IS NOT NULL | x.source_id]
+                         ) AS srcs
+                    CALL apoc.refactor.mergeNodes([surv] + ms,
+                        {mergeRels: true, properties: 'discard'}) YIELD node
+                    SET node.siteKey = $key, node.needsHumanReview = true,
+                        node.sourceIds = srcs, node.source_id = srcs[0]
+                    RETURN elementId(node)
+                    """,
+                    sid=c["survivor_id"], mids=mids, key=c["site_key"],
+                )
     return summary

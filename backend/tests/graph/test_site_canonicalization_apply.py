@@ -154,3 +154,40 @@ def test_dry_run_mutates_nothing(driver):
     summary = apply_site_canonicalization(driver, plans, dry_run=True)
     assert _count_sites(driver, "Tulebras") == 2  # untouched
     assert summary["merged_groups"] == 1  # reports what it WOULD do
+
+
+def test_merge_sets_sitekey_and_sourceids(driver):
+    """Merge writes siteKey from plan and accumulates sourceIds from all members."""
+    _wipe(driver)
+    with driver.session() as s:
+        s.run(
+            """
+            CREATE (:TrialSite {name:'Sartaguda', source_id:'NAVARRA-AGRARIA', latitude:42.38, longitude:-2.05})
+            CREATE (:TrialSite {name:'Sartaguda', source_id:'GENVCE', latitude:42.39, longitude:-2.06})
+            """
+        )
+    plans = plan_site_canonicalization(fetch_trial_sites(driver))
+    apply_site_canonicalization(driver, plans, dry_run=False)
+    with driver.session() as s:
+        rec = s.run(
+            "MATCH (t:TrialSite {name:'Sartaguda'}) RETURN t.siteKey AS k, t.sourceIds AS src"
+        ).single()
+    assert rec["k"] == "sartaguda"
+    assert sorted(rec["src"]) == ["GENVCE", "NAVARRA-AGRARIA"]
+
+
+def test_fetch_trial_sites_loads_longitude_and_source_ids(driver):
+    """fetch_trial_sites returns longitude, source_id, and sourceIds for every site."""
+    _wipe(driver)
+    with driver.session() as s:
+        s.run(
+            "CREATE (:TrialSite {name:'Lleida', source_id:'GENVCE', "
+            "sourceIds:['GENVCE','ITACYL'], latitude:41.6, longitude:0.62})"
+        )
+    sites = fetch_trial_sites(driver)
+    assert len(sites) == 1
+    s0 = sites[0]
+    assert s0["name"] == "Lleida"
+    assert s0["longitude"] == 0.62
+    assert s0["source_id"] == "GENVCE"
+    assert s0["sourceIds"] == ["GENVCE", "ITACYL"]
