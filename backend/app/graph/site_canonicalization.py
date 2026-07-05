@@ -8,7 +8,38 @@ otherwise it is merged into the richest survivor with null backfill from sibling
 
 from __future__ import annotations
 
+import math
+import re
+import unicodedata
 from collections import defaultdict
+
+_PAREN_RE = re.compile(r"\s*\([^)]*\)\s*$")
+_WS_RE = re.compile(r"\s+")
+
+
+def normalize_site_key(name: str | None) -> str:
+    """Stable, source-agnostic identity key for a physical site.
+
+    lower + trim + NFKD diacritic-fold + strip one trailing parenthetical
+    qualifier (e.g. "Córdoba (Alameda del Obispo)" -> "cordoba") + collapse
+    internal whitespace. Shared by the migration and base_ingester so the
+    MERGE key and the migration key agree byte-for-byte.
+    """
+    if not name:
+        return ""
+    s = unicodedata.normalize("NFKD", str(name))
+    s = "".join(c for c in s if not unicodedata.combining(c))
+    s = _PAREN_RE.sub("", s)
+    s = _WS_RE.sub(" ", s).strip().lower()
+    return s
+
+
+def haversine_km(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
+    """Great-circle distance in km. Mirrors the formula in graph/dao.py."""
+    lat1r, lon1r, lat2r, lon2r = map(math.radians, (lat1, lon1, lat2, lon2))
+    dlat, dlon = lat2r - lat1r, lon2r - lon1r
+    a = math.sin(dlat / 2) ** 2 + math.cos(lat1r) * math.cos(lat2r) * math.sin(dlon / 2) ** 2
+    return 6371.0 * 2 * math.asin(math.sqrt(a))
 
 # Fields that make a TrialSite "rich"; survivor = the node with most non-null.
 RICHNESS_FIELDS = ("climateClass", "latitude", "municipality", "soilTexture", "annualRainfallMm")

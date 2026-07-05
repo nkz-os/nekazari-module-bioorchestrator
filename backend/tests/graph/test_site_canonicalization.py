@@ -7,7 +7,8 @@ survivor with backfill. See internal-docs 2026-07-03-task0.4-canonicalization.
 
 from __future__ import annotations
 
-from app.graph.site_canonicalization import plan_site_canonicalization
+import pytest
+from app.graph.site_canonicalization import plan_site_canonicalization, normalize_site_key, haversine_km
 
 
 def _site(sid, name, municipality=None, climateClass=None, latitude=None,
@@ -74,3 +75,25 @@ def test_already_canonical_input_is_idempotent_noop():
     # Post-merge state: every name unique -> no further work.
     sites = [_site("a", "Sartaguda"), _site("b", "Cárcar"), _site("c", "Lleida")]
     assert plan_site_canonicalization(sites) == []
+
+
+@pytest.mark.parametrize("raw,expected", [
+    ("Córdoba (Alameda del Obispo)", "cordoba"),
+    ("Córdoba", "cordoba"),
+    ("  La  Mojonera ", "la mojonera"),
+    ("ALMERÍA (La Mojonera)", "almeria"),
+    (None, ""),
+    ("", ""),
+])
+def test_normalize_site_key(raw, expected):
+    assert normalize_site_key(raw) == expected
+
+
+def test_haversine_km_known_distance():
+    # Madrid ~ Zaragoza ≈ 273 km
+    d = haversine_km(40.4168, -3.7038, 41.6488, -0.8891)
+    assert 260 < d < 285
+
+
+def test_haversine_km_zero():
+    assert haversine_km(40.0, -3.0, 40.0, -3.0) == pytest.approx(0.0, abs=1e-6)
