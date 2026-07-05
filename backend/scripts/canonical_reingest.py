@@ -71,7 +71,8 @@ async def _baseline(driver, source_id: str) -> dict:
                 "MATCH (m:ManagementTrial {source_id: $sid}) RETURN count(m) AS c", sid=source_id
             ),
             "ts_source": await one(
-                "MATCH (t:TrialSite {source_id: $sid}) RETURN count(t) AS c", sid=source_id
+                "MATCH (:VarietyTrial {source_id: $sid})-[:TRIAL_AT]->(t:TrialSite) "
+                "RETURN count(DISTINCT t) AS c", sid=source_id
             ),
             "legacy_mergekeys": await one(
                 "MATCH (v:VarietyTrial {source_id: $sid}) "
