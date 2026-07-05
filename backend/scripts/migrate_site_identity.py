@@ -31,25 +31,36 @@ NEO4J_PASSWORD = os.environ.get("NEO4J_PASSWORD", "bioorchestrator")
 def _counts(driver) -> dict:
     with driver.session() as s:
         return {
-            "vt": s.run("MATCH (v:VarietyTrial) RETURN count(v) AS c").single()["c"],
+            "vt": s.run(
+                "MATCH (v) WHERE v:VarietyTrial OR v:ManagementTrial RETURN count(v) AS c"
+            ).single()["c"],
             "sites": s.run("MATCH (t:TrialSite) RETURN count(t) AS c").single()["c"],
             "orphans": s.run(
-                "MATCH (v:VarietyTrial) WHERE NOT (v)-[:TRIAL_AT]->() RETURN count(v) AS c"
+                "MATCH (v) WHERE (v:VarietyTrial OR v:ManagementTrial) "
+                "AND NOT (v)-[:TRIAL_AT]->() RETURN count(v) AS c"
             ).single()["c"],
         }
 
 
 def _set_sitekeys(driver) -> None:
     sites = fetch_trial_sites(driver)
+    updates = [
+        {
+            "id": s["id"],
+            "k": normalize_site_key(s.get("name")),
+            "mk": normalize_site_key(s.get("municipality")),
+        }
+        for s in sites
+    ]
     with driver.session() as s:
-        for site in sites:
-            s.run(
-                "MATCH (t:TrialSite) WHERE elementId(t)=$id "
-                "SET t.siteKey=$k, t.municipalityKey=$mk",
-                id=site["id"],
-                k=normalize_site_key(site.get("name")),
-                mk=normalize_site_key(site.get("municipality")),
-            )
+        s.run(
+            """
+            UNWIND $updates AS u
+            MATCH (t:TrialSite) WHERE elementId(t) = u.id
+            SET t.siteKey = u.k, t.municipalityKey = u.mk
+            """,
+            updates=updates,
+        )
 
 
 def run(execute: bool = False, driver=None) -> dict:
@@ -86,10 +97,11 @@ def run(execute: bool = False, driver=None) -> dict:
         )
         if execute:
             assert after["vt"] == before["vt"], (
-                f"VarietyTrial count changed {before['vt']}→{after['vt']}"
+                f"Trial count changed {before['vt']}→{after['vt']} "
+                f"(VarietyTrial + ManagementTrial)"
             )
             assert after["orphans"] <= before["orphans"], (
-                "orphan VarietyTrials increased"
+                "orphan trials increased (VarietyTrial + ManagementTrial)"
             )
         return result
     finally:
