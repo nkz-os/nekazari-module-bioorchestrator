@@ -100,23 +100,14 @@ def test_already_canonical_input_is_idempotent_noop():
     assert plan_site_canonicalization(sites) == []
 
 
-def test_aggregate_only_groups_are_skipped():
+def test_aggregate_only_groups_are_merged_not_skipped():
     """Country-level means and multi-location aggregates share the same
-    normalized name (e.g. "hungary") but are not the same physical site.
-    Merging them would lose the semantic distinction."""
+    normalized name (e.g. "hungary") and must be merged — otherwise both
+    get the same siteKey and the UNIQUE constraint fails. The semantic
+    distinction is preserved in the source's data, not the site name."""
     sites = [
         _site("a", "Hungary (average)"),
         _site("b", "Hungary (multiple locations)"),
-    ]
-    assert plan_site_canonicalization(sites) == []
-
-
-def test_aggregate_with_real_site_is_not_skipped():
-    """If a non-aggregate shares the normalized name with an aggregate,
-    the group IS processed -- the aggregate merges into the real site."""
-    sites = [
-        _site("a", "Spain (high-yield zones)"),
-        _site("b", "Spain"),  # not an aggregate
     ]
     plans = plan_site_canonicalization(sites)
     assert len(plans) == 1

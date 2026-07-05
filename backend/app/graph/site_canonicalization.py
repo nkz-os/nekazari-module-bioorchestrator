@@ -16,8 +16,6 @@ import re
 import unicodedata
 from collections import defaultdict
 
-from app.ingestion.trial_site_geo import is_aggregate_site_name
-
 _PAREN_RE = re.compile(r"\s*\([^)]*\)\s*$")
 _WS_RE = re.compile(r"\s+")
 
@@ -124,13 +122,6 @@ def plan_site_canonicalization(sites: list[dict]) -> list[dict]:
     plans: list[dict] = []
     for name_key, members in groups.items():
         if not name_key or len(members) <= 1:
-            continue
-        # Skip aggregate-only groups: country-level means, multi-location
-        # averages etc. are not physical sites — merging them loses the
-        # semantic distinction (e.g. "Hungary (average)" vs "Hungary (multiple
-        # locations)"). If a non-aggregate shares the name, the group IS
-        # processed (aggregate merges into the real site).
-        if all(is_aggregate_site_name(m.get("name")) for m in members):
             continue
         node_ids = [m["id"] for m in members]
         clusters = _greedy_geo_clusters(members)
