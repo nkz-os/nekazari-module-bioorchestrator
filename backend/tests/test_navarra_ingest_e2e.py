@@ -82,10 +82,10 @@ def test_navarra_adequate_ingest_links_and_idempotent(driver):
         async with driver.session() as s:
             await s.run("MATCH (n) DETACH DELETE n")
         nodes = await ing.transform(BUNDLE)
-        assert len(nodes["variety_trials"]) == 505
+        assert len(nodes["variety_trials"]) == 1429
         assert len(nodes["trial_sites"]) == 32
         stats = await ing.merge(nodes)
-        assert stats["variety_trials"] == 505
+        assert stats["variety_trials"] == 1429
         assert stats["relationships"] > 0
         c1 = await _counts()
         await ing.merge(nodes)
@@ -96,13 +96,13 @@ def test_navarra_adequate_ingest_links_and_idempotent(driver):
     vt, mt, ts, ta, orphan, with_geo = c1
     assert c1 == c2
 
-    assert vt == 505
+    assert vt == 1429
     assert mt == 55  # 224 source rows → 55 distinct management mergeKeys
     assert ts == 32
-    assert ta == 505
+    assert ta == 1429
     assert orphan == 0
     assert with_geo == 32
-    assert stats["variety_trials"] == 505
+    assert stats["variety_trials"] == 1429
     assert stats["management_trials"] == 224
     assert stats["sites"] == 32
 
