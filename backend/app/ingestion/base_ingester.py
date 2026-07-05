@@ -463,6 +463,7 @@ class BaseIngester(ABC):
                         vt.agronomicTraits = $agro_traits,
                         vt.irrigationRegime = $irrigation,
                         vt.trialLocation = $location,
+                        vt.trialLocationKey = $location_key,
                         vt.agroclimaticZone = $agro_zone,
                         vt.productionSystem = $production,
                         vt.rootstock = $rootstock,
@@ -487,6 +488,7 @@ class BaseIngester(ABC):
                         vt.agronomicTraitsUnified = $agro_traits_unified,
                         vt.irrigationRegime = $irrigation,
                         vt.trialLocation = $location,
+                        vt.trialLocationKey = $location_key,
                         vt.locationNormalized = $loc_norm,
                         vt.locationCountry = $loc_country,
                         vt.climateClass = $climate,
@@ -515,6 +517,7 @@ class BaseIngester(ABC):
                     agro_traits_unified=node.get("agronomicTraitsUnified"),
                     irrigation=node.get("irrigationRegime"),
                     location=node.get("trialLocation"),
+                    location_key=node.get("trialLocationKey") or "",
                     loc_norm=node.get("locationNormalized"),
                     loc_country=node.get("locationCountry"),
                     climate=node.get("climateClass"),
@@ -599,6 +602,7 @@ class BaseIngester(ABC):
                         mt.resultUnit = $unit,
                         mt.year = $year,
                         mt.trialLocation = $location,
+                        mt.trialLocationKey = $location_key,
                         mt.confidence = $confidence,
                         mt.varietyNormalized = $variety_norm,
                         mt.locationNormalized = $loc_norm,
@@ -619,6 +623,7 @@ class BaseIngester(ABC):
                     unit=node.get("resultUnit"),
                     year=node.get("year"),
                     location=node.get("trialLocation"),
+                    location_key=node.get("trialLocationKey") or "",
                     loc_norm=node.get("locationNormalized"),
                     loc_country=node.get("locationCountry"),
                     qudt_uri=node.get("unitQudtUri"),
@@ -634,28 +639,40 @@ class BaseIngester(ABC):
         variety_trials: list[dict],
         management_trials: list[dict],
     ) -> int:
-        """Create TRIAL_AT relationships deterministically.
+        """Create TRIAL_AT relationships source-agnostically.
 
-        Links trials to TrialSites by the stable ``(source_id, trialLocation ==
-        TrialSite.name)`` pair, scoped to this source over the whole graph, in a
-        single query per node type. A re-ingest therefore re-links previously
-        orphaned trials of the source.
+        Links trials to TrialSites by ``trialLocationKey`` (precomputed in
+        ``normalize_nodes``) against the site's ``siteKey`` or
+        ``municipalityKey``. Removes the source_id filter on TrialSite — a
+        site created by source A is visible to source B's trials, so shared
+        physical locations accumulate trials from all sources.
 
-        The former per-node match by a recomputed ``merge_key|content_hash``
-        unique_key produced 0 TRIAL_AT (~16k orphans, incl. all of BSL/AHDB):
-        the stored key had been overwritten with the short one, so the lookup
-        never matched. ``location == name`` is what the scrapers guarantee (one
-        TrialSite whose name equals each trialLocation) and mirrors the proven
-        ``EuTrialsIngester`` override.
+        The former source-scoped query ``(t:TrialSite {source_id: $sid})``
+        produced 0 TRIAL_AT for any source whose site had been merged into a
+        survivor carrying a different ``source_id`` (~16k orphans).
         """
+        # Defensive: compute trialLocationKey for trials that bypassed
+        # normalize_nodes (e.g., merge() called directly in tests).
+        for v in variety_trials:
+            if not v.get("trialLocationKey") and v.get("trialLocation"):
+                v["trialLocationKey"] = normalize_site_key(v["trialLocation"])
+        for m in management_trials:
+            if not m.get("trialLocationKey") and m.get("trialLocation"):
+                m["trialLocationKey"] = normalize_site_key(m["trialLocation"])
+
         count = 0
 
         async def _link(session, label: str) -> int:
             result = await session.run(
-                f"MATCH (n:{label} {{source_id: $sid}}), "
-                "      (t:TrialSite {source_id: $sid}) "
-                "WHERE toLower(n.trialLocation) = toLower(t.name) "
-                "   OR toLower(n.trialLocation) = toLower(t.municipality) "
+                f"MATCH (n:{label} {{source_id: $sid}}) "
+                "MATCH (t:TrialSite) "
+                "WHERE t.siteKey = n.trialLocationKey "
+                "   OR t.municipalityKey = n.trialLocationKey "
+                "   OR (n.trialLocationKey IS NULL AND "
+                "       (t.siteKey = toLower(trim(n.trialLocation)) "
+                "        OR t.municipalityKey = toLower(trim(n.trialLocation)))) "
+                "   OR (n.locationNormalized IS NOT NULL AND t.siteKey = "
+                "        toLower(trim(n.locationNormalized))) "
                 "MERGE (n)-[:TRIAL_AT]->(t) "
                 "RETURN count(*) AS c",
                 sid=self.SOURCE_ID,

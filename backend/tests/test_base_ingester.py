@@ -120,17 +120,19 @@ async def test_merge_variety_trials_does_not_overwrite_stable_key():
     assert "vt.mergeKey = $merge_key" not in cypher
 
 
-# ── Deterministic, source-scoped linking (EU-proven pattern) ─────────────────
+# ── Source-agnostic TRIAL_AT linking ────────────────────────────────────────
 
 @pytest.mark.asyncio
-async def test_merge_relationships_links_by_source_and_location():
+async def test_merge_relationships_links_source_agnostically():
+    """TrialSite is matched by siteKey/trialLocationKey, NOT source-scoped."""
     driver, session = _mock_driver()
     n = await _T()._merge_relationships(driver, [_vt()], [])
     assert n == 15884
     cypher = session.run.call_args[0][0]
     assert "TRIAL_AT" in cypher
-    assert "source_id" in cypher
-    assert "trialLocation" in cypher and "t.name" in cypher
-    # Must NOT depend on the fragile recomputed content-hash unique_key.
+    assert "trialLocationKey" in cypher
+    assert "siteKey" in cypher
+    # The root cause: TrialSite must NOT be filtered by source_id anymore.
+    assert "TrialSite {source_id" not in cypher
     assert "unique_key" not in cypher
     assert session.run.call_args.kwargs.get("sid") == "BSL"
