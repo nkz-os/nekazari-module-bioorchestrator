@@ -210,3 +210,49 @@ def test_crop_context_soil_suitability_is_graded_verdict(monkeypatch):
         {"data_available": False, "source": "unavailable"},
     )
     assert verdict["verdict"] == "unknown"
+
+
+NORMALIZED_CROP_TRIGO = {
+    "id": "urn:ngsi-ld:AgriCrop:TRZAX",
+    "type": "AgriCrop",
+    "name": {"type": "Property", "value": "trigo"},
+    "scientificName": {"type": "Property", "value": "Triticum aestivum"},
+}
+
+NORMALIZED_PARCEL_TRIGO = {
+    "id": PARCEL_ID,
+    "type": "AgriParcel",
+    "hasAgriCrop": {"type": "Relationship", "object": "urn:ngsi-ld:AgriCrop:TRZAX"},
+}
+
+
+class _FakeOrionClientTrigo(_FakeOrionClient):
+    async def get_entity(self, entity_id: str) -> dict:
+        if entity_id == PARCEL_ID:
+            return NORMALIZED_PARCEL_TRIGO
+        if entity_id == "urn:ngsi-ld:AgriCrop:TRZAX":
+            return NORMALIZED_CROP_TRIGO
+        return await super().get_entity(entity_id)
+
+
+def test_get_crop_context_resolves_species_slug_for_soil_lookup(mock_driver):
+    """Spanish crop name must resolve to canonical slug before Neo4j tolerance lookup."""
+    dao = GraphDAO(mock_driver)
+    soil_mock = AsyncMock(return_value={"ph_min": 5.5, "ph_max": 7.5, "textures": ["Loam"]})
+    parcel_soil = {
+        "data_available": True,
+        "ph": 6.5,
+        "texture": "Loam",
+        "source": "soilgrids",
+        "depth_cm": "0-30",
+    }
+
+    with patch("app.graph.dao.OrionClient", _FakeOrionClientTrigo), \
+         patch.object(GraphDAO, "get_phenology_params", AsyncMock(return_value=None)), \
+         patch.object(GraphDAO, "get_heat_tolerance", AsyncMock(return_value=None)), \
+         patch.object(GraphDAO, "get_soil_suitability", soil_mock), \
+         patch("app.services.soil_client.get_parcel_soil_properties", AsyncMock(return_value=parcel_soil)):
+        result = asyncio.run(dao.get_crop_context(PARCEL_ID, tenant_id=TENANT))
+
+    soil_mock.assert_awaited_once_with("wheat")
+    assert result["soil"]["suitability"]["verdict"] in ("suitable", "marginal", "unsuitable", "unknown")

@@ -3015,11 +3015,12 @@ class GraphDAO:
 
             variety_name = variety_uri.split(":")[-1] if variety_uri else None
             species_query = crop_name or crop_scientific or crop_eppo
+            species_slug = resolve_species(crop_eppo) or resolve_species(species_query) or species_query
             phenology = await self.get_phenology_params(
                 species=species_query, cultivar=variety_name, management=management, gdd=gdd,
             )
             thermal = await self.get_heat_tolerance(species_query)
-            soil_req = await self.get_soil_suitability(species_query)
+            soil_req = await self.get_soil_suitability(species_slug)
 
             from app.services.soil_client import assess_soil_suitability, get_parcel_soil_properties
             soil_actual = await get_parcel_soil_properties(parcel_id, tenant_id)
