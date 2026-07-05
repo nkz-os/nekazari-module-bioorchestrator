@@ -38,8 +38,10 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     return ap.parse_args(argv)
 
 
-def run(execute: bool = False) -> dict:
-    driver = GraphDatabase.driver(NEO4J_URI, auth=(NEO4J_USER, NEO4J_PASSWORD))
+def run(execute: bool = False, driver=None) -> dict:
+    own_driver = driver is None
+    if own_driver:
+        driver = GraphDatabase.driver(NEO4J_URI, auth=(NEO4J_USER, NEO4J_PASSWORD))
     try:
         sites = fetch_trial_sites(driver)
         plans = plan_site_canonicalization(sites)
@@ -58,7 +60,8 @@ def run(execute: bool = False) -> dict:
                         len(sites) - summary["removed_nodes"])
         return summary
     finally:
-        driver.close()
+        if own_driver:
+            driver.close()
 
 
 def main() -> None:

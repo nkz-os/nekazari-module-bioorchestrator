@@ -214,6 +214,14 @@ async def run(
             )
             return 1
 
+        # Auto-canonicalize sites: a source-scoped ingest re-creates per-source
+        # TrialSite duplicates; collapse same-name sites so re-ingest stays
+        # idempotent and cannot re-duplicate the graph (incident 2026-07-04).
+        from scripts.canonicalize_trial_sites import run as _canonicalize_sites
+
+        canon = await asyncio.to_thread(_canonicalize_sites, execute=True)
+        logger.info("Site canonicalization: %s", canon)
+
         logger.info("Canonical re-ingest OK (%s)", source_id)
         return 0
     finally:

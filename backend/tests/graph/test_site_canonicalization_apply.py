@@ -124,6 +124,26 @@ def test_conflicting_municipalities_flagged_not_merged(driver):
     assert flagged["c"] == flagged["f"] == 2
 
 
+def test_cli_run_execute_collapses_dups(driver):
+    # the CLI run() (reused by the post-ingest hook) canonicalizes end-to-end
+    from scripts.canonicalize_trial_sites import run as canon_run
+
+    _wipe(driver)
+    with driver.session() as s:
+        s.run(
+            """
+            CREATE (a:TrialSite {name:'Larraga', municipality:'Larraga', climateClass:'BSk'})
+            CREATE (:TrialSite {name:'Larraga', municipality:'Larraga', source_id:'NAVARRA-AGRARIA'})
+            CREATE (:VarietyTrial {mergeKey:'x'})-[:TRIAL_AT]->(a)
+            """
+        )
+    summary = canon_run(execute=True, driver=driver)
+    assert summary["merged_groups"] == 1
+    assert _count_sites(driver, "Larraga") == 1
+    # idempotent second run
+    assert canon_run(execute=True, driver=driver)["merged_groups"] == 0
+
+
 def test_dry_run_mutates_nothing(driver):
     _wipe(driver)
     with driver.session() as s:
