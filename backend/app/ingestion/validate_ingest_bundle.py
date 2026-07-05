@@ -211,9 +211,11 @@ def _check_trial(trial: dict, sites_by_key: dict, names_all: set[str]) -> list[I
             out.append(Issue("WARNING", "cumulative_leak", nid,
                              f"cumulative quality_params {leaked} present alongside annual yield_kg_ha"))
 
-    # Rule 10 — mergeKey present
+    # Rule 10 — mergeKey present (ingestion generates it if absent;
+    # the real gate items are EPPO/variety/year/location above).
     if not str(trial.get("mergeKey") or "").strip():
-        out.append(Issue("ERROR", "missing_mergekey", nid, "VarietyTrial missing mergeKey"))
+        out.append(Issue("WARNING", "missing_mergekey", nid,
+                         "VarietyTrial missing mergeKey — will be auto-generated"))
 
     return out
 
