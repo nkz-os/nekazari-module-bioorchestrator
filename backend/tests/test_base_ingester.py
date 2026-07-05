@@ -82,6 +82,31 @@ def test_variety_unique_key_none_without_merge_key():
     assert BaseIngester._variety_unique_key({"variety": "x"}) is None
 
 
+# ── Source-agnostic site identity (precomputed keys) ────────────────────────
+
+@pytest.mark.asyncio
+async def test_normalize_nodes_sets_site_and_trial_keys():
+    """normalize_nodes precomputes siteKey, municipalityKey, and trialLocationKey."""
+    nodes = {
+        "trial_sites": [{"name": "C\u00f3rdoba (Alameda del Obispo)", "municipality": "C\u00f3rdoba"}],
+        "variety_trials": [{"trialLocation": "C\u00f3rdoba (Alameda del Obispo)",
+                            "variety": "X", "cropEppo": "TRZAX", "year": 2023}],
+        "management_trials": [],
+        "article_sources": [],
+    }
+    out = await _T().normalize_nodes(nodes)
+    assert out["trial_sites"][0]["siteKey"] == "cordoba"
+    assert out["trial_sites"][0]["municipalityKey"] == "cordoba"
+    assert out["trial_sites"][0]["source_id"] == "BSL"
+    assert out["variety_trials"][0]["trialLocationKey"] == "cordoba"
+
+
+def test_normalize_site_key_imported_by_base_ingester():
+    """base_ingester imports normalize_site_key — keys agree byte-for-byte with migration."""
+    from app.ingestion.base_ingester import normalize_site_key  # noqa: F401 — proves import
+    assert normalize_site_key("C\u00f3rdoba (Alameda del Obispo)") == "cordoba"
+
+
 # ── MERGE must not overwrite the stable key with the short one ────────────────
 
 @pytest.mark.asyncio

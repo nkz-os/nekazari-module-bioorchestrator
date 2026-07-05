@@ -37,6 +37,8 @@ from app.ingestion.normalization_registry import (
     canonical_source_id,
 )
 
+from app.graph.site_canonicalization import normalize_site_key
+
 logger = logging.getLogger(__name__)
 
 NEO4J_URI = os.getenv("NEO4J_URI", "bolt://bioorchestrator-neo4j:7687")
@@ -173,6 +175,8 @@ class BaseIngester(ABC):
             raw_variety = vt.get("variety")
             vt["varietyNormalized"] = normalize_variety_name(raw_variety)
 
+            vt["trialLocationKey"] = normalize_site_key(vt.get("trialLocation"))
+
             if not vt.get("cropScientific") and vt.get("cropEppo"):
                 vt["cropScientific"] = eppo_to_scientific(vt["cropEppo"])
 
@@ -239,6 +243,8 @@ class BaseIngester(ABC):
                 mt["locationNormalized"] = loc_info["name"]
                 mt["locationCountry"] = loc_info["country"]
 
+            mt["trialLocationKey"] = normalize_site_key(mt.get("trialLocation"))
+
             # Resolve unit to canonical QUDT/UCUM form
             unit_str = mt.get("resultUnit")
             if unit_str:
@@ -257,6 +263,8 @@ class BaseIngester(ABC):
         normalised_sites: list[dict] = []
         for site in nodes.get("trial_sites", []):
             site["source_id"] = source_id
+            site["siteKey"] = normalize_site_key(site.get("name"))
+            site["municipalityKey"] = normalize_site_key(site.get("municipality"))
             normalised_sites.append(site)
 
         # Log validation warnings
@@ -310,38 +318,48 @@ class BaseIngester(ABC):
         )
 
     async def _merge_trial_sites(self, driver: AsyncDriver, sites: list[dict]) -> int:
-        """MERGE TrialSite nodes by mergeKey. Idempotent."""
+        """MERGE TrialSite nodes by siteKey (source-agnostic). Accumulates
+        sourceIds across sources so a shared physical site carries all its
+        contributing provenance. Idempotent — re-run of same source is a no-op.
+        """
         if not sites:
             return 0
 
         count = 0
         async with driver.session() as session:
             for node in sites:
-                merge_key = self._get_merge_key(node)
-                if not merge_key:
+                site_key = node.get("siteKey") or normalize_site_key(node.get("name"))
+                if not site_key:
                     continue
                 await session.run(
                     """
-                    MERGE (ts:TrialSite {mergeKey: $merge_key})
-                    SET ts.name = $name,
-                        ts.municipality = $municipality,
-                        ts.climateClass = $climate,
-                        ts.soilType = $soil_type,
-                        ts.soilTexture = $soil_texture,
-                        ts.soilPh = $soil_ph,
-                        ts.annualRainfallMm = $rainfall,
-                        ts.annualET0Mm = $et0,
-                        ts.elevationM = $elevation,
-                        ts.frostDaysPerYear = $frost,
-                        ts.latitude = $lat,
-                        ts.longitude = $lon,
-                        ts.photoperiodSummerHours = $photoperiod,
-                        ts.source_id = $source,
+                    MERGE (ts:TrialSite {siteKey: $site_key})
+                    SET ts.name = coalesce(ts.name, $name),
+                        ts.municipality = coalesce($municipality, ts.municipality),
+                        ts.municipalityKey = $municipality_key,
+                        ts.climateClass = coalesce($climate, ts.climateClass),
+                        ts.soilType = coalesce($soil_type, ts.soilType),
+                        ts.soilTexture = coalesce($soil_texture, ts.soilTexture),
+                        ts.soilPh = coalesce($soil_ph, ts.soilPh),
+                        ts.annualRainfallMm = coalesce($rainfall, ts.annualRainfallMm),
+                        ts.annualET0Mm = coalesce($et0, ts.annualET0Mm),
+                        ts.elevationM = coalesce($elevation, ts.elevationM),
+                        ts.frostDaysPerYear = coalesce($frost, ts.frostDaysPerYear),
+                        ts.latitude = coalesce($lat, ts.latitude),
+                        ts.longitude = coalesce($lon, ts.longitude),
+                        ts.photoperiodSummerHours = coalesce($photoperiod, ts.photoperiodSummerHours),
+                        ts.sourceIds = CASE
+                            WHEN ts.sourceIds IS NULL THEN [$source]
+                            WHEN NOT $source IN ts.sourceIds THEN ts.sourceIds + $source
+                            ELSE ts.sourceIds
+                        END,
                         ts.updatedAt = datetime()
+                    SET ts.source_id = ts.sourceIds[0]
                     """,
-                    merge_key=merge_key,
+                    site_key=site_key,
                     name=node.get("name"),
                     municipality=node.get("municipality"),
+                    municipality_key=node.get("municipalityKey") or "",
                     climate=node.get("climateClass"),
                     soil_type=node.get("soilType"),
                     soil_texture=node.get("soilTexture"),
