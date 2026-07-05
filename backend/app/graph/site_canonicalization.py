@@ -1,9 +1,12 @@
 """TrialSite canonicalization planning (0.4 spec, idempotent).
 
 Pure planning separated from Neo4j execution so the decision logic is unit
-testable without a database. Groups TrialSites by normalized name; a group whose
-members disagree on municipality is flagged ``needsHumanReview`` (not merged),
-otherwise it is merged into the richest survivor with null backfill from siblings.
+testable without a database. Groups TrialSites by ``normalize_site_key(name)``;
+municipality disagreement no longer blocks a merge (source-agnostic identity is
+the name key, not municipality). Members within ``SPLIT_KM`` of each other (or
+lacking geo) are merged into the richest survivor; if two geo-present members
+in a same-name group are further apart than ``SPLIT_KM``, the group is instead
+split into disambiguated ``site_key`` clusters and flagged ``needsHumanReview``.
 """
 
 from __future__ import annotations
@@ -72,40 +75,73 @@ def _backfill(survivor: dict, members: list[dict]) -> dict:
     return out
 
 
-def plan_site_canonicalization(sites: list[dict]) -> list[dict]:
-    """Return one plan per duplicate-name group (size > 1).
+SPLIT_KM = 15.0
 
-    Each site dict carries: id, name, municipality, and the richness fields
-    climateClass, latitude, soilTexture, annualRainfallMm.
+
+def _has_geo(s: dict) -> bool:
+    return s.get("latitude") is not None and s.get("longitude") is not None
+
+
+def _disambiguated_key(name_key: str, s: dict) -> str:
+    return f"{name_key}#{round(float(s['latitude']), 2)},{round(float(s['longitude']), 2)}"
+
+
+def _greedy_geo_clusters(members: list[dict]) -> list[list[dict]]:
+    """Single-linkage-ish: seed clusters by representatives > SPLIT_KM apart.
+    Deterministic (input order). Non-geo members attach to the first cluster.
     """
+    clusters: list[list[dict]] = []
+    reps: list[dict] = []
+    for m in members:
+        if not _has_geo(m):
+            continue
+        placed = False
+        for i, r in enumerate(reps):
+            if haversine_km(float(m["latitude"]), float(m["longitude"]),
+                            float(r["latitude"]), float(r["longitude"])) <= SPLIT_KM:
+                clusters[i].append(m)
+                placed = True
+                break
+        if not placed:
+            reps.append(m)
+            clusters.append([m])
+    if not clusters:  # no geo at all
+        clusters = [[]]
+    for m in members:  # attach geo-less members to first cluster
+        if not _has_geo(m):
+            clusters[0].append(m)
+    return clusters
+
+
+def plan_site_canonicalization(sites: list[dict]) -> list[dict]:
+    """One plan per duplicate-name group (size > 1). See spec §3.1/§4.1."""
     groups: dict[str, list[dict]] = defaultdict(list)
     for site in sites:
-        groups[_norm(site.get("name"))].append(site)
+        groups[normalize_site_key(site.get("name"))].append(site)
 
     plans: list[dict] = []
-    for name, members in groups.items():
-        if len(members) <= 1:
+    for name_key, members in groups.items():
+        if not name_key or len(members) <= 1:
             continue
         node_ids = [m["id"] for m in members]
-        distinct_munis = {_norm(m.get("municipality")) for m in members if _norm(m.get("municipality"))}
-        if len(distinct_munis) >= 2:
+        clusters = _greedy_geo_clusters(members)
+        if len(clusters) <= 1:
+            survivor = _pick_survivor(members)
             plans.append({
-                "name": name,
-                "action": "flag",
-                "node_ids": node_ids,
-                "survivor_id": None,
+                "name": name_key, "action": "merge", "site_key": name_key,
+                "node_ids": node_ids, "survivor_id": survivor["id"],
+                "merge_ids": [m["id"] for m in members if m["id"] != survivor["id"]],
+                "backfill": _backfill(survivor, members),
             })
-            continue
-        survivor = _pick_survivor(members)
-        merge_ids = [m["id"] for m in members if m["id"] != survivor["id"]]
-        plans.append({
-            "name": name,
-            "action": "merge",
-            "node_ids": node_ids,
-            "survivor_id": survivor["id"],
-            "merge_ids": merge_ids,
-            "backfill": _backfill(survivor, members),
-        })
+        else:  # dormant: same name, geo proves > SPLIT_KM apart
+            plans.append({
+                "name": name_key, "action": "split", "node_ids": node_ids,
+                "clusters": [{
+                    "site_key": _disambiguated_key(name_key, _pick_survivor(c)),
+                    "survivor_id": _pick_survivor(c)["id"],
+                    "member_ids": [m["id"] for m in c],
+                } for c in clusters],
+            })
     return plans
 
 

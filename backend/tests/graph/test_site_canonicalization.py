@@ -12,13 +12,14 @@ from app.graph.site_canonicalization import plan_site_canonicalization, normaliz
 
 
 def _site(sid, name, municipality=None, climateClass=None, latitude=None,
-          soilTexture=None, annualRainfallMm=None):
+          longitude=None, soilTexture=None, annualRainfallMm=None):
     return {
         "id": sid,
         "name": name,
         "municipality": municipality,
         "climateClass": climateClass,
         "latitude": latitude,
+        "longitude": longitude,
         "soilTexture": soilTexture,
         "annualRainfallMm": annualRainfallMm,
     }
@@ -33,18 +34,40 @@ def test_all_unique_names_produce_no_plan():
     assert plan_site_canonicalization(sites) == []
 
 
-def test_group_with_conflicting_municipalities_is_flagged_not_merged():
+def test_ifapa_variants_same_name_merge_not_flag():
+    # Regression: municipality disagreement must NOT flag anymore.
     sites = [
         _site("a", "Córdoba (Alameda del Obispo)", municipality="Córdoba"),
         _site("b", "Córdoba (Alameda del Obispo)", municipality="Alameda"),
-        _site("c", "Córdoba (Alameda del Obispo)", municipality=None),
     ]
     plans = plan_site_canonicalization(sites)
-    assert len(plans) == 1
-    p = plans[0]
-    assert p["action"] == "flag"
-    assert set(p["node_ids"]) == {"a", "b", "c"}
-    assert "survivor_id" not in p or p["survivor_id"] is None
+    assert len(plans) == 1 and plans[0]["action"] == "merge"
+    assert plans[0]["site_key"] == "cordoba"
+
+
+def test_same_name_geo_close_merges():
+    sites = [
+        _site("a", "Sartaguda", latitude=42.38, longitude=-2.05, climateClass="Csa"),
+        _site("b", "Sartaguda", latitude=42.39, longitude=-2.06),
+    ]
+    plans = plan_site_canonicalization(sites)
+    assert plans[0]["action"] == "merge" and plans[0]["survivor_id"] == "a"
+
+
+def test_same_name_geo_far_splits_and_flags():
+    sites = [
+        _site("a", "Springfield", latitude=39.80, longitude=-89.64),
+        _site("b", "Springfield", latitude=42.10, longitude=-72.59),  # ~1600 km
+    ]
+    plans = plan_site_canonicalization(sites)
+    assert plans[0]["action"] == "split"
+    keys = {c["site_key"] for c in plans[0]["clusters"]}
+    assert len(keys) == 2 and all(k.startswith("springfield#") for k in keys)
+
+
+def test_same_name_no_geo_merges():
+    sites = [_site("a", "Lleida"), _site("b", "Lleida")]
+    assert plan_site_canonicalization(sites)[0]["action"] == "merge"
 
 
 def test_merge_group_picks_richest_survivor():

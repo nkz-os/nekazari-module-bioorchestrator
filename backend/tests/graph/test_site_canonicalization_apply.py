@@ -2,7 +2,8 @@
 
 Uses an apoc-enabled Neo4j testcontainer (prod has apoc; the 0.4 canonicalization
 used apoc.refactor.mergeNodes). Verifies: same-name dups merge into the richest
-survivor with TRIAL_AT reattached, flagged groups are NOT merged, re-run is a no-op.
+survivor with TRIAL_AT reattached (municipality disagreement no longer blocks the
+merge — identity is the name key, not municipality), re-run is a no-op.
 """
 
 from __future__ import annotations
@@ -102,7 +103,8 @@ def test_rerun_is_idempotent_noop(driver):
     assert _count_sites(driver, "Sartaguda") == 1
 
 
-def test_conflicting_municipalities_flagged_not_merged(driver):
+def test_conflicting_municipalities_now_merge_not_flag(driver):
+    # Regression: municipality disagreement alone (no geo) must merge, not flag.
     _wipe(driver)
     with driver.session() as s:
         s.run(
@@ -112,16 +114,11 @@ def test_conflicting_municipalities_flagged_not_merged(driver):
             """
         )
     plans = plan_site_canonicalization(fetch_trial_sites(driver))
+    assert plans[0]["action"] == "merge"
     summary = apply_site_canonicalization(driver, plans, dry_run=False)
 
-    assert _count_sites(driver, "Córdoba (Alameda del Obispo)") == 2  # not merged
-    assert summary["flagged_groups"] == 1
-    with driver.session() as s:
-        flagged = s.run(
-            "MATCH (t:TrialSite) WHERE t.name STARTS WITH 'Córdoba (Alameda' "
-            "RETURN count(t) AS c, sum(CASE WHEN t.needsHumanReview THEN 1 ELSE 0 END) AS f"
-        ).single()
-    assert flagged["c"] == flagged["f"] == 2
+    assert _count_sites(driver, "Córdoba (Alameda del Obispo)") == 1  # merged
+    assert summary["merged_groups"] == 1
 
 
 def test_cli_run_execute_collapses_dups(driver):
