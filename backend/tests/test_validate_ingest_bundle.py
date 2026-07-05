@@ -116,14 +116,15 @@ def test_matches_by_municipality_is_ok():
     assert report.ok is True
 
 
-def test_source_id_mismatch_is_error():
-    # name matches but the site belongs to a different source_id -> would orphan at merge
+def test_cross_source_link_is_not_mismatch():
+    # After source-agnostic identity: a trial from source B linking to a
+    # same-name site from source A is VALID (shared site, not an orphan).
     report = validate_bundle(_bundle(
         _site("Dicastillo", source_id="NAVARRA-AGRARIA"),
         _trial("Dicastillo", source_id="BSL"),
     ))
-    assert report.ok is False
-    assert "source_id_mismatch" in _codes(report, "ERROR")
+    assert report.ok is True
+    assert "source_id_mismatch" not in _codes(report)
     assert "orphan_trial" not in _codes(report)
 
 

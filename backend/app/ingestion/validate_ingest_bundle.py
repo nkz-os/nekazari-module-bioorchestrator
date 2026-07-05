@@ -107,15 +107,14 @@ def validate_bundle(bundle: dict | str) -> ValidationReport:
 
     issues: list[Issue] = []
 
-    # Site lookup by (source_id, name/municipality) — mirrors _merge_relationships.
-    sites_by_key: dict[tuple[str, str], list[dict]] = {}
+    # Site lookup by name/municipality — source-agnostic (matches _merge_relationships).
+    sites_by_key: dict[str, list[dict]] = {}
     names_all: set[str] = set()
     for s in sites:
-        sid = _norm(s.get("source_id"))
         for field_name in ("name", "municipality"):
             key = _norm(s.get(field_name))
             if key:
-                sites_by_key.setdefault((sid, key), []).append(s)
+                sites_by_key.setdefault(key, []).append(s)
                 names_all.add(key)
 
     for site in sites:
@@ -174,17 +173,12 @@ def _check_trial(trial: dict, sites_by_key: dict, names_all: set[str]) -> list[I
     if not location:
         out.append(Issue("ERROR", "missing_location", nid, "VarietyTrial missing trial_location"))
 
-    # Rules 5 + 14 — linkage (name match) then source_id alignment
+    # Rules 5 + 14 — linkage by name/municipality only (source-agnostic).
     if location:
         loc_key = _norm(location)
-        sid = _norm(trial.get("source_id"))
         if loc_key not in names_all:
             out.append(Issue("ERROR", "orphan_trial", nid,
                              f"trial_location '{location}' matches no TrialSite name/municipality"))
-        elif not sites_by_key.get((sid, loc_key)):
-            out.append(Issue("ERROR", "source_id_mismatch", nid,
-                             f"trial_location '{location}' matches a TrialSite by name but not by "
-                             f"source_id '{trial.get('source_id')}' — would orphan at merge"))
 
     # Rule 6 — yield_note_s1, if present, is a scalar
     note = trial.get("yield_note_s1")
