@@ -115,3 +115,19 @@ async def test_mt_merge_persists_quality_and_host():
     assert params["quality"] == '{"applicationMethod": "soil"}'
     assert params["host"] == "Solanum lycopersicum"
     assert "qudt_uri" in params
+
+
+@pytest.mark.asyncio
+async def test_relationships_source_set_aware():
+    from app.ingestion.fungi_ingester import FungiIngester
+    ing = FungiIngester(driver=None)
+    driver = _FakeDriver()
+    vts = [
+        {"source_id": "REDALYC-PLEUROTUS-2017", "trialLocation": "Guaranda", "trialLocationKey": "guaranda"},
+        {"source_id": "WAGENINGEN-FUNGAL-SUBSTRATES-2021", "trialLocation": "Wageningen", "trialLocationKey": "wageningen"},
+    ]
+    await ing._merge_relationships(driver, vts, [])
+    query, params = driver.calls[0]
+    assert "n.source_id IN $sids" in query
+    assert set(params["sids"]) == {"REDALYC-PLEUROTUS-2017", "WAGENINGEN-FUNGAL-SUBSTRATES-2021"}
+    assert "VISION2024" not in params["sids"]

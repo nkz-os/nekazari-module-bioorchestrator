@@ -197,6 +197,51 @@ class FungiIngester(BaseIngester):
         except KeyError:
             return "medium"
 
+    async def _merge_relationships(self, driver, variety_trials, management_trials) -> int:
+        """Link trials to TrialSites across ALL source_ids present in the batch.
+
+        Base filters by the single class SOURCE_ID (the umbrella) → zero links
+        for real-source trials. We link the batch's own source_ids only, so
+        other sources' orphans are never affected.
+        """
+        from app.graph.site_canonicalization import normalize_site_key
+
+        for v in variety_trials:
+            if not v.get("trialLocationKey") and v.get("trialLocation"):
+                v["trialLocationKey"] = normalize_site_key(v["trialLocation"])
+        for m in management_trials:
+            if not m.get("trialLocationKey") and m.get("trialLocation"):
+                m["trialLocationKey"] = normalize_site_key(m["trialLocation"])
+
+        sids = sorted({n["source_id"] for n in (variety_trials + management_trials)
+                       if n.get("source_id") and not n.get("skip_ingestion")})
+        if not sids:
+            return 0
+
+        count = 0
+
+        async def _link(session, label: str) -> int:
+            result = await session.run(
+                f"MATCH (n:{label}) WHERE n.source_id IN $sids "
+                "MATCH (t:TrialSite) "
+                "WHERE t.siteKey = n.trialLocationKey "
+                "   OR t.municipalityKey = n.trialLocationKey "
+                "   OR (n.locationNormalized IS NOT NULL "
+                "       AND t.siteKey = toLower(trim(n.locationNormalized))) "
+                "MERGE (n)-[:TRIAL_AT]->(t) "
+                "RETURN count(*) AS c",
+                sids=sids,
+            )
+            row = await result.single()
+            return row["c"] if row else 0
+
+        async with driver.session() as session:
+            if any(not v.get("skip_ingestion") for v in variety_trials):
+                count += await _link(session, "VarietyTrial")
+            if any(not m.get("skip_ingestion") for m in management_trials):
+                count += await _link(session, "ManagementTrial")
+        return count
+
     def _enrich_article_sources(self, articles: list[dict]) -> None:
         """Enrich each article from ITS OWN registered source (not the umbrella)."""
         from app.common.source_registry import get_source
