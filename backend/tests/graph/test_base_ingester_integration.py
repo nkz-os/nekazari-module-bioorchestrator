@@ -86,3 +86,65 @@ def test_merge_is_idempotent_and_links_without_collapsing(driver):
     vt, rels = _run(_scenario())
     assert vt == 2   # two distinct trials: not 4 (idempotent), not 1 (no collapse)
     assert rels == 2  # both linked to the Lleida TrialSite (no orphans)
+
+
+def test_two_sources_share_site_and_both_link(driver):
+    """Source B ingests after source A — its trial links to A's existing site.
+
+    Pre-source-agnostic fix: each source had its own TrialSite (source-scoped
+    MERGE by mergeKey, source-scoped link by source_id). Now MERGE finds the
+    shared site by siteKey, and _merge_relationships links trials to ANY
+    matching TrialSite regardless of which source created it.
+    """
+    from app.ingestion.base_ingester import normalize_site_key
+
+    class _SrcA(BaseIngester):
+        SOURCE_ID = "GENVCE"
+        async def _parse_nodes(self, data):
+            return {"trial_sites": [], "article_sources": [],
+                    "variety_trials": [], "management_trials": []}
+
+    class _SrcB(BaseIngester):
+        SOURCE_ID = "ITACYL"
+        async def _parse_nodes(self, data):
+            return {"trial_sites": [], "article_sources": [],
+                    "variety_trials": [], "management_trials": []}
+
+    async def _scenario():
+        async with driver.session() as s:
+            await s.run("MATCH (n) DETACH DELETE n")
+
+        # Source A creates the site + one trial
+        ing_a = _SrcA(driver=driver)
+        site_a = {"name": "Lleida", "source_id": "GENVCE",
+                  "siteKey": normalize_site_key("Lleida"),
+                  "municipalityKey": normalize_site_key("Lleida")}
+        vt_a = {"mergeKey": "g1", "source_id": "GENVCE", "cropEppo": "TRZAX",
+                "variety": "V1", "year": 2021, "yieldKgHa": 8000,
+                "trialLocation": "Lleida",
+                "trialLocationKey": normalize_site_key("Lleida")}
+        await ing_a._merge_trial_sites(driver, [site_a])
+        await ing_a._merge_variety_trials(driver, [vt_a])
+        await ing_a._merge_relationships(driver, [vt_a], [])
+
+        # Source B ingests later — its trial must link to the same Lleida site
+        ing_b = _SrcB(driver=driver)
+        vt_b = {"mergeKey": "i1", "source_id": "ITACYL", "cropEppo": "HORVX",
+                "variety": "V2", "year": 2021, "yieldKgHa": 6000,
+                "trialLocation": "Lleida",
+                "trialLocationKey": normalize_site_key("Lleida")}
+        # No site from source B — the existing Lleida must be found
+        await ing_b._merge_variety_trials(driver, [vt_b])
+        await ing_b._merge_relationships(driver, [vt_b], [])
+
+        async with driver.session() as s:
+            sites = (await (await s.run(
+                "MATCH (t:TrialSite) RETURN count(t) AS c")).single())["c"]
+            linked_b = (await (await s.run(
+                "MATCH (:VarietyTrial {source_id:'ITACYL'})-[:TRIAL_AT]->(:TrialSite {siteKey:'lleida'}) "
+                "RETURN count(*) AS c")).single())["c"]
+        return sites, linked_b
+
+    sites, linked_b = _run(_scenario())
+    assert sites == 1  # one site for both sources
+    assert linked_b == 1  # source B's trial linked to the shared Lleida site

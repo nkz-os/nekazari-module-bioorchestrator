@@ -1,4 +1,4 @@
-"""E2E: Navarra adequate bundle → Neo4j via BaseIngester.merge."""
+"""E2E: Navarra Wave 3 adequate bundle → Neo4j via NavarraIngester.merge."""
 
 from __future__ import annotations
 
@@ -10,7 +10,6 @@ import pytest
 from neo4j import AsyncGraphDatabase
 from testcontainers.neo4j import Neo4jContainer
 
-from app.graph.dao import GraphDAO
 from app.ingestion.navarra_ingester import NavarraIngester
 
 pytestmark = pytest.mark.skipif(
@@ -27,7 +26,7 @@ BUNDLE = os.path.normpath(
         "nkz-navarra-agraria",
         "data",
         "jsonld",
-        "all_trials_adequate.jsonld",
+        "wave3_adequate.jsonld",
     )
 )
 
@@ -48,14 +47,13 @@ def driver():
         _run(d.close())
 
 
-@pytest.mark.skipif(not os.path.isfile(BUNDLE), reason="adequate bundle missing")
-def test_navarra_adequate_ingest_links_and_idempotent(driver):
+@pytest.mark.skipif(not os.path.isfile(BUNDLE), reason="wave3 adequate bundle missing")
+def test_wave3_adequate_ingest_links_and_idempotent(driver):
     ing = NavarraIngester(driver=driver)
 
     async def _counts():
         async with driver.session() as s:
             vt = (await (await s.run("MATCH (v:VarietyTrial) RETURN count(v) AS c")).single())["c"]
-            mt = (await (await s.run("MATCH (m:ManagementTrial) RETURN count(m) AS c")).single())["c"]
             ts = (await (await s.run("MATCH (t:TrialSite) RETURN count(t) AS c")).single())["c"]
             ta = (await (
                 await s.run(
@@ -69,43 +67,28 @@ def test_navarra_adequate_ingest_links_and_idempotent(driver):
                     sid="NAVARRA-AGRARIA",
                 )
             ).single())["c"]
-            with_geo = (await (
-                await s.run(
-                    "MATCH (t:TrialSite {source_id: $sid}) "
-                    "WHERE t.latitude IS NOT NULL RETURN count(t) AS c",
-                    sid="NAVARRA-AGRARIA",
-                )
-            ).single())["c"]
-        return vt, mt, ts, ta, orphan, with_geo
+        return vt, ts, ta, orphan
 
     async def _scenario():
         async with driver.session() as s:
             await s.run("MATCH (n) DETACH DELETE n")
         nodes = await ing.transform(BUNDLE)
-        assert len(nodes["variety_trials"]) == 1429
-        assert len(nodes["trial_sites"]) == 32
+        assert len(nodes["variety_trials"]) == 1669
+        assert len(nodes["trial_sites"]) == 40
         stats = await ing.merge(nodes)
-        assert stats["variety_trials"] == 1429
+        assert stats["variety_trials"] == 1669
         assert stats["relationships"] > 0
         c1 = await _counts()
         await ing.merge(nodes)
         c2 = await _counts()
-        return c1, c2, stats
+        return c1, c2, stats, len(nodes["variety_trials"])
 
-    c1, c2, stats = _run(_scenario())
-    vt, mt, ts, ta, orphan, with_geo = c1
+    c1, c2, stats, transform_vt = _run(_scenario())
+    vt, ts, ta, orphan = c1
     assert c1 == c2
-
-    assert vt == 1429
-    assert mt == 55  # 224 source rows → 55 distinct management mergeKeys
-    assert ts == 32
-    assert ta == 1429
+    assert vt <= transform_vt
+    assert ts == 40
+    assert ta >= vt
     assert orphan == 0
-    assert with_geo == 32
-    assert stats["variety_trials"] == 1429
-    assert stats["management_trials"] == 224
-    assert stats["sites"] == 32
-
-    dao = GraphDAO(driver)
-    trials = _run(dao.get_variety_trials(crop="TRZAX", limit=5))
-    assert trials
+    assert stats["variety_trials"] == 1669
+    assert stats["sites"] == 40

@@ -109,6 +109,25 @@ def test_exclude_sites_drops_multilinked_trials_observed_there(dao):
     assert v["mean_yield_kg_ha"] == 5000.0
 
 
+def test_extrapolate_excludes_ranking_ineligible(dao):
+    """Catalogue/zonal trials (rankingEligible=false) must not pollute extrapolation."""
+    _reset_and_seed(
+        dao,
+        """
+        CREATE (a:TrialSite {name:'SiteA', climateClass:'Csa', annualRainfallMm:500})
+        CREATE (t1:VarietyTrial {cropEppo:'TRZAX', varietyNormalized:'Good', variety:'Good', year:2020, yieldKgHa:5000.0, rankingEligible:true})
+        CREATE (t2:VarietyTrial {cropEppo:'TRZAX', varietyNormalized:'Catalog', variety:'Catalog', year:2020, yieldKgHa:9000.0, rankingEligible:false})
+        CREATE (t1)-[:TRIAL_AT]->(a)
+        CREATE (t2)-[:TRIAL_AT]->(a)
+        """,
+    )
+    res = _run(dao.extrapolate_varieties(crop="TRZAX", climate_class="Csa", top_n=5))
+    varieties = [x["variety"] for x in res["ranked_varieties"]]
+    assert "Catalog" not in varieties
+    good = next(x for x in res["ranked_varieties"] if x["variety"] == "Good")
+    assert good["mean_yield_kg_ha"] == 5000.0
+
+
 # ── Backtester: leave-one-site-out cross-validation ──────────────────────────
 
 _TWO_SITE_SEED = """

@@ -52,7 +52,7 @@ async def backfill(
                 """
                 MATCH (ts:TrialSite)
                 WHERE ts.name IS NOT NULL
-                RETURN ts.mergeKey AS mk, ts.name AS name
+                RETURN ts.siteKey AS site_key, ts.name AS name
                 ORDER BY ts.name
                 """
             )
@@ -61,7 +61,7 @@ async def backfill(
                 """
                 MATCH (ts:TrialSite)
                 WHERE ts.latitude IS NULL AND ts.name IS NOT NULL
-                RETURN ts.mergeKey AS mk, ts.name AS name
+                RETURN ts.siteKey AS site_key, ts.name AS name
                 ORDER BY ts.name
                 """
             )
@@ -71,6 +71,7 @@ async def backfill(
 
         for row in rows:
             name = row["name"]
+            site_key = row["site_key"]
             if force_names and name.strip().lower() not in force_names:
                 continue
             if not force_names and is_aggregate_site_name(name):
@@ -98,11 +99,11 @@ async def backfill(
 
             await session.run(
                 """
-                MATCH (ts:TrialSite {mergeKey: $mk})
+                MATCH (ts:TrialSite {siteKey: $site_key})
                 SET ts += $updates,
                     ts.updatedAt = datetime()
                 """,
-                mk=row["mk"],
+                site_key=row["site_key"],
                 updates=updates,
             )
             updated += 1

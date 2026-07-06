@@ -49,8 +49,8 @@ def run(execute: bool = False, driver=None) -> dict:
         for p in plans:
             if p["action"] == "merge":
                 logger.info("  MERGE  %-32s %d -> 1", p["name"], len(p["node_ids"]))
-            else:
-                logger.info("  FLAG   %-32s %d (needsHumanReview)", p["name"], len(p["node_ids"]))
+            elif p["action"] == "split":
+                logger.info("  SPLIT  %-32s %d (needsHumanReview)", p["name"], len(p["node_ids"]))
         summary = apply_site_canonicalization(driver, plans, dry_run=not execute)
         mode = "EXECUTED" if execute else "DRY-RUN (no changes)"
         logger.info("%s | merged_groups=%d removed_nodes=%d flagged_groups=%d",

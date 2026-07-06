@@ -31,6 +31,7 @@ data/reports/
 
 # ── Agent artifacts ──
 .claude/
+.superpowers/
 docs/superpowers/
 
 # ── Secrets (template only in repo; real values applied via kubectl) ──

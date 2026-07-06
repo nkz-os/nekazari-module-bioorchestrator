@@ -760,5 +760,75 @@
       "academic"
     ],
     "_notes": "Registered 2026-07-04 for A3 gate unblock. Source is currently skipped in perennial canonical reingest — phenology-only, no variety trials. EPPO PIAVE (Pistacia vera), cv. Kerman & Golden Hills, central Spain."
+  },
+  {
+    "source_id": "INRAMAROC",
+    "name": "INRA Maroc",
+    "institution": "Institut National de la Recherche Agronomique (Maroc)",
+    "institution_short": "INRA Maroc",
+    "country": "MA",
+    "country_name": {
+      "en": "Morocco",
+      "es": "Marruecos",
+      "fr": "Maroc",
+      "pt": "Marrocos"
+    },
+    "url": "https://www.inra.org.ma",
+    "document_url_template": null,
+    "license_class": "public-sector-psi",
+    "use_type": "variety-trial-network",
+    "official_status": false,
+    "data_format": "pdf-extracted",
+    "extraction_method": "llm-enhanced",
+    "confidence_default": "medium",
+    "attribution": {
+      "en": "Data sourced from variety trials published by INRA Maroc.",
+      "es": "Datos obtenidos de ensayos varietales publicados por INRA Marruecos.",
+      "fr": "Données issues des essais variétaux publiés par l INRA Maroc."
+    },
+    "disclaimer": {
+      "en": "INRA trials are conducted in Morocco. NKZ extrapolates results to similar environments.",
+      "es": "Los ensayos INRA se realizan en Marruecos. NKZ extrapola los resultados a entornos similares.",
+      "fr": "Les essais INRA sont menés au Maroc. NKZ extrapole les résultats à des environnements similaires."
+    },
+    "site_urls": [
+      "https://www.inra.org.ma"
+    ],
+    "tags": [
+      "cereals",
+      "legumes",
+      "morocco",
+      "variety-trials"
+    ]
+  },
+  {
+    "source_id": "TAGEM_TR_2012",
+    "name": "TAGEM Turkey 2012",
+    "institution": "TAGEM Turkey",
+    "institution_short": "TAGEM",
+    "country": "TR",
+    "country_name": {
+      "en": "Turkey",
+      "tr": "Türkiye"
+    },
+    "url": "https://www.tarimorman.gov.tr/TAGEM",
+    "document_url_template": null,
+    "license_class": "public-sector-psi",
+    "use_type": "variety-trial-network",
+    "official_status": true,
+    "data_format": "pdf-extracted",
+    "extraction_method": "structured",
+    "confidence_default": "high",
+    "attribution": {
+      "en": "Data sourced from variety trials published by TAGEM (Turkey)."
+    },
+    "disclaimer": {
+      "en": "TAGEM trials are conducted in Turkey. NKZ extrapolates results to similar environments."
+    },
+    "site_urls": [],
+    "tags": [
+      "turkey",
+      "variety-trials"
+    ]
   }
 ]

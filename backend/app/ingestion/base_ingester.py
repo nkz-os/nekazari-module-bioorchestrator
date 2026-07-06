@@ -37,6 +37,9 @@ from app.ingestion.normalization_registry import (
     canonical_source_id,
 )
 
+from app.graph.site_canonicalization import normalize_site_key
+from app.ingestion.trial_site_geo import geo_updates_for_neo4j, resolve_trial_site_geo
+
 logger = logging.getLogger(__name__)
 
 NEO4J_URI = os.getenv("NEO4J_URI", "bolt://bioorchestrator-neo4j:7687")
@@ -173,6 +176,8 @@ class BaseIngester(ABC):
             raw_variety = vt.get("variety")
             vt["varietyNormalized"] = normalize_variety_name(raw_variety)
 
+            vt["trialLocationKey"] = normalize_site_key(vt.get("trialLocation"))
+
             if not vt.get("cropScientific") and vt.get("cropEppo"):
                 vt["cropScientific"] = eppo_to_scientific(vt["cropEppo"])
 
@@ -239,6 +244,8 @@ class BaseIngester(ABC):
                 mt["locationNormalized"] = loc_info["name"]
                 mt["locationCountry"] = loc_info["country"]
 
+            mt["trialLocationKey"] = normalize_site_key(mt.get("trialLocation"))
+
             # Resolve unit to canonical QUDT/UCUM form
             unit_str = mt.get("resultUnit")
             if unit_str:
@@ -257,6 +264,12 @@ class BaseIngester(ABC):
         normalised_sites: list[dict] = []
         for site in nodes.get("trial_sites", []):
             site["source_id"] = source_id
+            site["siteKey"] = normalize_site_key(site.get("name"))
+            site["municipalityKey"] = normalize_site_key(site.get("municipality"))
+            if site.get("latitude") is None:
+                geo = resolve_trial_site_geo(site.get("name"))
+                if geo:
+                    site.update(geo_updates_for_neo4j(geo))
             normalised_sites.append(site)
 
         # Log validation warnings
@@ -310,38 +323,50 @@ class BaseIngester(ABC):
         )
 
     async def _merge_trial_sites(self, driver: AsyncDriver, sites: list[dict]) -> int:
-        """MERGE TrialSite nodes by mergeKey. Idempotent."""
+        """MERGE TrialSite nodes by siteKey (source-agnostic). Accumulates
+        sourceIds across sources so a shared physical site carries all its
+        contributing provenance. Idempotent — re-run of same source is a no-op.
+        """
         if not sites:
             return 0
 
         count = 0
         async with driver.session() as session:
             for node in sites:
-                merge_key = self._get_merge_key(node)
-                if not merge_key:
+                site_key = node.get("siteKey") or normalize_site_key(node.get("name"))
+                if not site_key:
                     continue
                 await session.run(
                     """
-                    MERGE (ts:TrialSite {mergeKey: $merge_key})
-                    SET ts.name = $name,
-                        ts.municipality = $municipality,
-                        ts.climateClass = $climate,
-                        ts.soilType = $soil_type,
-                        ts.soilTexture = $soil_texture,
-                        ts.soilPh = $soil_ph,
-                        ts.annualRainfallMm = $rainfall,
-                        ts.annualET0Mm = $et0,
-                        ts.elevationM = $elevation,
-                        ts.frostDaysPerYear = $frost,
-                        ts.latitude = $lat,
-                        ts.longitude = $lon,
-                        ts.photoperiodSummerHours = $photoperiod,
-                        ts.source_id = $source,
+                    MERGE (ts:TrialSite {siteKey: $site_key})
+                    SET ts.name = coalesce(ts.name, $name),
+                        ts.municipality = coalesce($municipality, ts.municipality),
+                        ts.municipalityKey = $municipality_key,
+                        ts.climateClass = coalesce($climate, ts.climateClass),
+                        ts.soilType = coalesce($soil_type, ts.soilType),
+                        ts.soilTexture = coalesce($soil_texture, ts.soilTexture),
+                        ts.soilPh = coalesce($soil_ph, ts.soilPh),
+                        ts.annualRainfallMm = coalesce($rainfall, ts.annualRainfallMm),
+                        ts.annualET0Mm = coalesce($et0, ts.annualET0Mm),
+                        ts.elevationM = coalesce($elevation, ts.elevationM),
+                        ts.frostDaysPerYear = coalesce($frost, ts.frostDaysPerYear),
+                        ts.latitude = coalesce($lat, ts.latitude),
+                        ts.longitude = coalesce($lon, ts.longitude),
+                        ts.geoConfidence = coalesce($geo_confidence, ts.geoConfidence),
+                        ts.geoSource = coalesce($geo_source, ts.geoSource),
+                        ts.photoperiodSummerHours = coalesce($photoperiod, ts.photoperiodSummerHours),
+                        ts.sourceIds = CASE
+                            WHEN ts.sourceIds IS NULL THEN [$source]
+                            WHEN NOT $source IN ts.sourceIds THEN ts.sourceIds + $source
+                            ELSE ts.sourceIds
+                        END,
                         ts.updatedAt = datetime()
+                    SET ts.source_id = ts.sourceIds[0]
                     """,
-                    merge_key=merge_key,
+                    site_key=site_key,
                     name=node.get("name"),
                     municipality=node.get("municipality"),
+                    municipality_key=node.get("municipalityKey") or "",
                     climate=node.get("climateClass"),
                     soil_type=node.get("soilType"),
                     soil_texture=node.get("soilTexture"),
@@ -352,6 +377,8 @@ class BaseIngester(ABC):
                     frost=node.get("frostDaysPerYear"),
                     lat=node.get("latitude"),
                     lon=node.get("longitude"),
+                    geo_confidence=node.get("geoConfidence"),
+                    geo_source=node.get("geoSource"),
                     photoperiod=node.get("photoperiodSummerHours"),
                     source=node.get("source_id", self.SOURCE_ID),
                 )
@@ -445,6 +472,7 @@ class BaseIngester(ABC):
                         vt.agronomicTraits = $agro_traits,
                         vt.irrigationRegime = $irrigation,
                         vt.trialLocation = $location,
+                        vt.trialLocationKey = $location_key,
                         vt.agroclimaticZone = $agro_zone,
                         vt.productionSystem = $production,
                         vt.rootstock = $rootstock,
@@ -469,6 +497,7 @@ class BaseIngester(ABC):
                         vt.agronomicTraitsUnified = $agro_traits_unified,
                         vt.irrigationRegime = $irrigation,
                         vt.trialLocation = $location,
+                        vt.trialLocationKey = $location_key,
                         vt.locationNormalized = $loc_norm,
                         vt.locationCountry = $loc_country,
                         vt.climateClass = $climate,
@@ -476,6 +505,7 @@ class BaseIngester(ABC):
                         vt.productionSystem = $production,
                         vt.confidence = $confidence,
                         vt._validationPassed = $valid,
+                        vt.rankingEligible = coalesce($ranking_eligible, vt.rankingEligible, true),
                         vt.updatedAt = datetime()
                     """,
                     unique_key=unique_key,
@@ -497,6 +527,7 @@ class BaseIngester(ABC):
                     agro_traits_unified=node.get("agronomicTraitsUnified"),
                     irrigation=node.get("irrigationRegime"),
                     location=node.get("trialLocation"),
+                    location_key=node.get("trialLocationKey") or "",
                     loc_norm=node.get("locationNormalized"),
                     loc_country=node.get("locationCountry"),
                     climate=node.get("climateClass"),
@@ -509,6 +540,7 @@ class BaseIngester(ABC):
                     planting_density=node.get("plantingDensityTreesHa"),
                     confidence=node.get("confidence", "medium"),
                     valid=node.get("_validation", {}).get("valid", True),
+                    ranking_eligible=node.get("rankingEligible"),
                 )
                 count += 1
         return count
@@ -581,6 +613,7 @@ class BaseIngester(ABC):
                         mt.resultUnit = $unit,
                         mt.year = $year,
                         mt.trialLocation = $location,
+                        mt.trialLocationKey = $location_key,
                         mt.confidence = $confidence,
                         mt.varietyNormalized = $variety_norm,
                         mt.locationNormalized = $loc_norm,
@@ -601,6 +634,7 @@ class BaseIngester(ABC):
                     unit=node.get("resultUnit"),
                     year=node.get("year"),
                     location=node.get("trialLocation"),
+                    location_key=node.get("trialLocationKey") or "",
                     loc_norm=node.get("locationNormalized"),
                     loc_country=node.get("locationCountry"),
                     qudt_uri=node.get("unitQudtUri"),
@@ -616,28 +650,40 @@ class BaseIngester(ABC):
         variety_trials: list[dict],
         management_trials: list[dict],
     ) -> int:
-        """Create TRIAL_AT relationships deterministically.
+        """Create TRIAL_AT relationships source-agnostically.
 
-        Links trials to TrialSites by the stable ``(source_id, trialLocation ==
-        TrialSite.name)`` pair, scoped to this source over the whole graph, in a
-        single query per node type. A re-ingest therefore re-links previously
-        orphaned trials of the source.
+        Links trials to TrialSites by ``trialLocationKey`` (precomputed in
+        ``normalize_nodes``) against the site's ``siteKey`` or
+        ``municipalityKey``. Removes the source_id filter on TrialSite — a
+        site created by source A is visible to source B's trials, so shared
+        physical locations accumulate trials from all sources.
 
-        The former per-node match by a recomputed ``merge_key|content_hash``
-        unique_key produced 0 TRIAL_AT (~16k orphans, incl. all of BSL/AHDB):
-        the stored key had been overwritten with the short one, so the lookup
-        never matched. ``location == name`` is what the scrapers guarantee (one
-        TrialSite whose name equals each trialLocation) and mirrors the proven
-        ``EuTrialsIngester`` override.
+        The former source-scoped query ``(t:TrialSite {source_id: $sid})``
+        produced 0 TRIAL_AT for any source whose site had been merged into a
+        survivor carrying a different ``source_id`` (~16k orphans).
         """
+        # Defensive: compute trialLocationKey for trials that bypassed
+        # normalize_nodes (e.g., merge() called directly in tests).
+        for v in variety_trials:
+            if not v.get("trialLocationKey") and v.get("trialLocation"):
+                v["trialLocationKey"] = normalize_site_key(v["trialLocation"])
+        for m in management_trials:
+            if not m.get("trialLocationKey") and m.get("trialLocation"):
+                m["trialLocationKey"] = normalize_site_key(m["trialLocation"])
+
         count = 0
 
         async def _link(session, label: str) -> int:
             result = await session.run(
-                f"MATCH (n:{label} {{source_id: $sid}}), "
-                "      (t:TrialSite {source_id: $sid}) "
-                "WHERE toLower(n.trialLocation) = toLower(t.name) "
-                "   OR toLower(n.trialLocation) = toLower(t.municipality) "
+                f"MATCH (n:{label} {{source_id: $sid}}) "
+                "MATCH (t:TrialSite) "
+                "WHERE t.siteKey = n.trialLocationKey "
+                "   OR t.municipalityKey = n.trialLocationKey "
+                "   OR (n.trialLocationKey IS NULL AND "
+                "       (t.siteKey = toLower(trim(n.trialLocation)) "
+                "        OR t.municipalityKey = toLower(trim(n.trialLocation)))) "
+                "   OR (n.locationNormalized IS NOT NULL AND t.siteKey = "
+                "        toLower(trim(n.locationNormalized))) "
                 "MERGE (n)-[:TRIAL_AT]->(t) "
                 "RETURN count(*) AS c",
                 sid=self.SOURCE_ID,

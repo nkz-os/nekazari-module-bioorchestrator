@@ -914,6 +914,266 @@
       "soilTexture": "clay loam",
       "geoConfidence": "nebih_scraper_municipality",
       "geoSource": "NÉBIH scraper CHELSA coordinates: Iregszemcse, HU — municipality centroid, NOT field GPS"
+    },
+    "muratlı (ballıhoca)": {
+      "name": "Muratlı (Ballıhoca)",
+      "matchKey": "Muratlı (Ballıhoca)",
+      "climateClass": "Csa",
+      "latitude": 41.1711,
+      "longitude": 27.5028,
+      "geoConfidence": "research_station_manual",
+      "geoSource": "TAGEM Research Station, Tekirdag, Turkey",
+      "resolvedName": "Muratlı"
+    },
+    "tekirdağ i̇nanlı": {
+      "name": "Tekirdağ İnanlı",
+      "matchKey": "Tekirdağ İnanlı",
+      "climateClass": "Csa",
+      "latitude": 40.978,
+      "longitude": 27.5117,
+      "geoConfidence": "research_station_manual",
+      "geoSource": "TAGEM Research Station, Tekirdag, Turkey",
+      "resolvedName": "Tekirdağ İnanlı"
+    },
+    "zones bour favorable": {
+      "name": "Zones Bour favorable",
+      "matchKey": "Zones Bour favorable",
+      "climateClass": "Csa",
+      "latitude": 33.88,
+      "longitude": -5.53,
+      "geoConfidence": "aggregate_centroid",
+      "geoSource": "Agregado INRAMAROC (Bour favorable - Saïs/Meknes region)",
+      "resolvedName": "Zones Bour favorable"
+    },
+    "zones favorables": {
+      "name": "Zones favorables",
+      "matchKey": "Zones favorables",
+      "climateClass": "Csa",
+      "latitude": 33.88,
+      "longitude": -5.53,
+      "geoConfidence": "aggregate_centroid",
+      "geoSource": "Agregado INRAMAROC (Bour favorable - Saïs/Meknes region)",
+      "resolvedName": "Zones favorables"
+    },
+    "zones arides et semi-arides": {
+      "name": "Zones arides et semi-arides",
+      "matchKey": "Zones arides et semi-arides",
+      "climateClass": "BSk",
+      "latitude": 31.63,
+      "longitude": -8.0,
+      "geoConfidence": "aggregate_centroid",
+      "geoSource": "Agregado INRAMAROC (Marrakech/Tensift region)",
+      "resolvedName": "Zones arides et semi-arides"
+    },
+    "régions arides et semi-arides": {
+      "name": "Régions arides et semi-arides",
+      "matchKey": "Régions arides et semi-arides",
+      "climateClass": "BSk",
+      "latitude": 31.63,
+      "longitude": -8.0,
+      "geoConfidence": "aggregate_centroid",
+      "geoSource": "Agregado INRAMAROC (Marrakech/Tensift region)",
+      "resolvedName": "Régions arides et semi-arides"
+    },
+    "zones semi-arides": {
+      "name": "Zones semi-arides",
+      "matchKey": "Zones semi-arides",
+      "climateClass": "BSk",
+      "latitude": 33.0,
+      "longitude": -7.61,
+      "geoConfidence": "aggregate_centroid",
+      "geoSource": "Agregado INRAMAROC (Settat/Chaouia region)",
+      "resolvedName": "Zones semi-arides"
+    },
+    "chaouia, abda, benslimane, el gara, zaër et saïs": {
+      "name": "Chaouia, Abda, Benslimane, El Gara, Zaër et Saïs",
+      "matchKey": "Chaouia, Abda, Benslimane, El Gara, Zaër et Saïs",
+      "climateClass": "Csa",
+      "latitude": 33.0,
+      "longitude": -7.61,
+      "geoConfidence": "aggregate_centroid",
+      "geoSource": "Agregado INRAMAROC (Settat/Chaouia region)",
+      "resolvedName": "Chaouia, Abda, Zaër"
+    },
+    "chaouia-abda-zaër-saïs": {
+      "name": "Chaouia-Abda-Zaër-Saïs",
+      "matchKey": "Chaouia-Abda-Zaër-Saïs",
+      "climateClass": "Csa",
+      "latitude": 33.0,
+      "longitude": -7.61,
+      "geoConfidence": "aggregate_centroid",
+      "geoSource": "Agregado INRAMAROC (Settat/Chaouia region)",
+      "resolvedName": "Chaouia, Abda, Zaër"
+    },
+    "chaouia et abda": {
+      "name": "Chaouia et Abda",
+      "matchKey": "Chaouia et Abda",
+      "climateClass": "Csa",
+      "latitude": 33.0,
+      "longitude": -7.61,
+      "geoConfidence": "aggregate_centroid",
+      "geoSource": "Agregado INRAMAROC (Settat/Chaouia region)",
+      "resolvedName": "Chaouia et Abda"
+    },
+    "chaouia, abda et zaër": {
+      "name": "Chaouia, Abda et Zaër",
+      "matchKey": "Chaouia, Abda et Zaër",
+      "climateClass": "Csa",
+      "latitude": 33.0,
+      "longitude": -7.61,
+      "geoConfidence": "aggregate_centroid",
+      "geoSource": "Agregado INRAMAROC (Settat/Chaouia region)",
+      "resolvedName": "Chaouia, Abda et Zaër"
+    },
+    "bour favorable, semi-aride et irrigué": {
+      "name": "Bour favorable, semi-aride et irrigué",
+      "matchKey": "Bour favorable, semi-aride et irrigué",
+      "climateClass": "Csa",
+      "latitude": 33.88,
+      "longitude": -5.53,
+      "geoConfidence": "aggregate_centroid",
+      "geoSource": "Agregado INRAMAROC (Meknes region)",
+      "resolvedName": "Bour favorable, semi-aride et irrigué"
+    },
+    "bour favorable et montagne": {
+      "name": "Bour favorable et montagne",
+      "matchKey": "Bour favorable et montagne",
+      "climateClass": "Csa",
+      "latitude": 33.88,
+      "longitude": -5.53,
+      "geoConfidence": "aggregate_centroid",
+      "geoSource": "Agregado INRAMAROC (Atlas/Meknes region)",
+      "resolvedName": "Bour favorable et montagne"
+    },
+    "bour et zones semi-arides": {
+      "name": "Bour et zones semi-arides",
+      "matchKey": "Bour et zones semi-arides",
+      "climateClass": "BSk",
+      "latitude": 33.0,
+      "longitude": -7.61,
+      "geoConfidence": "aggregate_centroid",
+      "geoSource": "Agregado INRAMAROC (Settat region)",
+      "resolvedName": "Bour et zones semi-arides"
+    },
+    "large adaptation": {
+      "name": "Large adaptation",
+      "matchKey": "Large adaptation",
+      "climateClass": "Csa",
+      "latitude": 34.02,
+      "longitude": -6.83,
+      "geoConfidence": "aggregate_centroid",
+      "geoSource": "Agregado INRAMAROC (Rabat/National)",
+      "resolvedName": "Large adaptation"
+    },
+    "toutes les zones de culture du colza au maroc": {
+      "name": "Toutes les zones de culture du colza au Maroc",
+      "matchKey": "Toutes les zones de culture du colza au Maroc",
+      "climateClass": "Csa",
+      "latitude": 34.02,
+      "longitude": -6.83,
+      "geoConfidence": "aggregate_centroid",
+      "geoSource": "Agregado INRAMAROC (National)",
+      "resolvedName": "Toutes les zones"
+    },
+    "toutes les régions de culture du colza au maroc": {
+      "name": "Toutes les régions de culture du colza au Maroc",
+      "matchKey": "Toutes les régions de culture du colza au Maroc",
+      "climateClass": "Csa",
+      "latitude": 34.02,
+      "longitude": -6.83,
+      "geoConfidence": "aggregate_centroid",
+      "geoSource": "Agregado INRAMAROC (National)",
+      "resolvedName": "Toutes les régions"
+    },
+    "toutes les régions de culture du colza au maroc (ouest, loukkos, saïs et baht)": {
+      "name": "Toutes les régions de culture du colza au Maroc (Ouest, Loukkos, Saïs et Baht)",
+      "matchKey": "Toutes les régions de culture du colza au Maroc (Ouest, Loukkos, Saïs et Baht)",
+      "climateClass": "Csa",
+      "latitude": 34.02,
+      "longitude": -6.83,
+      "geoConfidence": "aggregate_centroid",
+      "geoSource": "Agregado INRAMAROC (Loukkos/Saïs)",
+      "resolvedName": "Toutes les régions (Loukkos, Saïs)"
+    },
+    "zamadueñas": {
+      "name": "Zamadueñas",
+      "matchKey": "Zamadueñas",
+      "climateClass": "Cfb",
+      "latitude": 41.6489,
+      "longitude": -4.1846,
+      "geoConfidence": "research_station_manual",
+      "geoSource": "ITACyL trial network, Valladolid province",
+      "resolvedName": "Zamadueñas"
+    },
+    "valdeolmillos": {
+      "name": "Valdeolmillos",
+      "matchKey": "Valdeolmillos",
+      "climateClass": "Cfb",
+      "latitude": 41.817,
+      "longitude": -4.438,
+      "geoConfidence": "research_station_manual",
+      "geoSource": "ITACyL trial network, Palencia province",
+      "resolvedName": "Valdeolmillos"
+    },
+    "el pego": {
+      "name": "El Pego",
+      "matchKey": "El Pego",
+      "climateClass": "Cfb",
+      "latitude": 40.998,
+      "longitude": -5.879,
+      "geoConfidence": "research_station_manual",
+      "geoSource": "ITACyL trial network, Salamanca province",
+      "resolvedName": "El Pego"
+    },
+    "torrepadierne": {
+      "name": "Torrepadierne",
+      "matchKey": "Torrepadierne",
+      "climateClass": "Cfb",
+      "latitude": 42.348,
+      "longitude": -3.497,
+      "geoConfidence": "research_station_manual",
+      "geoSource": "ITACyL trial network, Burgos province",
+      "resolvedName": "Torrepadierne"
+    },
+    "constanzana": {
+      "name": "Constanzana",
+      "matchKey": "Constanzana",
+      "climateClass": "BSk",
+      "latitude": 41.583,
+      "longitude": -4.947,
+      "geoConfidence": "research_station_manual",
+      "geoSource": "ITACyL trial network, Ávila province",
+      "resolvedName": "Constanzana"
+    },
+    "san juan de torres": {
+      "name": "San Juan de Torres",
+      "matchKey": "San Juan de Torres",
+      "climateClass": "BSk",
+      "latitude": 41.584,
+      "longitude": -5.771,
+      "geoConfidence": "research_station_manual",
+      "geoSource": "ITACyL trial network, Salamanca province",
+      "resolvedName": "San Juan de Torres"
+    },
+    "san pedro de latarce": {
+      "name": "San Pedro de Latarce",
+      "matchKey": "San Pedro de Latarce",
+      "climateClass": "BSk",
+      "latitude": 41.351,
+      "longitude": -5.323,
+      "geoConfidence": "research_station_manual",
+      "geoSource": "ITACyL trial network, Salamanca province",
+      "resolvedName": "San Pedro de Latarce"
+    },
+    "castrojeriz": {
+      "name": "Castrojeriz",
+      "matchKey": "Castrojeriz",
+      "climateClass": "BSk",
+      "latitude": 42.288,
+      "longitude": -4.160,
+      "geoConfidence": "research_station_manual",
+      "geoSource": "ITACyL trial network, Burgos province",
+      "resolvedName": "Castrojeriz"
     }
   },
   "aggregates": [

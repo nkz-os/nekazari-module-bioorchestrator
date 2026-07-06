@@ -252,7 +252,33 @@ def test_get_crop_context_resolves_species_slug_for_soil_lookup(mock_driver):
          patch.object(GraphDAO, "get_heat_tolerance", AsyncMock(return_value=None)), \
          patch.object(GraphDAO, "get_soil_suitability", soil_mock), \
          patch("app.services.soil_client.get_parcel_soil_properties", AsyncMock(return_value=parcel_soil)):
+        result = asyncio.run(
+            dao.get_crop_context(PARCEL_ID, tenant_id=TENANT)
+        )
+
+    soil_mock.assert_awaited_once_with("trigo")
+    assert result["soil"]["suitability"]["verdict"] in ("suitable", "marginal", "unsuitable", "unknown")
+
+
+def test_get_crop_context_soil_suitability_uses_c5_verdict_envelope(mock_driver):
+    """crop-context must expose assess_soil_suitability verdict (not legacy compute overall)."""
+    dao = GraphDAO(mock_driver)
+    tolerance = {"ph_min": 5.5, "ph_max": 7.5, "textures": ["Loam"]}
+    parcel_soil = {
+        "data_available": True,
+        "ph": 6.5,
+        "texture": "Loam",
+        "source": "soilgrids",
+    }
+
+    with patch("app.graph.dao.OrionClient", _FakeOrionClient), \
+         patch.object(GraphDAO, "get_phenology_params", AsyncMock(return_value=None)), \
+         patch.object(GraphDAO, "get_heat_tolerance", AsyncMock(return_value=None)), \
+         patch.object(GraphDAO, "get_soil_suitability", AsyncMock(return_value=tolerance)), \
+         patch("app.services.soil_client.get_parcel_soil_properties", AsyncMock(return_value=parcel_soil)):
         result = asyncio.run(dao.get_crop_context(PARCEL_ID, tenant_id=TENANT))
 
-    soil_mock.assert_awaited_once_with("wheat")
-    assert result["soil"]["suitability"]["verdict"] in ("suitable", "marginal", "unsuitable", "unknown")
+    suit = result["soil"]["suitability"]
+    assert "verdict" in suit
+    assert "confidence" in suit
+    assert "overall" not in suit or suit.get("overall") is None

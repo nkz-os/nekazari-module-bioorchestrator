@@ -39,6 +39,10 @@ from app.species_registry import get_species_info, resolve_species
 # ranking. Below it the response carries lowEvidence. Owner default (B2) = 5.
 EVIDENCE_THRESHOLD = 5
 
+# Catalogue/zonal trials (rankingEligible=false) remain in the graph for metadata
+# and map display but must not enter yield ranking, extrapolation, or backtest.
+RANKING_ELIGIBLE_PREDICATE = "coalesce(vt.rankingEligible, true) = true"
+
 
 def _assess_evidence(ranked: list[dict]) -> dict:
     """C.2 evidence gate: how much trial evidence backs this ranking."""
@@ -1086,7 +1090,10 @@ class GraphDAO:
           - "Show me tomato trials on calcareous soils under rainfed conditions"
         """
         # Effective yield: prefer absolute yieldKgHa, fallback to BSL 1-9 notes scaled
-        where_clauses = ["(vt.yieldKgHa IS NOT NULL OR vt.yieldNoteS1 IS NOT NULL)"]
+        where_clauses = [
+            "(vt.yieldKgHa IS NOT NULL OR vt.yieldNoteS1 IS NOT NULL)",
+            RANKING_ELIGIBLE_PREDICATE,
+        ]
         params: dict[str, Any] = {"limit": limit}
 
         if crop:
@@ -1476,6 +1483,7 @@ class GraphDAO:
                 MATCH (vt:VarietyTrial)-[:TRIAL_AT]->(ts:TrialSite)
                 WHERE ts.name IN $site_names
                   AND (vt.yieldKgHa IS NOT NULL OR vt.yieldNoteS1 IS NOT NULL)
+                  AND coalesce(vt.rankingEligible, true) = true
                   AND (
                       vt.cropEppo = $crop
                       OR vt.cropScientific CONTAINS $crop
@@ -3022,7 +3030,6 @@ class GraphDAO:
             thermal = await self.get_heat_tolerance(species_query)
             soil_req = await self.get_soil_suitability(species_slug)
 
-            from app.services.soil_client import assess_soil_suitability, get_parcel_soil_properties
             soil_actual = await get_parcel_soil_properties(parcel_id, tenant_id)
             # C.5 graded verdict (assess handles missing tolerance / unavailable soil → unknown)
             soil_suitability = assess_soil_suitability(soil_req, soil_actual)
