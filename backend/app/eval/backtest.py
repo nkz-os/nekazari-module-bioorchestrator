@@ -69,6 +69,10 @@ class Backtester:
             WHERE v.yieldKgHa IS NOT NULL
               AND v.yieldDerivationMethod IS NULL
               AND coalesce(v.rankingEligible, true) = true
+              AND coalesce(v.yieldMetric, '') NOT IN [
+                'fresh_fruit_kg_ha', 'fresh_grape_kg_ha', 'fresh grape', 'fresh_fruit'
+              ]
+              AND NOT coalesce(v.yieldMetric, '') CONTAINS 'fresh'
               AND t.climateClass IS NOT NULL
               AND v.cropEppo IS NOT NULL
               AND v.varietyNormalized IS NOT NULL

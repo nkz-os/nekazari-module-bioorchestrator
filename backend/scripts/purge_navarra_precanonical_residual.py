@@ -18,7 +18,6 @@ from __future__ import annotations
 import argparse
 import asyncio
 import logging
-import os
 import sys
 from pathlib import Path
 
@@ -156,8 +155,10 @@ async def _post_stats(session) -> dict:
     }
 
 
-async def run(*, execute: bool) -> int:
-    driver = AsyncGraphDatabase.driver(NEO4J_URI, auth=(NEO4J_USER, NEO4J_PASSWORD))
+async def run(*, execute: bool, driver=None) -> int:
+    owns_driver = driver is None
+    if owns_driver:
+        driver = AsyncGraphDatabase.driver(NEO4J_URI, auth=(NEO4J_USER, NEO4J_PASSWORD))
     try:
         async with driver.session() as session:
             before = await _post_stats(session)
@@ -192,10 +193,11 @@ async def run(*, execute: bool) -> int:
                     after["carcar_prndu_vt"],
                 )
                 return 1
-            logger.info("Navarra pre-canonical purge OK")
-            return 0
+        logger.info("Navarra pre-canonical purge OK")
+        return 0
     finally:
-        await driver.close()
+        if owns_driver:
+            await driver.close()
 
 
 def main() -> None:

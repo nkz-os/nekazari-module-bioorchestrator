@@ -36,6 +36,7 @@ from app.ingestion.intia_exp_ingester import IntiaExpIngester
 from app.ingestion.navarra_ingester import NavarraIngester
 from app.ingestion.validate_ingest_bundle import validate_bundle
 from scripts.canonical_reingest import _baseline
+from scripts.purge_navarra_precanonical_residual import run as purge_navarra_precanonical
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 logger = logging.getLogger(__name__)
@@ -257,6 +258,23 @@ async def run(
                         return code
                 finally:
                     Path(sub_path).unlink(missing_ok=True)
+
+            if execute and not dry_run:
+                nav_vt = sum(
+                    1
+                    for n in graph
+                    if n.get("@type") == "VarietyTrial"
+                    and n.get("source_id") == NavarraIngester.SOURCE_ID
+                )
+                if nav_vt > 0:
+                    logger.info(
+                        "Post-merge Navarra hygiene (%d bundle VT)", nav_vt
+                    )
+                    purge_code = await purge_navarra_precanonical(
+                        execute=True, driver=driver
+                    )
+                    if purge_code != 0:
+                        return purge_code
 
             if not execute:
                 logger.info("DRY RUN — no writes (pass --execute to merge)")
