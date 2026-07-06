@@ -61,3 +61,55 @@ async def test_article_provenance_per_source(nodes):
     assert redalyc["license_class"] == "open-access-cc"
     # umbrella must NOT leak onto real articles
     assert all(a["source_id"] != "VISION2024" for a in nodes["article_sources"])
+
+
+class _FakeResult:
+    async def single(self):
+        return {"c": 0}
+
+
+class _FakeSession:
+    def __init__(self, sink):
+        self._sink = sink
+
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, *a):
+        return False
+
+    async def run(self, query, **params):
+        self._sink.append((query, params))
+        return _FakeResult()
+
+
+class _FakeDriver:
+    def __init__(self):
+        self.calls = []
+
+    def session(self):
+        return _FakeSession(self.calls)
+
+
+@pytest.mark.asyncio
+async def test_mt_merge_persists_quality_and_host():
+    from app.ingestion.fungi_ingester import FungiIngester
+    ing = FungiIngester(driver=None)
+    driver = _FakeDriver()
+    trials = [{
+        "source_id": "EXCALIBUR-H2020",
+        "cropScientific": "Solanum lycopersicum",
+        "treatment": "Inoculation: Trichoderma sp.",
+        "experimentType": "biological_inoculation",
+        "resultMetric": "soil_fungal_population_dominance",
+        "resultValue": 100, "resultUnit": "pct_colonization",
+        "qualityParams": '{"applicationMethod": "soil"}',
+        "mergeKey": "EXCALIBUR-H2020|mt|trichoderma|2021",
+    }]
+    count = await ing._merge_management_trials(driver, trials)
+    assert count == 1
+    query, params = driver.calls[0]
+    assert "mt.qualityParams" in query
+    assert "mt.cropScientific" in query
+    assert params["quality"] == '{"applicationMethod": "soil"}'
+    assert params["host"] == "Solanum lycopersicum"

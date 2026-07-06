@@ -130,6 +130,62 @@ class FungiIngester(BaseIngester):
             ),
         }
 
+    async def _merge_management_trials(self, driver, trials: list[dict]) -> int:
+        """Base fields + qualityParams (JSON) + host cropScientific."""
+        active = [t for t in trials if not t.get("skip_ingestion")]
+        if not active:
+            return 0
+        count = 0
+        async with driver.session() as session:
+            for node in active:
+                merge_key = self._get_merge_key(node)
+                if not merge_key:
+                    continue
+                eppo_raw = node.get("cropEppo") or ""
+                await session.run(
+                    """
+                    MERGE (mt:ManagementTrial {mergeKey: $merge_key})
+                    SET mt.source_id = $source,
+                        mt.cropEppo = $eppo,
+                        mt.cropScientific = $host,
+                        mt.variety = $variety,
+                        mt.experimentType = $exp_type,
+                        mt.treatment = $treatment,
+                        mt.resultMetric = $metric,
+                        mt.resultValue = $value,
+                        mt.resultUnit = $unit,
+                        mt.year = $year,
+                        mt.trialLocation = $location,
+                        mt.trialLocationKey = $location_key,
+                        mt.qualityParams = $quality,
+                        mt.varietyNormalized = $variety_norm,
+                        mt.locationNormalized = $loc_norm,
+                        mt.locationCountry = $loc_country,
+                        mt.confidence = $confidence,
+                        mt.updatedAt = datetime()
+                    """,
+                    merge_key=merge_key,
+                    source=node.get("source_id", self.SOURCE_ID),
+                    eppo=eppo_raw.replace("eppo:", ""),
+                    host=node.get("cropScientific"),
+                    variety=node.get("variety"),
+                    variety_norm=node.get("varietyNormalized"),
+                    exp_type=node.get("experimentType"),
+                    treatment=node.get("treatment"),
+                    metric=node.get("resultMetric"),
+                    value=node.get("resultValue"),
+                    unit=node.get("resultUnit"),
+                    year=node.get("year"),
+                    location=node.get("trialLocation"),
+                    location_key=node.get("trialLocationKey") or "",
+                    loc_norm=node.get("locationNormalized"),
+                    loc_country=node.get("locationCountry"),
+                    quality=node.get("qualityParams"),
+                    confidence=node.get("confidence", "medium"),
+                )
+                count += 1
+        return count
+
     def _confidence_for(self, source_id: str) -> str:
         from app.common.source_registry import get_source
         try:
