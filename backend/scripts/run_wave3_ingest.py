@@ -35,9 +35,23 @@ async def baseline(driver) -> dict:
             "vt_source": await one(
                 "MATCH (v:VarietyTrial {source_id: $sid}) RETURN count(v) AS c", sid=SOURCE_ID
             ),
+            "mt_source": await one(
+                "MATCH (m:ManagementTrial {source_id: $sid}) RETURN count(m) AS c", sid=SOURCE_ID
+            ),
             "orphan_vt": await one(
                 "MATCH (v:VarietyTrial {source_id: $sid}) "
                 "WHERE NOT (v)-[:TRIAL_AT]->(:TrialSite) RETURN count(v) AS c",
+                sid=SOURCE_ID,
+            ),
+            "orphan_mt": await one(
+                "MATCH (m:ManagementTrial {source_id: $sid}) "
+                "WHERE NOT (m)-[:TRIAL_AT]->(:TrialSite) RETURN count(m) AS c",
+                sid=SOURCE_ID,
+            ),
+            "null_clim_sites": await one(
+                "MATCH (t:TrialSite)<-[:TRIAL_AT]-(v:VarietyTrial {source_id: $sid}) "
+                "WHERE t.climateClass IS NULL AND t.climate_class IS NULL "
+                "RETURN count(DISTINCT t) AS c",
                 sid=SOURCE_ID,
             ),
             "trial_at": await one(
@@ -72,6 +86,9 @@ async def run(*, execute: bool) -> int:
         if after["orphan_vt"] != 0:
             print("ERROR orphan_vt != 0", file=sys.stderr)
             return 1
+
+        if after["orphan_mt"] != 0:
+            print("WARN orphan_mt != 0", after["orphan_mt"], file=sys.stderr)
 
         delta = after["vt_source"] - before["vt_source"]
         print("DELTA_VT", delta)

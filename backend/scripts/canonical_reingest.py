@@ -37,6 +37,8 @@ from app.ingestion.iniav_ingester import IniavIngester
 from app.ingestion.intia_exp_ingester import IntiaExpIngester
 from app.ingestion.itacyl_ingester import ItacylIngester
 from app.ingestion.navarra_ingester import NavarraIngester
+from app.ingestion.inramaroc_ingester import InramarocIngester
+from app.ingestion.tagem_ingester import TagemIngester
 from app.ingestion.validate_ingest_bundle import validate_bundle
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
@@ -51,6 +53,8 @@ SOURCES: dict[str, tuple[IngesterFactory, str]] = {
     "ifapa": (IfapaIngester, IfapaIngester.SOURCE_ID),
     "itacyl": (ItacylIngester, ItacylIngester.SOURCE_ID),
     "intia": (IntiaExpIngester, IntiaExpIngester.SOURCE_ID),
+    "inramaroc": (InramarocIngester, InramarocIngester.SOURCE_ID),
+    "tagem": (TagemIngester, TagemIngester.SOURCE_ID),
 }
 
 LEGACY_MERGEKEY_MARKER = "eppo:"

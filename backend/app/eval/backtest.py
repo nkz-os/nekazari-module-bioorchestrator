@@ -68,6 +68,7 @@ class Backtester:
             MATCH (v:VarietyTrial)-[:TRIAL_AT]->(t:TrialSite)
             WHERE v.yieldKgHa IS NOT NULL
               AND v.yieldDerivationMethod IS NULL
+              AND coalesce(v.rankingEligible, true) = true
               AND t.climateClass IS NOT NULL
               AND v.cropEppo IS NOT NULL
               AND v.varietyNormalized IS NOT NULL

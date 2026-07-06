@@ -38,6 +38,7 @@ from app.ingestion.normalization_registry import (
 )
 
 from app.graph.site_canonicalization import normalize_site_key
+from app.ingestion.trial_site_geo import geo_updates_for_neo4j, resolve_trial_site_geo
 
 logger = logging.getLogger(__name__)
 
@@ -265,6 +266,10 @@ class BaseIngester(ABC):
             site["source_id"] = source_id
             site["siteKey"] = normalize_site_key(site.get("name"))
             site["municipalityKey"] = normalize_site_key(site.get("municipality"))
+            if site.get("latitude") is None:
+                geo = resolve_trial_site_geo(site.get("name"))
+                if geo:
+                    site.update(geo_updates_for_neo4j(geo))
             normalised_sites.append(site)
 
         # Log validation warnings
@@ -347,6 +352,8 @@ class BaseIngester(ABC):
                         ts.frostDaysPerYear = coalesce($frost, ts.frostDaysPerYear),
                         ts.latitude = coalesce($lat, ts.latitude),
                         ts.longitude = coalesce($lon, ts.longitude),
+                        ts.geoConfidence = coalesce($geo_confidence, ts.geoConfidence),
+                        ts.geoSource = coalesce($geo_source, ts.geoSource),
                         ts.photoperiodSummerHours = coalesce($photoperiod, ts.photoperiodSummerHours),
                         ts.sourceIds = CASE
                             WHEN ts.sourceIds IS NULL THEN [$source]
@@ -370,6 +377,8 @@ class BaseIngester(ABC):
                     frost=node.get("frostDaysPerYear"),
                     lat=node.get("latitude"),
                     lon=node.get("longitude"),
+                    geo_confidence=node.get("geoConfidence"),
+                    geo_source=node.get("geoSource"),
                     photoperiod=node.get("photoperiodSummerHours"),
                     source=node.get("source_id", self.SOURCE_ID),
                 )
@@ -496,6 +505,7 @@ class BaseIngester(ABC):
                         vt.productionSystem = $production,
                         vt.confidence = $confidence,
                         vt._validationPassed = $valid,
+                        vt.rankingEligible = coalesce($ranking_eligible, vt.rankingEligible, true),
                         vt.updatedAt = datetime()
                     """,
                     unique_key=unique_key,
@@ -530,6 +540,7 @@ class BaseIngester(ABC):
                     planting_density=node.get("plantingDensityTreesHa"),
                     confidence=node.get("confidence", "medium"),
                     valid=node.get("_validation", {}).get("valid", True),
+                    ranking_eligible=node.get("rankingEligible"),
                 )
                 count += 1
         return count
