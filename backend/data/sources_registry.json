@@ -2,12 +2,12 @@
   {
     "source_id": "NAVARRA-AGRARIA",
     "name": "Navarra Agraria",
-    "institution": "INTIA — Instituto Navarro de Tecnologías e Infraestructuras Agroalimentarias",
+    "institution": "INTIA \u2014 Instituto Navarro de Tecnolog\u00edas e Infraestructuras Agroalimentarias",
     "institution_short": "INTIA",
     "country": "ES",
     "country_name": {
       "en": "Spain",
-      "es": "España",
+      "es": "Espa\u00f1a",
       "eu": "Espainia",
       "fr": "Espagne",
       "pt": "Espanha"
@@ -24,15 +24,15 @@
       "en": "Data sourced from variety trials published in Navarra Agraria by INTIA (Government of Navarre).",
       "es": "Datos obtenidos de ensayos varietales publicados en Navarra Agraria por INTIA (Gobierno de Navarra).",
       "eu": "INTIAk (Nafarroako Gobernua) Navarra Agraria-n argitaratutako barietate-entseguetatik lortutako datuak.",
-      "fr": "Données issues des essais variétaux publiés dans Navarra Agraria par INTIA (Gouvernement de Navarre).",
+      "fr": "Donn\u00e9es issues des essais vari\u00e9taux publi\u00e9s dans Navarra Agraria par INTIA (Gouvernement de Navarre).",
       "pt": "Dados obtidos de ensaios varietais publicados na Navarra Agraria pela INTIA (Governo de Navarra)."
     },
     "disclaimer": {
-      "en": "These trials are conducted by INTIA for informational purposes. NKZ extrapolates results to similar environments — this does not constitute an official recommendation by INTIA.",
-      "es": "Estos ensayos son realizados por INTIA con fines divulgativos. NKZ extrapola los resultados a entornos similares — esto no constituye una recomendación oficial de INTIA.",
-      "eu": "Entsegu hauek INTIAk egiten ditu informazio-helburuekin. NKZk emaitzak antzeko inguruneetara estrapolatzen ditu — honek ez du INTIAren gomendio ofizial bat osatzen.",
-      "fr": "Ces essais sont menés par INTIA à titre informatif. NKZ extrapole les résultats à des environnements similaires — cela ne constitue pas une recommandation officielle d'INTIA.",
-      "pt": "Estes ensaios são realizados pela INTIA para fins informativos. A NKZ extrapola os resultados para ambientes semelhantes — isto não constitui uma recomendação oficial da INTIA."
+      "en": "These trials are conducted by INTIA for informational purposes. NKZ extrapolates results to similar environments \u2014 this does not constitute an official recommendation by INTIA.",
+      "es": "Estos ensayos son realizados por INTIA con fines divulgativos. NKZ extrapola los resultados a entornos similares \u2014 esto no constituye una recomendaci\u00f3n oficial de INTIA.",
+      "eu": "Entsegu hauek INTIAk egiten ditu informazio-helburuekin. NKZk emaitzak antzeko inguruneetara estrapolatzen ditu \u2014 honek ez du INTIAren gomendio ofizial bat osatzen.",
+      "fr": "Ces essais sont men\u00e9s par INTIA \u00e0 titre informatif. NKZ extrapole les r\u00e9sultats \u00e0 des environnements similaires \u2014 cela ne constitue pas une recommandation officielle d'INTIA.",
+      "pt": "Estes ensaios s\u00e3o realizados pela INTIA para fins informativos. A NKZ extrapola os resultados para ambientes semelhantes \u2014 isto n\u00e3o constitui uma recomenda\u00e7\u00e3o oficial da INTIA."
     },
     "site_urls": [
       "https://www.intiasa.es"
@@ -48,12 +48,12 @@
   {
     "source_id": "GENVCE",
     "name": "GENVCE",
-    "institution": "GENVCE — Grupo para la Evaluación de Nuevas Variedades de Cultivos Extensivos en España",
+    "institution": "GENVCE \u2014 Grupo para la Evaluaci\u00f3n de Nuevas Variedades de Cultivos Extensivos en Espa\u00f1a",
     "institution_short": "GENVCE",
     "country": "ES",
     "country_name": {
       "en": "Spain",
-      "es": "España",
+      "es": "Espa\u00f1a",
       "eu": "Espainia",
       "fr": "Espagne",
       "pt": "Espanha"
@@ -67,18 +67,18 @@
     "extraction_method": "structured",
     "confidence_default": "high",
     "attribution": {
-      "en": "Data sourced from variety trials published by GENVCE (Grupo para la Evaluación de Nuevas Variedades), a public network of 12 Spanish autonomous communities.",
-      "es": "Datos obtenidos de ensayos varietales publicados por GENVCE (Grupo para la Evaluación de Nuevas Variedades), red pública de 12 comunidades autónomas.",
+      "en": "Data sourced from variety trials published by GENVCE (Grupo para la Evaluaci\u00f3n de Nuevas Variedades), a public network of 12 Spanish autonomous communities.",
+      "es": "Datos obtenidos de ensayos varietales publicados por GENVCE (Grupo para la Evaluaci\u00f3n de Nuevas Variedades), red p\u00fablica de 12 comunidades aut\u00f3nomas.",
       "eu": "GENVCEk (Barietate Berriak Ebaluatzeko Taldea) argitaratutako barietate-entseguetatik lortutako datuak, 12 autonomia erkidegoko sare publikoa.",
-      "fr": "Données issues des essais variétaux publiés par GENVCE, réseau public de 12 communautés autonomes espagnoles.",
-      "pt": "Dados obtidos de ensaios varietais publicados pelo GENVCE, rede pública de 12 comunidades autónomas espanholas."
+      "fr": "Donn\u00e9es issues des essais vari\u00e9taux publi\u00e9s par GENVCE, r\u00e9seau public de 12 communaut\u00e9s autonomes espagnoles.",
+      "pt": "Dados obtidos de ensaios varietais publicados pelo GENVCE, rede p\u00fablica de 12 comunidades aut\u00f3nomas espanholas."
     },
     "disclaimer": {
-      "en": "GENVCE trials are conducted by participating autonomous communities. NKZ extrapolates results to similar environments — this does not constitute an official recommendation by GENVCE or any participating authority.",
-      "es": "Los ensayos GENVCE son realizados por las comunidades autónomas participantes. NKZ extrapola los resultados a entornos similares — esto no constituye una recomendación oficial de GENVCE ni de ninguna autoridad participante.",
-      "eu": "GENVCE entseguak parte hartzen duten autonomia erkidegoek egiten dituzte. NKZk emaitzak antzeko inguruneetara estrapolatzen ditu — honek ez du GENVCEren ez parte hartzen duen agintaritzaren gomendio ofizial bat osatzen.",
-      "fr": "Les essais GENVCE sont menés par les communautés autonomes participantes. NKZ extrapole les résultats — cela ne constitue pas une recommandation officielle de GENVCE ni d'aucune autorité participante.",
-      "pt": "Os ensaios GENVCE são realizados pelas comunidades autónomas participantes. A NKZ extrapola os resultados — isto não constitui uma recomendação oficial da GENVCE ou de qualquer autoridade participante."
+      "en": "GENVCE trials are conducted by participating autonomous communities. NKZ extrapolates results to similar environments \u2014 this does not constitute an official recommendation by GENVCE or any participating authority.",
+      "es": "Los ensayos GENVCE son realizados por las comunidades aut\u00f3nomas participantes. NKZ extrapola los resultados a entornos similares \u2014 esto no constituye una recomendaci\u00f3n oficial de GENVCE ni de ninguna autoridad participante.",
+      "eu": "GENVCE entseguak parte hartzen duten autonomia erkidegoek egiten dituzte. NKZk emaitzak antzeko inguruneetara estrapolatzen ditu \u2014 honek ez du GENVCEren ez parte hartzen duen agintaritzaren gomendio ofizial bat osatzen.",
+      "fr": "Les essais GENVCE sont men\u00e9s par les communaut\u00e9s autonomes participantes. NKZ extrapole les r\u00e9sultats \u2014 cela ne constitue pas une recommandation officielle de GENVCE ni d'aucune autorit\u00e9 participante.",
+      "pt": "Os ensaios GENVCE s\u00e3o realizados pelas comunidades aut\u00f3nomas participantes. A NKZ extrapola os resultados \u2014 isto n\u00e3o constitui uma recomenda\u00e7\u00e3o oficial da GENVCE ou de qualquer autoridade participante."
     },
     "site_urls": [
       "https://genvce.org"
@@ -94,14 +94,14 @@
   {
     "source_id": "CTIFL",
     "name": "CTIFL",
-    "institution": "CTIFL — Centre Technique Interprofessionnel des Fruits et Légumes",
+    "institution": "CTIFL \u2014 Centre Technique Interprofessionnel des Fruits et L\u00e9gumes",
     "institution_short": "CTIFL",
     "country": "FR",
     "country_name": {
       "en": "France",
       "es": "Francia",
       "fr": "France",
-      "pt": "França"
+      "pt": "Fran\u00e7a"
     },
     "url": "https://www.ctifl.fr",
     "document_url_template": null,
@@ -112,16 +112,16 @@
     "extraction_method": "llm-enhanced",
     "confidence_default": "medium",
     "attribution": {
-      "en": "Data sourced from technical sheets published by CTIFL (Centre Technique Interprofessionnel des Fruits et Légumes). Only publicly accessible documents are used.",
-      "es": "Datos obtenidos de fichas técnicas publicadas por CTIFL (Centre Technique Interprofessionnel des Fruits et Légumes). Solo se utilizan documentos de acceso público.",
-      "fr": "Données issues des fiches techniques publiées par le CTIFL. Seuls les documents en accès libre sont utilisés.",
-      "pt": "Dados obtidos de fichas técnicas publicadas pelo CTIFL. Apenas documentos de acesso público são utilizados."
+      "en": "Data sourced from technical sheets published by CTIFL (Centre Technique Interprofessionnel des Fruits et L\u00e9gumes). Only publicly accessible documents are used.",
+      "es": "Datos obtenidos de fichas t\u00e9cnicas publicadas por CTIFL (Centre Technique Interprofessionnel des Fruits et L\u00e9gumes). Solo se utilizan documentos de acceso p\u00fablico.",
+      "fr": "Donn\u00e9es issues des fiches techniques publi\u00e9es par le CTIFL. Seuls les documents en acc\u00e8s libre sont utilis\u00e9s.",
+      "pt": "Dados obtidos de fichas t\u00e9cnicas publicadas pelo CTIFL. Apenas documentos de acesso p\u00fablico s\u00e3o utilizados."
     },
     "disclaimer": {
       "en": "CTIFL data includes only publicly available technical sheets. Some CTIFL publications are commercial and are excluded. NKZ results do not constitute an official CTIFL recommendation.",
-      "es": "Los datos de CTIFL incluyen solo fichas técnicas de acceso público. Algunas publicaciones de CTIFL son comerciales y quedan excluidas. Los resultados de NKZ no constituyen una recomendación oficial de CTIFL.",
-      "fr": "Les données CTIFL incluent uniquement les fiches techniques en accès libre. Certaines publications CTIFL sont commerciales et sont exclues. Les résultats NKZ ne constituent pas une recommandation officielle du CTIFL.",
-      "pt": "Os dados CTIFL incluem apenas fichas técnicas de acesso público. Algumas publicações CTIFL são comerciais e estão excluídas. Os resultados NKZ não constituem uma recomendação oficial do CTIFL."
+      "es": "Los datos de CTIFL incluyen solo fichas t\u00e9cnicas de acceso p\u00fablico. Algunas publicaciones de CTIFL son comerciales y quedan excluidas. Los resultados de NKZ no constituyen una recomendaci\u00f3n oficial de CTIFL.",
+      "fr": "Les donn\u00e9es CTIFL incluent uniquement les fiches techniques en acc\u00e8s libre. Certaines publications CTIFL sont commerciales et sont exclues. Les r\u00e9sultats NKZ ne constituent pas une recommandation officielle du CTIFL.",
+      "pt": "Os dados CTIFL incluem apenas fichas t\u00e9cnicas de acesso p\u00fablico. Algumas publica\u00e7\u00f5es CTIFL s\u00e3o comerciais e est\u00e3o exclu\u00eddas. Os resultados NKZ n\u00e3o constituem uma recomenda\u00e7\u00e3o oficial do CTIFL."
     },
     "site_urls": [
       "https://www.ctifl.fr"
@@ -139,7 +139,7 @@
   {
     "source_id": "LFL-BAYERN",
     "name": "LfL Bayern",
-    "institution": "Bayerische Landesanstalt für Landwirtschaft (LfL)",
+    "institution": "Bayerische Landesanstalt f\u00fcr Landwirtschaft (LfL)",
     "institution_short": "LfL",
     "country": "DE",
     "country_name": {
@@ -159,17 +159,17 @@
     "confidence_default": "high",
     "attribution": {
       "en": "Data sourced from Landessortenversuche (state variety trials) published by LfL Bayern (Bavarian State Research Center for Agriculture).",
-      "es": "Datos obtenidos de los ensayos varietales estatales (Landessortenversuche) publicados por LfL Bayern (Centro de Investigación Agraria del Estado de Baviera).",
-      "de": "Daten aus den Landessortenversuchen, veröffentlicht von der Bayerischen Landesanstalt für Landwirtschaft (LfL).",
-      "fr": "Données issues des essais variétaux d'État (Landessortenversuche) publiés par le LfL Bayern (Centre de recherche agricole de l'État de Bavière).",
-      "pt": "Dados obtidos dos ensaios varietais estaduais (Landessortenversuche) publicados pelo LfL Bayern (Centro de Pesquisa Agrícola do Estado da Baviera)."
+      "es": "Datos obtenidos de los ensayos varietales estatales (Landessortenversuche) publicados por LfL Bayern (Centro de Investigaci\u00f3n Agraria del Estado de Baviera).",
+      "de": "Daten aus den Landessortenversuchen, ver\u00f6ffentlicht von der Bayerischen Landesanstalt f\u00fcr Landwirtschaft (LfL).",
+      "fr": "Donn\u00e9es issues des essais vari\u00e9taux d'\u00c9tat (Landessortenversuche) publi\u00e9s par le LfL Bayern (Centre de recherche agricole de l'\u00c9tat de Bavi\u00e8re).",
+      "pt": "Dados obtidos dos ensaios varietais estaduais (Landessortenversuche) publicados pelo LfL Bayern (Centro de Pesquisa Agr\u00edcola do Estado da Baviera)."
     },
     "disclaimer": {
-      "en": "LfL variety trials are conducted by the Bavarian State Research Center. NKZ extrapolates results to similar environments — this does not constitute an official LfL recommendation.",
-      "es": "Los ensayos varietales LfL son realizados por el Centro de Investigación Agraria de Baviera. NKZ extrapola los resultados — esto no constituye una recomendación oficial de LfL.",
-      "de": "Die LfL-Sortenversuche werden von der Bayerischen Landesanstalt für Landwirtschaft durchgeführt. NKZ extrapoliert Ergebnisse auf ähnliche Umgebungen — dies stellt keine offizielle Empfehlung der LfL dar.",
-      "fr": "Les essais variétaux LfL sont menés par le Centre de recherche agricole bavarois. NKZ extrapole les résultats — cela ne constitue pas une recommandation officielle du LfL.",
-      "pt": "Os ensaios varietais LfL são realizados pelo Centro de Pesquisa Agrícola da Baviera. A NKZ extrapola os resultados — isto não constitui uma recomendação oficial da LfL."
+      "en": "LfL variety trials are conducted by the Bavarian State Research Center. NKZ extrapolates results to similar environments \u2014 this does not constitute an official LfL recommendation.",
+      "es": "Los ensayos varietales LfL son realizados por el Centro de Investigaci\u00f3n Agraria de Baviera. NKZ extrapola los resultados \u2014 esto no constituye una recomendaci\u00f3n oficial de LfL.",
+      "de": "Die LfL-Sortenversuche werden von der Bayerischen Landesanstalt f\u00fcr Landwirtschaft durchgef\u00fchrt. NKZ extrapoliert Ergebnisse auf \u00e4hnliche Umgebungen \u2014 dies stellt keine offizielle Empfehlung der LfL dar.",
+      "fr": "Les essais vari\u00e9taux LfL sont men\u00e9s par le Centre de recherche agricole bavarois. NKZ extrapole les r\u00e9sultats \u2014 cela ne constitue pas une recommandation officielle du LfL.",
+      "pt": "Os ensaios varietais LfL s\u00e3o realizados pelo Centro de Pesquisa Agr\u00edcola da Baviera. A NKZ extrapola os resultados \u2014 isto n\u00e3o constitui uma recomenda\u00e7\u00e3o oficial da LfL."
     },
     "site_urls": [
       "https://www.lfl.bayern.de"
@@ -185,15 +185,15 @@
   },
   {
     "source_id": "NEBIH",
-    "name": "NÉBIH / VSZT",
-    "institution": "NÉBIH — Nemzeti Élelmiszerlánc-biztonsági Hivatal / VSZT — Vetőmag Szövetség",
-    "institution_short": "NÉBIH",
+    "name": "N\u00c9BIH / VSZT",
+    "institution": "N\u00c9BIH \u2014 Nemzeti \u00c9lelmiszerl\u00e1nc-biztons\u00e1gi Hivatal / VSZT \u2014 Vet\u0151mag Sz\u00f6vets\u00e9g",
+    "institution_short": "N\u00c9BIH",
     "country": "HU",
     "country_name": {
       "en": "Hungary",
-      "es": "Hungría",
+      "es": "Hungr\u00eda",
       "fr": "Hongrie",
-      "hu": "Magyarország",
+      "hu": "Magyarorsz\u00e1g",
       "pt": "Hungria"
     },
     "url": "https://portal.nebih.gov.hu",
@@ -205,18 +205,18 @@
     "extraction_method": "ocr",
     "confidence_default": "medium",
     "attribution": {
-      "en": "Data sourced from national variety trial results published by NÉBIH (Hungarian National Food Chain Safety Authority) and VSZT (Hungarian Seed Association).",
-      "es": "Datos obtenidos de resultados de ensayos varietales nacionales publicados por NÉBIH (Autoridad Nacional de Seguridad de la Cadena Alimentaria de Hungría) y VSZT (Asociación Húngara de Semillas).",
-      "fr": "Données issues des résultats d'essais variétaux nationaux publiés par NÉBIH et VSZT (Autorité hongroise de sécurité de la chaîne alimentaire et Association hongroise des semences).",
-      "hu": "A NÉBIH (Nemzeti Élelmiszerlánc-biztonsági Hivatal) és a VSZT (Vetőmag Szövetség) által közzétett országos fajtakísérleti eredményekből származó adatok.",
-      "pt": "Dados obtidos de resultados de ensaios varietais nacionais publicados pela NÉBIH (Autoridade Nacional de Segurança da Cadeia Alimentar da Hungria) e VSZT (Associação Húngara de Sementes)."
+      "en": "Data sourced from national variety trial results published by N\u00c9BIH (Hungarian National Food Chain Safety Authority) and VSZT (Hungarian Seed Association).",
+      "es": "Datos obtenidos de resultados de ensayos varietales nacionales publicados por N\u00c9BIH (Autoridad Nacional de Seguridad de la Cadena Alimentaria de Hungr\u00eda) y VSZT (Asociaci\u00f3n H\u00fangara de Semillas).",
+      "fr": "Donn\u00e9es issues des r\u00e9sultats d'essais vari\u00e9taux nationaux publi\u00e9s par N\u00c9BIH et VSZT (Autorit\u00e9 hongroise de s\u00e9curit\u00e9 de la cha\u00eene alimentaire et Association hongroise des semences).",
+      "hu": "A N\u00c9BIH (Nemzeti \u00c9lelmiszerl\u00e1nc-biztons\u00e1gi Hivatal) \u00e9s a VSZT (Vet\u0151mag Sz\u00f6vets\u00e9g) \u00e1ltal k\u00f6zz\u00e9tett orsz\u00e1gos fajtak\u00eds\u00e9rleti eredm\u00e9nyekb\u0151l sz\u00e1rmaz\u00f3 adatok.",
+      "pt": "Dados obtidos de resultados de ensaios varietais nacionais publicados pela N\u00c9BIH (Autoridade Nacional de Seguran\u00e7a da Cadeia Alimentar da Hungria) e VSZT (Associa\u00e7\u00e3o H\u00fangara de Sementes)."
     },
     "disclaimer": {
-      "en": "NÉBIH/VSZT trials are part of the Hungarian national variety testing system. NKZ extrapolates results to similar environments — this does not constitute an official recommendation by NÉBIH or VSZT.",
-      "es": "Los ensayos NÉBIH/VSZT forman parte del sistema nacional de ensayos varietales húngaro. NKZ extrapola los resultados — esto no constituye una recomendación oficial de NÉBIH o VSZT.",
-      "fr": "Les essais NÉBIH/VSZT font partie du système national hongrois d'essais variétaux. NKZ extrapole les résultats — cela ne constitue pas une recommandation officielle de NÉBIH ou VSZT.",
-      "hu": "A NÉBIH/VSZT kísérletek a magyar nemzeti fajtakísérleti rendszer részét képezik. NKZ az eredményeket hasonló környezetekre extrapolálja — ez nem minősül a NÉBIH vagy a VSZT hivatalos ajánlásának.",
-      "pt": "Os ensaios NÉBIH/VSZT fazem parte do sistema nacional húngaro de ensaios varietais. A NKZ extrapola os resultados — isto não constitui uma recomendação oficial da NÉBIH ou VSZT."
+      "en": "N\u00c9BIH/VSZT trials are part of the Hungarian national variety testing system. NKZ extrapolates results to similar environments \u2014 this does not constitute an official recommendation by N\u00c9BIH or VSZT.",
+      "es": "Los ensayos N\u00c9BIH/VSZT forman parte del sistema nacional de ensayos varietales h\u00fangaro. NKZ extrapola los resultados \u2014 esto no constituye una recomendaci\u00f3n oficial de N\u00c9BIH o VSZT.",
+      "fr": "Les essais N\u00c9BIH/VSZT font partie du syst\u00e8me national hongrois d'essais vari\u00e9taux. NKZ extrapole les r\u00e9sultats \u2014 cela ne constitue pas une recommandation officielle de N\u00c9BIH ou VSZT.",
+      "hu": "A N\u00c9BIH/VSZT k\u00eds\u00e9rletek a magyar nemzeti fajtak\u00eds\u00e9rleti rendszer r\u00e9sz\u00e9t k\u00e9pezik. NKZ az eredm\u00e9nyeket hasonl\u00f3 k\u00f6rnyezetekre extrapol\u00e1lja \u2014 ez nem min\u0151s\u00fcl a N\u00c9BIH vagy a VSZT hivatalos aj\u00e1nl\u00e1s\u00e1nak.",
+      "pt": "Os ensaios N\u00c9BIH/VSZT fazem parte do sistema nacional h\u00fangaro de ensaios varietais. A NKZ extrapola os resultados \u2014 isto n\u00e3o constitui uma recomenda\u00e7\u00e3o oficial da N\u00c9BIH ou VSZT."
     },
     "site_urls": [
       "https://portal.nebih.gov.hu",
@@ -233,7 +233,7 @@
   {
     "source_id": "INIAV-LVR",
     "name": "INIAV / LVR",
-    "institution": "INIAV — Instituto Nacional de Investigação Agrária e Veterinária / LVR — Lista de Variedades Recomendadas / CerealTech-ANPOC",
+    "institution": "INIAV \u2014 Instituto Nacional de Investiga\u00e7\u00e3o Agr\u00e1ria e Veterin\u00e1ria / LVR \u2014 Lista de Variedades Recomendadas / CerealTech-ANPOC",
     "institution_short": "INIAV",
     "country": "PT",
     "country_name": {
@@ -253,14 +253,14 @@
     "attribution": {
       "en": "Data sourced from the LVR (Recommended Variety List) published by INIAV and the CerealTech-ANPOC network (Portugal).",
       "es": "Datos obtenidos de la LVR (Lista de Variedades Recomendadas) publicada por INIAV y la red CerealTech-ANPOC (Portugal).",
-      "fr": "Données issues de la LVR (Liste des Variétés Recommandées) publiée par l'INIAV et le réseau CerealTech-ANPOC (Portugal).",
+      "fr": "Donn\u00e9es issues de la LVR (Liste des Vari\u00e9t\u00e9s Recommand\u00e9es) publi\u00e9e par l'INIAV et le r\u00e9seau CerealTech-ANPOC (Portugal).",
       "pt": "Dados obtidos da LVR (Lista de Variedades Recomendadas) publicada pelo INIAV e pela rede CerealTech-ANPOC (Portugal)."
     },
     "disclaimer": {
-      "en": "The LVR is a national recommended variety list maintained by INIAV. NKZ extrapolates results to similar environments — this does not substitute the official LVR for commercial seed registration.",
-      "es": "La LVR es una lista nacional de variedades recomendadas mantenida por INIAV. NKZ extrapola los resultados — esto no sustituye la LVR oficial para el registro comercial de semillas.",
-      "fr": "La LVR est une liste nationale de variétés recommandées tenue par l'INIAV. NKZ extrapole les résultats — cela ne remplace pas la LVR officielle pour l'enregistrement commercial des semences.",
-      "pt": "A LVR é uma lista nacional de variedades recomendadas mantida pelo INIAV. A NKZ extrapola os resultados — isto não substitui a LVR oficial para o registo comercial de sementes."
+      "en": "The LVR is a national recommended variety list maintained by INIAV. NKZ extrapolates results to similar environments \u2014 this does not substitute the official LVR for commercial seed registration.",
+      "es": "La LVR es una lista nacional de variedades recomendadas mantenida por INIAV. NKZ extrapola los resultados \u2014 esto no sustituye la LVR oficial para el registro comercial de semillas.",
+      "fr": "La LVR est une liste nationale de vari\u00e9t\u00e9s recommand\u00e9es tenue par l'INIAV. NKZ extrapole les r\u00e9sultats \u2014 cela ne remplace pas la LVR officielle pour l'enregistrement commercial des semences.",
+      "pt": "A LVR \u00e9 uma lista nacional de variedades recomendadas mantida pelo INIAV. A NKZ extrapola os resultados \u2014 isto n\u00e3o substitui a LVR oficial para o registo comercial de sementes."
     },
     "site_urls": [
       "https://www.iniav.pt"
@@ -276,12 +276,12 @@
   {
     "source_id": "ITACYL",
     "name": "ITACyL",
-    "institution": "ITACyL — Instituto Tecnológico Agrario de Castilla y León",
+    "institution": "ITACyL \u2014 Instituto Tecnol\u00f3gico Agrario de Castilla y Le\u00f3n",
     "institution_short": "ITACyL",
     "country": "ES",
     "country_name": {
       "en": "Spain",
-      "es": "España",
+      "es": "Espa\u00f1a",
       "eu": "Espainia",
       "fr": "Espagne",
       "pt": "Espanha"
@@ -295,16 +295,16 @@
     "extraction_method": "structured",
     "confidence_default": "high",
     "attribution": {
-      "en": "Data sourced from legume variety trials published by ITACyL (Agrarian Technology Institute of Castile and León).",
-      "es": "Datos obtenidos de ensayos varietales de leguminosas publicados por ITACyL (Instituto Tecnológico Agrario de Castilla y León).",
-      "fr": "Données issues des essais variétaux de légumineuses publiés par l'ITACyL (Institut de Technologie Agraire de Castille-et-León).",
-      "pt": "Dados obtidos de ensaios varietais de leguminosas publicados pelo ITACyL (Instituto Tecnológico Agrário de Castela e Leão)."
+      "en": "Data sourced from legume variety trials published by ITACyL (Agrarian Technology Institute of Castile and Le\u00f3n).",
+      "es": "Datos obtenidos de ensayos varietales de leguminosas publicados por ITACyL (Instituto Tecnol\u00f3gico Agrario de Castilla y Le\u00f3n).",
+      "fr": "Donn\u00e9es issues des essais vari\u00e9taux de l\u00e9gumineuses publi\u00e9s par l'ITACyL (Institut de Technologie Agraire de Castille-et-Le\u00f3n).",
+      "pt": "Dados obtidos de ensaios varietais de leguminosas publicados pelo ITACyL (Instituto Tecnol\u00f3gico Agr\u00e1rio de Castela e Le\u00e3o)."
     },
     "disclaimer": {
-      "en": "ITACyL trials are conducted by the Institute. NKZ extrapolates results to similar environments — this does not constitute an official ITACyL recommendation.",
-      "es": "Los ensayos ITACyL son realizados por el Instituto. NKZ extrapola los resultados — esto no constituye una recomendación oficial de ITACyL.",
-      "fr": "Les essais ITACyL sont menés par l'Institut. NKZ extrapole les résultats — cela ne constitue pas une recommandation officielle de l'ITACyL.",
-      "pt": "Os ensaios ITACyL são realizados pelo Instituto. A NKZ extrapola os resultados — isto não constitui uma recomendação oficial do ITACyL."
+      "en": "ITACyL trials are conducted by the Institute. NKZ extrapolates results to similar environments \u2014 this does not constitute an official ITACyL recommendation.",
+      "es": "Los ensayos ITACyL son realizados por el Instituto. NKZ extrapola los resultados \u2014 esto no constituye una recomendaci\u00f3n oficial de ITACyL.",
+      "fr": "Les essais ITACyL sont men\u00e9s par l'Institut. NKZ extrapole les r\u00e9sultats \u2014 cela ne constitue pas une recommandation officielle de l'ITACyL.",
+      "pt": "Os ensaios ITACyL s\u00e3o realizados pelo Instituto. A NKZ extrapola os resultados \u2014 isto n\u00e3o constitui uma recomenda\u00e7\u00e3o oficial do ITACyL."
     },
     "site_urls": [
       "https://www.itacyl.es"
@@ -323,12 +323,12 @@
   {
     "source_id": "IFAPA",
     "name": "IFAPA Servifapa",
-    "institution": "IFAPA — Instituto Andaluz de Investigación y Formación Agraria, Pesquera, Alimentaria y de la Producción Ecológica",
+    "institution": "IFAPA \u2014 Instituto Andaluz de Investigaci\u00f3n y Formaci\u00f3n Agraria, Pesquera, Alimentaria y de la Producci\u00f3n Ecol\u00f3gica",
     "institution_short": "IFAPA",
     "country": "ES",
     "country_name": {
       "en": "Spain",
-      "es": "España",
+      "es": "Espa\u00f1a",
       "eu": "Espainia",
       "fr": "Espagne",
       "pt": "Espanha"
@@ -343,15 +343,15 @@
     "confidence_default": "medium",
     "attribution": {
       "en": "Data sourced from management trials published by IFAPA (Andalusian Institute for Agricultural Research).",
-      "es": "Datos obtenidos de ensayos de manejo publicados por IFAPA (Instituto Andaluz de Investigación Agraria).",
-      "fr": "Données issues des essais de gestion publiés par l'IFAPA (Institut andalou de recherche agricole).",
-      "pt": "Dados obtidos de ensaios de manejo publicados pelo IFAPA (Instituto Andaluz de Pesquisa Agrícola)."
+      "es": "Datos obtenidos de ensayos de manejo publicados por IFAPA (Instituto Andaluz de Investigaci\u00f3n Agraria).",
+      "fr": "Donn\u00e9es issues des essais de gestion publi\u00e9s par l'IFAPA (Institut andalou de recherche agricole).",
+      "pt": "Dados obtidos de ensaios de manejo publicados pelo IFAPA (Instituto Andaluz de Pesquisa Agr\u00edcola)."
     },
     "disclaimer": {
-      "en": "IFAPA trials are conducted by the Institute. NKZ extrapolates results — this does not constitute an official IFAPA recommendation.",
-      "es": "Los ensayos IFAPA son realizados por el Instituto. NKZ extrapola los resultados — esto no constituye una recomendación oficial de IFAPA.",
-      "fr": "Les essais IFAPA sont menés par l'Institut. NKZ extrapole les résultats — cela ne constitue pas une recommandation officielle de l'IFAPA.",
-      "pt": "Os ensaios IFAPA são realizados pelo Instituto. A NKZ extrapola os resultados — isto não constitui uma recomendação oficial do IFAPA."
+      "en": "IFAPA trials are conducted by the Institute. NKZ extrapolates results \u2014 this does not constitute an official IFAPA recommendation.",
+      "es": "Los ensayos IFAPA son realizados por el Instituto. NKZ extrapola los resultados \u2014 esto no constituye una recomendaci\u00f3n oficial de IFAPA.",
+      "fr": "Les essais IFAPA sont men\u00e9s par l'Institut. NKZ extrapole les r\u00e9sultats \u2014 cela ne constitue pas une recommandation officielle de l'IFAPA.",
+      "pt": "Os ensaios IFAPA s\u00e3o realizados pelo Instituto. A NKZ extrapola os resultados \u2014 isto n\u00e3o constitui uma recomenda\u00e7\u00e3o oficial do IFAPA."
     },
     "site_urls": [
       "https://www.juntadeandalucia.es/agriculturaypesca/ifapa"
@@ -366,13 +366,13 @@
   },
   {
     "source_id": "INTIA-EXP",
-    "name": "INTIA Experimentación",
-    "institution": "INTIA — Instituto Navarro de Tecnologías e Infraestructuras Agroalimentarias",
+    "name": "INTIA Experimentaci\u00f3n",
+    "institution": "INTIA \u2014 Instituto Navarro de Tecnolog\u00edas e Infraestructuras Agroalimentarias",
     "institution_short": "INTIA",
     "country": "ES",
     "country_name": {
       "en": "Spain",
-      "es": "España",
+      "es": "Espa\u00f1a",
       "eu": "Espainia",
       "fr": "Espagne",
       "pt": "Espanha"
@@ -386,17 +386,17 @@
     "extraction_method": "structured",
     "confidence_default": "high",
     "attribution": {
-      "en": "Data sourced from management trials published by INTIA Experimentación (Navarre).",
-      "es": "Datos obtenidos de ensayos de manejo publicados por INTIA Experimentación (Navarra).",
-      "eu": "INTIA Experimentación-ek (Nafarroa) argitaratutako kudeaketa-entseguetatik lortutako datuak.",
-      "fr": "Données issues des essais de gestion publiés par INTIA Experimentación (Navarre).",
-      "pt": "Dados obtidos de ensaios de manejo publicados pela INTIA Experimentación (Navarra)."
+      "en": "Data sourced from management trials published by INTIA Experimentaci\u00f3n (Navarre).",
+      "es": "Datos obtenidos de ensayos de manejo publicados por INTIA Experimentaci\u00f3n (Navarra).",
+      "eu": "INTIA Experimentaci\u00f3n-ek (Nafarroa) argitaratutako kudeaketa-entseguetatik lortutako datuak.",
+      "fr": "Donn\u00e9es issues des essais de gestion publi\u00e9s par INTIA Experimentaci\u00f3n (Navarre).",
+      "pt": "Dados obtidos de ensaios de manejo publicados pela INTIA Experimentaci\u00f3n (Navarra)."
     },
     "disclaimer": {
-      "en": "INTIA Experimentación trials are conducted for informational purposes. NKZ extrapolates results — this does not constitute an official INTIA recommendation.",
-      "es": "Los ensayos de INTIA Experimentación se realizan con fines divulgativos. NKZ extrapola los resultados — esto no constituye una recomendación oficial de INTIA.",
-      "fr": "Les essais INTIA Experimentación sont menés à titre informatif. NKZ extrapole les résultats — cela ne constitue pas une recommandation officielle d'INTIA.",
-      "pt": "Os ensaios INTIA Experimentación são realizados para fins informativos. A NKZ extrapola os resultados — isto não constitui uma recomendação oficial da INTIA."
+      "en": "INTIA Experimentaci\u00f3n trials are conducted for informational purposes. NKZ extrapolates results \u2014 this does not constitute an official INTIA recommendation.",
+      "es": "Los ensayos de INTIA Experimentaci\u00f3n se realizan con fines divulgativos. NKZ extrapola los resultados \u2014 esto no constituye una recomendaci\u00f3n oficial de INTIA.",
+      "fr": "Les essais INTIA Experimentaci\u00f3n sont men\u00e9s \u00e0 titre informatif. NKZ extrapole les r\u00e9sultats \u2014 cela ne constitue pas une recommandation officielle d'INTIA.",
+      "pt": "Os ensaios INTIA Experimentaci\u00f3n s\u00e3o realizados para fins informativos. A NKZ extrapola os resultados \u2014 isto n\u00e3o constitui uma recomenda\u00e7\u00e3o oficial da INTIA."
     },
     "site_urls": [
       "https://www.intiasa.es/es/experimentacion"
@@ -413,7 +413,7 @@
   {
     "source_id": "CREA",
     "name": "CREA",
-    "institution": "CREA — Consiglio per la Ricerca in Agricoltura e l'Analisi dell'Economia Agraria",
+    "institution": "CREA \u2014 Consiglio per la Ricerca in Agricoltura e l'Analisi dell'Economia Agraria",
     "institution_short": "CREA",
     "country": "IT",
     "country_name": {
@@ -421,7 +421,7 @@
       "es": "Italia",
       "fr": "Italie",
       "it": "Italia",
-      "pt": "Itália"
+      "pt": "It\u00e1lia"
     },
     "url": "https://www.crea.gov.it",
     "document_url_template": null,
@@ -433,17 +433,17 @@
     "confidence_default": "medium",
     "attribution": {
       "en": "Data sourced from maize variety trials published by CREA (Council for Agricultural Research and Economics, Italy).",
-      "es": "Datos obtenidos de ensayos varietales de maíz publicados por CREA (Consejo de Investigación Agraria, Italia).",
-      "fr": "Données issues des essais variétaux de maïs publiés par le CREA (Conseil pour la Recherche en Agriculture, Italie).",
+      "es": "Datos obtenidos de ensayos varietales de ma\u00edz publicados por CREA (Consejo de Investigaci\u00f3n Agraria, Italia).",
+      "fr": "Donn\u00e9es issues des essais vari\u00e9taux de ma\u00efs publi\u00e9s par le CREA (Conseil pour la Recherche en Agriculture, Italie).",
       "it": "Dati provenienti dalle prove varietali sul mais pubblicate dal CREA (Consiglio per la Ricerca in Agricoltura e l'Analisi dell'Economia Agraria).",
-      "pt": "Dados obtidos de ensaios varietais de milho publicados pelo CREA (Conselho de Pesquisa Agrícola, Itália)."
+      "pt": "Dados obtidos de ensaios varietais de milho publicados pelo CREA (Conselho de Pesquisa Agr\u00edcola, It\u00e1lia)."
     },
     "disclaimer": {
-      "en": "CREA trials are conducted by the Italian research council. NKZ extrapolates results to similar environments — this does not constitute an official CREA recommendation.",
-      "es": "Los ensayos CREA son realizados por el consejo de investigación italiano. NKZ extrapola los resultados — esto no constituye una recomendación oficial de CREA.",
-      "fr": "Les essais CREA sont menés par le conseil de recherche italien. NKZ extrapole les résultats — cela ne constitue pas une recommandation officielle du CREA.",
-      "it": "Le prove CREA sono condotte dal consiglio di ricerca italiano. NKZ estrapola i risultati ad ambienti simili — ciò non costituisce una raccomandazione ufficiale del CREA.",
-      "pt": "Os ensaios CREA são realizados pelo conselho de investigação italiano. A NKZ extrapola os resultados — isto não constitui uma recomendação oficial do CREA."
+      "en": "CREA trials are conducted by the Italian research council. NKZ extrapolates results to similar environments \u2014 this does not constitute an official CREA recommendation.",
+      "es": "Los ensayos CREA son realizados por el consejo de investigaci\u00f3n italiano. NKZ extrapola los resultados \u2014 esto no constituye una recomendaci\u00f3n oficial de CREA.",
+      "fr": "Les essais CREA sont men\u00e9s par le conseil de recherche italien. NKZ extrapole les r\u00e9sultats \u2014 cela ne constitue pas une recommandation officielle du CREA.",
+      "it": "Le prove CREA sono condotte dal consiglio di ricerca italiano. NKZ estrapola i risultati ad ambienti simili \u2014 ci\u00f2 non costituisce una raccomandazione ufficiale del CREA.",
+      "pt": "Os ensaios CREA s\u00e3o realizados pelo conselho de investiga\u00e7\u00e3o italiano. A NKZ extrapola os resultados \u2014 isto n\u00e3o constitui uma recomenda\u00e7\u00e3o oficial do CREA."
     },
     "site_urls": [
       "https://www.crea.gov.it"
@@ -457,7 +457,7 @@
   {
     "source_id": "BSL",
     "name": "Bundessortenamt (BSL)",
-    "institution": "Bundessortenamt — Federal Plant Variety Office",
+    "institution": "Bundessortenamt \u2014 Federal Plant Variety Office",
     "institution_short": "BSL",
     "country": "DE",
     "country_name": {
@@ -477,12 +477,12 @@
     "confidence_default": "high",
     "attribution": {
       "en": "Data sourced from official German variety trials (Landessortenversuche) published by the Bundessortenamt (BSL).",
-      "de": "Daten aus den Landessortenversuchen, veröffentlicht vom Bundessortenamt.",
+      "de": "Daten aus den Landessortenversuchen, ver\u00f6ffentlicht vom Bundessortenamt.",
       "es": "Datos obtenidos de los ensayos varietales oficiales alemanes publicados por el Bundessortenamt."
     },
     "disclaimer": {
-      "en": "BSL variety trials are the official German variety testing system. NKZ extrapolates results — this does not constitute an official BSL recommendation.",
-      "de": "Die BSL-Sortenversuche sind das offizielle deutsche Sortenprüfungssystem. NKZ extrapoliert Ergebnisse — dies stellt keine offizielle Empfehlung des BSL dar."
+      "en": "BSL variety trials are the official German variety testing system. NKZ extrapolates results \u2014 this does not constitute an official BSL recommendation.",
+      "de": "Die BSL-Sortenversuche sind das offizielle deutsche Sortenpr\u00fcfungssystem. NKZ extrapoliert Ergebnisse \u2014 dies stellt keine offizielle Empfehlung des BSL dar."
     },
     "site_urls": [
       "https://www.bundessortenamt.de"
@@ -500,7 +500,7 @@
   {
     "source_id": "AHDB",
     "name": "AHDB Recommended Lists",
-    "institution": "AHDB — Agriculture and Horticulture Development Board",
+    "institution": "AHDB \u2014 Agriculture and Horticulture Development Board",
     "institution_short": "AHDB",
     "country": "GB",
     "country_name": {
@@ -520,10 +520,10 @@
     "attribution": {
       "en": "Data sourced from the AHDB Recommended Lists for cereals and oilseeds (Agriculture and Horticulture Development Board, UK).",
       "es": "Datos obtenidos de las Listas Recomendadas de AHDB para cereales y oleaginosas.",
-      "fr": "Données issues des listes recommandées de l'AHDB pour les céréales et oléagineux."
+      "fr": "Donn\u00e9es issues des listes recommand\u00e9es de l'AHDB pour les c\u00e9r\u00e9ales et ol\u00e9agineux."
     },
     "disclaimer": {
-      "en": "AHDB Recommended Lists are produced by AHDB. NKZ extrapolates results — this does not constitute an official AHDB recommendation."
+      "en": "AHDB Recommended Lists are produced by AHDB. NKZ extrapolates results \u2014 this does not constitute an official AHDB recommendation."
     },
     "site_urls": [
       "https://ahdb.org.uk"
@@ -560,17 +560,17 @@
     "confidence_default": "medium",
     "attribution": {
       "en": "Crop environmental requirements derived from FAO EcoCrop and the FAO/IIASA Global Agro-Ecological Zones (GAEZ) v4.",
-      "es": "Requerimientos ambientales de los cultivos derivados de FAO EcoCrop y de las Zonas Agroecológicas Globales (GAEZ) v4 de FAO/IIASA.",
+      "es": "Requerimientos ambientales de los cultivos derivados de FAO EcoCrop y de las Zonas Agroecol\u00f3gicas Globales (GAEZ) v4 de FAO/IIASA.",
       "eu": "FAO EcoCrop-etik eta FAO/IIASAren Mundu mailako Zona Agroekologikoetatik (GAEZ) v4-tik eratorritako laboreen ingurumen-eskakizunak.",
-      "fr": "Exigences environnementales des cultures issues de FAO EcoCrop et des Zones Agro-Écologiques Mondiales (GAEZ) v4 de la FAO/IIASA.",
-      "pt": "Requisitos ambientais das culturas derivados do FAO EcoCrop e das Zonas Agroecológicas Globais (GAEZ) v4 da FAO/IIASA."
+      "fr": "Exigences environnementales des cultures issues de FAO EcoCrop et des Zones Agro-\u00c9cologiques Mondiales (GAEZ) v4 de la FAO/IIASA.",
+      "pt": "Requisitos ambientais das culturas derivados do FAO EcoCrop e das Zonas Agroecol\u00f3gicas Globais (GAEZ) v4 da FAO/IIASA."
     },
     "disclaimer": {
-      "en": "GAEZ/EcoCrop are global-scale models for informational purposes. NKZ applies them as reference defaults — they do not replace local agronomic trials.",
-      "es": "GAEZ/EcoCrop son modelos de escala global con fines divulgativos. NKZ los aplica como valores de referencia — no sustituyen ensayos agronómicos locales.",
-      "eu": "GAEZ/EcoCrop mundu-eskalako ereduak dira, informazio-helburuekin. NKZk erreferentziazko balio gisa erabiltzen ditu — ez dituzte tokiko entsegu agronomikoak ordezkatzen.",
-      "fr": "GAEZ/EcoCrop sont des modèles à l'échelle mondiale à titre informatif. NKZ les applique comme valeurs de référence — ils ne remplacent pas les essais agronomiques locaux.",
-      "pt": "GAEZ/EcoCrop são modelos de escala global para fins informativos. A NKZ aplica-os como valores de referência — não substituem ensaios agronómicos locais."
+      "en": "GAEZ/EcoCrop are global-scale models for informational purposes. NKZ applies them as reference defaults \u2014 they do not replace local agronomic trials.",
+      "es": "GAEZ/EcoCrop son modelos de escala global con fines divulgativos. NKZ los aplica como valores de referencia \u2014 no sustituyen ensayos agron\u00f3micos locales.",
+      "eu": "GAEZ/EcoCrop mundu-eskalako ereduak dira, informazio-helburuekin. NKZk erreferentziazko balio gisa erabiltzen ditu \u2014 ez dituzte tokiko entsegu agronomikoak ordezkatzen.",
+      "fr": "GAEZ/EcoCrop sont des mod\u00e8les \u00e0 l'\u00e9chelle mondiale \u00e0 titre informatif. NKZ les applique comme valeurs de r\u00e9f\u00e9rence \u2014 ils ne remplacent pas les essais agronomiques locaux.",
+      "pt": "GAEZ/EcoCrop s\u00e3o modelos de escala global para fins informativos. A NKZ aplica-os como valores de refer\u00eancia \u2014 n\u00e3o substituem ensaios agron\u00f3micos locais."
     },
     "site_urls": [
       "https://gaez.fao.org/",
@@ -591,10 +591,10 @@
     "country": "EU",
     "country_name": {
       "en": "European Union",
-      "es": "Unión Europea",
+      "es": "Uni\u00f3n Europea",
       "eu": "Europar Batasuna",
-      "fr": "Union européenne",
-      "pt": "União Europeia"
+      "fr": "Union europ\u00e9enne",
+      "pt": "Uni\u00e3o Europeia"
     },
     "url": "https://cpvo.europa.eu/",
     "document_url_template": null,
@@ -606,17 +606,17 @@
     "confidence_default": "high",
     "attribution": {
       "en": "Plant variety identity and protection data sourced from the EU Community Plant Variety Office (CPVO) register.",
-      "es": "Datos de identidad y protección de variedades vegetales obtenidos del registro de la Oficina Comunitaria de Variedades Vegetales (CPVO) de la UE.",
+      "es": "Datos de identidad y protecci\u00f3n de variedades vegetales obtenidos del registro de la Oficina Comunitaria de Variedades Vegetales (CPVO) de la UE.",
       "eu": "Landare-barietateen identitate- eta babes-datuak EBko Landare Barietateen Bulego Komunitarioaren (CPVO) erregistrotik lortuak.",
-      "fr": "Données d'identité et de protection des variétés végétales issues du registre de l'Office communautaire des variétés végétales (OCVV/CPVO) de l'UE.",
-      "pt": "Dados de identidade e proteção de variedades vegetais obtidos do registo do Instituto Comunitário das Variedades Vegetais (ICVV/CPVO) da UE."
+      "fr": "Donn\u00e9es d'identit\u00e9 et de protection des vari\u00e9t\u00e9s v\u00e9g\u00e9tales issues du registre de l'Office communautaire des vari\u00e9t\u00e9s v\u00e9g\u00e9tales (OCVV/CPVO) de l'UE.",
+      "pt": "Dados de identidade e prote\u00e7\u00e3o de variedades vegetais obtidos do registo do Instituto Comunit\u00e1rio das Variedades Vegetais (ICVV/CPVO) da UE."
     },
     "disclaimer": {
-      "en": "The CPVO register is the official EU source for plant variety rights. NKZ uses it for variety identification only — it does not confer any commercial right.",
-      "es": "El registro CPVO es la fuente oficial de la UE para los derechos de obtención vegetal. NKZ lo usa solo para identificación de variedades — no confiere ningún derecho comercial.",
-      "eu": "CPVO erregistroa EBko iturri ofiziala da landare-barietateen eskubideetarako. NKZk barietateak identifikatzeko soilik erabiltzen du — ez du merkataritza-eskubiderik ematen.",
-      "fr": "Le registre CPVO est la source officielle de l'UE pour les droits d'obtention végétale. NKZ l'utilise uniquement pour l'identification des variétés — il ne confère aucun droit commercial.",
-      "pt": "O registo CPVO é a fonte oficial da UE para os direitos de variedades vegetais. A NKZ usa-o apenas para identificação de variedades — não confere qualquer direito comercial."
+      "en": "The CPVO register is the official EU source for plant variety rights. NKZ uses it for variety identification only \u2014 it does not confer any commercial right.",
+      "es": "El registro CPVO es la fuente oficial de la UE para los derechos de obtenci\u00f3n vegetal. NKZ lo usa solo para identificaci\u00f3n de variedades \u2014 no confiere ning\u00fan derecho comercial.",
+      "eu": "CPVO erregistroa EBko iturri ofiziala da landare-barietateen eskubideetarako. NKZk barietateak identifikatzeko soilik erabiltzen du \u2014 ez du merkataritza-eskubiderik ematen.",
+      "fr": "Le registre CPVO est la source officielle de l'UE pour les droits d'obtention v\u00e9g\u00e9tale. NKZ l'utilise uniquement pour l'identification des vari\u00e9t\u00e9s \u2014 il ne conf\u00e8re aucun droit commercial.",
+      "pt": "O registo CPVO \u00e9 a fonte oficial da UE para os direitos de variedades vegetais. A NKZ usa-o apenas para identifica\u00e7\u00e3o de variedades \u2014 n\u00e3o confere qualquer direito comercial."
     },
     "site_urls": [
       "https://cpvo.europa.eu/"
@@ -635,10 +635,10 @@
     "country": "EU",
     "country_name": {
       "en": "European Union",
-      "es": "Unión Europea",
-      "fr": "Union européenne",
+      "es": "Uni\u00f3n Europea",
+      "fr": "Union europ\u00e9enne",
       "it": "Unione Europea",
-      "pt": "União Europeia"
+      "pt": "Uni\u00e3o Europeia"
     },
     "url": null,
     "document_url_template": null,
@@ -650,17 +650,17 @@
     "confidence_default": "medium",
     "attribution": {
       "en": "Data aggregated from variety trial reports published by European public-sector institutions (LfL, COBORU, SLU, Arvalis, CSIC, IFAPA, BRESOV and others).",
-      "es": "Datos agregados de informes de ensayos varietales publicados por instituciones públicas europeas (LfL, COBORU, SLU, Arvalis, CSIC, IFAPA, BRESOV y otras).",
-      "fr": "Données agrégées de rapports d'essais variétaux publiés par des institutions publiques européennes (LfL, COBORU, SLU, Arvalis, CSIC, IFAPA, BRESOV et autres).",
+      "es": "Datos agregados de informes de ensayos varietales publicados por instituciones p\u00fablicas europeas (LfL, COBORU, SLU, Arvalis, CSIC, IFAPA, BRESOV y otras).",
+      "fr": "Donn\u00e9es agr\u00e9g\u00e9es de rapports d'essais vari\u00e9taux publi\u00e9s par des institutions publiques europ\u00e9ennes (LfL, COBORU, SLU, Arvalis, CSIC, IFAPA, BRESOV et autres).",
       "it": "Dati aggregati da rapporti di prove varietali pubblicati da istituzioni pubbliche europee (LfL, COBORU, SLU, Arvalis, CSIC, IFAPA, BRESOV e altre).",
-      "pt": "Dados agregados de relatórios de ensaios varietais publicados por instituições públicas europeias (LfL, COBORU, SLU, Arvalis, CSIC, IFAPA, BRESOV e outras)."
+      "pt": "Dados agregados de relat\u00f3rios de ensaios varietais publicados por institui\u00e7\u00f5es p\u00fablicas europeias (LfL, COBORU, SLU, Arvalis, CSIC, IFAPA, BRESOV e outras)."
     },
     "disclaimer": {
-      "en": "Trials are conducted by independent European institutions. NKZ aggregates and extrapolates results to similar environments — this does not constitute an official recommendation by any of the source institutions.",
-      "es": "Los ensayos son realizados por instituciones europeas independientes. NKZ agrega y extrapola los resultados — esto no constituye una recomendación oficial de ninguna de las instituciones fuente.",
-      "fr": "Les essais sont menés par des institutions européennes indépendantes. NKZ agrège et extrapole les résultats — cela ne constitue pas une recommandation officielle.",
-      "it": "Le prove sono condotte da istituzioni europee indipendenti. NKZ aggrega ed estrapola i risultati — ciò non costituisce una raccomandazione ufficiale.",
-      "pt": "Os ensaios são realizados por instituições europeias independentes. A NKZ agrega e extrapola os resultados — isto não constitui uma recomendação oficial."
+      "en": "Trials are conducted by independent European institutions. NKZ aggregates and extrapolates results to similar environments \u2014 this does not constitute an official recommendation by any of the source institutions.",
+      "es": "Los ensayos son realizados por instituciones europeas independientes. NKZ agrega y extrapola los resultados \u2014 esto no constituye una recomendaci\u00f3n oficial de ninguna de las instituciones fuente.",
+      "fr": "Les essais sont men\u00e9s par des institutions europ\u00e9ennes ind\u00e9pendantes. NKZ agr\u00e8ge et extrapole les r\u00e9sultats \u2014 cela ne constitue pas une recommandation officielle.",
+      "it": "Le prove sono condotte da istituzioni europee indipendenti. NKZ aggrega ed estrapola i risultati \u2014 ci\u00f2 non costituisce una raccomandazione ufficiale.",
+      "pt": "Os ensaios s\u00e3o realizados por institui\u00e7\u00f5es europeias independentes. A NKZ agrega e extrapola os resultados \u2014 isto n\u00e3o constitui uma recomenda\u00e7\u00e3o oficial."
     },
     "site_urls": [],
     "tags": [
@@ -671,13 +671,13 @@
   },
   {
     "source_id": "IFAPA_ALMOND",
-    "name": "IFAPA Las Torres — Almond variety trials",
-    "institution": "IFAPA — Instituto Andaluz de Investigación y Formación Agraria y Pesquera",
+    "name": "IFAPA Las Torres \u2014 Almond variety trials",
+    "institution": "IFAPA \u2014 Instituto Andaluz de Investigaci\u00f3n y Formaci\u00f3n Agraria y Pesquera",
     "institution_short": "IFAPA",
     "country": "ES",
     "country_name": {
       "en": "Spain",
-      "es": "España",
+      "es": "Espa\u00f1a",
       "eu": "Espainia",
       "fr": "Espagne",
       "pt": "Espanha"
@@ -692,17 +692,17 @@
     "confidence_default": "high",
     "attribution": {
       "en": "Data sourced from almond variety trials published by IFAPA (Andalusia, Spain), Las Torres research centre.",
-      "es": "Datos obtenidos de ensayos varietales de almendro publicados por el IFAPA (Andalucía, España), centro Las Torres.",
+      "es": "Datos obtenidos de ensayos varietales de almendro publicados por el IFAPA (Andaluc\u00eda, Espa\u00f1a), centro Las Torres.",
       "eu": "IFAPAk (Andaluzia, Espainia) argitaratutako almendra-barietate entseguetatik lortutako datuak, Las Torres ikerketa-zentroa.",
-      "fr": "Données issues des essais variétaux d'amandier publiés par l'IFAPA (Andalousie, Espagne), centre Las Torres.",
+      "fr": "Donn\u00e9es issues des essais vari\u00e9taux d'amandier publi\u00e9s par l'IFAPA (Andalousie, Espagne), centre Las Torres.",
       "pt": "Dados obtidos de ensaios varietais de amendoeira publicados pelo IFAPA (Andaluzia, Espanha), centro Las Torres."
     },
     "disclaimer": {
-      "en": "IFAPA trials are conducted at Las Torres. NKZ extrapolates results to similar environments — this is not an official IFAPA recommendation.",
-      "es": "Los ensayos IFAPA se realizan en Las Torres. NKZ extrapola los resultados a entornos similares — esto no constituye una recomendación oficial del IFAPA.",
-      "eu": "IFAPA entseguak Las Torresen egiten dira. NKZk emaitzak antzeko inguruneetara estrapolatzen ditu — hau ez da IFAPAren gomendio ofiziala.",
-      "fr": "Les essais IFAPA sont menés à Las Torres. NKZ extrapole les résultats — ce n'est pas une recommandation officielle de l'IFAPA.",
-      "pt": "Os ensaios IFAPA são realizados em Las Torres. A NKZ extrapola os resultados — não é uma recomendação oficial do IFAPA."
+      "en": "IFAPA trials are conducted at Las Torres. NKZ extrapolates results to similar environments \u2014 this is not an official IFAPA recommendation.",
+      "es": "Los ensayos IFAPA se realizan en Las Torres. NKZ extrapola los resultados a entornos similares \u2014 esto no constituye una recomendaci\u00f3n oficial del IFAPA.",
+      "eu": "IFAPA entseguak Las Torresen egiten dira. NKZk emaitzak antzeko inguruneetara estrapolatzen ditu \u2014 hau ez da IFAPAren gomendio ofiziala.",
+      "fr": "Les essais IFAPA sont men\u00e9s \u00e0 Las Torres. NKZ extrapole les r\u00e9sultats \u2014 ce n'est pas une recommandation officielle de l'IFAPA.",
+      "pt": "Os ensaios IFAPA s\u00e3o realizados em Las Torres. A NKZ extrapola os resultados \u2014 n\u00e3o \u00e9 uma recomenda\u00e7\u00e3o oficial do IFAPA."
     },
     "site_urls": [
       "https://www.juntadeandalucia.es/agriculturaypesca/ifapa"
@@ -716,13 +716,13 @@
   },
   {
     "source_id": "SCIENTIA-PIAVE",
-    "name": "Scientia Horticulturae — Pistachio Phenology",
+    "name": "Scientia Horticulturae \u2014 Pistachio Phenology",
     "institution": "Scientia Horticulturae (Elsevier)",
     "institution_short": "Scientia Hortic.",
     "country": "ES",
     "country_name": {
       "en": "Spain",
-      "es": "España",
+      "es": "Espa\u00f1a",
       "eu": "Espainia",
       "fr": "Espagne",
       "pt": "Espanha"
@@ -737,17 +737,17 @@
     "confidence_default": "high",
     "attribution": {
       "en": "Phenology data (GDD) extracted from pistachio field studies published in Scientia Horticulturae, central Spain 2019-2024.",
-      "es": "Datos de fenología (GDD) extraídos de estudios de campo de pistachero publicados en Scientia Horticulturae, Castilla central 2019-2024.",
+      "es": "Datos de fenolog\u00eda (GDD) extra\u00eddos de estudios de campo de pistachero publicados en Scientia Horticulturae, Castilla central 2019-2024.",
       "eu": "Fenologia datuak (GDD) Scientia Horticulturae-n argitaratutako pistatxo-landa-azterketetatik ateratakoak, Gaztela erdialdea 2019-2024.",
-      "fr": "Données phénologiques (GDD) extraites d'études de terrain sur le pistachier publiées dans Scientia Horticulturae, centre de l'Espagne 2019-2024.",
-      "pt": "Dados de fenologia (GDD) extraídos de estudos de campo de pistache publicados na Scientia Horticulturae, Castela central 2019-2024."
+      "fr": "Donn\u00e9es ph\u00e9nologiques (GDD) extraites d'\u00e9tudes de terrain sur le pistachier publi\u00e9es dans Scientia Horticulturae, centre de l'Espagne 2019-2024.",
+      "pt": "Dados de fenologia (GDD) extra\u00eddos de estudos de campo de pistache publicados na Scientia Horticulturae, Castela central 2019-2024."
     },
     "disclaimer": {
-      "en": "Data from peer-reviewed journal article. NKZ uses this as phenology reference — this is not an official recommendation by the authors or the journal.",
-      "es": "Datos de artículo científico revisado por pares. NKZ los usa como referencia fenológica — esto no constituye una recomendación oficial de los autores ni de la revista.",
-      "eu": "Berrikusitako artikulu zientifikoko datuak. NKZk fenologia erreferentzia gisa erabiltzen ditu — hau ez da egileen edo aldizkariaren gomendio ofiziala.",
-      "fr": "Données d'un article scientifique évalué par des pairs. NKZ les utilise comme référence phénologique — ce n'est pas une recommandation officielle des auteurs ou de la revue.",
-      "pt": "Dados de artigo científico revisto por pares. A NKZ usa-os como referência fenológica — não é uma recomendação oficial dos autores ou da revista."
+      "en": "Data from peer-reviewed journal article. NKZ uses this as phenology reference \u2014 this is not an official recommendation by the authors or the journal.",
+      "es": "Datos de art\u00edculo cient\u00edfico revisado por pares. NKZ los usa como referencia fenol\u00f3gica \u2014 esto no constituye una recomendaci\u00f3n oficial de los autores ni de la revista.",
+      "eu": "Berrikusitako artikulu zientifikoko datuak. NKZk fenologia erreferentzia gisa erabiltzen ditu \u2014 hau ez da egileen edo aldizkariaren gomendio ofiziala.",
+      "fr": "Donn\u00e9es d'un article scientifique \u00e9valu\u00e9 par des pairs. NKZ les utilise comme r\u00e9f\u00e9rence ph\u00e9nologique \u2014 ce n'est pas une recommandation officielle des auteurs ou de la revue.",
+      "pt": "Dados de artigo cient\u00edfico revisto por pares. A NKZ usa-os como refer\u00eancia fenol\u00f3gica \u2014 n\u00e3o \u00e9 uma recomenda\u00e7\u00e3o oficial dos autores ou da revista."
     },
     "site_urls": [
       "https://www.sciencedirect.com/journal/scientia-horticulturae"
@@ -759,7 +759,7 @@
       "gdd",
       "academic"
     ],
-    "_notes": "Registered 2026-07-04 for A3 gate unblock. Source is currently skipped in perennial canonical reingest — phenology-only, no variety trials. EPPO PIAVE (Pistacia vera), cv. Kerman & Golden Hills, central Spain."
+    "_notes": "Registered 2026-07-04 for A3 gate unblock. Source is currently skipped in perennial canonical reingest \u2014 phenology-only, no variety trials. EPPO PIAVE (Pistacia vera), cv. Kerman & Golden Hills, central Spain."
   },
   {
     "source_id": "INRAMAROC",
@@ -784,12 +784,12 @@
     "attribution": {
       "en": "Data sourced from variety trials published by INRA Maroc.",
       "es": "Datos obtenidos de ensayos varietales publicados por INRA Marruecos.",
-      "fr": "Données issues des essais variétaux publiés par l INRA Maroc."
+      "fr": "Donn\u00e9es issues des essais vari\u00e9taux publi\u00e9s par l INRA Maroc."
     },
     "disclaimer": {
       "en": "INRA trials are conducted in Morocco. NKZ extrapolates results to similar environments.",
       "es": "Los ensayos INRA se realizan en Marruecos. NKZ extrapola los resultados a entornos similares.",
-      "fr": "Les essais INRA sont menés au Maroc. NKZ extrapole les résultats à des environnements similaires."
+      "fr": "Les essais INRA sont men\u00e9s au Maroc. NKZ extrapole les r\u00e9sultats \u00e0 des environnements similaires."
     },
     "site_urls": [
       "https://www.inra.org.ma"
@@ -809,7 +809,7 @@
     "country": "TR",
     "country_name": {
       "en": "Turkey",
-      "tr": "Türkiye"
+      "tr": "T\u00fcrkiye"
     },
     "url": "https://www.tarimorman.gov.tr/TAGEM",
     "document_url_template": null,
@@ -833,11 +833,14 @@
   },
   {
     "source_id": "TAGEM_TR_CATALOG_2015",
-    "name": "TAGEM Çeşit Kataloğu 2015-2016",
-    "institution": "T.C. Tarım ve Orman Bakanlığı, Tohumluk Tescil ve Sertifikasyon Merkez Müdürlüğü (TTSM)",
+    "name": "TAGEM \u00c7e\u015fit Katalo\u011fu 2015-2016",
+    "institution": "T.C. Tar\u0131m ve Orman Bakanl\u0131\u011f\u0131, Tohumluk Tescil ve Sertifikasyon Merkez M\u00fcd\u00fcrl\u00fc\u011f\u00fc (TTSM)",
     "institution_short": "TAGEM",
     "country": "TR",
-    "country_name": {"en": "Turkey", "tr": "Türkiye"},
+    "country_name": {
+      "en": "Turkey",
+      "tr": "T\u00fcrkiye"
+    },
     "url": "https://www.tarimorman.gov.tr/BUGEM/TTSM",
     "license_class": "public-sector",
     "use_type": "variety-catalog",
@@ -851,16 +854,27 @@
     "disclaimer": {
       "en": "TAGEM catalog entries report average yields from multi-location registration trials in Turkey. NKZ extrapolates results to similar environments."
     },
-    "site_urls": ["https://www.tarimorman.gov.tr/BUGEM/TTSM"],
-    "tags": ["turkey", "cereals", "barley", "oats", "variety-catalog"]
+    "site_urls": [
+      "https://www.tarimorman.gov.tr/BUGEM/TTSM"
+    ],
+    "tags": [
+      "turkey",
+      "cereals",
+      "barley",
+      "oats",
+      "variety-catalog"
+    ]
   },
   {
     "source_id": "TAGEM_TR_CATALOG_2017",
-    "name": "TAGEM Çeşit Kataloğu 2017",
-    "institution": "T.C. Tarım ve Orman Bakanlığı, Tohumluk Tescil ve Sertifikasyon Merkez Müdürlüğü (TTSM)",
+    "name": "TAGEM \u00c7e\u015fit Katalo\u011fu 2017",
+    "institution": "T.C. Tar\u0131m ve Orman Bakanl\u0131\u011f\u0131, Tohumluk Tescil ve Sertifikasyon Merkez M\u00fcd\u00fcrl\u00fc\u011f\u00fc (TTSM)",
     "institution_short": "TAGEM",
     "country": "TR",
-    "country_name": {"en": "Turkey", "tr": "Türkiye"},
+    "country_name": {
+      "en": "Turkey",
+      "tr": "T\u00fcrkiye"
+    },
     "url": "https://www.tarimorman.gov.tr/BUGEM/TTSM",
     "license_class": "public-sector",
     "use_type": "variety-catalog",
@@ -874,16 +888,29 @@
     "disclaimer": {
       "en": "TAGEM catalog entries report average yields from multi-location registration trials in Turkey. Alfalfa yields are total annual accumulated values (multi-cut perennial). NKZ extrapolates results to similar environments."
     },
-    "site_urls": ["https://www.tarimorman.gov.tr/BUGEM/TTSM"],
-    "tags": ["turkey", "cereals", "barley", "oats", "alfalfa", "forage", "variety-catalog"]
+    "site_urls": [
+      "https://www.tarimorman.gov.tr/BUGEM/TTSM"
+    ],
+    "tags": [
+      "turkey",
+      "cereals",
+      "barley",
+      "oats",
+      "alfalfa",
+      "forage",
+      "variety-catalog"
+    ]
   },
   {
     "source_id": "IFAPA_ALMENDRO_2023",
-    "name": "IFAPA Cultivo del Almendro Ecológico en Regadío",
-    "institution": "IFAPA — Instituto Andaluz de Investigación y Formación Agraria, Pesquera, Alimentaria y de la Producción Ecológica",
+    "name": "IFAPA Cultivo del Almendro Ecol\u00f3gico en Regad\u00edo",
+    "institution": "IFAPA \u2014 Instituto Andaluz de Investigaci\u00f3n y Formaci\u00f3n Agraria, Pesquera, Alimentaria y de la Producci\u00f3n Ecol\u00f3gica",
     "institution_short": "IFAPA",
     "country": "ES",
-    "country_name": {"en": "Spain", "es": "España"},
+    "country_name": {
+      "en": "Spain",
+      "es": "Espa\u00f1a"
+    },
     "url": "https://www.juntadeandalucia.es/agriculturaypesca/ifapa/",
     "license_class": "cc-by-nc-nd",
     "use_type": "research-report",
@@ -892,14 +919,63 @@
     "extraction_method": "chart-estimated",
     "confidence_default": "medium",
     "attribution": {
-      "en": "Data sourced from IFAPA almond cultivation report. Yields estimated from Figure 10 bar chart (±15%).",
-      "es": "Datos obtenidos del informe de cultivo de almendro del IFAPA. Rendimientos estimados de la Figura 10 (gráfico de barras, ±15%)."
+      "en": "Data sourced from IFAPA almond cultivation report. Yields estimated from Figure 10 bar chart (\u00b115%).",
+      "es": "Datos obtenidos del informe de cultivo de almendro del IFAPA. Rendimientos estimados de la Figura 10 (gr\u00e1fico de barras, \u00b115%)."
     },
     "disclaimer": {
-      "en": "IFAPA almond trial at Las Torres (Alcalá del Río, Sevilla). Yields are estimates from a bar chart figure — exact values not extractable as text. NKZ extrapolates results to similar Mediterranean environments.",
-      "es": "Ensayo de almendro del IFAPA en Las Torres (Alcalá del Río, Sevilla). Los rendimientos son estimaciones de un gráfico de barras — valores exactos no extraíbles como texto. NKZ extrapola los resultados a entornos mediterráneos similares."
+      "en": "IFAPA almond trial at Las Torres (Alcal\u00e1 del R\u00edo, Sevilla). Yields are estimates from a bar chart figure \u2014 exact values not extractable as text. NKZ extrapolates results to similar Mediterranean environments.",
+      "es": "Ensayo de almendro del IFAPA en Las Torres (Alcal\u00e1 del R\u00edo, Sevilla). Los rendimientos son estimaciones de un gr\u00e1fico de barras \u2014 valores exactos no extra\u00edbles como texto. NKZ extrapola los resultados a entornos mediterr\u00e1neos similares."
     },
-    "site_urls": ["https://www.juntadeandalucia.es/agriculturaypesca/ifapa/"],
-    "tags": ["spain", "andalusia", "almond", "woody-crops", "organic", "variety-trial"]
+    "site_urls": [
+      "https://www.juntadeandalucia.es/agriculturaypesca/ifapa/"
+    ],
+    "tags": [
+      "spain",
+      "andalusia",
+      "almond",
+      "woody-crops",
+      "organic",
+      "variety-trial"
+    ]
+  },
+  {
+    "source_id": "EVENA",
+    "name": "EVENA — Estación de Viticultura y Enología de Navarra",
+    "institution": "EVENA — Estación de Viticultura y Enología de Navarra",
+    "institution_short": "EVENA",
+    "country": "ES",
+    "country_name": {
+      "en": "Spain",
+      "es": "España",
+      "eu": "Espainia",
+      "fr": "Espagne",
+      "pt": "Espanha"
+    },
+    "url": "https://www.evena.es/",
+    "document_url_template": null,
+    "license_class": "public-sector-psi",
+    "use_type": "variety-trial-network",
+    "official_status": true,
+    "data_format": "pdf-extracted",
+    "extraction_method": "structured",
+    "confidence_default": "high",
+    "attribution": {
+      "en": "Data sourced from grape variety trials published by EVENA (Navarra Viticulture and Enology Station).",
+      "es": "Datos obtenidos de ensayos varietales de vid publicados por EVENA (Estación de Viticultura y Enología de Navarra)."
+    },
+    "disclaimer": {
+      "en": "EVENA trials are conducted in Navarra. NKZ extrapolates results to similar environments — this is not an official EVENA recommendation.",
+      "es": "Los ensayos EVENA se realizan en Navarra. NKZ extrapola los resultados a entornos similares — esto no constituye una recomendación oficial de EVENA."
+    },
+    "site_urls": [
+      "https://www.evena.es/"
+    ],
+    "tags": [
+      "spain",
+      "navarra",
+      "vineyard",
+      "viticulture",
+      "variety-trials"
+    ]
   }
 ]
