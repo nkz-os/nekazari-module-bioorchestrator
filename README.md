@@ -116,6 +116,34 @@ Crop N fixation and growing season are resolved from **multiple live sources** (
 3. **EcoCrop CSV** (FAO GAEZ) — growing season days per crop
 4. **IPCC 2019 Tier 1** — static fallback for 18 crops
 
+### 🧬 How Species & Varieties are Populated (The 6-Layer Architecture)
+
+Adding a crop to BioOrchestrator is not a single database entry; it requires populating a multi-layered NGSI-LD knowledge graph to unlock the predictive engines across the platform. A fully unlocked crop must fulfill these 6 layers:
+
+1. **Base Taxonomy (EPPO Code)**
+   - **Where**: `species_registry.yaml` & `normalization_registry.py`
+   - **Role**: The foundational key. If an EPPO code (e.g., `BRSOB` for broccoli) is not registered, the core API Gateway will reject the creation of `AgriCrop` entities.
+
+2. **Phenological & Hydrological Models (FAO-56)**
+   - **Where**: `phenology_sources.yaml`
+   - **Role**: Defines Kc curves (crop coefficients) and growth stage durations. Without this, the `Hydrology` and `Vegetation-Health` modules cannot calculate crop evapotranspiration (ETc) to issue precision irrigation recommendations.
+
+3. **Agronomic Trials (VarietyTrials & TrialSites)**
+   - **Where**: Neo4j Graph (ingested via public scrapers)
+   - **Role**: Powers the *Extrapolate* feature. This allows the AI to move beyond generic advice to precision recommendations (e.g., *"Under Csa climate and clay soil, variety X yields 15% more than variety Y"*).
+
+4. **Edaphoclimatic Ranges (GAEZ / EcoCrop)**
+   - **Where**: Neo4j (`CropHeatTol.`, `SoilSuitability`)
+   - **Role**: Establishes physical survival limits (Base temperature for GDD, frost tolerance, optimal pH, salinity limits). It acts as the red light for the `CropPlanner` to warn against planting in unsuitable environments.
+
+5. **Pest & Disease Catalog (Host-Pathogen Map)**
+   - **Where**: EPPO API / Neo4j
+   - **Role**: Links EPPO pathogen codes (e.g., mildew) to the host species. This is mandatory for the `Crop-Health` module to trigger Disease Alerts when weather conditions favor an outbreak.
+
+6. **Nutritional Extractions (N-P-K Curves)**
+   - **Where**: Neo4j (`CropNutrientP.`)
+   - **Role**: Defines how many kilos of Nitrogen, Phosphorus, and Potassium the plant consumes per ton of yield. The `Soil` module requires this to generate precise fertilization recipes and calculate Carbon Footprints.
+
 ### 🌍 Sustainability & Compliance
 
 BioOrchestrator enriches agronomic decisions with real-time environmental intelligence:
