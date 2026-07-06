@@ -256,7 +256,7 @@ def test_get_crop_context_resolves_species_slug_for_soil_lookup(mock_driver):
             dao.get_crop_context(PARCEL_ID, tenant_id=TENANT)
         )
 
-    soil_mock.assert_awaited_once_with("trigo")
+    soil_mock.assert_awaited_once_with("wheat")
     assert result["soil"]["suitability"]["verdict"] in ("suitable", "marginal", "unsuitable", "unknown")
 
 

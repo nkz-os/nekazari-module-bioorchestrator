@@ -142,11 +142,11 @@ def test_fabricated_note_times_1000_is_error():
     assert "fabricated_yield" in _codes(report, "ERROR")
 
 
-def test_missing_mergekey_is_error():
+def test_missing_mergekey_is_warning():
     trial = _trial("Dicastillo")
     del trial["mergeKey"]
     report = validate_bundle(_bundle(_site("Dicastillo"), trial))
-    assert "missing_mergekey" in _codes(report, "ERROR")
+    assert "missing_mergekey" in _codes(report, "WARNING")
 
 
 def test_site_missing_name_is_error():
