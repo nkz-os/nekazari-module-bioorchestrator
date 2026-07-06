@@ -50,3 +50,14 @@ async def test_management_trial_shape(nodes):
     assert "Trichoderma" in mt["treatment"] or "AMF" in mt["treatment"] or "mycorrhiz" in mt["treatment"].lower()
     assert mt["cropScientific"] == "Solanum lycopersicum"
     assert isinstance(mt["qualityParams"], str)
+
+
+@pytest.mark.asyncio
+async def test_article_provenance_per_source(nodes):
+    by_id = {a["source_id"]: a for a in nodes["article_sources"]}
+    assert "REDALYC-PLEUROTUS-2017" in by_id
+    redalyc = by_id["REDALYC-PLEUROTUS-2017"]
+    assert "Cuyo" in redalyc["institution"]
+    assert redalyc["license_class"] == "open-access-cc"
+    # umbrella must NOT leak onto real articles
+    assert all(a["source_id"] != "VISION2024" for a in nodes["article_sources"])

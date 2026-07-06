@@ -136,3 +136,20 @@ class FungiIngester(BaseIngester):
             return get_source(source_id).get("confidence_default", "medium")
         except KeyError:
             return "medium"
+
+    def _enrich_article_sources(self, articles: list[dict]) -> None:
+        """Enrich each article from ITS OWN registered source (not the umbrella)."""
+        from app.common.source_registry import get_source
+        for art in articles:
+            sid = art.get("source_id") or self.SOURCE_ID
+            try:
+                entry = get_source(sid)
+            except KeyError:
+                entry = self._registry_entry
+            art["source_id"] = sid
+            art["institution"] = entry["institution"]
+            art["license_class"] = entry["license_class"]
+            art["use_type"] = entry["use_type"]
+            art["official_status"] = entry["official_status"]
+            art["data_format"] = entry.get("data_format", "pdf-extracted")
+            art["confidence"] = art.get("confidence") or entry.get("confidence_default", "medium")
