@@ -65,7 +65,7 @@ class IfapaIngester(BaseIngester):
             "municipality": node.get("municipality"),
             "latitude": node.get("latitude"),
             "longitude": node.get("longitude"),
-            "climateClass": node.get("climateClass"),
+            "climateClass": node.get("climateClass") or node.get("climate_class"),
             "soilType": node.get("soilType"),
             "annualRainfallMm": node.get("annualRainfallMm"),
             "mergeKey": (

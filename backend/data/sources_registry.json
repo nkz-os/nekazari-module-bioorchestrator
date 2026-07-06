@@ -830,5 +830,76 @@
       "turkey",
       "variety-trials"
     ]
+  },
+  {
+    "source_id": "TAGEM_TR_CATALOG_2015",
+    "name": "TAGEM Çeşit Kataloğu 2015-2016",
+    "institution": "T.C. Tarım ve Orman Bakanlığı, Tohumluk Tescil ve Sertifikasyon Merkez Müdürlüğü (TTSM)",
+    "institution_short": "TAGEM",
+    "country": "TR",
+    "country_name": {"en": "Turkey", "tr": "Türkiye"},
+    "url": "https://www.tarimorman.gov.tr/BUGEM/TTSM",
+    "license_class": "public-sector",
+    "use_type": "variety-catalog",
+    "official_status": true,
+    "data_format": "pdf-extracted",
+    "extraction_method": "structured",
+    "confidence_default": "high",
+    "attribution": {
+      "en": "Data sourced from TAGEM variety catalog (2015-2016)."
+    },
+    "disclaimer": {
+      "en": "TAGEM catalog entries report average yields from multi-location registration trials in Turkey. NKZ extrapolates results to similar environments."
+    },
+    "site_urls": ["https://www.tarimorman.gov.tr/BUGEM/TTSM"],
+    "tags": ["turkey", "cereals", "barley", "oats", "variety-catalog"]
+  },
+  {
+    "source_id": "TAGEM_TR_CATALOG_2017",
+    "name": "TAGEM Çeşit Kataloğu 2017",
+    "institution": "T.C. Tarım ve Orman Bakanlığı, Tohumluk Tescil ve Sertifikasyon Merkez Müdürlüğü (TTSM)",
+    "institution_short": "TAGEM",
+    "country": "TR",
+    "country_name": {"en": "Turkey", "tr": "Türkiye"},
+    "url": "https://www.tarimorman.gov.tr/BUGEM/TTSM",
+    "license_class": "public-sector",
+    "use_type": "variety-catalog",
+    "official_status": true,
+    "data_format": "pdf-extracted",
+    "extraction_method": "structured",
+    "confidence_default": "high",
+    "attribution": {
+      "en": "Data sourced from TAGEM variety catalog (2017)."
+    },
+    "disclaimer": {
+      "en": "TAGEM catalog entries report average yields from multi-location registration trials in Turkey. Alfalfa yields are total annual accumulated values (multi-cut perennial). NKZ extrapolates results to similar environments."
+    },
+    "site_urls": ["https://www.tarimorman.gov.tr/BUGEM/TTSM"],
+    "tags": ["turkey", "cereals", "barley", "oats", "alfalfa", "forage", "variety-catalog"]
+  },
+  {
+    "source_id": "IFAPA_ALMENDRO_2023",
+    "name": "IFAPA Cultivo del Almendro Ecológico en Regadío",
+    "institution": "IFAPA — Instituto Andaluz de Investigación y Formación Agraria, Pesquera, Alimentaria y de la Producción Ecológica",
+    "institution_short": "IFAPA",
+    "country": "ES",
+    "country_name": {"en": "Spain", "es": "España"},
+    "url": "https://www.juntadeandalucia.es/agriculturaypesca/ifapa/",
+    "license_class": "cc-by-nc-nd",
+    "use_type": "research-report",
+    "official_status": false,
+    "data_format": "pdf-extracted",
+    "extraction_method": "chart-estimated",
+    "confidence_default": "medium",
+    "attribution": {
+      "en": "Data sourced from IFAPA almond cultivation report. Yields estimated from Figure 10 bar chart (±15%).",
+      "es": "Datos obtenidos del informe de cultivo de almendro del IFAPA. Rendimientos estimados de la Figura 10 (gráfico de barras, ±15%)."
+    },
+    "disclaimer": {
+      "en": "IFAPA almond trial at Las Torres (Alcalá del Río, Sevilla). Yields are estimates from a bar chart figure — exact values not extractable as text. NKZ extrapolates results to similar Mediterranean environments.",
+      "es": "Ensayo de almendro del IFAPA en Las Torres (Alcalá del Río, Sevilla). Los rendimientos son estimaciones de un gráfico de barras — valores exactos no extraíbles como texto. NKZ extrapola los resultados a entornos mediterráneos similares."
+    },
+    "site_urls": ["https://www.juntadeandalucia.es/agriculturaypesca/ifapa/"],
+    "tags": ["spain", "andalusia", "almond", "woody-crops", "organic", "variety-trial"]
   }
 ]

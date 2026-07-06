@@ -131,6 +131,39 @@
       "geoSource": "open-meteo geocoding: Carmona, ES",
       "resolvedName": "Carmona"
     },
+    "jerez de la frontera": {
+      "name": "Jerez de la Frontera",
+      "matchKey": "Jerez de la Frontera",
+      "climateClass": "Csa",
+      "latitude": 36.6865,
+      "longitude": -6.1368,
+      "elevationM": 56.0,
+      "geoConfidence": "ifapa_trial_network",
+      "geoSource": "IFAPA cereal trials 2024 / Cadiz province",
+      "resolvedName": "Jerez de la Frontera"
+    },
+    "montejicar": {
+      "name": "Montejícar",
+      "matchKey": "Montejícar",
+      "climateClass": "Csa",
+      "latitude": 37.575,
+      "longitude": -3.5015,
+      "elevationM": 713.0,
+      "geoConfidence": "ifapa_trial_network",
+      "geoSource": "IFAPA cereal trials 2024 / Granada province",
+      "resolvedName": "Montejícar"
+    },
+    "montejícar": {
+      "name": "Montejícar",
+      "matchKey": "Montejícar",
+      "climateClass": "Csa",
+      "latitude": 37.575,
+      "longitude": -3.5015,
+      "elevationM": 713.0,
+      "geoConfidence": "ifapa_trial_network",
+      "geoSource": "IFAPA cereal trials 2024 / Granada province",
+      "resolvedName": "Montejícar"
+    },
     "casasola de arión": {
       "name": "Casasola de Arión",
       "matchKey": "Casasola de Arión",
