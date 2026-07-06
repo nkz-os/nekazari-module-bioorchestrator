@@ -10,6 +10,7 @@ import httpx
 from cachetools import TTLCache
 
 from app.services.soil_headers import soil_module_headers
+from app.services.soil_nodata import sanitize_soil_properties
 
 logger = logging.getLogger(__name__)
 
@@ -77,6 +78,7 @@ async def get_parcel_soil_properties(parcel_id: str, tenant_id: str = "") -> dic
                     "source": (data.get("dataSource") or {}).get("value", "soilgrids"),
                     "data_available": True,
                 }
+                result = sanitize_soil_properties(result)
                 _soil_cache[cache_key] = result
                 return result
             elif resp.status_code == 404:
