@@ -94,54 +94,6 @@ async def get_parcel_soil_properties(parcel_id: str, tenant_id: str = "") -> dic
     return result
 
 
-def compute_soil_suitability(
-    requirements: dict | None,
-    actual: dict | None,
-) -> dict | None:
-    """Compare crop soil requirements against actual parcel soil.
-
-    Returns None if no requirements or actual data available.
-    """
-    if not requirements or not actual or not actual.get("data_available"):
-        return None
-
-    warnings: list[str] = []
-    ph_match = True
-    texture_match = True
-
-    ph = actual.get("ph")
-    if (
-        ph is not None
-        and requirements.get("ph_min") is not None
-        and requirements.get("ph_max") is not None
-    ):
-        ph_match = requirements["ph_min"] <= ph <= requirements["ph_max"]
-        if not ph_match:
-            warnings.append(
-                f"Soil pH {ph} outside crop range "
-                f"[{requirements['ph_min']}, {requirements['ph_max']}]"
-            )
-
-    texture = actual.get("texture")
-    req_textures = requirements.get("textures", [])
-    if texture and req_textures:
-        texture_match = any(t.lower() in texture.lower() for t in req_textures)
-        if not texture_match:
-            warnings.append(
-                f"Soil texture '{texture}' not in crop preference: {req_textures}"
-            )
-
-    awc_match = actual.get("awc_mm") is not None and actual["awc_mm"] > 0
-
-    return {
-        "ph_match": ph_match,
-        "texture_match": texture_match,
-        "awc_sufficient": awc_match,
-        "overall": "suitable" if (ph_match and texture_match) else "unsuitable",
-        "warnings": warnings,
-    }
-
-
 # ── Soil-suitability gate (C.5) ──────────────────────────────────────────────
 # Compares a crop's STANDARD tolerance (EcoCrop / CropSoilSuitability) against
 # a parcel's REAL soil (read live from the Soil module) and returns a graded

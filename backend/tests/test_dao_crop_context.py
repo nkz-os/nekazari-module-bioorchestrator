@@ -199,6 +199,19 @@ def test_get_crop_context_no_assessment_available(mock_driver):
     assert result["soil_sensors"] == {"available": False}
 
 
+def test_crop_context_soil_suitability_is_graded_verdict(monkeypatch):
+    # assess (not compute) → the `soil.suitability` carries a graded `verdict`.
+    from app.services import soil_client
+    assert not hasattr(soil_client, "compute_soil_suitability"), \
+        "compute_soil_suitability must be removed (0 callers after swap)"
+    # unavailable parcel soil → honest 'unknown' (guard-drop is safe)
+    verdict = soil_client.assess_soil_suitability(
+        {"ph_min": 6.0, "ph_max": 7.5, "textures": ["loam"]},
+        {"data_available": False, "source": "unavailable"},
+    )
+    assert verdict["verdict"] == "unknown"
+
+
 NORMALIZED_CROP_TRIGO = {
     "id": "urn:ngsi-ld:AgriCrop:TRZAX",
     "type": "AgriCrop",

@@ -3031,6 +3031,7 @@ class GraphDAO:
             soil_req = await self.get_soil_suitability(species_slug)
 
             soil_actual = await get_parcel_soil_properties(parcel_id, tenant_id)
+            # C.5 graded verdict (assess handles missing tolerance / unavailable soil → unknown)
             soil_suitability = assess_soil_suitability(soil_req, soil_actual)
 
             # ── 3. Fetch latest CropHealthAssessment (normalized NGSI-LD) ──
