@@ -111,5 +111,7 @@ async def test_mt_merge_persists_quality_and_host():
     query, params = driver.calls[0]
     assert "mt.qualityParams" in query
     assert "mt.cropScientific" in query
+    assert "mt.unitQudtUri" in query
     assert params["quality"] == '{"applicationMethod": "soil"}'
     assert params["host"] == "Solanum lycopersicum"
+    assert "qudt_uri" in params

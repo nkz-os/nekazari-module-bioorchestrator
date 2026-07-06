@@ -161,6 +161,8 @@ class FungiIngester(BaseIngester):
                         mt.varietyNormalized = $variety_norm,
                         mt.locationNormalized = $loc_norm,
                         mt.locationCountry = $loc_country,
+                        mt.unitQudtUri = $qudt_uri,
+                        mt.unitUcum = $ucum,
                         mt.confidence = $confidence,
                         mt.updatedAt = datetime()
                     """,
@@ -180,6 +182,8 @@ class FungiIngester(BaseIngester):
                     location_key=node.get("trialLocationKey") or "",
                     loc_norm=node.get("locationNormalized"),
                     loc_country=node.get("locationCountry"),
+                    qudt_uri=node.get("unitQudtUri"),
+                    ucum=node.get("unitUcum"),
                     quality=node.get("qualityParams"),
                     confidence=node.get("confidence", "medium"),
                 )
