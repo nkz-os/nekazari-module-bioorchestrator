@@ -103,7 +103,7 @@ async def backfill(
                 SET ts += $updates,
                     ts.updatedAt = datetime()
                 """,
-                site_key=row["site_key"],
+                site_key=site_key,
                 updates=updates,
             )
             updated += 1
