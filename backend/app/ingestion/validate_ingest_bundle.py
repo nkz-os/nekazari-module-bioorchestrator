@@ -13,9 +13,11 @@ dishonesty (impossible metrics, cumulative leaks, `note*1000` fabrication)
 before they reach staging.
 
 It mirrors the linking rule of `base_ingester._merge_relationships` exactly:
-a trial links iff a TrialSite in the bundle shares its `source_id` AND matches
-its `trial_location` (case-insensitive) against the site's `name` or
-`municipality`. Rules 5 (name) and 14 (source_id) together encode that pair.
+a trial links iff a TrialSite in the bundle matches its `trial_location`
+(case-insensitive) against the site's `name` or `municipality`. Linking is
+source-agnostic — sites merge by normalized `siteKey` and accumulate `sourceIds`,
+so a trial links to any same-location site regardless of source. Rule 5 (name)
+encodes the location match.
 
 CLI:
     python -m app.ingestion.validate_ingest_bundle <bundle.jsonld>

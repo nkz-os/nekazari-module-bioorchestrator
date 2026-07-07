@@ -124,8 +124,12 @@ class FungiIngester(BaseIngester):
             "confidence": self._confidence_for(source_id),
             "source_id": source_id,
             "mergeKey": node.get("mergeKey") or (
+                # result_metric/result_value disambiguate distinct measurements of
+                # the same treatment+year so the fallback can't silently overwrite.
                 f"{source_id}|mt|"
                 f"{str(node.get('treatment', '')).strip().lower()[:60]}|"
+                f"{str(node.get('result_metric', '')).strip().lower()}|"
+                f"{str(node.get('result_value', ''))}|"
                 f"{str(node.get('year', 0))}"
             ),
         }

@@ -118,6 +118,36 @@ async def test_mt_merge_persists_quality_and_host():
 
 
 @pytest.mark.asyncio
+async def test_management_fallback_key_disambiguates_by_metric():
+    # Two MTs with identical treatment+year but different result_metric and NO
+    # explicit mergeKey must NOT collapse into one node (silent overwrite).
+    from app.ingestion.fungi_ingester import FungiIngester
+    ing = FungiIngester(driver=None)
+    a = ing._convert_management({
+        "source_id": "EXCALIBUR-H2020", "treatment": "Trichoderma sp.",
+        "result_metric": "soil_fungal_population_dominance", "result_value": 100, "year": 2021,
+    })
+    b = ing._convert_management({
+        "source_id": "EXCALIBUR-H2020", "treatment": "Trichoderma sp.",
+        "result_metric": "yield_increase_pct", "result_value": 15, "year": 2021,
+    })
+    assert a["mergeKey"] != b["mergeKey"]
+
+
+@pytest.mark.asyncio
+async def test_management_explicit_mergekey_wins():
+    # An explicit mergeKey from the bundle is preserved verbatim (fallback unused).
+    from app.ingestion.fungi_ingester import FungiIngester
+    ing = FungiIngester(driver=None)
+    mt = ing._convert_management({
+        "source_id": "EXCALIBUR-H2020", "treatment": "Trichoderma sp.",
+        "result_metric": "yield_increase_pct", "result_value": 15, "year": 2021,
+        "mergeKey": "explicit_key_2021",
+    })
+    assert mt["mergeKey"] == "explicit_key_2021"
+
+
+@pytest.mark.asyncio
 async def test_relationships_source_set_aware():
     from app.ingestion.fungi_ingester import FungiIngester
     ing = FungiIngester(driver=None)

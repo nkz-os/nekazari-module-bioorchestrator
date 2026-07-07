@@ -37,6 +37,23 @@ async def _orphans(driver, sids: list[str]) -> int:
         return int(row["c"])
 
 
+async def _unlinked_mt_with_location(driver, sids: list[str]) -> int:
+    """Count ManagementTrials that carry a location but did not link to a site.
+
+    Visibility only — NOT a gate. MT→site linkage is best-effort (management
+    trials often cite loose locations), so an unlinked MT is logged as a warning,
+    never a hard failure; MTs with a null location are expected and excluded.
+    """
+    async with driver.session() as s:
+        row = await (await s.run(
+            "MATCH (m:ManagementTrial) WHERE m.source_id IN $sids "
+            "AND m.trialLocation IS NOT NULL "
+            "AND NOT (m)-[:TRIAL_AT]->(:TrialSite) RETURN count(m) AS c",
+            sids=sids,
+        )).single()
+        return int(row["c"])
+
+
 async def run(bundle_path: str, *, execute: bool) -> int:
     path = Path(bundle_path)
     if not path.is_file():
@@ -73,6 +90,14 @@ async def run(bundle_path: str, *, execute: bool) -> int:
         if orphans:
             logger.error("Post-ingest orphan VarietyTrials: %d", orphans)
             return 1
+
+        unlinked_mt = await _unlinked_mt_with_location(driver, sids)
+        if unlinked_mt:
+            logger.warning(
+                "ManagementTrials with a location that did not link: %d "
+                "(visibility only — MT linkage is best-effort, not a gate)",
+                unlinked_mt,
+            )
 
         from scripts.canonicalize_trial_sites import run as _canon
         logger.info("Site canonicalization: %s", await asyncio.to_thread(_canon, execute=True))
