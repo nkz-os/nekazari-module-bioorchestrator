@@ -1,6 +1,8 @@
+import os
+
 import pytest
 
-BUNDLE = "/home/g/Documents/nekazari/nkz-setas-scraper/data/jsonld/vision_2024_fungi.jsonld"
+BUNDLE = os.path.join(os.path.dirname(__file__), "fixtures", "vision_2024_fungi.jsonld")
 
 
 @pytest.mark.asyncio

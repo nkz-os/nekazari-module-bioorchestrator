@@ -1,7 +1,7 @@
 import json
 from pathlib import Path
 
-BUNDLE = Path("/home/g/Documents/nekazari/nkz-setas-scraper/data/jsonld/vision_2024_fungi.jsonld")
+BUNDLE = Path(__file__).parent / "fixtures" / "vision_2024_fungi.jsonld"
 AREAL = {"yield_kg_ha", "grain_yield_kg_ha", "dry_yield_kg_ha",
          "fresh_yield_kg_ha", "truffle_yield_kg_ha"}
 
