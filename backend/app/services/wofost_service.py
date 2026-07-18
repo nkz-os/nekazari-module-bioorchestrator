@@ -9,6 +9,14 @@ Provides run_wofost_simulation() which:
   6. Returns biomass, LAI, and yield projection
 
 Requires: pcse (pip install pcse)
+
+NOTE — estado real (verificado 2026-07-18): la ruta mecanicista NO es operativa.
+`pcse` está instalado (6.0.13), luego HAS_PCSE es True y se intenta, pero falla
+siempre: construye objetos de la API de PCSE 5 (`WOFOST71SiteDataProvider` ya no
+existe en PCSE 6), pasa el cultivo como ruta de fichero donde se espera una
+estructura parseada, no pasa datos de suelo y fija lat/lon a 42.0/-1.5. El
+`except` captura y `_run_fallback_simulation` es lo que se ejecuta en el 100 % de
+las llamadas. Portar a la API de PCSE 6 está pendiente de decisión metodológica.
 """
 
 from __future__ import annotations
@@ -202,7 +210,12 @@ def run_wofost_simulation(
             os.unlink(crop_fp)
 
     except Exception as e:
-        logger.warning("PCSE simulation failed: %s — falling back", e)
+        logger.error(
+            "PCSE simulation failed (%s) — falling back to the empirical FAO-33 "
+            "model. The PCSE integration is not operational: it targets the PCSE 5 "
+            "API and this deployment runs PCSE 6. Every call takes this path.",
+            e,
+        )
         return _run_fallback_simulation(
             crop_slug, sowing_date, weather_data, soil_hydraulic_props,
             crop_params_override, emergence_date, max_duration_days,
@@ -294,7 +307,7 @@ def _run_fallback_simulation(
         })
 
     return {
-        "model": "FAO-33 simplified (PCSE unavailable)",
+        "model": "FAO-33 simplified (PCSE integration not operational)",
         "method": "empirical",
         "projected_yield_kg_ha": None,  # caller multiplies by potential
         "total_stress_factor": round(stress_factor, 3),
