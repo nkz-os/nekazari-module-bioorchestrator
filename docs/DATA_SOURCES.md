@@ -145,7 +145,7 @@ into Neo4j via the `init_graph.py` n10s ingestion pipeline.
 | Connector | Source | What it provides | Entity types |
 |-----------|--------|------------------|-------------|
 | **EcoCrop** | FAO GAEZ (CSV) | Crop environmental requirements — 2,500+ species, climate + soil envelopes | `Crop`, `EdaphicProfile`, `ClimaticProfile` |
-| **CPVO Varieties** | cpvo.europa.eu (API) | EU registered plant varieties — 45K+ varieties across 300+ species | `AgriCropVariety`, `AgriCrop` |
+| **CPVO Varieties** ⚠️ **NOT OPERATIONAL** | cpvo.europa.eu (API) | Intended: EU registered plant varieties. **The endpoint returns 404** (verified 2026-07-19) and there are **0 `AgriCropVariety` nodes** in the graph. The connector also extracts only name, species, registration year and maintainer — **no growing cycle, no maturity class**: CPVO is a plant-variety-rights registry, not an agronomic one. | — |
 | **FiBL** | fibl.org (CSV) | Organic input products list — fertilizers, biopesticides | `OrganicInput` |
 | **DG SANTE** | ec.europa.eu (API) | EU Pesticides Database — approved/withdrawn active substances | `Pesticide`, `ApprovalStatus` |
 | **EU Pesticides** | ec.europa.eu | Pesticide MRLs, approval status, withdrawal dates | `Pesticide`, `Regulation` |
@@ -203,7 +203,7 @@ into Neo4j via the `init_graph.py` n10s ingestion pipeline.
 | `GET /soil-suitability` | pH, texture, drainage, depth reqs | CropSoilSuitability |
 | `GET /recommendations/next-crop` | Rotation successor recommendation | RotationConstraint |
 | `GET /recommendations/simulate` | What-if crop scenario simulation | RotationConstraint, SoilSuitability, NutrientProfile |
-| `GET /varieties` | Variety list for a species | AgriCropVariety (CPVO) |
+| `GET /varieties` | Variety list for a species | `AgriCropVariety` — **returns empty**: the label has 0 nodes (see CPVO above) |
 | `GET /pesticides` | Approved/withdrawn pesticides for crop | DG SANTE, EU Pesticides |
 | `GET /pollinators` | Pollinator presence near coordinates | GBIF Pollinators |
 | `GET /protected-area-check` | Natura 2000 overlap check | Natura 2000 |
