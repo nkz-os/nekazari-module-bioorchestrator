@@ -87,6 +87,12 @@ class BslIngester(BaseIngester):
             ),
         }
 
+    # Vocabulary for `cropCycle`. `facultative` (alternative varieties, sown either
+    # in autumn or in spring) is part of the contract from the outset even though
+    # BSL does not currently label any: adding a value later would force a
+    # re-extraction of every source.
+    CROP_CYCLES = ("winter", "spring", "facultative")
+
     @staticmethod
     def _crop_cycle(crop_scientific: str | None) -> str | None:
         """Growing cycle from the German crop label, or None if it carries none.
@@ -103,6 +109,8 @@ class BslIngester(BaseIngester):
         if not crop_scientific:
             return None
         label = crop_scientific.strip().lower()
+        if label.startswith("wechsel"):  # Wechselweizen: sown autumn OR spring
+            return "facultative"
         if label.startswith("winter"):
             return "winter"
         if label.startswith("sommer"):

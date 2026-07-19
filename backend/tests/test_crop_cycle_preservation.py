@@ -48,6 +48,12 @@ class TestCropCycleExtraction:
                       "Sommerroggen"):
             assert BslIngester._crop_cycle(label) == "spring", label
 
+    def test_facultative_is_part_of_the_vocabulary_from_the_start(self):
+        # Ninguna fuente actual etiqueta facultativas, pero el valor forma parte
+        # del contrato: añadirlo después obligaría a reextraer todas las fuentes.
+        assert "facultative" in BslIngester.CROP_CYCLES
+        assert BslIngester._crop_cycle("Wechselweizen") == "facultative"
+
     def test_unlabelled_crops_yield_none(self):
         # Maíz, soja o triticale no llevan prefijo estacional: no inventamos uno.
         for label in ("Körnermais", "Silomais", "Sojabohne", "Triticale",
