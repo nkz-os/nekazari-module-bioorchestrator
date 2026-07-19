@@ -294,12 +294,14 @@ def seed(driver: Driver, data: dict[str, Any]) -> dict[str, int]:
                 MERGE (r:RotationConstraint {cropA: $crop_a, cropB: $crop_b})
                 SET r.intervalYears = $interval,
                     r.reason = $reason,
-                    r.sourceShort = $src_short
+                    r.sourceShort = $src_short,
+                    r.effect = $effect
                 """,
                 crop_a=rc.get("crop_a"), crop_b=rc.get("crop_b"),
                 interval=rc.get("interval_years"),
                 reason=rc.get("reason"),
                 src_short=rc.get("source_short"),
+                effect=rc.get("effect") or "restriction",
             )
             counts["params"] += 1
 
