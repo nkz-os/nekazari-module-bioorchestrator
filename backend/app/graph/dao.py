@@ -798,7 +798,8 @@ class GraphDAO:
                 MATCH (rc:RotationConstraint)
                 WHERE rc.cropA = $crop
                 RETURN rc.cropB AS crop_b, rc.intervalYears AS interval_years,
-                       rc.reason AS reason, rc.sourceShort AS source_short
+                       rc.reason AS reason, rc.sourceShort AS source_short,
+                       coalesce(rc.effect, 'restriction') AS effect
                 """,
                 crop=crop,
             )
@@ -811,6 +812,7 @@ class GraphDAO:
             result = await session.run(
                 """
                 MATCH (rc:RotationConstraint {cropA: $crop})
+                WHERE coalesce(rc.effect, 'restriction') = 'restriction'
                 RETURN rc.cropB AS restricted, rc.intervalYears AS years, rc.reason AS reason
                 """,
                 crop=previous_crop,
@@ -892,11 +894,12 @@ class GraphDAO:
             rc = await session.run(
                 "MATCH (r:RotationConstraint) "
                 "WHERE toLower(r.cropA) = toLower($baseline) AND toLower(r.cropB) = toLower($scenario) "
-                "RETURN r.intervalYears AS years, r.reason AS reason",
+                "RETURN r.intervalYears AS years, r.reason AS reason, "
+                "coalesce(r.effect, 'restriction') AS effect",
                 baseline=baseline_crop, scenario=scenario_crop,
             )
             row = await rc.single()
-            if row and row["years"] and row["years"] > 0:
+            if row and row["effect"] == "restriction" and row["years"] and row["years"] > 0:
                 result["rotation_ok"] = False
                 result["rotation_issue"] = (
                     f"{row['reason']}. Minimum interval: {row['years']} years."
