@@ -4576,6 +4576,38 @@ rotation_constraints:
   interval_years: 8
   reason: Replant disease, fusarium crown rot
   source_short: FAO
+# Rescued 2026-07-19: these six existed only in the production graph, never in
+# this file. Without them a rebuild would silently drop six rotation rules.
+- crop_a: wheat
+  crop_b: wheat
+  interval_years: 2
+  reason: "Common root pathogens (Gaeumannomyces graminis — take-all)"
+  source_short: "FAO Crop Rotation Guidelines"
+- crop_a: wheat
+  crop_b: sunflower
+  interval_years: 3
+  reason: "Shared soil-borne pathogens (Sclerotinia sclerotiorum)"
+  source_short: "FAO Crop Rotation Guidelines"
+- crop_a: wheat
+  crop_b: legume
+  interval_years: 0
+  reason: "Beneficial: wheat consumes N, legume fixes N — complementary"
+  source_short: "FAO Crop Rotation Guidelines"
+- crop_a: wheat
+  crop_b: maize
+  interval_years: 1
+  reason: "Same pest family (Fusarium spp.)"
+  source_short: "JRC MARS"
+- crop_a: wheat
+  crop_b: barley
+  interval_years: 1
+  reason: "Shared take-all disease (Gaeumannomyces graminis)"
+  source_short: "JRC MARS"
+- crop_a: maize
+  crop_b: maize
+  interval_years: 1
+  reason: "European corn borer pressure"
+  source_short: "JRC MARS"
 species:
 - name: wheat
   scientific_name: Triticum aestivum
