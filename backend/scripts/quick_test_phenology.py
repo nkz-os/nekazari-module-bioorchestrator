@@ -1,9 +1,15 @@
 """Quick test: query phenology from Neo4j directly."""
+import os
 import sys
+
 from neo4j import GraphDatabase
 
 uri = sys.argv[1] if len(sys.argv) > 1 else "bolt://localhost:7687"
-driver = GraphDatabase.driver(uri, auth=("neo4j", "bioorchestrator"))
+user = os.getenv("NEO4J_USER", "neo4j")
+password = os.getenv("NEO4J_PASSWORD", "")
+if not password:
+    raise SystemExit("Falta NEO4J_PASSWORD. Expórtela antes de ejecutar.")
+driver = GraphDatabase.driver(uri, auth=(user, password))
 
 # Test 1: Direct Species query
 with driver.session() as session:

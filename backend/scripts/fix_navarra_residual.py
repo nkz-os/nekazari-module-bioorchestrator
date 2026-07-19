@@ -11,8 +11,11 @@ from neo4j import AsyncGraphDatabase
 
 NEO4J_URI = os.getenv("NEO4J_URI", "bolt://bioorchestrator-neo4j:7687")
 NEO4J_USER = os.getenv("NEO4J_USER", "neo4j")
-NEO4J_PASSWORD = os.getenv("NEO4J_PASSWORD", "bioorchestrator")
+NEO4J_PASSWORD = os.getenv("NEO4J_PASSWORD", "")
 SOURCE_ID = "NAVARRA-AGRARIA"
+
+if not NEO4J_PASSWORD:
+    raise SystemExit("Falta NEO4J_PASSWORD. Expórtela antes de ejecutar.")
 
 # Mirror navarra site_enricher SITE_COORDS + Köppen heuristic
 SITE_GEO: dict[str, tuple[float, float, int, str]] = {

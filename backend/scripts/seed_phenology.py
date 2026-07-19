@@ -328,7 +328,7 @@ def main() -> None:
     )
     parser.add_argument(
         "--neo4j-password",
-        default=os.getenv("NEO4J_PASSWORD", "bioorchestrator"),
+        default=os.getenv("NEO4J_PASSWORD", ""),
     )
     parser.add_argument(
         "--dry-run",

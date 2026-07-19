@@ -69,7 +69,7 @@ async def _main() -> None:
     )
     parser.add_argument(
         "--neo4j-password",
-        default=os.getenv("NEO4J_PASSWORD", "bioorchestrator"),
+        default=os.getenv("NEO4J_PASSWORD", ""),
     )
     parser.add_argument(
         "--dry-run",
@@ -93,6 +93,9 @@ async def _main() -> None:
         for rule in data["rules"]:
             print(f"  {rule['id']} ({rule.get('category')}) — source: {rule.get('source_short')}")
         return
+
+    if not args.neo4j_password:
+        raise SystemExit("[seed_action_rules] Falta NEO4J_PASSWORD (o --neo4j-password).")
 
     driver = await connect(args.neo4j_uri, args.neo4j_user, args.neo4j_password)
     try:
