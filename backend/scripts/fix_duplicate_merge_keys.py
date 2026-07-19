@@ -19,9 +19,21 @@ import sys
 
 from neo4j import GraphDatabase
 
-URI = os.getenv("NEO4J_URI", "bolt://bioorchestrator-neo4j:7687")
-AUTH = (os.getenv("NEO4J_USER", "neo4j"), os.getenv("NEO4J_PASSWORD", "bioorchestrator"))
 CONSTRAINT = "variety_trial_mergekey_unique"
+
+# Credenciales por variable de entorno, sin valor por defecto: este script escribe
+# en el grafo y debe fallar en seco si no se le dice explícitamente contra cuál.
+URI = os.getenv("NEO4J_URI", "")
+USER = os.getenv("NEO4J_USER", "")
+PASSWORD = os.getenv("NEO4J_PASSWORD", "")
+
+if not (URI and USER and PASSWORD):
+    raise SystemExit(
+        "Faltan credenciales. Exporte NEO4J_URI, NEO4J_USER y NEO4J_PASSWORD "
+        "antes de ejecutar este script."
+    )
+
+AUTH = (USER, PASSWORD)
 
 
 def main() -> int:
