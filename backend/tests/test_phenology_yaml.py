@@ -11,6 +11,7 @@ Validates that the YAML file:
 import pytest
 import yaml
 from pathlib import Path
+from collections import Counter
 
 DATA_DIR = Path(__file__).parent.parent / "data"
 YAML_PATH = DATA_DIR / "phenology_sources.yaml"
@@ -184,17 +185,38 @@ def test_soil_suitability_major_species():
         assert "source" in ss[sp], f"{sp}: missing soil suitability source"
 
 
+VALID_EFFECTS = {"restriction", "benefit"}
+
+
 def test_rotation_constraints_have_required_fields():
-    """Rotation constraints must have interval_years, reason, and source_short."""
+    """Rotation constraints must declare effect; interval semantics depend on it."""
     data = _load_yaml()
     rc = data.get("rotation_constraints", [])
     assert len(rc) > 0, "No rotation constraints defined"
     for entry in rc:
         assert "crop_a" in entry, f"Rotation constraint missing crop_a: {entry}"
         assert "crop_b" in entry, f"Rotation constraint missing crop_b: {entry}"
-        assert "interval_years" in entry, \
-            f"{entry['crop_a']}-{entry['crop_b']}: missing interval_years"
-        assert entry["interval_years"] > 0, \
-            f"{entry['crop_a']}-{entry['crop_b']}: interval_years must be positive"
-        assert "reason" in entry, \
-            f"{entry['crop_a']}-{entry['crop_b']}: missing reason"
+        pair = f"{entry['crop_a']}-{entry['crop_b']}"
+
+        assert "effect" in entry, f"{pair}: missing effect"
+        assert entry["effect"] in VALID_EFFECTS, \
+            f"{pair}: effect must be one of {VALID_EFFECTS}, got {entry['effect']!r}"
+
+        assert "interval_years" in entry, f"{pair}: missing interval_years"
+        if entry["effect"] == "restriction":
+            assert entry["interval_years"] > 0, \
+                f"{pair}: a restriction must have interval_years > 0"
+        else:
+            assert entry["interval_years"] >= 0, \
+                f"{pair}: interval_years must not be negative"
+
+        assert "reason" in entry, f"{pair}: missing reason"
+
+
+def test_rotation_constraint_effect_counts():
+    """The curated classification is 34 restrictions and 14 benefits."""
+    rc = _load_yaml().get("rotation_constraints", [])
+    assert len(rc) == 48, f"expected 48 rotation constraints, got {len(rc)}"
+    counts = Counter(e["effect"] for e in rc)
+    assert counts["restriction"] == 34, counts
+    assert counts["benefit"] == 14, counts

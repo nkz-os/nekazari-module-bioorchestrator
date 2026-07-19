@@ -4371,211 +4371,253 @@ rotation_constraints:
   interval_years: 1
   reason: N fixation benefit for following cereal
   source_short: FAO rotation guidelines
+  effect: benefit
 - crop_a: lentil
   crop_b: wheat
   interval_years: 1
   reason: N fixation benefit for following cereal
   source_short: FAO rotation guidelines
+  effect: benefit
 - crop_a: pea
   crop_b: wheat
   interval_years: 1
   reason: N fixation benefit for following cereal
   source_short: FAO rotation guidelines
+  effect: benefit
 - crop_a: bean
   crop_b: maize
   interval_years: 1
   reason: N fixation benefit for following cereal
   source_short: FAO rotation guidelines
+  effect: benefit
 - crop_a: vetch
   crop_b: wheat
   interval_years: 1
   reason: N fixation benefit for following cereal
   source_short: FAO rotation guidelines
+  effect: benefit
 - crop_a: grass_pea
   crop_b: wheat
   interval_years: 1
   reason: N fixation benefit for following cereal
   source_short: FAO rotation guidelines
+  effect: benefit
 - crop_a: alfalfa
   crop_b: maize
   interval_years: 1
   reason: Deep N fixation, soil structure improvement
   source_short: FAO rotation guidelines
+  effect: benefit
 - crop_a: soybean
   crop_b: maize
   interval_years: 1
   reason: N fixation benefit for following cereal
   source_short: FAO rotation guidelines
+  effect: benefit
 - crop_a: wheat
   crop_b: chickpea
   interval_years: 1
   reason: Cereal residue benefits legume establishment
   source_short: FAO rotation guidelines
+  effect: benefit
 - crop_a: wheat
   crop_b: lentil
   interval_years: 1
   reason: Cereal residue benefits legume establishment
   source_short: FAO rotation guidelines
+  effect: benefit
 - crop_a: wheat
   crop_b: pea
   interval_years: 1
   reason: Cereal residue benefits legume establishment
   source_short: FAO rotation guidelines
+  effect: benefit
 - crop_a: maize
   crop_b: bean
   interval_years: 1
   reason: Cereal residue benefits legume establishment
   source_short: FAO rotation guidelines
+  effect: benefit
 - crop_a: maize
   crop_b: soybean
   interval_years: 1
   reason: Standard US Corn Belt rotation
   source_short: FAO rotation guidelines
+  effect: benefit
 - crop_a: rapeseed
   crop_b: rapeseed
   interval_years: 3
   reason: Clubroot, sclerotinia pressure
   source_short: FAO/ICARDA
+  effect: restriction
 - crop_a: rapeseed
   crop_b: broccoli
   interval_years: 3
   reason: Shared brassica pathogens
   source_short: FAO
+  effect: restriction
 - crop_a: broccoli
   crop_b: rapeseed
   interval_years: 3
   reason: Shared brassica pathogens
   source_short: FAO
+  effect: restriction
 - crop_a: broccoli
   crop_b: broccoli
   interval_years: 2
   reason: Clubroot and nematode buildup
   source_short: FAO
+  effect: restriction
 - crop_a: potato
   crop_b: potato
   interval_years: 3
   reason: Late blight, cyst nematode, verticillium
   source_short: CIP/FAO
+  effect: restriction
 - crop_a: potato
   crop_b: tomato
   interval_years: 3
   reason: Shared Solanaceae pathogens
   source_short: FAO
+  effect: restriction
 - crop_a: tomato
   crop_b: potato
   interval_years: 3
   reason: Shared Solanaceae pathogens
   source_short: FAO
+  effect: restriction
 - crop_a: tomato
   crop_b: tomato
   interval_years: 2
   reason: Nematode and fusarium buildup
   source_short: FAO
+  effect: restriction
 - crop_a: sunflower
   crop_b: sunflower
   interval_years: 3
   reason: Sclerotinia, phoma, orobanche
   source_short: FAO
+  effect: restriction
 - crop_a: sunflower
   crop_b: rapeseed
   interval_years: 2
   reason: Shared sclerotinia risk
   source_short: FAO
+  effect: restriction
 - crop_a: sugar_beet
   crop_b: sugar_beet
   interval_years: 3
   reason: Cyst nematode (Heterodera schachtii)
   source_short: FAO
+  effect: restriction
 - crop_a: flax
   crop_b: flax
   interval_years: 5
   reason: Fusarium wilt and pasmo buildup
   source_short: FAO
+  effect: restriction
 - crop_a: rice
   crop_b: rice
   interval_years: 1
   reason: Continuous rice is common in paddies
   source_short: IRRI/FAO
+  effect: restriction
 - crop_a: apple
   crop_b: apple
   interval_years: 15
   reason: Replant disease complex
   source_short: FAO
+  effect: restriction
 - crop_a: pear
   crop_b: pear
   interval_years: 15
   reason: Replant disease complex
   source_short: FAO
+  effect: restriction
 - crop_a: peach
   crop_b: peach
   interval_years: 10
   reason: Replant disease, nematodes
   source_short: FAO
+  effect: restriction
 - crop_a: apricot
   crop_b: apricot
   interval_years: 10
   reason: Replant disease
   source_short: FAO
+  effect: restriction
 - crop_a: plum
   crop_b: plum
   interval_years: 10
   reason: Replant disease
   source_short: FAO
+  effect: restriction
 - crop_a: cherry
   crop_b: cherry
   interval_years: 10
   reason: Replant disease
   source_short: FAO
+  effect: restriction
 - crop_a: almond
   crop_b: almond
   interval_years: 12
   reason: Replant disease, nematodes
   source_short: FAO
+  effect: restriction
 - crop_a: pistachio
   crop_b: pistachio
   interval_years: 12
   reason: Verticillium wilt, nematodes
   source_short: FAO
+  effect: restriction
 - crop_a: olive
   crop_b: olive
   interval_years: 15
   reason: Replant disease, verticillium
   source_short: FAO
+  effect: restriction
 - crop_a: grapevine
   crop_b: grapevine
   interval_years: 15
   reason: Replant disease, phylloxera
   source_short: OIV/FAO
+  effect: restriction
 - crop_a: onion
   crop_b: onion
   interval_years: 3
   reason: White rot (Sclerotium cepivorum)
   source_short: FAO
+  effect: restriction
 - crop_a: garlic
   crop_b: garlic
   interval_years: 3
   reason: White rot, nematodes
   source_short: FAO
+  effect: restriction
 - crop_a: leek
   crop_b: leek
   interval_years: 3
   reason: White rot, rust
   source_short: FAO
+  effect: restriction
 - crop_a: onion
   crop_b: garlic
   interval_years: 3
   reason: Shared Allium pathogens
   source_short: FAO
+  effect: restriction
 - crop_a: garlic
   crop_b: onion
   interval_years: 3
   reason: Shared Allium pathogens
   source_short: FAO
+  effect: restriction
 - crop_a: asparagus
   crop_b: asparagus
   interval_years: 8
   reason: Replant disease, fusarium crown rot
   source_short: FAO
+  effect: restriction
 # Rescued 2026-07-19: these six existed only in the production graph, never in
 # this file. Without them a rebuild would silently drop six rotation rules.
 - crop_a: wheat
@@ -4583,31 +4625,37 @@ rotation_constraints:
   interval_years: 2
   reason: "Common root pathogens (Gaeumannomyces graminis — take-all)"
   source_short: "FAO Crop Rotation Guidelines"
+  effect: restriction
 - crop_a: wheat
   crop_b: sunflower
   interval_years: 3
   reason: "Shared soil-borne pathogens (Sclerotinia sclerotiorum)"
   source_short: "FAO Crop Rotation Guidelines"
+  effect: restriction
 - crop_a: wheat
   crop_b: legume
   interval_years: 0
   reason: "Beneficial: wheat consumes N, legume fixes N — complementary"
   source_short: "FAO Crop Rotation Guidelines"
+  effect: benefit
 - crop_a: wheat
   crop_b: maize
   interval_years: 1
   reason: "Same pest family (Fusarium spp.)"
   source_short: "JRC MARS"
+  effect: restriction
 - crop_a: wheat
   crop_b: barley
   interval_years: 1
   reason: "Shared take-all disease (Gaeumannomyces graminis)"
   source_short: "JRC MARS"
+  effect: restriction
 - crop_a: maize
   crop_b: maize
   interval_years: 1
   reason: "European corn borer pressure"
   source_short: "JRC MARS"
+  effect: restriction
 species:
 - name: wheat
   scientific_name: Triticum aestivum
