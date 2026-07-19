@@ -28,6 +28,7 @@ EPPO_TO_SPECIES: dict[str, str] = {
     "TRZDU": "Triticum durum",
     "ZEAMX": "Zea mays",
     "BRSNN": "Brassica napus",
+    "BRSNW": "Brassica napus",  # winter rapeseed — cycle travels in cropCycle
     "AVESA": "Avena sativa",
     "SECCE": "Secale cereale",
     "TTLSS": "Triticosecale",
@@ -86,11 +87,35 @@ class BslIngester(BaseIngester):
             ),
         }
 
+    @staticmethod
+    def _crop_cycle(crop_scientific: str | None) -> str | None:
+        """Growing cycle from the German crop label, or None if it carries none.
+
+        BSL names the cycle in `crop_scientific` (Winterweichweizen, Sommergerste,
+        Winterraps…) — 9,980 of 15,884 trials. `cropScientific` itself is
+        overwritten below with the Latin binomial because the recommender matches
+        crops on it, so without this the cycle would be lost at ingest. Losing it
+        merges winter and spring populations of the same species into one mean,
+        which is agronomically meaningless and breaks season-aware rotation
+        planning. Crops with no seasonal prefix (maize, soy, triticale) get None —
+        we do not guess.
+        """
+        if not crop_scientific:
+            return None
+        label = crop_scientific.strip().lower()
+        if label.startswith("winter"):
+            return "winter"
+        if label.startswith("sommer"):
+            return "spring"
+        return None
+
     def _convert_trial(self, node: dict) -> dict:
         eppo = BaseIngester._normalize_eppo(node.get("crop_eppo"))
+        cycle = self._crop_cycle(node.get("crop_scientific"))
         return {
             "cropEppo": eppo,
             "cropScientific": EPPO_TO_SPECIES.get(eppo) or node.get("crop_scientific"),
+            "cropCycle": cycle,
             "variety": node.get("variety"),
             "year": node.get("year"),
             "yieldNoteS1": node.get("yield_note_s1"),
@@ -109,9 +134,12 @@ class BslIngester(BaseIngester):
             "confidence": node.get("confidence", self._registry_entry.get("confidence_default", "medium")),
             "source_id": self.SOURCE_ID,
             "trial_id": node.get("@id", ""),
+            # The cycle is part of the trial's identity: winter and spring barley
+            # of the same variety, site and year are different trials.
             "mergeKey": (
                 f"{self.SOURCE_ID.lower()}|{eppo or 'unknown'}|"
                 f"{str(node.get('variety', '')).strip().lower()}|"
+                f"{cycle or 'nocycle'}|"
                 f"{str(node.get('trial_location', 'unknown')).strip().lower()}|"
                 f"{str(node.get('year', 0))}"
             ),
