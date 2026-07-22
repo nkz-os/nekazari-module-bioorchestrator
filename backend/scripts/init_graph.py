@@ -174,9 +174,12 @@ def main() -> None:
     )
     parser.add_argument(
         "--neo4j-password",
-        default=os.getenv("NEO4J_PASSWORD", "bioorchestrator"),
+        default=os.getenv("NEO4J_PASSWORD", ""),
     )
     args = parser.parse_args()
+
+    if not args.neo4j_password:
+        sys.exit("[init_graph] Falta NEO4J_PASSWORD (o --neo4j-password).")
 
     driver = connect(args.neo4j_uri, args.neo4j_user, args.neo4j_password)
 

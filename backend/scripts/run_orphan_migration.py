@@ -1,6 +1,8 @@
 """Run orphan PhenologyParams migration on Neo4j."""
-from neo4j import GraphDatabase
+import os
 import sys
+
+from neo4j import GraphDatabase
 
 CYPHER = """
 MATCH (p:PhenologyParams)
@@ -45,7 +47,11 @@ RETURN count(p) AS linked_count, collect(DISTINCT species_name) AS species_linke
 """
 
 uri = sys.argv[1] if len(sys.argv) > 1 else "bolt://localhost:7687"
-driver = GraphDatabase.driver(uri, auth=("neo4j", "bioorchestrator"))
+user = os.getenv("NEO4J_USER", "neo4j")
+password = os.getenv("NEO4J_PASSWORD", "")
+if not password:
+    raise SystemExit("Falta NEO4J_PASSWORD. Expórtela antes de ejecutar.")
+driver = GraphDatabase.driver(uri, auth=(user, password))
 with driver.session() as session:
     r = session.run(CYPHER)
     result = r.single()

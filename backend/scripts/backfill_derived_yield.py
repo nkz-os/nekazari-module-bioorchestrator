@@ -42,7 +42,7 @@ MIN_DIRECT_N = 20
 def connect() -> "GraphDatabase.driver":
     uri = os.getenv("NEO4J_URI", "bolt://localhost:7687")
     user = os.getenv("NEO4J_USER", "neo4j")
-    pwd = os.getenv("NEO4J_PASSWORD", "bioorchestrator")
+    pwd = os.getenv("NEO4J_PASSWORD", "")
     driver = GraphDatabase.driver(uri, auth=(user, pwd))
     driver.verify_connectivity()
     print(f"[backfill] connected to {uri}")

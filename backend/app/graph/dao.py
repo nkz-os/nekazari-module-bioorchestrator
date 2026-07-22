@@ -798,7 +798,8 @@ class GraphDAO:
                 MATCH (rc:RotationConstraint)
                 WHERE rc.cropA = $crop
                 RETURN rc.cropB AS crop_b, rc.intervalYears AS interval_years,
-                       rc.reason AS reason, rc.sourceShort AS source_short
+                       rc.reason AS reason, rc.sourceShort AS source_short,
+                       coalesce(rc.effect, 'restriction') AS effect
                 """,
                 crop=crop,
             )
@@ -811,6 +812,7 @@ class GraphDAO:
             result = await session.run(
                 """
                 MATCH (rc:RotationConstraint {cropA: $crop})
+                WHERE coalesce(rc.effect, 'restriction') = 'restriction'
                 RETURN rc.cropB AS restricted, rc.intervalYears AS years, rc.reason AS reason
                 """,
                 crop=previous_crop,
@@ -892,11 +894,12 @@ class GraphDAO:
             rc = await session.run(
                 "MATCH (r:RotationConstraint) "
                 "WHERE toLower(r.cropA) = toLower($baseline) AND toLower(r.cropB) = toLower($scenario) "
-                "RETURN r.intervalYears AS years, r.reason AS reason",
+                "RETURN r.intervalYears AS years, r.reason AS reason, "
+                "coalesce(r.effect, 'restriction') AS effect",
                 baseline=baseline_crop, scenario=scenario_crop,
             )
             row = await rc.single()
-            if row and row["years"] and row["years"] > 0:
+            if row and row["effect"] == "restriction" and row["years"] and row["years"] > 0:
                 result["rotation_ok"] = False
                 result["rotation_issue"] = (
                     f"{row['reason']}. Minimum interval: {row['years']} years."
@@ -4195,9 +4198,13 @@ class GraphDAO:
                 stage_eto = total_eto * stage_fraction
                 etc_stage = kc * stage_eto
 
-                # Estimate ETa: assume 80% effective rainfall + AWC contribution
-                # In absence of per-stage precipitation data, use conservative estimate
-                etc_with_stress = etc_stage * 0.85  # 15% stress assumption for past stages
+                # PLACEHOLDER, NOT DATA: ETa/ETc is pinned at 0.85, so the whole
+                # projection reduces to Yp × Π(1 - 0.15·Ky) regardless of the
+                # season's weather. The real per-stage water balance lives in
+                # crop-health (soil_water_balance); wiring it in is pending a
+                # methodology decision. Declared in data_quality.eta_etc_source.
+                ETA_ETC_FIXED_ASSUMPTION = 0.85
+                etc_with_stress = etc_stage * ETA_ETC_FIXED_ASSUMPTION
 
                 if reached_current:
                     # For completed stages, calculate actual stress
@@ -4241,8 +4248,14 @@ class GraphDAO:
             "yield_loss_pct": round((1 - cumulative_stress_factor) * 100, 1),
             "per_stage": stage_results,
             "methodology": "FAO-33 (Doorenbos & Kassam 1979): Y = Yp × Π(1 - Ky × (1 - ETa/ETc))",
+            "warning": (
+                "ETa/ETc is a fixed 0.85 assumption, not observed data: this "
+                "projection does not vary with the season's actual weather. "
+                "Treat as a structural placeholder, not a prediction."
+            ),
             "data_quality": {
                 "eto_source": "timeseries-reader" if total_eto else "default",
+                "eta_etc_source": "fixed_assumption_0.85",
                 "ky_source": "phenology_params",
                 "initial_yield_source": "variety_trials" if initial_yield_kg_ha else "none",
             },

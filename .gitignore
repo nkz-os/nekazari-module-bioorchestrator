@@ -16,6 +16,8 @@ __pycache__/
 data/raw/
 data/processed/
 data/reports/
+data/jsonld/
+backend/data/update_geo.py
 # data/phenology_sources.yaml is curated reference data — tracked
 
 # ── Tests ──

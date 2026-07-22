@@ -1,9 +1,13 @@
 # BioOrchestrator — Data Sources & Knowledge Graph Reference
 
-> **Last updated:** 2026-06-17  
-> **Neo4j VarietyTrials:** 33,378 | **ManagementTrials:** 181 | **TrialSites:** 206 | **Species:** 27  
-> **Unique varieties:** 5,854 | **Climate coverage:** BSk, Csa, Cfb, BSh, Dfb, Dfa  
-> **Data sources:** 12 | **Relationships:** 43,318
+> **Last updated:** 2026-07-18 (counts regenerated from the production graph)  
+> **VarietyTrials:** 35,357 | **ManagementTrials:** 437 | **TrialSites:** 232 | **Species:** 45  
+> **Unique varieties:** 5,409 | **Data sources:** 18 | **Relationships:** 50,610  
+> **Climate coverage (sites):** Cfb 103, BSk 42, Csa 28, Dfb 23, Dfa 7, Cwb 3, BSh 2,
+> Csb 1, Cfa 1, unclassified 22
+>
+> ⚠️ These counts age with every ingest. Regenerate them rather than trusting them:
+> `MATCH (n) UNWIND labels(n) AS l RETURN l, count(*) ORDER BY count(*) DESC`
 >
 > 🔄 **Data normalization**: All ingested data now passes through
 > `normalize_nodes()` in `BaseIngester`. Traits are translated to AGROVOC,
@@ -17,18 +21,43 @@
 
 | Label | Count | Description |
 |-------|-------|-------------|
-| `VarietyTrial` | 9,738 | Crop variety trial observation (yield, quality, disease scores) |
-| `TrialSite` | 107 | Geolocated experimental station with climate + soil metadata |
-| `ArticleSource` | 405 | Bibliographic reference (journal issue, report, PDF) |
-| `ManagementTrial` | 224 | Agronomic management experiment (fertilizer, irrigation, tillage) |
+| `VarietyTrial` | 35,357 | Crop variety trial observation (yield, quality, disease scores) |
+| `CropNutrientProfile` | 577 | NPK uptake per phenological stage |
+| `ArticleSource` | 560 | Bibliographic reference (journal issue, report, PDF) |
+| `ManagementTrial` | 437 | Agronomic management experiment (fertilizer, irrigation, tillage) |
+| `TrialSite` | 232 | Geolocated experimental station with climate + soil metadata |
+| `PhenologyParams` | 197 | Kc, stage duration (d1/d2), reference MDS, with bibliographic provenance |
+| `PhenologyStage` | 189 | Phenological stage per species |
+| `RotationConstraint` | 48 | Pairwise crop rotation compatibility rules |
+| `AgriCrop` | 45 | Crop catalog node (bridge to the NGSI-LD context broker) |
+| `CropHeatTolerance` | 45 | Heat / frost damage thresholds per species |
+| `CropSoilSuitability` | 45 | pH range, textures, drainage, depth requirements |
+| `Species` | 45 | Plant species node (EPPO code, AGROVOC URI) |
 | `HarvestData` | 3 | Regional harvest summary statistics |
-| `Species` | ~200 | Plant species node (EPPO code, AGROVOC URI) |
-| `PhenologyStage` / `PhenologyParams` | ~400 | Kc coefficients, GDD thresholds, rooting depth per stage |
-| `CropHeatTolerance` | ~150 | Tmin, Tmax, Topt, lethal thresholds per species |
-| `CropNutrientProfile` | ~200 | NPK uptake per phenological stage |
-| `CropSoilSuitability` | ~150 | pH range, textures, drainage, depth requirements |
-| `RotationConstraint` | ~50 | Pairwise crop rotation compatibility rules |
-| `AgriCrop` / `AgriCropVariety` | ~500 | Orion-LD backed crop catalog (CPVO + EcoCrop) |
+| `Rootstock` | 3 | Rootstock (fruit trees) |
+
+Platform metadata labels (`Capability` 28, `AgriKnowledge` 8, `Module` 2, `ActionRule` 2,
+`Entitlement` 0) are **not agronomic** and can be ignored for data analysis.
+
+### Known data-quality caveats
+
+Documented so they are not mistaken for signal. Full detail in the external review
+package README:
+
+- Only **20,723 of 35,357** trials (58.6 %) carry `yieldKgHa`; **6,090** of those are
+  *derived* from BSL relative notes via an empirical factor, not measured — treat as a
+  separate population (`yieldDerivationMethod = bsl_note_empirical_factor`).
+- `yieldMetric` (grain vs fruit vs dry matter) is set on **0.1 %** of nodes: yield scales
+  are **not comparable across crops**. Never aggregate across species without segmenting.
+- `irrigationRegime` is present on only **28.1 %**.
+- **182 `mergeKey` values are shared** by distinct observations — there is **no uniqueness
+  constraint** on `VarietyTrial.mergeKey`. 96 groups are EU-TRIAL-REPORTS site trials
+  whose location never reached the key; 85 are LfL Bayern **aggregate columns**
+  (site means / growing regions), not single-site trials.
+- A `TrialSite` literally named `unknown`, with no climate or coordinates, is referenced
+  by **84 trials**.
+- Only **108 of 232** sites carry the full agro-climatic vector (rainfall, ET0, frost
+  days, elevation) used by the site-similarity engine; the rest fall back to Köppen.
 
 ### Relationship types
 
@@ -50,20 +79,29 @@
 
 ### Active sources (7 climates covered)
 
-| # | Source | Country | Crops | Period | Trials (agg.) | Sites | Köppen |
-|---|--------|---------|-------|--------|--------|-------|--------|
-| 1 | **BSL Bundessortenamt** | Germany | Maize, wheat, barley, rapeseed, rye, oats, triticale, potato | 2019–2026 | ~15,500 | 6+ (multiple per climate) | Cfb, Dfb |
-| 2 | **GENVCE** | Spain | Wheat, barley, oats, triticale, rye, rapeseed, sunflower, legumes | 2005–2025 | ~2,711 | 12 | Csa, BSk, Cfb, BSh |
-| 3 | **Navarra Agraria** (INTIA) | Spain | Wheat, barley, oats, triticale, pea, faba bean | 2004–2024 | ~97 | 40 | BSk, Cfb |
-| 4 | **NÉBIH / VSZT** | Hungary | Winter wheat, maize, rapeseed | 2014–2025 | ~838 | 33 | Dfa, Dfb, Cfb |
-| 5 | **INIAV / CerealTech** | Portugal | Soft wheat, durum wheat, barley | 2019–2025 | ~545 | 4 | Csb, Csa |
-| 6 | **ITACyL** | Spain | Wheat, barley, rapeseed | 2020–2025 | ~525 | 15 | Cfb, BSkg |
-| 7 | **LfL Bayern** | Germany | Winter/spring wheat, barley, oats, rye, triticale, rapeseed, maize, potato | 2025 | ~517 | 11 | Dfb, Cfb |
-| 8 | **CREA** | Italy | Durum wheat, barley | 2020–2025 | ~320 | 8 | Csa, Cfa |
-| 9 | **AHDB** | UK | Wheat, barley, oats, rapeseed | 2020–2025 | ~350 | 15 | Cfb |
-| 10 | **CTIFL** | France | Strawberry, tomato, peach, apricot, cherry, apple, pear | 2019–2025 | ~455 | 12 | Csa, Cfb |
-| 11 | **IFAPA** | Spain | Wheat, barley, sunflower, legumes | 2020–2025 | ~58 | 5 | Csa |
-| 12 | **FAO EcoCrop** | International | 2,500+ species (environmental envelopes) | Static | — | — | All |
+Trial counts below are **exact**, from the production graph on 2026-07-18
+(`MATCH (vt:VarietyTrial) RETURN vt.source_id, count(*)`).
+
+| # | Source (`source_id`) | Country | Crops | Trials |
+|---|--------|---------|-------|-------:|
+| 1 | **BSL Bundessortenamt** (`BSL`) | Germany | Maize, wheat, barley, rapeseed, rye, oats, triticale, potato | 18,422 |
+| 2 | **GENVCE** (`GENVCE`) | Spain | Wheat, barley, oats, triticale, rye, rapeseed, sunflower, legumes | 7,044 |
+| 3 | **Navarra Agraria / INTIA** (`NAVARRA-AGRARIA`) | Spain | Wheat, barley, oats, triticale, pea, faba bean | 4,834 |
+| 4 | **NÉBIH / VSZT** (`NEBIH`) | Hungary | Winter wheat, maize, rapeseed | 838 |
+| 5 | **EU trial reports** (`EU-TRIAL-REPORTS`) | EU | Cereals | 724 |
+| 6 | **LfL Bayern** (`LFL-BAYERN`) | Germany | Winter/spring wheat, barley, oats, rye, triticale, rapeseed, maize, potato | 694 |
+| 7 | **CREA** (`CREA`) | Italy | Durum wheat, barley | 659 |
+| 8 | **Legacy load** (`LEGACY`) | — | Mixed, pre-dates per-source traceability | 576 |
+| 9 | **ITACyL** (`ITACYL`) | Spain | Wheat, barley, rapeseed | 523 |
+| 10 | **INIAV / CerealTech** (`INIAV-LVR`) | Portugal | Soft wheat, durum wheat, barley | 306 |
+| 11 | **AHDB** (`AHDB`) | UK | Wheat, barley, oats, rapeseed | 247 |
+| 12 | **CTIFL** (`CTIFL`) | France | Strawberry, tomato, peach, apricot, cherry, apple, pear | 133 |
+| 13 | **INTIA experimental** (`INTIA-EXP`) | Spain | Cover crops, legumes | 118 |
+| 14 | **IFAPA** (`IFAPA` + `IFAPA_ALMOND`) | Spain | Wheat, barley, sunflower, legumes, almond | 135 |
+| 15 | **TAGEM** (`TAGEM_TR_2012`) | Turkey | Cereals | 57 |
+| 16 | **INRA Maroc** (`INRAMAROC`) | Morocco | Cereals | 42 |
+| 17 | **EVENA** (`EVENA`) | Spain | Cereals | 5 |
+| 18 | **FAO EcoCrop** | International | 2,500+ species (environmental envelopes) | reference only |
 
 ### Pipeline per source
 
@@ -107,7 +145,7 @@ into Neo4j via the `init_graph.py` n10s ingestion pipeline.
 | Connector | Source | What it provides | Entity types |
 |-----------|--------|------------------|-------------|
 | **EcoCrop** | FAO GAEZ (CSV) | Crop environmental requirements — 2,500+ species, climate + soil envelopes | `Crop`, `EdaphicProfile`, `ClimaticProfile` |
-| **CPVO Varieties** | cpvo.europa.eu (API) | EU registered plant varieties — 45K+ varieties across 300+ species | `AgriCropVariety`, `AgriCrop` |
+| **CPVO Varieties** ⚠️ **NOT OPERATIONAL** | cpvo.europa.eu (API) | Intended: EU registered plant varieties. **The endpoint returns 404** (verified 2026-07-19) and there are **0 `AgriCropVariety` nodes** in the graph. The connector also extracts only name, species, registration year and maintainer — **no growing cycle, no maturity class**: CPVO is a plant-variety-rights registry, not an agronomic one. | — |
 | **FiBL** | fibl.org (CSV) | Organic input products list — fertilizers, biopesticides | `OrganicInput` |
 | **DG SANTE** | ec.europa.eu (API) | EU Pesticides Database — approved/withdrawn active substances | `Pesticide`, `ApprovalStatus` |
 | **EU Pesticides** | ec.europa.eu | Pesticide MRLs, approval status, withdrawal dates | `Pesticide`, `Regulation` |
@@ -165,7 +203,7 @@ into Neo4j via the `init_graph.py` n10s ingestion pipeline.
 | `GET /soil-suitability` | pH, texture, drainage, depth reqs | CropSoilSuitability |
 | `GET /recommendations/next-crop` | Rotation successor recommendation | RotationConstraint |
 | `GET /recommendations/simulate` | What-if crop scenario simulation | RotationConstraint, SoilSuitability, NutrientProfile |
-| `GET /varieties` | Variety list for a species | AgriCropVariety (CPVO) |
+| `GET /varieties` | Variety list for a species | `AgriCropVariety` — **returns empty**: the label has 0 nodes (see CPVO above) |
 | `GET /pesticides` | Approved/withdrawn pesticides for crop | DG SANTE, EU Pesticides |
 | `GET /pollinators` | Pollinator presence near coordinates | GBIF Pollinators |
 | `GET /protected-area-check` | Natura 2000 overlap check | Natura 2000 |
@@ -255,4 +293,4 @@ All sources adhere to these standards:
 | Units | **UCUM** | `kg/ha`, `t/ha`, `mm`, `%` |
 | Variables | **ICASA** (AgMIP) | `YAMH` (yield), `IRRC` (irrigation) |
 | Ontology | **AGROVOC** (FAO) | `c_7951` (winter wheat) |
-| NGSI-LD refs | **ref<Type>** | `refTrialSite`, `refArticleSource` |
+| NGSI-LD refs | **`ref<Type>` — DEPRECATED** | `refTrialSite`, `refArticleSource` still exist in the JSON-LD ingest bundles, but the platform standard for **new** relationships is the FIWARE Smart Data Model naming (`hasAgriParcel`, `hasAgriCrop`, `hasDevice`) or a descriptive `verbNoun` (`locatedAt`, `belongsTo`). Do not add new `ref<Type>` attributes. |

@@ -26,13 +26,19 @@ async def test_process_one_noop_on_empty_queue():
 @pytest.mark.asyncio
 async def test_run_loop_logs_swallowed_exception(caplog):
     q = BackgroundQueue()
+    failed = asyncio.Event()
+
+    # A third-party import elsewhere in the suite disables pre-existing loggers as a side effect.
+    logging.getLogger("app.workers.queue").disabled = False
 
     async def boom():
+        failed.set()
         raise RuntimeError("kaboom")
 
     q.process_one = boom
     with caplog.at_level(logging.WARNING, logger="app.workers.queue"):
         task = asyncio.create_task(q.run_loop())
-        await asyncio.sleep(0.05)
+        # Wait for the handler to run instead of racing a fixed sleep.
+        await asyncio.wait_for(failed.wait(), timeout=5)
         task.cancel()
     assert any("background task failed" in r.message for r in caplog.records)

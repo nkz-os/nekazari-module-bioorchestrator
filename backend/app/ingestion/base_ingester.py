@@ -44,7 +44,8 @@ logger = logging.getLogger(__name__)
 
 NEO4J_URI = os.getenv("NEO4J_URI", "bolt://bioorchestrator-neo4j:7687")
 NEO4J_USER = os.getenv("NEO4J_USER", "neo4j")
-NEO4J_PASSWORD = os.getenv("NEO4J_PASSWORD", "bioorchestrator")
+# No default: this is a public repo. _get_driver() raises when it is unset.
+NEO4J_PASSWORD = os.getenv("NEO4J_PASSWORD", "")
 
 
 class BaseIngester(ABC):
@@ -461,6 +462,7 @@ class BaseIngester(ABC):
                     SET vt.source_id = $source,
                         vt.cropEppo = $eppo,
                         vt.cropScientific = $sci_name,
+                        vt.cropCycle = $crop_cycle,
                         vt.variety = $variety,
                         vt.year = $year,
                         vt.yieldKgHa = $yield_kg,
@@ -483,6 +485,7 @@ class BaseIngester(ABC):
                         vt.confidence = $confidence,
                         vt.mergeKeyNormalized = $merge_key_norm,
                         vt.cropScientific = $sci_name,
+                        vt.cropCycle = $crop_cycle,
                         vt.variety = $variety,
                         vt.varietyNormalized = $variety_norm,
                         vt.year = $year,
@@ -513,6 +516,7 @@ class BaseIngester(ABC):
                     source=node.get("source_id", self.SOURCE_ID),
                     eppo=eppo_raw.replace("eppo:", ""),
                     sci_name=node.get("cropScientific"),
+                    crop_cycle=node.get("cropCycle"),
                     variety=node.get("variety"),
                     variety_norm=node.get("varietyNormalized"),
                     year=node.get("year"),
@@ -791,7 +795,7 @@ class BaseIngester(ABC):
 
     @staticmethod
     def _normalize_eppo(eppo_code: str | None) -> str | None:
-        """Normalize EPPO code: strip 'eppo:' prefix, uppercase.
+        """Normalize EPPO code: strip 'eppo:' prefix, uppercase, unify split codes.
 
         Args:
             eppo_code: Raw EPPO code (may include 'eppo:' prefix).
@@ -802,4 +806,18 @@ class BaseIngester(ABC):
         if not eppo_code:
             return None
         code = eppo_code.replace("eppo:", "").replace("EPPO:", "").strip().upper()
-        return code if len(code) == 5 else None
+        if len(code) != 5:
+            return None
+
+        # Only unify codes that denote the SAME crop AND the same growing cycle.
+        #
+        # DO NOT add TRZAW→TRZAX or BRSNW→BRSNN here. In the BSL source those
+        # codes carry the cycle: TRZAW is Winterspelz (winter spelt), BRSNW is
+        # Winterraps (winter rapeseed), while TRZAX is Sommerweichweizen (spring
+        # wheat). Collapsing them destroys the winter/spring distinction that
+        # season-aware rotation planning depends on — and would mix spelt into
+        # wheat. The cycle is captured separately as `cropCycle`.
+        UNIFICATION_MAP = {
+            "ZEAMA": "ZEAMX",  # both plain Zea mays, cycle-neutral
+        }
+        return UNIFICATION_MAP.get(code, code)
