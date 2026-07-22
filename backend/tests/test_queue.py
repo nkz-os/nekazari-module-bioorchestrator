@@ -28,6 +28,15 @@ async def test_run_loop_logs_swallowed_exception(caplog):
     q = BackgroundQueue()
     failed = asyncio.Event()
 
+    # Importing `pcse` (elsewhere in the suite, e.g. wofost_service tests)
+    # runs logging.config.dictConfig(disable_existing_loggers=True), which
+    # sets .disabled = True on every logger that already existed — including
+    # this one, if it was already created by an earlier test. That makes
+    # logger.warning() a silent no-op regardless of caplog's level/handlers.
+    # Force it back on for this test; unrelated to the sleep-vs-event race
+    # this test used to have.
+    logging.getLogger("app.workers.queue").disabled = False
+
     async def boom():
         failed.set()
         raise RuntimeError("kaboom")
