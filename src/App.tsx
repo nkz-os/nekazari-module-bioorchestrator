@@ -1,13 +1,15 @@
-import React, { useState, lazy, Suspense, Component, ErrorInfo } from 'react';
+import React, { useState, useEffect, lazy, Suspense, Component, ErrorInfo } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useTranslation } from '@nekazari/sdk';
 import { Card, Stack, Spinner, Button } from '@nekazari/ui-kit';
 import { ArrowLeft, FlaskConical } from 'lucide-react';
-import { ParcelProvider } from './context/ParcelContext';
+import { ParcelProvider, useParcelContext } from './context/ParcelContext';
 import { PlanningScenarioProvider } from './context/PlanningScenarioContext';
 import GlobalParcelSelector from './components/GlobalParcelSelector';
 import ExplorationModeBanner from './components/ExplorationModeBanner';
 import Dashboard from './components/Dashboard';
 import DisclaimerFooter from './components/DisclaimerFooter';
+import { resolveToolFromSearchParams } from './utils/navigation';
 import './i18n';
 
 const CropPlanner = lazy(() => import('./components/CropPlanner'));
@@ -121,7 +123,19 @@ function ToolView({ toolId, onBack, onNavigateTool }: { toolId: string; onBack: 
 
 function AppInner() {
   const { t } = useTranslation('bioorchestrator');
-  const [view, setView] = useState<ViewState>({ mode: 'dashboard' });
+  const [searchParams] = useSearchParams();
+  const { setSelectedParcel } = useParcelContext();
+  const [view, setView] = useState<ViewState>(() => {
+    const tool = resolveToolFromSearchParams(searchParams);
+    return tool ? { mode: 'tool', toolId: tool } : { mode: 'dashboard' };
+  });
+
+  useEffect(() => {
+    const parcelId = searchParams.get('parcel');
+    if (parcelId) setSelectedParcel(parcelId);
+    // Only meant to apply once, from the initial deep-link URL.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleSelectTool = (toolId: string) => {
     setView({ mode: 'tool', toolId });

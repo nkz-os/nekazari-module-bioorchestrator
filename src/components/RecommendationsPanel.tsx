@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Stack, Card, Badge, Button, DetailGrid, DetailItem, Skeleton } from '@nekazari/ui-kit';
 import { SlotShell } from '@nekazari/viewer-kit';
 import { useTranslation } from '@nekazari/sdk';
+import { buildBioorchestratorToolUrl } from '../utils/navigation';
 import {
   RefreshCw, Globe, Thermometer, MapPin, Sprout, Bug, Beaker,
   AlertTriangle, CheckCircle, XCircle, ChevronDown, ChevronRight, Info,
@@ -21,6 +23,7 @@ const PESTICIDE_INTENT: Record<string, 'positive' | 'negative' | 'warning'> = { 
 const RecommendationsPanel: React.FC<Props> = ({ parcelId, parcelName, cropType, lat, lon }) => {
   const { t } = useTranslation('bioorchestrator');
   const api = useBioApi();
+  const navigate = useNavigate();
   const [nextCrops, setNextCrops] = useState<RecCrop[]>([]);
   const [soil, setSoil] = useState<CropSoilReq | null>(null);
   const [realSoil, setRealSoil] = useState<any>(null);
@@ -126,7 +129,7 @@ const RecommendationsPanel: React.FC<Props> = ({ parcelId, parcelName, cropType,
         <ContextEmptyState
           message={t('panel.noCrop')}
           actionLabel={t('panel.assignCrop')}
-          onAction={() => { window.location.href = '/modules/bioorchestrator'; }}
+          onAction={() => navigate(buildBioorchestratorToolUrl(parcelId, 'varietyFinder'))}
           variant="warning"
         />
       </SlotShell>

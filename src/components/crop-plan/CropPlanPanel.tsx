@@ -1,5 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useTranslation } from '@nekazari/sdk';
+import { buildBioorchestratorToolUrl } from '../../utils/navigation';
 import { SlotShell } from '@nekazari/viewer-kit';
 import { Card, Skeleton, Button } from '@nekazari/ui-kit';
 import { CalendarRange, AlertTriangle } from 'lucide-react';
@@ -61,6 +63,7 @@ function Section({
 /** SP3 — Plan & Acciones: composes SP1 plan, SP2 actions and P1 reliability badges
  *  for the selected parcel. The recommended action is the hero; badges are secondary. */
 const CropPlanPanel: React.FC<Props> = ({ parcelId }) => {
+  const navigate = useNavigate();
   const { t } = useTranslation('bioorchestrator');
   const bio = useBioApi();
   const crop = useCropApi();
@@ -107,9 +110,8 @@ const CropPlanPanel: React.FC<Props> = ({ parcelId }) => {
   }, [plan, bio]);
 
   const handleCreatePlan = useCallback(() => {
-    // Navigate to the module page with rotation planner tool
-    window.location.href = '/modules/bioorchestrator';
-  }, []);
+    navigate(buildBioorchestratorToolUrl(parcelId, 'cropPlanner'));
+  }, [navigate, parcelId]);
 
   if (!parcelId) return null;
 
