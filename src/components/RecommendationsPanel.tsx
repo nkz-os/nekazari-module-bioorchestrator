@@ -5,11 +5,12 @@ import { SlotShell } from '@nekazari/viewer-kit';
 import { useTranslation } from '@nekazari/sdk';
 import { buildBioorchestratorToolUrl } from '../utils/navigation';
 import { resolveParcelContext, type ParcelEntityData } from '../utils/entityData';
+import { resolveCropTypeFromContext } from '../utils/cropContext';
 import {
   RefreshCw, Globe, Thermometer, MapPin, Sprout, Bug, Beaker,
   AlertTriangle, CheckCircle, XCircle, ChevronDown, ChevronRight, Info,
 } from 'lucide-react';
-import { useBioApi, useCropApi } from '../services/api';
+import { useBioApi, useCropApi, getCropContext } from '../services/api';
 import type { VegetationData, SoilData as ParcelSoilData, SoilHorizon } from '../services/api';
 import ContextEmptyState from './shared/ContextEmptyState';
 
@@ -22,10 +23,12 @@ interface Props { entityData?: ParcelEntityData; }
 const PESTICIDE_INTENT: Record<string, 'positive' | 'negative' | 'warning'> = { approved: 'positive', not_approved: 'negative', withdrawn: 'warning' };
 
 const RecommendationsPanel: React.FC<Props> = ({ entityData }) => {
-  const { parcelId, parcelName, cropType, lat, lon } = resolveParcelContext(entityData);
+  const { parcelId, parcelName, lat, lon } = resolveParcelContext(entityData);
   const { t } = useTranslation('bioorchestrator');
   const api = useBioApi();
   const navigate = useNavigate();
+  const [cropType, setCropType] = useState<string | null>(null);
+  const [cropContextLoading, setCropContextLoading] = useState(true);
   const [nextCrops, setNextCrops] = useState<RecCrop[]>([]);
   const [soil, setSoil] = useState<CropSoilReq | null>(null);
   const [realSoil, setRealSoil] = useState<any>(null);
@@ -47,6 +50,21 @@ const RecommendationsPanel: React.FC<Props> = ({ entityData }) => {
 
   const [parcelSoil, setParcelSoil] = useState<ParcelSoilData | null>(null);
   const [soilLoading, setSoilLoading] = useState(false);
+
+  // Resolve the real crop commitment (AgriParcel.hasAgriCrop) via
+  // BioOrchestrator's own crop-context endpoint. NOT entityData.cropType —
+  // that's the host's legacy free-text field, never updated by assign-crop,
+  // so it would keep showing "no crop" after a real, successful assignment.
+  useEffect(() => {
+    if (!parcelId) { setCropType(null); setCropContextLoading(false); return; }
+    let cancelled = false;
+    setCropContextLoading(true);
+    getCropContext(parcelId)
+      .then((ctx) => { if (!cancelled) setCropType(resolveCropTypeFromContext(ctx)); })
+      .catch(() => { if (!cancelled) setCropType(null); })
+      .finally(() => { if (!cancelled) setCropContextLoading(false); });
+    return () => { cancelled = true; };
+  }, [parcelId]);
 
   useEffect(() => {
     if (!parcelId) return;
@@ -123,6 +141,14 @@ const RecommendationsPanel: React.FC<Props> = ({ entityData }) => {
     })();
     return () => { cancelled = true; };
   }, [cropType, lat, lon]);
+
+  if (cropContextLoading) {
+    return (
+      <SlotShell moduleId="bioorchestrator" title={t('panel.title')} icon={<RefreshCw className="w-4 h-4" />} accent={bioAccent}>
+        <Stack gap="stack"><Skeleton variant="rect" height="60px" /></Stack>
+      </SlotShell>
+    );
+  }
 
   // No-crop state
   if (!cropType) {
