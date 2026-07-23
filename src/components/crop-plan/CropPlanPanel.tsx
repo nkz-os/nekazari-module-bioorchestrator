@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from '@nekazari/sdk';
 import { buildBioorchestratorToolUrl } from '../../utils/navigation';
+import { resolveParcelContext, type ParcelEntityData } from '../../utils/entityData';
 import { SlotShell } from '@nekazari/viewer-kit';
 import { Card, Skeleton, Button } from '@nekazari/ui-kit';
 import { CalendarRange, AlertTriangle } from 'lucide-react';
@@ -19,8 +20,7 @@ const toUrn = (id: string) => (id.startsWith('urn:') ? id : `${URN_PREFIX}${id}`
 const toShort = (id: string) => id.replace(URN_PREFIX, '');
 
 interface Props {
-  parcelId?: string;
-  parcelName?: string;
+  entityData?: ParcelEntityData;
 }
 
 /** Section wrapper: each loads best-effort; one failure never tears down the panel. */
@@ -62,7 +62,8 @@ function Section({
 
 /** SP3 — Plan & Acciones: composes SP1 plan, SP2 actions and P1 reliability badges
  *  for the selected parcel. The recommended action is the hero; badges are secondary. */
-const CropPlanPanel: React.FC<Props> = ({ parcelId }) => {
+const CropPlanPanel: React.FC<Props> = ({ entityData }) => {
+  const { parcelId } = resolveParcelContext(entityData);
   const navigate = useNavigate();
   const { t } = useTranslation('bioorchestrator');
   const bio = useBioApi();

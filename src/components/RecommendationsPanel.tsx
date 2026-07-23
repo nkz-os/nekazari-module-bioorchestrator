@@ -4,6 +4,7 @@ import { Stack, Card, Badge, Button, DetailGrid, DetailItem, Skeleton } from '@n
 import { SlotShell } from '@nekazari/viewer-kit';
 import { useTranslation } from '@nekazari/sdk';
 import { buildBioorchestratorToolUrl } from '../utils/navigation';
+import { resolveParcelContext, type ParcelEntityData } from '../utils/entityData';
 import {
   RefreshCw, Globe, Thermometer, MapPin, Sprout, Bug, Beaker,
   AlertTriangle, CheckCircle, XCircle, ChevronDown, ChevronRight, Info,
@@ -16,11 +17,12 @@ const bioAccent = { base: '#14B8A6', soft: '#CCFBF1', strong: '#0D9488' };
 
 interface RecCrop { name: string; scientific_name?: string; }
 interface CropSoilReq { ph_min: number; ph_max: number; textures: string[]; drainage: string[]; depth_min_cm: number; salinity_max_ds_m: number; source_short?: string; }
-interface Props { parcelId?: string; parcelName?: string; cropType?: string; lat?: number; lon?: number; }
+interface Props { entityData?: ParcelEntityData; }
 
 const PESTICIDE_INTENT: Record<string, 'positive' | 'negative' | 'warning'> = { approved: 'positive', not_approved: 'negative', withdrawn: 'warning' };
 
-const RecommendationsPanel: React.FC<Props> = ({ parcelId, parcelName, cropType, lat, lon }) => {
+const RecommendationsPanel: React.FC<Props> = ({ entityData }) => {
+  const { parcelId, parcelName, cropType, lat, lon } = resolveParcelContext(entityData);
   const { t } = useTranslation('bioorchestrator');
   const api = useBioApi();
   const navigate = useNavigate();
