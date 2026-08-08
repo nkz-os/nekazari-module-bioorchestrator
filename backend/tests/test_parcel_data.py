@@ -1,7 +1,6 @@
 from unittest.mock import patch
 
 import pytest
-
 from app.services.timescale import compute_trend
 
 
@@ -76,7 +75,7 @@ def test_soil_available_response_structure():
 
 class _RecordingOrion:
     """Factory that records the tenant_id each OrionClient is built with."""
-    constructed_tenants: list[str] = []
+    constructed_tenants: list[str] = []  # noqa: RUF012
 
     def __init__(self, tenant_id, *a, **k):
         _RecordingOrion.constructed_tenants.append(tenant_id)

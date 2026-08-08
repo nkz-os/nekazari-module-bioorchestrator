@@ -17,6 +17,7 @@ def test_perennial_fields_change_content_hash():
 def test_merge_variety_trials_sets_perennial_fields():
     """The MERGE Cypher must SET the new optional fields."""
     import inspect
+
     from app.ingestion.base_ingester import BaseIngester
     src = inspect.getsource(BaseIngester._merge_variety_trials)
     for field in ("rootstock", "scion", "trainingSystem",

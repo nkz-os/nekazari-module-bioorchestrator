@@ -1,7 +1,6 @@
 import pytest
-
-from app.services.weather_stats_cache import TTLCache, weather_stats_cache
 from app.graph.dao import GraphDAO
+from app.services.weather_stats_cache import TTLCache, weather_stats_cache
 
 
 def test_ttl_cache_hit_and_miss():

@@ -23,21 +23,19 @@ import logging
 import os
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Optional
 
 from neo4j import AsyncDriver, AsyncGraphDatabase
 
 from app.common.source_registry import get_source
-from app.ingestion.normalization_registry import (
-    normalize_variety_name,
-    normalize_location,
-    eppo_to_scientific,
-    normalize_merge_key,
-    transform_traits_to_unified,
-    canonical_source_id,
-)
-
 from app.graph.site_canonicalization import normalize_site_key
+from app.ingestion.normalization_registry import (
+    canonical_source_id,
+    eppo_to_scientific,
+    normalize_location,
+    normalize_merge_key,
+    normalize_variety_name,
+    transform_traits_to_unified,
+)
 from app.ingestion.trial_site_geo import geo_updates_for_neo4j, resolve_trial_site_geo
 
 logger = logging.getLogger(__name__)
@@ -71,7 +69,7 @@ class BaseIngester(ABC):
 
     SOURCE_ID: str = ""
 
-    def __init__(self, driver: Optional[AsyncDriver] = None) -> None:
+    def __init__(self, driver: AsyncDriver | None = None) -> None:
         if not self.SOURCE_ID:
             raise ValueError(f"{type(self).__name__} must define SOURCE_ID")
         self._registry_entry = get_source(self.SOURCE_ID)

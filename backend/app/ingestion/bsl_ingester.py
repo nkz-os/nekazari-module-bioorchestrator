@@ -20,7 +20,6 @@ import json
 
 from app.ingestion.base_ingester import BaseIngester
 
-
 EPPO_TO_SPECIES: dict[str, str] = {
     "HORVX": "Hordeum vulgare",
     "TRZAX": "Triticum aestivum",
@@ -82,7 +81,7 @@ class BslIngester(BaseIngester):
             "topic": node.get("topic"),
             "mergeKey": (
                 f"{self.SOURCE_ID.lower()}|"
-                f"{str(node.get('issue_number', ''))}|"
+                f"{node.get('issue_number', '')!s}|"
                 f"{str(node.get('article_title', ''))[:80]}"
             ),
         }
@@ -149,7 +148,7 @@ class BslIngester(BaseIngester):
                 f"{str(node.get('variety', '')).strip().lower()}|"
                 f"{cycle or 'nocycle'}|"
                 f"{str(node.get('trial_location', 'unknown')).strip().lower()}|"
-                f"{str(node.get('year', 0))}"
+                f"{node.get('year', 0)!s}"
             ),
         }
 

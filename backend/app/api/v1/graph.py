@@ -6,9 +6,10 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from neo4j import AsyncDriver
-
 from nkz_platform_sdk.agronomy import (
-    AgronomicValue, Source, confidence_from_match,
+    AgronomicValue,
+    Source,
+    confidence_from_match,
 )
 from nkz_platform_sdk.orion import OrionClient
 
@@ -372,7 +373,7 @@ async def protected_area_check(
         return {"in_protected_area": False}
     except ImportError:
         return {"error": "Natura 2000 connector not available"}
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         return {"error": str(e)}
 
 
@@ -381,8 +382,8 @@ async def variety_catalogue(
     species: str = Query(..., description="Crop species scientific name"),
 ):
     """Return varieties for a species from Orion-LD via hasSubCrop."""
-    from app.ingestion.uri import agri_crop_uri
     from app.core.config import settings
+    from app.ingestion.uri import agri_crop_uri
 
     parent_uri = agri_crop_uri(species)
     orion = OrionClient(
@@ -392,7 +393,7 @@ async def variety_catalogue(
     )
     try:
         parent = await orion.get_entity(parent_uri)
-    except Exception:
+    except Exception:  # noqa: BLE001
         return {"varieties": [], "error": "Parent species not found in catalog"}
     finally:
         await orion.close()
@@ -452,7 +453,7 @@ async def pollinator_occurrences(lat: float = Query(...), lon: float = Query(...
         return {"pollinators": species[:10]}
     except ImportError:
         return {"pollinators": []}
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         return {"pollinators": [], "error": str(e)}
 
 
@@ -466,7 +467,7 @@ async def terrain_data(lat: float = Query(...), lon: float = Query(...)):
         return result.entities[0] if result.entities else {"error": "No DEM data"}
     except ImportError:
         return {"error": "Copernicus DEM connector not available", "elevation_m": None}
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         return {"error": str(e)}
 
 
@@ -480,7 +481,7 @@ async def climate_reference(lat: float = Query(...), lon: float = Query(...)):
         return result.entities[0] if result.entities else {"error": "No climate data"}
     except ImportError:
         return {"error": "ERA5 connector not available"}
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         return {"error": str(e)}
 
 

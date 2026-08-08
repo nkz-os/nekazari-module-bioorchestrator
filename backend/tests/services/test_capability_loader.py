@@ -1,15 +1,15 @@
 """Loader fetches a capabilities.yaml URL and upserts into Neo4j."""
 from __future__ import annotations
+
 import asyncio
 import shutil
 
 import httpx
 import pytest
-from neo4j import AsyncGraphDatabase
-from testcontainers.neo4j import Neo4jContainer
-
 from app.graph.capability_dao import CapabilityDao
 from app.services.capability_loader import CapabilityLoader
+from neo4j import AsyncGraphDatabase
+from testcontainers.neo4j import Neo4jContainer
 
 pytestmark = pytest.mark.skipif(
     shutil.which("docker") is None,

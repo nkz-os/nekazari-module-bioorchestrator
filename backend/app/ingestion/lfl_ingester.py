@@ -15,7 +15,6 @@ import asyncio
 
 from app.ingestion.base_ingester import BaseIngester
 
-
 EPPO_TO_SPECIES: dict[str, str] = {
     "TRZAX": "Triticum aestivum",
     "TRZAW": "Triticum aestivum",
@@ -84,7 +83,7 @@ class LflIngester(BaseIngester):
             "year": node.get("year"),
             "mergeKey": (
                 f"{self.SOURCE_ID.lower()}|"
-                f"{str(node.get('issue_number', ''))}|"
+                f"{node.get('issue_number', '')!s}|"
                 f"{str(node.get('article_title', ''))[:80]}"
             ),
         }
@@ -106,8 +105,8 @@ class LflIngester(BaseIngester):
                 f"{self.SOURCE_ID.lower()}|{eppo or 'unknown'}|"
                 f"{str(node.get('variety', '')).strip().lower()}|"
                 f"{str(node.get('trial_location', 'unknown')).strip().lower()}|"
-                f"{str(node.get('irrigation_regime', 'unknown'))}|"
-                f"{str(node.get('year', 0))}"
+                f"{node.get('irrigation_regime', 'unknown')!s}|"
+                f"{node.get('year', 0)!s}"
             ),
         }
 
@@ -123,7 +122,7 @@ class LflIngester(BaseIngester):
             "trial_id": node.get("@id", ""),
             "mergeKey": (
                 f"{self.SOURCE_ID.lower()}|"
-                f"{str(node.get('experiment_type', ''))}|"
+                f"{node.get('experiment_type', '')!s}|"
                 f"{str(node.get('treatment', ''))[:60]}"
             ),
         }

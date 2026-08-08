@@ -20,12 +20,15 @@ Transforms:
 from __future__ import annotations
 
 import json
-from typing import Optional
 
 from neo4j import AsyncDriver
 
-from app.ingestion.base_ingester import BaseIngester, NEO4J_PASSWORD, NEO4J_URI, NEO4J_USER
-
+from app.ingestion.base_ingester import (
+    NEO4J_PASSWORD,
+    NEO4J_URI,
+    NEO4J_USER,
+    BaseIngester,
+)
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # EPPO code → scientific name mapping (canonical, used for enrichment)
@@ -165,7 +168,7 @@ class NavarraIngester(BaseIngester):
 
     SOURCE_ID = "NAVARRA-AGRARIA"
 
-    def __init__(self, driver: Optional[AsyncDriver] = None) -> None:
+    def __init__(self, driver: AsyncDriver | None = None) -> None:
         super().__init__(driver=driver)
         self._stats: dict[str, int] = {}
 

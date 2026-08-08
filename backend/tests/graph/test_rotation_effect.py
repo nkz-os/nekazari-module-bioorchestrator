@@ -1,9 +1,8 @@
 """recommend_next_crop must exclude restrictions only, never benefits."""
 import pytest
+from app.graph.dao import GraphDAO
 from neo4j import AsyncGraphDatabase
 from testcontainers.neo4j import Neo4jContainer
-
-from app.graph.dao import GraphDAO
 
 _PASSWORD = "testpassword"
 

@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# ruff: noqa: EXE001
 """One-shot Wave 3 ingest runner for prod pod (patches + baseline + merge + verify)."""
 from __future__ import annotations
 
@@ -17,8 +18,12 @@ for src, dst in (
 ):
     shutil.copy(src, dst)
 
-from app.ingestion.base_ingester import NEO4J_PASSWORD, NEO4J_URI, NEO4J_USER  # noqa: E402
-from app.ingestion.navarra_ingester import NavarraIngester  # noqa: E402
+from app.ingestion.base_ingester import (
+    NEO4J_PASSWORD,
+    NEO4J_URI,
+    NEO4J_USER,
+)
+from app.ingestion.navarra_ingester import NavarraIngester
 
 BUNDLE = "/tmp/wave3_adequate.jsonld"
 SOURCE_ID = NavarraIngester.SOURCE_ID

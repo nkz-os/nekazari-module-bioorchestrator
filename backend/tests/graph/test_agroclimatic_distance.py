@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import math
 
-from app.graph.agroclimatic import feature_vector, normalize_bounds, distance
+from app.graph.agroclimatic import distance, feature_vector, normalize_bounds
 
 
 def test_feature_vector_computes_aridity_or_none_when_incomplete():

@@ -16,8 +16,7 @@ import sys
 import time
 from pathlib import Path
 
-from neo4j import GraphDatabase, Driver
-
+from neo4j import Driver, GraphDatabase
 
 # ── Connection ────────────────────────────────────────────────────────────────
 
@@ -30,7 +29,7 @@ def connect(uri: str, user: str, password: str, retries: int = 30, delay: float 
             driver.verify_connectivity()
             print(f"[init_graph] Connected to Neo4j at {uri}")
             return driver
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001
             last_exc = exc
             print(f"[init_graph] Attempt {attempt}/{retries} — waiting {delay}s: {exc}")
             time.sleep(delay)
@@ -95,7 +94,7 @@ def is_jsonld(path: Path) -> bool:
         with path.open("r", encoding="utf-8") as f:
             data = json.load(f)
         return "@context" in data or "@graph" in data
-    except Exception:
+    except Exception:  # noqa: BLE001
         return False
 
 
@@ -140,7 +139,7 @@ def ingest_directory(driver: Driver, data_dir: Path) -> None:
             triples = ingest_file(driver, path)
             total_triples += triples
             print(f"  ✓ {path.name}: {triples} triples loaded")
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001
             errors += 1
             print(f"  ✗ {path.name}: {exc}")
 

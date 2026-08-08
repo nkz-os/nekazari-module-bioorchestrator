@@ -1,11 +1,12 @@
 """Crop catalog API — species/varieties from Orion-LD + Neo4j."""
-from fastapi import APIRouter, Query, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
+from nkz_platform_sdk.orion import OrionClient
+
+from app.core.config import settings
+from app.core.dependencies import get_current_user, get_dao
 from app.graph.dao import GraphDAO
 from app.ingestion.ecocrop_ingester import EcoCropIngester
 from app.ingestion.variety_ingester import VarietyIngester
-from app.core.dependencies import get_dao, get_current_user
-from nkz_platform_sdk.orion import OrionClient
-from app.core.config import settings
 
 router = APIRouter(prefix="/catalog", tags=["crop-catalog"])
 
@@ -15,7 +16,7 @@ async def list_crops(
     source: str | None = Query(None, description="Data source: ecocrop, cpvo"),
     q: str | None = Query(None, description="Search by name"),
     parent: str | None = Query(None, description="Parent species URI for varieties"),
-    dao: GraphDAO = Depends(get_dao),
+    dao: GraphDAO = Depends(get_dao),  # noqa: B008
 ):
     """List species and/or varieties from the catalog."""
     crops = await dao.get_crop_catalog(source=source, search=q)
@@ -24,7 +25,7 @@ async def list_crops(
 
 @router.get("/thermal-summary")
 async def thermal_summary(
-    dao: GraphDAO = Depends(get_dao),
+    dao: GraphDAO = Depends(get_dao),  # noqa: B008
 ):
     """Return count of species with/without thermal data."""
     async with dao._driver.session() as session:
@@ -46,7 +47,7 @@ async def thermal_summary(
 
 @router.get("/npk-summary")
 async def npk_summary(
-    dao: GraphDAO = Depends(get_dao),
+    dao: GraphDAO = Depends(get_dao),  # noqa: B008
 ):
     """Return count of species with/without NPK data."""
     async with dao._driver.session() as session:
@@ -70,7 +71,7 @@ async def npk_summary(
 @router.get("/{crop_id:path}")
 async def get_crop_detail(
     crop_id: str,
-    dao: GraphDAO = Depends(get_dao),
+    dao: GraphDAO = Depends(get_dao),  # noqa: B008
 ):
     """Get full detail for a species or variety.
 
@@ -127,8 +128,8 @@ async def get_crop_detail(
 async def trigger_ingestion(
     source: str = Query(..., description="ecocrop or cpvo"),
     species_filter: str | None = Query(None),
-    user: dict = Depends(get_current_user),
-    dao: GraphDAO = Depends(get_dao),
+    user: dict = Depends(get_current_user),  # noqa: B008
+    dao: GraphDAO = Depends(get_dao),  # noqa: B008
 ):
     """Trigger ingestion from an external source. Requires technician/admin."""
     orion = OrionClient(
@@ -155,8 +156,8 @@ async def trigger_ingestion(
 @router.post("/contribute")
 async def contribute_parameter(
     body: dict,
-    user: dict = Depends(get_current_user),
-    dao: GraphDAO = Depends(get_dao),
+    user: dict = Depends(get_current_user),  # noqa: B008
+    dao: GraphDAO = Depends(get_dao),  # noqa: B008
 ):
     """Contribute phenological/agronomic parameters for a crop.
 
@@ -220,7 +221,7 @@ async def contribute_parameter(
 
 @router.post("/derive-thermal")
 async def derive_thermal(
-    user: dict = Depends(get_current_user),
+    user: dict = Depends(get_current_user),  # noqa: B008
 ):
     """Trigger thermal limits derivation for all species with EcoCrop temp data.
 
@@ -232,7 +233,7 @@ async def derive_thermal(
     from pathlib import Path
 
     script = Path(__file__).parent.parent.parent.parent / "scripts" / "derive_thermal_limits.py"
-    subprocess.Popen(
+    subprocess.Popen(  # noqa: ASYNC220
         [sys.executable, str(script)],
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,

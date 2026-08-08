@@ -8,7 +8,6 @@ in request.state.tenant_id and every Orion request went to a phantom tenant
 """
 
 import pytest
-
 from app.common.tenant_utils import normalize_tenant_id
 
 

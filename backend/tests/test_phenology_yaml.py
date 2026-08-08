@@ -8,10 +8,11 @@ Validates that the YAML file:
 - Has complete provenance data
 """
 
+from collections import Counter
+from pathlib import Path
+
 import pytest
 import yaml
-from pathlib import Path
-from collections import Counter
 
 DATA_DIR = Path(__file__).parent.parent / "data"
 YAML_PATH = DATA_DIR / "phenology_sources.yaml"
@@ -148,7 +149,7 @@ def test_yaml_is_valid_yaml():
     """YAML must parse without errors."""
     try:
         _load_yaml()
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         pytest.fail(f"Invalid YAML: {e}")
 
 

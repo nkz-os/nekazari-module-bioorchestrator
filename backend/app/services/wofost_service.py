@@ -152,9 +152,10 @@ def run_wofost_simulation(
 
     # ── Full PCSE simulation ──
     try:
+        import os
+
         from pcse.base import ParameterProvider
         from pcse.models import Wofost71_WLP_FD
-        import os
 
         crop_params = get_crop_params(crop_slug, crop_params_override)
 
@@ -209,7 +210,7 @@ def run_wofost_simulation(
         finally:
             os.unlink(crop_fp)
 
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         logger.error(
             "PCSE simulation failed (%s) — falling back to the empirical FAO-33 "
             "model. The PCSE integration is not operational: it targets the PCSE 5 "
@@ -322,10 +323,11 @@ def _run_fallback_simulation(
 
 def _build_weather_for_pcse(weather_data: list[dict], start_date: date) -> Any:
     """Build PCSE weather data provider from timeseries-reader format."""
-    from pcse.util import WOFOST71SiteDataProvider
-    import tempfile
-    import os
     import csv
+    import os
+    import tempfile
+
+    from pcse.util import WOFOST71SiteDataProvider
 
     # PCSE expects a CSV with columns: DAY, IRRAD, TMIN, TMAX, VAP, WIND, RAIN
     fd, path = tempfile.mkstemp(suffix=".csv", text=True)
@@ -367,8 +369,8 @@ def _build_soil_for_pcse(props: dict) -> dict:
 
 def _build_crop_file(crop_params: dict) -> str:
     """Build a temporary PCSE CABO crop file from parameters."""
-    import tempfile
     import os
+    import tempfile
 
     fd, path = tempfile.mkstemp(suffix=".crop", text=True)
     with os.fdopen(fd, "w") as f:

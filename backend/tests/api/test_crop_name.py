@@ -1,8 +1,7 @@
 """Tests for GET /api/graph/agriculture/crop-name (EPPO→common name resolver)."""
 
-from fastapi.testclient import TestClient
-
 from app.main import app
+from fastapi.testclient import TestClient
 
 client = TestClient(app)
 

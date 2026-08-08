@@ -1,6 +1,7 @@
 """Tests for assign_crop_to_parcel method."""
+from unittest.mock import AsyncMock, MagicMock, patch
+
 import pytest
-from unittest.mock import AsyncMock, patch, MagicMock
 from app.graph.dao import GraphDAO
 
 
@@ -247,7 +248,7 @@ async def test_clear_crop_assignment_raises_on_orion_error():
             nonlocal close_called
             close_called = True
 
-    with patch("app.graph.dao.OrionClient", side_effect=lambda tenant_id: FakeOrionFailing(tenant_id)):
+    with patch("app.graph.dao.OrionClient", side_effect=lambda tenant_id: FakeOrionFailing(tenant_id)):  # noqa: SIM117
         with pytest.raises(RuntimeError, match="orion 400"):
             await dao.clear_crop_assignment(
                 parcel_id="urn:ngsi-ld:AgriParcel:test-parcel",

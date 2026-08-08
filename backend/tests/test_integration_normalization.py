@@ -12,7 +12,6 @@ from app.ingestion.normalization_registry import (
     normalize_merge_key,
 )
 
-
 # ── Test ingester that simulates a real source ─────────────────────────────
 
 class FakeTestIngester(BaseIngester):
@@ -328,7 +327,7 @@ class TestRegistryWithRealData:
     def test_bsl_all_traits_mapped(self):
         """All BSL trait keys should have a canonical mapping."""
         bsl_keys_in_registry = set()
-        for canonical, config in TRAIT_REGISTRY.items():
+        for config in TRAIT_REGISTRY.values():
             src_val = config["sources"].get("BSL")
             if src_val:
                 if isinstance(src_val, list):
@@ -355,7 +354,7 @@ class TestRegistryWithRealData:
         """Disease score key from BSL should be mapped."""
         from app.ingestion.normalization_registry import DISEASE_REGISTRY
         bsl_keys = set()
-        for canonical, config in DISEASE_REGISTRY.items():
+        for config in DISEASE_REGISTRY.values():
             src_val = config["sources"].get("BSL")
             if src_val:
                 if isinstance(src_val, list):

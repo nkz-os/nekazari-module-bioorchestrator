@@ -1,13 +1,15 @@
 # backend/tests/test_almond_ingest_e2e.py
 from __future__ import annotations
+
 import asyncio
 import os
 import shutil
+
 import pytest
+from app.graph.dao import GraphDAO
+from app.ingestion.almond_ifapa_ingester import AlmondIfapaIngester
 from neo4j import AsyncGraphDatabase
 from testcontainers.neo4j import Neo4jContainer
-from app.ingestion.almond_ifapa_ingester import AlmondIfapaIngester
-from app.graph.dao import GraphDAO
 
 pytestmark = pytest.mark.skipif(shutil.which("docker") is None, reason="docker unavailable")
 FIX = os.path.join(os.path.dirname(__file__), "fixtures", "ifapa_almond_lastorres.jsonld")
@@ -48,8 +50,8 @@ def test_ingest_links_and_is_idempotent(driver):
     # Consumer sees perennial fields + no fabricated yield
     dao = GraphDAO(driver)
     trials = _run(dao.get_variety_trials(crop="PRNDU", limit=50))
-    guara = [t for t in trials if t["variety"] == "Guara" and t["rootstock"] == "Garnem"][0]
+    guara = next(t for t in trials if t["variety"] == "Guara" and t["rootstock"] == "Garnem")
     assert guara["planting_year"] == 2013
     assert guara["orchard_age_years"] == 6
-    lauranne = [t for t in trials if t["variety"] == "Lauranne"][0]
+    lauranne = next(t for t in trials if t["variety"] == "Lauranne")
     assert lauranne["yield_kg_ha"] is None      # note-only, never fabricated

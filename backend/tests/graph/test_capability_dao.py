@@ -1,12 +1,13 @@
 """Capability DAO upsert + query semantics (async Neo4j driver)."""
 from __future__ import annotations
+
 import asyncio
 import shutil
+
 import pytest
+from app.graph.capability_dao import CapabilityDao
 from neo4j import AsyncGraphDatabase
 from testcontainers.neo4j import Neo4jContainer
-
-from app.graph.capability_dao import CapabilityDao
 
 pytestmark = pytest.mark.skipif(
     shutil.which("docker") is None,

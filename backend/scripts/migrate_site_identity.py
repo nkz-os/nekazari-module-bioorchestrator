@@ -13,14 +13,13 @@ import argparse
 import logging
 import os
 
-from neo4j import GraphDatabase
-
 from app.graph.site_canonicalization import (
     apply_site_canonicalization,
     fetch_trial_sites,
     normalize_site_key,
     plan_site_canonicalization,
 )
+from neo4j import GraphDatabase
 
 logger = logging.getLogger("migrate_site_identity")
 NEO4J_URI = os.environ.get("NEO4J_URI", "bolt://bioorchestrator-neo4j:7687")

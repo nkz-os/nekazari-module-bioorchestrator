@@ -73,8 +73,8 @@ async def apply_weather_penalties(
 
     # Drought check
     deficit_pct = _safe_get(weather_stats, "water_balance.deficit_area_pct")
-    if deficit_pct is not None and deficit_pct > 30.0:
-        if not tolerance.get("drought_tolerant", False):
+    if deficit_pct is not None and deficit_pct > 30.0 \
+            and not tolerance.get("drought_tolerant", False):
             penalties_applied["drought_penalty"] = DROUGHT_PENALTY
             penalties_applied["reasons"].append(
                 f"deficit_area_pct={deficit_pct:.1f}% > 30% → "
@@ -83,8 +83,8 @@ async def apply_weather_penalties(
 
     # Heat check
     heat_pct = _safe_get(weather_stats, "temperature_avg.heat_stress_pct")
-    if heat_pct is not None and heat_pct > 20.0:
-        if not tolerance.get("heat_tolerant", False):
+    if heat_pct is not None and heat_pct > 20.0 \
+            and not tolerance.get("heat_tolerant", False):
             penalties_applied["heat_penalty"] = HEAT_PENALTY
             penalties_applied["reasons"].append(
                 f"heat_stress_pct={heat_pct:.1f}% > 20% → "
@@ -93,8 +93,8 @@ async def apply_weather_penalties(
 
     # Frost check
     frost_pct = _safe_get(weather_stats, "frost_risk.high_risk_pct")
-    if frost_pct is not None and frost_pct > 50.0:
-        if not tolerance.get("frost_tolerant", False):
+    if frost_pct is not None and frost_pct > 50.0 \
+            and not tolerance.get("frost_tolerant", False):
             penalties_applied["frost_penalty"] = FROST_PENALTY
             penalties_applied["reasons"].append(
                 f"high_risk_pct={frost_pct:.1f}% > 50% → "
@@ -168,7 +168,7 @@ async def _get_crop_tolerance(crop: str, dao) -> dict[str, Any]:
                 "heat_damage_threshold_c": heat_damage_c,
                 "frost_damage_threshold_c": frost_damage_c,
             }
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001
         logger.warning(
             "Failed to get heat tolerance for crop %s: %s", crop, exc,
         )

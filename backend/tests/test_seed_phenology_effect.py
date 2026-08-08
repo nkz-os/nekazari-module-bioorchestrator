@@ -7,7 +7,7 @@ from neo4j import GraphDatabase
 from testcontainers.neo4j import Neo4jContainer
 
 sys.path.insert(0, str(Path(__file__).parent.parent / "scripts"))
-import seed_phenology  # noqa: E402
+import seed_phenology
 
 
 @pytest.fixture(scope="module")

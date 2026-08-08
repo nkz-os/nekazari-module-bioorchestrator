@@ -1,5 +1,6 @@
 import asyncio
 import os
+
 from app.ingestion.almond_ifapa_ingester import AlmondIfapaIngester
 
 FIX = os.path.join(os.path.dirname(__file__), "fixtures", "ifapa_almond_lastorres.jsonld")
@@ -15,11 +16,11 @@ def test_transform_las_torres():
     assert len(nodes["trial_sites"]) == 1
     # source_id alignment (prevents orphan TRIAL_AT)
     assert nodes["trial_sites"][0]["source_id"] == "IFAPA_ALMOND"
-    vt = [t for t in nodes["variety_trials"] if t["variety"] == "Guara" and t["rootstock"] == "Garnem"][0]
+    vt = next(t for t in nodes["variety_trials"] if t["variety"] == "Guara" and t["rootstock"] == "Garnem")
     assert vt["cropEppo"] == "PRNDU"
     assert vt["yieldKgHa"] == 2100
     assert vt["plantingYear"] == 2013
     # note-only record carries the relative note, NOT a fabricated kg/ha
-    note = [t for t in nodes["variety_trials"] if t["variety"] == "Lauranne"][0]
+    note = next(t for t in nodes["variety_trials"] if t["variety"] == "Lauranne")
     assert note.get("yieldKgHa") is None
     assert note.get("yieldNoteS1") == 7

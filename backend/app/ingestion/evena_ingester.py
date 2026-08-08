@@ -65,7 +65,7 @@ class EvenaIngester(BaseIngester):
             "year": year,
             "mergeKey": (
                 f"{self.SOURCE_ID.lower()}|"
-                f"{str(year or '')}|"
+                f"{year or ''!s}|"
                 f"{str(title).strip().lower()[:80]}"
             ),
         }
@@ -89,7 +89,7 @@ class EvenaIngester(BaseIngester):
                 f"{self.SOURCE_ID}|{eppo or 'unknown'}|"
                 f"{str(node.get('variety', '')).strip().lower()}|"
                 f"{str(node.get('trial_location', 'unknown')).strip().lower()}|"
-                f"{str(node.get('year', 0))}"
+                f"{node.get('year', 0)!s}"
             ),
         }
 

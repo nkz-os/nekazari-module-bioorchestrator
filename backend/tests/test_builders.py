@@ -1,5 +1,4 @@
 import pytest
-
 from app.ingestion.builders import build_agri_crop_entity
 
 

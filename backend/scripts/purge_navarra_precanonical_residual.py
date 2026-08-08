@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# ruff: noqa: EXE001
 """Remove Navarra pre-canonical graph residue after perennial MERGE.
 
 Targets:

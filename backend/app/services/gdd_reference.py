@@ -20,9 +20,8 @@ from __future__ import annotations
 from typing import Any
 
 from ikerketa.connectors.base import AbstractConnector
-from ikerketa.models.base import BaseEntity, BaseRelationship, DataSource, RawRecord
 from ikerketa.models.agronomy import AgriKnowledge
-
+from ikerketa.models.base import BaseEntity, BaseRelationship, DataSource, RawRecord
 
 # ── Climate normals per Köppen zone (monthly mean T, WorldClim 2.1) ─────
 # Values represent °C monthly means for representative locations
@@ -91,7 +90,7 @@ def _compute_gdd(monthly_t: list[float], sow_month: int, anthesis_month: int, ba
 
     # Handle wrap-around (e.g., sow=11, anthesis=5)
     if end_m < m:
-        months = list(range(m, 12)) + list(range(0, end_m + 1))
+        months = list(range(m, 12)) + list(range(end_m + 1))
     else:
         months = list(range(m, end_m + 1))
 

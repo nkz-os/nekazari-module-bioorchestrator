@@ -1,11 +1,13 @@
 # backend/tests/test_rootstock.py
 from __future__ import annotations
+
 import asyncio
 import shutil
+
 import pytest
+from app.ingestion.almond_ifapa_ingester import AlmondIfapaIngester  # Task 4
 from neo4j import AsyncGraphDatabase
 from testcontainers.neo4j import Neo4jContainer
-from app.ingestion.almond_ifapa_ingester import AlmondIfapaIngester  # Task 4
 
 pytestmark = pytest.mark.skipif(shutil.which("docker") is None,
                                 reason="docker unavailable")

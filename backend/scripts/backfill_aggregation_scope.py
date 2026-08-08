@@ -128,7 +128,7 @@ def main() -> int:
         ).data()
         print("resultado en el grafo:")
         for r in final:
-            print(f"  {str(r['scope']):12s} {r['n']:7,}")
+            print(f"  {r['scope']!s:12s} {r['n']:7,}")
 
         integrity = s.run(
             "MATCH (vt:VarietyTrial) RETURN count(*) AS total, "

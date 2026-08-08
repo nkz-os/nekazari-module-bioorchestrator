@@ -29,10 +29,10 @@ from neo4j import AsyncGraphDatabase
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from app.ingestion.normalization_registry import (
-    normalize_variety_name,
-    normalize_location,
     eppo_to_scientific,
+    normalize_location,
     normalize_merge_key,
+    normalize_variety_name,
     transform_traits_to_unified,
 )
 
@@ -88,7 +88,7 @@ async def backfill_variety_trials(driver, dry_run: bool, batch_size: int) -> int
                             updates=updates,
                         )
                     processed += 1
-                except Exception as e:
+                except Exception as e:  # noqa: BLE001
                     logger.error("  Error processing %s: %s", node.get("mergeKey"), e)
                     errors += 1
 
@@ -141,7 +141,7 @@ async def backfill_management_trials(driver, dry_run: bool, batch_size: int) -> 
                             updates=updates,
                         )
                     processed += 1
-                except Exception as e:
+                except Exception as e:  # noqa: BLE001
                     logger.error("  Error: %s", e)
                     errors += 1
 

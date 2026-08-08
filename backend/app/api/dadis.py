@@ -21,7 +21,7 @@ class BreedsFilter(BaseModel):
 
 @router.post("/breeds")
 async def get_breeds(
-    filters: BreedsFilter, client: DadisClient = Depends(get_dadis_client)
+    filters: BreedsFilter, client: DadisClient = Depends(get_dadis_client)  # noqa: B008
 ) -> Any:
     """Get breeds from DAD-IS based on filters."""
     try:
@@ -38,7 +38,7 @@ async def get_breeds(
 async def get_breed_by_id(
     breed_id: str,
     lang: str = Query("en"),
-    client: DadisClient = Depends(get_dadis_client),
+    client: DadisClient = Depends(get_dadis_client),  # noqa: B008
 ) -> Any:
     """Get details of a specific breed."""
     try:
@@ -48,7 +48,7 @@ async def get_breed_by_id(
 
 
 @router.get("/countries")
-async def get_countries(client: DadisClient = Depends(get_dadis_client)) -> Any:
+async def get_countries(client: DadisClient = Depends(get_dadis_client)) -> Any:  # noqa: B008
     """Get all available countries from DAD-IS."""
     try:
         return await client.get_countries()
@@ -57,7 +57,7 @@ async def get_countries(client: DadisClient = Depends(get_dadis_client)) -> Any:
 
 
 @router.get("/species")
-async def get_species(client: DadisClient = Depends(get_dadis_client)) -> Any:
+async def get_species(client: DadisClient = Depends(get_dadis_client)) -> Any:  # noqa: B008
     """Get all available species from DAD-IS."""
     try:
         return await client.get_species()

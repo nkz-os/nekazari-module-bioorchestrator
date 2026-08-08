@@ -37,8 +37,8 @@ async def main() -> None:
     user = os.environ.get("NEO4J_USER", "neo4j")
     password = os.environ["NEO4J_PASSWORD"]
 
-    async with AsyncGraphDatabase.driver(uri, auth=(user, password)) as driver:
-        async with driver.session() as session:
+    async with AsyncGraphDatabase.driver(uri, auth=(user, password)) as driver, \
+            driver.session() as session:
             for migration in sorted(MIGRATIONS_DIR.glob("[0-9][0-9][0-9]_*.cypher")):
                 print(f"[migrate] applying {migration.name}", flush=True)
                 for stmt in _statements(migration.read_text()):

@@ -7,13 +7,13 @@ Skips auth for health check endpoints.
 from __future__ import annotations
 
 import os
-from app.common.tenant_utils import normalize_tenant_id
-from typing import Callable
+from collections.abc import Callable
 
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 
+from app.common.tenant_utils import normalize_tenant_id
 
 # Endpoints that don't require auth — health probes, docs, and public reference data
 SKIP_AUTH_PATHS = {"/healthz", "/readyz", "/docs", "/openapi.json"}
@@ -117,7 +117,7 @@ class NKZAuthMiddleware(BaseHTTPMiddleware):
             # canonical attribute is 'tenant_id' (underscore), fallback 'tenant'
             raw_tenant = payload.get("tenant_id") or payload.get("tenant", "")
             request.state.tenant_id = normalize_tenant_id(raw_tenant) if raw_tenant else ""
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             return JSONResponse(
                 status_code=401,
                 content={"detail": f"Token validation failed: {e}"},

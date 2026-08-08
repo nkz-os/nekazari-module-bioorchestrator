@@ -13,7 +13,6 @@ from __future__ import annotations
 
 import logging
 import os
-from typing import Optional
 
 from cachetools import TTLCache
 
@@ -218,8 +217,8 @@ def is_legume_cash_crop(eppo: str, crop_ref: dict | None = None) -> bool:
 
 # ── Caches ──────────────────────────────────────────────────────────────────
 
-_eppo_taxonomy_cache: TTLCache[str, Optional[dict]] = TTLCache(maxsize=200, ttl=86400 * 7)
-_agriknowledge_cache: TTLCache[str, Optional[float]] = TTLCache(maxsize=200, ttl=86400)
+_eppo_taxonomy_cache: TTLCache[str, dict | None] = TTLCache(maxsize=200, ttl=86400 * 7)
+_agriknowledge_cache: TTLCache[str, float | None] = TTLCache(maxsize=200, ttl=86400)
 
 EPPO_API_KEY = os.getenv("EPPO_API_KEY", "")
 EPPO_BASE = "https://api.eppo.int/gd/v2"
@@ -227,7 +226,7 @@ EPPO_BASE = "https://api.eppo.int/gd/v2"
 
 # ── Live data fetchers ──────────────────────────────────────────────────────
 
-async def _fetch_eppo_taxonomy(eppo_code: str) -> Optional[dict]:
+async def _fetch_eppo_taxonomy(eppo_code: str) -> dict | None:
     """Fetch taxonomy from EPPO API v2. Returns {family, scientific_name, life_cycle} or None."""
     cached = _eppo_taxonomy_cache.get(eppo_code)
     if cached is not None:
@@ -258,14 +257,14 @@ async def _fetch_eppo_taxonomy(eppo_code: str) -> Optional[dict]:
                 return None
             else:
                 logger.warning("EPPO taxonomy returned %d for %s", resp.status_code, eppo_code)
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         logger.warning("EPPO taxonomy lookup failed for %s: %s", eppo_code, e)
 
     _eppo_taxonomy_cache[eppo_code] = {}
     return None
 
 
-async def _fetch_agriknowledge_n_fixation(eppo_code: str) -> Optional[float]:
+async def _fetch_agriknowledge_n_fixation(eppo_code: str) -> float | None:
     """Query Neo4j :AgriKnowledge nodes for measured N fixation. Returns kg/ha or None."""
     cached = _agriknowledge_cache.get(eppo_code)
     if cached is not None:
@@ -293,7 +292,7 @@ async def _fetch_agriknowledge_n_fixation(eppo_code: str) -> Optional[float]:
                 val = float(record["avg_n"])
                 _agriknowledge_cache[eppo_code] = val
                 return val
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         logger.warning("AgriKnowledge N fixation query failed for %s: %s", eppo_code, e)
 
     _agriknowledge_cache[eppo_code] = None

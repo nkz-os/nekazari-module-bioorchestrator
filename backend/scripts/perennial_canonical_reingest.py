@@ -31,12 +31,20 @@ from neo4j import AsyncGraphDatabase
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from app.ingestion.almond_ifapa_ingester import AlmondIfapaIngester
-from app.ingestion.base_ingester import BaseIngester, NEO4J_PASSWORD, NEO4J_URI, NEO4J_USER
+from app.ingestion.base_ingester import (
+    NEO4J_PASSWORD,
+    NEO4J_URI,
+    NEO4J_USER,
+    BaseIngester,
+)
 from app.ingestion.intia_exp_ingester import IntiaExpIngester
 from app.ingestion.navarra_ingester import NavarraIngester
 from app.ingestion.validate_ingest_bundle import validate_bundle
+
 from scripts.canonical_reingest import _baseline
-from scripts.purge_navarra_precanonical_residual import run as purge_navarra_precanonical
+from scripts.purge_navarra_precanonical_residual import (
+    run as purge_navarra_precanonical,
+)
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 logger = logging.getLogger(__name__)
@@ -193,7 +201,7 @@ async def run(
         graph = approved["@graph"]
 
         if dry_run and not execute:
-            for source_id in SOURCE_INGESTERS:
+            for source_id, ingester_cls in SOURCE_INGESTERS.items():
                 sub_graph = subgraph_for_source(graph, source_id)
                 vt_count = sum(
                     1 for n in sub_graph if n.get("@type") == "VarietyTrial"
@@ -207,7 +215,7 @@ async def run(
                     json.dump({**approved, "@graph": sub_graph}, sub_tmp, ensure_ascii=False)
                     sub_path = sub_tmp.name
                 try:
-                    ingester = SOURCE_INGESTERS[source_id]()
+                    ingester = ingester_cls()
                     nodes = await ingester.transform(sub_path)
                     logger.info(
                         "Transform (%s): %s",
@@ -223,7 +231,7 @@ async def run(
         if owns_driver:
             driver = AsyncGraphDatabase.driver(NEO4J_URI, auth=(NEO4J_USER, NEO4J_PASSWORD))
         try:
-            for source_id in SOURCE_INGESTERS:
+            for source_id, ingester_cls in SOURCE_INGESTERS.items():
                 sub_graph = subgraph_for_source(graph, source_id)
                 vt_count = sum(
                     1

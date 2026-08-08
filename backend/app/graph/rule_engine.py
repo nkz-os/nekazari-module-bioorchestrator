@@ -5,6 +5,7 @@ writes phenologyStage to the broker. Missing context field → clause is False
 (fail-safe: never fire a management recommendation on absent data).
 """
 from __future__ import annotations
+
 import logging
 from datetime import date, datetime, timezone
 
@@ -56,7 +57,7 @@ def flatten_context(crop: dict, observed: dict, *, today: date | None = None) ->
     if sow:
         try:
             d = date.fromisoformat(str(sow)[:10])
-            ctx["crop.days_until_sowing_window"] = (d - (today or date.today())).days
+            ctx["crop.days_until_sowing_window"] = (d - (today or datetime.now(tz=timezone.utc).date())).days
         except ValueError:
             pass
     # drop keys whose value is None so a missing crop field never satisfies eq(None)

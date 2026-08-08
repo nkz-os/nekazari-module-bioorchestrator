@@ -14,11 +14,11 @@ import yaml
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from app.ingestion.uri import agri_crop_uri
-from app.ingestion.builders import build_agri_crop_entity
-from app.core.dependencies import get_driver
-from nkz_platform_sdk.orion import OrionClient
 from app.core.config import settings
+from app.core.dependencies import get_driver
+from app.ingestion.builders import build_agri_crop_entity
+from app.ingestion.uri import agri_crop_uri
+from nkz_platform_sdk.orion import OrionClient
 
 
 async def main():
@@ -29,7 +29,7 @@ async def main():
         print(f"ERROR: {yaml_path} not found. Run from bioorchestrator root.")
         return
 
-    with open(yaml_path) as f:
+    with open(yaml_path) as f:  # noqa: ASYNC230
         phen_data = yaml.safe_load(f)
 
     orion = OrionClient(

@@ -1,7 +1,9 @@
 # tests/test_assign_crop_subscription.py
-import pytest
 from unittest.mock import AsyncMock, patch
+
+import pytest
 from app.graph.dao import GraphDAO
+
 
 @pytest.mark.asyncio
 async def test_ensure_phenology_subscription_uses_watched_attrs():

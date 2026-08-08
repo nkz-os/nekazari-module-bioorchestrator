@@ -8,9 +8,7 @@ from unittest.mock import AsyncMock, patch
 import httpx
 import pytest
 import respx
-
 from app.graph.dao import GraphDAO
-
 
 WEATHER_MAP_URL = "http://weather-map-backend:8080"
 
@@ -87,12 +85,12 @@ def test_fetch_parcel_weather_stats_returns_none_when_unreachable():
 class _FakeOrionClientAssessment:
     """Stub for Site B: query_entities returns one CropHealthAssessment (normalized)."""
 
-    _constructed_with: list[str] = []
+    _constructed_with: list[str] = []  # noqa: RUF012
 
     def __init__(self, tenant_id: str) -> None:
         _FakeOrionClientAssessment._constructed_with.append(tenant_id)
 
-    async def query_entities(self, *, type: str, q: str = "", limit: int = 20) -> list:  # noqa: A002
+    async def query_entities(self, *, type: str, q: str = "", limit: int = 20) -> list:
         if type == "CropHealthAssessment":
             return [
                 {
@@ -113,7 +111,7 @@ class _FakeOrionClientAssessmentEmpty:
     def __init__(self, tenant_id: str) -> None:
         pass
 
-    async def query_entities(self, *, type: str, q: str = "", limit: int = 20) -> list:  # noqa: A002
+    async def query_entities(self, *, type: str, q: str = "", limit: int = 20) -> list:
         return []
 
     async def close(self) -> None:

@@ -20,7 +20,6 @@ from __future__ import annotations
 import math
 from typing import Any
 
-
 # ═══════════════════════════════════════════════════════════════════════════════
 # Allowed external FQDNs — defense in depth
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -253,7 +252,7 @@ async def resolve_environment(
             if elev is not None:
                 profile["elevation_m"] = round(float(elev), 1)
         sources_used.append("elevation: Copernicus DEM GLO-30")
-    except (ImportError, TypeError, Exception):
+    except (ImportError, TypeError, Exception):  # noqa: BLE001,S110
         pass
 
     # ── Climate (ERA5 reanalysis) ───────────────────────────────────────
@@ -295,7 +294,7 @@ async def resolve_environment(
             )
 
         sources_used.append("climate: ERA5 reanalysis (via IkerKeta)")
-    except (ImportError, TypeError, Exception):
+    except (ImportError, TypeError, Exception):  # noqa: BLE001,S110
         pass
 
     # ── Soil (SoilGrids ISRIC) ──────────────────────────────────────────
@@ -322,7 +321,7 @@ async def resolve_environment(
                 profile["soil_organic_matter_pct"] = round(float(om), 1)
 
         sources_used.append("soil: SoilGrids ISRIC v2.0")
-    except (ImportError, TypeError, Exception):
+    except (ImportError, TypeError, Exception):  # noqa: BLE001,S110
         pass
 
     profile["data_source"] = "; ".join(sources_used)

@@ -39,7 +39,7 @@ CROP_GROUPS = {
 MIN_DIRECT_N = 20
 
 
-def connect() -> "GraphDatabase.driver":
+def connect() -> GraphDatabase.driver:
     uri = os.getenv("NEO4J_URI", "bolt://localhost:7687")
     user = os.getenv("NEO4J_USER", "neo4j")
     pwd = os.getenv("NEO4J_PASSWORD", "")
@@ -130,7 +130,7 @@ def main() -> int:
         for crop in sorted(note_only, key=lambda c: -note_only[c]):
             r = resolve(crop, cal, gmedians)
             n_fill = note_only[crop]
-            print(f"  {crop:<8} {str(r['group']):<16} {r['n_dual']:>7} {n_fill:>7} "
+            print(f"  {crop:<8} {r['group']!s:<16} {r['n_dual']:>7} {n_fill:>7} "
                   f"{(r['factor'] or 0):>8.0f}  {r['source']}")
             if r["factor"] is None:
                 unclassified.append((crop, n_fill))

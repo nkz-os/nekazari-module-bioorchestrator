@@ -79,8 +79,9 @@ def _key(source: str, eppo: str, variety: str, location: str, year) -> tuple:
 def _trials(pattern: str):
     for path in glob.glob(pattern):
         try:
-            data = json.load(open(path, encoding="utf-8"))
-        except Exception:
+            with open(path, encoding="utf-8") as f:
+                data = json.load(f)
+        except Exception:  # noqa: BLE001,S112
             continue
         for node in data.get("@graph", []):
             if "VarietyTrial" in str(node.get("@type", "")):
@@ -135,23 +136,25 @@ def main() -> int:
     args = ap.parse_args()
 
     if args.from_json:
-        payload = json.load(open(args.from_json, encoding="utf-8"))
+        with open(args.from_json, encoding="utf-8") as f:
+            payload = json.load(f)
         resolved = {tuple(r["key"]): (r["cycle"], r["origin"]) for r in payload["rows"]}
         ambiguous = set(range(payload["ambiguous"]))  # count only
     else:
         resolved, ambiguous = collect_cycles()
 
     if args.dump_json:
-        json.dump(
-            {
-                "rows": [
-                    {"key": list(k), "cycle": c, "origin": o}
-                    for k, (c, o) in resolved.items()
-                ],
-                "ambiguous": len(ambiguous),
-            },
-            open(args.dump_json, "w", encoding="utf-8"),
-            ensure_ascii=False,
+        with open(args.dump_json, "w", encoding="utf-8") as f:
+            json.dump(
+                {
+                    "rows": [
+                        {"key": list(k), "cycle": c, "origin": o}
+                        for k, (c, o) in resolved.items()
+                    ],
+                    "ambiguous": len(ambiguous),
+                },
+                f,
+                ensure_ascii=False,
         )
         print(f"escrito {args.dump_json}: {len(resolved):,} claves, "
               f"{len(ambiguous):,} descartadas por desacuerdo")

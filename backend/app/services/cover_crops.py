@@ -413,10 +413,10 @@ SOWING_WINDOWS: dict[str, dict[str, tuple[str, str]]] = {
 #  Scraped trial data enrichment — IFAPA (Andalusia) + ITACyL (Castilla y León)
 # ═══════════════════════════════════════════════════════════════════════════
 
-import json as _json  # noqa: E402
-from pathlib import Path as _Path  # noqa: E402
-from collections import defaultdict as _defaultdict  # noqa: E402
-from statistics import mean as _mean  # noqa: E402
+import json as _json
+from collections import defaultdict as _defaultdict
+from pathlib import Path as _Path
+from statistics import mean as _mean
 
 # Paths to scraped data JSON files (updated by IFAPA/ITACyL scrapers)
 _SCRAPED_DATA_PATHS = [
@@ -469,7 +469,7 @@ def _load_scraped_data() -> tuple[dict, list]:
             try:
                 with open(path) as f:
                     all_obs.extend(_json.load(f))
-            except Exception:
+            except Exception:  # noqa: BLE001,S110
                 pass
 
     # Group observations by (eppo, climate, management)
@@ -851,7 +851,7 @@ def estimate_dates(
     adjusted by GDD requirements. Cover crops are autumn-sown and
     terminated the following spring.
     """
-    from datetime import datetime, timedelta
+    from datetime import datetime, timedelta, timezone
 
     windows = SOWING_WINDOWS.get(climate_class, SOWING_WINDOWS["Csa"])
     cover_start, _ = windows["cover_crop_autumn"]
@@ -862,20 +862,19 @@ def estimate_dates(
     gdd_day = spring_gdd_rates.get(climate_class, 8)
 
     year = 2026
-    cover_sow = datetime(year, *map(int, cover_start.split("-")))
+    cover_sow = datetime(year, *map(int, cover_start.split("-")), tzinfo=timezone.utc)
 
     # Base termination: 15th of termination month in the FOLLOWING year
     # Adjust +/- days based on GDD deviation from typical (~1200 GDD)
     typical_gdd = 1200
     gdd_deviation = cover_gdd - typical_gdd
     day_offset = int(gdd_deviation / max(gdd_day, 3))
-    termination = datetime(year + 1, term_month, 15) + timedelta(days=day_offset)
+    termination = datetime(year + 1, term_month, 15, tzinfo=timezone.utc) + timedelta(days=day_offset)
 
     # Protein crop 10 days after termination, not before spring window
     protein_sow = termination + timedelta(days=10)
-    ref_protein_start = datetime(year + 1, *map(int, protein_start.split("-")))
-    if protein_sow < ref_protein_start:
-        protein_sow = ref_protein_start
+    ref_protein_start = datetime(year + 1, *map(int, protein_start.split("-")), tzinfo=timezone.utc)
+    protein_sow = max(protein_sow, ref_protein_start)
 
     harvest_days = protein_gdd / max(gdd_day, 3)
     harvest = protein_sow + timedelta(days=int(harvest_days))

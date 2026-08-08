@@ -1,15 +1,17 @@
 """Ingest species from EcoCrop GAEZ v4 into Orion-LD as AgriCrop entities."""
-from app.ingestion.uri import agri_crop_uri
+from typing import ClassVar
+
+from app.graph.dao import GraphDAO
 from app.ingestion.builders import build_agri_crop_entity
 from app.ingestion.sync import sync_all_agri_crops
-from app.graph.dao import GraphDAO
+from app.ingestion.uri import agri_crop_uri
 
 
 class EcoCropIngester:
     """Transform EcoCrop connector output -> NGSI-LD AgriCrop entities."""
 
     # Map EcoCrop property names to NGSI-LD attribute names
-    PROPERTY_MAP = {
+    PROPERTY_MAP: ClassVar[dict[str, str]] = {
         "tempMinAbs": "tempMinAbs",
         "tempMaxAbs": "tempMaxAbs",
         "tempMinOpt": "tempMinOpt",

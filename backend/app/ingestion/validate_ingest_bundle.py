@@ -91,7 +91,7 @@ def _load_bundle(bundle: dict | str) -> dict:
 def _graph(bundle: dict) -> list[dict]:
     graph = bundle.get("@graph")
     if not isinstance(graph, list):
-        raise ValueError("bundle missing @graph list")
+        raise TypeError("bundle missing @graph list")
     return graph
 
 

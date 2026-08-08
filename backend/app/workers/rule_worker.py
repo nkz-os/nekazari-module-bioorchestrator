@@ -17,7 +17,7 @@ async def handle_evaluate_action_rules(tenant_id: str, parcel_id: str, observed:
         advisories = await evaluate(dao, orion, tenant_id, parcel_id, observed)
         logger.info("evaluate_action_rules done: tenant=%s parcel=%s advisories=%d",
                     tenant_id, parcel_id, len(advisories))
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001
         logger.warning("evaluate_action_rules failed: tenant=%s parcel=%s err=%s",
                        tenant_id, parcel_id, exc)
     finally:
