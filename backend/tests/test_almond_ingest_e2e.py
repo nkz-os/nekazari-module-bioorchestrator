@@ -6,10 +6,11 @@ import os
 import shutil
 
 import pytest
+from testcontainers.neo4j import Neo4jContainer
+
 from app.graph.dao import GraphDAO
 from app.ingestion.almond_ifapa_ingester import AlmondIfapaIngester
 from neo4j import AsyncGraphDatabase
-from testcontainers.neo4j import Neo4jContainer
 
 pytestmark = pytest.mark.skipif(shutil.which("docker") is None, reason="docker unavailable")
 FIX = os.path.join(os.path.dirname(__file__), "fixtures", "ifapa_almond_lastorres.jsonld")

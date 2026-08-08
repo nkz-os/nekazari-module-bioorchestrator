@@ -3,8 +3,9 @@ import sys
 from pathlib import Path
 
 import pytest
-from neo4j import GraphDatabase
 from testcontainers.neo4j import Neo4jContainer
+
+from neo4j import GraphDatabase
 
 sys.path.insert(0, str(Path(__file__).parent.parent / "scripts"))
 import seed_phenology

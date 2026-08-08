@@ -11,9 +11,10 @@ from __future__ import annotations
 import shutil
 
 import pytest
+from testcontainers.neo4j import Neo4jContainer
+
 from neo4j import GraphDatabase
 from scripts.migrate_site_identity import run
-from testcontainers.neo4j import Neo4jContainer
 
 pytestmark = pytest.mark.skipif(
     shutil.which("docker") is None,

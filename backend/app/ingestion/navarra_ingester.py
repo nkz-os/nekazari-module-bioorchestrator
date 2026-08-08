@@ -21,14 +21,13 @@ from __future__ import annotations
 
 import json
 
-from neo4j import AsyncDriver
-
 from app.ingestion.base_ingester import (
     NEO4J_PASSWORD,
     NEO4J_URI,
     NEO4J_USER,
     BaseIngester,
 )
+from neo4j import AsyncDriver
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # EPPO code → scientific name mapping (canonical, used for enrichment)

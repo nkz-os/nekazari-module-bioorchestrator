@@ -1,4 +1,5 @@
 import pytest
+
 from app.graph.dao import GraphDAO
 from app.services.weather_stats_cache import TTLCache, weather_stats_cache
 

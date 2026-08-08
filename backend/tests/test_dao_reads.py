@@ -8,6 +8,7 @@ from unittest.mock import AsyncMock, patch
 import httpx
 import pytest
 import respx
+
 from app.graph.dao import GraphDAO
 
 WEATHER_MAP_URL = "http://weather-map-backend:8080"

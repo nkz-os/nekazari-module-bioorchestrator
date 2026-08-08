@@ -40,7 +40,6 @@ from app.ingestion.base_ingester import (
 from app.ingestion.intia_exp_ingester import IntiaExpIngester
 from app.ingestion.navarra_ingester import NavarraIngester
 from app.ingestion.validate_ingest_bundle import validate_bundle
-
 from scripts.canonical_reingest import _baseline
 from scripts.purge_navarra_precanonical_residual import (
     run as purge_navarra_precanonical,

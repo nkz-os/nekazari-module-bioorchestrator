@@ -6,9 +6,10 @@ import asyncio
 import shutil
 
 import pytest
+from testcontainers.neo4j import Neo4jContainer
+
 from neo4j import AsyncGraphDatabase
 from scripts.canonical_reingest import LEGACY_MERGEKEY_MARKER, _baseline, _purge_source
-from testcontainers.neo4j import Neo4jContainer
 
 pytestmark = pytest.mark.skipif(
     shutil.which("docker") is None,

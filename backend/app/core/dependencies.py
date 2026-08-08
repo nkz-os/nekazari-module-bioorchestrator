@@ -4,9 +4,8 @@ from __future__ import annotations
 
 from collections.abc import AsyncGenerator
 
-from neo4j import AsyncDriver, AsyncGraphDatabase
-
 from app.core.config import settings
+from neo4j import AsyncDriver, AsyncGraphDatabase
 
 # Module-level driver instance (created during lifespan, shared across requests)
 _driver: AsyncDriver | None = None

@@ -9,13 +9,14 @@ import shutil
 from pathlib import Path
 
 import pytest
+from testcontainers.neo4j import Neo4jContainer
+
 from app.ingestion.almond_ifapa_ingester import AlmondIfapaIngester
 from neo4j import AsyncGraphDatabase
 from scripts.perennial_canonical_reingest import (
     prepare_approved_graph,
     subgraph_for_source,
 )
-from testcontainers.neo4j import Neo4jContainer
 
 pytestmark = pytest.mark.skipif(
     shutil.which("docker") is None,

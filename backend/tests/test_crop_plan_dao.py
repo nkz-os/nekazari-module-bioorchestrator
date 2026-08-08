@@ -1,7 +1,8 @@
 import httpx
 import pytest
-from app.graph.dao import GraphDAO
 from fastapi import HTTPException
+
+from app.graph.dao import GraphDAO
 
 
 class _FakeOrion:

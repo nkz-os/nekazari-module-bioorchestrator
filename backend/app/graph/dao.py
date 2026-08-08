@@ -25,7 +25,6 @@ import re
 from datetime import datetime, timezone
 from typing import Any
 
-from neo4j import AsyncDriver
 from nkz_platform_sdk.agronomy import AgronomicValue, Source
 from nkz_platform_sdk.orion import OrionClient
 from nkz_platform_sdk.subscriptions import SubscriptionDef, SubscriptionRegistrar
@@ -34,6 +33,7 @@ from app.core.config import settings
 from app.graph import agroclimatic
 from app.services.soil_client import assess_soil_suitability, get_parcel_soil_properties
 from app.species_registry import get_species_info, resolve_species
+from neo4j import AsyncDriver
 
 # C.2 — minimum numeric trials in a (crop, climate) cell for a "direct" (robust)
 # ranking. Below it the response carries lowEvidence. Owner default (B2) = 5.

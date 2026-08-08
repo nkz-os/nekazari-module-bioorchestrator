@@ -5,7 +5,6 @@ from __future__ import annotations
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
-from neo4j import AsyncDriver
 from nkz_platform_sdk.agronomy import (
     AgronomicValue,
     Source,
@@ -16,6 +15,7 @@ from nkz_platform_sdk.orion import OrionClient
 from app.core.dependencies import get_neo4j_driver
 from app.graph.dao import GraphDAO
 from app.species_registry import get_species_info, resolve_species
+from neo4j import AsyncDriver
 
 router = APIRouter()
 

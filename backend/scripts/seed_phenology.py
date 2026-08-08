@@ -18,6 +18,7 @@ from pathlib import Path
 from typing import Any
 
 import yaml
+
 from neo4j import Driver, GraphDatabase
 
 VALID_SOURCE_TYPES = {"global_standard", "peer_reviewed_study", "extension_advisory"}

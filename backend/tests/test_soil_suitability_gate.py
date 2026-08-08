@@ -16,6 +16,7 @@ import shutil
 from unittest.mock import AsyncMock, patch
 
 import pytest
+
 from app.services.soil_client import (
     assess_soil_suitability,
     derive_drainage_class,
@@ -196,9 +197,10 @@ def _run(coro):
 class TestExtrapolateSoilGate:
     @pytest.fixture(scope="class")
     def dao(self):
+        from testcontainers.neo4j import Neo4jContainer
+
         from app.graph.dao import GraphDAO
         from neo4j import AsyncGraphDatabase
-        from testcontainers.neo4j import Neo4jContainer
         with Neo4jContainer("neo4j:5.26-community", password="testpassword") as n:
             driver = AsyncGraphDatabase.driver(
                 n.get_connection_url(), auth=(n.username, n.password),

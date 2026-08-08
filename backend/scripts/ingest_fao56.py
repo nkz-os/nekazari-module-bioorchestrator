@@ -11,13 +11,14 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+from nkz_platform_sdk.orion import OrionClient
+
 from app.core.config import settings
 from app.core.dependencies import get_driver
 from app.graph.dao import GraphDAO
 from app.ingestion.builders import build_agri_crop_entity
 from app.ingestion.sync import sync_all_agri_crops
 from app.ingestion.uri import agri_crop_uri
-from nkz_platform_sdk.orion import OrionClient
 
 # Hardcoded mapping from FAO-56 common names to scientific names.
 # Extracted manually from FAO-56 Table 12 + external cross-reference.

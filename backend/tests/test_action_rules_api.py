@@ -1,10 +1,11 @@
 import os
 
-import app.api.v1.graph as graph_mod
 import pytest
+from fastapi.testclient import TestClient
+
+import app.api.v1.graph as graph_mod
 from app.auth import SKIP_AUTH_PREFIXES
 from app.main import app
-from fastapi.testclient import TestClient
 
 
 @pytest.fixture

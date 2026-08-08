@@ -3,6 +3,7 @@ import logging
 from unittest.mock import AsyncMock
 
 import pytest
+
 from app.workers.queue import BackgroundQueue
 
 

@@ -7,9 +7,10 @@ import os
 import shutil
 
 import pytest
+from testcontainers.neo4j import Neo4jContainer
+
 from app.ingestion.navarra_ingester import NavarraIngester
 from neo4j import AsyncGraphDatabase
-from testcontainers.neo4j import Neo4jContainer
 
 pytestmark = pytest.mark.skipif(
     shutil.which("docker") is None,

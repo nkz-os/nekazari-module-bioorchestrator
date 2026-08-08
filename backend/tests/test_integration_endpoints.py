@@ -23,6 +23,7 @@ from typing import Any
 from unittest.mock import AsyncMock, patch
 
 import pytest
+
 from neo4j import AsyncDriver
 
 # ---------------------------------------------------------------------------

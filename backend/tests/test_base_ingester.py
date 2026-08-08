@@ -16,6 +16,7 @@ EuTrialsIngester override does.
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
+
 from app.ingestion.base_ingester import BaseIngester
 
 

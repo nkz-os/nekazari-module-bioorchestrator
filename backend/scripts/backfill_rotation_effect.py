@@ -22,6 +22,7 @@ import sys
 from pathlib import Path
 
 import yaml
+
 from neo4j import GraphDatabase
 
 URI = os.getenv("NEO4J_URI", "")

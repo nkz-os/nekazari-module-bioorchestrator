@@ -8,6 +8,7 @@ survivor with backfill. See internal-docs 2026-07-03-task0.4-canonicalization.
 from __future__ import annotations
 
 import pytest
+
 from app.graph.site_canonicalization import (
     haversine_km,
     normalize_site_key,

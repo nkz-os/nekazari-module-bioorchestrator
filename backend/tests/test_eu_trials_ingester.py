@@ -1,4 +1,5 @@
 import pytest
+
 from app.ingestion.eu_trials_ingester import EuTrialsIngester
 
 

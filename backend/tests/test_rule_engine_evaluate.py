@@ -2,6 +2,7 @@
 from unittest.mock import AsyncMock
 
 import pytest
+
 from app.graph.rule_engine import evaluate
 
 COVER_RULE = {

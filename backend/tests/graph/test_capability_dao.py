@@ -5,9 +5,10 @@ import asyncio
 import shutil
 
 import pytest
+from testcontainers.neo4j import Neo4jContainer
+
 from app.graph.capability_dao import CapabilityDao
 from neo4j import AsyncGraphDatabase
-from testcontainers.neo4j import Neo4jContainer
 
 pytestmark = pytest.mark.skipif(
     shutil.which("docker") is None,

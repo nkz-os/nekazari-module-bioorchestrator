@@ -12,8 +12,9 @@ class TestWaterBudget:
         driver = MagicMock(spec=AsyncDriver)
         with patch.dict("sys.modules", {"ikerketa": MagicMock()}):  # noqa: SIM117
             with patch("app.core.dependencies.get_driver", return_value=driver):
-                from app.main import app
                 from fastapi.testclient import TestClient
+
+                from app.main import app
                 client = TestClient(app)
                 resp = client.get("/api/graph/agriculture/water-budget")
                 assert resp.status_code == 422

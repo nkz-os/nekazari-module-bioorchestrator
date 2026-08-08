@@ -1,6 +1,7 @@
 from unittest.mock import AsyncMock
 
 import pytest
+
 from app.ingestion.sync import sync_all_agri_crops
 
 

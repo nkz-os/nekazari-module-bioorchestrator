@@ -12,11 +12,12 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+from nkz_platform_sdk.orion import OrionClient
+
 from app.core.config import settings
 from app.core.dependencies import get_driver
 from app.graph.dao import GraphDAO
 from app.ingestion.sync import sync_all_agri_crops
-from nkz_platform_sdk.orion import OrionClient
 
 HEAT_MARGIN_C = 2.0   # Conservative offset from absolute max to damage threshold
 FROST_THRESHOLD = 0.0  # Only derive frost threshold if tempMinAbs < 0 deg C

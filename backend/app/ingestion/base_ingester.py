@@ -24,8 +24,6 @@ import os
 from abc import ABC, abstractmethod
 from pathlib import Path
 
-from neo4j import AsyncDriver, AsyncGraphDatabase
-
 from app.common.source_registry import get_source
 from app.graph.site_canonicalization import normalize_site_key
 from app.ingestion.normalization_registry import (
@@ -37,6 +35,7 @@ from app.ingestion.normalization_registry import (
     transform_traits_to_unified,
 )
 from app.ingestion.trial_site_geo import geo_updates_for_neo4j, resolve_trial_site_geo
+from neo4j import AsyncDriver, AsyncGraphDatabase
 
 logger = logging.getLogger(__name__)
 
