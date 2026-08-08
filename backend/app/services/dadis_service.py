@@ -101,7 +101,7 @@ class DadisClient:
                 logger.error("DAD-IS connection error for %s: %s", url, e)
                 last_exc = DadisAPIError(f"Connection error: {e}")
 
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 logger.error("DAD-IS unexpected error: %s", e)
                 last_exc = DadisAPIError(f"Unexpected error: {e}")
 
@@ -140,7 +140,7 @@ class DadisClient:
         return await self._request("GET", "species")
 
 
-from fastapi import Request  # noqa: E402
+from fastapi import Request
 
 
 def get_dadis_client(request: Request) -> DadisClient:

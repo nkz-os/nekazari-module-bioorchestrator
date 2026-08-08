@@ -17,7 +17,7 @@ import hashlib
 import json
 import re
 import sys
-from datetime import date
+from datetime import datetime, timezone
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
@@ -96,7 +96,7 @@ def adequate_curated(curated_path: Path, *, canonical_source: str) -> dict:
     data = json.loads(curated_path.read_text(encoding="utf-8"))
     graph = data.get("@graph", [])
     if not isinstance(graph, list):
-        raise ValueError("missing @graph")
+        raise TypeError("missing @graph")
 
     sites_out: dict[str, dict] = {}
     articles_out: dict[str, dict] = {}
@@ -176,7 +176,7 @@ def adequate_curated(curated_path: Path, *, canonical_source: str) -> dict:
     return {
         "@context": data.get("@context") or CONTEXT_URL,
         "adequacy_meta": {
-            "date": str(date.today()),
+            "date": str(datetime.now(tz=timezone.utc).date()),
             "canonical_source_id": canonical_source,
             "excluded_bad_year": excluded_bad_year,
             "note": "Regen/protein cover-crop trials — metadata only, ranking_eligible false",

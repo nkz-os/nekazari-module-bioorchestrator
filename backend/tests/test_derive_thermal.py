@@ -25,4 +25,4 @@ def test_heat_margin():
 def test_frost_only_derived_when_below_zero():
     """Frost only set if tempMinAbs < 0 deg C"""
     assert -5.0 < 0  # should derive
-    assert 5.0 >= 0   # should not derive
+    assert 5.0 >= 0   # should not derive  # noqa: PLR0133

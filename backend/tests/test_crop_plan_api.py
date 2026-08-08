@@ -2,9 +2,10 @@ from unittest.mock import MagicMock
 
 import pytest
 from fastapi.testclient import TestClient
-from neo4j import AsyncDriver
-from app.main import app
+
 import app.api.v1.graph as graph_mod
+from app.main import app
+from neo4j import AsyncDriver
 
 
 @pytest.fixture

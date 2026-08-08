@@ -1,5 +1,5 @@
-from app.ingestion.uri import agri_crop_uri
 from app.ingestion.ecocrop_ingester import EcoCropIngester
+from app.ingestion.uri import agri_crop_uri
 
 
 def test_property_map_coverage():

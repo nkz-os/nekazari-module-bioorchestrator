@@ -80,7 +80,7 @@ async def test_create_plan_segment_transport_error_is_collected_not_aborted(dao)
 
 @pytest.mark.asyncio
 async def test_create_plan_includes_sanity_warnings_in_output(dao):
-    d, fake = dao
+    d, _fake = dao
     segs = [
         {"crop": "Vicia sativa", "role": "bogus_role", "sowing_window": ["2025-11-01", "2025-12-20"],
          "termination_method": "roller_crimper", "expected_termination": "2026-03-15"},
@@ -124,7 +124,7 @@ async def test_advance_activates_target_demotes_prior_patches_hasagricrop(dao):
          "terminationMethod": "harvest"},
     ]
     out = await d.advance_segment("urn:ngsi-ld:AgriParcel:montiko:p-1", "2026", 1, "2026-04-15", "montiko")
-    patched = dict((eid, attrs) for eid, attrs in fake.patched)
+    patched = {eid: attrs for eid, attrs in fake.patched}
     # target activated with real plantingDate
     tgt = patched["urn:ngsi-ld:AgriCrop:montiko:p-1:2026:1"]
     assert tgt["status"]["value"] == "active"

@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# ruff: noqa: EXE001
 """One-shot prod fix for Navarra residual debt (null-climate sites, orphan MT)."""
 from __future__ import annotations
 

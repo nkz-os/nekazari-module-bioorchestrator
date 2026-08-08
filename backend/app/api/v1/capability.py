@@ -7,10 +7,10 @@ from typing import Annotated, Any
 
 import httpx
 from fastapi import APIRouter, Depends, HTTPException
-from neo4j import AsyncDriver
 
 from app.core.dependencies import get_neo4j_driver
 from app.graph.capability_dao import CapabilityDao
+from neo4j import AsyncDriver
 
 router = APIRouter()
 

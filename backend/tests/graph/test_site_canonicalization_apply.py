@@ -11,7 +11,6 @@ from __future__ import annotations
 import shutil
 
 import pytest
-from neo4j import GraphDatabase
 from testcontainers.neo4j import Neo4jContainer
 
 from app.graph.site_canonicalization import (
@@ -19,6 +18,7 @@ from app.graph.site_canonicalization import (
     fetch_trial_sites,
     plan_site_canonicalization,
 )
+from neo4j import GraphDatabase
 
 pytestmark = pytest.mark.skipif(
     shutil.which("docker") is None,

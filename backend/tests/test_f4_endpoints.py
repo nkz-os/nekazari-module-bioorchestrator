@@ -3,6 +3,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from fastapi.testclient import TestClient
+
 from neo4j import AsyncDriver
 
 
@@ -23,7 +24,7 @@ class TestAssignCrop:
 
     def test_assign_crop_missing_parcel_id(self, mock_neo4j_driver):
         """Returns 400 when parcel_id is missing."""
-        with patch.dict("sys.modules", {"ikerketa": MagicMock()}):
+        with patch.dict("sys.modules", {"ikerketa": MagicMock()}):  # noqa: SIM117
             with patch("app.core.dependencies.get_driver", return_value=mock_neo4j_driver):
                 from app.main import app
                 client = TestClient(app)
@@ -36,7 +37,7 @@ class TestAssignCrop:
 
     def test_assign_crop_invalid_management(self, mock_neo4j_driver):
         """Returns 400 when management is not organic/conventional."""
-        with patch.dict("sys.modules", {"ikerketa": MagicMock()}):
+        with patch.dict("sys.modules", {"ikerketa": MagicMock()}):  # noqa: SIM117
             with patch("app.core.dependencies.get_driver", return_value=mock_neo4j_driver):
                 from app.main import app
                 client = TestClient(app)
@@ -56,7 +57,7 @@ class TestAssignCrop:
 
     def test_assign_crop_missing_fields(self, mock_neo4j_driver):
         """Returns 400 when required fields are missing."""
-        with patch.dict("sys.modules", {"ikerketa": MagicMock()}):
+        with patch.dict("sys.modules", {"ikerketa": MagicMock()}):  # noqa: SIM117
             with patch("app.core.dependencies.get_driver", return_value=mock_neo4j_driver):
                 from app.main import app
                 client = TestClient(app)
@@ -113,7 +114,7 @@ class TestCropContext:
     def test_crop_context_missing_parcel_id(self):
         """Returns 404 when endpoint not yet deployed."""
         driver = MagicMock(spec=AsyncDriver)
-        with patch.dict("sys.modules", {"ikerketa": MagicMock()}):
+        with patch.dict("sys.modules", {"ikerketa": MagicMock()}):  # noqa: SIM117
             with patch("app.core.dependencies.get_driver", return_value=driver):
                 from app.main import app
                 client = TestClient(app)
@@ -128,7 +129,7 @@ class TestYieldPotential:
     def test_yield_potential_missing_params(self):
         """Returns 404 when endpoint not yet deployed."""
         driver = MagicMock(spec=AsyncDriver)
-        with patch.dict("sys.modules", {"ikerketa": MagicMock()}):
+        with patch.dict("sys.modules", {"ikerketa": MagicMock()}):  # noqa: SIM117
             with patch("app.core.dependencies.get_driver", return_value=driver):
                 from app.main import app
                 client = TestClient(app)

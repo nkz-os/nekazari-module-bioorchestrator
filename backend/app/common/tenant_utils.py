@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
+# ruff: noqa: EXE001
 # =============================================================================
 # Tenant Utilities - Common Functions for Tenant ID Normalization
 # =============================================================================
 # Provides consistent tenant ID normalization across all services
 # Ensures compatibility with PostgreSQL, MongoDB, and other services
 
-import re
 import logging
+import re
 
 logger = logging.getLogger(__name__)
 

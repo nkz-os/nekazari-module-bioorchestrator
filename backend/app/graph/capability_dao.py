@@ -1,6 +1,8 @@
 """Neo4j async DAO for the Capability Registry: Module/Capability/Attribute upserts + queries."""
 from __future__ import annotations
-from typing import Iterable
+
+from collections.abc import Iterable
+
 from neo4j import AsyncDriver
 
 

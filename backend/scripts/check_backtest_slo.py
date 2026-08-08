@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# ruff: noqa: EXE001
 """Compare leave-one-site-out backtest metrics against gate and owner SLO.
 
 Usage:

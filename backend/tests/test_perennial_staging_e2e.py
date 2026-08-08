@@ -14,11 +14,11 @@ import shutil
 from pathlib import Path
 
 import pytest
-from neo4j import AsyncGraphDatabase
 from testcontainers.neo4j import Neo4jContainer
 
 from app.ingestion.navarra_ingester import NavarraIngester
 from app.ingestion.validate_ingest_bundle import validate_bundle
+from neo4j import AsyncGraphDatabase
 
 pytestmark = pytest.mark.skipif(
     shutil.which("docker") is None,

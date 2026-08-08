@@ -7,7 +7,6 @@ CSV path: data/raw/ecocrop.csv (from FAO GAEZ EcoCrop export).
 import csv
 import logging
 from pathlib import Path
-from typing import Optional
 
 logger = logging.getLogger(__name__)
 
@@ -18,7 +17,7 @@ DEFAULT_CSV_PATH = Path(__file__).parent.parent.parent.parent / "data" / "raw" /
 
 
 def _load_ecocrop() -> None:
-    global _loaded, _ecocrop_cache
+    global _loaded, _ecocrop_cache  # noqa: PLW0602
     if _loaded:
         return
     _loaded = True
@@ -47,11 +46,11 @@ def _load_ecocrop() -> None:
                         "family": family,
                     }
         logger.info("EcoCrop loaded: %d species", len(_ecocrop_cache))
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         logger.warning("Failed to load EcoCrop CSV: %s", e)
 
 
-def _safe_int(val) -> Optional[int]:
+def _safe_int(val) -> int | None:
     if val is None or val == "" or val == "NA":
         return None
     try:
@@ -60,14 +59,14 @@ def _safe_int(val) -> Optional[int]:
         return None
 
 
-def get_ecocrop_data(scientific_name: str) -> Optional[dict]:
+def get_ecocrop_data(scientific_name: str) -> dict | None:
     """Look up EcoCrop data by scientific name. Returns None if not found."""
     if not _loaded:
         _load_ecocrop()
     return _ecocrop_cache.get(scientific_name.strip().lower())
 
 
-def get_growing_season_days(scientific_name: str) -> Optional[int]:
+def get_growing_season_days(scientific_name: str) -> int | None:
     """Get growing cycle days (midpoint of min/max). Returns None if not found."""
     data = get_ecocrop_data(scientific_name)
     if not data:

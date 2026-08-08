@@ -247,8 +247,9 @@ def test_path_input_is_accepted(tmp_path):
 # ── Rule set 5: CLI ─────────────────────────────────────────────────────────
 
 def test_cli_exit_zero_on_clean(tmp_path, capsys):
-    from app.ingestion.validate_ingest_bundle import main
     import json as _json
+
+    from app.ingestion.validate_ingest_bundle import main
     p = tmp_path / "ok.jsonld"
     p.write_text(_json.dumps(_bundle(_site("Dicastillo"), _trial("Dicastillo"))))
     rc = main([str(p)])
@@ -257,8 +258,9 @@ def test_cli_exit_zero_on_clean(tmp_path, capsys):
 
 
 def test_cli_exit_one_on_error(tmp_path, capsys):
-    from app.ingestion.validate_ingest_bundle import main
     import json as _json
+
+    from app.ingestion.validate_ingest_bundle import main
     trial = _trial("Dicastillo")
     del trial["crop_eppo"]
     p = tmp_path / "bad.jsonld"

@@ -16,7 +16,6 @@ import json
 
 from app.ingestion.base_ingester import BaseIngester
 
-
 EPPO_TO_SPECIES: dict[str, str] = {
     "TRZAX": "Triticum aestivum",
     "TRZAW": "Triticum aestivum",
@@ -100,7 +99,7 @@ class GenvceIngester(BaseIngester):
             "year": node.get("year"),
             "topic": node.get("topic"),
             "mergeKey": (
-                f"genvce|{str(node.get('issue_number', ''))}|"
+                f"genvce|{node.get('issue_number', '')!s}|"
                 f"{str(node.get('article_title', ''))[:80]}"
             ),
         }

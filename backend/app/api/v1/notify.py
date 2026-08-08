@@ -1,6 +1,7 @@
 """NGSI-LD subscription notification handler."""
 from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
+
 from app.workers.queue import background_queue
 
 router = APIRouter(tags=["ngsi-ld"])
@@ -11,9 +12,7 @@ def _is_valid_ngsi_ld_subscription(payload: dict) -> bool:
     if not isinstance(payload, dict):
         return False
     data = payload.get("data")
-    if not isinstance(data, list):
-        return False
-    return True
+    return isinstance(data, list)
 
 
 @router.post("/notify")

@@ -1,9 +1,12 @@
 # tests/test_phenology_notify.py
-import pytest
 from unittest.mock import patch
+
+import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
+
 from app.api.v1 import phenology_notify
+
 
 @pytest.fixture(autouse=True)
 def _reset():

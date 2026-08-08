@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
+# ruff: noqa: EXE001
 """Ingest IFAPA + ITACyL trial observations as VarietyTrial nodes in Neo4j."""
 
-import json
 import base64
+import json
 import urllib.request
 
 NEO4J_URL = "http://bioorchestrator-neo4j:7474/db/neo4j/tx/commit"
@@ -136,7 +137,7 @@ def ingest_observations():
                     print(f"  ERROR: {result['errors'][:200]}")
             else:
                 ingested += 1
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             errors += 1
             if errors <= 3:
                 print(f"  EXCEPTION: {e}")

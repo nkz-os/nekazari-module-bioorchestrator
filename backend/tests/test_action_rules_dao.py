@@ -1,5 +1,7 @@
 import json
+
 import pytest
+
 from app.graph.dao import GraphDAO
 
 

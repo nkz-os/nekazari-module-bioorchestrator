@@ -149,7 +149,7 @@ def fetch_trial_sites(driver) -> list[dict]:
     """Load every TrialSite from Neo4j — id, name, richness fields, and
     source provenance (source_id, sourceIds) for the merge executor.
     """
-    fields = ", ".join("t.%s AS %s" % (f, f) for f in RICHNESS_FIELDS)
+    fields = ", ".join(f"t.{f} AS {f}" for f in RICHNESS_FIELDS)
     query = (
         "MATCH (t:TrialSite) "
         "RETURN elementId(t) AS id, t.name AS name, "

@@ -12,7 +12,7 @@ _SOIL_NUMERIC_KEYS = frozenset({
 })
 
 
-def is_soilgrids_nodata(value: float | int | None) -> bool:
+def is_soilgrids_nodata(value: float | None) -> bool:
     if value is None:
         return False
     try:

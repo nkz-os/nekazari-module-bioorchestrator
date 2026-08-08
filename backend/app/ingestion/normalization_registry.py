@@ -28,7 +28,6 @@ from __future__ import annotations
 import json
 import re
 
-
 # ═══════════════════════════════════════════════════════════════════════════════
 # 1. Trait mappings: source language → canonical AGROVOC
 # ═══════════════════════════════════════════════════════════════════════════════

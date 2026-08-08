@@ -22,18 +22,18 @@ import json
 import logging
 import os
 import re
-from datetime import date
+from datetime import datetime, timezone
 from typing import Any
 
-from neo4j import AsyncDriver
 from nkz_platform_sdk.agronomy import AgronomicValue, Source
 from nkz_platform_sdk.orion import OrionClient
-from nkz_platform_sdk.subscriptions import SubscriptionRegistrar, SubscriptionDef
+from nkz_platform_sdk.subscriptions import SubscriptionDef, SubscriptionRegistrar
 
 from app.core.config import settings
 from app.graph import agroclimatic
 from app.services.soil_client import assess_soil_suitability, get_parcel_soil_properties
 from app.species_registry import get_species_info, resolve_species
+from neo4j import AsyncDriver
 
 # C.2 — minimum numeric trials in a (crop, climate) cell for a "direct" (robust)
 # ranking. Below it the response carries lowEvidence. Owner default (B2) = 5.
@@ -79,7 +79,7 @@ async def _fetch_ropo_products(cultivo: str, tenant_id: str) -> list[dict]:
             if resp.status_code == 200:
                 data = resp.json()
                 return data if isinstance(data, list) else []
-    except Exception:
+    except Exception:  # noqa: BLE001,S110
         pass
     return []
 
@@ -99,7 +99,7 @@ class GraphDAO:
                 result = await session.run("RETURN 1 AS alive")
                 record = await result.single()
                 return {"neo4j": "connected", "alive": record["alive"]}
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001
             return {"neo4j": "error", "detail": str(exc)}
 
     # ── Global stats (not tenant-filtered — counts all reference data) ────────
@@ -591,8 +591,9 @@ class GraphDAO:
         and extracts Kc, D1, D2, MDS from its attributes.
         """
         try:
-            from app.core.config import settings
             from nkz_platform_sdk.orion import OrionClient
+
+            from app.core.config import settings
 
             orion = OrionClient(
                 settings.catalog_tenant,
@@ -630,7 +631,7 @@ class GraphDAO:
         except ImportError:
             logger.warning("nkz_platform_sdk not available, cannot fallback to Orion")
             return None
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001
             logger.warning("Phenology fallback to Orion failed: %s", exc)
             return None
 
@@ -1569,7 +1570,7 @@ class GraphDAO:
                 top_n=top_n,
                 excluded_sites=excluded_lower,
                 site_weights=site_weights,
-                now_year=date.today().year,
+                now_year=datetime.now(tz=timezone.utc).date().year,
                 half_life=recency_half_life,
                 target_regime=irrigation_uri,
                 regime_penalty=0.4,
@@ -1586,9 +1587,9 @@ class GraphDAO:
                     try:
                         ds = json.loads(ds_raw) if isinstance(ds_raw, str) else ds_raw
                         for dk, dv in ds.items():
-                            if isinstance(dv, dict) and dv.get("value") is not None:
-                                if dk not in merged_diseases or dv["value"] > merged_diseases[dk]["value"]:
-                                    merged_diseases[dk] = dv
+                            if isinstance(dv, dict) and dv.get("value") is not None \
+                                    and (dk not in merged_diseases or dv["value"] > merged_diseases[dk]["value"]):
+                                merged_diseases[dk] = dv
                     except (json.JSONDecodeError, TypeError):
                         pass
 
@@ -1804,11 +1805,11 @@ class GraphDAO:
             Complete sequence plan dict matching RegenerativeSequence schema.
         """
         from app.services.cover_crops import (
-            PROTEIN_CROPS,
-            select_cover_crops,
-            estimate_n_fixation,
-            estimate_dates,
             ORGANIC_YIELD_FACTOR,
+            PROTEIN_CROPS,
+            estimate_dates,
+            estimate_n_fixation,
+            select_cover_crops,
         )
 
         # ── Validate inputs ───────────────────────────────────────────
@@ -2038,7 +2039,7 @@ class GraphDAO:
                             if topsoil.get("organicCarbon") is not None:
                                 current_soc = topsoil["organicCarbon"]
                             soil_texture = topsoil.get("usdaTextureClass", "unknown")
-            except Exception:
+            except Exception:  # noqa: BLE001,S110
                 pass
 
         # Target SOC by texture (FAO voluntary guidelines for sustainable soil management)
@@ -2157,7 +2158,7 @@ class GraphDAO:
                             for h in horizons
                         )
                         return round(total_awc, 1) if total_awc > 0 else None
-        except Exception:
+        except Exception:  # noqa: BLE001,S110
             pass
         return None
 
@@ -2178,6 +2179,7 @@ class GraphDAO:
         penalties applied (fail-safe: ranking unchanged).
         """
         import httpx
+
         from app.core.config import settings
         from app.services.weather_stats_cache import weather_stats_cache
 
@@ -2242,9 +2244,10 @@ class GraphDAO:
         2. Patches the AgriParcel with hasAgriCrop to the new entity.
         3. If the parcel had a previous assignment, marks the old crop harvested.
         """
+        from datetime import datetime, timezone
+
         import httpx
         from fastapi import HTTPException
-        from datetime import datetime, timezone
 
         parcel_short = parcel_id.split(":")[-1]
         season_year = season_start[:4] if season_start else str(datetime.now(timezone.utc).year)
@@ -2360,7 +2363,7 @@ class GraphDAO:
                     await client.update_entity_attrs(old_crop_id, {
                         "status": {"type": "Property", "value": "harvested"},
                     })
-                except Exception:
+                except Exception:  # noqa: BLE001
                     logger.warning("Failed to mark old crop %s as harvested", old_crop_id)
 
             # Step 4: Patch the AgriParcel with new crop assignment
@@ -2419,7 +2422,7 @@ class GraphDAO:
             )
             result = await registrar.ensure_all([tenant_id])
             logger.info("phenology subscription ensured for %s: %s", tenant_id, result)
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001
             logger.warning("phenology subscription setup failed for %s: %s", tenant_id, exc)
 
     async def create_crop_plan(self, parcel_id, season, segments, tenant_id) -> dict:
@@ -2427,8 +2430,9 @@ class GraphDAO:
 
         No segment is auto-activated (actual planting happens via advance).
         """
-        from app.graph.crop_plan import build_segment_entity, sanity_warnings
         import httpx
+
+        from app.graph.crop_plan import build_segment_entity, sanity_warnings
         client = OrionClient(tenant_id=tenant_id)
         ids, warnings = [], []
         warnings.extend(sanity_warnings(segments))
@@ -2446,7 +2450,7 @@ class GraphDAO:
                         else:
                             warnings.append({"seq": seq, "error": str(e)[:160]})
                             continue
-                except Exception as e:
+                except Exception as e:  # noqa: BLE001
                     # Never abort the batch on a single-segment failure
                     # (e.g. httpx.ConnectError, timeout, or any transport error).
                     warnings.append({"seq": seq, "error": str(e)[:160]})
@@ -2463,7 +2467,7 @@ class GraphDAO:
                     patch["cropSeasonEnd"] = {"type": "Property", "value": {"@type": "Date", "@value": max(ends)}}
                 try:
                     await client.append_entity_attrs(parcel_id, patch)
-                except Exception:
+                except Exception:  # noqa: BLE001
                     warnings.append({"parcel": "season-bounds patch failed"})
             return {"status": "committed", "parcel_id": parcel_id, "season": season,
                     "segments": ids, "warnings": warnings}
@@ -2479,7 +2483,7 @@ class GraphDAO:
                 q=f'hasAgriParcel=="{parcel_id}";cropSeason=="{season}"',
                 limit=50, options="keyValues",
             )
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001
             logger.warning(
                 "get_crop_plan: query failed for parcel=%s season=%s (returning empty plan, "
                 "not necessarily an empty plan — Orion may be unreachable): %s",
@@ -2644,7 +2648,7 @@ class GraphDAO:
             else:
                 soil_data = {"texture": None, "wrb_type": None, "ph": None,
                              "data_available": False, "source": soil_data.get("source", "unavailable")}
-        except Exception:
+        except Exception:  # noqa: BLE001
             soil_data = {"texture": None, "wrb_type": None, "ph": None,
                          "data_available": False, "source": "unavailable"}
 
@@ -2671,13 +2675,13 @@ class GraphDAO:
                         "source": "era5_reanalysis",
                     }
                     climate_input = "era5_reanalysis"
-            except Exception:
+            except Exception:  # noqa: BLE001,S110
                 pass  # fall through to TrialSite proxy
 
             # Fallback: nearest TrialSite by haversine (capped ~50km)
             if climate_input == "unavailable":
                 async with self._driver.session() as session:
-                    from math import radians, cos, sin, asin, sqrt
+                    from math import asin, cos, radians, sin, sqrt
                     lat_r, lon_r = radians(float(climate_lat)), radians(float(climate_lon))
                     result = await session.run(
                         "MATCH (ts:TrialSite) WHERE ts.latitude IS NOT NULL AND ts.longitude IS NOT NULL "
@@ -2745,7 +2749,11 @@ class GraphDAO:
         Orchestrates get_parcel_environment + get_available_crops +
         extrapolate_varieties + economics. No new Neo4j relationship types.
         """
-        from app.services.crop_reference import DEFAULT_REFERENCE, get_season_slots, get_gluten_status
+        from app.services.crop_reference import (
+            DEFAULT_REFERENCE,
+            get_gluten_status,
+            get_season_slots,
+        )
 
         # ── 1. Resolve environment ─────────────────────────────────────
         env = await self.get_parcel_environment(parcel_id, tenant_id)
@@ -2809,13 +2817,13 @@ class GraphDAO:
                 if soil_req and soil_data.get("data_available"):
                     ph = soil_data.get("ph")
                     texture = soil_data.get("texture")
-                    if ph is not None and soil_req.get("ph_min") is not None:
-                        if not (soil_req["ph_min"] <= ph <= soil_req["ph_max"]):
+                    if ph is not None and soil_req.get("ph_min") is not None \
+                            and not (soil_req["ph_min"] <= ph <= soil_req["ph_max"]):
                             suitability["warnings"].append(
                                 f"pH {ph} fuera del rango [{soil_req['ph_min']}, {soil_req['ph_max']}]")
-                    if texture and soil_req.get("textures"):
-                        match = any(t.lower() in texture.lower() for t in soil_req["textures"])
-                        if not match:
+                    if texture and soil_req.get("textures") and not any(
+                        t.lower() in texture.lower() for t in soil_req["textures"]
+                    ):
                             suitability["warnings"].append(
                                 f"Textura '{texture}' no coincide con {soil_req['textures']}")
                     suitability["overall"] = "suitable" if not suitability["warnings"] else "warning"
@@ -2827,8 +2835,8 @@ class GraphDAO:
                 frost_days = climate_detail.get("frost_days_per_year")
                 if heat_tol:
                     frost_threshold = heat_tol.get("frost_damage_c")
-                    if frost_threshold is not None and frost_days and frost_days > 0:
-                        if frost_threshold > -5 and frost_days > 5:
+                    if frost_threshold is not None and frost_days and frost_days > 0 \
+                            and frost_threshold > -5 and frost_days > 5:
                             thermal_risk = "frost"
 
                 # ── 7. Water demand (if ERA5 data available) ───────────
@@ -2929,7 +2937,7 @@ class GraphDAO:
                     "gluten_status": get_gluten_status(eppo),
                     "recommendation_trust": trust,
                 }
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 logger.warning("suggest_crops: failed to evaluate %s: %s", eppo, e)
                 return None
 
@@ -2941,7 +2949,7 @@ class GraphDAO:
                 r = await coro
                 if r:
                     results.append(r)
-            except Exception:
+            except Exception:  # noqa: BLE001,S110
                 pass
 
         # ── 10. Composite score ────────────────────────────────────────
@@ -3002,8 +3010,8 @@ class GraphDAO:
                 raise
             except httpx.ConnectError:
                 raise HTTPException(status_code=502, detail="Orion-LD unreachable")
-            except Exception as e:
-                return {"error": f"Failed to read parcel: {str(e)}"}
+            except Exception as e:  # noqa: BLE001
+                return {"error": f"Failed to read parcel: {e!s}"}
 
             crop_uri = _resolve_relationship(parcel, "hasAgriCrop")
             variety_uri = _resolve_relationship(parcel, "hasAgriCropVariety")
@@ -3021,7 +3029,7 @@ class GraphDAO:
                 crop_entity = await orion.get_entity(crop_uri)
                 crop_name = _extract_prop_value(crop_entity.get("name"))
                 crop_scientific = _extract_prop_value(crop_entity.get("scientificName"))
-            except Exception:
+            except Exception:  # noqa: BLE001,S110
                 pass
 
             variety_name = variety_uri.split(":")[-1] if variety_uri else None
@@ -3060,7 +3068,7 @@ class GraphDAO:
                             "moisture_pct": moisture,
                             "temperature_c": temp,
                         }
-            except Exception:
+            except Exception:  # noqa: BLE001,S110
                 pass
 
         finally:
@@ -3122,7 +3130,7 @@ class GraphDAO:
         stddev = math.sqrt(sum((y - mean_yield) ** 2 for y in yields) / (n - 1)) if n > 1 else 0
         ci_low = mean_yield - 1.96 * stddev / math.sqrt(n) if n > 1 else mean_yield
         ci_high = mean_yield + 1.96 * stddev / math.sqrt(n) if n > 1 else mean_yield
-        sites = list(set(t.get("site_name") for t in variety_trials if t.get("site_name")))
+        sites = list({t.get("site_name") for t in variety_trials if t.get("site_name")})
         result: dict = {"variety": variety, "crop": crop, "target_environment": {"climate_class": climate_class, "soil_type": soil_type}, "expected_yield_kg_ha": round(mean_yield, 1), "confidence_interval": [round(ci_low, 1), round(ci_high, 1)], "trials_analyzed": len(variety_trials), "similar_sites": sites[:10]}
         if parcel_id:
             try:
@@ -3143,7 +3151,7 @@ class GraphDAO:
                         result["current_estimated_yield_kg_ha"] = round(current_yield, 1)
                         result["yield_gap_kg_ha"] = round(gap, 1)
                         result["yield_gap_pct"] = round(gap / mean_yield * 100, 1) if mean_yield else 0
-            except Exception:
+            except Exception:  # noqa: BLE001,S110
                 pass
         phenology = await self.get_phenology_params(species=crop)
         if phenology:
@@ -3156,12 +3164,12 @@ class GraphDAO:
         conf_levels: list[str] = []
         for t in variety_trials:
             ds_raw = t.get("disease_scores_unified")
-            if ds_raw:
+            if ds_raw and isinstance(ds_raw, (str, dict)):
                 try:
                     ds = json.loads(ds_raw) if isinstance(ds_raw, str) else ds_raw
                     for dk, dv in ds.items():
-                        if isinstance(dv, dict) and dv.get("value") is not None:
-                            if dk not in merged_diseases or dv["value"] > merged_diseases[dk]["value"]:
+                        if isinstance(dv, dict) and dv.get("value") is not None \
+                                and (dk not in merged_diseases or dv["value"] > merged_diseases[dk]["value"]):
                                 merged_diseases[dk] = dv
                 except (json.JSONDecodeError, TypeError):
                     pass
@@ -3230,8 +3238,8 @@ class GraphDAO:
                 actual = soil_data.get("actual", {})
                 if isinstance(actual, dict) and actual.get("ph"):
                     ph = actual["ph"]
-                    if soil_req.get("ph_min") and soil_req.get("ph_max"):
-                        if not (soil_req["ph_min"] <= ph <= soil_req["ph_max"]):
+                    if soil_req.get("ph_min") and soil_req.get("ph_max") \
+                            and not (soil_req["ph_min"] <= ph <= soil_req["ph_max"]):
                             warnings.append(f"pH {ph} outside [{soil_req['ph_min']}, {soil_req['ph_max']}]")
 
             entry = {
@@ -3271,13 +3279,13 @@ class GraphDAO:
                     forage = await self.get_forage_value(crop)
                     if forage:
                         entry["forage_value"] = forage
-                except Exception:
+                except Exception:  # noqa: BLE001,S110
                     pass
             try:
                 maturity = await self.get_market_maturity(crop)
                 if maturity and not maturity.get("source_unavailable"):
                     entry["market_maturity"] = maturity
-            except Exception:
+            except Exception:  # noqa: BLE001,S110
                 pass
 
             comparisons.append(entry)
@@ -3454,12 +3462,15 @@ class GraphDAO:
 
         No new Neo4j queries. No Orion writes. Pure DAO orchestration.
         """
-        from app.services.crop_reference import (
-            DEFAULT_REFERENCE, get_crop_ref,
-            get_season_slots, get_gluten_status,
-            compute_grain_protein_kg_ha, is_legume_cash_crop,
-        )
         from app.services.cover_crops import select_cover_crops
+        from app.services.crop_reference import (
+            DEFAULT_REFERENCE,
+            compute_grain_protein_kg_ha,
+            get_crop_ref,
+            get_gluten_status,
+            get_season_slots,
+            is_legume_cash_crop,
+        )
 
         if years < 2 or years > 6:
             return {"error": "Years must be between 2 and 6"}
@@ -3502,7 +3513,7 @@ class GraphDAO:
         def _crop_passes_constraints(eppo: str) -> bool:
             if gluten_free_only and get_gluten_status(eppo) == "contains_gluten":
                 return False
-            if season_slot != "all" and season_slot not in get_season_slots(eppo):
+            if season_slot != "all" and season_slot not in get_season_slots(eppo):  # noqa: SIM103
                 return False
             return True
 
@@ -3631,7 +3642,7 @@ class GraphDAO:
                                 name = (eppo_to_name.get(eppo, eppo) or "").lower()
                                 if name in successor_names or eppo.lower() in successor_names:
                                     successor_eppos.add(eppo)
-                    except Exception:
+                    except Exception:  # noqa: BLE001,S110
                         pass
 
                 if successor_eppos:
@@ -3674,7 +3685,7 @@ class GraphDAO:
                             "margin": margin_c,
                             "ops": ops,
                         }
-                    except Exception:
+                    except Exception:  # noqa: BLE001
                         return None
 
                 scored = []
@@ -3683,7 +3694,7 @@ class GraphDAO:
                         r = await coro
                         if r:
                             scored.append(r)
-                    except Exception:
+                    except Exception:  # noqa: BLE001,S110
                         pass
 
                 if not scored:
@@ -3755,7 +3766,7 @@ class GraphDAO:
                             "sowing_date": regen.get("cover_crop_sowing_date"),
                             "termination_date": regen.get("termination_date_estimate"),
                         }
-                except Exception:
+                except Exception:  # noqa: BLE001,S110
                     pass
 
             if not cover_crop:
@@ -3770,11 +3781,11 @@ class GraphDAO:
                     violated = [rc for rc in constraints_list if rc.get("crop_b") == selected_eppo]
                     if violated:
                         rotation_warning = violated[0].get("reason", "Rotation constraint violated")
-                except Exception:
+                except Exception:  # noqa: BLE001,S110
                     pass
                 try:
                     pest_risk = await self.get_shared_pests(previous_crop, selected_eppo)
-                except Exception:
+                except Exception:  # noqa: BLE001,S110
                     pass
 
             # ── 7. Build year entry ───────────────────────────────────
@@ -3815,7 +3826,7 @@ class GraphDAO:
         try:
             cash_only = [{"crop": y["cash_crop"]["eppo"]} for y in plan]
             pac = await self._evaluate_pac_compliance(parcel_id, cash_only)
-        except Exception:
+        except Exception:  # noqa: BLE001,S110
             pass
 
         return {
@@ -3865,7 +3876,7 @@ class GraphDAO:
                 if terrain_resp.status_code == 200:
                     terrain_data = terrain_resp.json()
                     slope_pct = terrain_data.get("slope_percent")
-        except Exception:
+        except Exception:  # noqa: BLE001,S110
             pass
 
         try:
@@ -3876,7 +3887,7 @@ class GraphDAO:
                 if natura_resp.status_code == 200:
                     natura_data = natura_resp.json()
                     natura2000_distance = natura_data.get("distance_m")
-        except Exception:
+        except Exception:  # noqa: BLE001,S110
             pass
 
         # Rule 1: Winter cover on slopes >10%
@@ -3916,7 +3927,7 @@ class GraphDAO:
 
         # Rule 3: Crop diversity (≥2 distinct crops in rotation)
         max_score += 25
-        distinct = len(set(e["crop"] for e in plan))
+        distinct = len({e["crop"] for e in plan})
         if distinct >= 2:
             rules.append({"id": "crop_diversity", "pass": True,
                 "detail": f"{distinct} cultivos distintos en {len(plan)} años"})
@@ -4002,7 +4013,7 @@ class GraphDAO:
                 return round(total_eto, 1) if total_eto > 0 else None
         except (httpx.ConnectError, httpx.TimeoutException):
             logger.warning("Timeseries-reader unreachable for ET0")
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.warning("Failed to fetch ET0 from timeseries-reader: %s", e)
         return None
 
@@ -4010,9 +4021,9 @@ class GraphDAO:
         self, parcel_id: str, tenant_id: str = "", week_start: str | None = None
     ) -> dict:
         """Calculate weekly irrigation requirement for a parcel."""
-        from datetime import date, timedelta
+        from datetime import date, datetime, timedelta, timezone
 
-        ws = date.fromisoformat(week_start) if week_start else date.today()
+        ws = date.fromisoformat(week_start) if week_start else datetime.now(tz=timezone.utc).date()
         we = ws + timedelta(days=6)
 
         ctx = await self.get_crop_context(parcel_id=parcel_id, tenant_id=tenant_id)
@@ -4105,7 +4116,7 @@ class GraphDAO:
 
         Returns projected yield with accumulated stress and remaining-season projection.
         """
-        from datetime import date, timedelta
+        from datetime import date, datetime, timedelta, timezone
 
         ctx = await self.get_crop_context(parcel_id=parcel_id, tenant_id=tenant_id)
         if "error" in ctx:
@@ -4151,9 +4162,9 @@ class GraphDAO:
         if season_start_str:
             season_start = date.fromisoformat(season_start_str[:10])
         else:
-            season_start = date.today() - timedelta(days=180)
+            season_start = datetime.now(tz=timezone.utc).date() - timedelta(days=180)
 
-        today = date.today()
+        today = datetime.now(tz=timezone.utc).date()
         days_since_planting = (today - season_start).days
         if days_since_planting <= 0:
             return {
@@ -4277,8 +4288,10 @@ class GraphDAO:
           4. Soil texture from Soil module → Saxton-Rawls pedotransfer
           5. Crop parameters from Neo4j PhenologyParams + PCSE defaults
         """
+        from datetime import date, datetime, timedelta, timezone
+
         import httpx
-        from datetime import date, timedelta
+
         from app.services.pedotransfer import texture_to_hydraulic_props
         from app.services.wofost_service import run_wofost_simulation
 
@@ -4315,7 +4328,7 @@ class GraphDAO:
                             if start_date:
                                 sowing_date_str = start_date[:10]
                                 break
-            except Exception:
+            except Exception:  # noqa: BLE001,S110
                 pass
 
             if not sowing_date_str:
@@ -4333,7 +4346,7 @@ class GraphDAO:
             return {"error": f"Invalid sowing date: {sowing_date_str}"}
 
         # ── 3. Fetch weather data from timeseries-reader ──
-        today = date.today()
+        today = datetime.now(tz=timezone.utc).date()
         weather_data = []
         try:
             async with httpx.AsyncClient(timeout=30) as client:
@@ -4346,7 +4359,7 @@ class GraphDAO:
                     raw = resp.json()
                     if isinstance(raw, list):
                         weather_data = raw
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.warning("Failed to fetch weather: %s — using defaults", e)
 
         if not weather_data:
@@ -4381,7 +4394,7 @@ class GraphDAO:
                 graph_params["tsum1"] = phen.get("stage_gdd_max") or phen.get("gdd_to_anthesis")
                 graph_params["tsum2"] = phen.get("gdd_to_maturity")
                 graph_params["tbase"] = phen.get("base_temp")
-        except Exception:
+        except Exception:  # noqa: BLE001,S110
             pass
 
         # ── 6. Run simulation ──
@@ -4416,7 +4429,7 @@ class GraphDAO:
         try:
             import redis.asyncio as aioredis
             r = aioredis.Redis.from_url("redis://redis-service:6379/0", socket_timeout=5.0)
-        except Exception:
+        except Exception:  # noqa: BLE001
             return {"alerts": []}
 
         try:
@@ -4446,7 +4459,7 @@ class GraphDAO:
                             ts_dt = datetime.fromisoformat(ts)
                             if ts_dt < cutoff:
                                 continue
-                        except Exception:
+                        except Exception:  # noqa: BLE001,S110
                             pass
                         alert = {
                             "type": payload.get("event_type", "unknown"),
@@ -4457,7 +4470,7 @@ class GraphDAO:
                         }
                         alerts.append(alert)
                         seen += 1
-                except Exception:
+                except Exception:  # noqa: BLE001,S112
                     continue
 
             await r.aclose()
@@ -4468,14 +4481,14 @@ class GraphDAO:
                     try:
                         eco = await self._enrich_eco_impact(parcel_id)
                         alert["eco_impact"] = eco
-                    except Exception:
+                    except Exception:  # noqa: BLE001,S110
                         pass  # non-blocking
 
             return {"alerts": alerts}
-        except Exception:
+        except Exception:  # noqa: BLE001
             try:
                 await r.aclose()
-            except Exception:
+            except Exception:  # noqa: BLE001,S110
                 pass
             return {"alerts": []}
 
@@ -4495,7 +4508,7 @@ class GraphDAO:
         # Get parcel coordinates from crop context
         try:
             ctx = await self.get_crop_context(parcel_id=parcel_id)
-        except Exception:
+        except Exception:  # noqa: BLE001
             return eco
 
         # Fetch pollinators from GBIF (non-blocking)
@@ -4508,7 +4521,7 @@ class GraphDAO:
                 eco["pollinator_species"] = ["Apis mellifera", "Bombus terrestris"]
                 eco["risk_level"] = "medium"
                 eco["recommended_window"] = "nocturna (22:00-06:00)"
-        except Exception:
+        except Exception:  # noqa: BLE001,S110
             pass  # non-blocking
 
         # Fetch safer pesticide alternatives from CUE ROPO (non-blocking)
@@ -4529,7 +4542,7 @@ class GraphDAO:
                     p.get("nombre_comercial", "") for p in products[:3]
                     if p.get("nombre_comercial")
                 ]
-        except Exception:
+        except Exception:  # noqa: BLE001,S110
             pass
 
         return eco
@@ -4541,6 +4554,7 @@ class GraphDAO:
         source_unavailable: bool}. Never raises — returns partial data on failure.
         """
         import os as _os
+
         import httpx
 
         api_key = _os.getenv("EPPO_API_KEY", "")
@@ -4567,7 +4581,7 @@ class GraphDAO:
                             for p in pests
                             if isinstance(p, dict)
                         ]
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 logger.warning("EPPO pest fetch failed for %s: %s", eppo_code, e)
             return []
 
@@ -4587,7 +4601,7 @@ class GraphDAO:
                 result["risk_level"] = "low"
             else:
                 result["risk_level"] = "none"
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.warning("Pest risk calculation failed: %s", e)
             result["source_unavailable"] = True
 
@@ -4613,7 +4627,7 @@ class GraphDAO:
                                 "crude_protein_pct": float(cp) if cp else None,
                                 "organic_matter_digestibility_pct": float(omd) if omd else None,
                             }
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.warning("Feedipedia lookup failed: %s", e)
         return None
 
@@ -4633,7 +4647,7 @@ class GraphDAO:
                     total = data.get("total", data.get("totalCount", 0))
                     result["registered_varieties"] = total
                     return result
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.warning("CPVO lookup failed for %s: %s", eppo, e)
             result["source_unavailable"] = True
         return result
@@ -4642,8 +4656,9 @@ class GraphDAO:
         """Get FiBL organic inputs compatible with this crop's pests. Non-blocking."""
         import csv
         import os as _os
-        import httpx
         from pathlib import Path
+
+        import httpx
 
         result: dict = {"inputs": [], "source_unavailable": False}
 
@@ -4664,7 +4679,7 @@ class GraphDAO:
                             p.get("scientificName", p.get("prefName", "")).lower()
                             for p in pests if isinstance(p, dict)
                         ]
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 logger.warning("EPPO pest fetch for organic inputs failed: %s", e)
 
         # 2) Cross-reference with FiBL
@@ -4680,7 +4695,7 @@ class GraphDAO:
                                 "active_substance": row.get("active_substance", ""),
                                 "category": row.get("category", ""),
                             })
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 logger.warning("FiBL lookup failed: %s", e)
 
         return result

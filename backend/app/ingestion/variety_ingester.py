@@ -1,8 +1,8 @@
 """Ingest crop varieties from CPVO into Orion-LD as AgriCrop entities."""
-from app.ingestion.uri import agri_crop_uri
+from app.graph.dao import GraphDAO
 from app.ingestion.builders import build_agri_crop_entity
 from app.ingestion.sync import sync_all_agri_crops
-from app.graph.dao import GraphDAO
+from app.ingestion.uri import agri_crop_uri
 
 
 class VarietyIngester:

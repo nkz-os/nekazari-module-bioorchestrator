@@ -12,12 +12,12 @@ from app.graph.dao import GraphDAO
 class _FakeOrionClient:
     """Stub for OrionClient that records the tenant_id it was constructed with."""
 
-    _constructed_with: list[str] = []
+    _constructed_with: list[str] = []  # noqa: RUF012
 
     def __init__(self, tenant_id: str) -> None:
         _FakeOrionClient._constructed_with.append(tenant_id)
 
-    async def query_entities(self, *, type: str, limit: int = 1):  # noqa: A002
+    async def query_entities(self, *, type: str, limit: int = 1):
         return []
 
     async def close(self) -> None:

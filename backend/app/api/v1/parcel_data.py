@@ -1,5 +1,6 @@
 """Per-parcel data aggregation endpoints (vegetation, soil)."""
-from datetime import datetime as dt, timedelta
+from datetime import datetime as dt
+from datetime import timedelta, timezone
 
 from fastapi import APIRouter, HTTPException, Query, Request
 from nkz_platform_sdk.orion import OrionClient
@@ -60,7 +61,7 @@ async def parcel_vegetation(
                 limit=200,
                 options="keyValues",
             )
-        except Exception:
+        except Exception:  # noqa: BLE001
             return _veg_unavailable(index, period)
 
         if not entities:
@@ -78,10 +79,10 @@ async def parcel_vegetation(
                     start_val = start_raw.get("value") if isinstance(start_raw, dict) else start_raw
                     if start_val:
                         since = str(start_val)[:10]
-            except Exception:
+            except Exception:  # noqa: BLE001
                 since = None
         elif period in _PERIOD_DAYS:
-            since = (dt.utcnow() - timedelta(days=_PERIOD_DAYS[period])).strftime("%Y-%m-%d")
+            since = (dt.now(tz=timezone.utc) - timedelta(days=_PERIOD_DAYS[period])).strftime("%Y-%m-%d")
 
         # EOProduct = one entity per sensingDate; the index (lowercased) is a named
         # Property whose keyValues value is the zonal mean.
@@ -131,7 +132,7 @@ async def parcel_soil(parcel_id: str, request: Request):
     try:
         try:
             entities = await orion.query_entities(type="AgriSoilExtended", q=f'hasAgriParcel=="{parcel_urn}"|refAgriParcel=="{parcel_urn}"', limit=1)
-        except Exception:
+        except Exception:  # noqa: BLE001
             return {"available": False, "message": "El modulo soil no ha procesado esta parcela."}
 
         if not entities:
@@ -215,7 +216,7 @@ async def parcel_climate(parcel_id: str, request: Request):
             },
             "source": "Landsat C2L2-ST + CLMS LST + Sentinel-1 SAR (ESA Copernicus)",
         }
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001
         return _climate_unavailable(str(exc))
     finally:
         await orion.close()

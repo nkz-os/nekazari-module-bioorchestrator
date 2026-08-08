@@ -17,12 +17,11 @@ import json as _json
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 
-from nkz_platform_sdk.orion import OrionClient
-from nkz_platform_sdk.subscriptions import SubscriptionRegistrar
-
 from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, StreamingResponse
+from nkz_platform_sdk.orion import OrionClient
+from nkz_platform_sdk.subscriptions import SubscriptionRegistrar
 
 from app.auth import NKZAuthMiddleware
 from app.core.config import settings
@@ -55,7 +54,7 @@ async def _ensure_catalog_subscription():
     try:
         result = await registrar.ensure_all([settings.catalog_tenant])
         print(f"[bioorchestrator] catalog subscription ensured: {result}")
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001
         print(f"[bioorchestrator] WARNING: subscription setup failed: {exc}")
 
 
@@ -108,7 +107,7 @@ async def _run_cypher_migrations(driver):
                 try:
                     await session.run(stmt)
                     executed += 1
-                except Exception as exc:
+                except Exception as exc:  # noqa: BLE001
                     # Constraint already exists → ok
                     if "already exists" in str(exc) or "AlreadyExists" in str(exc) or "equivalent" in str(exc):
                         pass
@@ -122,8 +121,8 @@ async def _start_background_tasks():
     await asyncio.sleep(2)  # Give uvicorn a moment to complete startup
     try:
         from app.workers.queue import background_queue
-        from app.workers.sync_worker import handle_sync_agri_crop
         from app.workers.rule_worker import handle_evaluate_action_rules
+        from app.workers.sync_worker import handle_sync_agri_crop
         background_queue.register("sync_agri_crop", handle_sync_agri_crop)
         background_queue.register("evaluate_action_rules", handle_evaluate_action_rules)
         # Keep strong refs: a bare create_task can be garbage-collected, which
@@ -133,11 +132,11 @@ async def _start_background_tasks():
         async def _reconcile_guarded():
             try:
                 await _reconcile_catalog()
-            except Exception as exc:
+            except Exception as exc:  # noqa: BLE001
                 print(f"[bioorchestrator] WARNING: catalog reconcile failed: {exc}")
         _BG_TASKS.add(asyncio.create_task(_reconcile_guarded()))
         print("[bioorchestrator] background tasks started")
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001
         print(f"[bioorchestrator] WARNING: background tasks init failed: {exc}")
 
 
@@ -164,7 +163,7 @@ async def lifespan(app: FastAPI):
         migrated = await _run_cypher_migrations(driver)
         if migrated:
             print(f"[bioorchestrator] {migrated} Cypher constraints/indexes ensured")
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001
         print(f"[bioorchestrator] WARNING: Neo4j unavailable on startup: {exc}")
 
     # Seed external capability registrations (best-effort)
@@ -174,7 +173,7 @@ async def lifespan(app: FastAPI):
         from app.services.capability_loader import seed_external_capabilities
         seeded = await seed_external_capabilities(CapabilityDao(get_driver()))
         print(f"[bioorchestrator] Seeded {seeded} external capabilities")
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001
         print(f"[bioorchestrator] WARNING: capability seed failed: {exc}")
 
     # Schedule background tasks after uvicorn binds (don't block startup)
@@ -209,14 +208,15 @@ app.add_middleware(
 )
 
 # Graph API router
-from app.api import router as api_router  # noqa: E402
+from app.api import router as api_router
+
 app.include_router(api_router, prefix="/api")
 
 # Catalog, NGSI-LD notify, and parcel data routers
-from app.api.v1.catalog import router as catalog_router  # noqa: E402
-from app.api.v1.notify import router as notify_router  # noqa: E402
-from app.api.v1.parcel_data import router as parcel_data_router  # noqa: E402
-from app.api.v1.phenology_notify import router as phenology_notify_router  # noqa: E402
+from app.api.v1.catalog import router as catalog_router
+from app.api.v1.notify import router as notify_router
+from app.api.v1.parcel_data import router as parcel_data_router
+from app.api.v1.phenology_notify import router as phenology_notify_router
 
 app.include_router(catalog_router, prefix="/api/crop")
 app.include_router(notify_router, prefix="/api/ngsi-ld")
@@ -264,7 +264,7 @@ async def _store_pipeline_history(
         }
         await r.xadd("pipeline:history", {"payload": _json.dumps(entry)}, maxlen=50)
         await r.aclose()
-    except Exception:
+    except Exception:  # noqa: BLE001,S110
         pass
 
 
@@ -354,7 +354,7 @@ async def pipeline_progress(request: Request, run_id: str = ""):
                     events = await r.xread(
                         {"pipeline:progress": last_id}, count=10, block=2000
                     )
-                except Exception:
+                except Exception:  # noqa: BLE001
                     break
                 if events:
                     for _stream_name, messages in events:
@@ -365,7 +365,7 @@ async def pipeline_progress(request: Request, run_id: str = ""):
                                 yield f"data: {_json.dumps(payload)}\n\n"
                 else:
                     yield ": heartbeat\n\n"
-        except Exception:
+        except Exception:  # noqa: BLE001,S110
             pass
         finally:
             await r.aclose()
@@ -386,7 +386,7 @@ async def pipeline_history(limit: int = Query(default=10, ge=1, le=50)):
             payload = _json.loads(data.get(b"payload", data.get("payload", "{}")))
             history.append(payload)
         return {"history": history}
-    except Exception:
+    except Exception:  # noqa: BLE001
         return {"history": []}
 
 
@@ -439,8 +439,8 @@ async def ingest_navarra_agraria(
     Returns per-type counts of merged nodes and relationships.
     """
     try:
-        from app.ingestion.navarra_ingester import NavarraIngester
         from app.core.dependencies import get_neo4j_driver
+        from app.ingestion.navarra_ingester import NavarraIngester
 
         driver = await anext(get_neo4j_driver())
         ingester = NavarraIngester(driver)
@@ -448,5 +448,5 @@ async def ingest_navarra_agraria(
         return {"status": "ok", "stats": stats}
     except FileNotFoundError as e:
         raise HTTPException(status_code=404, detail=str(e))
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         raise HTTPException(status_code=500, detail=str(e))

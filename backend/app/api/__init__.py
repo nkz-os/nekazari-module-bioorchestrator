@@ -1,8 +1,8 @@
 from fastapi import APIRouter
 
-from app.api.v1.graph import router as graph_router
-from app.api.v1.capability import router as capability_router
 from app.api.dadis import router as dadis_router
+from app.api.v1.capability import router as capability_router
+from app.api.v1.graph import router as graph_router
 
 # IUCN router removed: IUCN Red List API license prohibits commercial use.
 # NKZ-OS operates as SaaS multi-tenant under paid plans → commercial use.

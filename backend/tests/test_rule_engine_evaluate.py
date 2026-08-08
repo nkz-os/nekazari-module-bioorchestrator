@@ -1,6 +1,8 @@
 # tests/test_rule_engine_evaluate.py
-import pytest
 from unittest.mock import AsyncMock
+
+import pytest
+
 from app.graph.rule_engine import evaluate
 
 COVER_RULE = {

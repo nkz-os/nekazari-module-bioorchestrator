@@ -103,7 +103,9 @@ async def test_normalize_nodes_sets_site_and_trial_keys():
 
 def test_normalize_site_key_imported_by_base_ingester():
     """base_ingester imports normalize_site_key — keys agree byte-for-byte with migration."""
-    from app.ingestion.base_ingester import normalize_site_key  # noqa: F401 — proves import
+    from app.ingestion.base_ingester import (
+        normalize_site_key,
+    )
     assert normalize_site_key("C\u00f3rdoba (Alameda del Obispo)") == "cordoba"
 
 

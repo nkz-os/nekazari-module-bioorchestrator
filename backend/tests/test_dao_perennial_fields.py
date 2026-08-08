@@ -1,4 +1,5 @@
 import inspect
+
 from app.graph.dao import GraphDAO
 
 

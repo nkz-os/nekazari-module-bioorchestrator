@@ -1,8 +1,11 @@
 # tests/test_advisories_endpoint.py
 from unittest.mock import AsyncMock, patch
+
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
+
 from app.api.v1 import graph as graph_mod
+
 
 def _app():
     app = FastAPI()

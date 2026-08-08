@@ -1,9 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { Stack, Card, Badge, Button, DetailGrid, DetailItem, Skeleton } from '@nekazari/ui-kit';
 import { SlotShell } from '@nekazari/viewer-kit';
 import { useTranslation } from '@nekazari/sdk';
-import { buildBioorchestratorToolUrl } from '../utils/navigation';
 import { resolveParcelContext, type ParcelEntityData } from '../utils/entityData';
 import { resolveCropTypeFromContext } from '../utils/cropContext';
 import {
@@ -13,6 +11,8 @@ import {
 import { useBioApi, useCropApi, getCropContext } from '../services/api';
 import type { VegetationData, SoilData as ParcelSoilData, SoilHorizon } from '../services/api';
 import ContextEmptyState from './shared/ContextEmptyState';
+import InlineVarietyPicker from './InlineVarietyPicker';
+import AssignVarietyModal from './AssignVarietyModal';
 
 const bioAccent = { base: '#14B8A6', soft: '#CCFBF1', strong: '#0D9488' };
 
@@ -26,7 +26,6 @@ const RecommendationsPanel: React.FC<Props> = ({ entityData }) => {
   const { parcelId, parcelName, lat, lon } = resolveParcelContext(entityData);
   const { t } = useTranslation('bioorchestrator');
   const api = useBioApi();
-  const navigate = useNavigate();
   const [cropType, setCropType] = useState<string | null>(null);
   const [cropContextLoading, setCropContextLoading] = useState(true);
   const [nextCrops, setNextCrops] = useState<RecCrop[]>([]);
@@ -50,6 +49,16 @@ const RecommendationsPanel: React.FC<Props> = ({ entityData }) => {
 
   const [parcelSoil, setParcelSoil] = useState<ParcelSoilData | null>(null);
   const [soilLoading, setSoilLoading] = useState(false);
+  const [showAssignModal, setShowAssignModal] = useState(false);
+  const [selectedVariety, setSelectedVariety] = useState<{
+    name: string;
+    scientificName?: string;
+    cropUri: string;
+    varietyUri: string;
+    expectedYield: number;
+    confidenceInterval: [number, number];
+    trialCount: number;
+  } | null>(null);
 
   // Resolve the real crop commitment (AgriParcel.hasAgriCrop) via
   // BioOrchestrator's own crop-context endpoint. NOT entityData.cropType —
@@ -157,9 +166,29 @@ const RecommendationsPanel: React.FC<Props> = ({ entityData }) => {
         <ContextEmptyState
           message={t('panel.noCrop')}
           actionLabel={t('panel.assignCrop')}
-          onAction={() => navigate(buildBioorchestratorToolUrl(parcelId, 'varietyFinder'))}
+          onAction={() => setShowAssignModal(true)}
           variant="warning"
         />
+        {showAssignModal && !selectedVariety && (
+          <InlineVarietyPicker
+            parcelId={parcelId!}
+            species={undefined}
+            onSelect={(variety) => setSelectedVariety(variety)}
+            onClose={() => setShowAssignModal(false)}
+          />
+        )}
+        {selectedVariety && (
+          <AssignVarietyModal
+            variety={selectedVariety}
+            parcelId={parcelId}
+            onClose={() => { setShowAssignModal(false); setSelectedVariety(null); }}
+            onAssigned={() => {
+              setShowAssignModal(false);
+              setSelectedVariety(null);
+              window.location.reload();
+            }}
+          />
+        )}
       </SlotShell>
     );
   }
@@ -316,7 +345,39 @@ const RecommendationsPanel: React.FC<Props> = ({ entityData }) => {
       <CollapsibleSection title={t('panel.scenarioSimulator')}>
         <ScenarioSimulator currentCrop={cropType} />
       </CollapsibleSection>
+
+      {/* Change crop button */}
+      <Button
+        variant="secondary"
+        size="sm"
+        onClick={() => setShowAssignModal(true)}
+        className="self-start"
+      >
+        {t('panel.changeCrop', { defaultValue: 'Change crop' })}
+      </Button>
       </Stack>
+
+      {/* Inline variety picker + assign modal */}
+      {showAssignModal && !selectedVariety && (
+        <InlineVarietyPicker
+          parcelId={parcelId!}
+          species={cropType ?? undefined}
+          onSelect={(variety) => setSelectedVariety(variety)}
+          onClose={() => setShowAssignModal(false)}
+        />
+      )}
+      {selectedVariety && (
+        <AssignVarietyModal
+          variety={selectedVariety}
+          parcelId={parcelId}
+          onClose={() => { setShowAssignModal(false); setSelectedVariety(null); }}
+          onAssigned={() => {
+            setShowAssignModal(false);
+            setSelectedVariety(null);
+            window.location.reload();
+          }}
+        />
+      )}
     </SlotShell>
   );
 };

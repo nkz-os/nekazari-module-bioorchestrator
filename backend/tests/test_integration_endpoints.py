@@ -23,8 +23,8 @@ from typing import Any
 from unittest.mock import AsyncMock, patch
 
 import pytest
-from neo4j import AsyncDriver
 
+from neo4j import AsyncDriver
 
 # ---------------------------------------------------------------------------
 # Helper: build a mock Neo4j result that supports async for / async iteration

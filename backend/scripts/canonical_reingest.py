@@ -23,23 +23,28 @@ import argparse
 import asyncio
 import logging
 import sys
+from collections.abc import Callable
 from pathlib import Path
-from typing import Callable
 
 from neo4j import AsyncGraphDatabase
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from app.ingestion.base_ingester import BaseIngester, NEO4J_PASSWORD, NEO4J_URI, NEO4J_USER
+from app.ingestion.base_ingester import (
+    NEO4J_PASSWORD,
+    NEO4J_URI,
+    NEO4J_USER,
+    BaseIngester,
+)
+from app.ingestion.evena_ingester import EvenaIngester
 from app.ingestion.genvce_ingester import GenvceIngester
 from app.ingestion.ifapa_ingester import IfapaIngester
 from app.ingestion.iniav_ingester import IniavIngester
+from app.ingestion.inramaroc_ingester import InramarocIngester
 from app.ingestion.intia_exp_ingester import IntiaExpIngester
 from app.ingestion.itacyl_ingester import ItacylIngester
 from app.ingestion.navarra_ingester import NavarraIngester
-from app.ingestion.inramaroc_ingester import InramarocIngester
 from app.ingestion.tagem_ingester import TagemIngester
-from app.ingestion.evena_ingester import EvenaIngester
 from app.ingestion.validate_ingest_bundle import validate_bundle
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")

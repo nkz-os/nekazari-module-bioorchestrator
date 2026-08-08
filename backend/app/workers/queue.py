@@ -4,7 +4,8 @@ import json
 import logging
 import os
 from collections import deque
-from typing import Any, Callable, Awaitable
+from collections.abc import Awaitable, Callable
+from typing import Any
 
 logger = logging.getLogger(__name__)
 

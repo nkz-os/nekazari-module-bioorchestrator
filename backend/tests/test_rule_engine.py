@@ -1,5 +1,6 @@
 from datetime import date
-from app.graph.rule_engine import evaluate_conditions, flatten_context, build_advisory
+
+from app.graph.rule_engine import build_advisory, evaluate_conditions, flatten_context
 
 BASE = {"crop.role": "cover_crop", "crop.status": "active",
         "crop.termination_method": "roller_crimper", "phenology.current_stage": "flowering"}

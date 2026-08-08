@@ -47,7 +47,7 @@ def test_auth_disabled_allows_all():
     # Build our own client with all patches active at import time
     from fastapi.testclient import TestClient
     with patch("app.core.dependencies.get_driver", return_value=_mock_driver()):
-        with patch("app.core.dependencies.init_driver", AsyncMock()):
+        with patch("app.core.dependencies.init_driver", AsyncMock()):  # noqa: SIM117
             with patch("app.core.dependencies.close_driver", AsyncMock()):
                 with patch.dict("sys.modules", {"ikerketa": MagicMock(__version__="0.1.0")}):
                     from app.main import app

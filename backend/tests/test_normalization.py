@@ -6,17 +6,17 @@ Run with:  python -m pytest tests/test_normalization.py -v
 import json
 
 from app.ingestion.normalization_registry import (
-    TRAIT_REGISTRY,
     DISEASE_REGISTRY,
+    EPPO_TO_SCIENTIFIC,
     LOCATION_NORMALIZATION,
     SCALE_NORMALIZERS,
-    normalize_variety_name,
-    normalize_location,
-    eppo_to_scientific,
-    normalize_merge_key,
-    transform_traits_to_unified,
+    TRAIT_REGISTRY,
     canonical_source_id,
-    EPPO_TO_SCIENTIFIC,
+    eppo_to_scientific,
+    normalize_location,
+    normalize_merge_key,
+    normalize_variety_name,
+    transform_traits_to_unified,
 )
 
 
@@ -223,7 +223,7 @@ class TestTransformTraits:
             "neigung_zu_lager": 8,
             "pflanzenlaenge": 3,
         })
-        result, disease = transform_traits_to_unified(raw, None, "BSL")
+        result, _disease = transform_traits_to_unified(raw, None, "BSL")
         assert result is not None
         parsed = json.loads(result)
 
@@ -243,7 +243,7 @@ class TestTransformTraits:
 
     def test_bsl_disease_normalised(self):
         raw = json.dumps({"staengelfaeule": 2})
-        result, disease = transform_traits_to_unified(None, raw, "BSL")
+        _result, disease = transform_traits_to_unified(None, raw, "BSL")
         assert disease is not None
         parsed = json.loads(disease)
 
@@ -261,17 +261,17 @@ class TestTransformTraits:
     def test_unknown_source_no_mapping(self):
         """A source with no registered traits produces no unified output."""
         raw = json.dumps({"some_trait": 5})
-        result, disease = transform_traits_to_unified(raw, None, "UNKNOWNSOURCE")
+        result, _disease = transform_traits_to_unified(raw, None, "UNKNOWNSOURCE")
         assert result is None
 
     def test_none_traits(self):
-        result, disease = transform_traits_to_unified(None, None, "BSL")
+        result, _disease = transform_traits_to_unified(None, None, "BSL")
         assert result is None
-        assert disease is None
+        assert _disease is None
 
     def test_string_no_traits(self):
         """String without registered keys → empty unified."""
-        result, disease = transform_traits_to_unified(
+        result, _disease = transform_traits_to_unified(
             '{"unregistered_key": 5}', None, "BSL"
         )
         assert result is None

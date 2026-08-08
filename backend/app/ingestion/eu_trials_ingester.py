@@ -96,8 +96,8 @@ class EuTrialsIngester(BaseIngester):
                 f"{self.SOURCE_ID.lower()}|{eppo or 'unknown'}|"
                 f"{str(variety or '').strip().lower()}|"
                 f"{str(location or 'unknown').strip().lower()}|"
-                f"{str(production or 'unknown')}|"
-                f"{str(year or 0)}"
+                f"{production or 'unknown'!s}|"
+                f"{year or 0!s}"
             ),
         }
 

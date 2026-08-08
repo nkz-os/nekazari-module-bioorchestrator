@@ -6,9 +6,9 @@ import asyncio
 import shutil
 
 import pytest
-from neo4j import AsyncGraphDatabase
 from testcontainers.neo4j import Neo4jContainer
 
+from neo4j import AsyncGraphDatabase
 from scripts.canonical_reingest import LEGACY_MERGEKEY_MARKER, _baseline, _purge_source
 
 pytestmark = pytest.mark.skipif(

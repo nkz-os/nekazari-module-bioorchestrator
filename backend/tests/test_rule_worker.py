@@ -1,6 +1,9 @@
-import pytest
 from unittest.mock import AsyncMock, patch
+
+import pytest
+
 from app.workers import rule_worker
+
 
 @pytest.mark.asyncio
 async def test_handler_calls_evaluate_with_orion_for_tenant():

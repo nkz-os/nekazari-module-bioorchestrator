@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# ruff: noqa: EXE001
 """Convert IFAPA/ITACyL extracted JSON to JSON-LD for NavarraIngester.
 
 Usage:

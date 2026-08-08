@@ -5,8 +5,9 @@ import sys
 from pathlib import Path
 
 import pytest
-from neo4j import GraphDatabase
 from testcontainers.neo4j import Neo4jContainer
+
+from neo4j import GraphDatabase
 
 SCRIPT = Path(__file__).parent.parent / "scripts" / "backfill_rotation_effect.py"
 

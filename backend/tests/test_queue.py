@@ -1,8 +1,8 @@
 import asyncio
 import logging
+from unittest.mock import AsyncMock
 
 import pytest
-from unittest.mock import AsyncMock
 
 from app.workers.queue import BackgroundQueue
 

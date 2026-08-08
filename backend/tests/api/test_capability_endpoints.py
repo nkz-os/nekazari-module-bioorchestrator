@@ -14,11 +14,12 @@ import pytest
 import respx
 from fastapi import FastAPI
 from httpx import ASGITransport
-from neo4j import AsyncGraphDatabase
 from testcontainers.neo4j import Neo4jContainer
 
-from app.api.v1.capability import router as capability_router, get_capability_dao
+from app.api.v1.capability import get_capability_dao
+from app.api.v1.capability import router as capability_router
 from app.graph.capability_dao import CapabilityDao
+from neo4j import AsyncGraphDatabase
 
 pytestmark = [
     pytest.mark.anyio,

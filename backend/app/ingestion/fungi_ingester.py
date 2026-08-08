@@ -103,7 +103,7 @@ class FungiIngester(BaseIngester):
                 f"{source_id}|{eppo or 'unknown'}|"
                 f"{str(node.get('variety', '')).strip().lower()}|"
                 f"{str(node.get('trial_location', 'unknown')).strip().lower()}|"
-                f"{str(node.get('year', 0))}"
+                f"{node.get('year', 0)!s}"
             ),
         }
 
@@ -129,8 +129,8 @@ class FungiIngester(BaseIngester):
                 f"{source_id}|mt|"
                 f"{str(node.get('treatment', '')).strip().lower()[:60]}|"
                 f"{str(node.get('result_metric', '')).strip().lower()}|"
-                f"{str(node.get('result_value', ''))}|"
-                f"{str(node.get('year', 0))}"
+                f"{node.get('result_value', '')!s}|"
+                f"{node.get('year', 0)!s}"
             ),
         }
 

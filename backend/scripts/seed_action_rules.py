@@ -23,6 +23,7 @@ from pathlib import Path
 from typing import Any
 
 import yaml
+
 from neo4j import AsyncDriver, AsyncGraphDatabase
 
 sys.path.insert(0, str(Path(__file__).parent.parent))

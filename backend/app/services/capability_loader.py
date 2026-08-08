@@ -22,7 +22,7 @@ class CapabilityLoader:
 
     async def load_from_url(self, url: str) -> int:
         """Fetch YAML, parse, upsert; return total capabilities upserted."""
-        resp = httpx.get(url, timeout=10)
+        resp = httpx.get(url, timeout=10)  # noqa: ASYNC210
         resp.raise_for_status()
         manifest = yaml.safe_load(resp.text)
         return await self.load_from_dict(manifest)

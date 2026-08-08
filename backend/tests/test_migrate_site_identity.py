@@ -11,9 +11,9 @@ from __future__ import annotations
 import shutil
 
 import pytest
-from neo4j import GraphDatabase
 from testcontainers.neo4j import Neo4jContainer
 
+from neo4j import GraphDatabase
 from scripts.migrate_site_identity import run
 
 pytestmark = pytest.mark.skipif(

@@ -29,7 +29,7 @@ _aliases: dict[str, str] | None = None
 
 def _build_aliases() -> dict[str, str]:
     """Build a lookup table mapping every identifier to its canonical slug."""
-    global _registry
+    global _registry  # noqa: PLW0602
     if _registry is None:
         _load()
 
@@ -52,7 +52,7 @@ def _build_aliases() -> dict[str, str]:
             aliases[eppo.lower()] = slug
 
         # All common names in all languages
-        for lang, name in data.get("common_names", {}).items():
+        for name in data.get("common_names", {}).values():
             aliases[name] = slug
             aliases[name.lower()] = slug
 
@@ -118,7 +118,7 @@ def resolve_species(identifier: str) -> str | None:
 
 def list_species() -> list[str]:
     """Return all canonical slugs in the registry."""
-    global _registry
+    global _registry  # noqa: PLW0602
     if _registry is None:
         _load()
     return sorted(k for k in _registry if k != "_eppo_index")
@@ -126,7 +126,7 @@ def list_species() -> list[str]:
 
 def get_species_info(slug: str) -> dict[str, Any] | None:
     """Return full registry entry for a canonical slug."""
-    global _registry
+    global _registry  # noqa: PLW0602
     if _registry is None:
         _load()
     return _registry.get(slug)

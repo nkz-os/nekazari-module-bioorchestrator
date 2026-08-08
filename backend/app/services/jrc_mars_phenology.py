@@ -27,9 +27,8 @@ from __future__ import annotations
 from typing import Any
 
 from ikerketa.connectors.base import AbstractConnector
-from ikerketa.models.base import BaseEntity, BaseRelationship, DataSource, RawRecord
 from ikerketa.models.agronomy import AgriKnowledge
-
+from ikerketa.models.base import BaseEntity, BaseRelationship, DataSource, RawRecord
 
 # ── Compiled Data from JRC MARS Bulletins (2019-2025) ──────────────────────
 # Sources:

@@ -38,7 +38,7 @@ def _median(values: list[float]) -> float | None:
 class _Bucket:
     """Accumulates fold outcomes for one grouping (overall / crop / climate)."""
 
-    __slots__ = ("errors", "overlaps", "folds", "covered")
+    __slots__ = ("covered", "errors", "folds", "overlaps")
 
     def __init__(self) -> None:
         self.errors: list[float] = []

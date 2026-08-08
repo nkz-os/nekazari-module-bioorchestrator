@@ -20,8 +20,8 @@ import sys
 
 from app.ingestion.normalization_registry import (
     TRAIT_REGISTRY,
-    normalize_location,
     eppo_to_scientific,
+    normalize_location,
 )
 
 
@@ -123,7 +123,7 @@ def validate_source(source_id: str, jsonld_path: str, strict: bool = False) -> i
     if traits_found:
         print(f"  Agronomic trait keys found in data: {len(traits_found)}")
         registered_source_keys = set()
-        for canonical, config in TRAIT_REGISTRY.items():
+        for config in TRAIT_REGISTRY.values():
             src_key = config["sources"].get(source_id)
             if src_key:
                 registered_source_keys.add(src_key)

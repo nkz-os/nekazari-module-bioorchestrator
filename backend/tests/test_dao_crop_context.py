@@ -54,7 +54,7 @@ NORMALIZED_ASSESSMENT = {
 class _FakeOrionClient:
     """Stub that records tenant and returns normalized entities."""
 
-    _instances: list[str] = []
+    _instances: list[str] = []  # noqa: RUF012
 
     def __init__(self, tenant_id: str) -> None:
         _FakeOrionClient._instances.append(tenant_id)
@@ -83,7 +83,7 @@ class _FakeOrionClient:
 class _FakeOrionClient404Parcel:
     """Returns 404 for the parcel entity."""
 
-    _instances: list[str] = []
+    _instances: list[str] = []  # noqa: RUF012
 
     def __init__(self, tenant_id: str) -> None:
         _FakeOrionClient404Parcel._instances.append(tenant_id)

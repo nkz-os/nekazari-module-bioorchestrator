@@ -5,9 +5,9 @@ from __future__ import annotations
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from neo4j import AsyncDriver
 
 from app.graph.dao import GraphDAO
+from neo4j import AsyncDriver
 
 
 class _MockResult:
@@ -105,6 +105,7 @@ class TestParcelEnvironment:
     async def test_handles_missing_parcel(self):
         """Should return error dict when parcel not found in Orion."""
         import httpx
+
         from app.graph.dao import GraphDAO
 
         with patch("app.graph.dao.OrionClient") as mock_orion_cls:

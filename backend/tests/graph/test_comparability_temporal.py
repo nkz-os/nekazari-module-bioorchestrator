@@ -13,17 +13,17 @@ import datetime
 import shutil
 
 import pytest
-from neo4j import AsyncGraphDatabase
 from testcontainers.neo4j import Neo4jContainer
 
 from app.graph.dao import GraphDAO
+from neo4j import AsyncGraphDatabase
 
 pytestmark = pytest.mark.skipif(
     shutil.which("docker") is None, reason="docker unavailable for testcontainers"
 )
 
 _loop: asyncio.AbstractEventLoop = asyncio.new_event_loop()
-_NOW = datetime.date.today().year
+_NOW = datetime.datetime.now(tz=datetime.timezone.utc).date().year
 
 _RAINFED = "http://aims.fao.org/aos/agrovoc/c_6436"
 _IRRIGATED = "http://aims.fao.org/aos/agrovoc/c_3954"
