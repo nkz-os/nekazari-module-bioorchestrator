@@ -149,18 +149,55 @@ class TestTenantResolution:
             from app.api.v1.graph import _get_tenant_id
         return _get_tenant_id
 
+    @staticmethod
+    def _qp(defaults=None):
+        """ImmutableMultiDict-like query_params for test mocks."""
+        from types import SimpleNamespace
+        d = defaults or {}
+        return SimpleNamespace(get=lambda k, default="": d.get(k, default))
+
     def test_falls_back_to_header(self):
         from types import SimpleNamespace
-        req = SimpleNamespace(state=SimpleNamespace(), headers={"X-Tenant-ID": "montiko"})
+        req = SimpleNamespace(
+            state=SimpleNamespace(),
+            headers={"X-Tenant-ID": "montiko"},
+            query_params=self._qp(),
+        )
         assert self._helper()(req) == "montiko"
 
     def test_prefers_state_when_set(self):
         from types import SimpleNamespace
-        req = SimpleNamespace(state=SimpleNamespace(tenant_id="state-t"),
-                              headers={"X-Tenant-ID": "montiko"})
+        req = SimpleNamespace(
+            state=SimpleNamespace(tenant_id="state-t"),
+            headers={"X-Tenant-ID": "montiko"},
+            query_params=self._qp(),
+        )
         assert self._helper()(req) == "state-t"
 
     def test_empty_when_neither(self):
         from types import SimpleNamespace
-        req = SimpleNamespace(state=SimpleNamespace(), headers={})
+        req = SimpleNamespace(
+            state=SimpleNamespace(),
+            headers={},
+            query_params=self._qp(),
+        )
         assert self._helper()(req) == ""
+
+    def test_falls_back_to_tenant_id_query_param(self):
+        from types import SimpleNamespace
+        req = SimpleNamespace(
+            state=SimpleNamespace(),
+            headers={},
+            query_params=self._qp({"tenant_id": "montiko"}),
+        )
+        assert self._helper()(req) == "montiko"
+
+    def test_falls_back_to_parcel_urn(self):
+        from types import SimpleNamespace
+        # URN with embedded tenant (5 segments = 4 colons): Type:tenant:id
+        req = SimpleNamespace(
+            state=SimpleNamespace(),
+            headers={},
+            query_params=self._qp({"parcel_id": "urn:ngsi-ld:AgriParcel:montiko:parcela-42"}),
+        )
+        assert self._helper()(req) == "montiko"

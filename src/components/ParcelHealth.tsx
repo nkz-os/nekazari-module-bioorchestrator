@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useTranslation } from "@nekazari/sdk";
+import { useTranslation, useAuth } from "@nekazari/sdk";
 import { useParcelContext } from "../context/ParcelContext";
 import {
   Panel, MetricCard, MetricGrid, ProgressBar,
@@ -36,6 +36,7 @@ interface AssessmentData {
 
 export default function ParcelHealth() {
   const { t } = useTranslation("bioorchestrator");
+  const { tenantId } = useAuth();
   const { selectedParcel, loading: parcelLoading, error: parcelError } = useParcelContext();
 
   const [ctx, setCtx] = useState<CropContextResponse | null>(null);
@@ -52,7 +53,7 @@ export default function ParcelHealth() {
     setLoading(true); setError(""); setCtx(null); setYp(null); setAssessment(null);
     (async () => {
       try {
-        const context = await getCropContext(selectedParcel);
+        const context = await getCropContext(selectedParcel, undefined, tenantId);
         if (!context.crop?.eppo || context.crop.eppo === "unknown") {
           setError("noCropAssigned"); setLoading(false); return;
         }

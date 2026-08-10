@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { useTranslation } from '@nekazari/sdk';
+import { useTranslation, useAuth } from '@nekazari/sdk';
 import { Badge, Card, Stack, Spinner } from '@nekazari/ui-kit';
 import {
   Search, Heart, Activity, RefreshCw, Droplets, Dna, Microscope,
@@ -57,6 +57,7 @@ function defaultHubForParcel(hasCampaign: boolean, hasParcel: boolean): HubId {
 
 export default function Dashboard({ onSelectTool }: DashboardProps) {
   const { t } = useTranslation('bioorchestrator');
+  const { tenantId } = useAuth();
   const { selectedParcel } = useParcelContext();
   const { enabled: scenarioEnabled } = usePlanningScenario();
   const api = useBioApi();
@@ -96,7 +97,7 @@ export default function Dashboard({ onSelectTool }: DashboardProps) {
     setContextLoading(true);
 
     Promise.all([
-      getCropContext(selectedParcel),
+      getCropContext(selectedParcel, undefined, tenantId),
       fetchAlerts(selectedParcel),
     ])
       .then(([ctx, alerts]) => {
