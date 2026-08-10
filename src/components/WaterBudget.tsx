@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useTranslation } from '@nekazari/sdk';
+import { useTranslation, useAuth } from '@nekazari/sdk';
 import { useParcelContext } from '../context/ParcelContext';
 import { Card, Stack, EmptyState, Skeleton, Spinner, ProgressBar } from '@nekazari/ui-kit';
 import { AlertTriangle, Activity } from 'lucide-react';
@@ -16,6 +16,7 @@ interface BudgetData {
 
 export default function WaterBudget() {
   const { t } = useTranslation('bioorchestrator');
+  const { tenantId } = useAuth();
   const { selectedParcel, loading: parcelLoading, error: parcelError } = useParcelContext();
   const [ctx, setCtx] = useState<CropContextResponse | null>(null);
   const [budget, setBudget] = useState<BudgetData | null>(null);
@@ -27,7 +28,7 @@ export default function WaterBudget() {
     setLoading(true); setError("");
     (async () => {
       try {
-        const context = await getCropContext(selectedParcel);
+        const context = await getCropContext(selectedParcel, undefined, tenantId);
         setCtx(context);
         const API_BASE = (import.meta as any).env?.VITE_API_URL || "https://nkz.robotika.cloud";
         const res = await fetch(`${API_BASE}/api/graph/agriculture/water-budget?parcel_id=${selectedParcel}`, { credentials: "include" });

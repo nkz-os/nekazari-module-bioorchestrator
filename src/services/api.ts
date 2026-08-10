@@ -433,10 +433,12 @@ export async function assignCrop(
 
 export async function getCropContext(
   parcelId: string,
-  gdd?: number
+  gdd?: number,
+  tenantId?: string
 ): Promise<CropContextResponse> {
   const params = new URLSearchParams({ parcel_id: parcelId });
   if (gdd !== undefined) params.append("gdd", String(gdd));
+  if (tenantId) params.append("tenant_id", tenantId);
   const res = await fetch(
     `${API_BASE}/api/graph/agriculture/crop-context?${params}`,
     { headers: authHeaders(), credentials: "include" }
