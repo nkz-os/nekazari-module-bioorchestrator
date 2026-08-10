@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useTranslation } from '@nekazari/sdk';
+import { useTranslation, useAuth } from '@nekazari/sdk';
 import { Card, Badge, Button, Stack, EmptyState, Select, Skeleton } from '@nekazari/ui-kit';
 import { TrendingUp, AlertTriangle, RefreshCw } from 'lucide-react';
 import { useBioApi, getCropContext } from '../services/api';
@@ -20,6 +20,7 @@ interface SimResult {
 
 const SimulateAlternative: React.FC = () => {
   const { t } = useTranslation('bioorchestrator');
+  const { tenantId } = useAuth();
   const api = useBioApi();
   const { selectedParcel, loading: parcelLoading, error: parcelError } = useParcelContext();
 
@@ -31,7 +32,7 @@ const SimulateAlternative: React.FC = () => {
 
   useEffect(() => {
     if (!selectedParcel) return;
-    getCropContext(selectedParcel)
+    getCropContext(selectedParcel, undefined, tenantId)
       .then(ctx => {
         if (ctx?.crop?.eppo && ctx.crop.eppo !== 'unknown') {
           setBaselineCrop(ctx.crop.eppo);

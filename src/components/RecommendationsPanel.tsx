@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Stack, Card, Badge, Button, DetailGrid, DetailItem, Skeleton } from '@nekazari/ui-kit';
 import { SlotShell } from '@nekazari/viewer-kit';
-import { useTranslation } from '@nekazari/sdk';
+import { useTranslation, useAuth } from '@nekazari/sdk';
 import { resolveParcelContext, type ParcelEntityData } from '../utils/entityData';
 import { resolveCropTypeFromContext } from '../utils/cropContext';
 import {
@@ -25,6 +25,7 @@ const PESTICIDE_INTENT: Record<string, 'positive' | 'negative' | 'warning'> = { 
 const RecommendationsPanel: React.FC<Props> = ({ entityData }) => {
   const { parcelId, parcelName, lat, lon } = resolveParcelContext(entityData);
   const { t } = useTranslation('bioorchestrator');
+  const { tenantId } = useAuth();
   const api = useBioApi();
   const [cropType, setCropType] = useState<string | null>(null);
   const [cropContextLoading, setCropContextLoading] = useState(true);
@@ -68,7 +69,7 @@ const RecommendationsPanel: React.FC<Props> = ({ entityData }) => {
     if (!parcelId) { setCropType(null); setCropContextLoading(false); return; }
     let cancelled = false;
     setCropContextLoading(true);
-    getCropContext(parcelId)
+    getCropContext(parcelId, undefined, tenantId)
       .then((ctx) => { if (!cancelled) setCropType(resolveCropTypeFromContext(ctx)); })
       .catch(() => { if (!cancelled) setCropType(null); })
       .finally(() => { if (!cancelled) setCropContextLoading(false); });
