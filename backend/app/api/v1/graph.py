@@ -84,8 +84,16 @@ def _get_tenant_id(request: Request) -> str:
     middleware never sets `request.state.tenant_id`. Fall back to the
     `X-Tenant-ID` header (injected by the api-gateway) so parcel-scoped queries
     hit the parcel's tenant instead of the default/catalog tenant.
+
+    If both are empty (direct-ingress public endpoint), extract the tenant from
+    the `parcel_id` URN query parameter (urn:ngsi-ld:Type:tenant:id).
     """
-    return getattr(request.state, "tenant_id", "") or request.headers.get("X-Tenant-ID", "")
+    tid = getattr(request.state, "tenant_id", "") or request.headers.get("X-Tenant-ID", "")
+    if not tid:
+        pid = request.query_params.get("parcel_id", "")
+        if pid.startswith("urn:ngsi-ld:") and pid.count(":") >= 4:
+            tid = pid.split(":")[3]
+    return tid
 
 
 @router.get("/health")
