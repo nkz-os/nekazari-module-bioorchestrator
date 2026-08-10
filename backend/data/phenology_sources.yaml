@@ -5209,7 +5209,7 @@ species:
         institution: Universidad de Sevilla, IAS-CSIC
         method: Dendrometer + water balance, RDI trial, 5-year
         conditions: Olive, cv. Picual, Seville, RDI (30% ETc at pit hardening)
-  eppo_code: OLVEU
+  eppo_code: OLIEU
 - name: almond
   scientific_name: Prunus dulcis
   agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_334
@@ -5491,7 +5491,7 @@ species:
         institution: FAO
         method: FAO-56 Table 12
         conditions: Mediterranean, no stress
-  eppo_code: CYNSC
+  eppo_code: CYUSC
 - name: asparagus
   scientific_name: Asparagus officinalis
   agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_669
@@ -5946,7 +5946,7 @@ species:
         institution: FAO
         method: FAO-56 Table 12
         conditions: Temperate, no ground cover
-  eppo_code: PRNAV
+  eppo_code: PRNAS
 - name: chickpea
   scientific_name: Cicer arietinum
   agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_1612
@@ -6271,7 +6271,7 @@ species:
         institution: FAO
         method: FAO-56 Table 12
         conditions: Temperate, no stress
-  eppo_code: CNUSA
+  eppo_code: CNUSI
 - name: leek
   scientific_name: Allium porrum
   agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_425
@@ -6596,7 +6596,7 @@ species:
         institution: FAO
         method: FAO-56 Table 12
         conditions: Semi-arid, no stress
-  eppo_code: PIBSX
+  eppo_code: PISAR
 - name: peach
   scientific_name: Prunus persica
   agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_6357
@@ -7051,7 +7051,7 @@ species:
         institution: FAO
         method: FAO-56 Table 12
         conditions: Temperate, no stress
-  eppo_code: BEAVX
+  eppo_code: BETVU
 - name: tomato
   scientific_name: Solanum lycopersicum
   agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_7805
