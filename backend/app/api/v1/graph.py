@@ -90,7 +90,8 @@ def _get_tenant_id(request: Request) -> str:
     """
     tid = getattr(request.state, "tenant_id", "") or request.headers.get("X-Tenant-ID", "")
     if not tid:
-        pid = request.query_params.get("parcel_id", "")
+        qp = getattr(request, "query_params", None)
+        pid = qp.get("parcel_id", "") if qp else ""
         if pid.startswith("urn:ngsi-ld:") and pid.count(":") >= 4:
             tid = pid.split(":")[3]
     return tid
