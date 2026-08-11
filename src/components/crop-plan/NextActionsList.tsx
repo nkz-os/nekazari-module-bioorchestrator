@@ -26,7 +26,7 @@ const NextActionsList: React.FC<{ ops: IssuedOp[]; agronomicByOp?: Record<string
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
               <div className="text-nkz-sm font-semibold text-nkz-text-primary truncate">
-                {t(`cropPlan.opType.${op.operationType}`, op.operationType)}
+                {t(`cropPlan.opType.${op.operationType}`)}
               </div>
               {op.description && <div className="text-nkz-xs text-nkz-text-secondary">{op.description}</div>}
               {op.dueDate && (

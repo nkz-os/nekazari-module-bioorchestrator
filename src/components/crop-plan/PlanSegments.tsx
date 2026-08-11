@@ -57,7 +57,7 @@ const PlanSegments: React.FC<{ plan: CropPlan; status: PhenologyStatus; onCreate
           </div>
           {active?.id === s.id && status.currentStage && (
             <div className="text-nkz-xs text-nkz-text-secondary mt-1 flex items-center gap-1">
-              {t('cropPlan.segments.stage')}: {t(`cropPlan.stage.${status.currentStage}`, status.currentStage)}
+              {t('cropPlan.segments.stage')}: {t(`cropPlan.stage.${status.currentStage}`)}
               <AgronomicBadge av={status.agronomic?.currentStage} />
             </div>
           )}
