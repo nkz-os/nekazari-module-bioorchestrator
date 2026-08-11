@@ -44,6 +44,10 @@
       "alertsAwareness": "{{count}} active alert(s) — see platform notifications"
     },
     "cards": {
+      "cropManagement": {
+        "title": "Crop Management",
+        "subtitle": "Assign and manage the crop for this parcel."
+      },
       "cropPlanner": {
         "title": "Recommend crops",
         "subtitle": "Analyze your parcel to find the best crops for winter and summer."
@@ -968,5 +972,9 @@
     },
     "opType": {},
     "stage": {}
+  },
+  "cropManagement": {
+    "title": "Crop Management",
+    "subtitle": "Assign and manage the crop for this parcel."
   }
 }

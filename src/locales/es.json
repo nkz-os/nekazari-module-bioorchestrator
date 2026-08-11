@@ -44,6 +44,10 @@
       "alertsAwareness": "{{count}} alerta(s) activa(s) — ver notificaciones de la plataforma"
     },
     "cards": {
+      "cropManagement": {
+        "title": "Gestión de Cultivo",
+        "subtitle": "Asigna y gestiona el cultivo de esta parcela."
+      },
       "cropPlanner": {
         "title": "Recomendar cultivos",
         "subtitle": "Analiza tu parcela para encontrar los mejores cultivos de invierno y verano."
@@ -966,5 +970,9 @@
     },
     "opType": {},
     "stage": {}
+  },
+  "cropManagement": {
+    "title": "Gestión de Cultivo",
+    "subtitle": "Asigna y gestiona el cultivo de esta parcela."
   }
 }
