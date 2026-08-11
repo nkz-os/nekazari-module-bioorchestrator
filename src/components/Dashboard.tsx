@@ -22,6 +22,7 @@ interface ToolCardDef {
 const HUB_ORDER: HubId[] = ['planning', 'campaign'];
 
 const ALL_TOOLS: ToolCardDef[] = [
+  { id: 'cropManagement', icon: Sprout, hub: 'planning' },
   { id: 'cropPlanner', icon: Sparkles, hub: 'planning' },
   { id: 'parcelStatus', icon: Heart, hub: 'campaign' },
   { id: 'yieldProjection', icon: TrendingUp, hub: 'campaign' },
