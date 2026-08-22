@@ -1,6 +1,6 @@
 {
   "@context": {
-    "_comment": "BioOrchestrator JSON-LD @context — ICASA/AgMIP + QUDT + SOSA + AGROVOC + EPPO as primary ontologies. nkz: reserved for concepts without international equivalent.",
+    "_comment": "BioOrchestrator JSON-LD @context — ICASA/AgMIP + QUDT + SOSA + AGROVOC + EPPO as primary ontologies. nkz: reserved for concepts without international equivalent. One platform namespace: https://nkz-os.org/ns/ — do not introduce a second self-namespace.",
 
     "xsd": "http://www.w3.org/2001/XMLSchema#",
     "rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
@@ -15,7 +15,7 @@
     "agrovoc": "http://aims.fao.org/aos/agrovoc/",
     "eppo": "https://gd.eppo.int/taxon/",
     "wrb": "http://www.fao.org/soils-portal/soil-survey/soil-classification/wrb-reference/",
-    "nkz": "https://nkz.robotika.cloud/ngsi-ld/",
+    "nkz": "https://nkz-os.org/ns/",
 
     "_icasa_note": "ICASA variable codes (White et al. 2013, AgMIP harmonization) are embedded as rdfs:label annotations. No official ICASA RDF namespace exists — we mint under nkz:icasa/ when a URI is required for linking.",
 
