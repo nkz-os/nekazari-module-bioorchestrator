@@ -459,7 +459,7 @@ EXPERIMENT_TYPE_MAP: dict[str, str] = {
     "fecha_siembra": "http://aims.fao.org/aos/agrovoc/c_32894",       # sowing date
     "densidad_siembra": "http://aims.fao.org/aos/agrovoc/c_7154",     # sowing density
     "cultivo_ecologico": "http://aims.fao.org/aos/agrovoc/c_5380",    # organic agriculture
-    "otro": "https://nkz.robotika.cloud/ngsi-ld/OtherTrial",          # nkz fallback
+    "otro": "https://nkz-os.org/ns/OtherTrial",                       # nkz fallback
 }
 
 
