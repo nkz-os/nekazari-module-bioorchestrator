@@ -1,15 +1,14 @@
 """Receiver for Orion-LD notifications on CropHealthAssessment.phenologyStage.
 
-Auth-exempt (/api/graph/internal/ in SKIP_AUTH_PREFIXES). Responds 200 fast and
-dispatches rule evaluation on the serving event loop. bioorch reads the state
+Auth-exempt (/api/graph/internal/ in SKIP_AUTH_PREFIXES). Responds 204 (No Content)
+fast and dispatches rule evaluation on the serving event loop. bioorch reads the state
 crop-health wrote; it never recomputes it. In-process dedup collapses repeated
 same-stage notifications.
 """
 import asyncio
 import logging
 
-from fastapi import APIRouter, Request
-from fastapi.responses import JSONResponse
+from fastapi import APIRouter, HTTPException, Request
 
 from app.workers.rule_worker import handle_evaluate_action_rules
 
@@ -40,14 +39,18 @@ def _dispatch(tenant_id: str, parcel_id: str, observed: dict) -> None:
     task.add_done_callback(_BG_TASKS.discard)
 
 
-@router.post("/phenology-update")
+@router.post("/phenology-update", status_code=204)
 async def phenology_update(request: Request):
+    """Receive NGSI-LD notifications on CropHealthAssessment phenology changes.
+
+    Responds 204 (No Content) with no body (contract requirement for Orion-LD).
+    Malformed payloads return 400.
+    """
     payload = await request.json()
     if not isinstance(payload, dict) or not isinstance(payload.get("data"), list):
-        return JSONResponse(status_code=400, content={"error": "invalid payload"})
+        raise HTTPException(status_code=400, detail="invalid payload")
 
     tenant_id = request.headers.get("NGSILD-Tenant", "")
-    queued = 0
     for entity in payload["data"]:
         if entity.get("type") != "CropHealthAssessment":
             continue
@@ -64,8 +67,8 @@ async def phenology_update(request: Request):
                 observed[_SNAKE[extra]] = _kv(entity[extra])
         _dispatch(tenant_id, parcel_id, observed)
         _LAST_STAGE[key] = stage
-        queued += 1
-    return {"status": "accepted", "queued": queued}
+
+    return None
 
 
 _SNAKE = {"waterDeficitMm": "water_deficit_mm", "nRequirementKgHa": "n_requirement_kg_ha"}

@@ -1,6 +1,5 @@
 """NGSI-LD subscription notification handler."""
-from fastapi import APIRouter, Request
-from fastapi.responses import JSONResponse
+from fastapi import APIRouter, HTTPException, Request
 
 from app.workers.queue import background_queue
 
@@ -15,23 +14,24 @@ def _is_valid_ngsi_ld_subscription(payload: dict) -> bool:
     return isinstance(data, list)
 
 
-@router.post("/notify")
+@router.post("/notify", status_code=204)
 async def ngsi_ld_notify(request: Request):
     """Receive NGSI-LD subscription notifications from Orion-LD.
 
-    Validates the payload, responds 200 immediately, and enqueues
+    Validates the payload, responds 204 (No Content) immediately, and enqueues
     Neo4j sync for background processing.
+
+    Returns 204 with no body on success (contract requirement for Orion-LD).
+    Malformed payloads return 400 — if Orion cannot produce it, fail loudly.
     """
     payload = await request.json()
 
     if not _is_valid_ngsi_ld_subscription(payload):
-        return JSONResponse(status_code=400, content={"error": "invalid payload"})
+        raise HTTPException(status_code=400, detail="invalid payload")
 
     entities = payload.get("data", [])
-    queued = 0
     for entity in entities:
         if entity.get("type") == "AgriCrop":
             await background_queue.enqueue("sync_agri_crop", entity)
-            queued += 1
 
-    return {"status": "accepted", "queued": queued}
+    return None
