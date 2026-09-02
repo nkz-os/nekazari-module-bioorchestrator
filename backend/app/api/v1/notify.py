@@ -33,5 +33,3 @@ async def ngsi_ld_notify(request: Request):
     for entity in entities:
         if entity.get("type") == "AgriCrop":
             await background_queue.enqueue("sync_agri_crop", entity)
-
-    return None

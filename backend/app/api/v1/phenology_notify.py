@@ -68,7 +68,5 @@ async def phenology_update(request: Request):
         _dispatch(tenant_id, parcel_id, observed)
         _LAST_STAGE[key] = stage
 
-    return None
-
 
 _SNAKE = {"waterDeficitMm": "water_deficit_mm", "nRequirementKgHa": "n_requirement_kg_ha"}
