@@ -54,7 +54,9 @@ export function authHeaders(): Record<string, string> {
 
 async function get(path: string, extraHeaders?: Record<string, string>): Promise<any> {
   const headers: Record<string, string> = { ...authHeaders(), ...extraHeaders };
-  const url = path.startsWith("http") ? path : `${BASE}${path}`;
+  const url = path.startsWith("http") ? path :
+              path.startsWith("/api/") ? `${API_BASE}${path}` :
+              `${BASE}${path}`;
   const resp = await fetch(url, { headers, credentials: 'include' });
   // 401 = not authenticated, expected for public pages — return null silently
   if (resp.status === 401) return null;
@@ -65,7 +67,9 @@ async function get(path: string, extraHeaders?: Record<string, string>): Promise
 
 async function post(path: string, body?: any, extraHeaders?: Record<string, string>): Promise<any> {
   const headers: Record<string, string> = { 'Content-Type': 'application/json', ...authHeaders(), ...extraHeaders };
-  const url = path.startsWith("http") ? path : `${BASE}${path}`;
+  const url = path.startsWith("http") ? path :
+              path.startsWith("/api/") ? `${API_BASE}${path}` :
+              `${BASE}${path}`;
   const resp = await fetch(url, { method: 'POST', headers, body: body ? JSON.stringify(body) : undefined, credentials: 'include' });
   // 401 = not authenticated, expected for public pages — return null silently
   if (resp.status === 401) return null;
