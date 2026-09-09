@@ -122,17 +122,32 @@ export function useCropApi() {
     if (params?.q) searchParams.set('q', params.q);
     if (params?.parent) searchParams.set('parent', params.parent);
     const qs = searchParams.toString();
-    return get(`/api/crop/catalog${qs ? `?${qs}` : ''}`);
+    const resp = await fetch(
+      `${API_BASE}/api/crop/catalog${qs ? `?${qs}` : ''}`,
+      { headers: authHeaders(), credentials: 'include' }
+    );
+    if (!resp.ok) return { crops: [], total: 0 };
+    return resp.json();
   }
 
   async function getCropDetail(cropId: string): Promise<CropDetail> {
-    return get(`/api/crop/catalog/${encodeURIComponent(cropId)}`);
+    const resp = await fetch(
+      `${API_BASE}/api/crop/catalog/${encodeURIComponent(cropId)}`,
+      { headers: authHeaders(), credentials: 'include' }
+    );
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    return resp.json();
   }
 
   async function triggerIngest(source: string, speciesFilter?: string): Promise<any> {
     const params = new URLSearchParams({ source });
     if (speciesFilter) params.set('species_filter', speciesFilter);
-    return post(`/api/crop/catalog/ingest?${params}`);
+    const resp = await fetch(
+      `${API_BASE}/api/crop/catalog/ingest?${params}`,
+      { method: 'POST', headers: authHeaders(), credentials: 'include' }
+    );
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    return resp.json();
   }
 
   async function contributeParameter(body: {
@@ -140,7 +155,12 @@ export function useCropApi() {
     params: Record<string, number>;
     provenance: { doi: string; author?: string; year?: number; institution?: string; method?: string; conditions?: string };
   }): Promise<any> {
-    return post('/api/crop/catalog/contribute', body);
+    const resp = await fetch(
+      `${API_BASE}/api/crop/catalog/contribute`,
+      { method: 'POST', headers: { 'Content-Type': 'application/json', ...authHeaders() }, body: JSON.stringify(body), credentials: 'include' }
+    );
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    return resp.json();
   }
 
   async function getThermalSummary(): Promise<{
@@ -148,7 +168,12 @@ export function useCropApi() {
     with_thermal: number;
     without_thermal: number;
   }> {
-    return get('/api/crop/catalog/thermal-summary');
+    const resp = await fetch(
+      `${API_BASE}/api/crop/catalog/thermal-summary`,
+      { headers: authHeaders(), credentials: 'include' }
+    );
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    return resp.json();
   }
 
   async function getNpkSummary(): Promise<{
@@ -156,15 +181,31 @@ export function useCropApi() {
     with_npk: number;
     without_npk: number;
   }> {
-    return get('/api/crop/catalog/npk-summary');
+    const resp = await fetch(
+      `${API_BASE}/api/crop/catalog/npk-summary`,
+      { headers: authHeaders(), credentials: 'include' }
+    );
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    return resp.json();
   }
 
   async function triggerDeriveThermal(): Promise<{ status: string; message: string }> {
-    return post('/api/crop/catalog/derive-thermal');
+    const resp = await fetch(
+      `${API_BASE}/api/crop/catalog/derive-thermal`,
+      { method: 'POST', headers: authHeaders(), credentials: 'include' }
+    );
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    return resp.json();
   }
 
-  const getPhenologyStatus = (parcelId: string) =>
-    get(`/api/crop-health/parcels/${encodeURIComponent(parcelId)}/phenology-status`);
+  async function getPhenologyStatus(parcelId: string) {
+    const resp = await fetch(
+      `${API_BASE}/api/crop-health/parcels/${encodeURIComponent(parcelId)}/phenology-status`,
+      { headers: authHeaders(), credentials: 'include' }
+    );
+    if (!resp.ok) return null;
+    return resp.json();
+  }
 
   return { getCatalog, getCropDetail, triggerIngest, contributeParameter, getThermalSummary, getNpkSummary, triggerDeriveThermal, getPhenologyStatus };
 }
@@ -172,19 +213,54 @@ export function useCropApi() {
 // ── Hook (no useAuth — relies on httpOnly cookie) ───────────────────────────
 
 export function useBioApi() {
+  async function runPipeline(body: any) {
+    const resp = await fetch(
+      `${API_BASE}/api/pipeline/run`,
+      { method: 'POST', headers: { 'Content-Type': 'application/json', ...authHeaders() }, body: JSON.stringify(body), credentials: 'include' }
+    );
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    return resp.json();
+  }
+
+  async function getPipelineHistory(limit = 5) {
+    const resp = await fetch(
+      `${API_BASE}/api/pipeline/history?limit=${limit}`,
+      { headers: authHeaders(), credentials: 'include' }
+    );
+    if (!resp.ok) return [];
+    return resp.json();
+  }
+
+  async function getIssuedOperations(parcelUrn: string) {
+    const resp = await fetch(
+      `${API_BASE}/api/field-operations/operations?parcel_id=${encodeURIComponent(parcelUrn)}&status=issued`,
+      { headers: authHeaders(), credentials: 'include' }
+    );
+    if (!resp.ok) return [];
+    return resp.json();
+  }
+
+  async function contributePhenology(params: URLSearchParams) {
+    const resp = await fetch(
+      `${API_BASE}/api/graph/phenology-params/contribute?${params.toString()}`,
+      { method: 'POST', headers: authHeaders(), credentials: 'include' }
+    );
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    return resp.json();
+  }
+
   return {
     getSources: () => get(`${GRAPH}/graph/agriculture/sources`),
-    runPipeline: (body: any) => post('/api/pipeline/run', body),
-    getPipelineHistory: (limit = 5) => get(`/api/pipeline/history?limit=${limit}`),
+    runPipeline,
+    getPipelineHistory,
     getSpecies: () => get(`${GRAPH}/graph/species`),
     getPhenologyParams: (params: URLSearchParams) => get(`${GRAPH}/graph/phenology-params?${params.toString()}`),
     getCropPlan: (parcelUrn: string) =>
       get(`${GRAPH}/graph/agriculture/crop-plan?parcel_id=${encodeURIComponent(parcelUrn)}`),
     getWaterBudget: (parcelUrn: string) =>
       get(`${GRAPH}/graph/agriculture/water-budget?parcel_id=${encodeURIComponent(parcelUrn)}`),
-    getIssuedOperations: (parcelUrn: string) =>
-      get(`/api/field-operations/operations?parcel_id=${encodeURIComponent(parcelUrn)}&status=issued`),
-    contributePhenology: (params: URLSearchParams) => post(`/api/graph/phenology-params/contribute?${params.toString()}`),
+    getIssuedOperations,
+    contributePhenology,
     getHeatTolerance: (species: string) => get(`${GRAPH}/graph/heat-tolerance?species=${encodeURIComponent(species)}`),
     getNutrientProfile: (species: string, stage?: string) => get(`${GRAPH}/graph/nutrient-profile?species=${encodeURIComponent(species)}${stage ? `&stage=${encodeURIComponent(stage)}` : ''}`),
     getNextCrop: (crop: string) => get(`${GRAPH}/graph/recommendations/next-crop?previous_crop=${encodeURIComponent(crop)}`),
@@ -199,14 +275,45 @@ export function useBioApi() {
     getRotationConstraints: (crop: string) => get(`${GRAPH}/graph/rotation-constraints?crop=${encodeURIComponent(crop)}`),
     getGraphSpecies: () => get(`${GRAPH}/graph/species`),
     simulateCrop: (baseline: string, scenario: string) => get(`${GRAPH}/graph/recommendations/simulate?baseline_crop=${encodeURIComponent(baseline)}&scenario_crop=${encodeURIComponent(scenario)}`),
-    getDadisCountries: () => get('/api/dadis/countries', dadisHeaders()),
-    getDadisSpecies: () => get('/api/dadis/species', dadisHeaders()),
-    getDadisBreeds: (classification = 'all', countryIds?: string[], speciesIds?: number[]) => post('/api/dadis/breeds', { classification, countryIds: countryIds || [], speciesIds: speciesIds || [] }, dadisHeaders()),
-    getDadisBreedById: (breedId: string, lang = 'en') => get(`/api/dadis/breeds/${encodeURIComponent(breedId)}?lang=${lang}`, dadisHeaders()),
-    getParcelVegetation: (parcelId: string, index = 'ndvi', period = '3m'): Promise<VegetationData> =>
-      get(`/api/parcel/${encodeURIComponent(parcelId)}/vegetation?index=${index}&period=${period}`),
-    getParcelSoil: (parcelId: string): Promise<SoilData> =>
-      get(`/api/parcel/${encodeURIComponent(parcelId)}/soil`),
+    getDadisCountries: async () => {
+      const resp = await fetch(`${API_BASE}/api/dadis/countries`, { headers: { ...authHeaders(), ...dadisHeaders() }, credentials: 'include' });
+      if (!resp.ok) return [];
+      return resp.json();
+    },
+    getDadisSpecies: async () => {
+      const resp = await fetch(`${API_BASE}/api/dadis/species`, { headers: { ...authHeaders(), ...dadisHeaders() }, credentials: 'include' });
+      if (!resp.ok) return [];
+      return resp.json();
+    },
+    getDadisBreeds: async (classification = 'all', countryIds?: string[], speciesIds?: number[]) => {
+      const resp = await fetch(
+        `${API_BASE}/api/dadis/breeds`,
+        { method: 'POST', headers: { 'Content-Type': 'application/json', ...authHeaders(), ...dadisHeaders() }, body: JSON.stringify({ classification, countryIds: countryIds || [], speciesIds: speciesIds || [] }), credentials: 'include' }
+      );
+      if (!resp.ok) return [];
+      return resp.json();
+    },
+    getDadisBreedById: async (breedId: string, lang = 'en') => {
+      const resp = await fetch(`${API_BASE}/api/dadis/breeds/${encodeURIComponent(breedId)}?lang=${lang}`, { headers: { ...authHeaders(), ...dadisHeaders() }, credentials: 'include' });
+      if (!resp.ok) return null;
+      return resp.json();
+    },
+    getParcelVegetation: async (parcelId: string, index = 'ndvi', period = '3m'): Promise<VegetationData> => {
+      const resp = await fetch(
+        `${API_BASE}/api/parcel/${encodeURIComponent(parcelId)}/vegetation?index=${index}&period=${period}`,
+        { headers: authHeaders(), credentials: 'include' }
+      );
+      if (!resp.ok) return { available: false, index, period, observations: [], current: null, trend: null, count: 0 };
+      return resp.json();
+    },
+    getParcelSoil: async (parcelId: string): Promise<SoilData> => {
+      const resp = await fetch(
+        `${API_BASE}/api/parcel/${encodeURIComponent(parcelId)}/soil`,
+        { headers: authHeaders(), credentials: 'include' }
+      );
+      if (!resp.ok) return { available: false, horizons: [] };
+      return resp.json();
+    },
     getAgricultureCrops: () => get(`${GRAPH}/graph/agriculture/crops`),
     getTrialSites: () => get(`${GRAPH}/graph/agriculture/trial-sites`),
     extrapolateVarieties: (params: Record<string, string>) => {
