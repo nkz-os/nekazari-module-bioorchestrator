@@ -10,6 +10,8 @@
  * IkerKeta's existing livestock/GBIF connectors.
  */
 
+import { useMemo } from 'react';
+
 const API_BASE = (import.meta as any).env?.VITE_API_URL || "https://nkz.robotika.cloud";
 const BASE = `${API_BASE}/api/bioorchestrator`;
 // Direct graph path bypasses api-gateway auth for public reference data endpoints
@@ -166,13 +168,15 @@ export function useCropApi() {
   const getPhenologyStatus = (parcelId: string) =>
     get(`${API_BASE}/api/crop-health/parcels/${encodeURIComponent(parcelId)}/phenology-status`);
 
-  return { getCatalog, getCropDetail, triggerIngest, contributeParameter, getThermalSummary, getNpkSummary, triggerDeriveThermal, getPhenologyStatus };
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- functions close over module scope only
+  return useMemo(() => ({ getCatalog, getCropDetail, triggerIngest, contributeParameter, getThermalSummary, getNpkSummary, triggerDeriveThermal, getPhenologyStatus }), []);
 }
 
 // ── Hook (no useAuth — relies on httpOnly cookie) ───────────────────────────
 
 export function useBioApi() {
-  return {
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- functions close over module scope only
+  return useMemo(() => ({
     getSources: () => get(`${GRAPH}/graph/agriculture/sources`),
     runPipeline: (body: any) => post('/api/pipeline/run', body),
     getPipelineHistory: (limit = 5) => get(`/api/pipeline/history?limit=${limit}`),
@@ -273,7 +277,7 @@ export function useBioApi() {
       });
       return get(`${GRAPH}/graph/agriculture/rotation-plan?${qs.toString()}`);
     },
-  };
+  }), []);
 }
 
 // ── Parcel Data Types ───────────────────────────────────────────────────────
