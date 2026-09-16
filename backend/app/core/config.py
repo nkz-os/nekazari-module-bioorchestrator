@@ -43,7 +43,7 @@ class Settings(BaseSettings):
     context_url: str = "http://api-gateway-service:5000/ngsi-ld-context.json"
     # Canonical Orion-LD tenant owning the global AgriCrop reference catalog.
     # bioorch is the SOLE writer; other modules consume via /api/crop/catalog.
-    catalog_tenant: str = "default"
+    catalog_tenant: str = "shared"
 
     # ── Weather-Map (per-parcel meteo stats: temperature_avg, water_balance, frost_risk) ─
     weather_map_url: str = "http://weather-map-backend:8080"

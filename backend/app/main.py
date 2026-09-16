@@ -42,7 +42,7 @@ async def _ensure_catalog_subscription():
     """Ensure the AgriCrop subscription exists in the canonical catalog tenant.
 
     Uses SubscriptionRegistrar (idempotent by description). The catalog lives in
-    tenant `settings.catalog_tenant` ("default"); a subscription in any other
+    tenant `settings.catalog_tenant` ("shared"); a subscription in any other
     store (e.g. the legacy no-header one) watches an empty store and never fires.
     """
     internal_secret = os.getenv("INTERNAL_SERVICE_SECRET", "")

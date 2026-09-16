@@ -13,6 +13,6 @@ async def test_reconcile_syncs_all_from_catalog_tenant():
          patch("app.main.sync_all_agri_crops", new=AsyncMock(return_value=45)) as sync:
         n = await _reconcile_catalog()
     assert n == 45
-    assert ctor.call_args.args[0] == "default"
+    assert ctor.call_args.args[0] == "shared"
     sync.assert_awaited_once()
     fake_client.close.assert_awaited_once()
