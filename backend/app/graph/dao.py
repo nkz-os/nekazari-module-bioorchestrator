@@ -2410,6 +2410,7 @@ class GraphDAO:
         Fail-soft: a subscription error must never fail the crop assignment.
         """
         try:
+            internal_secret = os.getenv("INTERNAL_SERVICE_SECRET", "")
             registrar = SubscriptionRegistrar(
                 orion_url=settings.orion_ld_url,
                 notification_url="http://bioorchestrator-api-service:8420/api/graph/internal/phenology-update",
@@ -2419,6 +2420,10 @@ class GraphDAO:
                 )],
                 module_name="bioorchestrator",
                 context_url=settings.context_url,
+                notification_headers=(
+                    {"X-Internal-Service-Secret": internal_secret}
+                    if internal_secret else None
+                ),
             )
             result = await registrar.ensure_all([tenant_id])
             logger.info("phenology subscription ensured for %s: %s", tenant_id, result)

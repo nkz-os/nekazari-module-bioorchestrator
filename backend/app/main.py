@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import asyncio
 import json as _json
+import os
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 
@@ -44,12 +45,17 @@ async def _ensure_catalog_subscription():
     tenant `settings.catalog_tenant` ("default"); a subscription in any other
     store (e.g. the legacy no-header one) watches an empty store and never fires.
     """
+    internal_secret = os.getenv("INTERNAL_SERVICE_SECRET", "")
     registrar = SubscriptionRegistrar(
         orion_url=settings.orion_ld_url,
         notification_url="http://bioorchestrator-api-service:8420/api/ngsi-ld/notify",
         subscriptions=[{"type": "AgriCrop"}],
         module_name="bioorchestrator",
         context_url=settings.context_url,
+        notification_headers=(
+            {"X-Internal-Service-Secret": internal_secret}
+            if internal_secret else None
+        ),
     )
     try:
         result = await registrar.ensure_all([settings.catalog_tenant])
