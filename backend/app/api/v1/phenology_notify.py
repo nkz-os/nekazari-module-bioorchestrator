@@ -6,14 +6,29 @@ crop-health wrote; it never recomputes it. In-process dedup collapses repeated
 same-stage notifications.
 """
 import asyncio
+import hmac
 import logging
+import os
 
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, Header, HTTPException, Request
 
 from app.workers.rule_worker import handle_evaluate_action_rules
 
 router = APIRouter(tags=["internal"])
 logger = logging.getLogger(__name__)
+
+
+def _reject_unauthenticated_notify(x_internal_secret: str | None) -> HTTPException | None:
+    """Flag-gated auth for the Orion notification receiver (two-phase rollout)."""
+    require = os.getenv("NOTIFY_REQUIRE_INTERNAL_SECRET", "").lower() in (
+        "1", "true", "yes", "on"
+    )
+    if not require:
+        return None
+    secret = os.getenv("INTERNAL_SERVICE_SECRET", "")
+    if not secret or not hmac.compare_digest(x_internal_secret or "", secret):
+        return HTTPException(status_code=401, detail="missing or invalid internal secret")
+    return None
 
 _LAST_STAGE: dict[tuple[str, str], str] = {}
 # Keep strong refs to in-flight tasks so the loop doesn't GC them mid-run.
@@ -40,12 +55,18 @@ def _dispatch(tenant_id: str, parcel_id: str, observed: dict) -> None:
 
 
 @router.post("/phenology-update", status_code=204)
-async def phenology_update(request: Request):
+async def phenology_update(
+    request: Request,
+    x_internal_secret: str | None = Header(None, alias="X-Internal-Service-Secret"),
+):
     """Receive NGSI-LD notifications on CropHealthAssessment phenology changes.
 
     Responds 204 (No Content) with no body (contract requirement for Orion-LD).
     Malformed payloads return 400.
     """
+    reject = _reject_unauthenticated_notify(x_internal_secret)
+    if reject:
+        raise reject
     payload = await request.json()
     if not isinstance(payload, dict) or not isinstance(payload.get("data"), list):
         raise HTTPException(status_code=400, detail="invalid payload")
