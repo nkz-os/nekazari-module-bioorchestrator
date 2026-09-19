@@ -2386,6 +2386,22 @@ class GraphDAO:
             await client.append_entity_attrs(parcel_id, patch_body)
             await self._ensure_phenology_subscription(tenant_id)
 
+            # Clean up activation placeholder AgriCrop(s) so they never
+            # masquerade as a second assigned crop.
+            try:
+                crops = await client.query_entities(
+                    type="AgriCrop",
+                    q=f'hasAgriParcel=="{parcel_id}"|refAgriParcel=="{parcel_id}"',
+                    limit=20,
+                    options="keyValues",
+                )
+                for ph in (crops or []):
+                    if ph.get("provenance") == "placeholder" and ph.get("id") != new_crop_id:
+                        await client.delete_entity(ph["id"])
+                        logger.info("Removed placeholder AgriCrop %s after assign-crop", ph["id"])
+            except Exception as exc:  # noqa: BLE001 — cleanup must never fail the assignment
+                logger.warning("Failed to clean up placeholder AgriCrop: %s", exc)
+
             return {
                 "status": "assigned",
                 "parcel_id": parcel_id,
