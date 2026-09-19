@@ -14,12 +14,12 @@
 import React, { useEffect, useState } from 'react';
 import { Stack, Card, Badge, Button, DetailGrid, DetailItem, Skeleton } from '@nekazari/ui-kit';
 import { useTranslation, useAuth } from '@nekazari/sdk';
-import { resolveCropTypeFromContext } from '../utils/cropContext';
+import { resolveCropTypeFromContext, resolveCropDisplayName } from '../utils/cropContext';
 import {
   RefreshCw, Globe, Thermometer, MapPin, Sprout, Bug, Beaker,
   AlertTriangle, CheckCircle, XCircle, ChevronDown, ChevronRight,
 } from 'lucide-react';
-import { useBioApi, useCropApi, getCropContext } from '../services/api';
+import { useBioApi, useCropApi, getCropContext, type CropContextResponse } from '../services/api';
 import type { VegetationData, SoilData as ParcelSoilData, SoilHorizon } from '../services/api';
 import ContextEmptyState from './shared/ContextEmptyState';
 import InlineVarietyPicker from './InlineVarietyPicker';
@@ -42,6 +42,8 @@ const CropManagementView: React.FC<CropManagementViewProps> = ({ parcelId, parce
   const { tenantId } = useAuth();
   const api = useBioApi();
   const [cropType, setCropType] = useState<string | null>(null);
+  const [cropDisplayName, setCropDisplayName] = useState<string | null>(null);
+  const [cropCtx, setCropCtx] = useState<CropContextResponse | null>(null);
   const [cropContextLoading, setCropContextLoading] = useState(true);
   const [nextCrops, setNextCrops] = useState<RecCrop[]>([]);
   const [soil, setSoil] = useState<CropSoilReq | null>(null);
@@ -78,12 +80,17 @@ const CropManagementView: React.FC<CropManagementViewProps> = ({ parcelId, parce
   // Resolve the real crop commitment (AgriParcel.hasAgriCrop) via
   // BioOrchestrator's own crop-context endpoint.
   useEffect(() => {
-    if (!parcelId) { setCropType(null); setCropContextLoading(false); return; }
+    if (!parcelId) { setCropType(null); setCropDisplayName(null); setCropCtx(null); setCropContextLoading(false); return; }
     let cancelled = false;
     setCropContextLoading(true);
     getCropContext(parcelId, undefined, tenantId)
-      .then((ctx) => { if (!cancelled) setCropType(resolveCropTypeFromContext(ctx)); })
-      .catch(() => { if (!cancelled) setCropType(null); })
+      .then((ctx) => {
+        if (cancelled) return;
+        setCropType(resolveCropTypeFromContext(ctx));
+        setCropDisplayName(resolveCropDisplayName(ctx));
+        setCropCtx(ctx);
+      })
+      .catch(() => { if (!cancelled) { setCropType(null); setCropDisplayName(null); setCropCtx(null); } })
       .finally(() => { if (!cancelled) setCropContextLoading(false); });
     return () => { cancelled = true; };
   }, [parcelId, tenantId]);
@@ -224,7 +231,7 @@ const CropManagementView: React.FC<CropManagementViewProps> = ({ parcelId, parce
       <Stack gap="stack">
         {parcelName && <p className="text-nkz-sm text-nkz-text-secondary">{parcelName}</p>}
         <ContextEmptyState
-          message={t('panel.cropNotInCatalog', { crop: cropType })}
+          message={t('panel.cropNotInCatalog', { crop: cropDisplayName || cropType })}
           actionLabel={t('panel.addToCatalog')}
           variant="warning"
         />
@@ -238,6 +245,29 @@ const CropManagementView: React.FC<CropManagementViewProps> = ({ parcelId, parce
   return (
     <Stack gap="stack">
       {parcelName && <p className="text-nkz-sm text-nkz-text-secondary">{parcelName}</p>}
+
+      {/* Current crop — prominent summary (species, variety, stage, dates) */}
+      <Card padding="md">
+        <Stack gap="tight">
+          <div className="flex items-center justify-between">
+            <h4 className="text-nkz-xs font-semibold text-nkz-text-secondary uppercase tracking-wider">{t('panel.currentCrop')}</h4>
+            <Button variant="ghost" size="sm" onClick={() => setShowAssignModal(true)}>{t('panel.changeCrop')}</Button>
+          </div>
+          <div className="flex items-baseline gap-2">
+            <span className="text-nkz-lg font-semibold text-nkz-text-primary">{cropDisplayName || cropType}</span>
+            {cropCtx?.crop?.scientific_name && (
+              <span className="text-nkz-sm text-nkz-text-muted italic">{cropCtx.crop.scientific_name}</span>
+            )}
+          </div>
+          <DetailGrid columns={2}>
+            {cropCtx?.variety?.name && <DetailItem label={t('assign.varietyLabel')} value={cropCtx.variety.name} />}
+            {cropCtx?.management && <DetailItem label={t('assign.managementLabel')} value={cropCtx.management} />}
+            {cropCtx?.season?.current_stage && <DetailItem label={t('phenology.stage')} value={cropCtx.season.current_stage} />}
+            {cropCtx?.season?.start && <DetailItem label={t('assign.sowingDate')} value={cropCtx.season.start} />}
+            {cropCtx?.season?.end && <DetailItem label={t('assign.harvestDate')} value={cropCtx.season.end} />}
+          </DetailGrid>
+        </Stack>
+      </Card>
 
       {/* Section 1: Data Availability — always expanded */}
       <Card padding="md">
@@ -297,7 +327,7 @@ const CropManagementView: React.FC<CropManagementViewProps> = ({ parcelId, parce
               <p className="text-nkz-text-muted text-xs">{parcelSoil.source || t('soilPanel.source')}</p>
             </Stack></Card>
           )}
-          {soil && <Card padding="md"><Stack gap="tight"><h4 className="text-nkz-xs font-semibold text-nkz-text-secondary uppercase tracking-wider flex items-center gap-1.5"><Globe className="w-3.5 h-3.5 text-nkz-accent-base" />Soil Requirements ({cropType})</h4><DetailGrid columns={2}><DetailItem label="pH" value={<>{soil.ph_min} – {soil.ph_max}</>} /><DetailItem label="Texture" value={(soil.textures || []).join(', ')} /><DetailItem label="Drainage" value={(soil.drainage || []).join(', ')} /></DetailGrid></Stack></Card>}
+          {soil && <Card padding="md"><Stack gap="tight"><h4 className="text-nkz-xs font-semibold text-nkz-text-secondary uppercase tracking-wider flex items-center gap-1.5"><Globe className="w-3.5 h-3.5 text-nkz-accent-base" />Soil Requirements ({cropDisplayName || cropType})</h4><DetailGrid columns={2}><DetailItem label="pH" value={<>{soil.ph_min} – {soil.ph_max}</>} /><DetailItem label="Texture" value={(soil.textures || []).join(', ')} /><DetailItem label="Drainage" value={(soil.drainage || []).join(', ')} /></DetailGrid></Stack></Card>}
           {protectedArea?.in_protected_area && <Card padding="md"><Stack gap="tight"><h4 className="text-nkz-xs font-semibold text-nkz-text-secondary uppercase tracking-wider flex items-center gap-1.5"><MapPin className="w-3.5 h-3.5 text-nkz-success" />Protected Area</h4><p className="text-nkz-sm font-medium">{protectedArea.site_name} ({protectedArea.site_code})</p></Stack></Card>}
           {lat != null && lon != null && <TerrainSection lat={lat} lon={lon} />}
           {lat != null && lon != null && <ClimateSection lat={lat} lon={lon} />}
@@ -352,7 +382,7 @@ const CropManagementView: React.FC<CropManagementViewProps> = ({ parcelId, parce
       {/* Section 3: Rotation & Crop */}
       <CollapsibleSection title={t('panel.rotationAndCrop')}>
         <Stack gap="stack">
-          <Card padding="md"><Stack gap="tight"><h4 className="text-nkz-xs font-semibold text-nkz-text-secondary uppercase tracking-wider flex items-center gap-1.5"><RefreshCw className="w-3.5 h-3.5 text-nkz-accent-base" />Rotation</h4><p className="text-nkz-sm">Current: <strong>{cropType}</strong></p>{nextCrops.length > 0 ? <div className="flex flex-wrap gap-1.5">{nextCrops.map((c) => <Badge key={c.name} intent="info">{c.scientific_name || c.name}</Badge>)}</div> : <p className="text-nkz-xs text-nkz-text-muted">No rotation restrictions.</p>}</Stack></Card>
+          <Card padding="md"><Stack gap="tight"><h4 className="text-nkz-xs font-semibold text-nkz-text-secondary uppercase tracking-wider flex items-center gap-1.5"><RefreshCw className="w-3.5 h-3.5 text-nkz-accent-base" />Rotation</h4><p className="text-nkz-sm">Current: <strong>{cropDisplayName || cropType}</strong></p>{nextCrops.length > 0 ? <div className="flex flex-wrap gap-1.5">{nextCrops.map((c) => <Badge key={c.name} intent="info">{c.scientific_name || c.name}</Badge>)}</div> : <p className="text-nkz-xs text-nkz-text-muted">No rotation restrictions.</p>}</Stack></Card>
           {varieties.length > 0 && <Card padding="md"><Stack gap="tight"><h4 className="text-nkz-xs font-semibold text-nkz-text-secondary uppercase tracking-wider flex items-center gap-1.5"><Sprout className="w-3.5 h-3.5 text-nkz-accent-base" />Registered Varieties (CPVO)</h4><div className="flex flex-wrap gap-1.5">{varieties.slice(0, 6).map((v: any, i: number) => <Badge key={i} intent="default">{v.variety_name || v.denomination}</Badge>)}</div></Stack></Card>}
           {pesticides.length > 0 && <Card padding="md"><Stack gap="tight"><h4 className="text-nkz-xs font-semibold text-nkz-text-secondary uppercase tracking-wider flex items-center gap-1.5"><Bug className="w-3.5 h-3.5 text-nkz-accent-base" />Authorised Pesticides (EU)</h4>{pesticides.slice(0, 5).map((p: any, i: number) => <div key={i} className="flex items-center justify-between text-nkz-sm"><Badge intent={PESTICIDE_INTENT[p.status] || 'default'}>{p.status}</Badge><span className="text-nkz-text-primary">{p.substance}</span></div>)}</Stack></Card>}
           {pollinators.length > 0 && <Card padding="md"><Stack gap="tight"><h4 className="text-nkz-xs font-semibold text-nkz-text-secondary uppercase tracking-wider flex items-center gap-1.5"><Sprout className="w-3.5 h-3.5 text-nkz-accent-base" />Pollinators (GBIF)</h4>{pollinators.slice(0, 5).map((p: any, i: number) => <div key={i} className="flex items-center justify-between text-nkz-sm"><span>{p.species}</span><span className="text-nkz-xs text-nkz-text-muted">{p.record_count} records</span></div>)}</Stack></Card>}

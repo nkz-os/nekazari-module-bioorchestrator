@@ -10,8 +10,21 @@ export interface CropContextLike {
   };
 }
 
-/** Picks the best available display value for the assigned crop. */
+/** Picks the canonical identifier for graph/catalog queries.
+ *
+ * The EPPO code (e.g. "SECCE") is what phenology-params, soil-suitability,
+ * pesticides and the crop catalog resolve. The human `name` is often a
+ * localized common name ("centeno") that the graph does not know, so it must
+ * NOT be used for queries. */
 export function resolveCropTypeFromContext(
+  ctx: CropContextLike | null | undefined,
+): string | null {
+  if (!ctx?.crop) return null;
+  return ctx.crop.eppo || ctx.crop.name || ctx.crop.scientific_name || null;
+}
+
+/** Picks the best display label for the assigned crop (for UI chrome only). */
+export function resolveCropDisplayName(
   ctx: CropContextLike | null | undefined,
 ): string | null {
   if (!ctx?.crop) return null;

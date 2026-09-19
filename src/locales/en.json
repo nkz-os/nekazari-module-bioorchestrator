@@ -576,6 +576,7 @@
     "noCrop": "This parcel has no crop assigned. Assign one to see agronomic recommendations.",
     "assignCrop": "Assign crop",
     "changeCrop": "Change crop",
+    "currentCrop": "Current crop",
     "cropNotInCatalog": "The crop '{{crop}}' is not in the catalog. Agronomic data is not available.",
     "addToCatalog": "Add to catalog",
     "dataAvailability": "Data Availability",
