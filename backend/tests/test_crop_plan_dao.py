@@ -154,3 +154,29 @@ async def test_advance_aborts_if_active_query_fails(dao):
         for _, attrs in fake.patched
     )
     assert fake.patched == []
+
+
+@pytest.mark.asyncio
+async def test_get_crop_plan_unwraps_typed_literal_dates(dao):
+    """keyValues returns date attrs as RDF typed literals ({"@type":"Date",
+    "@value":"…"}); the read path must return plain strings so the frontend
+    does not render an object (React invariant #31)."""
+    d, fake = dao
+    fake.entities = [
+        {
+            "id": "urn:ngsi-ld:AgriCrop:montiko:p-1:2026:0",
+            "type": "AgriCrop",
+            "seq": 0,
+            "status": "planned",
+            "sowingWindowStart": {"@type": "Date", "@value": "2025-11-01"},
+            "sowingWindowEnd": {"@type": "Date", "@value": "2025-11-20"},
+            "expectedTerminationDate": {"@type": "Date", "@value": "2026-03-15"},
+        },
+    ]
+    out = await d.get_crop_plan("urn:ngsi-ld:AgriParcel:montiko:p-1", "2026", "montiko")
+    seg = out["segments"][0]
+    assert seg["sowingWindowStart"] == "2025-11-01"
+    assert seg["sowingWindowEnd"] == "2025-11-20"
+    assert seg["expectedTerminationDate"] == "2026-03-15"
+    # Scalar attrs must pass through untouched (no str()-coercion of ints).
+    assert seg["seq"] == 0

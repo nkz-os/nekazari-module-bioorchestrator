@@ -2524,8 +2524,19 @@ class GraphDAO:
         finally:
             await client.close()
         rows = sorted(rows, key=lambda r: r.get("seq", 0))
+        # Date attrs are stored as NGSI-LD typed literals ({"@type": "Date",
+        # "@value": "…"}); keyValues returns them verbatim. Unwrap to plain
+        # strings at the read boundary — the frontend contract is scalars.
+        date_fields = (
+            "sowingWindowStart", "sowingWindowEnd", "expectedTerminationDate",
+            "plantingDate", "terminationDate",
+        )
+        segments = [
+            {**r, **{f: _extract_prop_value(r[f]) for f in date_fields if f in r}}
+            for r in rows
+        ]
         active = next((r["id"] for r in rows if r.get("status") == "active"), None)
-        return {"parcel_id": parcel_id, "season": season, "active": active, "segments": rows}
+        return {"parcel_id": parcel_id, "season": season, "active": active, "segments": segments}
 
     async def advance_segment(self, parcel_id, season, seq, planting_date, tenant_id) -> dict:
         """Mark a segment sown: set actual plantingDate + activate; demote prior active."""
@@ -4852,6 +4863,9 @@ def _extract_prop_value(prop: dict | str | None):
     if prop is None:
         return None
     if isinstance(prop, dict):
+        # Direct RDF typed literal (keyValues form): {"@value": ..., "@type": ...}
+        if "@value" in prop:
+            return prop["@value"]
         val = prop.get("value")
         if isinstance(val, dict):
             # RDF typed literal e.g. {"@value": "2026-01-01", "@type": "xsd:date"}
