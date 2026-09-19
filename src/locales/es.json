@@ -576,6 +576,7 @@
     "noCrop": "Esta parcela no tiene un cultivo asignado. Asigna uno para ver recomendaciones agronómicas.",
     "assignCrop": "Asignar cultivo",
     "changeCrop": "Cambiar cultivo",
+    "currentCrop": "Cultivo actual",
     "cropNotInCatalog": "El cultivo '{{crop}}' no está en el catálogo. Los datos agronómicos no están disponibles.",
     "addToCatalog": "Añadir al catálogo",
     "dataAvailability": "Disponibilidad de datos",

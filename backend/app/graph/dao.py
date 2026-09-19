@@ -3077,6 +3077,11 @@ class GraphDAO:
                 crop_entity = await orion.get_entity(crop_uri)
                 crop_name = _extract_prop_value(crop_entity.get("name"))
                 crop_scientific = _extract_prop_value(crop_entity.get("scientificName"))
+                # Prefer the AgriCrop's own species (EPPO code, e.g. "SECCE") over
+                # the URN segment (e.g. "2026") — the URN suffix is a season id.
+                species_val = _extract_prop_value(crop_entity.get("species"))
+                if species_val:
+                    crop_eppo = species_val
             except Exception:  # noqa: BLE001,S110
                 pass
 
