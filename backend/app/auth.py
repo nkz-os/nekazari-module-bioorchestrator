@@ -75,6 +75,15 @@ class NKZAuthMiddleware(BaseHTTPMiddleware):
             if request.url.path.startswith(prefix) and (
                 "*" in methods or request.method in methods
             ):
+                # Public path, but several of these (agriculture crop-context,
+                # assign-crop, water-budget, crop-plan) are TENANT-SCOPED: they
+                # read/write Orion under the caller's tenant. The frontend sends
+                # a Bearer token even on these public routes (direct ingress,
+                # no api-gateway to inject X-Tenant-ID), so resolve the tenant
+                # from it best-effort WITHOUT enforcing auth: a missing/invalid
+                # token stays public, but a valid one makes the parcel-scoped
+                # queries hit the right Orion tenant.
+                await self._soft_set_tenant_from_token(request)
                 return await call_next(request)
 
         # Trust gateway-injected headers (request already passed api-gateway auth)
@@ -124,6 +133,23 @@ class NKZAuthMiddleware(BaseHTTPMiddleware):
             )
 
         return await call_next(request)
+
+    async def _soft_set_tenant_from_token(self, request: Request) -> None:
+        """Best-effort tenant resolution for public, tenant-scoped routes.
+
+        Never rejects the request: on any failure it proceeds unauthenticated
+        (tenant stays empty and the route falls back to header/query/URN).
+        """
+        auth_header = request.headers.get("Authorization", "")
+        if not auth_header.startswith("Bearer "):
+            return
+        try:
+            payload = await self._validate_token(auth_header.split(" ", 1)[1])
+        except Exception:
+            return
+        raw_tenant = payload.get("tenant_id") or payload.get("tenant", "")
+        if raw_tenant:
+            request.state.tenant_id = normalize_tenant_id(raw_tenant)
 
     async def _validate_token(self, token: str) -> dict:
         """Validate JWT against Keycloak JWKS endpoint.
