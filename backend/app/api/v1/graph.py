@@ -1313,7 +1313,7 @@ async def agriculture_commit_crop_plan(driver: DriverDep, request: Request):
 async def agriculture_get_crop_plan(
     driver: DriverDep, request: Request,
     parcel_id: str = Query(..., description="AgriParcel URN"),
-    season: str = Query(..., description="Campaign id, e.g. 2026"),
+    season: str | None = Query(None, description="Campaign id, e.g. 2026. Omit for all seasons."),
 ):
     """Read the committed plan (ordered segments + status) for a parcel/season."""
     dao = GraphDAO(driver)

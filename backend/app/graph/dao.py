@@ -2249,6 +2249,7 @@ class GraphDAO:
         import httpx
         from fastapi import HTTPException
 
+        parcel_id = _to_parcel_urn(parcel_id)
         parcel_short = parcel_id.split(":")[-1]
         season_year = season_start[:4] if season_start else str(datetime.now(timezone.utc).year)
         crop_eppo = crop_uri.split(":")[-1] if crop_uri else "unknown"
@@ -2438,6 +2439,7 @@ class GraphDAO:
         import httpx
 
         from app.graph.crop_plan import build_segment_entity, sanity_warnings
+        parcel_id = _to_parcel_urn(parcel_id)
         client = OrionClient(tenant_id=tenant_id)
         ids, warnings = [], []
         warnings.extend(sanity_warnings(segments))
@@ -2480,12 +2482,20 @@ class GraphDAO:
             await client.close()
 
     async def get_crop_plan(self, parcel_id, season, tenant_id) -> dict:
-        """Return the parcel's plan segments for a season, ordered by seq."""
+        """Return the parcel's plan segments for a season, ordered by seq.
+
+        ``season`` is optional: when omitted the plan for every season is
+        returned (the panel renders before any campaign id is known).
+        """
+        parcel_id = _to_parcel_urn(parcel_id)
+        q = f'hasAgriParcel=="{parcel_id}"'
+        if season:
+            q += f';cropSeason=="{season}"'
         client = OrionClient(tenant_id=tenant_id)
         try:
             rows = await client.query_entities(
                 type="AgriCrop",
-                q=f'hasAgriParcel=="{parcel_id}";cropSeason=="{season}"',
+                q=q,
                 limit=50, options="keyValues",
             )
         except Exception as exc:  # noqa: BLE001
@@ -2506,6 +2516,7 @@ class GraphDAO:
         from fastapi import HTTPException
 
         from app.graph.crop_plan import segment_urn
+        parcel_id = _to_parcel_urn(parcel_id)
         target_id = segment_urn(tenant_id, parcel_id, season, int(seq))
         _date = {"type": "Property", "value": {"@type": "Date", "@value": planting_date}}
         client = OrionClient(tenant_id=tenant_id)
@@ -2563,6 +2574,7 @@ class GraphDAO:
         import httpx
         from fastapi import HTTPException
 
+        parcel_id = _to_parcel_urn(parcel_id)
         orion = OrionClient(tenant_id)
         try:
             # ── 1. Fetch parcel entity ──────────────────────────────────
@@ -3004,6 +3016,7 @@ class GraphDAO:
         import httpx
         from fastapi import HTTPException
 
+        parcel_id = _to_parcel_urn(parcel_id)
         orion = OrionClient(tenant_id)
         try:
             # ── 1. Fetch parcel entity ──────────────────────────────────────
@@ -3106,6 +3119,7 @@ class GraphDAO:
 
     async def clear_crop_assignment(self, parcel_id: str, tenant_id: str) -> dict:
         """Remove crop assignment from AgriParcel. Raises on Orion failure."""
+        parcel_id = _to_parcel_urn(parcel_id)
         patch_body = {
             "hasAgriCrop": {"type": "Relationship", "object": None},
             "hasAgriCropVariety": {"type": "Relationship", "object": None},
@@ -4028,6 +4042,7 @@ class GraphDAO:
         """Calculate weekly irrigation requirement for a parcel."""
         from datetime import date, datetime, timedelta, timezone
 
+        parcel_id = _to_parcel_urn(parcel_id)
         ws = date.fromisoformat(week_start) if week_start else datetime.now(tz=timezone.utc).date()
         we = ws + timedelta(days=6)
 
@@ -4123,6 +4138,7 @@ class GraphDAO:
         """
         from datetime import date, datetime, timedelta, timezone
 
+        parcel_id = _to_parcel_urn(parcel_id)
         ctx = await self.get_crop_context(parcel_id=parcel_id, tenant_id=tenant_id)
         if "error" in ctx:
             return {"error": ctx["error"], "parcel_id": parcel_id}
@@ -4836,3 +4852,20 @@ def _resolve_relationship(entity: dict, rel_name: str) -> str | None:
     if isinstance(rel, str):
         return rel
     return None
+
+
+def _to_parcel_urn(parcel_id: str) -> str:
+    """Normalize a parcel id to a full AgriParcel URN (idempotent).
+
+    Callers arrive with mixed conventions: the full URN
+    (``urn:ngsi-ld:AgriParcel:parcela-42``), a bare short id (``parcela-42``),
+    or a prefixed-but-not-URN id (``AgriParcel:parcela-42``). Orion-LD needs
+    the full URN, so normalize here at the DAO boundary. Empty/None pass through.
+    """
+    if not parcel_id:
+        return parcel_id
+    if parcel_id.startswith("urn:"):
+        return parcel_id
+    if parcel_id.startswith("AgriParcel:"):
+        return f"urn:ngsi-ld:{parcel_id}"
+    return f"urn:ngsi-ld:AgriParcel:{parcel_id}"
