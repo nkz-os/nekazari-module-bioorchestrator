@@ -145,7 +145,7 @@ class NKZAuthMiddleware(BaseHTTPMiddleware):
             return
         try:
             payload = await self._validate_token(auth_header.split(" ", 1)[1])
-        except Exception:
+        except Exception:  # noqa: BLE001 — public route: never reject on token errors
             return
         raw_tenant = payload.get("tenant_id") or payload.get("tenant", "")
         if raw_tenant:
