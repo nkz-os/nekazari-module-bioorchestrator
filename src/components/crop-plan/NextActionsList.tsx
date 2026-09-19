@@ -4,7 +4,7 @@ import { Card } from '@nekazari/ui-kit';
 import { AlertTriangle, Clock } from 'lucide-react';
 import type { IssuedOp } from '../../types/cropplan';
 import type { AgronomicValue } from '../../types/agronomic';
-import { sortByUrgency } from './cropplan.utils';
+import { sortByUrgency, dt } from './cropplan.utils';
 import AgronomicBadge from '../shared/AgronomicBadge';
 
 const urgencyClass = (u?: string) =>
@@ -29,9 +29,9 @@ const NextActionsList: React.FC<{ ops: IssuedOp[]; agronomicByOp?: Record<string
                 {t(`cropPlan.opType.${op.operationType}`)}
               </div>
               {op.description && <div className="text-nkz-xs text-nkz-text-secondary">{op.description}</div>}
-              {op.dueDate && (
+              {dt(op.dueDate as any) && (
                 <div className="text-nkz-2xs text-nkz-text-muted flex items-center gap-1 mt-0.5">
-                  <Clock size={11} /> {t('cropPlan.actions.dueBy', { date: op.dueDate })}
+                  <Clock size={11} /> {t('cropPlan.actions.dueBy', { date: dt(op.dueDate as any) })}
                 </div>
               )}
               {agronomicByOp?.[op.id] && (

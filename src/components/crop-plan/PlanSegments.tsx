@@ -2,7 +2,7 @@ import React from 'react';
 import { useTranslation } from '@nekazari/sdk';
 import { Card, Button } from '@nekazari/ui-kit';
 import type { CropPlan, PhenologyStatus } from '../../types/cropplan';
-import { pickActiveSegment } from './cropplan.utils';
+import { pickActiveSegment, dt } from './cropplan.utils';
 import AgronomicBadge from '../shared/AgronomicBadge';
 
 const statusChip: Record<string, string> = {
@@ -46,12 +46,12 @@ const PlanSegments: React.FC<{ plan: CropPlan; status: PhenologyStatus; onCreate
             </span>
           </div>
           <div className="text-nkz-2xs text-nkz-text-muted mt-0.5">
-            {t('cropPlan.segments.planned')}: {s.sowingWindowStart ?? '—'}
-            {s.expectedTerminationDate ? ` → ${s.expectedTerminationDate}` : ''}
-            {s.plantingDate && (
+            {t('cropPlan.segments.planned')}: {dt(s.sowingWindowStart as any) ?? '—'}
+            {dt(s.expectedTerminationDate as any) ? ` → ${dt(s.expectedTerminationDate as any)}` : ''}
+            {dt(s.plantingDate as any) && (
               <>
                 {' · '}
-                {t('cropPlan.segments.actual')}: {s.plantingDate}
+                {t('cropPlan.segments.actual')}: {dt(s.plantingDate as any)}
               </>
             )}
           </div>
