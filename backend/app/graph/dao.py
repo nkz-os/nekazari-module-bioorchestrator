@@ -2725,7 +2725,10 @@ class GraphDAO:
                         climate_input = "trial_proxy"
 
         # ── 6. Campaign status ──────────────────────────────────────────
-        has_crop = _resolve_relationship(parcel, "hasAgriCrop") is not None
+        has_crop = (
+            _resolve_relationship(parcel, "hasAgriCrop")
+            or _resolve_relationship(parcel, "refAgriCrop")  # legacy naming
+        ) is not None
 
         return {
             "parcel_id": parcel_id,
@@ -3031,7 +3034,7 @@ class GraphDAO:
             except Exception as e:  # noqa: BLE001
                 return {"error": f"Failed to read parcel: {e!s}"}
 
-            crop_uri = _resolve_relationship(parcel, "hasAgriCrop")
+            crop_uri = _resolve_relationship(parcel, "hasAgriCrop") or _resolve_relationship(parcel, "refAgriCrop")
             variety_uri = _resolve_relationship(parcel, "hasAgriCropVariety")
             management = _extract_prop_value(parcel.get("management"))
             season_start = _extract_prop_value(parcel.get("cropSeasonStart"))
@@ -4320,7 +4323,7 @@ class GraphDAO:
         orion = OrionClient(tenant_id)
         try:
             parcel = await orion.get_entity(parcel_id)
-            crop_uri = _resolve_relationship(parcel, "hasAgriCrop")
+            crop_uri = _resolve_relationship(parcel, "hasAgriCrop") or _resolve_relationship(parcel, "refAgriCrop")
             if not crop_slug and crop_uri:
                 from app.species_registry import resolve_species
                 crop_eppo = crop_uri.split(":")[-1] if crop_uri else "unknown"
