@@ -24,6 +24,7 @@ import os
 import re
 from datetime import datetime, timezone
 from typing import Any
+from urllib.parse import quote, unquote
 
 from nkz_platform_sdk.agronomy import AgronomicValue, Source
 from nkz_platform_sdk.orion import OrionClient
@@ -601,17 +602,26 @@ class GraphDAO:
                 context_url=settings.context_url,
             )
             try:
+                # NOTE: OrionClient (sdk 0.8.x) has no order_by/order_desc kwargs —
+                # passing them raises TypeError and kills the whole fallback
+                # (prod logs 2026-09-20). Sort client-side by assessedAt instead.
                 entities = await orion.query_entities(
                     type="CropHealthAssessment",
                     limit=5,
-                    order_by="assessedAt",
-                    order_desc=True,
                 )
             finally:
                 await orion.close()
 
             if not entities or not isinstance(entities, list):
                 return None
+
+            def _assessed_at(entity: dict) -> str:
+                raw = entity.get("assessedAt") or {}
+                if isinstance(raw, dict):
+                    raw = raw.get("value") or raw.get("@value") or ""
+                return str(raw or "")
+
+            entities = sorted(entities, key=_assessed_at, reverse=True)
 
             # Find the first entity that matches the species
             for entity in entities:
@@ -1615,7 +1625,7 @@ class GraphDAO:
                 ranked.append({
                     "variety": variety_name,
                     "crop_uri": f"urn:ngsi-ld:AgriCrop:{crop}",
-                    "variety_uri": f"urn:ngsi-ld:AgriCrop:{crop}:{variety_name}",
+                    "variety_uri": f"urn:ngsi-ld:AgriCrop:{crop}:{quote(str(variety_name), safe='')}",
                     "mean_yield_kg_ha": round(record["mean_yield"], 1) if record["mean_yield"] else None,
                     "min_yield_kg_ha": round(record["min_yield"], 1) if record["min_yield"] else None,
                     "max_yield_kg_ha": round(record["max_yield"], 1) if record["max_yield"] else None,
@@ -2253,7 +2263,12 @@ class GraphDAO:
         parcel_short = parcel_id.split(":")[-1]
         season_year = season_start[:4] if season_start else str(datetime.now(timezone.utc).year)
         crop_eppo = crop_uri.split(":")[-1] if crop_uri else "unknown"
-        variety_name = variety_uri.split(":")[-1] if variety_uri else None
+        # Variety names travel inside a synthetic URN whose last segment is
+        # the raw name (e.g. "ROSA JUNIN"). A NGSI-LD Relationship object must
+        # be a valid URI — Orion-LD 400s on spaces/accents — so encode for the
+        # relationship and keep the human-readable name for Property values.
+        variety_name = unquote(variety_uri.split(":")[-1]) if variety_uri else None
+        safe_variety_uri = quote(variety_uri, safe=":") if variety_uri else None
 
         # Resolve a human-readable name + scientificName from the EPPO code so
         # frontends reading AgriCrop.name/scientificName get a real label instead
@@ -2370,7 +2385,7 @@ class GraphDAO:
             # Step 4: Patch the AgriParcel with new crop assignment
             patch_body = {
                 "hasAgriCrop": {"type": "Relationship", "object": new_crop_id},
-                "hasAgriCropVariety": {"type": "Relationship", "object": variety_uri},
+                "hasAgriCropVariety": {"type": "Relationship", "object": safe_variety_uri},
                 "management": {"type": "Property", "value": management},
                 "cropSeasonStart": {
                     "type": "Property",
@@ -2414,7 +2429,13 @@ class GraphDAO:
         except httpx.HTTPStatusError as e:
             if e.response.status_code == 404:
                 raise HTTPException(status_code=404, detail=f"Parcel not found: {parcel_id}")
-            raise HTTPException(status_code=502, detail=f"Orion-LD error: {e.response.status_code}")
+            raise HTTPException(
+                status_code=502,
+                detail=(
+                    f"Orion-LD error: {e.response.status_code}: "
+                    f"{e.response.text[:200]}"
+                ),
+            )
         except httpx.ConnectError:
             raise HTTPException(status_code=502, detail="Orion-LD unreachable")
         finally:
@@ -3085,7 +3106,7 @@ class GraphDAO:
             except Exception:  # noqa: BLE001,S110
                 pass
 
-            variety_name = variety_uri.split(":")[-1] if variety_uri else None
+            variety_name = unquote(variety_uri.split(":")[-1]) if variety_uri else None
             species_query = crop_name or crop_scientific or crop_eppo
             species_slug = resolve_species(crop_eppo) or resolve_species(species_query) or species_query
             phenology = await self.get_phenology_params(

@@ -257,3 +257,84 @@ async def test_clear_crop_assignment_raises_on_orion_error():
             )
 
     assert close_called, "close() must still be called even when update_entity_attrs raises"
+
+
+@pytest.mark.asyncio
+async def test_assign_crop_encodes_variety_uri_with_spaces():
+    """Variety names with spaces must not break the NGSI-LD Relationship object.
+
+    Orion-LD rejects a Relationship object that is not a valid URI (400
+    "Invalid URI - invalid character"), e.g. "...:ROSA JUNIN". The write path
+    must percent-encode the URI while keeping the human-readable name in the
+    AgriCrop.variety Property.
+    """
+    mock_driver = AsyncMock()
+    dao = GraphDAO(mock_driver)
+
+    with patch("app.graph.dao.OrionClient") as MockClient:
+        instance = MockClient.return_value
+        instance.create_entity = AsyncMock(return_value={"id": "new-id", "status": "created"})
+        instance.get_entity = AsyncMock(side_effect=Exception("not found"))
+        instance.update_entity_attrs = AsyncMock()
+        instance.append_entity_attrs = AsyncMock()
+        instance.query_entities = AsyncMock(return_value=[])
+        instance.close = AsyncMock()
+
+        result = await dao.assign_crop_to_parcel(
+            parcel_id="urn:ngsi-ld:AgriParcel:test-parcel",
+            crop_uri="urn:ngsi-ld:AgriCrop:QUCHX",
+            variety_uri="urn:ngsi-ld:AgriCrop:QUCHX:ROSA JUNIN",
+            management="organic",
+            season_start="2026-10-15",
+            season_end="2027-06-30",
+            tenant_id="test-tenant",
+        )
+
+        assert result["status"] == "assigned"
+        assert result["variety"] == "ROSA JUNIN"
+
+        # AgriCrop body: variety stays human-readable
+        crop_body = instance.create_entity.call_args[0][0]
+        assert crop_body["variety"]["value"] == "ROSA JUNIN"
+
+        # Parcel append: relationship object must be a valid URI
+        parcel_calls = [c for c in instance.append_entity_attrs.call_args_list
+                        if c[0][0] == "urn:ngsi-ld:AgriParcel:test-parcel"]
+        assert len(parcel_calls) == 1
+        patch_body = parcel_calls[0][0][1]
+        assert patch_body["hasAgriCropVariety"]["object"] == \
+            "urn:ngsi-ld:AgriCrop:QUCHX:ROSA%20JUNIN"
+
+
+@pytest.mark.asyncio
+async def test_assign_crop_leaves_already_valid_vari_uri_unchanged():
+    """Idempotence: an already-encoded (or space-free) variety URI passes through."""
+    mock_driver = AsyncMock()
+    dao = GraphDAO(mock_driver)
+
+    with patch("app.graph.dao.OrionClient") as MockClient:
+        instance = MockClient.return_value
+        instance.create_entity = AsyncMock(return_value={"id": "new-id", "status": "created"})
+        instance.get_entity = AsyncMock(side_effect=Exception("not found"))
+        instance.update_entity_attrs = AsyncMock()
+        instance.append_entity_attrs = AsyncMock()
+        instance.query_entities = AsyncMock(return_value=[])
+        instance.close = AsyncMock()
+
+        await dao.assign_crop_to_parcel(
+            parcel_id="urn:ngsi-ld:AgriParcel:test-parcel",
+            crop_uri="urn:ngsi-ld:AgriCrop:TRZAX",
+            variety_uri="urn:ngsi-ld:AgriCropVariety:LG_AURUS",
+            management="conventional",
+            season_start="2026-03-01",
+            season_end="2026-06-30",
+            tenant_id="test-tenant",
+        )
+
+        parcel_calls = [c for c in instance.append_entity_attrs.call_args_list
+                        if c[0][0] == "urn:ngsi-ld:AgriParcel:test-parcel"]
+        patch_body = parcel_calls[0][0][1]
+        assert patch_body["hasAgriCropVariety"]["object"] == \
+            "urn:ngsi-ld:AgriCropVariety:LG_AURUS"
+        crop_body = instance.create_entity.call_args[0][0]
+        assert crop_body["variety"]["value"] == "LG_AURUS"
