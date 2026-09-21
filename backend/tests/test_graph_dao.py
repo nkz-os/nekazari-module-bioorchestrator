@@ -139,8 +139,12 @@ class TestSpeciesCommonNames:
     def test_common_name_present(self, dao):
         """get_all_species() includes common_name for every species."""
         records = [
-            {"name": "TRZAX", "scientific_name": "Triticum aestivum", "stage_count": 4, "params_count": 8},
-            {"name": "HORVX", "scientific_name": "Hordeum vulgare", "stage_count": 0, "params_count": 0},
+            {"name": "TRZAX", "scientific_name": "Triticum aestivum", "stage_count": 4, "params_count": 8,
+             "eppo_code": "TRZAX", "agrovoc_uri": "http://aims.fao.org/aos/agrovoc/c_7951",
+             "heat_count": 1, "soil_count": 1, "npk_count": 0, "kc_values": [0.5], "d1_values": [2.0]},
+            {"name": "HORVX", "scientific_name": "Hordeum vulgare", "stage_count": 0, "params_count": 0,
+             "eppo_code": "HORVX", "agrovoc_uri": "http://aims.fao.org/aos/agrovoc/c_3662",
+             "heat_count": 0, "soil_count": 0, "npk_count": 0, "kc_values": [], "d1_values": []},
         ]
         driver = MagicMock(spec=AsyncDriver)
         session = MagicMock()
@@ -160,7 +164,9 @@ class TestSpeciesCommonNames:
     def test_unknown_species_fallback(self, dao):
         """Unknown EPPO codes get capitalized name as fallback."""
         records = [
-            {"name": "UNKNW", "scientific_name": "Unknownus sp.", "stage_count": 0, "params_count": 0},
+            {"name": "UNKNW", "scientific_name": "Unknownus sp.", "stage_count": 0, "params_count": 0,
+             "eppo_code": None, "agrovoc_uri": None,
+             "heat_count": 0, "soil_count": 0, "npk_count": 0, "kc_values": [], "d1_values": []},
         ]
         driver = MagicMock(spec=AsyncDriver)
         session = MagicMock()

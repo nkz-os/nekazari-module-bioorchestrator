@@ -19,7 +19,7 @@ import {
   RefreshCw, Globe, Thermometer, MapPin, Sprout, Bug, Beaker,
   AlertTriangle, CheckCircle, XCircle, ChevronDown, ChevronRight,
 } from 'lucide-react';
-import { useBioApi, useCropApi, getCropContext, type CropContextResponse } from '../services/api';
+import { useBioApi, getCropContext, type CropContextResponse } from '../services/api';
 import type { VegetationData, SoilData as ParcelSoilData, SoilHorizon } from '../services/api';
 import ContextEmptyState from './shared/ContextEmptyState';
 import InlineVarietyPicker from './InlineVarietyPicker';
@@ -56,7 +56,6 @@ const CropManagementView: React.FC<CropManagementViewProps> = ({ parcelId, parce
   const [dataGaps, setDataGaps] = useState<string[]>([]);
   const [dataAvail, setDataAvail] = useState<Record<string, boolean>>({});
   const [cropNotFound, setCropNotFound] = useState(false);
-  const { getCropDetail } = useCropApi();
 
   // ── Vegetation / Soil (Plan C) ──────────────────────────────────────────
   const [vegIndex, setVegIndex] = useState('ndvi');
@@ -125,22 +124,24 @@ const CropManagementView: React.FC<CropManagementViewProps> = ({ parcelId, parce
         const species = await api.getSpecies();
         const match = Array.isArray(species)
           ? species.find((s: any) =>
-              (s.name || '').toLowerCase() === cropType.toLowerCase() ||
-              (s.scientificName || '').toLowerCase() === cropType.toLowerCase() ||
               (s.eppoCode || '').toLowerCase() === cropType.toLowerCase() ||
-              (s.uri || '').endsWith(cropType.replace(/ /g, '_'))
+              (s.name || '').toLowerCase() === cropType.toLowerCase() ||
+              (s.scientific_name || '').toLowerCase() === cropType.toLowerCase() ||
+              (s.scientificName || '').toLowerCase() === cropType.toLowerCase()
             )
           : null;
-        const cropId = match?.uri || cropType;
-        const detail = await getCropDetail(cropId);
-        if (detail?.data_available) {
-          setDataAvail(detail.data_available);
-          const gaps: string[] = [];
-          if (!detail.data_available.kc) gaps.push('kc');
-          if (!detail.data_available.d1_d2) gaps.push('d1_d2');
-          if (!detail.data_available.thermal) gaps.push('thermal');
-          if (!detail.data_available.npk) gaps.push('npk');
-          setDataGaps(gaps);
+        if (match) {
+          if (match.data_available) {
+            setDataAvail(match.data_available);
+            const gaps: string[] = [];
+            if (!match.data_available.kc) gaps.push('kc');
+            if (!match.data_available.d1_d2) gaps.push('d1_d2');
+            if (!match.data_available.thermal) gaps.push('thermal');
+            if (!match.data_available.npk) gaps.push('npk');
+            setDataGaps(gaps);
+          }
+        } else {
+          setCropNotFound(true);
         }
       } catch {
         setCropNotFound(true);

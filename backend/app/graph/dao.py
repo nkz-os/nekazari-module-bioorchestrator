@@ -233,28 +233,49 @@ class GraphDAO:
     # ── Lookup (global reference data) ────────────────────────────────────────
 
     async def get_all_species(self) -> list[dict]:
-        """Return all species in the knowledge graph with phenology availability."""
+        """Return all species in the knowledge graph with data availability."""
         async with self._driver.session() as session:
             result = await session.run("""
                 MATCH (s:Species)
                 OPTIONAL MATCH (s)-[:HAS_STAGE]->(st:PhenologyStage)-[:HAS_PARAMETER]->(p:PhenologyParams)
+                OPTIONAL MATCH (s)-[:HAS_HEAT_TOLERANCE]->(ht:CropHeatTolerance)
+                OPTIONAL MATCH (s)-[:HAS_SOIL_SUITABILITY]->(ss:CropSoilSuitability)
+                OPTIONAL MATCH (s)-[:HAS_NUTRIENT_PROFILE]->(np:CropNutrientProfile)
                 RETURN s.name AS name,
                        s.scientificName AS scientific_name,
+                       s.eppoCode AS eppo_code,
+                       s.agrovocUri AS agrovoc_uri,
                        count(DISTINCT st) AS stage_count,
-                       count(DISTINCT p) AS params_count
+                       count(DISTINCT p) AS params_count,
+                       count(DISTINCT ht) AS heat_count,
+                       count(DISTINCT ss) AS soil_count,
+                       count(DISTINCT np) AS npk_count,
+                       collect(DISTINCT p.kc) AS kc_values,
+                       collect(DISTINCT p.d1) AS d1_values
                 ORDER BY s.name
             """)
             from app.data.eppo_common_names import get_common_name
             species_list = []
             async for record in result:
                 name = record["name"]
+                kc_vals = [v for v in (record["kc_values"] or []) if v is not None]
+                d1_vals = [v for v in (record["d1_values"] or []) if v is not None]
                 species_list.append({
                     "name": name,
                     "scientific_name": record["scientific_name"],
+                    "eppoCode": record["eppo_code"],
+                    "uri": record["agrovoc_uri"],
                     "common_name": get_common_name(name) or name.capitalize(),
                     "stage_count": record["stage_count"],
                     "params_count": record["params_count"],
                     "has_phenology": record["params_count"] > 0,
+                    "data_available": {
+                        "kc": bool(kc_vals),
+                        "d1_d2": bool(d1_vals),
+                        "thermal": record["heat_count"] > 0,
+                        "soil_suitability": record["soil_count"] > 0,
+                        "npk": record["npk_count"] > 0,
+                    },
                 })
             return species_list
 
