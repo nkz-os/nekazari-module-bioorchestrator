@@ -20,6 +20,12 @@ species:
     agrovoc_uri: "http://aims.fao.org/aos/agrovoc/c_7951"
     common_names: { es: "trigo", en: "wheat", eu: "gari", fr: "blé", ca: "blat", pt: "trigo" }
 
+  durum_wheat:
+    scientific_name: "Triticum durum"
+    eppo_code: "TRZDU"
+    agrovoc_uri: "http://aims.fao.org/aos/agrovoc/c_11443"
+    common_names: { es: "trigo duro", en: "durum wheat", eu: "gari gogor", fr: "blé dur", ca: "blat dur", pt: "trigo duro" }
+
   barley:
     scientific_name: "Hordeum vulgare"
     eppo_code: "HORVX"
@@ -306,6 +312,7 @@ species:
 # =============================================================================
 _eppo_index:
   TRZAX: wheat
+  TRZDU: durum_wheat
   HORVX: barley
   ZEAMA: maize
   ORYSA: rice

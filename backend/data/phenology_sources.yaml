@@ -1345,6 +1345,66 @@ stage_detection:
       maturity:
         gdd_min: 1800
         gdd_max: 2100
+  durum_wheat:
+    base_temp_c: 0
+    upper_cutoff_c: 30
+    gdd_method: simple_avg_capped
+    source:
+      doi: 10.1016/j.agrformet.2015.04.012
+      short: McMaster & Wilhelm 1997
+      author: McMaster, G.S.
+      year: 1997
+    stages:
+      emergence:
+        gdd_min: 0
+        gdd_max: 143
+      tillering:
+        gdd_min: 143
+        gdd_max: 500
+      stem_elongation:
+        gdd_min: 500
+        gdd_max: 800
+      heading:
+        gdd_min: 800
+        gdd_max: 1100
+      maturity:
+        gdd_min: 1100
+        gdd_max: 1550
+    varieties:
+      winter:
+        stages:
+          emergence:
+            gdd_min: 0
+            gdd_max: 150
+          tillering:
+            gdd_min: 150
+            gdd_max: 650
+          stem_elongation:
+            gdd_min: 650
+            gdd_max: 1000
+          heading:
+            gdd_min: 1000
+            gdd_max: 1400
+          maturity:
+            gdd_min: 1400
+            gdd_max: 1900
+      spring:
+        stages:
+          emergence:
+            gdd_min: 0
+            gdd_max: 130
+          tillering:
+            gdd_min: 130
+            gdd_max: 400
+          stem_elongation:
+            gdd_min: 400
+            gdd_max: 650
+          heading:
+            gdd_min: 650
+            gdd_max: 950
+          maturity:
+            gdd_min: 950
+            gdd_max: 1300
 crop_heat_tolerance:
   almond:
     heat_damage_threshold_c: 38
@@ -1703,6 +1763,14 @@ crop_heat_tolerance:
   faba_bean:
     heat_damage_threshold_c: 35
     frost_damage_threshold_c: -3
+    heat_accum_hours: 48
+    source:
+      short: EcoCrop
+      author: FAO
+      year: 2020
+  durum_wheat:
+    heat_damage_threshold_c: 35
+    frost_damage_threshold_c: -5
     heat_accum_hours: 48
     source:
       short: EcoCrop
@@ -3734,6 +3802,51 @@ crop_nutrient_profiles:
       late-season:
         uptake_kg_ha_day: 1.44
         total_kg_ha: 26
+  durum_wheat:
+    source:
+      short: IPNI/FAO
+      author: IPNI
+      year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+    nitrogen:
+      initial:
+        uptake_kg_ha_day: 1.56
+        total_kg_ha: 14
+      development:
+        uptake_kg_ha_day: 1.56
+        total_kg_ha: 42
+      mid-season:
+        uptake_kg_ha_day: 1.56
+        total_kg_ha: 56
+      late-season:
+        uptake_kg_ha_day: 1.56
+        total_kg_ha: 28
+    phosphorus:
+      initial:
+        uptake_kg_ha_day: 0.56
+        total_kg_ha: 5
+      development:
+        uptake_kg_ha_day: 0.56
+        total_kg_ha: 15
+      mid-season:
+        uptake_kg_ha_day: 0.56
+        total_kg_ha: 20
+      late-season:
+        uptake_kg_ha_day: 0.56
+        total_kg_ha: 10
+    potassium:
+      initial:
+        uptake_kg_ha_day: 1.67
+        total_kg_ha: 15
+      development:
+        uptake_kg_ha_day: 1.67
+        total_kg_ha: 45
+      mid-season:
+        uptake_kg_ha_day: 1.67
+        total_kg_ha: 60
+      late-season:
+        uptake_kg_ha_day: 1.67
+        total_kg_ha: 30
 crop_soil_suitability:
   alfalfa:
     salinity_tolerance_ds_m: 3.0
@@ -4365,6 +4478,20 @@ crop_soil_suitability:
     drainage:
     - well_drained
     depth_min_cm: 60
+  durum_wheat:
+    salinity_tolerance_ds_m: 6.0
+    source:
+      short: FAO
+      author: FAO
+      year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+    ph_min: 5.5
+    ph_max: 8.5
+    textures:
+    - loam
+    drainage:
+    - well_drained
+    depth_min_cm: 60
 rotation_constraints:
 - crop_a: chickpea
   crop_b: wheat
@@ -4618,43 +4745,41 @@ rotation_constraints:
   reason: Replant disease, fusarium crown rot
   source_short: FAO
   effect: restriction
-# Rescued 2026-07-19: these six existed only in the production graph, never in
-# this file. Without them a rebuild would silently drop six rotation rules.
 - crop_a: wheat
   crop_b: wheat
   interval_years: 2
-  reason: "Common root pathogens (Gaeumannomyces graminis — take-all)"
-  source_short: "FAO Crop Rotation Guidelines"
+  reason: Common root pathogens (Gaeumannomyces graminis — take-all)
+  source_short: FAO Crop Rotation Guidelines
   effect: restriction
 - crop_a: wheat
   crop_b: sunflower
   interval_years: 3
-  reason: "Shared soil-borne pathogens (Sclerotinia sclerotiorum)"
-  source_short: "FAO Crop Rotation Guidelines"
+  reason: Shared soil-borne pathogens (Sclerotinia sclerotiorum)
+  source_short: FAO Crop Rotation Guidelines
   effect: restriction
 - crop_a: wheat
   crop_b: legume
   interval_years: 0
-  reason: "Beneficial: wheat consumes N, legume fixes N — complementary"
-  source_short: "FAO Crop Rotation Guidelines"
+  reason: 'Beneficial: wheat consumes N, legume fixes N — complementary'
+  source_short: FAO Crop Rotation Guidelines
   effect: benefit
 - crop_a: wheat
   crop_b: maize
   interval_years: 1
-  reason: "Same pest family (Fusarium spp.)"
-  source_short: "JRC MARS"
+  reason: Same pest family (Fusarium spp.)
+  source_short: JRC MARS
   effect: restriction
 - crop_a: wheat
   crop_b: barley
   interval_years: 1
-  reason: "Shared take-all disease (Gaeumannomyces graminis)"
-  source_short: "JRC MARS"
+  reason: Shared take-all disease (Gaeumannomyces graminis)
+  source_short: JRC MARS
   effect: restriction
 - crop_a: maize
   crop_b: maize
   interval_years: 1
-  reason: "European corn borer pressure"
-  source_short: "JRC MARS"
+  reason: European corn borer pressure
+  source_short: JRC MARS
   effect: restriction
 species:
 - name: wheat
@@ -4744,6 +4869,93 @@ species:
         method: CWSI field trial, North China Plain
         conditions: Winter wheat, deficit irrigation, North China Plain
   eppo_code: TRZAX
+- name: durum_wheat
+  scientific_name: Triticum durum
+  agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_11443
+  stages:
+  - name: initial
+    description: From planting to 10% ground cover
+    parameters:
+    - kc: 0.3
+      d1: 15
+      d2: 45
+      mds_ref: 80
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Semi-arid, no stress
+  - name: development
+    description: From 10% ground cover to effective full cover
+    parameters:
+    - kc: 0.7
+      d1: 45
+      d2: 105
+      mds_ref: 120
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Semi-arid, no stress
+  - name: mid-season
+    description: From effective full cover to start of maturity
+    parameters:
+    - kc: 1.15
+      d1: 105
+      d2: 180
+      mds_ref: 150
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Semi-arid, no stress
+  - name: late-season
+    description: From start of maturity to harvest or full senescence
+    parameters:
+    - kc: 0.4
+      d1: 180
+      d2: 230
+      mds_ref: 100
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Semi-arid, no stress
+  - name: stem_elongation
+    description: Stem elongation to heading
+    parameters:
+    - cultivar: null
+      management: deficit_irrigation
+      climate_zone: semi_arid
+      kc: 0.9
+      kc_ci:
+      - 0.8
+      - 1.0
+      d1: 2.0
+      d2: 7.0
+      mds_ref: null
+      source:
+        source_type: peer_reviewed_study
+        doi: null
+        short: Kang et al. 2003
+        author: Kang, Zhang, Liang
+        year: 2003
+        institution: China Agricultural University
+        method: CWSI field trial, North China Plain
+        conditions: Winter wheat, deficit irrigation, North China Plain
+  eppo_code: TRZDU
 - name: maize
   scientific_name: Zea mays
   agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_8487
