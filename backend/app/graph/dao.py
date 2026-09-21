@@ -240,7 +240,7 @@ class GraphDAO:
                 OPTIONAL MATCH (s)-[:HAS_STAGE]->(st:PhenologyStage)-[:HAS_PARAMETER]->(p:PhenologyParams)
                 OPTIONAL MATCH (s)-[:HAS_HEAT_TOLERANCE]->(ht:CropHeatTolerance)
                 OPTIONAL MATCH (s)-[:HAS_SOIL_SUITABILITY]->(ss:CropSoilSuitability)
-                OPTIONAL MATCH (s)-[:HAS_NUTRIENT_PROFILE]->(np:CropNutrientProfile)
+                OPTIONAL MATCH (s)-[:HAS_STAGE]->(:PhenologyStage)-[:HAS_NUTRIENT_PROFILE]->(np:CropNutrientProfile)
                 RETURN s.name AS name,
                        s.scientificName AS scientific_name,
                        s.eppoCode AS eppo_code,
