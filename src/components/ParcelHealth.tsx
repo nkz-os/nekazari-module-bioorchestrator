@@ -259,7 +259,7 @@ export default function ParcelHealth() {
               <DetailGrid columns={3}>
                 <DetailItem
                   label={t("parcelHealth.soilSuitability")}
-                  value={`pH ${ctx.soil.suitability.ph_match ? "✅" : "❌"} — Texture ${ctx.soil.suitability.texture_match ? "✅" : "❌"}`}
+                  value={`pH ${(ctx.soil.suitability.ph as any)?.verdict === "suitable" ? "✅" : "❌"} — Texture ${(ctx.soil.suitability.texture as any)?.verdict === "suitable" ? "✅" : "❌"}`}
                 />
                 {(ctx.soil.actual as any)?.awc_mm && (
                   <DetailItem label="AWC" value={`${(ctx.soil.actual as any).awc_mm}mm`} />
