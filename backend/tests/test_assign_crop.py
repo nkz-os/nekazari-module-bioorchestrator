@@ -36,6 +36,10 @@ async def test_assign_crop_creates_entity():
         assert result["entity_id"] == "urn:ngsi-ld:AgriCrop:test-tenant:test-parcel:2026"
         MockClient.assert_called_once_with(tenant_id="test-tenant")
         instance.create_entity.assert_called_once()
+        # AgriCrop must carry the SDM category (crop group) so risk/disease models
+        # can select by crop group (audit 2026-09-30). TRZAX → wheat → cereal.
+        create_call = instance.create_entity.call_args[0][0]
+        assert create_call["category"] == {"type": "Property", "value": "cereal"}
         # Should patch both the parcel (hasAgriCrop) and NOT mark old crop (no old crop)
         # parcel commitment must be APPENDED (POST /attrs), not PATCHed, so a
         # first-time hasAgriCrop actually persists instead of landing in notUpdated.

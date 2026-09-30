@@ -2295,9 +2295,10 @@ class GraphDAO:
         # frontends reading AgriCrop.name/scientificName get a real label instead
         # of an empty field (audit 2026-07-01). Platform convention: the
         # crop-name endpoint defaults to Spanish, so prefer es → en → scientific.
-        from app.species_registry import get_species_info, resolve_species
+        from app.species_registry import get_crop_group, get_species_info, resolve_species
 
         _slug = resolve_species(crop_eppo) if crop_eppo and crop_eppo != "unknown" else None
+        crop_group = get_crop_group(_slug) if _slug else None
         _info = get_species_info(_slug) if _slug else None
         _common = (_info.get("common_names") if _info else None) or {}
         crop_scientific = _info.get("scientific_name") if _info else None
@@ -2344,6 +2345,11 @@ class GraphDAO:
                 "value": {"@type": "DateTime", "@value": now},
             },
         }
+        if crop_group:
+            agri_crop_body["category"] = {
+                "type": "Property",
+                "value": crop_group,
+            }
         if variety_name:
             agri_crop_body["variety"] = {
                 "type": "Property",
