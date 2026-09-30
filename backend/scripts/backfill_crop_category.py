@@ -42,7 +42,9 @@ async def backfill_tenant(tenant_id: str) -> int:
         if not group:
             continue
         try:
-            await orion.update_entity_attrs(
+            # POST /attrs (append): añade el atributo nuevo `category`. PATCH /attrs
+            # solo actualiza atributos existentes (y Orion devuelve 404 si no hay).
+            await orion.append_entity_attrs(
                 entity["id"],
                 {"category": {"type": "Property", "value": group}},
             )
