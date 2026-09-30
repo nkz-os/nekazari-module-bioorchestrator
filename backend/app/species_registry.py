@@ -130,3 +130,12 @@ def get_species_info(slug: str) -> dict[str, Any] | None:
     if _registry is None:
         _load()
     return _registry.get(slug)
+
+
+def get_crop_group(slug: str) -> str | None:
+    """Return the crop_group for a canonical species slug, or None."""
+    global _registry  # noqa: PLW0602
+    if _registry is None:
+        _load()
+    data = _registry.get(slug)
+    return data.get("crop_group") if data else None
