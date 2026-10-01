@@ -216,7 +216,6 @@ Full i18n support in **6 languages**: English, Spanish, Basque, French, Portugue
 | `GET /recommendations/next-crop` | Crop suggestion after rotation |
 | `GET /recommendations/fertilizer` | NPK fertilizer needs |
 | `GET /recommendations/simulate` | A/B crop scenario comparison |
-| `GET /soil-data` | SoilGrids 2.0 + LUCAS 2018 proxy |
 | `GET /protected-area-check` | Natura 2000 proximity |
 | `GET /varieties` | CPVO registered varieties |
 | `GET /pollinators` | GBIF pollinator species |
