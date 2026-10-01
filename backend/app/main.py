@@ -29,6 +29,7 @@ from app.core.config import settings
 from app.core.dependencies import close_driver, get_driver, init_driver
 from app.graph.dao import GraphDAO
 from app.ingestion.sync import sync_all_agri_crops
+from app.logging_setup import configure_logging
 
 # Module-level readiness state set during lifespan.
 # K8s probes hit /healthz and /readyz every 10-30s — must be fast and never rate-limited.
@@ -191,6 +192,8 @@ async def lifespan(app: FastAPI):
     await close_driver()
     print("[bioorchestrator] Neo4j connection closed")
 
+
+configure_logging(settings.log_level)
 
 app = FastAPI(
     title="NKZ BioOrchestrator",
