@@ -4,9 +4,8 @@ import io
 import logging
 import logging.config
 
-from uvicorn.config import LOGGING_CONFIG
-
 from app.logging_setup import NAMESPACE, configure_logging
+from uvicorn.config import LOGGING_CONFIG
 
 
 def test_info_is_emitted_once_under_uvicorn_config():
