@@ -26,6 +26,7 @@ from nkz_platform_sdk.subscriptions import SubscriptionRegistrar
 
 from app.auth import NKZAuthMiddleware
 from app.core.config import settings
+from app.logging_setup import configure_logging
 from app.core.dependencies import close_driver, get_driver, init_driver
 from app.graph.dao import GraphDAO
 from app.ingestion.sync import sync_all_agri_crops
@@ -191,6 +192,8 @@ async def lifespan(app: FastAPI):
     await close_driver()
     print("[bioorchestrator] Neo4j connection closed")
 
+
+configure_logging(settings.log_level)
 
 app = FastAPI(
     title="NKZ BioOrchestrator",
