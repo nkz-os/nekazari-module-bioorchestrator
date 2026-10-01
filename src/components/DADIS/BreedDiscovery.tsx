@@ -85,7 +85,7 @@ export const BreedDiscovery: React.FC = () => {
           <Panel.Body>
             <p className="text-nkz-sm text-nkz-text-secondary mb-3">{t('dadis.fallback.description')}</p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {['GBIF Livestock', 'AGROVOC', 'EPPO', 'GlobalTreeSearch', 'EU Pesticides', 'CPVO Varieties'].map((name) => (
+              {['GBIF Livestock', 'AGROVOC', 'EPPO', 'GlobalTreeSearch', 'CPVO Varieties'].map((name) => (
                 <Card key={name} padding="sm"><div className="flex items-start gap-2"><CheckCircle className="w-3.5 h-3.5 text-nkz-success flex-shrink-0 mt-0.5" /><p className="text-nkz-sm font-medium">{name}</p></div></Card>
               ))}
             </div>

@@ -16,7 +16,7 @@ import { Stack, Card, Badge, Button, DetailGrid, DetailItem, Skeleton } from '@n
 import { useTranslation, useAuth } from '@nekazari/sdk';
 import { resolveCropTypeFromContext, resolveCropDisplayName } from '../utils/cropContext';
 import {
-  RefreshCw, Globe, Thermometer, MapPin, Sprout, Bug, Beaker,
+  RefreshCw, Globe, Thermometer, MapPin, Sprout, Beaker,
   AlertTriangle, CheckCircle, XCircle, ChevronDown, ChevronRight,
 } from 'lucide-react';
 import { useBioApi, getCropContext, type CropContextResponse } from '../services/api';
@@ -35,8 +35,6 @@ export interface CropManagementViewProps {
 interface RecCrop { name: string; scientific_name?: string; }
 interface CropSoilReq { ph_min: number; ph_max: number; textures: string[]; drainage: string[]; depth_min_cm: number; salinity_max_ds_m: number; source_short?: string; }
 
-const PESTICIDE_INTENT: Record<string, 'positive' | 'negative' | 'warning'> = { approved: 'positive', not_approved: 'negative', withdrawn: 'warning' };
-
 const CropManagementView: React.FC<CropManagementViewProps> = ({ parcelId, parcelName, lat, lon }) => {
   const { t } = useTranslation('bioorchestrator');
   const { tenantId } = useAuth();
@@ -47,10 +45,8 @@ const CropManagementView: React.FC<CropManagementViewProps> = ({ parcelId, parce
   const [cropContextLoading, setCropContextLoading] = useState(true);
   const [nextCrops, setNextCrops] = useState<RecCrop[]>([]);
   const [soil, setSoil] = useState<CropSoilReq | null>(null);
-  const [realSoil, setRealSoil] = useState<any>(null);
   const [protectedArea, setProtectedArea] = useState<any>(null);
   const [varieties, setVarieties] = useState<any[]>([]);
-  const [pesticides, setPesticides] = useState<any[]>([]);
   const [pollinators, setPollinators] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [dataGaps, setDataGaps] = useState<string[]>([]);
@@ -160,11 +156,11 @@ const CropManagementView: React.FC<CropManagementViewProps> = ({ parcelId, parce
       const s = await safe(() => api.getSoilSuitability(crop));
       if (!cancelled) { setNextCrops(nc?.suggested_crops || []); if (s) setSoil(s); }
       if (lat != null && lon != null && !cancelled) {
-        const [rs, pa, vars, pests, polls] = await Promise.all([
-          safe(() => api.getSoilData(lat, lon)), safe(() => api.getProtectedArea(lat, lon)),
-          safe(() => api.getVarieties(crop)), safe(() => api.getPesticides(crop)), safe(() => api.getPollinators(lat, lon)),
+        const [pa, vars, polls] = await Promise.all([
+          safe(() => api.getProtectedArea(lat, lon)),
+          safe(() => api.getVarieties(crop)), safe(() => api.getPollinators(lat, lon)),
         ]);
-        if (!cancelled) { if (rs) setRealSoil(rs); if (pa) setProtectedArea(pa); if (vars) setVarieties(vars.varieties || []); if (pests) setPesticides(pests.substances || []); if (polls) setPollinators(polls.pollinators || []); }
+        if (!cancelled) { if (pa) setProtectedArea(pa); if (vars) setVarieties(vars.varieties || []); if (polls) setPollinators(polls.pollinators || []); }
       }
       if (!cancelled) setLoading(false);
     })();
@@ -385,7 +381,6 @@ const CropManagementView: React.FC<CropManagementViewProps> = ({ parcelId, parce
         <Stack gap="stack">
           <Card padding="md"><Stack gap="tight"><h4 className="text-nkz-xs font-semibold text-nkz-text-secondary uppercase tracking-wider flex items-center gap-1.5"><RefreshCw className="w-3.5 h-3.5 text-nkz-accent-base" />Rotation</h4><p className="text-nkz-sm">Current: <strong>{cropDisplayName || cropType}</strong></p>{nextCrops.length > 0 ? <div className="flex flex-wrap gap-1.5">{nextCrops.map((c) => <Badge key={c.name} intent="info">{c.scientific_name || c.name}</Badge>)}</div> : <p className="text-nkz-xs text-nkz-text-muted">No rotation restrictions.</p>}</Stack></Card>
           {varieties.length > 0 && <Card padding="md"><Stack gap="tight"><h4 className="text-nkz-xs font-semibold text-nkz-text-secondary uppercase tracking-wider flex items-center gap-1.5"><Sprout className="w-3.5 h-3.5 text-nkz-accent-base" />Registered Varieties (CPVO)</h4><div className="flex flex-wrap gap-1.5">{varieties.slice(0, 6).map((v: any, i: number) => <Badge key={i} intent="default">{v.variety_name || v.denomination}</Badge>)}</div></Stack></Card>}
-          {pesticides.length > 0 && <Card padding="md"><Stack gap="tight"><h4 className="text-nkz-xs font-semibold text-nkz-text-secondary uppercase tracking-wider flex items-center gap-1.5"><Bug className="w-3.5 h-3.5 text-nkz-accent-base" />Authorised Pesticides (EU)</h4>{pesticides.slice(0, 5).map((p: any, i: number) => <div key={i} className="flex items-center justify-between text-nkz-sm"><Badge intent={PESTICIDE_INTENT[p.status] || 'default'}>{p.status}</Badge><span className="text-nkz-text-primary">{p.substance}</span></div>)}</Stack></Card>}
           {pollinators.length > 0 && <Card padding="md"><Stack gap="tight"><h4 className="text-nkz-xs font-semibold text-nkz-text-secondary uppercase tracking-wider flex items-center gap-1.5"><Sprout className="w-3.5 h-3.5 text-nkz-accent-base" />Pollinators (GBIF)</h4>{pollinators.slice(0, 5).map((p: any, i: number) => <div key={i} className="flex items-center justify-between text-nkz-sm"><span>{p.species}</span><span className="text-nkz-xs text-nkz-text-muted">{p.record_count} records</span></div>)}</Stack></Card>}
         </Stack>
       </CollapsibleSection>

@@ -12,8 +12,8 @@ export interface CropContextLike {
 
 /** Picks the canonical identifier for graph/catalog queries.
  *
- * The EPPO code (e.g. "SECCE") is what phenology-params, soil-suitability,
- * pesticides and the crop catalog resolve. The human `name` is often a
+ * The EPPO code (e.g. "SECCE") is what phenology-params, soil-suitability
+ * and the crop catalog resolve. The human `name` is often a
  * localized common name ("centeno") that the graph does not know, so it must
  * NOT be used for queries. */
 export function resolveCropTypeFromContext(
