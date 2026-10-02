@@ -78,25 +78,14 @@ def _water_budget_agronomic(result: dict) -> dict:
 
 
 def _get_tenant_id(request: Request) -> str:
-    """Resolve tenant_id for this request.
+    """Tenant of the verified caller, as set by NKZAuthMiddleware.
 
-    The `/agriculture/` prefix is auth-exempt (SKIP_AUTH_PREFIXES), so the auth
-    middleware never sets `request.state.tenant_id`. Fall back to the
-    `X-Tenant-ID` header (injected by the api-gateway) so parcel-scoped queries
-    hit the parcel's tenant instead of the default/catalog tenant.
-
-    If both are empty (direct-ingress public endpoint), extract the tenant from
-    the `parcel_id` URN query parameter (urn:ngsi-ld:Type:tenant:id).
+    Never read from headers, query params or the parcel URN: those come from the
+    caller and would let one tenant read another's parcels on this direct-ingress
+    service. Tenant-scoped requests are rejected by the middleware before reaching
+    here when no identity was verified.
     """
-    tid = getattr(request.state, "tenant_id", "") or request.headers.get("X-Tenant-ID", "")
-    if not tid:
-        tid = request.query_params.get("tenant_id", "")
-    if not tid:
-        qp = getattr(request, "query_params", None)
-        pid = qp.get("parcel_id", "") if qp else ""
-        if pid.startswith("urn:ngsi-ld:") and pid.count(":") >= 4:
-            tid = pid.split(":")[3]
-    return tid
+    return getattr(request.state, "tenant_id", "") or ""
 
 
 @router.get("/health")

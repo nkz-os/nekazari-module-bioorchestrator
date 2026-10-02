@@ -146,9 +146,9 @@ class TestYieldPotential:
 
 
 class TestTenantResolution:
-    """`_get_tenant_id` must fall back to the X-Tenant-ID header on the
-    auth-exempt /agriculture/ path (request.state.tenant_id is never set there).
-    Guards every parcel-scoped endpoint routed through the shared helper."""
+    """`_get_tenant_id` resolves the tenant only from the verified identity
+    (request.state.tenant_id). Headers, query params and the parcel URN are
+    caller-controlled and must be ignored."""
 
     @staticmethod
     def _helper():
@@ -163,20 +163,20 @@ class TestTenantResolution:
         d = defaults or {}
         return SimpleNamespace(get=lambda k, default="": d.get(k, default))
 
-    def test_falls_back_to_header(self):
+    def test_ignores_header(self):
         from types import SimpleNamespace
         req = SimpleNamespace(
             state=SimpleNamespace(),
-            headers={"X-Tenant-ID": "montiko"},
+            headers={"X-Tenant-ID": "tenant-b"},
             query_params=self._qp(),
         )
-        assert self._helper()(req) == "montiko"
+        assert self._helper()(req) == ""
 
     def test_prefers_state_when_set(self):
         from types import SimpleNamespace
         req = SimpleNamespace(
             state=SimpleNamespace(tenant_id="state-t"),
-            headers={"X-Tenant-ID": "montiko"},
+            headers={"X-Tenant-ID": "tenant-b"},
             query_params=self._qp(),
         )
         assert self._helper()(req) == "state-t"
@@ -190,21 +190,20 @@ class TestTenantResolution:
         )
         assert self._helper()(req) == ""
 
-    def test_falls_back_to_tenant_id_query_param(self):
+    def test_ignores_tenant_id_query_param(self):
         from types import SimpleNamespace
         req = SimpleNamespace(
             state=SimpleNamespace(),
             headers={},
-            query_params=self._qp({"tenant_id": "montiko"}),
+            query_params=self._qp({"tenant_id": "tenant-b"}),
         )
-        assert self._helper()(req) == "montiko"
+        assert self._helper()(req) == ""
 
-    def test_falls_back_to_parcel_urn(self):
+    def test_ignores_parcel_urn(self):
         from types import SimpleNamespace
-        # URN with embedded tenant (5 segments = 4 colons): Type:tenant:id
         req = SimpleNamespace(
             state=SimpleNamespace(),
             headers={},
-            query_params=self._qp({"parcel_id": "urn:ngsi-ld:AgriParcel:montiko:parcela-42"}),
+            query_params=self._qp({"parcel_id": "urn:ngsi-ld:AgriParcel:tenant-b:parcela-42"}),
         )
-        assert self._helper()(req) == "montiko"
+        assert self._helper()(req) == ""
