@@ -58,3 +58,19 @@ async def test_missing_issuers_fails_closed(strict, monkeypatch):
     monkeypatch.setenv("JWT_ISSUERS", "  ")
     with pytest.raises(RuntimeError):
         await strict._validate_token(_token())
+
+
+async def test_tampered_signature_rejected(strict):
+    header, payload, sig = _token().split(".")
+    tampered = f"{header}.{payload}.{sig[:-4]}{'AAAA' if sig[-4:] != 'AAAA' else 'BBBB'}"
+    with pytest.raises(jwt.InvalidSignatureError):
+        await strict._validate_token(tampered)
+
+
+async def test_hs256_token_rejected(strict):
+    forged = jwt.encode(
+        {"iss": ISS, "sub": "u1", "tenant_id": "tenant-a", "exp": int(time.time()) + 300},
+        "attacker-chosen-secret-of-sufficient-length", algorithm="HS256",
+    )
+    with pytest.raises(jwt.PyJWTError):
+        await strict._validate_token(forged)
