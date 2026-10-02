@@ -134,13 +134,16 @@ async def test_validate_token_verifies_unless_exactly_false(monkeypatch, value):
         await auth.NKZAuthMiddleware(app=MagicMock())._validate_token(forged)
 
 
-async def test_auth_strict_false_decodes_unverified_and_logs_critical(monkeypatch, caplog):
+async def test_auth_strict_false_decodes_unverified_and_logs_critical(monkeypatch):
+    # Mock the module logger: other tests reconfigure logging globally, so
+    # caplog capture of app.auth is order-dependent.
     monkeypatch.setenv("AUTH_STRICT", " False ")
+    log = MagicMock()
+    monkeypatch.setattr(auth, "logger", log)
     forged = jwt.encode({"tenant_id": "tenant-a"}, "x", algorithm="HS256")
-    with caplog.at_level("CRITICAL", logger="app.auth"):
-        payload = await auth.NKZAuthMiddleware(app=MagicMock())._validate_token(forged)
+    payload = await auth.NKZAuthMiddleware(app=MagicMock())._validate_token(forged)
     assert payload["tenant_id"] == "tenant-a"
-    assert any(r.levelname == "CRITICAL" for r in caplog.records)
+    log.critical.assert_called_once()
 
 
 # ── I1: gateway identity requires a Bearer token ───────────────────────────
