@@ -22,6 +22,7 @@ import json
 import logging
 import os
 import re
+import time
 from datetime import datetime, timezone
 from typing import Any
 from urllib.parse import quote, unquote
@@ -87,6 +88,51 @@ async def _fetch_ropo_products(cultivo: str, tenant_id: str) -> list[dict]:
 TIMESERIES_READER_URL = os.getenv("TIMESERIES_READER_URL", "http://timeseries-reader-service:5000")
 
 
+# Strong references to in-flight background climate reads, keyed by grid cell.
+_climate_tasks: dict[str, asyncio.Task] = {}
+
+# Negative cache: cell key -> monotonic() expiry. A cell whose read came back empty is not
+# retried by background lookups (wait=False) until the entry expires; wait=True ignores it.
+CLIMATE_NEGATIVE_TTL_S = 600.0
+_climate_negative: dict[str, float] = {}
+
+# At most this many CHELSA cell reads run at once (background tasks and wait=True alike).
+MAX_CONCURRENT_CELL_READS = 2
+_climate_sem: asyncio.Semaphore | None = None
+_climate_sem_loop: asyncio.AbstractEventLoop | None = None
+
+
+def _get_climate_sem() -> asyncio.Semaphore:
+    """Semaphore bound to the running loop, created lazily (a new loop gets a new one)."""
+    global _climate_sem, _climate_sem_loop
+    loop = asyncio.get_running_loop()
+    if _climate_sem is None or _climate_sem_loop is not loop:
+        _climate_sem = asyncio.Semaphore(MAX_CONCURRENT_CELL_READS)
+        _climate_sem_loop = loop
+    return _climate_sem
+
+
+def _chelsa_parcel_climate_enabled() -> bool:
+    """Feature flag, read at call time. Default OFF: only 1/true/yes (any case) enable it."""
+    return os.getenv("CHELSA_PARCEL_CLIMATE_ENABLED", "").strip().lower() in ("1", "true", "yes")
+
+
+def _monthly_or_none(values: list | None) -> list | None:
+    """Neo4j list properties cannot hold null: a series with any missing month is omitted."""
+    if values is None or any(v is None for v in values):
+        return None
+    return values
+
+
+def _climate_task_done(key: str, task: asyncio.Task) -> None:
+    _climate_tasks.pop(key, None)
+    if task.cancelled():
+        return
+    exc = task.exception()  # retrieves it: no "never retrieved" warning
+    if exc is not None:
+        logger.warning("background climate cell %s failed: %s", key, type(exc).__name__)
+
+
 class GraphDAO:
     def __init__(self, driver: AsyncDriver) -> None:
         self._driver = driver
@@ -102,6 +148,92 @@ class GraphDAO:
                 return {"neo4j": "connected", "alive": record["alive"]}
         except Exception as exc:  # noqa: BLE001
             return {"neo4j": "error", "detail": str(exc)}
+
+    # ── ClimateCell cache (global, keyed by CHELSA 30" grid cell) ─────────────
+
+    async def get_climate_cell(self, key: str) -> dict | None:
+        """Return the cached climate normals for a grid cell, or None."""
+        async with self._driver.session() as session:
+            result = await session.run(
+                "MATCH (c:ClimateCell {key: $key}) RETURN c {.*} AS c", key=key
+            )
+            record = await result.single()
+        node = record["c"] if record else None
+        if not node:
+            return None
+        return {
+            "koppen": node.get("koppen"),
+            "annual_temp_c": node.get("annualTempC"),
+            "annual_rainfall_mm": node.get("annualRainfallMm"),
+            "annual_et0_mm": node.get("annualET0Mm"),
+            "coldest_month_min_c": node.get("coldestMonthMinC"),
+            "monthly_tas_c": node.get("monthlyTasC"),
+            "monthly_pr_mm": node.get("monthlyPrMm"),
+            "source": node.get("source"),
+        }
+
+    async def save_climate_cell(self, key: str, data: dict) -> None:
+        """Upsert the climate normals for a grid cell (idempotent MERGE on key)."""
+        async with self._driver.session() as session:
+            await session.run(
+                "MERGE (c:ClimateCell {key: $key}) "
+                "SET c.koppen = $koppen, c.annualTempC = $annualTempC, "
+                "c.annualRainfallMm = $annualRainfallMm, c.annualET0Mm = $annualET0Mm, "
+                "c.coldestMonthMinC = $coldestMonthMinC, c.monthlyTasC = $monthlyTasC, "
+                "c.monthlyPrMm = $monthlyPrMm, c.source = $source, "
+                "c.computedAt = $computedAt",
+                key=key,
+                koppen=data.get("koppen"),
+                annualTempC=data.get("annual_temp_c"),
+                annualRainfallMm=data.get("annual_rainfall_mm"),
+                annualET0Mm=data.get("annual_et0_mm"),
+                coldestMonthMinC=data.get("coldest_month_min_c"),
+                monthlyTasC=_monthly_or_none(data.get("monthly_tas_c")),
+                monthlyPrMm=_monthly_or_none(data.get("monthly_pr_mm")),
+                source=data.get("source"),
+                computedAt=datetime.now(timezone.utc).isoformat(),
+            )
+
+    async def parcel_climate(
+        self, lat: float, lon: float, *, wait: bool = False, timeout_s: float = 30.0
+    ) -> dict | None:
+        """Climate normals for a point: graph cache first, CHELSA read on miss.
+
+        On a miss with wait=False the read+save runs in a background task (one per
+        cell) and None is returned so the caller can fall back. With wait=True the
+        read is awaited. A failed read (None) is never stored as a cell; it is remembered
+        for CLIMATE_NEGATIVE_TTL_S so background lookups do not re-read it, while
+        wait=True always retries. timeout_s bounds one CHELSA read.
+        """
+        from app.services import chelsa_climate
+
+        key = chelsa_climate.cell_key(lat, lon)
+        cached = await self.get_climate_cell(key)
+        if cached is not None:
+            return cached
+        if wait:
+            return await self._compute_climate_cell(key, lat, lon, timeout_s)
+        if _climate_negative.get(key, 0.0) > time.monotonic():
+            return None
+        if key not in _climate_tasks:
+            task = asyncio.create_task(self._compute_climate_cell(key, lat, lon, timeout_s))
+            _climate_tasks[key] = task
+            task.add_done_callback(lambda t, k=key: _climate_task_done(k, t))
+        return None
+
+    async def _compute_climate_cell(
+        self, key: str, lat: float, lon: float, timeout_s: float = 30.0
+    ) -> dict | None:
+        from app.services import chelsa_climate
+
+        async with _get_climate_sem():
+            data = await chelsa_climate.read_cell(lat, lon, timeout_s=timeout_s)
+        if data is None:
+            _climate_negative[key] = time.monotonic() + CLIMATE_NEGATIVE_TTL_S
+            return None
+        _climate_negative.pop(key, None)
+        await self.save_climate_cell(key, data)
+        return data
 
     # ── Global stats (not tenant-filtered — counts all reference data) ────────
 
@@ -1243,10 +1375,10 @@ class GraphDAO:
                     MATCH (ts:TrialSite)
                     WHERE toLower(ts.name) = toLower($name)
                        OR toLower(ts.municipality) = toLower($name)
-                    RETURN ts.climateClass AS climate,
+                    RETURN coalesce(ts.climateClassChelsa, ts.climateClass) AS climate,
                            ts.soilType AS soil,
-                           ts.annualRainfallMm AS rainfall,
-                           ts.annualET0Mm AS et0,
+                           coalesce(ts.annualRainfallMmChelsa, ts.annualRainfallMm) AS rainfall,
+                           coalesce(ts.annualET0MmChelsa, ts.annualET0Mm) AS et0,
                            ts.frostDaysPerYear AS frost,
                            ts.elevationM AS elevation
                     LIMIT 1
@@ -1283,13 +1415,13 @@ class GraphDAO:
                    ts.agroclimaticZone AS agroclimatic_zone,
                    ts.latitude AS latitude,
                    ts.longitude AS longitude,
-                   ts.climateClass AS climate_class,
+                   coalesce(ts.climateClassChelsa, ts.climateClass) AS climate_class,
                    ts.soilType AS soil_type,
                    ts.soilTexture AS soil_texture,
                    ts.soilPh AS soil_ph,
                    ts.soilOrganicMatterPct AS soil_organic_matter_pct,
-                   ts.annualRainfallMm AS annual_rainfall_mm,
-                   ts.annualET0Mm AS annual_et0_mm,
+                   coalesce(ts.annualRainfallMmChelsa, ts.annualRainfallMm) AS annual_rainfall_mm,
+                   coalesce(ts.annualET0MmChelsa, ts.annualET0Mm) AS annual_et0_mm,
                    ts.frostDaysPerYear AS frost_days,
                    ts.elevationM AS elevation_m,
                    ts.photoperiodSummerHours AS photoperiod_hours
@@ -1431,10 +1563,10 @@ class GraphDAO:
                     MATCH (ts:TrialSite)
                     WHERE toLower(ts.name) = toLower($name)
                        OR toLower(ts.municipality) = toLower($name)
-                    RETURN ts.climateClass AS climate,
+                    RETURN coalesce(ts.climateClassChelsa, ts.climateClass) AS climate,
                            ts.soilType AS soil,
-                           ts.annualRainfallMm AS rainfall,
-                           ts.annualET0Mm AS et0,
+                           coalesce(ts.annualRainfallMmChelsa, ts.annualRainfallMm) AS rainfall,
+                           coalesce(ts.annualET0MmChelsa, ts.annualET0Mm) AS et0,
                            ts.frostDaysPerYear AS frost,
                            ts.name AS name,
                            ts.latitude AS lat,
@@ -2746,24 +2878,30 @@ class GraphDAO:
         climate_lat = centroid["lat"]
         climate_lon = centroid["lon"]
         if climate_lat is not None and climate_lon is not None:
-            # Try ERA5 reanalysis first (higher fidelity)
+            # Preferred (feature-flagged): CHELSA v2.1 30-arcsec normals for the parcel's cell
             try:
-                from ikerketa.connectors.era5_climate import ERA5ClimateConnector
-                era5 = ERA5ClimateConnector()
-                era5_result = era5.fetch(lat=float(climate_lat), lon=float(climate_lon))
-                if era5_result.entities:
-                    era5_data = era5_result.entities[0]
-                    climate_class = era5_data.get("koppenClass") or climate_class
+                from app.services.chelsa_climate import cell_key
+
+                cell = None
+                if _chelsa_parcel_climate_enabled():
+                    cell = await self.parcel_climate(float(climate_lat), float(climate_lon))
+                if cell and cell.get("koppen"):
+                    climate_class = cell["koppen"]
                     climate_detail = {
-                        "frost_days_per_year": era5_data.get("frostDays"),
-                        "annual_rainfall_mm": era5_data.get("annualRainfall"),
-                        "annual_et0_mm": era5_data.get("annualET0"),
-                        "mean_temp_c": era5_data.get("meanTemperature"),
-                        "source": "era5_reanalysis",
+                        "annual_temp_c": cell.get("annual_temp_c"),
+                        "annual_rainfall_mm": cell.get("annual_rainfall_mm"),
+                        "annual_et0_mm": cell.get("annual_et0_mm"),
+                        "coldest_month_min_c": cell.get("coldest_month_min_c"),
+                        "frost_days_per_year": None,
+                        "source": "chelsa_v2.1",
+                        "cell": cell_key(float(climate_lat), float(climate_lon)),
                     }
-                    climate_input = "era5_reanalysis"
-            except Exception:  # noqa: BLE001,S110
-                pass  # fall through to TrialSite proxy
+                    climate_input = "chelsa_v2.1"
+            except Exception as exc:  # noqa: BLE001
+                logger.warning(
+                    "parcel climate lookup failed, using trial-site fallback: %s",
+                    type(exc).__name__,
+                )
 
             # Fallback: nearest TrialSite by haversine (capped ~50km)
             if climate_input == "unavailable":
@@ -2772,12 +2910,18 @@ class GraphDAO:
                     lat_r, lon_r = radians(float(climate_lat)), radians(float(climate_lon))
                     result = await session.run(
                         "MATCH (ts:TrialSite) WHERE ts.latitude IS NOT NULL AND ts.longitude IS NOT NULL "
-                        "AND ts.climateClass IS NOT NULL "
-                        "RETURN ts.climateClass AS cc, ts.latitude AS tlat, ts.longitude AS tlon "
+                        "AND coalesce(ts.climateClassChelsa, ts.climateClass) IS NOT NULL "
+                        "RETURN coalesce(ts.climateClassChelsa, ts.climateClass) AS cc, "
+                        "ts.latitude AS tlat, ts.longitude AS tlon, "
+                        "ts.name AS name, "
+                        "coalesce(ts.annualRainfallMmChelsa, ts.annualRainfallMm) AS rain, "
+                        "coalesce(ts.annualET0MmChelsa, ts.annualET0Mm) AS et0, "
+                        "ts.frostDaysPerYear AS frost "
                         "LIMIT 500"
                     )
                     best_dist = float("inf")
                     best_cc = None
+                    best_rec = None
                     async for rec in result:
                         tlat, tlon = rec["tlat"], rec["tlon"]
                         if tlat is None or tlon is None:
@@ -2790,8 +2934,19 @@ class GraphDAO:
                         if dist_km < best_dist:
                             best_dist = dist_km
                             best_cc = rec["cc"]
-                    if best_cc and best_dist <= 50.0:
+                            best_rec = rec
+                    if best_cc and best_rec is not None and best_dist <= 50.0:
                         climate_class = best_cc
+                        climate_detail = {
+                            "annual_rainfall_mm": best_rec["rain"],
+                            "annual_et0_mm": best_rec["et0"],
+                            "frost_days_per_year": best_rec["frost"],
+                            "annual_temp_c": None,
+                            "coldest_month_min_c": None,
+                            "source": "trial_proxy",
+                            "site": best_rec["name"],
+                            "distance_km": round(best_dist, 1),
+                        }
                         climate_input = "trial_proxy"
 
         # ── 6. Campaign status ──────────────────────────────────────────

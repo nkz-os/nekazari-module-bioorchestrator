@@ -71,11 +71,13 @@ class Backtester:
               AND coalesce(v.rankingEligible, true) = true
               AND NOT coalesce(v.yieldMetric, '') IN ['fresh_fruit_kg_ha', 'fresh_grape_kg_ha', 'fresh grape', 'fresh_fruit']
               AND NOT coalesce(v.yieldMetric, '') CONTAINS 'fresh'
-              AND t.climateClass IS NOT NULL
+              AND coalesce(t.climateClassChelsa, t.climateClass) IS NOT NULL
               AND v.cropEppo IS NOT NULL
               AND v.varietyNormalized IS NOT NULL
-            WITH t.name AS site, t.climateClass AS climate, v.cropEppo AS crop,
-                 t.annualRainfallMm AS rainfall, t.annualET0Mm AS et0,
+            WITH t.name AS site,
+                 coalesce(t.climateClassChelsa, t.climateClass) AS climate, v.cropEppo AS crop,
+                 coalesce(t.annualRainfallMmChelsa, t.annualRainfallMm) AS rainfall,
+                 coalesce(t.annualET0MmChelsa, t.annualET0Mm) AS et0,
                  t.frostDaysPerYear AS frost, t.elevationM AS elevation,
                  v.varietyNormalized AS variety, avg(v.yieldKgHa) AS obs_mean
             RETURN site, climate, crop, rainfall, et0, frost, elevation,
