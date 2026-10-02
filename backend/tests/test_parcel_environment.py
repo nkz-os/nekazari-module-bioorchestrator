@@ -180,3 +180,40 @@ class TestParcelEnvironment:
 
             assert result["climate_class"] == "Csa"
             assert result["inputs_used"]["climate"] == "trial_proxy"
+
+
+def test_polygon_parcel_terminates_and_yields_centroid():
+    """A Polygon parcel used to spin forever in the centroid loop, freezing the server."""
+    import asyncio
+    import threading
+
+    parcel = {
+        "id": "urn:ngsi-ld:AgriParcel:poly-1",
+        "type": "AgriParcel",
+        "location": {
+            "type": "GeoProperty",
+            "value": {
+                "type": "Polygon",
+                "coordinates": [[[-2.0, 42.6], [-1.9, 42.6], [-1.9, 42.7], [-2.0, 42.7], [-2.0, 42.6]]],
+            },
+        },
+    }
+    outcome: dict = {}
+
+    def run():
+        with patch("app.graph.dao.OrionClient") as mock_orion_cls, \
+             patch("app.services.soil_client.get_parcel_soil_properties",
+                   AsyncMock(return_value={"data_available": False})):
+            mock_orion = AsyncMock()
+            mock_orion.get_entity.return_value = parcel
+            mock_orion_cls.return_value = mock_orion
+            dao = GraphDAO(_make_driver([]))
+            outcome["result"] = asyncio.run(dao.get_parcel_environment("urn:ngsi-ld:AgriParcel:poly-1"))
+
+    worker = threading.Thread(target=run, daemon=True)
+    worker.start()
+    worker.join(timeout=5)
+    assert not worker.is_alive(), "get_parcel_environment did not terminate for a Polygon parcel"
+    centroid = outcome["result"]["centroid"]
+    assert centroid["lon"] == pytest.approx(-1.95)
+    assert centroid["lat"] == pytest.approx(42.65)
