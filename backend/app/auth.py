@@ -6,6 +6,7 @@ Skips auth for health check endpoints.
 
 from __future__ import annotations
 
+import hmac
 import os
 from collections.abc import Callable
 
@@ -13,6 +14,9 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 
+from nkz_platform_sdk.crypto import verify_hmac_signature
+
+from app.auth_policy import requires_identity
 from app.common.tenant_utils import normalize_tenant_id
 
 # Endpoints that don't require auth — health probes, docs, and public reference data
@@ -67,36 +71,61 @@ class NKZAuthMiddleware(BaseHTTPMiddleware):
     In production, validates Bearer token against Keycloak JWKS.
     """
 
+    @staticmethod
+    def _set_identity(request: Request, tenant: str, sub: str, roles: list[str]) -> None:
+        tenant_id = normalize_tenant_id(tenant)
+        request.state.tenant_id = tenant_id
+        request.state.user = {"sub": sub, "tenant_id": tenant_id, "roles": roles}
+
+    def _internal_identity(self, request: Request) -> bool:
+        secret = os.getenv("INTERNAL_SERVICE_SECRET", "")
+        provided = request.headers.get("X-Internal-Service-Secret", "")
+        tenant = request.headers.get("X-Tenant-ID", "").strip()
+        if not secret or not provided or not tenant:
+            return False
+        if not hmac.compare_digest(provided, secret):
+            return False
+        caller = request.headers.get("X-User-ID", "").strip() or "internal"
+        self._set_identity(request, tenant, f"service:{caller}", [])
+        return True
+
+    def _gateway_identity(self, request: Request) -> bool:
+        tenant = request.headers.get("X-Tenant-ID", "").strip()
+        user = request.headers.get("X-User-ID", "").strip()
+        signature = request.headers.get("X-Auth-Signature", "")
+        if not tenant or not user or not signature:
+            return False
+        token = request.headers.get("Authorization", "").removeprefix("Bearer ")
+        if not verify_hmac_signature(
+            os.getenv("HMAC_SECRET", ""), signature, token, tenant, fail_open=False
+        ):
+            return False
+        roles_header = request.headers.get("X-User-Roles", "")
+        self._set_identity(
+            request, tenant, user, roles_header.split(",") if roles_header else []
+        )
+        return True
+
     async def dispatch(self, request: Request, call_next: Callable):
         # Skip auth for health checks and public reference data
         if request.url.path in SKIP_AUTH_PATHS:
             return await call_next(request)
+
+        needs_identity = requires_identity(
+            request.url.path, request.method, request.query_params
+        )
         for prefix, methods in SKIP_AUTH_PREFIXES.items():
             if request.url.path.startswith(prefix) and (
                 "*" in methods or request.method in methods
             ):
-                # Public path, but several of these (agriculture crop-context,
-                # assign-crop, water-budget, crop-plan) are TENANT-SCOPED: they
-                # read/write Orion under the caller's tenant. The frontend sends
-                # a Bearer token even on these public routes (direct ingress,
-                # no api-gateway to inject X-Tenant-ID), so resolve the tenant
-                # from it best-effort WITHOUT enforcing auth: a missing/invalid
-                # token stays public, but a valid one makes the parcel-scoped
-                # queries hit the right Orion tenant.
-                await self._soft_set_tenant_from_token(request)
-                return await call_next(request)
+                if not needs_identity:
+                    # Public reference route: resolve the tenant from a valid
+                    # token best-effort, never reject.
+                    await self._soft_set_tenant_from_token(request)
+                    return await call_next(request)
+                break  # public prefix, but tenant data: identity chain below
 
-        # Trust gateway-injected headers (request already passed api-gateway auth)
-        gateway_tenant = request.headers.get("X-Tenant-ID", "")
-        gateway_user = request.headers.get("X-User-ID", "")
-        gateway_roles = request.headers.get("X-User-Roles", "")
-        if gateway_tenant and gateway_user:
-            request.state.user = {
-                "sub": gateway_user,
-                "tenant_id": gateway_tenant,
-                "roles": gateway_roles.split(",") if gateway_roles else [],
-            }
-            request.state.tenant_id = normalize_tenant_id(gateway_tenant)
+        if self._internal_identity(request) or self._gateway_identity(request):
             return await call_next(request)
 
         # Development mode: skip auth
@@ -126,6 +155,10 @@ class NKZAuthMiddleware(BaseHTTPMiddleware):
             # canonical attribute is 'tenant_id' (underscore), fallback 'tenant'
             raw_tenant = payload.get("tenant_id") or payload.get("tenant", "")
             request.state.tenant_id = normalize_tenant_id(raw_tenant) if raw_tenant else ""
+            if needs_identity and not request.state.tenant_id:
+                return JSONResponse(
+                    status_code=401, content={"detail": "Token carries no tenant"}
+                )
         except Exception as e:  # noqa: BLE001
             return JSONResponse(
                 status_code=401,

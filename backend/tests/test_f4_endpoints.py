@@ -71,13 +71,16 @@ class TestAssignCrop:
                 assert resp.status_code == 400
                 assert "missing" in resp.json()["detail"].lower()
 
-    def test_assign_crop_forwards_tenant_from_header(self, mock_neo4j_driver):
+    def test_assign_crop_forwards_tenant_from_header(self, mock_neo4j_driver, monkeypatch):
         """The agriculture prefix is auth-exempt (SKIP_AUTH_PREFIXES), so
         request.state.tenant_id is never set. The route MUST fall back to the
         X-Tenant-ID header (mirroring crop-plan) or multi-tenant parcels 404.
         Regression test for the bug where assign-crop queried the catalog
         (default) tenant instead of the parcel's tenant.
         """
+        from nkz_platform_sdk.crypto import generate_hmac_signature
+
+        monkeypatch.setenv("HMAC_SECRET", "hmac-test")
         captured = {}
 
         async def fake_assign(self, **kwargs):
@@ -92,7 +95,11 @@ class TestAssignCrop:
             client = TestClient(app)
             resp = client.post(
                 "/api/graph/agriculture/assign-crop",
-                headers={"X-Tenant-ID": "montiko", "X-User-ID": "smoke-test"},
+                headers={
+                    "X-Tenant-ID": "montiko",
+                    "X-User-ID": "smoke-test",
+                    "X-Auth-Signature": generate_hmac_signature("hmac-test", "", "montiko"),
+                },
                 json={
                     "parcel_id": "urn:ngsi-ld:AgriParcel:test-1",
                     "variety_uri": "urn:ngsi-ld:AgriCropVariety:V",
