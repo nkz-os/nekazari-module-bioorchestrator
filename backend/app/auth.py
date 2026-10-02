@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import functools
 import hmac
+import logging
 import os
 from collections.abc import Callable
 
@@ -21,6 +22,8 @@ from nkz_platform_sdk.crypto import verify_hmac_signature
 
 from app.auth_policy import requires_identity
 from app.common.tenant_utils import normalize_tenant_id
+
+logger = logging.getLogger(__name__)
 
 # Endpoints that don't require auth — health probes, docs, and public reference data
 SKIP_AUTH_PATHS = {"/healthz", "/readyz", "/docs", "/openapi.json"}
@@ -96,7 +99,16 @@ class NKZAuthMiddleware(BaseHTTPMiddleware):
         tenant = request.headers.get("X-Tenant-ID", "").strip()
         if not secret or not provided or not tenant:
             return False
-        if not hmac.compare_digest(provided, secret):
+        # The secret is shared org-wide, so it must never be honoured from the
+        # internet. The ingress always sets X-Forwarded-For / X-Real-Ip, while
+        # in-cluster callers reach this service by its service DNS name without
+        # them: their presence means the request came through the ingress.
+        if "x-forwarded-for" in request.headers or "x-real-ip" in request.headers:
+            return False
+        try:
+            if not hmac.compare_digest(provided, secret):
+                return False
+        except TypeError:  # non-ASCII header value
             return False
         caller = request.headers.get("X-User-ID", "").strip() or "internal"
         self._set_identity(request, tenant, f"service:{caller}", [])
@@ -108,10 +120,16 @@ class NKZAuthMiddleware(BaseHTTPMiddleware):
         signature = request.headers.get("X-Auth-Signature", "")
         if not tenant or not user or not signature:
             return False
-        token = request.headers.get("Authorization", "").removeprefix("Bearer ")
-        if not verify_hmac_signature(
-            os.getenv("HMAC_SECRET", ""), signature, token, tenant, fail_open=False
-        ):
+        token = request.headers.get("Authorization", "").removeprefix("Bearer ").strip()
+        if not token:
+            return False
+        try:
+            valid = verify_hmac_signature(
+                os.getenv("HMAC_SECRET", ""), signature, token, tenant, fail_open=False
+            )
+        except TypeError:  # non-ASCII header value
+            return False
+        if not valid:
             return False
         roles_header = request.headers.get("X-User-Roles", "")
         self._set_identity(
@@ -173,9 +191,10 @@ class NKZAuthMiddleware(BaseHTTPMiddleware):
                     status_code=401, content={"detail": "Token carries no tenant"}
                 )
         except Exception as e:  # noqa: BLE001
+            logger.warning("JWT validation failed: %s", type(e).__name__)
             return JSONResponse(
                 status_code=401,
-                content={"detail": f"Token validation failed: {e}"},
+                content={"detail": "Invalid or missing credentials"},
             )
 
         return await call_next(request)
@@ -184,7 +203,8 @@ class NKZAuthMiddleware(BaseHTTPMiddleware):
         """Best-effort tenant resolution for public, tenant-scoped routes.
 
         Never rejects the request: on any failure it proceeds unauthenticated
-        (tenant stays empty and the route falls back to header/query/URN).
+        and the tenant stays empty. Routes never read the tenant from headers,
+        query params or the parcel URN; tenant-scoped handlers reject an empty one.
         """
         auth_header = request.headers.get("Authorization", "")
         if not auth_header.startswith("Bearer "):
@@ -199,7 +219,10 @@ class NKZAuthMiddleware(BaseHTTPMiddleware):
 
     async def _validate_token(self, token: str) -> dict:
         """Validate a Keycloak RS256 JWT: signature via JWKS, exact issuer whitelist, expiry."""
-        if os.getenv("AUTH_STRICT", "true").lower() != "true":
+        if os.getenv("AUTH_STRICT", "true").strip().lower() == "false":
+            logger.critical(
+                "AUTH_STRICT=false: accepting a JWT WITHOUT signature verification"
+            )
             return jwt.decode(token, options={"verify_signature": False})
 
         jwks_url = os.getenv("KEYCLOAK_JWKS_URL", "").strip()

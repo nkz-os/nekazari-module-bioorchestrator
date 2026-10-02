@@ -98,9 +98,10 @@ def test_action_rules_post_succeeds_with_gateway_auth(client, auth_enabled, monk
         "/api/graph/action-rules",
         json={"id": "r9", "category": "sowing"},
         headers={
-            "X-Tenant-ID": "montiko",
+            "Authorization": "Bearer user-token",
+            "X-Tenant-ID": "tenant-a",
             "X-User-ID": "u1",
-            "X-Auth-Signature": generate_hmac_signature("hmac-test", "", "montiko"),
+            "X-Auth-Signature": generate_hmac_signature("hmac-test", "user-token", "tenant-a"),
         },
     )
     assert r.status_code == 200 and r.json()["status"] == "created"

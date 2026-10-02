@@ -72,11 +72,10 @@ class TestAssignCrop:
                 assert "missing" in resp.json()["detail"].lower()
 
     def test_assign_crop_forwards_tenant_from_header(self, mock_neo4j_driver, monkeypatch):
-        """The agriculture prefix is auth-exempt (SKIP_AUTH_PREFIXES), so
-        request.state.tenant_id is never set. The route MUST fall back to the
-        X-Tenant-ID header (mirroring crop-plan) or multi-tenant parcels 404.
-        Regression test for the bug where assign-crop queried the catalog
-        (default) tenant instead of the parcel's tenant.
+        """A write under the agriculture prefix needs a verified identity; with
+        a signed api-gateway request the middleware sets request.state.tenant_id
+        and the route forwards exactly that tenant to the DAO, never the catalog
+        (default) tenant.
         """
         from nkz_platform_sdk.crypto import generate_hmac_signature
 
@@ -96,9 +95,10 @@ class TestAssignCrop:
             resp = client.post(
                 "/api/graph/agriculture/assign-crop",
                 headers={
-                    "X-Tenant-ID": "montiko",
+                    "Authorization": "Bearer user-token",
+            "X-Tenant-ID": "tenant-a",
                     "X-User-ID": "smoke-test",
-                    "X-Auth-Signature": generate_hmac_signature("hmac-test", "", "montiko"),
+                    "X-Auth-Signature": generate_hmac_signature("hmac-test", "user-token", "tenant-a"),
                 },
                 json={
                     "parcel_id": "urn:ngsi-ld:AgriParcel:test-1",
@@ -110,7 +110,7 @@ class TestAssignCrop:
                 },
             )
             assert resp.status_code == 200, resp.text
-            assert captured.get("tenant_id") == "montiko", (
+            assert captured.get("tenant_id") == "tenant-a", (
                 f"tenant_id not forwarded from X-Tenant-ID header: got {captured.get('tenant_id')!r}"
             )
 

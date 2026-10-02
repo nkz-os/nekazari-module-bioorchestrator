@@ -107,6 +107,103 @@ def test_graph_parcel_handler_rejects_empty_tenant_without_middleware():
     dao.assert_not_called()
 
 
+# ── C2: AUTH_STRICT fails closed ────────────────────────────────────────────
+
+def test_auth_strict_non_false_value_verifies(prod, monkeypatch):
+    client, _ = prod
+    monkeypatch.setenv("AUTH_STRICT", "1")
+    forged = jwt.encode(
+        {"iss": ISS, "sub": "u1", "tenant_id": "tenant-a", "exp": int(time.time()) + 300},
+        "attacker-secret", algorithm="HS256",
+    )
+    r = client.get("/api/parcel/p1/vegetation", headers={"Authorization": f"Bearer {forged}"})
+    assert r.status_code == 401
+    assert _OrionSpy.calls == []
+
+
+@pytest.mark.parametrize("value", ["1", "yes", "True ", ""])
+async def test_validate_token_verifies_unless_exactly_false(monkeypatch, value):
+    monkeypatch.setenv("AUTH_STRICT", value)
+    monkeypatch.setenv("KEYCLOAK_JWKS_URL", "https://idp.example/certs")
+    monkeypatch.setenv("JWT_ISSUERS", ISS)
+    fake = MagicMock()
+    fake.get_signing_key_from_jwt.return_value = MagicMock(key=_KEY.public_key())
+    monkeypatch.setattr(auth, "_jwks_client", lambda url: fake)
+    forged = jwt.encode({"iss": ISS, "exp": int(time.time()) + 300}, "x", algorithm="HS256")
+    with pytest.raises(Exception):  # noqa: B017
+        await auth.NKZAuthMiddleware(app=MagicMock())._validate_token(forged)
+
+
+async def test_auth_strict_false_decodes_unverified_and_logs_critical(monkeypatch, caplog):
+    monkeypatch.setenv("AUTH_STRICT", " False ")
+    forged = jwt.encode({"tenant_id": "tenant-a"}, "x", algorithm="HS256")
+    with caplog.at_level("CRITICAL", logger="app.auth"):
+        payload = await auth.NKZAuthMiddleware(app=MagicMock())._validate_token(forged)
+    assert payload["tenant_id"] == "tenant-a"
+    assert any(r.levelname == "CRITICAL" for r in caplog.records)
+
+
+# ── I1: gateway identity requires a Bearer token ───────────────────────────
+
+def test_gateway_hmac_over_empty_token_rejected(prod):
+    client, env_dao = prod
+    r = client.get(
+        f"/api/graph/agriculture/parcel-environment?parcel_id={URN}",
+        headers={
+            "X-Tenant-ID": "tenant-a", "X-User-ID": "u1",
+            "X-Auth-Signature": generate_hmac_signature("hmac-test", "", "tenant-a"),
+        },
+    )
+    assert r.status_code == 401
+    env_dao.assert_not_called()
+
+
+def test_gateway_with_bearer_accepted(prod):
+    client, _ = prod
+    r = client.get(
+        f"/api/graph/agriculture/parcel-environment?parcel_id={URN}",
+        headers=_gateway_headers(),
+    )
+    assert r.status_code == 200
+    assert r.json()["tenant_seen"] == "tenant-a"
+
+
+# ── I2: internal identity only for in-cluster traffic ──────────────────────
+
+@pytest.mark.parametrize("hdr", ["X-Forwarded-For", "X-Real-Ip"])
+def test_internal_secret_via_ingress_rejected(prod, hdr):
+    client, env_dao = prod
+    r = client.get(
+        f"/api/graph/agriculture/parcel-environment?parcel_id={URN}",
+        headers={"X-Internal-Service-Secret": "internal-test", "X-Tenant-ID": "tenant-a",
+                 hdr: "203.0.113.1"},
+    )
+    assert r.status_code == 401
+    env_dao.assert_not_called()
+
+
+# ── T3: non-ASCII credentials are rejected, never a 500 ────────────────────
+
+def test_non_ascii_internal_secret_is_401(prod):
+    client, _ = prod
+    r = client.get(
+        f"/api/graph/agriculture/parcel-environment?parcel_id={URN}",
+        headers={"X-Internal-Service-Secret": "s\xe9cret".encode("latin-1"),
+                 "X-Tenant-ID": "tenant-a"},
+    )
+    assert r.status_code == 401
+
+
+def test_non_ascii_gateway_signature_is_401(prod):
+    client, _ = prod
+    r = client.get(
+        f"/api/graph/agriculture/parcel-environment?parcel_id={URN}",
+        headers={"Authorization": f"Bearer {BEARER}", "X-Tenant-ID": "tenant-a", "X-User-ID": "u1",
+                 "X-Auth-Signature": f"\xe9:{int(time.time())}".encode("latin-1")},
+    )
+    assert r.status_code == 401
+
+
 # ── I5a: extrapolate must not accept a caller tenant ───────────────────────
 
 def test_extrapolate_ignores_tenant_query_param(prod):
@@ -126,3 +223,10 @@ def test_extrapolate_ignores_tenant_query_param(prod):
     assert seen["tenant_id"] == "tenant-a"
 
 
+# ── 401 detail never echoes the exception ──────────────────────────────────
+
+def test_jwt_failure_detail_is_fixed(prod):
+    client, _ = prod
+    r = client.get("/api/parcel/p1/vegetation", headers={"Authorization": "Bearer not-a-jwt"})
+    assert r.status_code == 401
+    assert r.json() == {"detail": "Invalid or missing credentials"}
