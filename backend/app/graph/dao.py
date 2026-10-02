@@ -2675,18 +2675,9 @@ class GraphDAO:
         if isinstance(location, dict):
             val = location.get("value", location)
             if isinstance(val, dict):
-                coords = val.get("coordinates", [])
-                if isinstance(coords, list) and coords:
-                    # GeoJSON: [lon, lat] or [[[lon, lat], ...]]
-                    first = coords
-                    # Drill into nested arrays for Polygon
-                    while isinstance(first, list) and first and isinstance(first[0], list):
-                        first = first[0] if not isinstance(first[0][0], (int, float)) or len(first) < 2 else first
-                        if isinstance(first[0], (int, float)):
-                            break
-                    if isinstance(first, list) and len(first) >= 2 and isinstance(first[0], (int, float)):
-                        centroid["lon"] = first[0]
-                        centroid["lat"] = first[1]
+                point = _geometry_centroid(val.get("coordinates"))
+                if point is not None:
+                    centroid["lon"], centroid["lat"] = point
 
         area_raw = _extract_prop_value(parcel.get("area"))
         if area_raw is not None:
@@ -4906,6 +4897,38 @@ def _yield_provenance(derived_count: int | None, trial_count: int | None) -> str
     if d >= t:
         return "derived"
     return "partial"
+
+
+def _is_position(value) -> bool:
+    return (
+        isinstance(value, list)
+        and len(value) >= 2
+        and all(isinstance(c, (int, float)) and not isinstance(c, bool) for c in value[:2])
+    )
+
+
+def _geometry_centroid(coords) -> tuple[float, float] | None:
+    """(lon, lat) of a GeoJSON Point, Polygon or MultiPolygon coordinate array.
+
+    Polygons use the mean of the outer ring's vertices (closing vertex excluded);
+    MultiPolygons use their first polygon. Each step descends one nesting level,
+    so it always terminates. Returns None for anything malformed.
+    """
+    node = coords
+    while isinstance(node, list) and node and isinstance(node[0], list):
+        if _is_position(node[0]):
+            ring = [p for p in node if _is_position(p)]
+            if len(ring) > 1 and ring[0][:2] == ring[-1][:2]:
+                ring = ring[:-1]
+            if not ring:
+                return None
+            lon = sum(p[0] for p in ring) / len(ring)
+            lat = sum(p[1] for p in ring) / len(ring)
+            return (lon, lat)
+        node = node[0]
+    if _is_position(node):
+        return (node[0], node[1])
+    return None
 
 
 def _extract_prop_value(prop: dict | str | None):
