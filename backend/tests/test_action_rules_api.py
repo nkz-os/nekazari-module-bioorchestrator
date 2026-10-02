@@ -89,12 +89,20 @@ def test_action_rules_put_requires_auth(client, auth_enabled):
     assert r.status_code == 401
 
 
-def test_action_rules_post_succeeds_with_gateway_auth(client, auth_enabled):
-    """POST still works when api-gateway auth headers are present."""
+def test_action_rules_post_succeeds_with_gateway_auth(client, auth_enabled, monkeypatch):
+    """POST still works when signed api-gateway auth headers are present."""
+    from nkz_platform_sdk.crypto import generate_hmac_signature
+
+    monkeypatch.setenv("HMAC_SECRET", "hmac-test")
     r = client.post(
         "/api/graph/action-rules",
         json={"id": "r9", "category": "sowing"},
-        headers={"X-Tenant-ID": "montiko", "X-User-ID": "u1"},
+        headers={
+            "Authorization": "Bearer user-token",
+            "X-Tenant-ID": "tenant-a",
+            "X-User-ID": "u1",
+            "X-Auth-Signature": generate_hmac_signature("hmac-test", "user-token", "tenant-a"),
+        },
     )
     assert r.status_code == 200 and r.json()["status"] == "created"
 

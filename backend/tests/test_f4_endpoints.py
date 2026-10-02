@@ -71,13 +71,15 @@ class TestAssignCrop:
                 assert resp.status_code == 400
                 assert "missing" in resp.json()["detail"].lower()
 
-    def test_assign_crop_forwards_tenant_from_header(self, mock_neo4j_driver):
-        """The agriculture prefix is auth-exempt (SKIP_AUTH_PREFIXES), so
-        request.state.tenant_id is never set. The route MUST fall back to the
-        X-Tenant-ID header (mirroring crop-plan) or multi-tenant parcels 404.
-        Regression test for the bug where assign-crop queried the catalog
-        (default) tenant instead of the parcel's tenant.
+    def test_assign_crop_forwards_tenant_from_header(self, mock_neo4j_driver, monkeypatch):
+        """A write under the agriculture prefix needs a verified identity; with
+        a signed api-gateway request the middleware sets request.state.tenant_id
+        and the route forwards exactly that tenant to the DAO, never the catalog
+        (default) tenant.
         """
+        from nkz_platform_sdk.crypto import generate_hmac_signature
+
+        monkeypatch.setenv("HMAC_SECRET", "hmac-test")
         captured = {}
 
         async def fake_assign(self, **kwargs):
@@ -92,7 +94,12 @@ class TestAssignCrop:
             client = TestClient(app)
             resp = client.post(
                 "/api/graph/agriculture/assign-crop",
-                headers={"X-Tenant-ID": "montiko", "X-User-ID": "smoke-test"},
+                headers={
+                    "Authorization": "Bearer user-token",
+            "X-Tenant-ID": "tenant-a",
+                    "X-User-ID": "smoke-test",
+                    "X-Auth-Signature": generate_hmac_signature("hmac-test", "user-token", "tenant-a"),
+                },
                 json={
                     "parcel_id": "urn:ngsi-ld:AgriParcel:test-1",
                     "variety_uri": "urn:ngsi-ld:AgriCropVariety:V",
@@ -103,7 +110,7 @@ class TestAssignCrop:
                 },
             )
             assert resp.status_code == 200, resp.text
-            assert captured.get("tenant_id") == "montiko", (
+            assert captured.get("tenant_id") == "tenant-a", (
                 f"tenant_id not forwarded from X-Tenant-ID header: got {captured.get('tenant_id')!r}"
             )
 
@@ -139,9 +146,9 @@ class TestYieldPotential:
 
 
 class TestTenantResolution:
-    """`_get_tenant_id` must fall back to the X-Tenant-ID header on the
-    auth-exempt /agriculture/ path (request.state.tenant_id is never set there).
-    Guards every parcel-scoped endpoint routed through the shared helper."""
+    """`_get_tenant_id` resolves the tenant only from the verified identity
+    (request.state.tenant_id). Headers, query params and the parcel URN are
+    caller-controlled and must be ignored."""
 
     @staticmethod
     def _helper():
@@ -156,20 +163,20 @@ class TestTenantResolution:
         d = defaults or {}
         return SimpleNamespace(get=lambda k, default="": d.get(k, default))
 
-    def test_falls_back_to_header(self):
+    def test_ignores_header(self):
         from types import SimpleNamespace
         req = SimpleNamespace(
             state=SimpleNamespace(),
-            headers={"X-Tenant-ID": "montiko"},
+            headers={"X-Tenant-ID": "tenant-b"},
             query_params=self._qp(),
         )
-        assert self._helper()(req) == "montiko"
+        assert self._helper()(req) == ""
 
     def test_prefers_state_when_set(self):
         from types import SimpleNamespace
         req = SimpleNamespace(
             state=SimpleNamespace(tenant_id="state-t"),
-            headers={"X-Tenant-ID": "montiko"},
+            headers={"X-Tenant-ID": "tenant-b"},
             query_params=self._qp(),
         )
         assert self._helper()(req) == "state-t"
@@ -183,21 +190,20 @@ class TestTenantResolution:
         )
         assert self._helper()(req) == ""
 
-    def test_falls_back_to_tenant_id_query_param(self):
+    def test_ignores_tenant_id_query_param(self):
         from types import SimpleNamespace
         req = SimpleNamespace(
             state=SimpleNamespace(),
             headers={},
-            query_params=self._qp({"tenant_id": "montiko"}),
+            query_params=self._qp({"tenant_id": "tenant-b"}),
         )
-        assert self._helper()(req) == "montiko"
+        assert self._helper()(req) == ""
 
-    def test_falls_back_to_parcel_urn(self):
+    def test_ignores_parcel_urn(self):
         from types import SimpleNamespace
-        # URN with embedded tenant (5 segments = 4 colons): Type:tenant:id
         req = SimpleNamespace(
             state=SimpleNamespace(),
             headers={},
-            query_params=self._qp({"parcel_id": "urn:ngsi-ld:AgriParcel:montiko:parcela-42"}),
+            query_params=self._qp({"parcel_id": "urn:ngsi-ld:AgriParcel:tenant-b:parcela-42"}),
         )
-        assert self._helper()(req) == "montiko"
+        assert self._helper()(req) == ""

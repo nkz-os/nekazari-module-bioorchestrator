@@ -1,6 +1,7 @@
 from unittest.mock import patch
 
 import pytest
+from nkz_platform_sdk.crypto import generate_hmac_signature
 
 from app.services.timescale import compute_trend
 
@@ -122,25 +123,31 @@ def test_vegetation_reads_eoproduct(client):
     assert [o["value"] for o in body["observations"]] == [0.42, 0.55]  # sorted by date
 
 
-def test_vegetation_uses_request_tenant(client):
+def test_vegetation_uses_request_tenant(client, monkeypatch):
+    monkeypatch.setenv("HMAC_SECRET", "hmac-test")
     _RecordingOrion.constructed_tenants = []
     with patch("app.api.v1.parcel_data.OrionClient", _RecordingOrion):
         resp = client.get(
             "/api/parcel/P1/vegetation",
-            headers={"X-Tenant-ID": "asociacion-allotarra", "X-User-ID": "u1", "X-User-Roles": "Tecnico"},
+            headers={"Authorization": "Bearer user-token", "X-Tenant-ID": "tenant-a", "X-User-ID": "u1",
+                     "X-User-Roles": "Tecnico",
+                     "X-Auth-Signature": generate_hmac_signature("hmac-test", "user-token", "tenant-a")},
         )
     assert resp.status_code == 200
-    assert "asociacion-allotarra" in _RecordingOrion.constructed_tenants
+    assert "tenant-a" in _RecordingOrion.constructed_tenants
     assert "" not in _RecordingOrion.constructed_tenants  # never the default store
 
 
-def test_soil_uses_request_tenant(client):
+def test_soil_uses_request_tenant(client, monkeypatch):
+    monkeypatch.setenv("HMAC_SECRET", "hmac-test")
     _RecordingOrion.constructed_tenants = []
     with patch("app.api.v1.parcel_data.OrionClient", _RecordingOrion):
         resp = client.get(
             "/api/parcel/P1/soil",
-            headers={"X-Tenant-ID": "asociacion-allotarra", "X-User-ID": "u1", "X-User-Roles": "Tecnico"},
+            headers={"Authorization": "Bearer user-token", "X-Tenant-ID": "tenant-a", "X-User-ID": "u1",
+                     "X-User-Roles": "Tecnico",
+                     "X-Auth-Signature": generate_hmac_signature("hmac-test", "user-token", "tenant-a")},
         )
     assert resp.status_code == 200
-    assert "asociacion-allotarra" in _RecordingOrion.constructed_tenants
+    assert "tenant-a" in _RecordingOrion.constructed_tenants
     assert "" not in _RecordingOrion.constructed_tenants  # never the default store
