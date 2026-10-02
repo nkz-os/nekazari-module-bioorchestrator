@@ -7,6 +7,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 
 from app.graph.dao import GraphDAO
+from app.services.chelsa_climate import cell_key
 from neo4j import AsyncDriver
 
 
@@ -54,6 +55,13 @@ def _make_driver(records: list[dict] | None = None):
     return driver
 
 
+@pytest.fixture(autouse=True)
+def _no_chelsa_network():
+    """Keep tests off the CHELSA network path; tests that need a cell patch it themselves."""
+    with patch.object(GraphDAO, "parcel_climate", AsyncMock(return_value=None)):
+        yield
+
+
 class TestParcelEnvironment:
     """Verify the DAO method resolves parcel profile without assigned crop."""
 
@@ -61,7 +69,8 @@ class TestParcelEnvironment:
     async def test_returns_profile_when_no_crop_assigned(self):
         """Core spec requirement: must NOT require hasAgriCrop."""
         with patch("app.graph.dao.OrionClient") as mock_orion_cls, \
-             patch("app.services.soil_client.get_parcel_soil_properties") as mock_soil:
+             patch("app.services.soil_client.get_parcel_soil_properties") as mock_soil, \
+             patch.object(GraphDAO, "parcel_climate", AsyncMock(return_value=None)):
 
             mock_orion = AsyncMock()
             mock_orion_cls.return_value = mock_orion
@@ -156,7 +165,8 @@ class TestParcelEnvironment:
     async def test_climate_from_nearest_trial_site(self):
         """Should resolve Köppen class from nearest TrialSite."""
         with patch("app.graph.dao.OrionClient") as mock_orion_cls, \
-             patch("app.services.soil_client.get_parcel_soil_properties") as mock_soil:
+             patch("app.services.soil_client.get_parcel_soil_properties") as mock_soil, \
+             patch.object(GraphDAO, "parcel_climate", AsyncMock(return_value=None)):
 
             mock_orion = AsyncMock()
             mock_orion_cls.return_value = mock_orion
@@ -217,3 +227,119 @@ def test_polygon_parcel_terminates_and_yields_centroid():
     centroid = outcome["result"]["centroid"]
     assert centroid["lon"] == pytest.approx(-1.95)
     assert centroid["lat"] == pytest.approx(42.65)
+
+
+# ── CHELSA climate wiring ─────────────────────────────────────────────────────
+
+_POINT_PARCEL = {
+    "id": "urn:ngsi-ld:AgriParcel:p1", "type": "AgriParcel",
+    "location": {"type": "GeoProperty", "value": {"type": "Point", "coordinates": [-1.6458, 42.8125]}},
+}
+
+
+async def _env_with(cell, records, *, side_effect=None, flag="1", driver=None, mock=None):
+    if mock is None:
+        mock = AsyncMock(return_value=cell) if side_effect is None else AsyncMock(side_effect=side_effect)
+    env = {"CHELSA_PARCEL_CLIMATE_ENABLED": flag} if flag is not None else {}
+    with patch.dict("os.environ", env), \
+         patch("app.graph.dao.OrionClient") as orion_cls, \
+         patch("app.services.soil_client.get_parcel_soil_properties", AsyncMock(return_value={"data_available": False})), \
+         patch.object(GraphDAO, "parcel_climate", mock):
+        orion = AsyncMock()
+        orion.get_entity.return_value = _POINT_PARCEL
+        orion_cls.return_value = orion
+        dao = GraphDAO(driver or _make_driver(records))
+        return await dao.get_parcel_environment("urn:ngsi-ld:AgriParcel:p1", "tenant-a")
+
+
+@pytest.mark.asyncio
+async def test_chelsa_climate_preferred():
+    cell = {"koppen": "Cfb", "annual_temp_c": 12.3, "annual_rainfall_mm": 828.0, "annual_et0_mm": 955.2,
+            "coldest_month_min_c": 0.85, "monthly_tas_c": [5.0] * 12, "monthly_pr_mm": [69.0] * 12,
+            "source": "CHELSA v2.1 1981-2010"}
+    env = await _env_with(cell, [])
+    assert env["climate_class"] == "Cfb"
+    assert env["inputs_used"]["climate"] == "chelsa_v2.1"
+    assert env["climate_detail"]["annual_et0_mm"] == 955.2
+    assert env["climate_detail"]["coldest_month_min_c"] == 0.85
+    assert env["climate_detail"]["source"] == "chelsa_v2.1"
+    assert env["climate_detail"]["frost_days_per_year"] is None
+    assert env["climate_detail"]["cell"] == cell_key(42.8125, -1.6458)
+
+
+@pytest.mark.asyncio
+async def test_chelsa_timeout_falls_back():
+    site = {"cc": "Cfb", "tlat": 42.815, "tlon": -1.65, "name": "site-a",
+            "rain": 650.0, "et0": 900.0, "frost": 30}
+    env = await _env_with(None, [site])
+    assert env["climate_class"] == "Cfb"
+    assert env["inputs_used"]["climate"] == "trial_proxy"
+    detail = env["climate_detail"]
+    assert detail["source"] == "trial_proxy" and detail["site"] == "site-a"
+    assert detail["annual_rainfall_mm"] == 650.0 and detail["annual_et0_mm"] == 900.0
+    assert detail["frost_days_per_year"] == 30 and detail["distance_km"] < 5
+
+
+@pytest.mark.asyncio
+async def test_chelsa_exception_falls_back():
+    site = {"cc": "Cfb", "tlat": 42.815, "tlon": -1.65, "name": "site-a",
+            "rain": 650.0, "et0": 900.0, "frost": 30}
+    env = await _env_with(None, [site], side_effect=RuntimeError("boom"))
+    assert env["inputs_used"]["climate"] == "trial_proxy"
+
+
+@pytest.mark.asyncio
+async def test_no_climate_anywhere():
+    env = await _env_with(None, [])
+    assert env["climate_class"] is None
+    assert env["climate_detail"] is None
+    assert env["inputs_used"]["climate"] == "unavailable"
+
+
+def test_era5_no_longer_called():
+    import inspect
+
+    from app.graph import dao
+    assert "ERA5ClimateConnector" not in inspect.getsource(dao.GraphDAO.get_parcel_environment)
+
+
+# ── Feature flag (CHELSA_PARCEL_CLIMATE_ENABLED) ──────────────────────────────
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("flag", [None, "", "0", "false", "no", "off", "2"])
+async def test_flag_off_skips_parcel_climate(flag):
+    mock = AsyncMock(return_value={"koppen": "Cfb"})
+    env = await _env_with(None, [], flag=flag, mock=mock)
+    mock.assert_not_awaited()
+    assert env["inputs_used"]["climate"] == "unavailable"
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("flag", ["1", "true", "TRUE", "Yes"])
+async def test_flag_on_awaits_parcel_climate(flag):
+    mock = AsyncMock(return_value=None)
+    await _env_with(None, [], flag=flag, mock=mock)
+    mock.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_flag_off_still_uses_trial_site_fallback():
+    site = {"cc": "Cfb", "tlat": 42.815, "tlon": -1.65, "name": "site-a",
+            "rain": 650.0, "et0": 900.0, "frost": 30}
+    env = await _env_with(None, [site], flag=None, mock=AsyncMock())
+    assert env["inputs_used"]["climate"] == "trial_proxy"
+
+
+# ── Trial-site fallback prefers CHELSA site climate ───────────────────────────
+
+@pytest.mark.asyncio
+async def test_fallback_query_coalesces_chelsa_properties():
+    driver = _make_driver([])
+    await _env_with(None, [], flag=None, driver=driver, mock=AsyncMock())
+    queries = [c.args[0] for c in driver.session.return_value.run.await_args_list]
+    q = next(x for x in queries if "MATCH (ts:TrialSite)" in x and "tlat" in x)
+    assert "coalesce(ts.climateClassChelsa, ts.climateClass) IS NOT NULL" in q
+    assert "coalesce(ts.climateClassChelsa, ts.climateClass) AS cc" in q
+    assert "coalesce(ts.annualRainfallMmChelsa, ts.annualRainfallMm) AS rain" in q
+    assert "coalesce(ts.annualET0MmChelsa, ts.annualET0Mm) AS et0" in q
+    assert "ts.frostDaysPerYear AS frost" in q

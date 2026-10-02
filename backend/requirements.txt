@@ -35,3 +35,6 @@ httpx>=0.27.0  # also used by TestClient
 pcse>=5.5.0
 numpy>=1.24.0
 pandas>=2.0.0
+
+# CHELSA climate normals reader
+rasterio>=1.4,<2

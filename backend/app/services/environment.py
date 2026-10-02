@@ -40,6 +40,7 @@ ALLOWED_FQDNS: frozenset[str] = frozenset({
     # CHELSA — high-resolution climatology (fallback)
     "chelsa-climate.org",
     "envicloud.wsl.ch",
+    "os.unil.cloud.switch.ch",
 })
 
 

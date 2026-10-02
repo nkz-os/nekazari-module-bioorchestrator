@@ -24,6 +24,18 @@ def _env():
     yield
 
 
+@pytest.fixture(autouse=True)
+def _no_chelsa_network(request, monkeypatch):
+    """Tests must never reach CHELSA unless marked `network`."""
+    if request.node.get_closest_marker("network"):
+        return
+
+    def _blocked(*args, **kwargs):
+        raise RuntimeError("network disabled in tests")
+
+    monkeypatch.setattr("app.services.chelsa_climate._rasterio_sampler", _blocked)
+
+
 @pytest.fixture
 def mock_driver() -> AsyncDriver:
     """Return a mock Neo4j AsyncDriver."""

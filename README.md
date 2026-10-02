@@ -296,6 +296,7 @@ export EPPO_API_KEY=your_eppo_key     # optional — enables pest risk + taxonom
 export KEYCLOAK_URL=https://auth.example.com/auth
 export TIMESERIES_READER_URL=http://timeseries-reader:5000
 export REDIS_URL=redis://redis:6379   # optional — enables alerts
+export CHELSA_PARCEL_CLIMATE_ENABLED=1  # optional (default off) — parcel-environment climate from CHELSA v2.1 cells
 
 uvicorn app.main:app --host 0.0.0.0 --port 8420 --reload
 ```
