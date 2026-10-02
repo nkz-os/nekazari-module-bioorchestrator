@@ -5,6 +5,7 @@ from datetime import timedelta, timezone
 from fastapi import APIRouter, HTTPException, Query, Request
 from nkz_platform_sdk.orion import OrionClient
 
+from app.api.v1.graph import _require_tenant_id
 from app.services.timescale import compute_trend
 
 router = APIRouter(prefix="/parcel", tags=["parcel-data"])
@@ -49,7 +50,7 @@ async def parcel_vegetation(
     if period not in VALID_PERIODS:
         raise HTTPException(status_code=400, detail=f"Invalid period: {period}. Valid: {VALID_PERIODS}")
 
-    tenant_id = getattr(request.state, "tenant_id", "") or request.headers.get("X-Tenant-ID", "")
+    tenant_id = _require_tenant_id(request)
     orion = OrionClient(tenant_id)
     parcel_urn = f"urn:ngsi-ld:AgriParcel:{parcel_id}"
 
@@ -125,7 +126,7 @@ async def parcel_vegetation(
 @router.get("/{parcel_id}/soil")
 async def parcel_soil(parcel_id: str, request: Request):
     """Get soil horizons for a parcel from Orion-LD (AgriSoilExtended)."""
-    tenant_id = getattr(request.state, "tenant_id", "") or request.headers.get("X-Tenant-ID", "")
+    tenant_id = _require_tenant_id(request)
     orion = OrionClient(tenant_id)
     parcel_urn = f"urn:ngsi-ld:AgriParcel:{parcel_id}"
 
@@ -169,7 +170,7 @@ async def parcel_climate(parcel_id: str, request: Request):
     from satellite observations. Used by crop planner for climate-risk
     assessment and rotation recommendations.
     """
-    tenant_id = getattr(request.state, "tenant_id", "") or request.headers.get("X-Tenant-ID", "")
+    tenant_id = _require_tenant_id(request)
     orion = OrionClient(tenant_id)
     parcel_urn = f"urn:ngsi-ld:AgriParcel:{parcel_id}"
 

@@ -88,6 +88,14 @@ def _get_tenant_id(request: Request) -> str:
     return getattr(request.state, "tenant_id", "") or ""
 
 
+def _require_tenant_id(request: Request) -> str:
+    """Verified tenant for a parcel-scoped handler; 401 when there is none."""
+    tenant_id = _get_tenant_id(request)
+    if not tenant_id:
+        raise HTTPException(status_code=401, detail="No verified tenant")
+    return tenant_id
+
+
 @router.get("/health")
 async def graph_health(driver: DriverDep):
     """Check Neo4j connectivity."""
@@ -429,7 +437,7 @@ async def crop_name(
 @router.get("/agriculture/advisories")
 async def list_advisories(request: Request, parcel_id: str = Query(...)):
     """CropAdvisory recommendations for a parcel (bioorch-owned, read from the broker)."""
-    tenant_id = _get_tenant_id(request)
+    tenant_id = _require_tenant_id(request)
     client = OrionClient(tenant_id)
     try:
         rows = await client.query_entities(
@@ -730,10 +738,6 @@ async def agriculture_extrapolate(
             "adjusts variety scores for drought, heat, and frost stress."
         ),
     ),
-    tenant_id: str = Query(
-        default="",
-        description="Tenant namespace for multi-tenancy (default: from auth context).",
-    ),
     request: Request = None,
 ):
     """Extrapolate best crop varieties for a target environment.
@@ -786,9 +790,10 @@ async def agriculture_extrapolate(
     else:
         resolved_env = None  # Explicit filters only
 
-    # Resolve tenant: prefer gateway header over query param
-    if not tenant_id and request is not None:
-        tenant_id = _get_tenant_id(request)
+    # Tenant only from the verified identity; required when a parcel is read.
+    tenant_id = ""
+    if request is not None:
+        tenant_id = _require_tenant_id(request) if parcel_id else _get_tenant_id(request)
 
     result = await dao.extrapolate_varieties(
         crop=crop,
@@ -953,7 +958,7 @@ async def agriculture_parcel_environment(
     Used by CropPlanner planning phase — contrast with crop-context which
     requires AgriParcel.hasAgriCrop.
     """
-    tenant_id = _get_tenant_id(request)
+    tenant_id = _require_tenant_id(request)
     dao = GraphDAO(driver)
     result = await dao.get_parcel_environment(
         parcel_id=parcel_id,
@@ -983,7 +988,7 @@ async def agriculture_suggest_crops(
     Orchestrates get_parcel_environment + get_available_crops +
     extrapolate_varieties + economics. No new Neo4j relationship types.
     """
-    tenant_id = _get_tenant_id(request)
+    tenant_id = _require_tenant_id(request)
     dao = GraphDAO(driver)
     result = await dao.suggest_crops_for_parcel(
         parcel_id=parcel_id,
@@ -1016,7 +1021,7 @@ async def agriculture_crop_context(
     ),
 ):
     """Return full calibrated agronomic context for a parcel."""
-    tenant_id = _get_tenant_id(request)
+    tenant_id = _require_tenant_id(request)
     dao = GraphDAO(driver)
     result = await dao.get_crop_context(
         parcel_id=parcel_id,
@@ -1039,7 +1044,7 @@ async def agriculture_yield_potential(
     parcel_id: str | None = Query(default=None, description="Optional parcel URN for yield gap"),
 ):
     """Compute expected yield and yield gap for a variety."""
-    tenant_id = _get_tenant_id(request)
+    tenant_id = _require_tenant_id(request) if parcel_id else _get_tenant_id(request)
     dao = GraphDAO(driver)
     result = await dao.get_yield_potential(
         variety=variety,
@@ -1062,7 +1067,7 @@ async def agriculture_water_budget(
     week_start: str | None = Query(default=None, description="ISO date for week start (default: today)"),
 ):
     """Calculate weekly irrigation requirement for a parcel."""
-    tenant_id = _get_tenant_id(request)
+    tenant_id = _require_tenant_id(request)
     dao = GraphDAO(driver)
     result = await dao.get_water_budget(
         parcel_id=parcel_id, tenant_id=tenant_id, week_start=week_start,
@@ -1092,7 +1097,7 @@ async def agriculture_yield_projection(
     Returns the projected yield, cumulative stress factor, and per-stage
     breakdown of water stress contributions.
     """
-    tenant_id = _get_tenant_id(request)
+    tenant_id = _require_tenant_id(request)
     dao = GraphDAO(driver)
     result = await dao.get_yield_projection(
         parcel_id=parcel_id, tenant_id=tenant_id,
@@ -1128,7 +1133,7 @@ async def agriculture_wofost_simulation(
     Falls back to FAO-33 simplified simulation if PCSE is not installed.
     Returns daily LAI, biomass, and yield projection.
     """
-    tenant_id = _get_tenant_id(request)
+    tenant_id = _require_tenant_id(request)
     dao = GraphDAO(driver)
     result = await dao.run_wofost_simulation(
         parcel_id=parcel_id,
@@ -1158,7 +1163,7 @@ async def agriculture_compare_crops(
     result = await dao.compare_crops(
         parcel_id=parcel_id, crops=crop_list,
         seed_price=seed_price, harvest_price=harvest_price, operation_cost=operation_cost,
-        tenant_id=_get_tenant_id(request),
+        tenant_id=_require_tenant_id(request),
     )
     return result
 
@@ -1179,7 +1184,7 @@ async def agriculture_rotation_plan(
     result = await dao.rotation_plan(
         parcel_id=parcel_id, years=years,
         seed_price=seed_price, harvest_price=harvest_price, operation_cost=operation_cost,
-        tenant_id=_get_tenant_id(request),
+        tenant_id=_require_tenant_id(request),
         starting_crop=starting_crop,
         management=management,
     )
@@ -1195,7 +1200,7 @@ async def agriculture_rotation_optimize(
 ):
     """Priority-driven rotation optimizer with cover crops."""
     body = await request.json()
-    tenant_id = _get_tenant_id(request)
+    tenant_id = _require_tenant_id(request)
     dao = GraphDAO(driver)
     result = await dao.optimize_rotation(
         parcel_id=body.get("parcel_id", ""),
@@ -1249,7 +1254,7 @@ async def agriculture_assign_crop(
         dao = GraphDAO(driver)
         result = await dao.clear_crop_assignment(
             parcel_id=parcel_id,
-            tenant_id=_get_tenant_id(request),
+            tenant_id=_require_tenant_id(request),
         )
         return result
 
@@ -1277,7 +1282,7 @@ async def agriculture_assign_crop(
         management=management,
         season_start=body["season_start"],
         season_end=body["season_end"],
-        tenant_id=_get_tenant_id(request),
+        tenant_id=_require_tenant_id(request),
     )
     return result
 
@@ -1294,7 +1299,7 @@ async def agriculture_commit_crop_plan(driver: DriverDep, request: Request):
     dao = GraphDAO(driver)
     return await dao.create_crop_plan(
         parcel_id=parcel_id, season=season, segments=segments,
-        tenant_id=_get_tenant_id(request),
+        tenant_id=_require_tenant_id(request),
     )
 
 
@@ -1308,7 +1313,7 @@ async def agriculture_get_crop_plan(
     dao = GraphDAO(driver)
     return await dao.get_crop_plan(
         parcel_id=parcel_id, season=season,
-        tenant_id=_get_tenant_id(request),
+        tenant_id=_require_tenant_id(request),
     )
 
 
@@ -1325,7 +1330,7 @@ async def agriculture_advance_segment(parcel_id: str, seq: int, driver: DriverDe
     dao = GraphDAO(driver)
     return await dao.advance_segment(
         parcel_id=parcel_id, season=season, seq=seq, planting_date=planting_date,
-        tenant_id=_get_tenant_id(request),
+        tenant_id=_require_tenant_id(request),
     )
 
 
