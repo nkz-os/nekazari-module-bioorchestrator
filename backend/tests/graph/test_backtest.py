@@ -241,9 +241,33 @@ def test_backtest_fold_carries_site_agroclimatic_features(dao):
     site_a = next(f for f in folds if f["site"] == "SiteA")
     assert site_a["rainfall"] == 520 and site_a["et0"] == 1000
     assert site_a["frost"] == 38 and site_a["elevation"] == 320
-    # And the full backtest runs over enriched sites without error.
-    report = _run(Backtester(dao).run())
+    # And the full v1-vector backtest runs over enriched sites without error.
+    report = _run(Backtester(dao).run(strategy="v1"))
     assert report["overall"]["coverage"] == 1.0
+
+
+def test_backtest_hybrid_falls_back_to_v2_when_koppen_misses(dao):
+    """Köppen has no analog (lone class per fold) but CHELSA analogs exist → v2 covers it."""
+    from app.eval.backtest import Backtester
+
+    _reset_and_seed(
+        dao,
+        """
+        CREATE (a:TrialSite {name:'SiteA', climateClass:'Csa', annualRainfallMm:500, annualET0Mm:1000,
+                             coldestMonthMinCChelsa:-3.0, annualTempCChelsa:13.0})
+        CREATE (b:TrialSite {name:'SiteB', climateClass:'Cfb', annualRainfallMm:520, annualET0Mm:1000,
+                             coldestMonthMinCChelsa:-2.0, annualTempCChelsa:13.5})
+        CREATE (a1:VarietyTrial {cropEppo:'TRZAX', varietyNormalized:'V', variety:'V', year:2020, yieldKgHa:8000.0})
+        CREATE (b1:VarietyTrial {cropEppo:'TRZAX', varietyNormalized:'V', variety:'V', year:2020, yieldKgHa:7000.0})
+        CREATE (a1)-[:TRIAL_AT]->(a)
+        CREATE (b1)-[:TRIAL_AT]->(b)
+        """,
+    )
+    koppen = _run(Backtester(dao).run(strategy="koppen"))
+    assert koppen["overall"]["coverage"] == 0.0
+    hybrid = _run(Backtester(dao).run(strategy="hybrid"))
+    assert hybrid["overall"]["coverage"] == 1.0
+    assert hybrid["similarity"] == "hybrid"
 
 
 def test_backtest_report_route(dao):

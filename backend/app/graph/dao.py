@@ -64,6 +64,9 @@ def _assess_evidence(ranked: list[dict]) -> dict:
 
 logger = logging.getLogger(__name__)
 
+# Log an invalid AGROCLIMATIC_VECTOR once per process, not per request.
+_INVALID_VECTOR_LOGGED = False
+
 
 async def _fetch_ropo_products(cultivo: str, tenant_id: str) -> list[dict]:
     """Query CUE national ROPO catalog for a crop. Internal-service auth. Never raises."""
@@ -1354,8 +1357,12 @@ class GraphDAO:
         rainfall_max: float | None = None,
         limit: int = 10,
         target_features: dict[str, float | None] | None = None,
+        vector_version: str = "v1",
     ) -> list[dict]:
         """Find TrialSites agro-climatically similar to a target (C.1).
+
+        ``vector_version`` "v1" uses rainfall/et0/frost/elevation; "v2" uses the
+        CHELSA vector (rainfall/et0/coldest_min/annual_temp) on both sides.
 
         When a target agro-climatic vector is available (``target_features`` =
         rainfall/et0/frost/elevation, or derived from ``reference_site``), sites are
@@ -1367,6 +1374,10 @@ class GraphDAO:
         Without a target vector (only a climate label) it falls back to the legacy
         Köppen/soil/rainfall filter (``distance`` = None).
         """
+        if vector_version not in ("v1", "v2"):
+            raise ValueError(f"unknown agro-climatic vector_version: {vector_version!r}")
+        is_v2 = vector_version == "v2"
+
         # Resolve a reference site's own vector + climate as the target.
         if reference_site:
             async with self._driver.session() as session:
@@ -1380,7 +1391,9 @@ class GraphDAO:
                            coalesce(ts.annualRainfallMmChelsa, ts.annualRainfallMm) AS rainfall,
                            coalesce(ts.annualET0MmChelsa, ts.annualET0Mm) AS et0,
                            ts.frostDaysPerYear AS frost,
-                           ts.elevationM AS elevation
+                           ts.elevationM AS elevation,
+                           ts.coldestMonthMinCChelsa AS coldest_min,
+                           ts.annualTempCChelsa AS annual_temp
                     LIMIT 1
                     """,
                     name=reference_site,
@@ -1394,17 +1407,30 @@ class GraphDAO:
                     rainfall_min = ref["rainfall"] - 200
                     rainfall_max = ref["rainfall"] + 200
                 if target_features is None:
-                    target_features = {
-                        "rainfall": ref["rainfall"], "et0": ref["et0"],
-                        "frost": ref["frost"], "elevation": ref["elevation"],
-                    }
+                    if is_v2:
+                        target_features = {
+                            "rainfall": ref["rainfall"], "et0": ref["et0"],
+                            "coldest_min": ref["coldest_min"],
+                            "annual_temp": ref["annual_temp"],
+                        }
+                    else:
+                        target_features = {
+                            "rainfall": ref["rainfall"], "et0": ref["et0"],
+                            "frost": ref["frost"], "elevation": ref["elevation"],
+                        }
 
         target_vec = None
         if target_features:
-            target_vec = agroclimatic.feature_vector(
-                target_features.get("rainfall"), target_features.get("et0"),
-                target_features.get("frost"), target_features.get("elevation"),
-            )
+            if is_v2:
+                target_vec = agroclimatic.feature_vector_v2(
+                    target_features.get("rainfall"), target_features.get("et0"),
+                    target_features.get("coldest_min"), target_features.get("annual_temp"),
+                )
+            else:
+                target_vec = agroclimatic.feature_vector(
+                    target_features.get("rainfall"), target_features.get("et0"),
+                    target_features.get("frost"), target_features.get("elevation"),
+                )
 
         # Pull every site once; scoring/filtering happens in Python (≤ a few hundred).
         query = """
@@ -1424,6 +1450,8 @@ class GraphDAO:
                    coalesce(ts.annualET0MmChelsa, ts.annualET0Mm) AS annual_et0_mm,
                    ts.frostDaysPerYear AS frost_days,
                    ts.elevationM AS elevation_m,
+                   ts.coldestMonthMinCChelsa AS coldest_min,
+                   ts.annualTempCChelsa AS annual_temp,
                    ts.photoperiodSummerHours AS photoperiod_hours
         """
         async with self._driver.session() as session:
@@ -1432,18 +1460,33 @@ class GraphDAO:
 
         # ── Distance path (C.1): rank by agro-climatic distance ─────────────
         if target_vec is not None:
-            vectors = [
-                agroclimatic.feature_vector(
-                    r["annual_rainfall_mm"], r["annual_et0_mm"],
-                    r["frost_days"], r["elevation_m"],
-                )
-                for r in rows
-            ]
-            bounds = agroclimatic.normalize_bounds(vectors + [target_vec])
+            if is_v2:
+                features = agroclimatic.FEATURES_V2
+                weights = agroclimatic.DEFAULT_WEIGHTS_V2
+                vectors = [
+                    agroclimatic.feature_vector_v2(
+                        r["annual_rainfall_mm"], r["annual_et0_mm"],
+                        r.get("coldest_min"), r.get("annual_temp"),
+                    )
+                    for r in rows
+                ]
+            else:
+                features = agroclimatic.FEATURES
+                weights = agroclimatic.DEFAULT_WEIGHTS
+                vectors = [
+                    agroclimatic.feature_vector(
+                        r["annual_rainfall_mm"], r["annual_et0_mm"],
+                        r["frost_days"], r["elevation_m"],
+                    )
+                    for r in rows
+                ]
+            bounds = agroclimatic.normalize_bounds(vectors + [target_vec], features=features)
             scored: list[dict] = []
             for r, vec in zip(rows, vectors):
                 if vec is not None:
-                    d = agroclimatic.distance(target_vec, vec, bounds)
+                    d = agroclimatic.distance(
+                        target_vec, vec, bounds, weights=weights, features=features,
+                    )
                 elif climate_class and r["climate_class"] == climate_class:
                     # Same Köppen but no numeric vector → keep, ranked after real
                     # analogs (soft prior, not a hard gate). Coverage preserved.
@@ -1514,6 +1557,7 @@ class GraphDAO:
         exclude_sites: list[str] | None = None,
         target_features: dict[str, float | None] | None = None,
         recency_half_life: float = 8.0,
+        vector_version: str = "v1",
     ) -> dict:
         """Extrapolate best varieties for a target environment.
 
@@ -1571,7 +1615,9 @@ class GraphDAO:
                            ts.name AS name,
                            ts.latitude AS lat,
                            ts.longitude AS lon,
-                           ts.elevationM AS elevation
+                           ts.elevationM AS elevation,
+                           ts.coldestMonthMinCChelsa AS coldest_min,
+                           ts.annualTempCChelsa AS annual_temp
                     LIMIT 1
                     """,
                     name=reference_site,
@@ -1589,7 +1635,13 @@ class GraphDAO:
                 target_env["reference_lon"] = ref["lon"]
                 target_env["reference_elevation"] = ref["elevation"]
                 # Derive the target agro-climatic vector for distance weighting (C.1).
-                if target_features is None:
+                if target_features is None and vector_version == "v2":
+                    target_features = {
+                        "rainfall": ref["rainfall"], "et0": ref["et0"],
+                        "coldest_min": ref["coldest_min"],
+                        "annual_temp": ref["annual_temp"],
+                    }
+                elif target_features is None:
                     target_features = {
                         "rainfall": ref["rainfall"], "et0": ref["et0"],
                         "frost": ref["frost"], "elevation": ref["elevation"],
@@ -1612,6 +1664,7 @@ class GraphDAO:
             rainfall_max=target_env.get("rainfall_max"),
             limit=50,
             target_features=target_features,
+            vector_version=vector_version,
         )
         similar_site_names = [s["name"] for s in similar_sites_result]
 
@@ -3039,6 +3092,36 @@ class GraphDAO:
         crops_to_evaluate = crops_to_evaluate[:30]
 
         # ── 4. Extrapolate best variety per crop (parallel) ────────────
+        # v2 (CHELSA vector) only when opted in via env AND the parcel climate is
+        # CHELSA-sourced; otherwise the legacy Köppen path is used unchanged.
+        global _INVALID_VECTOR_LOGGED
+        mode = os.environ.get("AGROCLIMATIC_VECTOR", "v1")
+        if mode not in ("v1", "v2", "hybrid"):
+            # Fail-safe: keep serving the proven Köppen path, but be loud once.
+            if not _INVALID_VECTOR_LOGGED:
+                _INVALID_VECTOR_LOGGED = True
+                logger.critical(
+                    "invalid AGROCLIMATIC_VECTOR %r (expected v1|v2|hybrid); using v1", mode,
+                )
+            mode = "v1"
+        chelsa = env.get("climate_detail") or {}
+        chelsa_ok = chelsa.get("source") == "chelsa_v2.1" and agroclimatic.feature_vector_v2(
+            chelsa.get("annual_rainfall_mm"), chelsa.get("annual_et0_mm"),
+            chelsa.get("coldest_month_min_c"), chelsa.get("annual_temp_c"),
+        ) is not None
+        v2_kwargs: dict[str, Any] = {
+            "vector_version": "v2",
+            "target_features": {
+                "rainfall": chelsa.get("annual_rainfall_mm"),
+                "et0": chelsa.get("annual_et0_mm"),
+                "coldest_min": chelsa.get("coldest_month_min_c"),
+                "annual_temp": chelsa.get("annual_temp_c"),
+            },
+        }
+        # v1/hybrid start on the legacy Köppen path (no target_features).
+        vector_kwargs: dict[str, Any] = v2_kwargs if (mode == "v2" and chelsa_ok) else {}
+        similarity_first = "vector_v2" if vector_kwargs else "koppen"
+
         async def _eval_one(crop_entry: dict) -> dict | None:
             eppo = crop_entry["eppo_code"]
             try:
@@ -3050,7 +3133,24 @@ class GraphDAO:
                     parcel_id=parcel_id,
                     tenant_id=tenant_id,
                     top_n=1,
+                    **vector_kwargs,
                 )
+                similarity = similarity_first
+                if mode == "hybrid" and chelsa_ok and not any(
+                    r.get("mean_yield_kg_ha") is not None
+                    for r in result.get("ranked_varieties", [])
+                ):
+                    result = await self.extrapolate_varieties(
+                        crop=eppo,
+                        climate_class=climate_class,
+                        soil_type=soil_type,
+                        irrigation_regime=effective_irrigation,
+                        parcel_id=parcel_id,
+                        tenant_id=tenant_id,
+                        top_n=1,
+                        **v2_kwargs,
+                    )
+                    similarity = "vector_v2_fallback"
                 ranked = result.get("ranked_varieties", [])
                 if not ranked:
                     return None
@@ -3146,6 +3246,7 @@ class GraphDAO:
                         "irrigation_filter": effective_irrigation or "any",
                     },
                     "data_gaps": [],
+                    "similarity": similarity,
                 }
                 if trials_analyzed < 3:
                     trust["data_gaps"].append("low_trial_count")

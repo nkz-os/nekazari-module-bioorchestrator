@@ -22,6 +22,8 @@ from __future__ import annotations
 import statistics
 from typing import Any
 
+from app.graph import agroclimatic
+
 # Pull a deep ranking per fold so predicted means exist for every observed
 # variety; top-3 overlap still uses only the first three ranked.
 _RANK_DEPTH = 500
@@ -56,6 +58,13 @@ class _Bucket:
         }
 
 
+_STRATEGIES = ("koppen", "v1", "v2", "hybrid")
+
+
+def _has_numeric_ranking(pred: dict[str, Any]) -> bool:
+    return any(r.get("mean_yield_kg_ha") is not None for r in pred.get("ranked_varieties", []))
+
+
 class Backtester:
     """Leave-one-site-out accuracy evaluation over measured trials."""
 
@@ -79,15 +88,56 @@ class Backtester:
                  coalesce(t.annualRainfallMmChelsa, t.annualRainfallMm) AS rainfall,
                  coalesce(t.annualET0MmChelsa, t.annualET0Mm) AS et0,
                  t.frostDaysPerYear AS frost, t.elevationM AS elevation,
+                 t.coldestMonthMinCChelsa AS coldest_min, t.annualTempCChelsa AS annual_temp,
                  v.varietyNormalized AS variety, avg(v.yieldKgHa) AS obs_mean
-            RETURN site, climate, crop, rainfall, et0, frost, elevation,
+            RETURN site, climate, crop, rainfall, et0, frost, elevation, coldest_min, annual_temp,
                    collect({variety: variety, obs: obs_mean}) AS observed
         """
         async with self._dao._driver.session() as session:
             result = await session.run(query)
             return [dict(r) async for r in result]
 
-    async def run(self, min_observed_varieties: int = 1) -> dict[str, Any]:
+    async def _predict(
+        self, strategy: str, fold: dict[str, Any], crop: str, climate: str, site: str,
+    ) -> dict[str, Any]:
+        base = {"crop": crop, "climate_class": climate, "top_n": _RANK_DEPTH,
+                "exclude_sites": [site]}
+        v2_target = {
+            "rainfall": fold["rainfall"], "et0": fold["et0"],
+            "coldest_min": fold.get("coldest_min"), "annual_temp": fold.get("annual_temp"),
+        }
+        if strategy == "v1":
+            return await self._dao.extrapolate_varieties(
+                **base,
+                target_features={
+                    "rainfall": fold["rainfall"], "et0": fold["et0"],
+                    "frost": fold["frost"], "elevation": fold["elevation"],
+                },
+            )
+        if strategy == "v2":
+            return await self._dao.extrapolate_varieties(
+                **base, target_features=v2_target, vector_version="v2",
+            )
+        pred = await self._dao.extrapolate_varieties(**base)  # Köppen path
+        if strategy == "hybrid" and not _has_numeric_ranking(pred) \
+                and agroclimatic.feature_vector_v2(
+                    v2_target["rainfall"], v2_target["et0"],
+                    v2_target["coldest_min"], v2_target["annual_temp"],
+                ) is not None:
+            pred = await self._dao.extrapolate_varieties(
+                **base, target_features=v2_target, vector_version="v2",
+            )
+        return pred
+
+    async def run(
+        self, min_observed_varieties: int = 1, strategy: str = "hybrid",
+    ) -> dict[str, Any]:
+        """strategy: koppen (no vector) | v1 | v2 | hybrid (koppen, then v2 if uncovered).
+
+        Default "hybrid" mirrors what the parcel API ships when enabled.
+        """
+        if strategy not in _STRATEGIES:
+            raise ValueError(f"unknown backtest strategy: {strategy!r}")
         folds = await self._folds()
 
         overall = _Bucket()
@@ -111,16 +161,7 @@ class Backtester:
             for b in (overall, crop_b, clim_b):
                 b.folds += 1
 
-            pred = await self._dao.extrapolate_varieties(
-                crop=crop,
-                climate_class=climate,
-                top_n=_RANK_DEPTH,
-                exclude_sites=[site],
-                target_features={
-                    "rainfall": fold["rainfall"], "et0": fold["et0"],
-                    "frost": fold["frost"], "elevation": fold["elevation"],
-                },
-            )
+            pred = await self._predict(strategy, fold, crop, climate, site)
             ranked = [
                 r for r in pred.get("ranked_varieties", [])
                 if r.get("mean_yield_kg_ha") is not None
@@ -145,6 +186,7 @@ class Backtester:
 
         return {
             "strategy": "leave_one_site_out",
+            "similarity": strategy,
             "eval_pool_observations": eval_pool,
             "overall": overall.summary(),
             "by_crop": {c: b.summary() for c, b in sorted(by_crop.items())},
