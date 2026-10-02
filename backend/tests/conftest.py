@@ -25,6 +25,13 @@ def _env():
 
 
 @pytest.fixture(autouse=True)
+def _clean_similarity_env(monkeypatch):
+    """Isolate tests from the developer shell; tests that need them set them."""
+    monkeypatch.delenv("AGROCLIMATIC_VECTOR", raising=False)
+    monkeypatch.delenv("CHELSA_PARCEL_CLIMATE_ENABLED", raising=False)
+
+
+@pytest.fixture(autouse=True)
 def _no_chelsa_network(request, monkeypatch):
     """Tests must never reach CHELSA unless marked `network`."""
     if request.node.get_closest_marker("network"):

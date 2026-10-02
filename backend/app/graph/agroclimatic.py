@@ -19,6 +19,10 @@ import math
 
 FEATURES: tuple[str, ...] = ("aridity", "rainfall", "frost", "elevation")
 
+# v2: CHELSA supplies the same four numbers for parcels and trial sites, so the
+# vector no longer needs frost days / elevation (which parcels never have).
+FEATURES_V2: tuple[str, ...] = ("aridity", "rainfall", "cold", "temp")
+
 # Normalized distances fall in [0, 1]; a same-Köppen site with no numeric vector is
 # kept but pushed beyond any real analog so it only fills coverage when nothing
 # closer exists.
@@ -31,6 +35,14 @@ DEFAULT_WEIGHTS: dict[str, float] = {
     "rainfall": 1.0,
     "frost": 1.0,
     "elevation": 0.5,
+}
+
+# ASSUMPTION: weights mirror v1 (aridity dominant); tuned only via the C.3 backtest.
+DEFAULT_WEIGHTS_V2: dict[str, float] = {
+    "aridity": 2.0,
+    "rainfall": 1.0,
+    "cold": 1.0,
+    "temp": 1.0,
 }
 
 
@@ -53,10 +65,32 @@ def feature_vector(
     }
 
 
-def normalize_bounds(vectors: list[dict[str, float] | None]) -> dict[str, tuple[float, float]]:
+def feature_vector_v2(
+    rainfall: float | None,
+    et0: float | None,
+    coldest_min: float | None,
+    annual_temp: float | None,
+) -> dict[str, float] | None:
+    """Build the v2 (CHELSA) vector, or None if any component is missing."""
+    if rainfall is None or et0 is None or coldest_min is None or annual_temp is None:
+        return None
+    if not et0:  # guard div-by-zero
+        return None
+    return {
+        "aridity": rainfall / et0,
+        "rainfall": float(rainfall),
+        "cold": float(coldest_min),
+        "temp": float(annual_temp),
+    }
+
+
+def normalize_bounds(
+    vectors: list[dict[str, float] | None],
+    features: tuple[str, ...] = FEATURES,
+) -> dict[str, tuple[float, float]]:
     """Per-feature (min, max) over the site population, for min-max normalization."""
     bounds: dict[str, tuple[float, float]] = {}
-    for f in FEATURES:
+    for f in features:
         vals = [v[f] for v in vectors if v is not None]
         bounds[f] = (min(vals), max(vals)) if vals else (0.0, 1.0)
     return bounds
@@ -67,6 +101,7 @@ def distance(
     candidate: dict[str, float],
     bounds: dict[str, tuple[float, float]],
     weights: dict[str, float] | None = None,
+    features: tuple[str, ...] = FEATURES,
 ) -> float:
     """Normalized weighted Euclidean distance in [0, ~1] between two vectors.
 
@@ -74,9 +109,9 @@ def distance(
     single feature (e.g. elevation in metres) dominates by unit magnitude.
     """
     w = weights or DEFAULT_WEIGHTS
-    total_w = sum(w[f] for f in FEATURES)
+    total_w = sum(w[f] for f in features)
     acc = 0.0
-    for f in FEATURES:
+    for f in features:
         lo, hi = bounds[f]
         span = (hi - lo) or 1.0
         tn = (target[f] - lo) / span

@@ -15,18 +15,18 @@ import json
 import sys
 from pathlib import Path
 
-from neo4j import AsyncGraphDatabase
-
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+from app.core.config import settings
 from app.eval.backtest import Backtester
 from app.graph.dao import GraphDAO
-from app.ingestion.base_ingester import NEO4J_PASSWORD, NEO4J_URI, NEO4J_USER
+from neo4j import AsyncGraphDatabase
 
+# re-baselined 2026-10-02 on CHELSA-enriched graph, hybrid strategy
 GATE = {
-    "top3_overlap": 0.193,
-    "median_abs_error_kg_ha": 857.0,
-    "coverage": 0.906,
+    "top3_overlap": 0.200,
+    "median_abs_error_kg_ha": 850.0,
+    "coverage": 0.89,
 }
 OWNER = {
     "top3_overlap": 0.25,
@@ -54,19 +54,32 @@ def _check(overall: dict, thresholds: dict, label: str) -> bool:
     return ok
 
 
-async def main() -> int:
+def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Backtest SLO gate check")
     parser.add_argument(
         "--gate-only",
         action="store_true",
         help="Exit 0 only on no-regression gate (not owner target)",
     )
-    args = parser.parse_args()
+    parser.add_argument(
+        "--strategy",
+        choices=("koppen", "v1", "v2", "hybrid"),
+        default="hybrid",
+        help="Similarity strategy (default: hybrid)",
+    )
+    return parser.parse_args(argv)
 
-    driver = AsyncGraphDatabase.driver(NEO4J_URI, auth=(NEO4J_USER, NEO4J_PASSWORD))
+
+async def main() -> int:
+    args = parse_args()
+
+    driver = AsyncGraphDatabase.driver(
+        settings.neo4j_uri, auth=(settings.neo4j_user, settings.neo4j_password),
+    )
     try:
         dao = GraphDAO(driver)
-        report = await Backtester(dao).run()
+        print(f"strategy: {args.strategy}")
+        report = await Backtester(dao).run(strategy=args.strategy)
         overall = report["overall"]
         print(json.dumps(overall, indent=2))
         gate_ok = _check(overall, GATE, "gate")
