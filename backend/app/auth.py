@@ -14,11 +14,10 @@ from collections.abc import Callable
 
 import jwt
 from jwt import PyJWKClient
+from nkz_platform_sdk.crypto import verify_hmac_signature
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import JSONResponse
-
-from nkz_platform_sdk.crypto import verify_hmac_signature
 
 from app.auth_policy import requires_identity
 from app.common.tenant_utils import normalize_tenant_id
