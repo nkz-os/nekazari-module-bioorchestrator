@@ -50,6 +50,25 @@ def _clear_cache():
     dao_mod._RECOMMEND_CACHE.clear()
 
 
+async def batch_via_per_crop(self, crops, similar_sites, irrigation_regime=None, top_n=10, **kw):
+    """Stand-in for extrapolate_varieties_batch over the (mocked) per-crop method.
+
+    The batch is defined as per-crop extrapolate_varieties; that equivalence is
+    proven on real Neo4j in tests/graph/test_extrapolate_batch.py.
+    """
+    return {c: (await self.extrapolate_varieties(
+        crop=c, irrigation_regime=irrigation_regime, top_n=top_n,
+        similar_sites_override=similar_sites, **kw))["ranked_varieties"]
+        for c in dict.fromkeys(crops)}
+
+
+@pytest.fixture(autouse=True)
+def _batch_via_per_crop():
+    from unittest.mock import patch
+    with patch.object(GraphDAO, "extrapolate_varieties_batch", batch_via_per_crop):
+        yield
+
+
 @pytest.fixture(autouse=True)
 def _shared_sites():
     """recommend_for_conditions looks similar sites up once; keep it off the fake driver."""

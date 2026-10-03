@@ -55,6 +55,79 @@ _CROP_MATCH_PREDICATE = (
     "(vt.cropEppo = $crop OR vt.cropScientific CONTAINS $crop "
     "OR toLower(vt.cropScientific) = toLower($crop))"
 )
+# Per-variety aggregation shared by extrapolate_varieties and its batched variant
+# (input rows: one per (vt, ts) match; output: top $top_n varieties). A single
+# definition keeps both paths' filters, weights, collect order and tie-breaking
+# identical.
+_EXTRAPOLATE_AGGREGATE_CYPHER = """
+                // Dedupe stage: collapse each trial to ONE row regardless of how
+                // many (same-name duplicate) sites it links to, so the numeric
+                // aggregations below count every trial exactly once (G2/G9 guard).
+                WITH vt.varietyNormalized AS variety, vt,
+                     collect(DISTINCT ts.name) AS trial_sites
+                // Per-trial weight = nearest analog site (C.1) × recency (C.4) ×
+                // water-regime match (C.4). $site_weights are 1.0 on the legacy
+                // path; with no target year/regime the extra factors are 1.0 too,
+                // so the weighted mean collapses to a flat average.
+                WITH variety, vt, trial_sites,
+                     reduce(mw = 0.0, n IN trial_sites |
+                        CASE WHEN coalesce($site_weights[n], 0.0) > mw
+                             THEN $site_weights[n] ELSE mw END) AS w_site
+                WITH variety, vt, trial_sites,
+                     w_site
+                     * (CASE WHEN vt.year IS NOT NULL AND (toFloat($now_year) - toFloat(vt.year)) > 0
+                             THEN 0.5 ^ ((toFloat($now_year) - toFloat(vt.year)) / $half_life)
+                             ELSE 1.0 END)
+                     * (CASE WHEN $target_regime IS NULL OR vt.irrigationRegime IS NULL
+                                  OR vt.irrigationRegime = $target_regime
+                             THEN 1.0 ELSE $regime_penalty END) AS w
+                WITH variety,
+                     collect(DISTINCT vt.year) AS years,
+                     collect(trial_sites) AS site_lists,
+                     collect(DISTINCT vt.irrigationRegime) AS irrigation_regimes,
+                     collect(DISTINCT vt.productionSystem) AS production_systems,
+                     collect(DISTINCT vt.diseaseScoresUnified) AS disease_scores_list,
+                     collect(DISTINCT vt.agronomicTraitsUnified) AS agronomic_traits_list,
+                     collect(DISTINCT vt.confidence) AS confidence_levels,
+                     collect(DISTINCT vt.source_id) AS source_ids,
+                     avg(vt.yieldKgHa) AS mean_yield_flat,
+                     sum(CASE WHEN vt.yieldKgHa IS NOT NULL THEN w * vt.yieldKgHa ELSE 0.0 END) AS wsum,
+                     sum(CASE WHEN vt.yieldKgHa IS NOT NULL THEN w ELSE 0.0 END) AS wtot,
+                     min(vt.yieldKgHa) AS min_yield,
+                     max(vt.yieldKgHa) AS max_yield,
+                     stDev(vt.yieldKgHa) AS stddev_yield,
+                     count(vt.yieldKgHa) AS numeric_yield_count,
+                     count(vt) AS trial_count,
+                     sum(CASE WHEN vt.yieldDerivationMethod IS NOT NULL THEN 1 ELSE 0 END) AS derived_count
+                WHERE trial_count >= 1
+                  AND ($irrigation_uri IS NULL OR $irrigation_uri IN irrigation_regimes)
+                  AND ($production_system IS NULL OR $production_system IN production_systems)
+                WITH variety,
+                     CASE WHEN wtot > 0 THEN wsum / wtot ELSE mean_yield_flat END AS mean_yield,
+                     min_yield, max_yield, stddev_yield,
+                     numeric_yield_count, trial_count, derived_count, years,
+                     reduce(acc = [], sl IN site_lists | acc + [x IN sl WHERE NOT x IN acc]) AS sites,
+                     irrigation_regimes, production_systems, disease_scores_list,
+                     agronomic_traits_list, confidence_levels, source_ids
+                RETURN variety,
+                       mean_yield,
+                       min_yield,
+                       max_yield,
+                       stddev_yield,
+                       numeric_yield_count,
+                       trial_count,
+                       derived_count,
+                       years,
+                       sites,
+                       irrigation_regimes,
+                       production_systems,
+                       disease_scores_list,
+                       agronomic_traits_list,
+                       confidence_levels,
+                       source_ids
+                ORDER BY mean_yield IS NULL, mean_yield DESC
+                LIMIT $top_n
+"""
 _MEDIAN_CACHE: dict[tuple[str, str | None], tuple[float, dict]] = {}
 _MEDIAN_TTL = 3600.0
 
@@ -1877,74 +1950,7 @@ class GraphDAO:
                       MATCH (vt)-[:TRIAL_AT]->(x:TrialSite)
                       WHERE toLower(x.name) IN $excluded_sites
                   })
-                // Dedupe stage: collapse each trial to ONE row regardless of how
-                // many (same-name duplicate) sites it links to, so the numeric
-                // aggregations below count every trial exactly once (G2/G9 guard).
-                WITH vt.varietyNormalized AS variety, vt,
-                     collect(DISTINCT ts.name) AS trial_sites
-                // Per-trial weight = nearest analog site (C.1) × recency (C.4) ×
-                // water-regime match (C.4). $site_weights are 1.0 on the legacy
-                // path; with no target year/regime the extra factors are 1.0 too,
-                // so the weighted mean collapses to a flat average.
-                WITH variety, vt, trial_sites,
-                     reduce(mw = 0.0, n IN trial_sites |
-                        CASE WHEN coalesce($site_weights[n], 0.0) > mw
-                             THEN $site_weights[n] ELSE mw END) AS w_site
-                WITH variety, vt, trial_sites,
-                     w_site
-                     * (CASE WHEN vt.year IS NOT NULL AND (toFloat($now_year) - toFloat(vt.year)) > 0
-                             THEN 0.5 ^ ((toFloat($now_year) - toFloat(vt.year)) / $half_life)
-                             ELSE 1.0 END)
-                     * (CASE WHEN $target_regime IS NULL OR vt.irrigationRegime IS NULL
-                                  OR vt.irrigationRegime = $target_regime
-                             THEN 1.0 ELSE $regime_penalty END) AS w
-                WITH variety,
-                     collect(DISTINCT vt.year) AS years,
-                     collect(trial_sites) AS site_lists,
-                     collect(DISTINCT vt.irrigationRegime) AS irrigation_regimes,
-                     collect(DISTINCT vt.productionSystem) AS production_systems,
-                     collect(DISTINCT vt.diseaseScoresUnified) AS disease_scores_list,
-                     collect(DISTINCT vt.agronomicTraitsUnified) AS agronomic_traits_list,
-                     collect(DISTINCT vt.confidence) AS confidence_levels,
-                     collect(DISTINCT vt.source_id) AS source_ids,
-                     avg(vt.yieldKgHa) AS mean_yield_flat,
-                     sum(CASE WHEN vt.yieldKgHa IS NOT NULL THEN w * vt.yieldKgHa ELSE 0.0 END) AS wsum,
-                     sum(CASE WHEN vt.yieldKgHa IS NOT NULL THEN w ELSE 0.0 END) AS wtot,
-                     min(vt.yieldKgHa) AS min_yield,
-                     max(vt.yieldKgHa) AS max_yield,
-                     stDev(vt.yieldKgHa) AS stddev_yield,
-                     count(vt.yieldKgHa) AS numeric_yield_count,
-                     count(vt) AS trial_count,
-                     sum(CASE WHEN vt.yieldDerivationMethod IS NOT NULL THEN 1 ELSE 0 END) AS derived_count
-                WHERE trial_count >= 1
-                  AND ($irrigation_uri IS NULL OR $irrigation_uri IN irrigation_regimes)
-                  AND ($production_system IS NULL OR $production_system IN production_systems)
-                WITH variety,
-                     CASE WHEN wtot > 0 THEN wsum / wtot ELSE mean_yield_flat END AS mean_yield,
-                     min_yield, max_yield, stddev_yield,
-                     numeric_yield_count, trial_count, derived_count, years,
-                     reduce(acc = [], sl IN site_lists | acc + [x IN sl WHERE NOT x IN acc]) AS sites,
-                     irrigation_regimes, production_systems, disease_scores_list,
-                     agronomic_traits_list, confidence_levels, source_ids
-                RETURN variety,
-                       mean_yield,
-                       min_yield,
-                       max_yield,
-                       stddev_yield,
-                       numeric_yield_count,
-                       trial_count,
-                       derived_count,
-                       years,
-                       sites,
-                       irrigation_regimes,
-                       production_systems,
-                       disease_scores_list,
-                       agronomic_traits_list,
-                       confidence_levels,
-                       source_ids
-                ORDER BY mean_yield IS NULL, mean_yield DESC
-                LIMIT $top_n
-                """,
+                """ + _EXTRAPOLATE_AGGREGATE_CYPHER,
                 site_names=similar_site_names,
                 crop=crop,
                 irrigation_uri=irrigation_uri,
@@ -1960,61 +1966,7 @@ class GraphDAO:
 
             ranked = []
             async for record in result:
-                # Merge disease scores across trials: take best (highest) per disease
-                merged_diseases: dict[str, dict] = {}
-                ds_list = record.get("disease_scores_list") or []
-                for ds_raw in ds_list:
-                    if not ds_raw:
-                        continue
-                    try:
-                        ds = json.loads(ds_raw) if isinstance(ds_raw, str) else ds_raw
-                        for dk, dv in ds.items():
-                            if isinstance(dv, dict) and dv.get("value") is not None \
-                                    and (dk not in merged_diseases or dv["value"] > merged_diseases[dk]["value"]):
-                                merged_diseases[dk] = dv
-                    except (json.JSONDecodeError, TypeError):
-                        pass
-
-                # Merge agronomic traits: take first non-null
-                merged_traits: dict[str, dict] = {}
-                at_list = record.get("agronomic_traits_list") or []
-                for at_raw in at_list:
-                    if not at_raw:
-                        continue
-                    try:
-                        at = json.loads(at_raw) if isinstance(at_raw, str) else at_raw
-                        for tk, tv in at.items():
-                            if tk not in merged_traits:
-                                merged_traits[tk] = tv
-                    except (json.JSONDecodeError, TypeError):
-                        pass
-
-                # Confidence provenance
-                conf_list = [c for c in (record.get("confidence_levels") or []) if c]
-                best_confidence = "high" if "high" in conf_list else ("medium" if "medium" in conf_list else (conf_list[0] if conf_list else None))
-
-                variety_name = record["variety"]
-                ranked.append({
-                    "variety": variety_name,
-                    "crop_uri": f"urn:ngsi-ld:AgriCrop:{crop}",
-                    "variety_uri": f"urn:ngsi-ld:AgriCrop:{crop}:{quote(str(variety_name), safe='')}",
-                    "mean_yield_kg_ha": round(record["mean_yield"], 1) if record["mean_yield"] else None,
-                    "min_yield_kg_ha": round(record["min_yield"], 1) if record["min_yield"] else None,
-                    "max_yield_kg_ha": round(record["max_yield"], 1) if record["max_yield"] else None,
-                    "stddev_yield_kg_ha": round(record["stddev_yield"], 1) if record["stddev_yield"] else None,
-                    "trial_count": record["trial_count"],
-                    "numeric_yield_count": record["numeric_yield_count"],
-                    "derived_trial_count": record["derived_count"],
-                    "yield_provenance": _yield_provenance(record["derived_count"], record["trial_count"]),
-                    "trial_years": sorted(record["years"]),
-                    "trial_sites": sorted(record["sites"]),
-                    "irrigation_regimes": record["irrigation_regimes"],
-                    "production_systems": record["production_systems"],
-                    "disease_scores": merged_diseases,
-                    "agronomic_traits": merged_traits,
-                    "confidence": best_confidence,
-                    "source_ids": sorted(s for s in (record.get("source_ids") or []) if s),
-                })
+                ranked.append(_ranked_variety(record, crop))
 
         # ── Soil-suitability gate (C.5) ────────────────────────────
         # Gate = crop STANDARD tolerance (CropSoilSuitability, EcoCrop) × the
@@ -2067,6 +2019,102 @@ class GraphDAO:
                 "similar_sites_count": len(similar_site_names),
             },
         }
+
+    async def extrapolate_varieties_batch(
+        self,
+        crops: list[str],
+        similar_sites: list[dict],
+        irrigation_regime: str | None = None,
+        top_n: int = 10,
+        exclude_sites: list[str] | None = None,
+        recency_half_life: float = 8.0,
+    ) -> dict[str, list[dict]]:
+        """``ranked_varieties`` of ``extrapolate_varieties`` for many crops in one query.
+
+        For each crop, the list equals ``extrapolate_varieties(crop,
+        similar_sites_override=similar_sites, irrigation_regime=..., top_n=...,
+        exclude_sites=..., recency_half_life=...)["ranked_varieties"]`` (no soil
+        gate, no parcel weather). The analog sites' trials are expanded once and
+        split by crop with the same predicate; each crop's rows then go, in the
+        same order, through the same aggregation (``_EXTRAPOLATE_AGGREGATE_CYPHER``)
+        and the same per-crop ORDER BY/LIMIT. Every requested crop is a key; a crop
+        without trials maps to ``[]``.
+        """
+        if not isinstance(similar_sites, list):
+            raise TypeError("similar_sites must be a list of site dicts")
+        crops = list(dict.fromkeys(crops))
+        out: dict[str, list[dict]] = {c: [] for c in crops}
+        irrigation_uri = _irrigation_uri(irrigation_regime)
+        site_names = [s["name"] for s in similar_sites]
+        site_weights = {
+            s["name"]: (1.0 / (1.0 + s["distance"]) if s.get("distance") is not None else 1.0)
+            for s in similar_sites
+        }
+        excluded_lower: list[str] | None = None
+        if exclude_sites:
+            excluded_lower = [s.lower() for s in exclude_sites]
+            _excluded = set(excluded_lower)
+            site_names = [n for n in site_names if n.lower() not in _excluded]
+        if not crops or not site_names:
+            return out
+
+        t0 = time.monotonic()
+        rows = 0
+        async with self._driver.session() as session:
+            result = await session.run(
+                """
+                MATCH (vt:VarietyTrial)-[:TRIAL_AT]->(ts:TrialSite)
+                WHERE ts.name IN $site_names
+                  AND (vt.yieldKgHa IS NOT NULL OR vt.yieldNoteS1 IS NOT NULL)
+                  AND coalesce(vt.rankingEligible, true) = true
+                  AND ($excluded_sites IS NULL OR NOT EXISTS {
+                      MATCH (vt)-[:TRIAL_AT]->(x:TrialSite)
+                      WHERE toLower(x.name) IN $excluded_sites
+                  })
+                // The per-crop plan walks the analog sites in ts.name index order
+                // (its collect(DISTINCT ts.name) leverages that order); reproduce
+                // it so each crop's rows arrive in the same order and tied
+                // means rank the same.
+                WITH vt, ts ORDER BY ts.name
+                // Same crop predicate as extrapolate_varieties, evaluated once per
+                // trial row for every requested crop.
+                WITH vt, ts, [c IN $crops WHERE
+                      vt.cropEppo = c
+                      OR vt.cropScientific CONTAINS c
+                      OR toLower(vt.cropScientific) = toLower(c)] AS matched
+                UNWIND matched AS crop
+                // collect keeps arrival (scan) order, so each crop's rows reach the
+                // aggregation in the order the per-crop query would see them.
+                WITH crop, collect({vt: vt, ts: ts}) AS hits
+                CALL (hits) {
+                  UNWIND hits AS h
+                  WITH h.vt AS vt, h.ts AS ts
+                """ + _EXTRAPOLATE_AGGREGATE_CYPHER + """
+                }
+                RETURN crop, variety, mean_yield, min_yield, max_yield, stddev_yield,
+                       numeric_yield_count, trial_count, derived_count, years, sites,
+                       irrigation_regimes, production_systems, disease_scores_list,
+                       agronomic_traits_list, confidence_levels, source_ids
+                """,
+                site_names=site_names,
+                crops=crops,
+                irrigation_uri=irrigation_uri,
+                production_system=None,  # mirrors extrapolate_varieties
+                top_n=top_n,
+                excluded_sites=excluded_lower,
+                site_weights=site_weights,
+                now_year=datetime.now(tz=timezone.utc).date().year,
+                half_life=recency_half_life,
+                target_regime=irrigation_uri,
+                regime_penalty=0.4,
+            )
+            async for record in result:
+                rows += 1
+                crop = record["crop"]
+                out[crop].append(_ranked_variety(record, crop))
+        logger.debug("extrapolate batch crops=%d sites=%d rows=%d elapsed_s=%.3f",
+                     len(crops), len(site_names), rows, time.monotonic() - t0)
+        return out
 
     async def get_trial_sites_summary(self) -> list[dict]:
         """Return all TrialSites with trial count summaries."""
@@ -3556,6 +3604,8 @@ class GraphDAO:
                         sowing = sowings[eppo]
                         if koppen_ok is not None and eppo not in koppen_ok:
                             result = {"ranked_varieties": []}  # no analog trials: nothing to extrapolate
+                        elif koppen_batch is not None:
+                            result = {"ranked_varieties": koppen_batch[eppo]}
                         else:
                             t_crop = time.monotonic()
                             result = await _extrapolate(eppo, similar_sites_override=koppen_sites)
@@ -3682,6 +3732,24 @@ class GraphDAO:
                 medians = None
             logger.debug("recommend stage=medians crops=%d elapsed_s=%.3f", len(candidates),
                          time.monotonic() - t_med)
+
+            # Köppen extrapolation for every evaluated crop in ONE query: the analog
+            # sites' trials are scanned once instead of once per crop. Same result
+            # per crop as extrapolate_varieties; on failure each crop falls back to it.
+            koppen_batch: dict[str, list[dict]] | None = None
+            batch_crops = [c["eppo_code"] for c in crop_entries
+                           if koppen_ok is None or c["eppo_code"] in koppen_ok]
+            if koppen_sites is not None and batch_crops:
+                t_batch = time.monotonic()
+                try:
+                    koppen_batch = await self.extrapolate_varieties_batch(
+                        batch_crops, koppen_sites, irrigation_regime=irrigation_regime, top_n=5,
+                    )
+                except Exception as e:  # noqa: BLE001
+                    logger.warning("recommend: batched extrapolation failed (%s); per-crop fallback",
+                                   type(e).__name__)
+                logger.debug("recommend stage=extrapolate_koppen_batch crops=%d elapsed_s=%.3f",
+                             len(batch_crops), time.monotonic() - t_batch)
 
             t_eval = time.monotonic()
             results = await asyncio.gather(*(_eval_one(c) for c in crop_entries))
@@ -5112,6 +5180,65 @@ class GraphDAO:
         async with self._driver.session() as session:
             await session.run(f"MATCH (r:ActionRule {{id: $id}}) SET {', '.join(sets)}", **params)
         return {"status": "updated", "id": rule_id}
+
+
+def _ranked_variety(record: Any, crop: str) -> dict:
+    """Map one aggregated extrapolation row to the ranked-variety dict."""
+    # Merge disease scores across trials: take best (highest) per disease
+    merged_diseases: dict[str, dict] = {}
+    ds_list = record.get("disease_scores_list") or []
+    for ds_raw in ds_list:
+        if not ds_raw:
+            continue
+        try:
+            ds = json.loads(ds_raw) if isinstance(ds_raw, str) else ds_raw
+            for dk, dv in ds.items():
+                if isinstance(dv, dict) and dv.get("value") is not None \
+                        and (dk not in merged_diseases or dv["value"] > merged_diseases[dk]["value"]):
+                    merged_diseases[dk] = dv
+        except (json.JSONDecodeError, TypeError):
+            pass
+
+    # Merge agronomic traits: take first non-null
+    merged_traits: dict[str, dict] = {}
+    at_list = record.get("agronomic_traits_list") or []
+    for at_raw in at_list:
+        if not at_raw:
+            continue
+        try:
+            at = json.loads(at_raw) if isinstance(at_raw, str) else at_raw
+            for tk, tv in at.items():
+                if tk not in merged_traits:
+                    merged_traits[tk] = tv
+        except (json.JSONDecodeError, TypeError):
+            pass
+
+    # Confidence provenance
+    conf_list = [c for c in (record.get("confidence_levels") or []) if c]
+    best_confidence = "high" if "high" in conf_list else ("medium" if "medium" in conf_list else (conf_list[0] if conf_list else None))
+
+    variety_name = record["variety"]
+    return {
+        "variety": variety_name,
+        "crop_uri": f"urn:ngsi-ld:AgriCrop:{crop}",
+        "variety_uri": f"urn:ngsi-ld:AgriCrop:{crop}:{quote(str(variety_name), safe='')}",
+        "mean_yield_kg_ha": round(record["mean_yield"], 1) if record["mean_yield"] else None,
+        "min_yield_kg_ha": round(record["min_yield"], 1) if record["min_yield"] else None,
+        "max_yield_kg_ha": round(record["max_yield"], 1) if record["max_yield"] else None,
+        "stddev_yield_kg_ha": round(record["stddev_yield"], 1) if record["stddev_yield"] else None,
+        "trial_count": record["trial_count"],
+        "numeric_yield_count": record["numeric_yield_count"],
+        "derived_trial_count": record["derived_count"],
+        "yield_provenance": _yield_provenance(record["derived_count"], record["trial_count"]),
+        "trial_years": sorted(record["years"]),
+        "trial_sites": sorted(record["sites"]),
+        "irrigation_regimes": record["irrigation_regimes"],
+        "production_systems": record["production_systems"],
+        "disease_scores": merged_diseases,
+        "agronomic_traits": merged_traits,
+        "confidence": best_confidence,
+        "source_ids": sorted(s for s in (record.get("source_ids") or []) if s),
+    }
 
 
 def _yield_provenance(derived_count: int | None, trial_count: int | None) -> str:

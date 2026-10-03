@@ -9,6 +9,7 @@ from app.auth_policy import requires_identity
 from app.core.dependencies import get_neo4j_driver
 from app.graph.dao import GraphDAO
 from app.main import app
+from tests.test_recommend_dao import _batch_via_per_crop  # noqa: F401 (autouse fixture)
 
 OK = {"status": "ok", "conditions": {}, "recommendations": [], "data_quality": {}}
 URN = "urn:ngsi-ld:AgriParcel:p1"
