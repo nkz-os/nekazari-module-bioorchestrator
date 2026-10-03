@@ -15,11 +15,7 @@ import { resolveDoor, pickDefaultDoor, hasAssignedCrop, type Door } from './util
 import './i18n';
 
 const CropManagement = lazy(() => import('./components/CropManagement'));
-const CropPlanner = lazy(() => import('./components/CropPlanner'));
-const VarietyFinder = lazy(() => import('./components/VarietyFinder'));
 const ParcelHealth = lazy(() => import('./components/ParcelHealth'));
-const CropComparator = lazy(() => import('./components/CropComparator'));
-const RotationPlanner = lazy(() => import('./components/RotationPlanner'));
 const WaterBudget = lazy(() => import('./components/WaterBudget'));
 const RegenerativeSequence = lazy(() => import('./components/RegenerativeSequence'));
 const CropCatalog = lazy(() => import('./components/CropCatalog'));
@@ -41,11 +37,7 @@ const BreedDiscovery = lazy(() => import('./components/DADIS/BreedDiscovery').th
 
 const TOOL_MAP: Record<string, React.LazyExoticComponent<React.ComponentType<any>>> = {
   cropManagement: CropManagement,
-  cropPlanner: CropPlanner,
-  varietyFinder: VarietyFinder,
   parcelStatus: ParcelHealth,
-  comparator: CropComparator,
-  rotationPlanner: RotationPlanner,
   waterBudget: WaterBudget,
   regenerative: RegenerativeSequence,
   yieldProjection: YieldProjection,
@@ -95,7 +87,7 @@ class ToolErrorBoundary extends Component<
   }
 }
 
-function ToolView({ toolId, onBack, onNavigateTool }: { toolId: string; onBack: () => void; onNavigateTool: (id: string) => void }) {
+function ToolView({ toolId, onBack }: { toolId: string; onBack: () => void }) {
   const { t } = useTranslation('bioorchestrator');
   const ToolComponent = TOOL_MAP[toolId];
 
@@ -108,8 +100,6 @@ function ToolView({ toolId, onBack, onNavigateTool }: { toolId: string; onBack: 
     );
   }
 
-  const extraProps = toolId === 'cropPlanner' ? { onNavigateTool } : {};
-
   return (
     <Stack gap="section">
       <Button variant="ghost" onClick={onBack} leadingIcon={<ArrowLeft className="w-4 h-4" />}>
@@ -117,7 +107,7 @@ function ToolView({ toolId, onBack, onNavigateTool }: { toolId: string; onBack: 
       </Button>
       <Suspense fallback={<Spinner size="lg" />}>
         <ToolErrorBoundary fallback={<ToolErrorFallback toolId={toolId} onBack={onBack} />}>
-          <ToolComponent {...extraProps} />
+          <ToolComponent />
         </ToolErrorBoundary>
       </Suspense>
     </Stack>
@@ -220,7 +210,7 @@ function AppInner() {
             doorPending={doorPending}
           />
         ) : (
-          <ToolView toolId={toolId} onBack={handleBack} onNavigateTool={handleSelectTool} />
+          <ToolView toolId={toolId} onBack={handleBack} />
         )}
 
         <DisclaimerFooter />

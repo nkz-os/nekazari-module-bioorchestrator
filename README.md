@@ -82,9 +82,7 @@ All parameters carry **full scientific provenance** (`sourceType`: global_standa
 
 | Tool | Description |
 |------|-------------|
-| **Variety Finder** | Rank varieties by climate, soil, yield — extrapolated from Neo4j trial data |
-| **Crop Comparator** | Side-by-side agronomic, environmental, and economic comparison with forage value and market maturity |
-| **Rotation Planner** | Multi-year rotation with N balance, C fixation, pest risk, **PAC compliance score** (eco-schemes) |
+| **What to sow** | Ranked crop and variety recommendations by climate, soil and trial data, with side-by-side comparison |
 | **Parcel Health** | Real-time CWSI/MDS/water balance from Crop-Health module with historical chart |
 | **Water Budget** | ETc × Kc irrigation demand using real ET0 from timeseries-reader |
 | **Regenerative Sequence** | Cover crop → protein crop design with N fixation, water balance, **carbon projection** (SOC, CO₂e, €) |
@@ -134,7 +132,7 @@ Adding a crop to BioOrchestrator is not a single database entry; it requires pop
 
 4. **Edaphoclimatic Ranges (GAEZ / EcoCrop)**
    - **Where**: Neo4j (`CropHeatTol.`, `SoilSuitability`)
-   - **Role**: Establishes physical survival limits (Base temperature for GDD, frost tolerance, optimal pH, salinity limits). It acts as the red light for the `CropPlanner` to warn against planting in unsuitable environments.
+   - **Role**: Establishes physical survival limits (Base temperature for GDD, frost tolerance, optimal pH, salinity limits). It acts as the red light for the "What to sow" recommender to warn against planting in unsuitable environments.
 
 5. **Pest & Disease Catalog (Host-Pathogen Map)**
    - **Where**: EPPO API / Neo4j

@@ -2,36 +2,10 @@
   "app": {
     "title": "BioOrchestrator",
     "subtitle": "Predict, compare, and plan — agronomic intelligence backed by trial data from similar environments.",
-    "tabs": {
-      "sources": "Sources de données",
-      "pipeline": "Pipeline",
-      "phenology": "Phénologie",
-      "dadis": "Explorateur DAD-IS",
-      "regenerative": "Séq. Régénérative",
-      "alerts": "Alertes",
-      "organic": "Intrants Bio"
-    },
-    "sections": {
-      "predictEvaluate": "Predict & Evaluate",
-      "comparePlan": "Compare & Plan",
-      "knowledgeBase": "Knowledge Base"
-    },
     "cards": {
-      "varietyFinder": {
-        "title": "Variety Finder",
-        "subtitle": "Best-adapted varieties for your parcel, climate and soil. Ranked by yield from similar trial sites."
-      },
       "parcelStatus": {
         "title": "Current Parcel Status",
         "subtitle": "Real-time crop stress, water balance, and active alerts from sensor and satellite data."
-      },
-      "comparator": {
-        "title": "Crop Comparator",
-        "subtitle": "Side-by-side crop comparison for your parcel: yield potential, margin, carbon score."
-      },
-      "rotationPlanner": {
-        "title": "Rotation Planner",
-        "subtitle": "Multi-year rotation design with CAP compliance scoring."
       },
       "waterBudget": {
         "title": "Water Budget",
@@ -351,35 +325,6 @@
     "retry": "Retry",
     "deprecatedSoilNote": "Deprecated data — coming soon from Soil module",
     "title": "Recommandations"
-  },
-  "rotationOptimizer": {
-    "title": "Optimiseur de rotation",
-    "optimize": "Optimiser",
-    "constraints": "Contraintes",
-    "glutenFree": "Sans gluten uniquement",
-    "priorities": "Priorités par année",
-    "year": "Année {{n}}",
-    "yearsShort": "{{n}}a",
-    "protein": "Protéine",
-    "carbon": "Carbone",
-    "nitrogen": "Azote",
-    "margin": "Marge",
-    "yield": "Rendement",
-    "coverCrop": "Culture de couverture",
-    "cashCrop": "Culture principale",
-    "alternatives": "Voir les alternatives",
-    "cumulative": "Cumulé",
-    "lockedYear": "Verrouillé",
-    "unlock": "Déverrouiller",
-    "scores": "Score"
-  },
-  "planning": {
-    "rotationTitle": "Rotation PAC (4 ans)",
-    "addToRotation": "Ajouter à la rotation",
-    "managementAny": "Tout",
-    "managementConventional": "Conventionnel",
-    "managementOrganic": "Biologique",
-    "glutenFreeOnly": "Sans gluten uniquement"
   },
   "disclaimer": {
     "text": "Les recommandations sont basées sur des modèles agronomiques et des données scientifiques tierces. Elles ne remplacent pas le jugement professionnel. Consultez votre technicien agricole local avant de prendre des décisions de culture."

@@ -2,43 +2,7 @@
   "app": {
     "title": "BioOrchestrator",
     "subtitle": "Predict, compare, and plan — agronomic intelligence backed by trial data from similar environments.",
-    "groups": {
-      "parcel": "My Parcel",
-      "reference": "Reference Data"
-    },
-    "tabs": {
-      "sources": "Data sources",
-      "pipeline": "Pipeline",
-      "phenology": "Phenology",
-      "dadis": "DAD-IS Explorer",
-      "varietyFinder": "Variety Finder",
-      "comparator": "Comparator",
-      "rotationPlan": "Rotation Plan",
-      "parcelHealth": "Parcel Health",
-      "waterBudget": "Water Budget",
-      "regenerative": "Regen. Sequence",
-      "alerts": "Alerts",
-      "catalog": "Catalog",
-      "thermal": "Thermal",
-      "npk": "NPK",
-      "soil": "Soil",
-      "rotation": "Rotation",
-      "organic": "Organic Inputs",
-      "climate": "Climate Map"
-    },
-    "sections": {
-      "predictEvaluate": "Predict & Evaluate",
-      "comparePlan": "Compare & Plan",
-      "knowledgeBase": "Knowledge Base"
-    },
     "hubs": {
-      "navLabel": "BioOrchestrator hubs",
-      "planning": "Planning",
-      "campaign": "Campaign",
-      "codex": "Codex",
-      "planningDescription": "Choose crops and varieties before sowing.",
-      "campaignDescription": "Monitor stress, yield trajectory, and irrigation during the season.",
-      "codexDescription": "Browse species parameters, trials, and reference data.",
       "activeCampaign": "Active crop: {{crop}}",
       "noCampaign": "No crop assigned on this parcel",
       "alertsAwareness": "{{count}} active alert(s) — see platform notifications"
@@ -48,25 +12,9 @@
         "title": "Crop Management",
         "subtitle": "Assign and manage the crop for this parcel."
       },
-      "cropPlanner": {
-        "title": "Recommend crops",
-        "subtitle": "Analyze your parcel to find the best crops for winter and summer."
-      },
-      "varietyFinder": {
-        "title": "Variety Finder",
-        "subtitle": "Best-adapted varieties for your parcel, climate and soil. Ranked by yield from similar trial sites."
-      },
       "parcelStatus": {
         "title": "Current Parcel Status",
         "subtitle": "Real-time crop stress, water balance, and active alerts from sensor and satellite data."
-      },
-      "comparator": {
-        "title": "Crop Comparator",
-        "subtitle": "Side-by-side crop comparison for your parcel: yield potential, margin, carbon score."
-      },
-      "rotationPlanner": {
-        "title": "Rotation Planner",
-        "subtitle": "Multi-year rotation design with CAP compliance scoring."
       },
       "waterBudget": {
         "title": "Water Budget",
@@ -141,17 +89,6 @@
         "rotationViolation": "Rotation constraint",
         "dataGaps": "Missing data (alternative crop)"
       },
-      "rotationOptimizer": {
-        "constraints": "Constraints",
-        "glutenFree": "Gluten-free only",
-        "priorities": "Priorities per year",
-        "year": "Year {{n}}",
-        "optimize": "Optimize",
-        "coverCrop": "Cover crop",
-        "cashCrop": "Cash crop",
-        "lockedYear": "Locked",
-        "cumulative": "Cumulative"
-      },
       "yieldProjection": {
         "title": "Yield Projection",
         "subtitle": "Yield estimates from trial data and stress-corrected in-campaign projections."
@@ -163,12 +100,6 @@
     },
     "backToDashboard": "← Back to dashboard",
     "selectParcelPrompt": "Select a parcel above to get started",
-    "advanced": {
-      "title": "Advanced tools",
-      "subtitle": "Scientific reference, data sources and technical tools",
-      "expand": "Show advanced tools",
-      "collapse": "Hide advanced tools"
-    },
     "expertMode": "Expert mode",
     "doors": {
       "navLabel": "BioOrchestrator sections",
@@ -227,31 +158,8 @@
     "biomass": "Biomass"
   },
   "varietyFinder": {
-    "title": "Variety Finder",
-    "crop": "Crop",
-    "climate": "Climate",
-    "soil": "Soil",
-    "optional": "optional",
-    "search": "Search species...",
-    "selectCrop": "Select crop",
     "selectParcel": "Select parcel",
-    "selectParcelDesc": "Choose a parcel to use its environment for variety recommendations",
-    "targetEnvironment": "Target environment",
-    "similarSites": "Similar sites",
-    "rankedVarieties": "Ranked varieties",
-    "noResults": "No varieties found for this selection",
-    "variety": "Variety",
-    "meanYield": "Mean yield",
-    "trials": "Trials",
-    "sites": "Sites",
-    "anySoil": "Any soil type",
-    "noDataAvailable": "No data available for this species yet",
-    "diseaseResistance": "Resistance",
-    "traits": "Traits",
-    "confidence": "Confidence",
-    "assign": "Assign",
-    "actions": "Actions",
-    "assigned": "{{variety}} assigned to {{parcel}}"
+    "meanYield": "Mean yield"
   },
   "climateExplorer": {
     "legend": "Köppen-Geiger Classification",
@@ -567,25 +475,7 @@
     "lowCoverage": "Only {{count}} rotation rules registered. Most crops lack data."
   },
   "rotationPlanner": {
-    "title": "Rotation Planner",
-    "selectParcel": "Select parcel...",
-    "years": "Years",
-    "economicInputs": "Economic parameters",
-    "calculate": "Calculate Rotation",
-    "year": "Year",
-    "cumulative": "Cumulative",
-    "yearsLabel": "years",
-    "pac": {
-      "title": "PAC Compliance",
-      "score": "Compliance Score",
-      "rule": {
-        "cover_on_slope": "Winter cover on slopes >10%",
-        "natura2000_buffer": "Natura 2000 protection buffer",
-        "crop_diversity": "Crop diversity (≥2 crops)",
-        "winter_cover": "Winter soil cover",
-        "pesticide_limits": "Pesticide limits"
-      }
-    }
+    "title": "Rotation Planner"
   },
   "panel": {
     "noCrop": "This parcel has no crop assigned. Assign one to see agronomic recommendations.",
@@ -676,75 +566,6 @@
   "common": {
     "loading": "Loading..."
   },
-  "planning": {
-    "recommendCrops": "Recommend crops",
-    "assignCrop": "Assign this crop",
-    "addToRotation": "Add to rotation plan",
-    "seasonWinter": "Winter crop",
-    "seasonSummer": "Summer crop",
-    "seasonAll": "All campaigns",
-    "filtersTitle": "Growing conditions",
-    "irrigationInferred": "Irrigation inferred from parcel",
-    "irrigationOverride": "Change water regime",
-    "noSuggestions": "No trial data for this parcel profile",
-    "yieldUnitKgHa": "kg/ha",
-    "yieldUnitTHa": "t/ha",
-    "pricePerKg": "€/kg",
-    "pricePerT": "€/t",
-    "marginPerHa": "Net margin €/ha",
-    "marginParcel": "Net margin (parcel)",
-    "viewVarieties": "View varieties",
-    "rotationTitle": "PAC Rotation (4 years)",
-    "trustHigh": "High confidence",
-    "trustMedium": "Medium confidence",
-    "trustLow": "Low confidence",
-    "trustWhy": "Why this recommendation?",
-    "trustTrials": "{{count}} trials analyzed",
-    "trustSites": "{{count}} similar environments",
-    "trustOrganicWarning": "Conventional trial data — estimated organic yield",
-    "trustDataGap": "Limited data for this profile",
-    "postAssignHealth": "View parcel health",
-    "postAssignWater": "Water budget",
-    "npkGapTitle": "Indicative NPK balance",
-    "npkDisclaimer": "Estimate based on soil and crop demand — does not replace field analysis",
-    "pestRiskTitle": "Shared pest risk",
-    "rotationWarning": "Rotation constraint",
-    "managementAny": "Any",
-    "managementConventional": "Conventional",
-    "managementOrganic": "Organic",
-    "glutenFreeOnly": "Gluten-free only"
-  },
-  "rotationOptimizer": {
-    "title": "Rotation optimizer",
-    "subtitle": "Plan a multi-year rotation that maximizes your objectives.",
-    "tabLabel": "Optimize",
-    "constraints": "Constraints",
-    "glutenFree": "Gluten-free only",
-    "priorities": "Priorities per year",
-    "year": "Year {{n}}",
-    "yearsShort": "{{n}}y",
-    "protein": "Protein",
-    "carbon": "Carbon",
-    "nitrogen": "Nitrogen",
-    "margin": "Margin",
-    "yield": "Yield",
-    "optimize": "Optimize",
-    "coverCrop": "Cover crop",
-    "cashCrop": "Cash crop",
-    "rollerCrimper": "Mechanical termination (roller crimper)",
-    "alternatives": "View alternatives",
-    "cumulative": "Cumulative",
-    "totalProtein": "kg protein",
-    "totalCarbon": "Total carbon",
-    "totalNitrogen": "kg N fixed",
-    "nPool": "Final N pool",
-    "proteinUnit": "kg protein",
-    "noValidRotation": "No valid rotation found with these constraints.",
-    "lockedYear": "Locked",
-    "unlock": "Unlock",
-    "scores": "Score",
-    "proteinSource": "Source: {{source}}"
-  },
   "yieldProjection": {
     "title": "Yield Projection",
     "subtitle": "Yield estimates from trial data (Phase A) and stress-corrected in-campaign projections (Phase B).",
@@ -826,7 +647,7 @@
     "selectParcel": "Select parcel...",
     "selectPrompt": "Select a parcel to view its health status",
     "noCrop": "No crop assigned to this parcel yet.",
-    "goToVarietyFinder": "Go to Variety Finder to assign a crop variety first.",
+    "goToVarietyFinder": "Go to What to sow to choose and assign a crop variety first.",
     "error": "Could not load health data",
     "crop": "Crop",
     "variety": "Variety",
@@ -860,23 +681,6 @@
     "irrigationRequired": "Irrigation required",
     "recommendation": "Recommendation",
     "confidence": "Confidence"
-  },
-  "comparator": {
-    "title": "Crop Comparator",
-    "selectParcel": "Select parcel...",
-    "selectCrops": "Crops to compare",
-    "economicInputs": "Economic parameters",
-    "optional": "optional — defaults to 1 (purely agronomic ranking)",
-    "seedPrice": "Seed cost",
-    "harvestPrice": "Harvest price",
-    "operationCost": "Cost/operation",
-    "compare": "Compare",
-    "crop": "Crop",
-    "variety": "Top variety",
-    "score": "Score",
-    "soil": "Soil",
-    "defaultPricesNote": "Prices set to default (1). Economic margins equal agronomic yield. Enter real prices for economic comparison.",
-    "scoreNote": "Score = weighted rank (yield 40% + margin 30% + carbon 20% + soil 10%)"
   },
   "disclaimer": {
     "text": "Recommendations are based on agronomic models and third-party scientific data. They do not replace professional judgment. Consult your local agricultural technician before making crop decisions."
@@ -917,7 +721,6 @@
     "ZEAMX": "Maize"
   },
   "onboarding": {
-    "varietyFinder": "Find the best crop varieties for your climate and soil. We analyze trial data from environments similar to yours and rank varieties by yield performance.",
     "climateExplorer": "Each point is a trial site colored by its Köppen-Geiger climate zone. Click a point to see its details. Use this to find sites with climates similar to your farm.",
     "phenologyBrowser": "Crop coefficients (Kc, D1, D2, MDS) describe how a crop uses water at each growth stage. These values come from published scientific research.",
     "rotationConstraints": "Some crops cannot be planted after others due to shared pests, diseases, or soil depletion. These rules come from FAO guidelines and scientific literature.",

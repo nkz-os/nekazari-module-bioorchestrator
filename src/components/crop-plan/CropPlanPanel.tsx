@@ -111,7 +111,7 @@ const CropPlanPanel: React.FC<Props> = ({ entityData }) => {
   }, [plan, bio]);
 
   const handleCreatePlan = useCallback(() => {
-    navigate(buildBioorchestratorToolUrl(parcelId, 'cropPlanner'));
+    navigate(buildBioorchestratorToolUrl(parcelId, 'whatToSow'));
   }, [navigate, parcelId]);
 
   if (!parcelId) return null;

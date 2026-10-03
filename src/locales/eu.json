@@ -2,36 +2,10 @@
   "app": {
     "title": "BioOrchestrator",
     "subtitle": "Predict, compare, and plan — agronomic intelligence backed by trial data from similar environments.",
-    "tabs": {
-      "sources": "Datu-iturriak",
-      "pipeline": "Pipeline",
-      "phenology": "Fenologia",
-      "dadis": "DAD-IS Arakatzailea",
-      "regenerative": "Sek. Birsortzailea",
-      "alerts": "Alertak",
-      "organic": "Input Organikoak"
-    },
-    "sections": {
-      "predictEvaluate": "Predict & Evaluate",
-      "comparePlan": "Compare & Plan",
-      "knowledgeBase": "Knowledge Base"
-    },
     "cards": {
-      "varietyFinder": {
-        "title": "Variety Finder",
-        "subtitle": "Best-adapted varieties for your parcel, climate and soil. Ranked by yield from similar trial sites."
-      },
       "parcelStatus": {
         "title": "Current Parcel Status",
         "subtitle": "Real-time crop stress, water balance, and active alerts from sensor and satellite data."
-      },
-      "comparator": {
-        "title": "Crop Comparator",
-        "subtitle": "Side-by-side crop comparison for your parcel: yield potential, margin, carbon score."
-      },
-      "rotationPlanner": {
-        "title": "Rotation Planner",
-        "subtitle": "Multi-year rotation design with CAP compliance scoring."
       },
       "waterBudget": {
         "title": "Water Budget",
@@ -351,35 +325,6 @@
     "retry": "Retry",
     "deprecatedSoilNote": "Deprecated data — coming soon from Soil module",
     "title": "Gomendiosk"
-  },
-  "rotationOptimizer": {
-    "title": "Errotazio optimizatzailea",
-    "optimize": "Optimizatu",
-    "constraints": "Mugak",
-    "glutenFree": "Glutenik gabe soilik",
-    "priorities": "Urteko lehentasunak",
-    "year": "{{n}}. urtea",
-    "yearsShort": "{{n}}u",
-    "protein": "Proteina",
-    "carbon": "Karbono",
-    "nitrogen": "Nitrogeno",
-    "margin": "Marjina",
-    "yield": "Emanaldia",
-    "coverCrop": "Estalki kultura",
-    "cashCrop": "Kultura nagusia",
-    "alternatives": "Ikusi alternatibak",
-    "cumulative": "Metatua",
-    "lockedYear": "Blokeatua",
-    "unlock": "Desblokeatu",
-    "scores": "Puntuazioa"
-  },
-  "planning": {
-    "rotationTitle": "PAC errotazioa (4 urte)",
-    "addToRotation": "Errotaziora gehitu",
-    "managementAny": "Edozein",
-    "managementConventional": "Konbentzionala",
-    "managementOrganic": "Ekologikoa",
-    "glutenFreeOnly": "Glutenik gabe soilik"
   },
   "disclaimer": {
     "text": "Recommendations are based on agronomic models and third-party scientific data. They do not replace professional judgment. Consult your local agricultural technician before making crop decisions."

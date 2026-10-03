@@ -2,43 +2,7 @@
   "app": {
     "title": "BioOrchestrator",
     "subtitle": "Predice, compara y planifica — inteligencia agronómica respaldada por datos de ensayos en entornos similares.",
-    "groups": {
-      "parcel": "Mi Parcela",
-      "reference": "Datos de Referencia"
-    },
-    "tabs": {
-      "sources": "Fuentes de datos",
-      "pipeline": "Pipeline",
-      "phenology": "Fenología",
-      "dadis": "Explorador DAD-IS",
-      "varietyFinder": "Buscador de variedades",
-      "comparator": "Comparador",
-      "rotationPlan": "Plan Rotación",
-      "parcelHealth": "Salud Parcela",
-      "waterBudget": "Balance Hídrico",
-      "regenerative": "Sec. Regenerativa",
-      "alerts": "Alertas",
-      "catalog": "Catálogo",
-      "thermal": "Térmica",
-      "npk": "NPK",
-      "soil": "Suelo",
-      "rotation": "Rotación",
-      "organic": "Insumos Orgánicos",
-      "climate": "Mapa climático"
-    },
-    "sections": {
-      "predictEvaluate": "Predecir y Evaluar",
-      "comparePlan": "Comparar y Planificar",
-      "knowledgeBase": "Base de Conocimiento"
-    },
     "hubs": {
-      "navLabel": "Hubs de BioOrchestrator",
-      "planning": "Planificación",
-      "campaign": "Campaña",
-      "codex": "Codex",
-      "planningDescription": "Elige cultivos y variedades antes de la siembra.",
-      "campaignDescription": "Monitoriza estrés, proyección de rendimiento e riego durante la campaña.",
-      "codexDescription": "Consulta parámetros de especies, ensayos y datos de referencia.",
       "activeCampaign": "Cultivo activo: {{crop}}",
       "noCampaign": "Sin cultivo asignado en esta parcela",
       "alertsAwareness": "{{count}} alerta(s) activa(s) — ver notificaciones de la plataforma"
@@ -48,25 +12,9 @@
         "title": "Gestión de Cultivo",
         "subtitle": "Asigna y gestiona el cultivo de esta parcela."
       },
-      "cropPlanner": {
-        "title": "Recomendar cultivos",
-        "subtitle": "Analiza tu parcela para encontrar los mejores cultivos de invierno y verano."
-      },
-      "varietyFinder": {
-        "title": "Buscador de Variedades",
-        "subtitle": "Variedades mejor adaptadas para tu parcela, clima y suelo. Ordenadas por rendimiento en sitios similares."
-      },
       "parcelStatus": {
         "title": "Estado de la Parcela",
         "subtitle": "Estrés del cultivo en tiempo real, balance hídrico y alertas activas desde sensores y satélite."
-      },
-      "comparator": {
-        "title": "Comparador de Cultivos",
-        "subtitle": "Comparación lado a lado para tu parcela: rendimiento potencial, margen, carbono."
-      },
-      "rotationPlanner": {
-        "title": "Planificador de Rotación",
-        "subtitle": "Diseño de rotación multi-año con puntuación de cumplimiento PAC."
       },
       "waterBudget": {
         "title": "Balance Hídrico",
@@ -141,17 +89,6 @@
         "rotationViolation": "Restricción de rotación",
         "dataGaps": "Datos faltantes (cultivo alternativo)"
       },
-      "rotationOptimizer": {
-        "constraints": "Restricciones",
-        "glutenFree": "Sin gluten solamente",
-        "priorities": "Prioridades por año",
-        "year": "Año {{n}}",
-        "optimize": "Optimizar",
-        "coverCrop": "Cultivo de cobertura",
-        "cashCrop": "Cultivo principal",
-        "lockedYear": "Bloqueado",
-        "cumulative": "Acumulado"
-      },
       "yieldProjection": {
         "title": "Proyección de Rendimiento",
         "subtitle": "Estimaciones de rendimiento desde ensayos y proyecciones corregidas por estrés en campaña."
@@ -163,12 +100,6 @@
     },
     "backToDashboard": "← Volver al panel",
     "selectParcelPrompt": "Selecciona una parcela arriba para empezar",
-    "advanced": {
-      "title": "Herramientas avanzadas",
-      "subtitle": "Consulta científica, datos de referencia y herramientas técnicas",
-      "expand": "Mostrar herramientas avanzadas",
-      "collapse": "Ocultar herramientas avanzadas"
-    },
     "expertMode": "Modo experto",
     "doors": {
       "navLabel": "Secciones de BioOrchestrator",
@@ -227,31 +158,8 @@
     "biomass": "Biomasa"
   },
   "varietyFinder": {
-    "title": "Buscador de variedades",
-    "crop": "Cultivo",
-    "climate": "Clima",
-    "soil": "Suelo",
-    "optional": "opcional",
-    "search": "Buscar especie...",
-    "selectCrop": "Seleccionar cultivo",
     "selectParcel": "Seleccionar parcela",
-    "selectParcelDesc": "Elige una parcela para usar su entorno en las recomendaciones",
-    "targetEnvironment": "Entorno objetivo",
-    "similarSites": "Sitios similares",
-    "rankedVarieties": "Variedades ordenadas",
-    "noResults": "Sin variedades para esta selección",
-    "variety": "Variedad",
-    "meanYield": "Rendimiento medio",
-    "trials": "Ensayos",
-    "sites": "Sitios",
-    "anySoil": "Cualquier tipo de suelo",
-    "noDataAvailable": "Sin datos disponibles para esta especie",
-    "diseaseResistance": "Resistencia",
-    "traits": "Rasgos",
-    "confidence": "Confianza",
-    "assign": "Asignar",
-    "actions": "Acciones",
-    "assigned": "{{variety}} asignada a {{parcel}}"
+    "meanYield": "Rendimiento medio"
   },
   "climateExplorer": {
     "legend": "Clasificación Köppen-Geiger",
@@ -567,25 +475,7 @@
     "lowCoverage": "Solo {{count}} reglas de rotación registradas. La mayoría de cultivos no tienen datos."
   },
   "rotationPlanner": {
-    "title": "Planificador de Rotación",
-    "selectParcel": "Seleccionar parcela...",
-    "years": "Años",
-    "economicInputs": "Parámetros económicos",
-    "calculate": "Calcular Rotación",
-    "year": "Año",
-    "cumulative": "Acumulado",
-    "yearsLabel": "años",
-    "pac": {
-      "title": "Cumplimiento PAC",
-      "score": "Puntuación de Cumplimiento",
-      "rule": {
-        "cover_on_slope": "Cubierta invernal en pendientes >10%",
-        "natura2000_buffer": "Franja protección Natura 2000",
-        "crop_diversity": "Diversidad de cultivos (≥2)",
-        "winter_cover": "Cobertura del suelo en invierno",
-        "pesticide_limits": "Límites de fitosanitarios"
-      }
-    }
+    "title": "Planificador de Rotación"
   },
   "panel": {
     "noCrop": "Esta parcela no tiene un cultivo asignado. Asigna uno para ver recomendaciones agronómicas.",
@@ -676,75 +566,6 @@
   "common": {
     "loading": "Cargando..."
   },
-  "planning": {
-    "recommendCrops": "Recomendar cultivos",
-    "assignCrop": "Adjudicar cultivo",
-    "addToRotation": "Añadir a rotación",
-    "seasonWinter": "Cultivo de invierno",
-    "seasonSummer": "Cultivo de verano",
-    "seasonAll": "Todas las campañas",
-    "filtersTitle": "Condiciones de cultivo",
-    "irrigationInferred": "Riego inferido de la parcela",
-    "irrigationOverride": "Cambiar régimen hídrico",
-    "noSuggestions": "Sin datos de ensayo para este perfil",
-    "yieldUnitKgHa": "kg/ha",
-    "yieldUnitTHa": "t/ha",
-    "pricePerKg": "€/kg",
-    "pricePerT": "€/t",
-    "marginPerHa": "Margen neto €/ha",
-    "marginParcel": "Margen neto (parcela)",
-    "viewVarieties": "Ver variedades",
-    "rotationTitle": "Rotación PAC (4 años)",
-    "trustHigh": "Alta fiabilidad",
-    "trustMedium": "Fiabilidad media",
-    "trustLow": "Baja fiabilidad",
-    "trustWhy": "¿Por qué esta recomendación?",
-    "trustTrials": "{{count}} ensayos analizados",
-    "trustSites": "{{count}} entornos similares",
-    "trustOrganicWarning": "Datos de ensayo convencional — rendimiento ecológico estimado",
-    "trustDataGap": "Datos limitados para este perfil",
-    "postAssignHealth": "Ver salud de parcela",
-    "postAssignWater": "Balance hídrico",
-    "npkGapTitle": "Balance NPK orientativo",
-    "npkDisclaimer": "Estimación basada en suelo y demanda del cultivo — no sustituye análisis de campo",
-    "pestRiskTitle": "Riesgo de plagas compartidas",
-    "rotationWarning": "Restricción de rotación",
-    "managementAny": "Cualquiera",
-    "managementConventional": "Convencional",
-    "managementOrganic": "Ecológico",
-    "glutenFreeOnly": "Sin gluten solamente"
-  },
-  "rotationOptimizer": {
-    "title": "Optimizador de rotación",
-    "subtitle": "Planifica una rotación multi-año que maximice tus objetivos.",
-    "tabLabel": "Optimizar",
-    "constraints": "Restricciones",
-    "glutenFree": "Sin gluten solamente",
-    "priorities": "Prioridades por año",
-    "year": "Año {{n}}",
-    "yearsShort": "{{n}}a",
-    "protein": "Proteína",
-    "carbon": "Carbono",
-    "nitrogen": "Nitrógeno",
-    "margin": "Margen",
-    "yield": "Rendimiento",
-    "optimize": "Optimizar",
-    "coverCrop": "Cultivo de cobertura",
-    "cashCrop": "Cultivo principal",
-    "rollerCrimper": "Terminación mecánica (roller crimper)",
-    "alternatives": "Ver alternativas",
-    "cumulative": "Acumulado",
-    "totalProtein": "kg proteína",
-    "totalCarbon": "Carbono total",
-    "totalNitrogen": "kg N fijado",
-    "nPool": "N pool final",
-    "proteinUnit": "kg prot",
-    "noValidRotation": "No se encontró rotación válida con estas restricciones.",
-    "lockedYear": "Bloqueado",
-    "unlock": "Desbloquear",
-    "scores": "Puntuación",
-    "proteinSource": "Fuente: {{source}}"
-  },
   "yieldProjection": {
     "title": "Proyección de Rendimiento",
     "subtitle": "Estimaciones de rendimiento desde ensayos (Fase A) y proyecciones corregidas por estrés en campaña (Fase B).",
@@ -826,7 +647,7 @@
     "selectParcel": "Seleccionar parcela...",
     "selectPrompt": "Selecciona una parcela para ver su estado de salud",
     "noCrop": "Esta parcela no tiene cultivo asignado.",
-    "goToVarietyFinder": "Ve al Buscador de Variedades para asignar un cultivo primero.",
+    "goToVarietyFinder": "Ve a ¿Qué siembro? para elegir y asignar un cultivo primero.",
     "error": "No se pudo cargar los datos de salud",
     "crop": "Cultivo",
     "variety": "Variedad",
@@ -858,23 +679,6 @@
     "forecast": "Previsión",
     "deficit": "Déficit",
     "irrigationRequired": "Riego necesario"
-  },
-  "comparator": {
-    "title": "Comparador de Cultivos",
-    "selectParcel": "Seleccionar parcela...",
-    "selectCrops": "Cultivos a comparar",
-    "economicInputs": "Parámetros económicos",
-    "optional": "opcional — por defecto 1 (ranking puramente agronómico)",
-    "seedPrice": "Coste semilla",
-    "harvestPrice": "Precio cosecha",
-    "operationCost": "Coste/manejo",
-    "compare": "Comparar",
-    "crop": "Cultivo",
-    "variety": "Mejor variedad",
-    "score": "Puntuación",
-    "soil": "Suelo",
-    "defaultPricesNote": "Precios por defecto (1). Los márgenes económicos equivalen al rendimiento agronómico. Introduce precios reales para comparación económica.",
-    "scoreNote": "Puntuación = ranking ponderado (rendimiento 40% + margen 30% + carbono 20% + suelo 10%)"
   },
   "disclaimer": {
     "text": "Las recomendaciones se basan en modelos agronómicos y datos de fuentes científicas. No sustituyen el criterio profesional. Consulte a su técnico agrícola local antes de tomar decisiones de cultivo."
@@ -915,7 +719,6 @@
     "ZEAMX": "Maíz"
   },
   "onboarding": {
-    "varietyFinder": "Encuentra las mejores variedades para tu clima y suelo. Analizamos datos de ensayos en entornos similares al tuyo y ordenamos las variedades por rendimiento.",
     "climateExplorer": "Cada punto es un sitio de ensayo coloreado según su zona climática Köppen-Geiger. Haz clic en un punto para ver sus detalles. Úsalo para encontrar sitios con clima similar a tu finca.",
     "phenologyBrowser": "Los coeficientes de cultivo (Kc, D1, D2, MDS) describen cómo un cultivo usa el agua en cada fase. Estos valores provienen de investigación científica publicada.",
     "rotationConstraints": "Algunos cultivos no pueden plantarse después de otros debido a plagas, enfermedades o agotamiento del suelo compartidos. Estas reglas provienen de guías FAO y literatura científica.",
