@@ -11,6 +11,8 @@ export default defineModule({
   displayName: 'BioOrchestrator',
   version: pkg.version,
   hostApiVersion: '^2.0.0',
+  route: '/bioorchestrator',
+  requiredRoles: ['Farmer', 'TechnicalConsultant', 'TenantAdmin', 'PlatformAdmin'],
   description: 'Biological pipeline orchestrator — Nekazari Platform Module',
   accent: { base: '#10B981', soft: '#D1FAE5', strong: '#047857' },
   icon: 'flask-conical',

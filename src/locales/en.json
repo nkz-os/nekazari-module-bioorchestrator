@@ -168,6 +168,22 @@
       "subtitle": "Scientific reference, data sources and technical tools",
       "expand": "Show advanced tools",
       "collapse": "Hide advanced tools"
+    },
+    "expertMode": "Expert mode",
+    "doors": {
+      "navLabel": "BioOrchestrator sections",
+      "whatToSow": {
+        "title": "What to sow?",
+        "description": "Crop recommendations for your parcel based on climate, soil and trials."
+      },
+      "campaign": {
+        "title": "My campaign",
+        "description": "Track the active crop: status, yield, irrigation and simulation."
+      },
+      "library": {
+        "title": "Library",
+        "description": "Species, parameters and reference data."
+      }
     }
   },
   "scenarioMode": {
@@ -645,7 +661,7 @@
     "conventional": "Conventional",
     "organic": "Organic",
     "organicWarningTitle": "Organic mode: limited data",
-    "organicWarningBody": "Only {{organicTrials}} organic trials vs {{conventionalTrials}} conventional for this crop/climate. Yield and risk calculations have lower precision. Estimated yield: -{{pct}}% (Seufert et al. 2012, Ponisio et al. 2015).",
+    "organicWarningBody": "Most estimated yields come from conventionally managed trials. Organic yields are usually lower, so treat these figures as indicative.",
     "seasonLabel": "Season",
     "sowingDate": "Sowing",
     "harvestDate": "Harvest",
@@ -976,5 +992,250 @@
   "cropManagement": {
     "title": "Crop Management",
     "subtitle": "Assign and manage the crop for this parcel."
+  },
+  "whatToSow": {
+    "noData": "no data",
+    "koppen": {
+      "Af": "Tropical rainforest",
+      "Am": "Tropical monsoon",
+      "Aw": "Tropical savanna, dry winter",
+      "BWh": "Hot desert",
+      "BWk": "Cold desert",
+      "BSh": "Hot steppe (semi-arid)",
+      "BSk": "Cold steppe (semi-arid)",
+      "Csa": "Mediterranean, hot summer",
+      "Csb": "Mediterranean, warm summer",
+      "Csc": "Mediterranean, cool summer",
+      "Cwa": "Humid subtropical, dry winter",
+      "Cwb": "Subtropical highland, dry winter",
+      "Cfa": "Humid subtropical",
+      "Cfb": "Temperate oceanic",
+      "Cfc": "Subpolar oceanic",
+      "Dfa": "Continental, hot summer",
+      "Dfb": "Continental, warm summer",
+      "Dfc": "Subarctic",
+      "Dsa": "Mediterranean continental, hot summer",
+      "Dsb": "Mediterranean continental, warm summer",
+      "Dwa": "Continental, dry winter, hot summer",
+      "Dwb": "Continental, dry winter, warm summer",
+      "ET": "Tundra"
+    },
+    "koppenPicker": {
+      "placeholder": "Choose a climate type"
+    },
+    "explore": {
+      "title": "Or explore by climate"
+    },
+    "env": {
+      "climate": "Climate",
+      "soil": "Soil",
+      "irrigation": "Irrigation",
+      "area": "Area"
+    },
+    "irrigation": {
+      "secano": "rainfed",
+      "regadío": "irrigated"
+    },
+    "filter": {
+      "season": {
+        "label": "Season",
+        "all": "All",
+        "autumn": "Autumn",
+        "spring": "Spring",
+        "summer": "Summer"
+      },
+      "management": {
+        "label": "Management",
+        "any": "Any",
+        "conventional": "Conventional",
+        "organic": "Organic"
+      },
+      "irrigation": {
+        "label": "Irrigation",
+        "inferred": "Detected",
+        "secano": "Rainfed",
+        "regadío": "Irrigated"
+      },
+      "frostMargin": "Frost margin (°C)",
+      "frostMarginInvalid": "Enter a value between 0 and 15, or leave it empty (default 5)."
+    },
+    "season": {
+      "autumn": "Autumn sowing",
+      "spring": "Spring sowing",
+      "summer": "Summer sowing",
+      "perennial": "Perennial crop",
+      "unknown": "Season: no data"
+    },
+    "level": {
+      "soil": {
+        "suitable": "suitable",
+        "marginal": "marginal",
+        "unsuitable": "unsuitable",
+        "unknown": "no data"
+      },
+      "water": {
+        "low": "low",
+        "medium": "medium",
+        "high": "high",
+        "unknown": "no data"
+      },
+      "frost": {
+        "none": "no risk",
+        "risk": "risk",
+        "unknown": "no data"
+      }
+    },
+    "badge": {
+      "water": "Water",
+      "soil": "Soil",
+      "frost": "Frost"
+    },
+    "card": {
+      "expectedYield": "Expected yield",
+      "observedRange": "observed range {{low}}–{{high}} kg/ha",
+      "observedRangeLabel": "observed range",
+      "trust": "Based on {{n_trials}} trials at {{n_sites}} sites",
+      "few": " (few)",
+      "similarityV2": "Sites chosen by climate similarity",
+      "compare": "Compare",
+      "chooseVariety": "Choose variety →"
+    },
+    "expert": {
+      "eppo": "EPPO code",
+      "relativeYield": "Relative yield",
+      "referenceMedian": "Reference median",
+      "referenceValue": "{{value}} kg/ha (n={{n}}, {{scope}})",
+      "cv": "CV",
+      "sd": "Standard deviation",
+      "intervalMethod": "Interval method",
+      "dataGaps": "Data gaps",
+      "sources": "Sources",
+      "sites": "Sites",
+      "years": "Years",
+      "assumptions": "Assumptions",
+      "viewTrials": "View trials",
+      "reportValue": "This value looks wrong"
+    },
+    "gap": {
+      "no_expected_yield": "No expected yield",
+      "reference_too_small": "Reference too small",
+      "reference_zero": "Reference is zero",
+      "cv_undefined": "CV undefined",
+      "low_trial_count": "Few trials",
+      "sowing_window_unavailable": "No sowing window",
+      "conventional_only_trials": "Conventional trials only",
+      "soil_unavailable": "No soil data",
+      "climate_detail_unavailable": "No climate detail",
+      "frost_tolerance_unavailable": "No frost tolerance data",
+      "sources_unavailable": "No data sources listed"
+    },
+    "evidence": {
+      "title": "{{crop}} trials",
+      "close": "Close",
+      "empty": "No trials for these conditions",
+      "variety": "Variety",
+      "site": "Site",
+      "year": "Year",
+      "yield": "Yield (kg/ha)",
+      "irrigation": "Irrigation",
+      "system": "System",
+      "source": "Source",
+      "prev": "Previous",
+      "next": "Next",
+      "pageOf": "Page {{page}} of {{pages}} ({{total}} trials)"
+    },
+    "more": {
+      "show_one": "Show {{count}} more option",
+      "show_other": "Show {{count}} more options",
+      "hide": "Hide options",
+      "fewTrials": "few trials"
+    },
+    "needsClimate": {
+      "title": "We don't know this parcel's climate — choose one",
+      "description": "The climate type is used to find trials at similar sites."
+    },
+    "empty": {
+      "title": "No trials at sites with a similar climate",
+      "hint": "Try changing the season, management or irrigation filters."
+    },
+    "error": {
+      "title": "Recommendations could not be loaded.",
+      "retry": "Retry"
+    },
+    "variety": {
+      "title": "{{crop}} varieties",
+      "none": "No varieties with trials for this crop.",
+      "trials": "{{count}} trials",
+      "disease": "resistant to {{resistant}} of {{total}} diseases",
+      "assign": "Assign",
+      "needsParcel": "Pick a parcel to assign a variety.",
+      "noAssignData": "Yield data is missing: cannot assign.",
+      "assigned": "Variety assigned: {{name}}",
+      "toHealth": "View parcel health",
+      "toWater": "Water budget"
+    },
+    "compare": {
+      "selected": "{{count}} selected",
+      "open": "Compare",
+      "hide": "Hide comparison",
+      "clear": "Clear",
+      "best": "best",
+      "expectedYield": "Expected yield (kg/ha)",
+      "relativeYield": "Vs. reference (%)",
+      "stability": "Variability (CV)",
+      "water": "Water demand",
+      "soil": "Soil",
+      "frost": "Frost",
+      "trust": "Reliability",
+      "trustLevel": {
+        "high": "high",
+        "medium": "medium",
+        "low": "low",
+        "unknown": "no data"
+      },
+      "lens": {
+        "fit": "Fit",
+        "calendar": "Calendar",
+        "rotation": "Rotation",
+        "euros": "Euros"
+      },
+      "calendar": {
+        "none": "no calendar data",
+        "emptyTitle": "No calendar data",
+        "emptyHint": "There are no sowing windows for these crops yet. They will appear here once available.",
+        "cycle": "Cycle: {{days}} days",
+        "noCycle": "Cycle: no data",
+        "month": {
+          "1": "J",
+          "2": "F",
+          "3": "M",
+          "4": "A",
+          "5": "M",
+          "6": "J",
+          "7": "J",
+          "8": "A",
+          "9": "S",
+          "10": "O",
+          "11": "N",
+          "12": "D"
+        }
+      },
+      "rotation": {
+        "next": "Next crop",
+        "nFixation": "N fixation",
+        "nBalance": "N balance",
+        "noSuccessor": "No recommended successor",
+        "pac": "CAP compliance",
+        "unavailable": "Rotation not available for this crop",
+        "needsParcel": "Pick a parcel to see the rotation"
+      },
+      "euros": {
+        "price": "Price (€/t)",
+        "addPrice": "add a price",
+        "range": "range {{low}}–{{high}} €/ha",
+        "noRange": "range: no data",
+        "note": "Gross income only: costs are not deducted."
+      }
+    }
   }
 }

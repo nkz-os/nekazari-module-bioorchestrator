@@ -12,7 +12,7 @@ import { useBioApi, getCropContext, fetchAlerts } from '../services/api';
 
 export type HubId = 'planning' | 'campaign' | 'codex';
 
-interface ToolCardDef {
+export interface ToolCardDef {
   id: string;
   icon: React.ElementType;
   hub: HubId;
@@ -21,7 +21,7 @@ interface ToolCardDef {
 
 const HUB_ORDER: HubId[] = ['planning', 'campaign'];
 
-const ALL_TOOLS: ToolCardDef[] = [
+export const ALL_TOOLS: ToolCardDef[] = [
   { id: 'cropManagement', icon: Sprout, hub: 'planning' },
   { id: 'cropPlanner', icon: Sparkles, hub: 'planning' },
   { id: 'parcelStatus', icon: Heart, hub: 'campaign' },
@@ -31,7 +31,7 @@ const ALL_TOOLS: ToolCardDef[] = [
   { id: 'simulateScenario', icon: Activity, hub: 'campaign' },
 ];
 
-const ADVANCED_TOOLS: ToolCardDef[] = [
+export const ADVANCED_TOOLS: ToolCardDef[] = [
   { id: 'regenerative', icon: Dna, hub: 'codex', compact: true },
   { id: 'catalog', icon: Leaf, hub: 'codex', compact: true },
   { id: 'climate', icon: Globe, hub: 'codex', compact: true },

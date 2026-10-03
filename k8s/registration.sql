@@ -40,7 +40,7 @@ INSERT INTO marketplace_modules (
     'FREE',
     false,
     true,
-    ARRAY['Farmer', 'TenantAdmin', 'PlatformAdmin'],
+    ARRAY['Farmer', 'TechnicalConsultant', 'TenantAdmin', 'PlatformAdmin'],
     '{
         "icon": "🌿",
         "color": "#059669",
@@ -55,5 +55,7 @@ INSERT INTO marketplace_modules (
 ) ON CONFLICT (id) DO UPDATE SET
     display_name   = EXCLUDED.display_name,
     description    = EXCLUDED.description,
+    route_path     = EXCLUDED.route_path,
+    required_roles = EXCLUDED.required_roles,
     is_active      = true,
     updated_at     = NOW();
