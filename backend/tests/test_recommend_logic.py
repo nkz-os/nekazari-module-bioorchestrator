@@ -50,6 +50,36 @@ def test_sowing_info_table_row_wins():
                     "cycle_days": 120, "source": "ref-1"}
 
 
+_ES_ROW = {"eppo": "TRZAX", "sowing_type": "autumn", "koppen": ["Csa"], "start_month": 10,
+           "end_month": 12, "cycle_days": None, "source": "ref-es", "countries": ["ES"]}
+_ANY_ROW = {**{k: v for k, v in _ES_ROW.items() if k != "countries"}, "source": "ref-any"}
+
+
+def test_sowing_info_country_scoped_row_matches_its_country():
+    assert r.sowing_info("TRZAX", "Csa", [_ES_ROW], country="ES")["source"] == "ref-es"
+
+
+def test_sowing_info_country_mismatch_falls_back_to_season_slot():
+    info = r.sowing_info("TRZAX", "Csa", [_ES_ROW], country="FR")
+    assert info["source"] == "crop_season_slot" and info["sowing_window"] is None
+
+
+def test_sowing_info_unknown_country_does_not_match_scoped_row():
+    assert r.sowing_info("TRZAX", "Csa", [_ES_ROW])["source"] == "crop_season_slot"
+    assert r.sowing_info("TRZAX", "Csa", [_ES_ROW], country=None)["source"] == "crop_season_slot"
+
+
+@pytest.mark.parametrize("country", [None, "ES", "FR"])
+def test_sowing_info_unscoped_row_matches_any_country(country):
+    assert r.sowing_info("TRZAX", "Csa", [_ANY_ROW], country=country)["source"] == "ref-any"
+
+
+def test_sowing_info_first_match_wins_after_country_filter():
+    rows = [_ES_ROW, _ANY_ROW]
+    assert r.sowing_info("TRZAX", "Csa", rows, country="ES")["source"] == "ref-es"
+    assert r.sowing_info("TRZAX", "Csa", rows, country="FR")["source"] == "ref-any"
+
+
 def _rec(eppo, rel, n, soil="suitable", frost="none"):
     return {"crop": {"eppo": eppo}, "fit": {"relative_yield_pct": rel},
             "yield": {"n_trials": n},

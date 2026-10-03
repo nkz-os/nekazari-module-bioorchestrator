@@ -343,3 +343,30 @@ async def test_fallback_query_coalesces_chelsa_properties():
     assert "coalesce(ts.annualRainfallMmChelsa, ts.annualRainfallMm) AS rain" in q
     assert "coalesce(ts.annualET0MmChelsa, ts.annualET0Mm) AS et0" in q
     assert "ts.frostDaysPerYear AS frost" in q
+
+
+# ── Country from the centroid ─────────────────────────────────────────────────
+
+async def _env_for_parcel(parcel):
+    with patch("app.graph.dao.OrionClient") as orion_cls, \
+         patch("app.services.soil_client.get_parcel_soil_properties", AsyncMock(return_value={"data_available": False})):
+        orion = AsyncMock()
+        orion.get_entity.return_value = parcel
+        orion_cls.return_value = orion
+        return await GraphDAO(_make_driver([])).get_parcel_environment("urn:ngsi-ld:AgriParcel:c1", "tenant-a")
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("lon,lat,iso2", [(-3.7038, 40.4168, "ES"), (2.3522, 48.8566, "FR"),
+                                          (-5.0, 45.5, None)])  # Madrid, Paris, Bay of Biscay
+async def test_country_from_centroid(lon, lat, iso2):
+    parcel = {"id": "urn:ngsi-ld:AgriParcel:c1", "type": "AgriParcel",
+              "location": {"type": "GeoProperty", "value": {"type": "Point", "coordinates": [lon, lat]}}}
+    env = await _env_for_parcel(parcel)
+    assert env["country"] == iso2
+
+
+@pytest.mark.asyncio
+async def test_country_none_without_location():
+    env = await _env_for_parcel({"id": "urn:ngsi-ld:AgriParcel:c1", "type": "AgriParcel"})
+    assert env["country"] is None

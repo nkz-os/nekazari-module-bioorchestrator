@@ -518,3 +518,25 @@ async def test_requested_crops_survive_catalog_failure_uncached():
         out = await dao.recommend_for_conditions(_conds(crops=["TRZAX"]))
     assert out["recommendations"][0]["crop"]["scientific_name"] == "TRZAX"
     assert dao_mod._RECOMMEND_CACHE == {}
+
+
+_ES_ROW = {"eppo": "TRZAX", "sowing_type": "autumn", "koppen": ["Cfb"], "start_month": 10,
+           "end_month": 12, "cycle_days": None, "source": "ref-es", "countries": ["ES"]}
+
+
+@pytest.mark.parametrize("country,source", [("ES", "ref-es"), ("FR", "crop_season_slot"),
+                                            (None, "crop_season_slot")])
+async def test_sowing_window_scoped_by_country(country, source):
+    from app.services import sowing_windows
+    with patch.object(sowing_windows, "load_rows", return_value=[_ES_ROW]):
+        rec = (await _run(_conds(country=country), {"TRZAX": [_variety()]}))["recommendations"][0]
+    assert rec["season"]["source"] == source
+
+
+async def test_recommend_cache_is_keyed_by_country():
+    from app.services import sowing_windows
+    with patch.object(sowing_windows, "load_rows", return_value=[_ES_ROW]):
+        es = (await _run(_conds(country="ES"), {"TRZAX": [_variety()]}))["recommendations"][0]
+        fr = (await _run(_conds(country="FR"), {"TRZAX": [_variety()]}))["recommendations"][0]
+    assert es["season"]["source"] == "ref-es"
+    assert fr["season"]["source"] == "crop_season_slot"

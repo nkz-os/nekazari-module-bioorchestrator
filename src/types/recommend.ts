@@ -57,6 +57,7 @@ export interface ParcelEnvironment {
   parcel_id: string;
   area_ha: number | null;
   centroid: { lat: number | null; lon: number | null };
+  country?: string | null;
   climate_class: string | null;
   climate_detail: Record<string, unknown> | null;
   soil: {

@@ -355,3 +355,37 @@ def test_parcel_route_without_identity_is_401_when_auth_enabled(client, monkeypa
                       AsyncMock(side_effect=AssertionError("must not be reached"))):
         r = client.get(f"/api/graph/recommend/parcel/{parcel}")
     assert r.status_code == 401
+
+
+def test_country_param_forwarded(client):
+    with patch.object(GraphDAO, "recommend_for_conditions", AsyncMock(return_value=OK)) as m:
+        r = client.get("/api/graph/agriculture/recommend", params={"climate_class": "Csa", "country": "ES"})
+    assert r.status_code == 200
+    assert m.call_args.args[0]["country"] == "ES"
+
+
+def test_country_defaults_to_none(client):
+    with patch.object(GraphDAO, "recommend_for_conditions", AsyncMock(return_value=OK)) as m:
+        client.get("/api/graph/agriculture/recommend", params={"climate_class": "Csa"})
+    assert m.call_args.args[0]["country"] is None
+
+
+@pytest.mark.parametrize("bad", ["es", "ESP", "E", "1A", ""])
+def test_bad_country_rejected(client, bad):
+    r = client.get("/api/graph/agriculture/recommend", params={"climate_class": "Csa", "country": bad})
+    assert r.status_code == 422
+
+
+@pytest.mark.parametrize("country", ["ES", None])
+def test_parcel_country_from_environment(client, country):
+    env = {
+        "climate_class": "Csa", "country": country, "soil": {"data_available": False},
+        "irrigation": {"inferred": None}, "climate_detail": None,
+        "inputs_used": {"soil": "unavailable", "climate": "chelsa"},
+    }
+    with patch.object(GraphDAO, "get_parcel_environment", AsyncMock(return_value=env)), \
+         patch.object(GraphDAO, "recommend_for_conditions", AsyncMock(return_value=OK)) as m:
+        r = client.get(f"/api/graph/recommend/parcel/{URN}")
+    assert r.status_code == 200
+    assert m.call_args.args[0]["country"] == country
+    assert r.json()["parcel_environment"]["country"] == country
