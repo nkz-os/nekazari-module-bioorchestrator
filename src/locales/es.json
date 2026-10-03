@@ -168,6 +168,22 @@
       "subtitle": "Consulta científica, datos de referencia y herramientas técnicas",
       "expand": "Mostrar herramientas avanzadas",
       "collapse": "Ocultar herramientas avanzadas"
+    },
+    "expertMode": "Modo experto",
+    "doors": {
+      "navLabel": "Secciones de BioOrchestrator",
+      "whatToSow": {
+        "title": "¿Qué siembro?",
+        "description": "Recomendaciones de cultivo para tu parcela según clima, suelo y ensayos."
+      },
+      "campaign": {
+        "title": "Mi campaña",
+        "description": "Seguimiento del cultivo activo: estado, rendimiento, riego y simulación."
+      },
+      "library": {
+        "title": "Biblioteca",
+        "description": "Especies, parámetros y datos de referencia."
+      }
     }
   },
   "scenarioMode": {
@@ -645,7 +661,7 @@
     "conventional": "Convencional",
     "organic": "Orgánico",
     "organicWarningTitle": "Modo orgánico: datos limitados",
-    "organicWarningBody": "Solo {{organicTrials}} ensayos orgánicos vs {{conventionalTrials}} convencionales para este cultivo/clima. Los cálculos de rendimiento y riesgo tienen menor precisión. Rendimiento estimado: -{{pct}}% (Seufert et al. 2012, Ponisio et al. 2015).",
+    "organicWarningBody": "La mayoría de los rendimientos estimados proceden de ensayos en manejo convencional. En manejo orgánico los rendimientos suelen ser menores, así que toma estas cifras como orientativas.",
     "seasonLabel": "Temporada",
     "sowingDate": "Siembra",
     "harvestDate": "Cosecha",
@@ -974,5 +990,250 @@
   "cropManagement": {
     "title": "Gestión de Cultivo",
     "subtitle": "Asigna y gestiona el cultivo de esta parcela."
+  },
+  "whatToSow": {
+    "noData": "sin datos",
+    "koppen": {
+      "Af": "Tropical lluvioso todo el año",
+      "Am": "Tropical monzónico",
+      "Aw": "Sabana tropical, invierno seco",
+      "BWh": "Desierto cálido",
+      "BWk": "Desierto frío",
+      "BSh": "Estepa cálida (semiárido)",
+      "BSk": "Estepa fría (semiárido)",
+      "Csa": "Mediterráneo de verano caluroso",
+      "Csb": "Mediterráneo de verano templado",
+      "Csc": "Mediterráneo de verano fresco",
+      "Cwa": "Subtropical húmedo, invierno seco",
+      "Cwb": "Templado de montaña, invierno seco",
+      "Cfa": "Subtropical húmedo",
+      "Cfb": "Oceánico templado",
+      "Cfc": "Oceánico subpolar",
+      "Dfa": "Continental de verano caluroso",
+      "Dfb": "Continental de verano templado",
+      "Dfc": "Subártico",
+      "Dsa": "Continental mediterráneo de verano caluroso",
+      "Dsb": "Continental mediterráneo de verano templado",
+      "Dwa": "Continental de invierno seco y verano caluroso",
+      "Dwb": "Continental de invierno seco y verano templado",
+      "ET": "Tundra"
+    },
+    "koppenPicker": {
+      "placeholder": "Elige un tipo de clima"
+    },
+    "explore": {
+      "title": "O explora por clima"
+    },
+    "env": {
+      "climate": "Clima",
+      "soil": "Suelo",
+      "irrigation": "Riego",
+      "area": "Superficie"
+    },
+    "irrigation": {
+      "secano": "secano",
+      "regadío": "regadío"
+    },
+    "filter": {
+      "season": {
+        "label": "Temporada",
+        "all": "Todas",
+        "autumn": "Otoño",
+        "spring": "Primavera",
+        "summer": "Verano"
+      },
+      "management": {
+        "label": "Manejo",
+        "any": "Cualquiera",
+        "conventional": "Convencional",
+        "organic": "Ecológico"
+      },
+      "irrigation": {
+        "label": "Riego",
+        "inferred": "Detectado",
+        "secano": "Secano",
+        "regadío": "Regadío"
+      },
+      "frostMargin": "Margen de helada (°C)",
+      "frostMarginInvalid": "Introduce un valor entre 0 y 15, o déjalo vacío (5 por defecto)."
+    },
+    "season": {
+      "autumn": "Siembra de otoño",
+      "spring": "Siembra de primavera",
+      "summer": "Siembra de verano",
+      "perennial": "Cultivo perenne",
+      "unknown": "Temporada sin datos"
+    },
+    "level": {
+      "soil": {
+        "suitable": "apto",
+        "marginal": "marginal",
+        "unsuitable": "no apto",
+        "unknown": "sin datos"
+      },
+      "water": {
+        "low": "baja",
+        "medium": "media",
+        "high": "alta",
+        "unknown": "sin datos"
+      },
+      "frost": {
+        "none": "sin riesgo",
+        "risk": "riesgo",
+        "unknown": "sin datos"
+      }
+    },
+    "badge": {
+      "water": "Agua",
+      "soil": "Suelo",
+      "frost": "Heladas"
+    },
+    "card": {
+      "expectedYield": "Rendimiento esperado",
+      "observedRange": "rango observado {{low}}–{{high}} kg/ha",
+      "observedRangeLabel": "rango observado",
+      "trust": "Basado en {{n_trials}} ensayos en {{n_sites}} sitios",
+      "few": " (pocos)",
+      "similarityV2": "Sitios elegidos por parecido climático",
+      "compare": "Comparar",
+      "chooseVariety": "Elegir variedad →"
+    },
+    "expert": {
+      "eppo": "Código EPPO",
+      "relativeYield": "Rendimiento relativo",
+      "referenceMedian": "Mediana de referencia",
+      "referenceValue": "{{value}} kg/ha (n={{n}}, {{scope}})",
+      "cv": "CV",
+      "sd": "Desviación típica",
+      "intervalMethod": "Método del intervalo",
+      "dataGaps": "Datos que faltan",
+      "sources": "Fuentes",
+      "sites": "Sitios",
+      "years": "Años",
+      "assumptions": "Supuestos",
+      "viewTrials": "Ver ensayos",
+      "reportValue": "Este valor parece incorrecto"
+    },
+    "gap": {
+      "no_expected_yield": "Sin rendimiento esperado",
+      "reference_too_small": "Referencia demasiado pequeña",
+      "reference_zero": "Referencia igual a cero",
+      "cv_undefined": "CV no calculable",
+      "low_trial_count": "Pocos ensayos",
+      "sowing_window_unavailable": "Sin ventana de siembra",
+      "conventional_only_trials": "Solo ensayos convencionales",
+      "soil_unavailable": "Sin datos de suelo",
+      "climate_detail_unavailable": "Sin detalle climático",
+      "frost_tolerance_unavailable": "Sin datos de tolerancia a heladas",
+      "sources_unavailable": "Sin fuentes de datos"
+    },
+    "evidence": {
+      "title": "Ensayos de {{crop}}",
+      "close": "Cerrar",
+      "empty": "No hay ensayos para estas condiciones",
+      "variety": "Variedad",
+      "site": "Sitio",
+      "year": "Año",
+      "yield": "Rendimiento (kg/ha)",
+      "irrigation": "Riego",
+      "system": "Sistema",
+      "source": "Fuente",
+      "prev": "Anterior",
+      "next": "Siguiente",
+      "pageOf": "Página {{page}} de {{pages}} ({{total}} ensayos)"
+    },
+    "more": {
+      "show_one": "Ver {{count}} opción más",
+      "show_other": "Ver {{count}} opciones más",
+      "hide": "Ocultar opciones",
+      "fewTrials": "pocos ensayos"
+    },
+    "needsClimate": {
+      "title": "No conocemos el clima de esta parcela — elige uno",
+      "description": "Con el tipo de clima buscamos ensayos en sitios parecidos."
+    },
+    "empty": {
+      "title": "No hay ensayos en sitios con clima parecido",
+      "hint": "Prueba a cambiar la temporada, el manejo o el riego."
+    },
+    "error": {
+      "title": "No se pudieron cargar las recomendaciones.",
+      "retry": "Reintentar"
+    },
+    "variety": {
+      "title": "Variedades de {{crop}}",
+      "none": "Sin variedades con ensayos para este cultivo.",
+      "trials": "{{count}} ensayos",
+      "disease": "resistente a {{resistant}} de {{total}} enfermedades",
+      "assign": "Adjudicar",
+      "needsParcel": "Elige una parcela para poder adjudicar una variedad.",
+      "noAssignData": "Faltan datos de rendimiento: no se puede adjudicar.",
+      "assigned": "Variedad adjudicada: {{name}}",
+      "toHealth": "Ver salud de parcela",
+      "toWater": "Balance hídrico"
+    },
+    "compare": {
+      "selected": "{{count}} seleccionados",
+      "open": "Comparar",
+      "hide": "Ocultar comparación",
+      "clear": "Limpiar",
+      "best": "mejor",
+      "expectedYield": "Rendimiento esperado (kg/ha)",
+      "relativeYield": "Frente a la referencia (%)",
+      "stability": "Variabilidad (CV)",
+      "water": "Demanda de agua",
+      "soil": "Suelo",
+      "frost": "Heladas",
+      "trust": "Fiabilidad",
+      "trustLevel": {
+        "high": "alta",
+        "medium": "media",
+        "low": "baja",
+        "unknown": "sin datos"
+      },
+      "lens": {
+        "fit": "Encaje",
+        "calendar": "Calendario",
+        "rotation": "Rotación",
+        "euros": "Euros"
+      },
+      "calendar": {
+        "none": "sin datos de calendario",
+        "emptyTitle": "Sin datos de calendario",
+        "emptyHint": "Todavía no hay ventanas de siembra para estos cultivos. Aparecerán aquí cuando existan.",
+        "cycle": "Ciclo: {{days}} días",
+        "noCycle": "Ciclo: sin datos",
+        "month": {
+          "1": "E",
+          "2": "F",
+          "3": "M",
+          "4": "A",
+          "5": "M",
+          "6": "J",
+          "7": "J",
+          "8": "A",
+          "9": "S",
+          "10": "O",
+          "11": "N",
+          "12": "D"
+        }
+      },
+      "rotation": {
+        "next": "Cultivo siguiente",
+        "nFixation": "Fijación de N",
+        "nBalance": "Balance de N",
+        "noSuccessor": "Sin sucesor recomendado",
+        "pac": "Cumplimiento PAC",
+        "unavailable": "Rotación no disponible para este cultivo",
+        "needsParcel": "Elige una parcela para ver la rotación"
+      },
+      "euros": {
+        "price": "Precio (€/t)",
+        "addPrice": "añade precio",
+        "range": "rango {{low}}–{{high}} €/ha",
+        "noRange": "rango: sin datos",
+        "note": "Solo ingreso bruto: no descuenta costes."
+      }
+    }
   }
 }

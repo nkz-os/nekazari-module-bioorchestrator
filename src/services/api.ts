@@ -16,6 +16,7 @@ const API_BASE = (import.meta as any).env?.VITE_API_URL || "https://nkz.robotika
 const BASE = `${API_BASE}/api/bioorchestrator`;
 // Direct graph path bypasses api-gateway auth for public reference data endpoints
 const GRAPH = `${API_BASE}/api`;
+export { API_BASE };
 
 // ── DAD-IS per-user credentials (localStorage) ──────────────────────────────
 

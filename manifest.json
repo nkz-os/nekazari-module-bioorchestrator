@@ -27,6 +27,7 @@
     "label": "BioOrchestrator",
     "required_roles": [
         "Farmer",
+        "TechnicalConsultant",
         "TenantAdmin",
         "PlatformAdmin"
     ],

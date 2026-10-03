@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { useTranslation } from '@nekazari/sdk';
+import { Button, Card, FormField, FormGrid, Inline, Input, Stack } from '@nekazari/ui-kit';
 import { assignCrop, AssignCropRequest } from "../services/api";
 import { useParcelContext } from "../context/ParcelContext";
 
-interface VarietyInfo {
+export interface VarietyInfo {
   name: string;
   scientificName?: string;
   cropEppo?: string;
@@ -39,6 +40,14 @@ export default function AssignVarietyModal({ variety, parcelId: propParcelId, on
     if (!seasonEnd) setSeasonEnd(`${y + 1}-06-30`);
   }, []);
 
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onClose]);
+
   const handleAssign = async () => {
     if (!selectedParcel) {
       setError(t("assign.noParcels", { defaultValue: "No parcel selected" }));
@@ -64,144 +73,94 @@ export default function AssignVarietyModal({ variety, parcelId: propParcelId, on
     }
   };
 
-  const organicTrials = 37;
-  const conventionalTrials = variety.trialCount;
-
   return (
-    <div className="modal-overlay" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={onClose}>
       <div
-        className="modal-content"
+        role="dialog"
+        aria-modal="true"
+        aria-label={t("assign.title")}
+        className="w-full max-w-lg max-h-[80vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
-        style={{ maxWidth: 520, padding: 24 }}
       >
-        <h2>{t("assign.title")}</h2>
+        <Card padding="lg">
+          <Stack gap="stack">
+            <h2 className="text-nkz-lg font-semibold text-nkz-text-primary">{t("assign.title")}</h2>
 
-        <div
-          style={{
-            marginBottom: 16,
-            padding: 12,
-            background: "#f5f5f5",
-            borderRadius: 8,
-          }}
-        >
-          <strong>{variety.name}</strong>
-          {variety.scientificName && (
-            <div style={{ fontSize: 13, color: "#666" }}>
-              {variety.scientificName}
+            <div className="rounded-nkz-md bg-nkz-surface-sunken p-nkz-inline">
+              <Stack gap="tight">
+                <span className="text-nkz-base font-semibold text-nkz-text-primary">{variety.name}</span>
+                {variety.scientificName && (
+                  <span className="text-nkz-sm italic text-nkz-text-muted">{variety.scientificName}</span>
+                )}
+                <span className="text-nkz-sm text-nkz-text-secondary">
+                  {t("assign.expectedYield")}: {variety.expectedYield.toLocaleString()} kg/ha
+                  {" ["}
+                  {variety.confidenceInterval[0].toLocaleString()} –{" "}
+                  {variety.confidenceInterval[1].toLocaleString()}
+                  {"]"}
+                </span>
+                <span className="text-nkz-xs text-nkz-text-muted">
+                  {variety.trialCount} {t("assign.trialsLabel")}
+                </span>
+              </Stack>
             </div>
-          )}
-          <div style={{ marginTop: 4 }}>
-            {t("assign.expectedYield")}: {variety.expectedYield.toLocaleString()} kg/ha
-            {" ["}
-            {variety.confidenceInterval[0].toLocaleString()} –{" "}
-            {variety.confidenceInterval[1].toLocaleString()}
-            {"]"}
-          </div>
-          <div style={{ fontSize: 13, color: "#666" }}>
-            {variety.trialCount} {t("assign.trialsLabel")}
-          </div>
-        </div>
 
-        <div style={{ marginBottom: 16 }}>
-          <label>{t("assign.parcelLabel")}</label>
-          <div style={{ padding: 8, marginTop: 4, background: "#f5f5f5", borderRadius: 4, fontSize: 14 }}>
-            {selectedParcel || t("assign.noParcelSelected", { defaultValue: "No parcel selected — please select one in the platform" })}
-          </div>
-        </div>
-
-        <div style={{ marginBottom: 16 }}>
-          <label>{t("assign.managementLabel")}</label>
-          <div style={{ display: "flex", gap: 12, marginTop: 4 }}>
-            <label>
-              <input
-                type="radio"
-                value="conventional"
-                checked={management === "conventional"}
-                onChange={() => setManagement("conventional")}
-              />
-              {t("assign.conventional")}
-            </label>
-            <label>
-              <input
-                type="radio"
-                value="organic"
-                checked={management === "organic"}
-                onChange={() => setManagement("organic")}
-              />
-              {t("assign.organic")}
-            </label>
-          </div>
-        </div>
-
-        {management === "organic" && (
-          <div
-            style={{
-              marginBottom: 16,
-              padding: 12,
-              background: "#fff3cd",
-              borderRadius: 8,
-              fontSize: 13,
-            }}
-          >
-            <strong>⚠️ {t("assign.organicWarningTitle")}</strong>
-            <p style={{ margin: "4px 0 0 0" }}>
-              {t("assign.organicWarningBody", {
-                organicTrials,
-                conventionalTrials,
-                pct: 18,
-              })}
-            </p>
-          </div>
-        )}
-
-        <div style={{ marginBottom: 16 }}>
-          <label>{t("assign.seasonLabel")}</label>
-          <div style={{ display: "flex", gap: 12, marginTop: 4 }}>
-            <div>
-              <div style={{ fontSize: 12, color: "#666" }}>
-                {t("assign.sowingDate")}
+            <FormField label={t("assign.parcelLabel")}>
+              <div className="rounded-nkz-md bg-nkz-surface-sunken p-nkz-inline text-nkz-sm text-nkz-text-primary break-all">
+                {selectedParcel || t("assign.noParcelSelected", { defaultValue: "No parcel selected — please select one in the platform" })}
               </div>
-              <input
-                type="date"
-                value={seasonStart}
-                onChange={(e) => setSeasonStart(e.target.value)}
-                style={{ padding: 6 }}
-              />
-            </div>
-            <div>
-              <div style={{ fontSize: 12, color: "#666" }}>
-                {t("assign.harvestDate")}
+            </FormField>
+
+            <FormField label={t("assign.managementLabel")}>
+              <Inline gap="inline" role="radiogroup" aria-label={t("assign.managementLabel")}>
+                {(["conventional", "organic"] as const).map((m) => (
+                  <Button
+                    key={m}
+                    size="sm"
+                    role="radio"
+                    aria-checked={management === m}
+                    variant={management === m ? "primary" : "secondary"}
+                    onClick={() => setManagement(m)}
+                  >
+                    {t(`assign.${m}`)}
+                  </Button>
+                ))}
+              </Inline>
+            </FormField>
+
+            {management === "organic" && (
+              <div role="note" className="rounded-nkz-md border border-nkz-warning bg-nkz-surface-sunken p-nkz-inline">
+                <Stack gap="tight">
+                  <span className="text-nkz-sm font-semibold text-nkz-warning">{t("assign.organicWarningTitle")}</span>
+                  <span className="text-nkz-sm text-nkz-text-secondary">{t("assign.organicWarningBody")}</span>
+                </Stack>
               </div>
-              <input
-                type="date"
-                value={seasonEnd}
-                onChange={(e) => setSeasonEnd(e.target.value)}
-                style={{ padding: 6 }}
-              />
-            </div>
-          </div>
-        </div>
+            )}
 
-        {error && <div style={{ color: "red", marginBottom: 12 }}>{error}</div>}
+            <Stack gap="tight">
+              <span className="text-nkz-sm font-medium text-nkz-text-primary">{t("assign.seasonLabel")}</span>
+              <FormGrid columns={2}>
+                <FormField label={t("assign.sowingDate")}>
+                  <Input type="date" value={seasonStart} onChange={(e) => setSeasonStart(e.target.value)} />
+                </FormField>
+                <FormField label={t("assign.harvestDate")}>
+                  <Input type="date" value={seasonEnd} onChange={(e) => setSeasonEnd(e.target.value)} />
+                </FormField>
+              </FormGrid>
+            </Stack>
 
-        <div style={{ display: "flex", justifyContent: "flex-end", gap: 12 }}>
-          <button onClick={onClose} disabled={loading}>
-            {t("assign.cancel")}
-          </button>
-          <button
-            onClick={handleAssign}
-            disabled={loading || !selectedParcel}
-            style={{
-              background: "#4caf50",
-              color: "white",
-              border: "none",
-              padding: "8px 16px",
-              borderRadius: 4,
-            }}
-          >
-            {loading ? "..." : t("assign.confirm")}
-          </button>
-        </div>
+            {error && <p role="alert" className="text-nkz-sm text-nkz-danger">{error}</p>}
+
+            <Inline gap="inline" justify="end">
+              <Button variant="secondary" onClick={onClose} disabled={loading}>
+                {t("assign.cancel")}
+              </Button>
+              <Button variant="primary" onClick={handleAssign} loading={loading} disabled={loading || !selectedParcel}>
+                {t("assign.confirm")}
+              </Button>
+            </Inline>
+          </Stack>
+        </Card>
       </div>
     </div>
   );

@@ -1,15 +1,17 @@
-import React, { useState, useEffect, lazy, Suspense, Component, ErrorInfo } from 'react';
+import React, { useState, useEffect, useCallback, useRef, lazy, Suspense, Component, ErrorInfo } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { useTranslation } from '@nekazari/sdk';
+import { useTranslation, useAuth } from '@nekazari/sdk';
 import { Card, Stack, Spinner, Button } from '@nekazari/ui-kit';
 import { ArrowLeft, FlaskConical } from 'lucide-react';
 import { ParcelProvider, useParcelContext } from './context/ParcelContext';
 import { PlanningScenarioProvider } from './context/PlanningScenarioContext';
 import GlobalParcelSelector from './components/GlobalParcelSelector';
 import ExplorationModeBanner from './components/ExplorationModeBanner';
-import Dashboard from './components/Dashboard';
+import Home, { type ParcelInfo } from './components/Home';
+import { ExpertModeProvider } from './features/whatToSow/expertModeContext';
+import { getCropContext, fetchAlerts } from './services/api';
 import DisclaimerFooter from './components/DisclaimerFooter';
-import { resolveToolFromSearchParams } from './utils/navigation';
+import { resolveDoor, pickDefaultDoor, hasAssignedCrop, type Door } from './utils/navigation';
 import './i18n';
 
 const CropManagement = lazy(() => import('./components/CropManagement'));
@@ -36,7 +38,6 @@ const SpeciesExplorer = lazy(() => import('./components/SpeciesExplorer'));
 const SimulateAlternative = lazy(() => import('./components/SimulateAlternative'));
 const BreedDiscovery = lazy(() => import('./components/DADIS/BreedDiscovery').then(m => ({ default: m.BreedDiscovery })));
 
-type ViewState = { mode: 'dashboard' } | { mode: 'tool'; toolId: string };
 
 const TOOL_MAP: Record<string, React.LazyExoticComponent<React.ComponentType<any>>> = {
   cropManagement: CropManagement,
@@ -126,11 +127,19 @@ function ToolView({ toolId, onBack, onNavigateTool }: { toolId: string; onBack: 
 function AppInner() {
   const { t } = useTranslation('bioorchestrator');
   const [searchParams] = useSearchParams();
-  const { setSelectedParcel } = useParcelContext();
-  const [view, setView] = useState<ViewState>(() => {
-    const tool = resolveToolFromSearchParams(searchParams);
-    return tool ? { mode: 'tool', toolId: tool } : { mode: 'dashboard' };
-  });
+  const { tenantId } = useAuth();
+  const { selectedParcel, setSelectedParcel } = useParcelContext();
+  const [initialTarget] = useState(() => resolveDoor(searchParams));
+  const [door, setDoor] = useState<Door>(initialTarget?.door ?? 'whatToSow');
+  const [toolId, setToolId] = useState<string | null>(initialTarget?.tool ?? null);
+  // The URL or a user click decides the door; only otherwise does the parcel's crop.
+  const doorDecided = useRef(initialTarget !== null);
+  const [parcelInfo, setParcelInfo] = useState<ParcelInfo>({ campaignCrop: null, alertCount: 0, loading: false });
+  // Bumped after an assignment so the campaign badge reflects the new crop.
+  const [parcelInfoVersion, setParcelInfoVersion] = useState(0);
+  const refreshParcelInfo = useCallback(() => setParcelInfoVersion((v) => v + 1), []);
+  // Parcel whose default door is already resolved: a refresh must not move the user to another door.
+  const doorParcel = useRef<string | null>(null);
 
   useEffect(() => {
     const parcelId = searchParams.get('parcel');
@@ -139,13 +148,45 @@ function AppInner() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const handleSelectTool = (toolId: string) => {
-    setView({ mode: 'tool', toolId });
+  // One crop-context fetch per parcel: feeds the default-door choice and the campaign badge.
+  useEffect(() => {
+    if (!selectedParcel) {
+      doorParcel.current = null;
+      setParcelInfo({ campaignCrop: null, alertCount: 0, loading: false });
+      return;
+    }
+    let cancelled = false;
+    setParcelInfo((prev) => ({ ...prev, loading: true }));
+    Promise.all([
+      getCropContext(selectedParcel, undefined, tenantId).catch(() => null),
+      fetchAlerts(selectedParcel).catch(() => []),
+    ]).then(([ctx, alerts]) => {
+      if (cancelled) return;
+      const assigned = hasAssignedCrop(ctx);
+      setParcelInfo({
+        campaignCrop: assigned && ctx ? `${ctx.crop.name || ctx.crop.eppo} (${ctx.crop.eppo})` : null,
+        alertCount: alerts.length,
+        loading: false,
+      });
+      if (!doorDecided.current && doorParcel.current !== selectedParcel) {
+        setDoor(pickDefaultDoor({ hasParcel: true, hasAssignedCrop: assigned }));
+      }
+      doorParcel.current = selectedParcel;
+    });
+    return () => { cancelled = true; };
+  }, [selectedParcel, tenantId, parcelInfoVersion]);
+
+  // Until the parcel's crop decides the default door, don't mount a door that may be replaced
+  // (it would fire a heavy recommend request that is thrown away).
+  const doorPending = Boolean(selectedParcel) && !doorDecided.current && doorParcel.current !== selectedParcel;
+
+  const handleDoorChange = (next: Door) => {
+    doorDecided.current = true;
+    setDoor(next);
   };
 
-  const handleBack = () => {
-    setView({ mode: 'dashboard' });
-  };
+  const handleSelectTool = (id: string) => setToolId(id);
+  const handleBack = () => setToolId(null);
 
   return (
     <Card padding="lg">
@@ -168,11 +209,18 @@ function AppInner() {
 
         <ExplorationModeBanner />
 
-        {/* Content: Dashboard or Tool */}
-        {view.mode === 'dashboard' ? (
-          <Dashboard onSelectTool={handleSelectTool} />
+        {/* Content: doors or Tool */}
+        {toolId === null ? (
+          <Home
+            parcelInfo={parcelInfo}
+            door={door}
+            onDoorChange={handleDoorChange}
+            onSelectTool={handleSelectTool}
+            onAssigned={refreshParcelInfo}
+            doorPending={doorPending}
+          />
         ) : (
-          <ToolView toolId={view.toolId} onBack={handleBack} onNavigateTool={handleSelectTool} />
+          <ToolView toolId={toolId} onBack={handleBack} onNavigateTool={handleSelectTool} />
         )}
 
         <DisclaimerFooter />
@@ -184,7 +232,9 @@ function AppInner() {
 const App: React.FC = () => (
   <ParcelProvider>
     <PlanningScenarioProvider>
-      <AppInner />
+      <ExpertModeProvider>
+        <AppInner />
+      </ExpertModeProvider>
     </PlanningScenarioProvider>
   </ParcelProvider>
 );
