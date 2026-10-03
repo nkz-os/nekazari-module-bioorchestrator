@@ -61,3 +61,9 @@ def client() -> TestClient:
         from app.main import app
 
         yield TestClient(app)
+
+
+@pytest.fixture(autouse=True)
+def _no_recommend_warmup(monkeypatch):
+    """Startup cache warm-up is off in tests unless a test turns it on."""
+    monkeypatch.setenv("RECOMMEND_WARMUP", "0")
