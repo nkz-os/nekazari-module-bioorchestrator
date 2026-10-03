@@ -5,7 +5,13 @@ import pytest
 
 from app.graph import dao as dao_mod
 from app.graph.dao import GraphDAO
-from tests.test_recommend_dao import _ROW, _conds, _dao, _variety
+from tests.test_recommend_dao import (  # noqa: F401
+    _ROW,
+    _batch_via_per_crop,
+    _conds,
+    _dao,
+    _variety,
+)
 
 _VEC = {"annual_rainfall_mm": 500.0, "annual_et0_mm": 900.0, "coldest_month_min_c": 1.0,
         "annual_temp_c": 14.0}
@@ -389,8 +395,70 @@ async def test_recommend_never_exceeds_concurrency_limit():
         state["now"] -= 1
         return {"ranked_varieties": [_variety()]}
 
-    await _cached_run(_conds(), crops=[f"C{i:04d}" for i in range(12)], extrap=extrap)
+    # per-crop fan-out (batch unavailable) stays bounded by the semaphore
+    with patch.object(GraphDAO, "extrapolate_varieties_batch",
+                      AsyncMock(side_effect=RuntimeError("batch down"))):
+        await _cached_run(_conds(), crops=[f"C{i:04d}" for i in range(12)], extrap=extrap)
     assert state["peak"] == dao_mod.RECOMMEND_CONCURRENCY
+
+
+# ── batched Köppen extrapolation ────────────────────────────────────────────
+async def _batched_run(conds, crops, batch, koppen_ok=None, sites=None):
+    async def no_v1(self_, crop, **kw):
+        assert kw.get("vector_version") == "v2", "Köppen path must not call per-crop extrapolate"
+        return {"ranked_varieties": [_variety()]}
+
+    dao, p = _run_with(conds, list(crops), no_v1, sites or AsyncMock(return_value=_SITES))
+    ok = set(crops) if koppen_ok is None else koppen_ok
+    pf = patch.object(GraphDAO, "_crops_with_analog_trials",
+                      AsyncMock(side_effect=lambda eppos, names, **kw: ok & set(eppos)))
+    pb = patch.object(GraphDAO, "extrapolate_varieties_batch", batch)
+    with p[0], p[1], p[2], p[3], p[4], p[5], pf, pb:
+        return await dao.recommend_for_conditions(conds)
+
+
+async def test_koppen_path_is_one_batch_for_prefiltered_crops():
+    batch = AsyncMock(side_effect=lambda crops, sites, **kw: {c: [_variety()] for c in crops})
+    out = await _batched_run(_conds(irrigation_regime="secano"), ["TRZAX", "HORVX", "ZEAMX"], batch,
+                             koppen_ok={"TRZAX", "ZEAMX"})
+    assert batch.await_count == 1
+    args, kw = batch.await_args
+    assert args == (["TRZAX", "ZEAMX"], _SITES)
+    assert kw == {"irrigation_regime": "secano", "top_n": 5}
+    assert sorted(r["crop"]["eppo"] for r in out["recommendations"]) == ["TRZAX", "ZEAMX"]
+
+
+async def test_batch_failure_falls_back_to_per_crop_with_same_answer():
+    async def extrap(self_, crop, **kw):
+        return {"ranked_varieties": [_variety(mean=5000.0 + len(crop))]}
+
+    with patch.object(GraphDAO, "extrapolate_varieties_batch",
+                      AsyncMock(side_effect=RuntimeError("batch down"))):
+        failed, _, seen = await _cached_run(_conds(), crops=["TRZAX", "HORVX"], extrap=extrap)
+    dao_mod._RECOMMEND_CACHE.clear()
+    ok, _, _ = await _cached_run(_conds(), crops=["TRZAX", "HORVX"], extrap=extrap)
+    assert failed == ok and sorted(seen) == ["HORVX", "TRZAX"]
+
+
+async def test_no_batch_when_shared_site_lookup_failed():
+    batch = AsyncMock(side_effect=AssertionError("must not be called"))
+    seen = []
+
+    async def extrap(self_, crop, **kw):
+        seen.append(kw.get("similar_sites_override"))
+        return {"ranked_varieties": [_variety()]}
+
+    dao, p = _run_with(_conds(), ["TRZAX"], extrap, AsyncMock(side_effect=RuntimeError("down")))
+    with p[0], p[1], p[2], p[3], p[4], p[5], patch.object(GraphDAO, "extrapolate_varieties_batch", batch):
+        out = await dao.recommend_for_conditions(_conds())
+    assert seen == [None] and len(out["recommendations"]) == 1
+
+
+async def test_batch_result_without_numeric_yield_still_triggers_v2(hybrid):
+    note_only = {**_variety(), "mean_yield_kg_ha": None}
+    batch = AsyncMock(side_effect=lambda crops, sites, **kw: {c: [note_only] for c in crops})
+    out = await _batched_run(_conds(**_VEC), ["TRZAX"], batch)
+    assert out["recommendations"][0]["trust"]["similarity"] == "vector_v2_fallback"
 
 
 # ── round 3: batched medians ────────────────────────────────────────────────
