@@ -222,3 +222,9 @@ async def test_save_with_none_month_stores_null_list():
     assert graph.rows["k1"]["monthlyPrMm"] is None
     await dao.save_climate_cell("k2", CELL)
     assert graph.rows["k2"]["monthlyTasC"] == [5.0] * 12
+
+
+def test_trial_site_name_index_survives_runner_parsing():
+    text = (Path(__file__).parents[1] / "cypher_migrations" / "009_trial_site_name_index.cypher").read_text()
+    stmts = [s.strip() for s in text.split(";") if s.strip() and not s.strip().startswith("//")]
+    assert stmts == ["CREATE INDEX trial_site_name IF NOT EXISTS FOR (ts:TrialSite) ON (ts.name)"]
