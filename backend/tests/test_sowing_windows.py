@@ -42,3 +42,23 @@ def test_bad_values_rejected(tmp_path, patch):
            "end_month": 3, "source": "ref-1", **patch}
     with pytest.raises(ValueError):
         sw.load_rows(_write(tmp_path, [row]))
+
+
+def test_countries_optional_and_kept(tmp_path):
+    row = {"eppo": "CIEAR", "sowing_type": "spring", "koppen": ["Cfb"], "start_month": 2,
+           "end_month": 3, "source": "ref-1", "countries": ["ES", "PT"]}
+    assert sw.load_rows(_write(tmp_path, [row])) == [row]
+
+
+@pytest.mark.parametrize("countries", [[], "ES", ["es"], ["ESP"], ["E"], [1], None, ["ES", ""]])
+def test_bad_countries_rejected(tmp_path, countries):
+    row = {"eppo": "CIEAR", "sowing_type": "spring", "koppen": ["Cfb"], "start_month": 2,
+           "end_month": 3, "source": "ref-1", "countries": countries}
+    with pytest.raises(ValueError, match="countries"):
+        sw.load_rows(_write(tmp_path, [row]))
+
+
+def test_default_table_rows_are_country_scoped():
+    rows = sw.load_rows()
+    assert rows, "the bundled table is not empty"
+    assert all(r.get("countries") == ["ES"] for r in rows)

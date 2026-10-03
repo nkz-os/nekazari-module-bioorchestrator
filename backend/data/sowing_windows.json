@@ -1,1 +1,803 @@
-{"version": 1, "rows": []}
+{
+ "version": 1,
+ "rows": [
+  {
+   "eppo": "HORVX",
+   "sowing_type": "autumn",
+   "koppen": [
+    "Csa"
+   ],
+   "start_month": 10,
+   "end_month": 12,
+   "cycle_days": null,
+   "source": "MAPA (ES), Calendario de siembra, recoleccion y comercializacion 2014-2016 (provincial sown-area % by month; area-weighted over ES provinces of the class), https://www.mapa.gob.es/es/estadistica/temas/estadisticas-agrarias/agricultura/calendarios-siembras-recoleccion/",
+   "countries": [
+    "ES"
+   ]
+  },
+  {
+   "eppo": "HORVX",
+   "sowing_type": "autumn",
+   "koppen": [
+    "Csb"
+   ],
+   "start_month": 10,
+   "end_month": 1,
+   "cycle_days": null,
+   "source": "MAPA (ES), Calendario de siembra, recoleccion y comercializacion 2014-2016 (provincial sown-area % by month; area-weighted over ES provinces of the class), https://www.mapa.gob.es/es/estadistica/temas/estadisticas-agrarias/agricultura/calendarios-siembras-recoleccion/",
+   "countries": [
+    "ES"
+   ]
+  },
+  {
+   "eppo": "HORVX",
+   "sowing_type": "autumn",
+   "koppen": [
+    "BSk"
+   ],
+   "start_month": 10,
+   "end_month": 1,
+   "cycle_days": null,
+   "source": "MAPA (ES), Calendario de siembra, recoleccion y comercializacion 2014-2016 (provincial sown-area % by month; area-weighted over ES provinces of the class), https://www.mapa.gob.es/es/estadistica/temas/estadisticas-agrarias/agricultura/calendarios-siembras-recoleccion/",
+   "countries": [
+    "ES"
+   ]
+  },
+  {
+   "eppo": "HORVX",
+   "sowing_type": "autumn",
+   "koppen": [
+    "Cfb"
+   ],
+   "start_month": 10,
+   "end_month": 1,
+   "cycle_days": null,
+   "source": "MAPA (ES), Calendario de siembra, recoleccion y comercializacion 2014-2016 (provincial sown-area % by month; area-weighted over ES provinces of the class), https://www.mapa.gob.es/es/estadistica/temas/estadisticas-agrarias/agricultura/calendarios-siembras-recoleccion/",
+   "countries": [
+    "ES"
+   ]
+  },
+  {
+   "eppo": "TRZAX",
+   "sowing_type": "autumn",
+   "koppen": [
+    "Csa"
+   ],
+   "start_month": 10,
+   "end_month": 12,
+   "cycle_days": null,
+   "source": "MAPA (ES), Calendario de siembra, recoleccion y comercializacion 2014-2016 (provincial sown-area % by month; area-weighted over ES provinces of the class), https://www.mapa.gob.es/es/estadistica/temas/estadisticas-agrarias/agricultura/calendarios-siembras-recoleccion/",
+   "countries": [
+    "ES"
+   ]
+  },
+  {
+   "eppo": "TRZAX",
+   "sowing_type": "autumn",
+   "koppen": [
+    "Csb"
+   ],
+   "start_month": 10,
+   "end_month": 11,
+   "cycle_days": null,
+   "source": "MAPA (ES), Calendario de siembra, recoleccion y comercializacion 2014-2016 (provincial sown-area % by month; area-weighted over ES provinces of the class), https://www.mapa.gob.es/es/estadistica/temas/estadisticas-agrarias/agricultura/calendarios-siembras-recoleccion/",
+   "countries": [
+    "ES"
+   ]
+  },
+  {
+   "eppo": "TRZAX",
+   "sowing_type": "autumn",
+   "koppen": [
+    "BSk"
+   ],
+   "start_month": 10,
+   "end_month": 1,
+   "cycle_days": null,
+   "source": "MAPA (ES), Calendario de siembra, recoleccion y comercializacion 2014-2016 (provincial sown-area % by month; area-weighted over ES provinces of the class), https://www.mapa.gob.es/es/estadistica/temas/estadisticas-agrarias/agricultura/calendarios-siembras-recoleccion/",
+   "countries": [
+    "ES"
+   ]
+  },
+  {
+   "eppo": "TRZAX",
+   "sowing_type": "autumn",
+   "koppen": [
+    "Cfb"
+   ],
+   "start_month": 10,
+   "end_month": 12,
+   "cycle_days": null,
+   "source": "MAPA (ES), Calendario de siembra, recoleccion y comercializacion 2014-2016 (provincial sown-area % by month; area-weighted over ES provinces of the class), https://www.mapa.gob.es/es/estadistica/temas/estadisticas-agrarias/agricultura/calendarios-siembras-recoleccion/",
+   "countries": [
+    "ES"
+   ]
+  },
+  {
+   "eppo": "TRZAW",
+   "sowing_type": "autumn",
+   "koppen": [
+    "Csa"
+   ],
+   "start_month": 10,
+   "end_month": 12,
+   "cycle_days": null,
+   "source": "MAPA (ES), Calendario de siembra, recoleccion y comercializacion 2014-2016 (provincial sown-area % by month; area-weighted over ES provinces of the class), https://www.mapa.gob.es/es/estadistica/temas/estadisticas-agrarias/agricultura/calendarios-siembras-recoleccion/",
+   "countries": [
+    "ES"
+   ]
+  },
+  {
+   "eppo": "TRZAW",
+   "sowing_type": "autumn",
+   "koppen": [
+    "Csb"
+   ],
+   "start_month": 10,
+   "end_month": 11,
+   "cycle_days": null,
+   "source": "MAPA (ES), Calendario de siembra, recoleccion y comercializacion 2014-2016 (provincial sown-area % by month; area-weighted over ES provinces of the class), https://www.mapa.gob.es/es/estadistica/temas/estadisticas-agrarias/agricultura/calendarios-siembras-recoleccion/",
+   "countries": [
+    "ES"
+   ]
+  },
+  {
+   "eppo": "TRZAW",
+   "sowing_type": "autumn",
+   "koppen": [
+    "BSk"
+   ],
+   "start_month": 10,
+   "end_month": 1,
+   "cycle_days": null,
+   "source": "MAPA (ES), Calendario de siembra, recoleccion y comercializacion 2014-2016 (provincial sown-area % by month; area-weighted over ES provinces of the class), https://www.mapa.gob.es/es/estadistica/temas/estadisticas-agrarias/agricultura/calendarios-siembras-recoleccion/",
+   "countries": [
+    "ES"
+   ]
+  },
+  {
+   "eppo": "TRZAW",
+   "sowing_type": "autumn",
+   "koppen": [
+    "Cfb"
+   ],
+   "start_month": 10,
+   "end_month": 12,
+   "cycle_days": null,
+   "source": "MAPA (ES), Calendario de siembra, recoleccion y comercializacion 2014-2016 (provincial sown-area % by month; area-weighted over ES provinces of the class), https://www.mapa.gob.es/es/estadistica/temas/estadisticas-agrarias/agricultura/calendarios-siembras-recoleccion/",
+   "countries": [
+    "ES"
+   ]
+  },
+  {
+   "eppo": "TRZDU",
+   "sowing_type": "autumn",
+   "koppen": [
+    "Csa"
+   ],
+   "start_month": 11,
+   "end_month": 12,
+   "cycle_days": null,
+   "source": "MAPA (ES), Calendario de siembra, recoleccion y comercializacion 2014-2016 (provincial sown-area % by month; area-weighted over ES provinces of the class), https://www.mapa.gob.es/es/estadistica/temas/estadisticas-agrarias/agricultura/calendarios-siembras-recoleccion/",
+   "countries": [
+    "ES"
+   ]
+  },
+  {
+   "eppo": "TRZDU",
+   "sowing_type": "autumn",
+   "koppen": [
+    "Csb"
+   ],
+   "start_month": 10,
+   "end_month": 2,
+   "cycle_days": null,
+   "source": "MAPA (ES), Calendario de siembra, recoleccion y comercializacion 2014-2016 (provincial sown-area % by month; area-weighted over ES provinces of the class), https://www.mapa.gob.es/es/estadistica/temas/estadisticas-agrarias/agricultura/calendarios-siembras-recoleccion/",
+   "countries": [
+    "ES"
+   ]
+  },
+  {
+   "eppo": "TRZDU",
+   "sowing_type": "autumn",
+   "koppen": [
+    "BSk"
+   ],
+   "start_month": 10,
+   "end_month": 1,
+   "cycle_days": null,
+   "source": "MAPA (ES), Calendario de siembra, recoleccion y comercializacion 2014-2016 (provincial sown-area % by month; area-weighted over ES provinces of the class), https://www.mapa.gob.es/es/estadistica/temas/estadisticas-agrarias/agricultura/calendarios-siembras-recoleccion/",
+   "countries": [
+    "ES"
+   ]
+  },
+  {
+   "eppo": "ZEAMX",
+   "sowing_type": "spring",
+   "koppen": [
+    "Csa"
+   ],
+   "start_month": 3,
+   "end_month": 5,
+   "cycle_days": null,
+   "source": "MAPA (ES), Calendario de siembra, recoleccion y comercializacion 2014-2016 (provincial sown-area % by month; area-weighted over ES provinces of the class), https://www.mapa.gob.es/es/estadistica/temas/estadisticas-agrarias/agricultura/calendarios-siembras-recoleccion/",
+   "countries": [
+    "ES"
+   ]
+  },
+  {
+   "eppo": "ZEAMX",
+   "sowing_type": "spring",
+   "koppen": [
+    "Csb"
+   ],
+   "start_month": 4,
+   "end_month": 5,
+   "cycle_days": null,
+   "source": "MAPA (ES), Calendario de siembra, recoleccion y comercializacion 2014-2016 (provincial sown-area % by month; area-weighted over ES provinces of the class), https://www.mapa.gob.es/es/estadistica/temas/estadisticas-agrarias/agricultura/calendarios-siembras-recoleccion/",
+   "countries": [
+    "ES"
+   ]
+  },
+  {
+   "eppo": "ZEAMX",
+   "sowing_type": "spring",
+   "koppen": [
+    "BSk"
+   ],
+   "start_month": 4,
+   "end_month": 6,
+   "cycle_days": null,
+   "source": "MAPA (ES), Calendario de siembra, recoleccion y comercializacion 2014-2016 (provincial sown-area % by month; area-weighted over ES provinces of the class), https://www.mapa.gob.es/es/estadistica/temas/estadisticas-agrarias/agricultura/calendarios-siembras-recoleccion/",
+   "countries": [
+    "ES"
+   ]
+  },
+  {
+   "eppo": "ZEAMX",
+   "sowing_type": "spring",
+   "koppen": [
+    "Cfb"
+   ],
+   "start_month": 4,
+   "end_month": 6,
+   "cycle_days": null,
+   "source": "MAPA (ES), Calendario de siembra, recoleccion y comercializacion 2014-2016 (provincial sown-area % by month; area-weighted over ES provinces of the class), https://www.mapa.gob.es/es/estadistica/temas/estadisticas-agrarias/agricultura/calendarios-siembras-recoleccion/",
+   "countries": [
+    "ES"
+   ]
+  },
+  {
+   "eppo": "HELAN",
+   "sowing_type": "spring",
+   "koppen": [
+    "Csa"
+   ],
+   "start_month": 2,
+   "end_month": 5,
+   "cycle_days": null,
+   "source": "MAPA (ES), Calendario de siembra, recoleccion y comercializacion 2014-2016 (provincial sown-area % by month; area-weighted over ES provinces of the class), https://www.mapa.gob.es/es/estadistica/temas/estadisticas-agrarias/agricultura/calendarios-siembras-recoleccion/",
+   "countries": [
+    "ES"
+   ]
+  },
+  {
+   "eppo": "HELAN",
+   "sowing_type": "spring",
+   "koppen": [
+    "Csb"
+   ],
+   "start_month": 4,
+   "end_month": 6,
+   "cycle_days": null,
+   "source": "MAPA (ES), Calendario de siembra, recoleccion y comercializacion 2014-2016 (provincial sown-area % by month; area-weighted over ES provinces of the class), https://www.mapa.gob.es/es/estadistica/temas/estadisticas-agrarias/agricultura/calendarios-siembras-recoleccion/",
+   "countries": [
+    "ES"
+   ]
+  },
+  {
+   "eppo": "HELAN",
+   "sowing_type": "spring",
+   "koppen": [
+    "BSk"
+   ],
+   "start_month": 4,
+   "end_month": 6,
+   "cycle_days": null,
+   "source": "MAPA (ES), Calendario de siembra, recoleccion y comercializacion 2014-2016 (provincial sown-area % by month; area-weighted over ES provinces of the class), https://www.mapa.gob.es/es/estadistica/temas/estadisticas-agrarias/agricultura/calendarios-siembras-recoleccion/",
+   "countries": [
+    "ES"
+   ]
+  },
+  {
+   "eppo": "HELAN",
+   "sowing_type": "spring",
+   "koppen": [
+    "Cfb"
+   ],
+   "start_month": 5,
+   "end_month": 6,
+   "cycle_days": null,
+   "source": "MAPA (ES), Calendario de siembra, recoleccion y comercializacion 2014-2016 (provincial sown-area % by month; area-weighted over ES provinces of the class), https://www.mapa.gob.es/es/estadistica/temas/estadisticas-agrarias/agricultura/calendarios-siembras-recoleccion/",
+   "countries": [
+    "ES"
+   ]
+  },
+  {
+   "eppo": "CIEAR",
+   "sowing_type": "spring",
+   "koppen": [
+    "Csa"
+   ],
+   "start_month": 2,
+   "end_month": 4,
+   "cycle_days": null,
+   "source": "MAPA (ES), Calendario de siembra, recoleccion y comercializacion 2014-2016 (provincial sown-area % by month; area-weighted over ES provinces of the class), https://www.mapa.gob.es/es/estadistica/temas/estadisticas-agrarias/agricultura/calendarios-siembras-recoleccion/",
+   "countries": [
+    "ES"
+   ]
+  },
+  {
+   "eppo": "CIEAR",
+   "sowing_type": "spring",
+   "koppen": [
+    "Csb"
+   ],
+   "start_month": 2,
+   "end_month": 4,
+   "cycle_days": null,
+   "source": "MAPA (ES), Calendario de siembra, recoleccion y comercializacion 2014-2016 (provincial sown-area % by month; area-weighted over ES provinces of the class), https://www.mapa.gob.es/es/estadistica/temas/estadisticas-agrarias/agricultura/calendarios-siembras-recoleccion/",
+   "countries": [
+    "ES"
+   ]
+  },
+  {
+   "eppo": "BRSNN",
+   "sowing_type": "autumn",
+   "koppen": [
+    "Csa"
+   ],
+   "start_month": 9,
+   "end_month": 12,
+   "cycle_days": null,
+   "source": "MAPA (ES), Calendario de siembra, recoleccion y comercializacion 2014-2016 (provincial sown-area % by month; area-weighted over ES provinces of the class), https://www.mapa.gob.es/es/estadistica/temas/estadisticas-agrarias/agricultura/calendarios-siembras-recoleccion/",
+   "countries": [
+    "ES"
+   ]
+  },
+  {
+   "eppo": "BRSNN",
+   "sowing_type": "autumn",
+   "koppen": [
+    "Csb"
+   ],
+   "start_month": 9,
+   "end_month": 11,
+   "cycle_days": null,
+   "source": "MAPA (ES), Calendario de siembra, recoleccion y comercializacion 2014-2016 (provincial sown-area % by month; area-weighted over ES provinces of the class), https://www.mapa.gob.es/es/estadistica/temas/estadisticas-agrarias/agricultura/calendarios-siembras-recoleccion/",
+   "countries": [
+    "ES"
+   ]
+  },
+  {
+   "eppo": "BRSNN",
+   "sowing_type": "autumn",
+   "koppen": [
+    "Cfb"
+   ],
+   "start_month": 9,
+   "end_month": 10,
+   "cycle_days": null,
+   "source": "MAPA (ES), Calendario de siembra, recoleccion y comercializacion 2014-2016 (provincial sown-area % by month; area-weighted over ES provinces of the class), https://www.mapa.gob.es/es/estadistica/temas/estadisticas-agrarias/agricultura/calendarios-siembras-recoleccion/",
+   "countries": [
+    "ES"
+   ]
+  },
+  {
+   "eppo": "AVESA",
+   "sowing_type": "autumn",
+   "koppen": [
+    "Csa"
+   ],
+   "start_month": 9,
+   "end_month": 12,
+   "cycle_days": null,
+   "source": "MAPA (ES), Calendario de siembra, recoleccion y comercializacion 2014-2016 (provincial sown-area % by month; area-weighted over ES provinces of the class), https://www.mapa.gob.es/es/estadistica/temas/estadisticas-agrarias/agricultura/calendarios-siembras-recoleccion/",
+   "countries": [
+    "ES"
+   ]
+  },
+  {
+   "eppo": "AVESA",
+   "sowing_type": "autumn",
+   "koppen": [
+    "Csb"
+   ],
+   "start_month": 9,
+   "end_month": 2,
+   "cycle_days": null,
+   "source": "MAPA (ES), Calendario de siembra, recoleccion y comercializacion 2014-2016 (provincial sown-area % by month; area-weighted over ES provinces of the class), https://www.mapa.gob.es/es/estadistica/temas/estadisticas-agrarias/agricultura/calendarios-siembras-recoleccion/",
+   "countries": [
+    "ES"
+   ]
+  },
+  {
+   "eppo": "AVESA",
+   "sowing_type": "autumn",
+   "koppen": [
+    "BSk"
+   ],
+   "start_month": 10,
+   "end_month": 1,
+   "cycle_days": null,
+   "source": "MAPA (ES), Calendario de siembra, recoleccion y comercializacion 2014-2016 (provincial sown-area % by month; area-weighted over ES provinces of the class), https://www.mapa.gob.es/es/estadistica/temas/estadisticas-agrarias/agricultura/calendarios-siembras-recoleccion/",
+   "countries": [
+    "ES"
+   ]
+  },
+  {
+   "eppo": "AVESA",
+   "sowing_type": "autumn",
+   "koppen": [
+    "Cfb"
+   ],
+   "start_month": 10,
+   "end_month": 1,
+   "cycle_days": null,
+   "source": "MAPA (ES), Calendario de siembra, recoleccion y comercializacion 2014-2016 (provincial sown-area % by month; area-weighted over ES provinces of the class), https://www.mapa.gob.es/es/estadistica/temas/estadisticas-agrarias/agricultura/calendarios-siembras-recoleccion/",
+   "countries": [
+    "ES"
+   ]
+  },
+  {
+   "eppo": "SECCE",
+   "sowing_type": "autumn",
+   "koppen": [
+    "Csa"
+   ],
+   "start_month": 9,
+   "end_month": 11,
+   "cycle_days": null,
+   "source": "MAPA (ES), Calendario de siembra, recoleccion y comercializacion 2014-2016 (provincial sown-area % by month; area-weighted over ES provinces of the class), https://www.mapa.gob.es/es/estadistica/temas/estadisticas-agrarias/agricultura/calendarios-siembras-recoleccion/",
+   "countries": [
+    "ES"
+   ]
+  },
+  {
+   "eppo": "SECCE",
+   "sowing_type": "autumn",
+   "koppen": [
+    "Csb"
+   ],
+   "start_month": 9,
+   "end_month": 11,
+   "cycle_days": null,
+   "source": "MAPA (ES), Calendario de siembra, recoleccion y comercializacion 2014-2016 (provincial sown-area % by month; area-weighted over ES provinces of the class), https://www.mapa.gob.es/es/estadistica/temas/estadisticas-agrarias/agricultura/calendarios-siembras-recoleccion/",
+   "countries": [
+    "ES"
+   ]
+  },
+  {
+   "eppo": "SECCE",
+   "sowing_type": "autumn",
+   "koppen": [
+    "BSk"
+   ],
+   "start_month": 10,
+   "end_month": 11,
+   "cycle_days": null,
+   "source": "MAPA (ES), Calendario de siembra, recoleccion y comercializacion 2014-2016 (provincial sown-area % by month; area-weighted over ES provinces of the class), https://www.mapa.gob.es/es/estadistica/temas/estadisticas-agrarias/agricultura/calendarios-siembras-recoleccion/",
+   "countries": [
+    "ES"
+   ]
+  },
+  {
+   "eppo": "SECCE",
+   "sowing_type": "autumn",
+   "koppen": [
+    "Cfb"
+   ],
+   "start_month": 10,
+   "end_month": 12,
+   "cycle_days": null,
+   "source": "MAPA (ES), Calendario de siembra, recoleccion y comercializacion 2014-2016 (provincial sown-area % by month; area-weighted over ES provinces of the class), https://www.mapa.gob.es/es/estadistica/temas/estadisticas-agrarias/agricultura/calendarios-siembras-recoleccion/",
+   "countries": [
+    "ES"
+   ]
+  },
+  {
+   "eppo": "TTLSS",
+   "sowing_type": "autumn",
+   "koppen": [
+    "Csa"
+   ],
+   "start_month": 10,
+   "end_month": 12,
+   "cycle_days": null,
+   "source": "MAPA (ES), Calendario de siembra, recoleccion y comercializacion 2014-2016 (provincial sown-area % by month; area-weighted over ES provinces of the class), https://www.mapa.gob.es/es/estadistica/temas/estadisticas-agrarias/agricultura/calendarios-siembras-recoleccion/",
+   "countries": [
+    "ES"
+   ]
+  },
+  {
+   "eppo": "TTLSS",
+   "sowing_type": "autumn",
+   "koppen": [
+    "Csb"
+   ],
+   "start_month": 10,
+   "end_month": 1,
+   "cycle_days": null,
+   "source": "MAPA (ES), Calendario de siembra, recoleccion y comercializacion 2014-2016 (provincial sown-area % by month; area-weighted over ES provinces of the class), https://www.mapa.gob.es/es/estadistica/temas/estadisticas-agrarias/agricultura/calendarios-siembras-recoleccion/",
+   "countries": [
+    "ES"
+   ]
+  },
+  {
+   "eppo": "TTLSS",
+   "sowing_type": "autumn",
+   "koppen": [
+    "BSk"
+   ],
+   "start_month": 10,
+   "end_month": 12,
+   "cycle_days": null,
+   "source": "MAPA (ES), Calendario de siembra, recoleccion y comercializacion 2014-2016 (provincial sown-area % by month; area-weighted over ES provinces of the class), https://www.mapa.gob.es/es/estadistica/temas/estadisticas-agrarias/agricultura/calendarios-siembras-recoleccion/",
+   "countries": [
+    "ES"
+   ]
+  },
+  {
+   "eppo": "TTLSS",
+   "sowing_type": "autumn",
+   "koppen": [
+    "Cfb"
+   ],
+   "start_month": 9,
+   "end_month": 11,
+   "cycle_days": null,
+   "source": "MAPA (ES), Calendario de siembra, recoleccion y comercializacion 2014-2016 (provincial sown-area % by month; area-weighted over ES provinces of the class), https://www.mapa.gob.es/es/estadistica/temas/estadisticas-agrarias/agricultura/calendarios-siembras-recoleccion/",
+   "countries": [
+    "ES"
+   ]
+  },
+  {
+   "eppo": "PISSA",
+   "sowing_type": "autumn",
+   "koppen": [
+    "Csa"
+   ],
+   "start_month": 10,
+   "end_month": 2,
+   "cycle_days": null,
+   "source": "MAPA (ES), Calendario de siembra, recoleccion y comercializacion 2014-2016 (provincial sown-area % by month; area-weighted over ES provinces of the class), https://www.mapa.gob.es/es/estadistica/temas/estadisticas-agrarias/agricultura/calendarios-siembras-recoleccion/",
+   "countries": [
+    "ES"
+   ]
+  },
+  {
+   "eppo": "PISSA",
+   "sowing_type": "autumn",
+   "koppen": [
+    "Csb"
+   ],
+   "start_month": 10,
+   "end_month": 2,
+   "cycle_days": null,
+   "source": "MAPA (ES), Calendario de siembra, recoleccion y comercializacion 2014-2016 (provincial sown-area % by month; area-weighted over ES provinces of the class), https://www.mapa.gob.es/es/estadistica/temas/estadisticas-agrarias/agricultura/calendarios-siembras-recoleccion/",
+   "countries": [
+    "ES"
+   ]
+  },
+  {
+   "eppo": "PISSA",
+   "sowing_type": "autumn",
+   "koppen": [
+    "BSk"
+   ],
+   "start_month": 10,
+   "end_month": 2,
+   "cycle_days": null,
+   "source": "MAPA (ES), Calendario de siembra, recoleccion y comercializacion 2014-2016 (provincial sown-area % by month; area-weighted over ES provinces of the class), https://www.mapa.gob.es/es/estadistica/temas/estadisticas-agrarias/agricultura/calendarios-siembras-recoleccion/",
+   "countries": [
+    "ES"
+   ]
+  },
+  {
+   "eppo": "PISSA",
+   "sowing_type": "autumn",
+   "koppen": [
+    "Cfb"
+   ],
+   "start_month": 10,
+   "end_month": 2,
+   "cycle_days": null,
+   "source": "MAPA (ES), Calendario de siembra, recoleccion y comercializacion 2014-2016 (provincial sown-area % by month; area-weighted over ES provinces of the class), https://www.mapa.gob.es/es/estadistica/temas/estadisticas-agrarias/agricultura/calendarios-siembras-recoleccion/",
+   "countries": [
+    "ES"
+   ]
+  },
+  {
+   "eppo": "VICFX",
+   "sowing_type": "autumn",
+   "koppen": [
+    "Csa"
+   ],
+   "start_month": 10,
+   "end_month": 12,
+   "cycle_days": null,
+   "source": "MAPA (ES), Calendario de siembra, recoleccion y comercializacion 2014-2016 (provincial sown-area % by month; area-weighted over ES provinces of the class), https://www.mapa.gob.es/es/estadistica/temas/estadisticas-agrarias/agricultura/calendarios-siembras-recoleccion/",
+   "countries": [
+    "ES"
+   ]
+  },
+  {
+   "eppo": "VICFX",
+   "sowing_type": "autumn",
+   "koppen": [
+    "Cfb"
+   ],
+   "start_month": 10,
+   "end_month": 11,
+   "cycle_days": null,
+   "source": "MAPA (ES), Calendario de siembra, recoleccion y comercializacion 2014-2016 (provincial sown-area % by month; area-weighted over ES provinces of the class), https://www.mapa.gob.es/es/estadistica/temas/estadisticas-agrarias/agricultura/calendarios-siembras-recoleccion/",
+   "countries": [
+    "ES"
+   ]
+  },
+  {
+   "eppo": "LENCU",
+   "sowing_type": "autumn",
+   "koppen": [
+    "Csa"
+   ],
+   "start_month": 11,
+   "end_month": 1,
+   "cycle_days": null,
+   "source": "MAPA (ES), Calendario de siembra, recoleccion y comercializacion 2014-2016 (provincial sown-area % by month; area-weighted over ES provinces of the class), https://www.mapa.gob.es/es/estadistica/temas/estadisticas-agrarias/agricultura/calendarios-siembras-recoleccion/",
+   "countries": [
+    "ES"
+   ]
+  },
+  {
+   "eppo": "LENCU",
+   "sowing_type": "spring",
+   "koppen": [
+    "Csb"
+   ],
+   "start_month": 1,
+   "end_month": 3,
+   "cycle_days": null,
+   "source": "MAPA (ES), Calendario de siembra, recoleccion y comercializacion 2014-2016 (provincial sown-area % by month; area-weighted over ES provinces of the class), https://www.mapa.gob.es/es/estadistica/temas/estadisticas-agrarias/agricultura/calendarios-siembras-recoleccion/",
+   "countries": [
+    "ES"
+   ]
+  },
+  {
+   "eppo": "LENCU",
+   "sowing_type": "autumn",
+   "koppen": [
+    "BSk"
+   ],
+   "start_month": 11,
+   "end_month": 1,
+   "cycle_days": null,
+   "source": "MAPA (ES), Calendario de siembra, recoleccion y comercializacion 2014-2016 (provincial sown-area % by month; area-weighted over ES provinces of the class), https://www.mapa.gob.es/es/estadistica/temas/estadisticas-agrarias/agricultura/calendarios-siembras-recoleccion/",
+   "countries": [
+    "ES"
+   ]
+  },
+  {
+   "eppo": "ORYSA",
+   "sowing_type": "spring",
+   "koppen": [
+    "Csa"
+   ],
+   "start_month": 4,
+   "end_month": 5,
+   "cycle_days": null,
+   "source": "MAPA (ES), Calendario de siembra, recoleccion y comercializacion 2014-2016 (provincial sown-area % by month; area-weighted over ES provinces of the class), https://www.mapa.gob.es/es/estadistica/temas/estadisticas-agrarias/agricultura/calendarios-siembras-recoleccion/",
+   "countries": [
+    "ES"
+   ]
+  },
+  {
+   "eppo": "ORYSA",
+   "sowing_type": "spring",
+   "koppen": [
+    "Csb"
+   ],
+   "start_month": 4,
+   "end_month": 5,
+   "cycle_days": null,
+   "source": "MAPA (ES), Calendario de siembra, recoleccion y comercializacion 2014-2016 (provincial sown-area % by month; area-weighted over ES provinces of the class), https://www.mapa.gob.es/es/estadistica/temas/estadisticas-agrarias/agricultura/calendarios-siembras-recoleccion/",
+   "countries": [
+    "ES"
+   ]
+  },
+  {
+   "eppo": "BETVU",
+   "sowing_type": "autumn",
+   "koppen": [
+    "Csa"
+   ],
+   "start_month": 10,
+   "end_month": 11,
+   "cycle_days": null,
+   "source": "MAPA (ES), Calendario de siembra, recoleccion y comercializacion 2014-2016 (provincial sown-area % by month; area-weighted over ES provinces of the class), https://www.mapa.gob.es/es/estadistica/temas/estadisticas-agrarias/agricultura/calendarios-siembras-recoleccion/",
+   "countries": [
+    "ES"
+   ]
+  },
+  {
+   "eppo": "BETVU",
+   "sowing_type": "spring",
+   "koppen": [
+    "Csb"
+   ],
+   "start_month": 3,
+   "end_month": 4,
+   "cycle_days": null,
+   "source": "MAPA (ES), Calendario de siembra, recoleccion y comercializacion 2014-2016 (provincial sown-area % by month; area-weighted over ES provinces of the class), https://www.mapa.gob.es/es/estadistica/temas/estadisticas-agrarias/agricultura/calendarios-siembras-recoleccion/",
+   "countries": [
+    "ES"
+   ]
+  },
+  {
+   "eppo": "BETVU",
+   "sowing_type": "spring",
+   "koppen": [
+    "Cfb"
+   ],
+   "start_month": 3,
+   "end_month": 4,
+   "cycle_days": null,
+   "source": "MAPA (ES), Calendario de siembra, recoleccion y comercializacion 2014-2016 (provincial sown-area % by month; area-weighted over ES provinces of the class), https://www.mapa.gob.es/es/estadistica/temas/estadisticas-agrarias/agricultura/calendarios-siembras-recoleccion/",
+   "countries": [
+    "ES"
+   ]
+  },
+  {
+   "eppo": "SOLTU",
+   "sowing_type": "autumn",
+   "koppen": [
+    "Csa"
+   ],
+   "start_month": 11,
+   "end_month": 2,
+   "cycle_days": null,
+   "source": "MAPA (ES), Calendario de siembra, recoleccion y comercializacion 2014-2016 (provincial sown-area % by month; area-weighted over ES provinces of the class), https://www.mapa.gob.es/es/estadistica/temas/estadisticas-agrarias/agricultura/calendarios-siembras-recoleccion/",
+   "countries": [
+    "ES"
+   ]
+  },
+  {
+   "eppo": "SOLTU",
+   "sowing_type": "spring",
+   "koppen": [
+    "Csb"
+   ],
+   "start_month": 3,
+   "end_month": 5,
+   "cycle_days": null,
+   "source": "MAPA (ES), Calendario de siembra, recoleccion y comercializacion 2014-2016 (provincial sown-area % by month; area-weighted over ES provinces of the class), https://www.mapa.gob.es/es/estadistica/temas/estadisticas-agrarias/agricultura/calendarios-siembras-recoleccion/",
+   "countries": [
+    "ES"
+   ]
+  },
+  {
+   "eppo": "SOLTU",
+   "sowing_type": "spring",
+   "koppen": [
+    "Cfb"
+   ],
+   "start_month": 3,
+   "end_month": 4,
+   "cycle_days": null,
+   "source": "MAPA (ES), Calendario de siembra, recoleccion y comercializacion 2014-2016 (provincial sown-area % by month; area-weighted over ES provinces of the class), https://www.mapa.gob.es/es/estadistica/temas/estadisticas-agrarias/agricultura/calendarios-siembras-recoleccion/",
+   "countries": [
+    "ES"
+   ]
+  }
+ ]
+}

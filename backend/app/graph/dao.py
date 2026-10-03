@@ -37,6 +37,7 @@ from nkz_platform_sdk.subscriptions import SubscriptionDef, SubscriptionRegistra
 
 from app.core.config import settings
 from app.graph import agroclimatic
+from app.services.country_lookup import country_at
 from app.services.soil_client import assess_soil_suitability, get_parcel_soil_properties
 from app.species_registry import get_species_info, resolve_species
 from neo4j import AsyncDriver
@@ -3354,6 +3355,7 @@ class GraphDAO:
             "parcel_id": parcel_id,
             "area_ha": area_ha,
             "centroid": centroid,
+            "country": country_at(centroid["lat"], centroid["lon"]),
             "climate_class": climate_class,
             "climate_detail": climate_detail,
             "soil": soil_data,
@@ -3689,7 +3691,9 @@ class GraphDAO:
         ``organic``), ``season`` (``all``/``autumn``/``spring``/``summer``),
         ``crops`` (EPPO list or None), ``top_n``, and optional numeric climate
         inputs ``annual_rainfall_mm``, ``annual_et0_mm``, ``coldest_month_min_c``,
-        ``annual_temp_c`` and ``frost_margin_c``. A ``climate_detail`` dict with
+        ``annual_temp_c`` and ``frost_margin_c``, and ``country`` (ISO 3166
+        alpha-2 or None; scopes country-specific sowing windows and is part of
+        the cache key through ``agro_cond``). A ``climate_detail`` dict with
         the same keys is also accepted; explicit top-level keys win.
 
         Only ``management="organic"`` changes the computation (yields and the
@@ -3772,7 +3776,8 @@ class GraphDAO:
             else:
                 crop_entries = await self.get_available_crops()
             crop_entries = [c for c in crop_entries if c.get("eppo_code")]
-            sowings = {c["eppo_code"]: sowing_info(c["eppo_code"], climate_class, table_rows)
+            sowings = {c["eppo_code"]: sowing_info(c["eppo_code"], climate_class, table_rows,
+                                                   country=cond.get("country"))
                        for c in crop_entries}
             if season != "all":
                 crop_entries = [c for c in crop_entries if sowings[c["eppo_code"]]["sowing_type"] == season]

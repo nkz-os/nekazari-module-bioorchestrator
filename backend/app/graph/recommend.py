@@ -40,8 +40,15 @@ def disease_summary(disease_scores: dict) -> dict:
     return {"resistant": sum(1 for v in values if v >= RESISTANT_THRESHOLD), "total": len(values)}
 
 
-def sowing_info(eppo: str, koppen: str | None, table_rows: list[dict]) -> dict:
+def sowing_info(eppo: str, koppen: str | None, table_rows: list[dict], country: str | None = None) -> dict:
+    """First matching table row, else the coarse season slot.
+
+    A row with ``countries`` applies only when ``country`` is one of them (an
+    unknown country matches no scoped row); a row without it applies anywhere.
+    """
     for row in table_rows:
+        if "countries" in row and country not in row["countries"]:
+            continue
         if row["eppo"] == eppo and (koppen is None or koppen in row.get("koppen", [])):
             return {
                 "sowing_type": row["sowing_type"],

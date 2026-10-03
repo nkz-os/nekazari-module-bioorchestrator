@@ -18,6 +18,7 @@ _MAX_CROPS = 4
 _EPPO_RE = re.compile(r"^[A-Z0-9]{2,6}$")
 _EPPO_PATTERN = r"^[A-Za-z0-9]{2,6}$"
 _KOPPEN_PATTERN = r"^[A-Z][A-Za-z]{0,2}$"
+_COUNTRY_PATTERN = r"^[A-Z]{2}$"
 _MAX_TEXT = 64
 
 Irrigation = Literal["secano", "regadío"]
@@ -104,8 +105,13 @@ async def recommend_for_conditions(
     cond: CondDep,
     crops: str | None = None,
     top_n: int = Query(10, ge=1, le=30),
+    country: str | None = Query(
+        None, pattern=_COUNTRY_PATTERN,
+        description="ISO 3166 alpha-2; scopes country-specific sowing windows",
+    ),
 ):
     conditions = cond.as_dict()
+    conditions["country"] = country
     conditions["crops"] = _parse_crops(crops)
     conditions["top_n"] = top_n
     return await GraphDAO(driver).recommend_for_conditions(conditions)
@@ -213,6 +219,7 @@ async def recommend_for_parcel(
         "crops": _parse_crops(crops),
         "top_n": top_n,
         "frost_margin_c": frost_margin_c,
+        "country": env.get("country"),
     }
     for key in _CLIMATE_KEYS:
         conditions[key] = detail.get(key)
