@@ -14,9 +14,10 @@ from app.graph import dao as dao_mod
 from app.graph.dao import GraphDAO
 from neo4j import AsyncGraphDatabase
 
-pytestmark = pytest.mark.skipif(
-    shutil.which("docker") is None, reason="docker unavailable for testcontainers"
-)
+pytestmark = [
+    pytest.mark.real_batch,
+    pytest.mark.skipif(shutil.which("docker") is None, reason="docker unavailable for testcontainers"),
+]
 
 _loop: asyncio.AbstractEventLoop = asyncio.new_event_loop()
 _PW = "testpassword"
@@ -76,8 +77,7 @@ def _trials(seed: int = 7) -> list[dict]:
         out.append({**out[0], "id": 1000 + k, "cropEppo": "HORVX", "cropScientific": None,
                     "varietyNormalized": f"HORVX-TIE{k}", "yieldKgHa": 99999.0, "yieldNoteS1": None,
                     "rankingEligible": True, "irrigationRegime": None, "year": None, "sites": [k % 3]})
-    # PISSA: exact ties spread over sites; their rank depends on the order the sites'
-    # trials are scanned, so the batch must walk them like the per-crop query does.
+    # PISSA: exact ties spread over sites; scan order must not influence their rank.
     for k in range(24):
         out.append({**out[0], "id": 3000 + k, "cropEppo": "PISSA", "cropScientific": None,
                     "varietyNormalized": f"PISSA-V{k:02d}", "yieldKgHa": 2000.0, "yieldNoteS1": None,
@@ -101,13 +101,15 @@ def dao():
         _run(_seed(d))
         yield d
         _run(driver.close())
+    _loop.close()
 
 
 async def _seed(dao):
     sites = [{**s, "idx": i} for i, s in enumerate(_SITES)]
     async with dao._driver.session() as s:
-        # Production schema (cypher_migrations 001/009): the per-crop plan, and so the
-        # order in which tied means rank, depends on the TrialSite(name) index.
+        # Production schema (cypher_migrations 001/009), kept so the planner picks the
+        # same plans as in production. Tie order no longer depends on it: the shared
+        # ORDER BY breaks ties by variety name (see test_ties_ranked_alphabetically).
         for stmt in (
             "CREATE INDEX trial_site_name IF NOT EXISTS FOR (ts:TrialSite) ON (ts.name)",
             "CREATE INDEX trial_site_soil IF NOT EXISTS FOR (ts:TrialSite) ON (ts.soilType)",
@@ -177,6 +179,27 @@ def test_fixture_exercises_ties_nulls_and_empty(dao):
     assert [v["mean_yield_kg_ha"] for v in full["HORVX"][:8]] == [99999.0] * 8
     secce = [v["mean_yield_kg_ha"] for v in full["SECCE"]]
     assert secce[:2] == [3001.0, 3000.0] and secce[2:] == [None] * 7
+
+
+@pytest.mark.parametrize("site_set", sorted(_SITE_SETS))
+@pytest.mark.parametrize("top_n", [3, 5, 50])
+def test_ties_ranked_alphabetically(dao, site_set, top_n):
+    """Ties (equal displayed mean) order by variety name, identically per-crop and batched."""
+    sites = _SITE_SETS[site_set]
+    batch = _run(dao.extrapolate_varieties_batch(["HORVX", "PISSA", "SECCE"], sites, top_n=top_n))
+    per_crop = _run(_per_crop(dao, ["HORVX", "PISSA", "SECCE"], sites, top_n=top_n))
+    assert batch == per_crop
+    for crop, ranked in batch.items():
+        # Within each run of equal means (None last), names must ascend.
+        groups: dict = {}
+        for v in ranked:
+            groups.setdefault(v["mean_yield_kg_ha"], []).append(v["variety"])
+        for names in groups.values():
+            assert names == sorted(names), (crop, names)
+    if site_set in ("flat", "unsorted"):
+        # all 8 HORVX ties sit on site-a/b/c: the cut inside the tie keeps the first names
+        assert [v["variety"] for v in batch["HORVX"]][:min(top_n, 8)] == \
+            [f"HORVX-TIE{k}" for k in range(min(top_n, 8))]
 
 
 def test_batch_exclude_sites_equals_per_crop(dao):

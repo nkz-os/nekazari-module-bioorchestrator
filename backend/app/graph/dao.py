@@ -57,8 +57,8 @@ _CROP_MATCH_PREDICATE = (
 )
 # Per-variety aggregation shared by extrapolate_varieties and its batched variant
 # (input rows: one per (vt, ts) match; output: top $top_n varieties). A single
-# definition keeps both paths' filters, weights, collect order and tie-breaking
-# identical.
+# definition keeps both paths' filters and weights identical; ties (equal mean at the
+# displayed 0.1 precision) are broken by variety name (ASC), so ranking never depends on the query plan.
 _EXTRAPOLATE_AGGREGATE_CYPHER = """
                 // Dedupe stage: collapse each trial to ONE row regardless of how
                 // many (same-name duplicate) sites it links to, so the numeric
@@ -125,7 +125,7 @@ _EXTRAPOLATE_AGGREGATE_CYPHER = """
                        agronomic_traits_list,
                        confidence_levels,
                        source_ids
-                ORDER BY mean_yield IS NULL, mean_yield DESC
+                ORDER BY mean_yield IS NULL, round(mean_yield, 1) DESC, variety ASC
                 LIMIT $top_n
 """
 _MEDIAN_CACHE: dict[tuple[str, str | None], tuple[float, dict]] = {}
@@ -2071,11 +2071,6 @@ class GraphDAO:
                       MATCH (vt)-[:TRIAL_AT]->(x:TrialSite)
                       WHERE toLower(x.name) IN $excluded_sites
                   })
-                // The per-crop plan walks the analog sites in ts.name index order
-                // (its collect(DISTINCT ts.name) leverages that order); reproduce
-                // it so each crop's rows arrive in the same order and tied
-                // means rank the same.
-                WITH vt, ts ORDER BY ts.name
                 // Same crop predicate as extrapolate_varieties, evaluated once per
                 // trial row for every requested crop.
                 WITH vt, ts, [c IN $crops WHERE
@@ -2083,8 +2078,6 @@ class GraphDAO:
                       OR vt.cropScientific CONTAINS c
                       OR toLower(vt.cropScientific) = toLower(c)] AS matched
                 UNWIND matched AS crop
-                // collect keeps arrival (scan) order, so each crop's rows reach the
-                // aggregation in the order the per-crop query would see them.
                 WITH crop, collect({vt: vt, ts: ts}) AS hits
                 CALL (hits) {
                   UNWIND hits AS h
@@ -5182,11 +5175,18 @@ class GraphDAO:
         return {"status": "updated", "id": rule_id}
 
 
+def _stable_key(x: Any) -> tuple[bool, str]:
+    """Total order over collected values that may include None (None last)."""
+    return (x is None, str(x))
+
+
 def _ranked_variety(record: Any, crop: str) -> dict:
     """Map one aggregated extrapolation row to the ranked-variety dict."""
     # Merge disease scores across trials: take best (highest) per disease
     merged_diseases: dict[str, dict] = {}
-    ds_list = record.get("disease_scores_list") or []
+    # collect() order follows the scan, which the query plan decides; sort the
+    # order-dependent inputs so the output never depends on it.
+    ds_list = sorted(record.get("disease_scores_list") or [], key=_stable_key)
     for ds_raw in ds_list:
         if not ds_raw:
             continue
@@ -5201,7 +5201,7 @@ def _ranked_variety(record: Any, crop: str) -> dict:
 
     # Merge agronomic traits: take first non-null
     merged_traits: dict[str, dict] = {}
-    at_list = record.get("agronomic_traits_list") or []
+    at_list = sorted(record.get("agronomic_traits_list") or [], key=_stable_key)
     for at_raw in at_list:
         if not at_raw:
             continue
@@ -5232,8 +5232,8 @@ def _ranked_variety(record: Any, crop: str) -> dict:
         "yield_provenance": _yield_provenance(record["derived_count"], record["trial_count"]),
         "trial_years": sorted(record["years"]),
         "trial_sites": sorted(record["sites"]),
-        "irrigation_regimes": record["irrigation_regimes"],
-        "production_systems": record["production_systems"],
+        "irrigation_regimes": sorted(record["irrigation_regimes"], key=_stable_key),
+        "production_systems": sorted(record["production_systems"], key=_stable_key),
         "disease_scores": merged_diseases,
         "agronomic_traits": merged_traits,
         "confidence": best_confidence,
