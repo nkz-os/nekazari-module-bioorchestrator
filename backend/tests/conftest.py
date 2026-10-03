@@ -8,6 +8,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from fastapi.testclient import TestClient
 
+from app.graph.dao import GraphDAO
 from neo4j import AsyncDriver
 
 
@@ -67,3 +68,28 @@ def client() -> TestClient:
 def _no_recommend_warmup(monkeypatch):
     """Startup cache warm-up is off in tests unless a test turns it on."""
     monkeypatch.setenv("RECOMMEND_WARMUP", "0")
+
+
+async def batch_via_per_crop(self, crops, similar_sites, irrigation_regime=None, top_n=10, **kw):
+    """Stand-in for extrapolate_varieties_batch over the (mocked) per-crop method.
+
+    The batch is defined as per-crop extrapolate_varieties; that equivalence is
+    proven on real Neo4j in tests/graph/test_extrapolate_batch.py.
+    """
+    return {c: (await self.extrapolate_varieties(
+        crop=c, irrigation_regime=irrigation_regime, top_n=top_n,
+        similar_sites_override=similar_sites, **kw))["ranked_varieties"]
+        for c in dict.fromkeys(crops)}
+
+
+@pytest.fixture(autouse=True)
+def _batch_via_per_crop(request):
+    """Mock-driven recommend tests exercise extrapolate_varieties_batch via this stand-in.
+
+    Tests marked `real_batch` (the real-Neo4j equivalence suite) run the real method.
+    """
+    if request.node.get_closest_marker("real_batch"):
+        yield
+        return
+    with patch.object(GraphDAO, "extrapolate_varieties_batch", batch_via_per_crop):
+        yield

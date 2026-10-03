@@ -5,9 +5,8 @@ import pytest
 
 from app.graph import dao as dao_mod
 from app.graph.dao import GraphDAO
-from tests.test_recommend_dao import (  # noqa: F401
+from tests.test_recommend_dao import (
     _ROW,
-    _batch_via_per_crop,
     _conds,
     _dao,
     _variety,
