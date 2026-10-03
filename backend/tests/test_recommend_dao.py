@@ -341,6 +341,25 @@ async def test_invalid_mode_falls_back_to_v1(monkeypatch):
     assert len(calls) == 1
 
 
+async def test_invalid_mode_logs_critical_once(monkeypatch, caplog):
+    import logging
+
+    monkeypatch.setattr(dao_mod, "_INVALID_VECTOR_LOGGED", False)
+    monkeypatch.setenv("AGROCLIMATIC_VECTOR", "v9")
+    with caplog.at_level(logging.CRITICAL, logger="app.graph.dao"):
+        await _run_hybrid(_conds(**_VEC), [_variety()], [])
+        dao_mod._RECOMMEND_CACHE.clear()
+        await _run_hybrid(_conds(**_VEC), [_variety()], [])
+    assert len([r for r in caplog.records if r.levelno == logging.CRITICAL]) == 1
+
+
+async def test_v2_without_vector_keeps_koppen_path(monkeypatch):
+    monkeypatch.setenv("AGROCLIMATIC_VECTOR", "v2")
+    c = _conds(annual_rainfall_mm=500.0, annual_et0_mm=900.0)
+    _, calls = await _run_hybrid(c, [], [_variety()])
+    assert len(calls) == 1 and "target_features" not in calls[0]
+
+
 async def test_hybrid_retries_v2(hybrid):
     _, calls = await _run_hybrid(_conds(**_VEC), [], [_variety()])
     assert len(calls) == 2

@@ -2,36 +2,10 @@
   "app": {
     "title": "BioOrchestrator",
     "subtitle": "Predict, compare, and plan — agronomic intelligence backed by trial data from similar environments.",
-    "tabs": {
-      "sources": "Fonts de dades",
-      "pipeline": "Pipeline",
-      "phenology": "Fenologia",
-      "dadis": "Explorador DAD-IS",
-      "regenerative": "Seq. Regenerativa",
-      "alerts": "Alertes",
-      "organic": "Insums Orgànics"
-    },
-    "sections": {
-      "predictEvaluate": "Predict & Evaluate",
-      "comparePlan": "Compare & Plan",
-      "knowledgeBase": "Knowledge Base"
-    },
     "cards": {
-      "varietyFinder": {
-        "title": "Variety Finder",
-        "subtitle": "Best-adapted varieties for your parcel, climate and soil. Ranked by yield from similar trial sites."
-      },
       "parcelStatus": {
         "title": "Current Parcel Status",
         "subtitle": "Real-time crop stress, water balance, and active alerts from sensor and satellite data."
-      },
-      "comparator": {
-        "title": "Crop Comparator",
-        "subtitle": "Side-by-side crop comparison for your parcel: yield potential, margin, carbon score."
-      },
-      "rotationPlanner": {
-        "title": "Rotation Planner",
-        "subtitle": "Multi-year rotation design with CAP compliance scoring."
       },
       "waterBudget": {
         "title": "Water Budget",
@@ -351,43 +325,6 @@
     "retry": "Retry",
     "deprecatedSoilNote": "Deprecated data — coming soon from Soil module",
     "title": "Recomanacions"
-  },
-  "rotationOptimizer": {
-    "title": "Optimizador de rotació",
-    "subtitle": "Planifica una rotació multi-any que maximitzi els teus objectius.",
-    "tabLabel": "Optimitzar",
-    "constraints": "Restriccions",
-    "glutenFree": "Només sense gluten",
-    "priorities": "Prioritats per any",
-    "year": "Any {{n}}",
-    "yearsShort": "{{n}}a",
-    "protein": "Proteïna",
-    "carbon": "Carboni",
-    "nitrogen": "Nitrogen",
-    "margin": "Marge",
-    "yield": "Rendiment",
-    "optimize": "Optimitzar",
-    "coverCrop": "Culti de cobertura",
-    "cashCrop": "Culti principal",
-    "alternatives": "Veure alternatives",
-    "cumulative": "Acumulat",
-    "totalProtein": "kg proteïna",
-    "totalNitrogen": "kg N fixat",
-    "nPool": "Pool N final",
-    "proteinUnit": "kg prot",
-    "noValidRotation": "No s'ha trobat rotació vàlida amb aquestes restriccions.",
-    "lockedYear": "Bloquejat",
-    "unlock": "Desbloquejar",
-    "scores": "Puntuació",
-    "proteinSource": "Font: {{source}}"
-  },
-  "planning": {
-    "rotationTitle": "Rotació PAC (4 anys)",
-    "addToRotation": "Afegir a rotació",
-    "managementAny": "Qualsevol",
-    "managementConventional": "Convencional",
-    "managementOrganic": "Ecològic",
-    "glutenFreeOnly": "Només sense gluten"
   },
   "disclaimer": {
     "text": "Les recomanacions es basen en models agronòmics i dades de fonts científiques. No substitueixen el criteri professional. Consulteu el vostre tècnic agrícola local abans de prendre decisions de cultiu."

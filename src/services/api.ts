@@ -247,28 +247,6 @@ export function useBioApi() {
       if (sowingDate) params.set('sowing_date', sowingDate);
       return post(`${GRAPH}/graph/agriculture/wofost-simulation?${params.toString()}`);
     },
-    getClimateClasses: () => get(`${GRAPH}/graph/reference/climate-classes`),
-    getSoilTypes: () => get(`${GRAPH}/graph/reference/soil-types`),
-    parcelEnvironment: (parcelId: string) =>
-      get(`${GRAPH}/graph/agriculture/parcel-environment?parcel_id=${encodeURIComponent(parcelId)}`),
-    suggestCrops: (params: Record<string, string | number>) => {
-      const qs = new URLSearchParams();
-      Object.entries(params).forEach(([k, v]) => { if (v !== undefined && v !== null && v !== '') qs.set(k, String(v)); });
-      return get(`${GRAPH}/graph/agriculture/suggest-crops?${qs.toString()}`);
-    },
-    optimizeRotation: async (body: Record<string, unknown>) => {
-      const res = await fetch(`${GRAPH}/graph/agriculture/rotation-optimize`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...authHeaders() },
-        body: JSON.stringify(body),
-        credentials: 'include',
-      });
-      if (!res.ok) {
-        const errBody = await res.json().catch(() => ({}));
-        throw new Error(errBody.detail || `HTTP ${res.status}`);
-      }
-      return res.json();
-    },
     rotationPlan: (params: Record<string, string | number>) => {
       const qs = new URLSearchParams();
       Object.entries(params).forEach(([k, v]) => {

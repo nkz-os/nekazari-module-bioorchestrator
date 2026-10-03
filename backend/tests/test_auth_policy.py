@@ -8,13 +8,11 @@ URN = "urn:ngsi-ld:AgriParcel:tenant-a:p1"
 
 @pytest.mark.parametrize("path,method,query", [
     ("/api/graph/agriculture/parcel-environment", "GET", {"parcel_id": URN}),
-    ("/api/graph/agriculture/suggest-crops", "GET", {"parcel_id": URN}),
     ("/api/graph/agriculture/crop-context", "GET", {"parcel_id": URN}),
     ("/api/graph/agriculture/extrapolate", "GET", {"crop": "TRZAX", "parcel_id": URN}),
     ("/api/graph/agriculture/yield-potential", "GET", {"parcel_id": URN}),
     ("/api/graph/agriculture/assign-crop", "POST", {}),
     ("/api/graph/agriculture/crop-plan", "POST", {}),
-    ("/api/graph/agriculture/rotation-optimize", "POST", {}),
     ("/api/graph/agriculture/wofost-simulation", "POST", {"parcel_id": URN}),
     (f"/api/graph/agriculture/crop-plan/{URN}/segments/1/advance", "POST", {}),
     ("/api/graph/agriculture/crop-plan", "GET", {"parcel_id": URN}),

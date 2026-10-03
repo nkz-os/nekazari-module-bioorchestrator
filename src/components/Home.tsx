@@ -6,7 +6,7 @@ import { useParcelContext } from '../context/ParcelContext';
 import { usePlanningScenario } from '../context/PlanningScenarioContext';
 import { useExpertMode } from '../features/whatToSow/expertModeContext';
 import WhatToSowPage from '../features/whatToSow/WhatToSowPage';
-import { ALL_TOOLS, ADVANCED_TOOLS, type ToolCardDef } from './Dashboard';
+import { ALL_TOOLS, ADVANCED_TOOLS, type ToolCardDef } from '../utils/tools';
 import {
   CAMPAIGN_TOOL_IDS,
   LIBRARY_TOOL_IDS,
