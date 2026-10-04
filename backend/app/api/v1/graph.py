@@ -12,7 +12,11 @@ from nkz_platform_sdk.agronomy import (
 )
 from nkz_platform_sdk.orion import OrionClient
 
-from app.core.dependencies import get_neo4j_driver
+from app.core.dependencies import (
+    get_neo4j_driver,
+    require_contributor,
+    require_platform_admin,
+)
 from app.graph.dao import GraphDAO
 from app.species_registry import get_species_info, resolve_species
 from neo4j import AsyncDriver
@@ -233,7 +237,7 @@ async def get_action_rule_route(rule_id: str, driver: DriverDep):
     return rule
 
 
-@router.post("/action-rules")
+@router.post("/action-rules", dependencies=[Depends(require_platform_admin)])
 async def create_action_rule_route(driver: DriverDep, request: Request):
     body = await request.json()
     if not body.get("id") or not body.get("category"):
@@ -241,7 +245,7 @@ async def create_action_rule_route(driver: DriverDep, request: Request):
     return await GraphDAO(driver).create_action_rule(body)
 
 
-@router.put("/action-rules/{rule_id}")
+@router.put("/action-rules/{rule_id}", dependencies=[Depends(require_platform_admin)])
 async def update_action_rule_route(rule_id: str, driver: DriverDep, request: Request):
     return await GraphDAO(driver).update_action_rule(rule_id, await request.json())
 
@@ -249,6 +253,7 @@ async def update_action_rule_route(rule_id: str, driver: DriverDep, request: Req
 @router.post("/phenology-params/contribute")
 async def contribute_phenology_params(
     driver: DriverDep,
+    user: Annotated[dict, Depends(require_contributor)],
     species: str = Query(..., description="Species name"),
     stage: str = Query(..., description="Phenological stage"),
     kc: float = Query(..., description="Crop coefficient"),
@@ -266,6 +271,8 @@ async def contribute_phenology_params(
 
     Creates a PhenologyParams node with status='pending_review'.
     An administrator can later approve and merge into the main parameter set.
+    Requires TechnicalConsultant, TenantAdmin or PlatformAdmin; the verified
+    subject and tenant are recorded on the node (contact_email is free text).
     """
     dao = GraphDAO(driver)
     result = await dao.contribute_phenology(
@@ -281,6 +288,8 @@ async def contribute_phenology_params(
         author=author,
         conditions=conditions,
         contact_email=contact_email,
+        contributed_by=user["sub"],
+        contributor_tenant=user.get("tenant_id"),
     )
     if result["status"] == "error":
         raise HTTPException(status_code=500, detail=result.get("detail", "Unknown error"))

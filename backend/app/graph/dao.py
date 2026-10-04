@@ -861,6 +861,8 @@ class GraphDAO:
         author: str | None = None,
         conditions: str | None = None,
         contact_email: str | None = None,
+        contributed_by: str | None = None,
+        contributor_tenant: str | None = None,
     ) -> dict:
         """Submit a contributed phenology parameter for review.
 
@@ -888,6 +890,8 @@ class GraphDAO:
                     sourceConditions: $conditions,
                     status: 'pending_review',
                     contactEmail: $contact_email,
+                    contributedBy: $contributed_by,
+                    contributorTenant: $contributor_tenant,
                     submittedAt: datetime()
                 })
                 RETURN p.status AS status, p.sourceShort AS source
@@ -904,6 +908,8 @@ class GraphDAO:
                 author=author,
                 conditions=conditions,
                 contact_email=contact_email,
+                contributed_by=contributed_by,
+                contributor_tenant=contributor_tenant,
             )
             record = await result.single()
             if record is None:

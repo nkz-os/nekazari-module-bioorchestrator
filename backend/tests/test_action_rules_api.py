@@ -90,7 +90,7 @@ def test_action_rules_put_requires_auth(client, auth_enabled):
 
 
 def test_action_rules_post_succeeds_with_gateway_auth(client, auth_enabled, monkeypatch):
-    """POST still works when signed api-gateway auth headers are present."""
+    """POST works with signed api-gateway auth headers carrying PlatformAdmin."""
     from nkz_platform_sdk.crypto import generate_hmac_signature
 
     monkeypatch.setenv("HMAC_SECRET", "hmac-test")
@@ -101,6 +101,7 @@ def test_action_rules_post_succeeds_with_gateway_auth(client, auth_enabled, monk
             "Authorization": "Bearer user-token",
             "X-Tenant-ID": "tenant-a",
             "X-User-ID": "u1",
+            "X-User-Roles": "PlatformAdmin",
             "X-Auth-Signature": generate_hmac_signature("hmac-test", "user-token", "tenant-a"),
         },
     )

@@ -19,7 +19,7 @@ import os
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 
-from fastapi import FastAPI, HTTPException, Query, Request
+from fastapi import Depends, FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, StreamingResponse
 from nkz_platform_sdk.orion import OrionClient
@@ -27,7 +27,12 @@ from nkz_platform_sdk.subscriptions import SubscriptionRegistrar
 
 from app.auth import NKZAuthMiddleware
 from app.core.config import settings
-from app.core.dependencies import close_driver, get_driver, init_driver
+from app.core.dependencies import (
+    close_driver,
+    get_driver,
+    init_driver,
+    require_platform_admin,
+)
 from app.graph.dao import GraphDAO
 from app.ingestion.sync import sync_all_agri_crops
 from app.logging_setup import configure_logging
@@ -331,7 +336,7 @@ async def readyz():
     )
 
 
-@app.post("/api/pipeline/run")
+@app.post("/api/pipeline/run", dependencies=[Depends(require_platform_admin)])
 async def run_pipeline_endpoint(request: Request):
     """Trigger a pipeline run via the NKZ frontend.
 
@@ -460,7 +465,7 @@ async def serve_context():
 # Navarra Agraria ingestion trigger — one-shot CLI endpoint
 # ═══════════════════════════════════════════════════════════════════════════════
 
-@app.post("/api/ingestion/navarra-agraria")
+@app.post("/api/ingestion/navarra-agraria", dependencies=[Depends(require_platform_admin)])
 async def ingest_navarra_agraria(
     request: Request,
     jsonld_path: str = Query(

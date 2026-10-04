@@ -202,8 +202,8 @@ def test_pipeline_run_requires_auth(client, auth_enabled):
 def test_contribute_endpoint_exists(client):
     """POST /api/graph/phenology-params/contribute must exist.
 
-    Note: The endpoint is intentionally public (same SKIP_AUTH_PREFIXES
-    as the GET /phenology-params). It uses Query params, not body.
+    Note: it takes Query params, not a body, and requires a contributor role
+    (see tests/test_authz_roles.py); auth is disabled in this fixture.
     With the mock driver it returns 500 (expected — no real Neo4j).
     """
     resp = client.post(

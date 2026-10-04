@@ -205,8 +205,8 @@ Full i18n support in **6 languages**: English, Spanish, Basque, French, Portugue
 | `GET /species` | List species in graph |
 | `GET /phenology-params` | Kc/D1/D2/MDS with GDD stage matching + `sourceType` provenance tier |
 | `GET /phenology-stages` | Phenological stages per species |
-| `POST /phenology-params/contribute` | Submit parameter for review |
-| `GET · POST · PUT /action-rules` | Agronomist-editable rules evaluated by the Contract-2 loop |
+| `POST /phenology-params/contribute` | Submit parameter for review (TechnicalConsultant, TenantAdmin or PlatformAdmin) |
+| `GET · POST · PUT /action-rules` | Agronomist-editable rules evaluated by the Contract-2 loop (POST/PUT: PlatformAdmin) |
 | `GET /heat-tolerance` | Thermal damage thresholds |
 | `GET /nutrient-profile` | NPK uptake per stage |
 | `GET /soil-suitability` | Soil requirements per species |
@@ -226,11 +226,11 @@ Full i18n support in **6 languages**: English, Spanish, Basque, French, Portugue
 |----------|-------------|
 | `GET /` | List crops with variety counts, data flags |
 | `GET /{id}` | Full crop detail with phenology, thermal, NPK, rotation |
-| `POST /ingest` | Trigger ingestion from source |
-| `POST /contribute` | Submit agronomic parameter with DOI |
+| `POST /ingest` | Trigger ingestion from source (PlatformAdmin) |
+| `POST /contribute` | Submit agronomic parameter with DOI (TechnicalConsultant, TenantAdmin or PlatformAdmin) |
 | `GET /thermal-summary` | Species with/without thermal data |
 | `GET /npk-summary` | Species with/without NPK data |
-| `POST /derive-thermal` | Auto-derive thermal thresholds from EcoCrop |
+| `POST /derive-thermal` | Auto-derive thermal thresholds from EcoCrop (PlatformAdmin) |
 
 ---
 

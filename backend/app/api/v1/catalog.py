@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from nkz_platform_sdk.orion import OrionClient
 
 from app.core.config import settings
-from app.core.dependencies import get_current_user, get_dao
+from app.core.dependencies import get_dao, require_contributor, require_platform_admin
 from app.graph.dao import GraphDAO
 from app.ingestion.ecocrop_ingester import EcoCropIngester
 from app.ingestion.variety_ingester import VarietyIngester
@@ -124,14 +124,13 @@ async def get_crop_detail(
     }
 
 
-@router.post("/ingest")
+@router.post("/ingest", dependencies=[Depends(require_platform_admin)])
 async def trigger_ingestion(
     source: str = Query(..., description="ecocrop or cpvo"),
     species_filter: str | None = Query(None),
-    user: dict = Depends(get_current_user),  # noqa: B008
     dao: GraphDAO = Depends(get_dao),  # noqa: B008
 ):
-    """Trigger ingestion from an external source. Requires technician/admin."""
+    """Trigger ingestion from an external source. Requires PlatformAdmin."""
     orion = OrionClient(
         settings.catalog_tenant,
         base_url=settings.orion_ld_url,
@@ -156,13 +155,14 @@ async def trigger_ingestion(
 @router.post("/contribute")
 async def contribute_parameter(
     body: dict,
-    user: dict = Depends(get_current_user),  # noqa: B008
+    user: dict = Depends(require_contributor),  # noqa: B008
     dao: GraphDAO = Depends(get_dao),  # noqa: B008
 ):
     """Contribute phenological/agronomic parameters for a crop.
 
     Body: {crop_id, params: {kc?, d1?, d2?, mds?, npk?, rotation?}, provenance}
-    Requires technician/admin role.
+    Requires TechnicalConsultant, TenantAdmin or PlatformAdmin; the verified
+    subject and tenant are recorded on the pending-review node.
     """
     crop_id = body.get("crop_id")
     params = body.get("params", {})
@@ -177,6 +177,7 @@ async def contribute_parameter(
             CREATE (p:PhenologyParams {
                 status: 'pending_review',
                 contributedBy: $user_id,
+                contributedByTenant: $tenant_id,
                 contributedAt: datetime(),
                 sourceDoi: $doi,
                 sourceAuthor: $author,
@@ -189,7 +190,8 @@ async def contribute_parameter(
             CREATE (c)-[:HAS_PARAMETER]->(p)
         """,
             uri=crop_id,
-            user_id=user.get("sub", "unknown"),
+            user_id=user["sub"],
+            tenant_id=user.get("tenant_id"),
             doi=provenance.get("doi"),
             author=provenance.get("author"),
             year=provenance.get("year"),
@@ -219,14 +221,12 @@ async def contribute_parameter(
     return {"status": "submitted", "crop_id": crop_id}
 
 
-@router.post("/derive-thermal")
-async def derive_thermal(
-    user: dict = Depends(get_current_user),  # noqa: B008
-):
+@router.post("/derive-thermal", dependencies=[Depends(require_platform_admin)])
+async def derive_thermal():
     """Trigger thermal limits derivation for all species with EcoCrop temp data.
 
     Runs derive_thermal_limits.py as a background subprocess.
-    Requires technician/admin role.
+    Requires PlatformAdmin.
     """
     import subprocess
     import sys
