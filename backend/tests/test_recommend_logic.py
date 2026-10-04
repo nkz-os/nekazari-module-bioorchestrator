@@ -230,13 +230,16 @@ def test_build_recommendation_shape():
     assert rec["fit"]["relative_yield_pct"] == pytest.approx(10.0)
     assert rec["fit"]["stability_cv"] == pytest.approx(0.1)
     assert rec["yield"] == {"expected_kg_ha": 5500.0, "interval": [4000.0, 7000.0],
-                            "interval_method": "observed_range", "sd": 550.0, "n_trials": 12, "n_sites": 2}
+                            "interval_method": "observed_range", "basis": None, "sd": 550.0, "n_trials": 12,
+                                "n_sites": 2}
     assert rec["suitability"]["soil"] == {"level": "marginal", "warnings": ["pH high"]}
     assert rec["suitability"]["water"] == {"level": "low", "etc_mm": 300.0}
     assert rec["suitability"]["frost"] == {"level": "none"}
     assert rec["varieties"][0]["disease_summary"] == {"resistant": 1, "total": 1}
     assert rec["evidence"] == {"trial_count": 12, "sources": ["SRC1"], "sites": ["site-a", "site-b"],
-                               "years": [2015, 2020]}
+                               "years": [2015, 2020], "tier": "field", "purpose": "main",
+                               "regional_trial_count": None, "other_purpose_trials": {"forage": 0},
+                               "unknown_basis_trials": None}
     assert rec["trust"]["level"] == "high"
     assert rec["season"]["source"] == "crop_season_slot"
     assert "recommendation_id" in rec
@@ -294,3 +297,74 @@ def test_rank_uses_numeric_n_trials():
 def test_evidence_years_null_when_unknown():
     assert _build(_nonnumeric_variety())["evidence"]["years"] is None
     assert _build(_nonnumeric_variety(trial_years=[2021, 2018]))["evidence"]["years"] == [2018, 2021]
+
+
+# ── evidence tiers and purpose ───────────────────────────────────────────────
+
+def _tv(**kw):
+    return {"variety": "V1", "variety_uri": "urn:x", "mean_yield_kg_ha": 5500.0, "min_yield_kg_ha": 4000.0,
+            "max_yield_kg_ha": 7000.0, "stddev_yield_kg_ha": 550.0, "numeric_yield_count": 12,
+            "trial_count": 12, "trial_sites": ["site-a"], "trial_years": [2020], "disease_scores": {},
+            "confidence": "high", "source_ids": ["SRC1"], **kw}
+
+
+def _build_many(varieties, **kw):
+    return r.build_recommendation(
+        eppo="TRZAX", scientific_name="Triticum aestivum", conditions={"climate_class": "Cfb"},
+        varieties=varieties, reference={"median_kg_ha": 5000.0, "n_trials": 40, "scope": "crop"},
+        soil_verdict={"verdict": "suitable"}, water=None, frost_level="none",
+        sowing=r.sowing_info("TRZAX", "Cfb", []), data_gaps_extra=[], assumptions=[], **kw)
+
+
+def test_regional_recommendation_is_capped_low_and_has_no_relative_yield():
+    rec = _build_many([_tv()], tier="regional")
+    assert rec["evidence"]["tier"] == "regional"
+    assert rec["trust"]["level"] == "low"                 # 12 numeric trials would be "high"
+    assert rec["fit"]["relative_yield_pct"] is None
+    assert rec["fit"]["reference"] == {"median_kg_ha": None, "n_trials": 0, "scope": "regional"}
+    gaps = rec["trust"]["data_gaps"]
+    assert "regional_evidence_only" in gaps and "regional_not_comparable" in gaps
+    assert "reference_too_small" not in gaps
+    assert rec["yield"]["expected_kg_ha"] == 5500.0
+
+
+def test_field_recommendation_reports_regional_and_forage_counts():
+    rec = _build_many([_tv(crop_other_purpose_trials=4)], regional_trial_count=7)
+    ev = rec["evidence"]
+    assert (ev["tier"], ev["purpose"], ev["regional_trial_count"]) == ("field", "main", 7)
+    assert ev["other_purpose_trials"] == {"forage": 4} and ev["unknown_basis_trials"] is None
+    assert rec["fit"]["relative_yield_pct"] == pytest.approx(10.0)
+    assert rec["yield"]["basis"] is None
+
+
+def test_forage_recommendation_names_the_dry_matter_basis():
+    rec = _build_many([_tv()], purpose="forage")
+    assert rec["yield"]["basis"] == "dry_matter" and rec["evidence"]["purpose"] == "forage"
+    assert rec["evidence"]["other_purpose_trials"] == {}
+    assert "forage_basis_unknown" not in rec["trust"]["data_gaps"]
+
+
+def test_forage_trials_of_unknown_basis_give_a_count_and_no_number():
+    v = _tv(mean_yield_kg_ha=None, min_yield_kg_ha=None, max_yield_kg_ha=None,
+                 stddev_yield_kg_ha=None, numeric_yield_count=0, unknown_basis_trial_count=4)
+    rec = _build_many([v], purpose="forage")
+    assert rec["yield"]["expected_kg_ha"] is None and rec["yield"]["basis"] is None
+    assert rec["yield"]["n_trials"] == 4 and rec["evidence"]["unknown_basis_trials"] == 4
+    assert "forage_basis_unknown" in rec["trust"]["data_gaps"]
+    assert "no_expected_yield" in rec["trust"]["data_gaps"]
+
+
+def test_main_mode_without_numbers_keeps_a_zero_trial_count():
+    rec = _build_many([_tv(mean_yield_kg_ha=None, numeric_yield_count=0, unknown_basis_trial_count=3)])
+    assert rec["yield"]["n_trials"] == 0 and "forage_basis_unknown" not in rec["trust"]["data_gaps"]
+
+
+def test_field_recommendations_rank_before_regional_ones():
+    field_low = _build_many([_tv(mean_yield_kg_ha=4500.0)])               # -10 %
+    field_blocked = _build_many([_tv()])
+    field_blocked["suitability"]["frost"]["level"] = "risk"
+    regional = _build_many([_tv(mean_yield_kg_ha=9000.0)], tier="regional")
+    for rec, eppo in ((field_low, "A"), (field_blocked, "B"), (regional, "C")):
+        rec["crop"]["eppo"] = eppo
+    assert [x["crop"]["eppo"] for x in r.rank_recommendations([regional, field_blocked, field_low])] == \
+        ["A", "B", "C"]

@@ -131,6 +131,50 @@ def test_purpose_basis_and_eligibility_fragments_match_python(driver):
     assert {r["forage_numeric"] for r in rows if r["forage"]} == {True, False}
 
 
+@pytest.mark.parametrize("mode", ["main", "forage"])
+def test_row_policy_columns_match_python(driver, mode):
+    """One WITH block classifies each (trial, site) row: tier, mode gate, policy yield, counts."""
+    sites = ["Cadreita", "Media 8 Località"]
+    _reset(
+        driver,
+        """
+        UNWIND $sites AS n CREATE (:TrialSite {name: n})
+        WITH count(*) AS made
+        UNWIND $rows AS r
+        MATCH (ts:TrialSite {name: $sites[r.i % 2]})
+        CREATE (v:VarietyTrial) SET v = r CREATE (v)-[:TRIAL_AT]->(ts)
+        """,
+        rows=[{**t, "i": i} for i, t in enumerate(_TRIALS)], sites=sites,
+    )
+    rows = _run(_query(
+        driver,
+        f"""
+        MATCH (vt:VarietyTrial)-[:TRIAL_AT]->(ts:TrialSite)
+        {ep.cypher_row_policy(mode)}
+        RETURN vt.i AS i, ep_tier, ep_in_mode, ep_other, ep_y, ep_unconv
+        ORDER BY i
+        """,
+    ))
+    assert len(rows) == len(_TRIALS)
+    for row in rows:
+        t = _TRIALS[row["i"]]
+        site = sites[row["i"] % 2]
+        assert row["ep_tier"] == ep.evidence_tier(t.get("aggregationScope"), site), t
+        assert row["ep_in_mode"] is ep.in_purpose_mode(
+            ep.yield_purpose(t.get("yieldMetric"), t.get("qualityParams")), mode), t
+        assert row["ep_other"] is ep.is_other_purpose_evidence(t, mode), t
+        assert row["ep_unconv"] is ep.has_unconverted_kg(t, mode), t
+        expected = ep.policy_yield(t, mode)
+        if expected is None:
+            assert row["ep_y"] is None, t
+        else:
+            assert row["ep_y"] == pytest.approx(expected), t
+    # both tiers, and yields / non-yields / unconverted kg occur among the rows
+    assert {r["ep_tier"] for r in rows} == {"field", "regional"}
+    assert {r["ep_y"] is None for r in rows} == {True, False}
+    assert any(r["ep_unconv"] for r in rows) or mode == "main"
+
+
 _SITE_NAMES = [
     "Media 14 Località", "Országos átlag", "Átlag (9 helyszín)", "Average 10 locations",
     "Hungary (multiple locations)", "UK national list", "Poland (national average)",

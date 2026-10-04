@@ -3,6 +3,35 @@
 Kept apart from the DAO so ranking and the evidence shape can be tested and
 reasoned about without Neo4j, and so the same output feeds the UI expert mode
 and the agent unchanged.
+
+Evidence policy contract (additions of the evidence-policy change; the rules live in
+``app.graph.evidence_policy``, mirrored in ``src/types/recommend.ts``):
+
+- Response: ``evidence_policy`` (policy version) and ``conditions.purpose``.
+- Request ``purpose`` = ``main`` (default: each crop's main harvested product — grain, fruit,
+  kernel, tuber; records positively classified as forage are left out) or ``forage``
+  (forage records only). It is part of the cache key and of the recommendation id when not
+  ``main``. Evidence endpoint: same ``purpose``, plus ``tier``.
+- ``evidence.tier``: ``field`` (numbers from field trials at analog field sites) or
+  ``regional`` (the crop has no numeric field evidence; the numbers come from aggregate
+  national/regional pseudo-sites of the same climate — never mixed with field numbers).
+  A regional recommendation has trust capped at ``low``, the data gaps
+  ``regional_evidence_only`` and ``regional_not_comparable`` (no relative yield: a registry
+  average is not comparable to the field-trial reference), ``fit.reference.scope`` =
+  ``regional`` and a null median. Ranking: ``field`` before ``regional``, then the former
+  order (blockers, relative yield, trials, crop code).
+- ``evidence.regional_trial_count``: distinct numeric regional trials of a ``field`` crop at
+  the climate's aggregate sites (supplementary; in no number). null when not computed.
+- ``evidence.other_purpose_trials``: main mode ``{"forage": N}`` — distinct forage trials of
+  the crop at the same analog field sites, counted and never averaged; ``{}`` otherwise.
+- ``evidence.purpose``: the purpose the answer was computed for.
+- Forage mode: ``yield.basis`` is ``dry_matter`` (yields are kg dry matter/ha, from records
+  whose basis is known and convertible); a crop whose forage trials all have an unknown basis
+  returns ``expected_kg_ha`` null, ``yield.n_trials`` = those trials, and the data gap
+  ``forage_basis_unknown``. ``evidence.unknown_basis_trials`` counts the best variety's
+  forage trials with a kg value that add no number. Reference medians use the same purpose.
+- ``yield.n_trials`` / ``yield.n_sites`` / ``evidence.trial_count`` count distinct trials
+  (content-identical re-ingested copies count once).
 """
 
 from __future__ import annotations
@@ -10,6 +39,7 @@ from __future__ import annotations
 import hashlib
 import json
 
+from app.graph import evidence_policy as ep
 from app.services import ggcmi_calendar
 from app.services.crop_reference import get_season_slots
 
@@ -95,7 +125,10 @@ def count_blockers(rec: dict) -> int:
 def rank_recommendations(recs: list[dict]) -> list[dict]:
     def key(rec: dict):
         rel = rec["fit"]["relative_yield_pct"]
-        return (count_blockers(rec), rel is None, -(rel or 0.0), -rec["yield"]["n_trials"], rec["crop"]["eppo"])
+        # Field evidence first, then regional; within a tier the former order.
+        regional = rec.get("evidence", {}).get("tier") == ep.EVIDENCE_TIER_REGIONAL
+        return (regional, count_blockers(rec), rel is None, -(rel or 0.0),
+                -rec["yield"]["n_trials"], rec["crop"]["eppo"])
     return sorted(recs, key=key)
 
 
@@ -113,16 +146,33 @@ def _trust_level(n_trials: int, confidence: str | None) -> str:
 
 
 def build_recommendation(*, eppo, scientific_name, conditions, varieties, reference, soil_verdict,
-                         water, frost_level, sowing, data_gaps_extra, assumptions) -> dict | None:
+                         water, frost_level, sowing, data_gaps_extra, assumptions,
+                         tier: str = ep.EVIDENCE_TIER_FIELD, purpose: str = ep.MODE_MAIN,
+                         regional_trial_count: int | None = None) -> dict | None:
     if not varieties:
         return None
     best = varieties[0]
+    regional = tier == ep.EVIDENCE_TIER_REGIONAL
+    forage = purpose == ep.MODE_FORAGE
     # Numeric trials only: a trial without a yield value backs no yield figure.
-    n_trials = int(best.get("numeric_yield_count") or 0)
-    rel, rel_gap = relative_yield(best.get("mean_yield_kg_ha"), reference.get("median_kg_ha"),
-                                  int(reference.get("n_trials") or 0))
-    cv, cv_gap = stability_cv(best.get("mean_yield_kg_ha"), best.get("stddev_yield_kg_ha"), n_trials)
+    n_numeric = int(best.get("numeric_yield_count") or 0)
+    unknown_basis = int(best.get("unknown_basis_trial_count") or 0)
+    # Forage trials whose basis is unknown carry kg but no comparable number: report how many.
+    n_trials = n_numeric if (n_numeric or not forage) else unknown_basis
+    expected = best.get("mean_yield_kg_ha")
+    if regional:
+        # A registry average is not comparable to the field-trial reference median.
+        rel, rel_gap = None, ("no_expected_yield" if expected is None else "regional_not_comparable")
+        reference = {"median_kg_ha": None, "n_trials": 0, "scope": ep.EVIDENCE_TIER_REGIONAL}
+    else:
+        rel, rel_gap = relative_yield(expected, reference.get("median_kg_ha"),
+                                      int(reference.get("n_trials") or 0))
+    cv, cv_gap = stability_cv(expected, best.get("stddev_yield_kg_ha"), n_numeric)
     gaps = [g for g in (rel_gap, cv_gap) if g] + list(data_gaps_extra)
+    if regional:
+        gaps.append("regional_evidence_only")
+    if forage and expected is None and unknown_basis:
+        gaps.append("forage_basis_unknown")
     if n_trials < LOW_TRIAL_COUNT:
         gaps.append("low_trial_count")
     if sowing["source"] == "crop_season_slot":
@@ -140,6 +190,7 @@ def build_recommendation(*, eppo, scientific_name, conditions, varieties, refere
             "expected_kg_ha": best.get("mean_yield_kg_ha"),
             "interval": [best.get("min_yield_kg_ha"), best.get("max_yield_kg_ha")],
             "interval_method": "observed_range",
+            "basis": ep.BASIS_DRY_MATTER if forage and expected is not None else None,
             "sd": best.get("stddev_yield_kg_ha"),
             "n_trials": n_trials,
             "n_sites": len(best.get("trial_sites") or []),
@@ -155,7 +206,8 @@ def build_recommendation(*, eppo, scientific_name, conditions, varieties, refere
                    "typical_sowing_doy": sowing.get("typical_sowing_doy"),
                    "typical_maturity_doy": sowing.get("typical_maturity_doy"),
                    "typical_rainfed_fallback": sowing.get("typical_rainfed_fallback")},
-        "trust": {"level": _trust_level(n_trials, best.get("confidence")), "data_gaps": gaps},
+        "trust": {"level": "low" if regional else _trust_level(n_trials, best.get("confidence")),
+                  "data_gaps": gaps},
         "varieties": [
             {"variety": v.get("variety"), "variety_uri": v.get("variety_uri"),
              "expected_kg_ha": v.get("mean_yield_kg_ha"),
@@ -168,6 +220,12 @@ def build_recommendation(*, eppo, scientific_name, conditions, varieties, refere
         # years is null when no trial year is known.
         "evidence": {"trial_count": sum(int(v.get("trial_count") or 0) for v in varieties),
                      "sources": sources, "sites": sites,
-                     "years": [years[0], years[-1]] if years else None},
+                     "years": [years[0], years[-1]] if years else None,
+                     "tier": tier, "purpose": purpose,
+                     "regional_trial_count": regional_trial_count,
+                     "other_purpose_trials": (
+                         {"forage": int(best.get("crop_other_purpose_trials") or 0)}
+                         if purpose == ep.MODE_MAIN and not regional else {}),
+                     "unknown_basis_trials": unknown_basis if forage else None},
         "assumptions": assumptions,
     }

@@ -18,14 +18,14 @@ function rec(eppo: string, over: {
     fit: { relative_yield_pct: over.rel ?? null, stability_cv: over.cv ?? null,
            reference: { median_kg_ha: null, n_trials: 0, scope: 'crop' } },
     yield: { expected_kg_ha: over.exp === undefined ? 1000 : over.exp, interval: [800, 1200],
-             interval_method: 'observed_range', sd: null, n_trials: over.n ?? 5, n_sites: 2 },
+             interval_method: 'observed_range', basis: null, sd: null, n_trials: over.n ?? 5, n_sites: 2 },
     suitability: { soil: { level: over.soil ?? 'suitable', warnings: [] },
                    water: { level: over.water ?? 'low', etc_mm: null },
                    frost: { level: over.frost ?? 'none' } },
     season: { sowing_window: over.window ? { start_month: 10, end_month: 11 } : null,
               cycle_days: null, source: null },
     trust: { level: over.trust ?? 'medium', data_gaps: [], similarity: 'koppen' },
-    varieties: [], evidence: { trial_count: 0, sources: [], sites: [], years: null },
+    varieties: [], evidence: { trial_count: 0, sources: [], sites: [], years: null, tier: 'field', purpose: 'main', regional_trial_count: null, other_purpose_trials: {}, unknown_basis_trials: null },
     assumptions: [],
   };
 }
@@ -180,7 +180,7 @@ describe('resolvePageState', () => {
   const env = { parcel_id: 'p', area_ha: null, centroid: { lat: null, lon: null }, climate_class: null,
     climate_detail: null, soil: { data_available: false }, irrigation: { inferred: null, source: 'unknown', overridable: true },
     campaign: { assigned: false }, inputs_used: {} };
-  const ok = (n: number): RecommendResponse => ({ status: 'ok',
+  const ok = (n: number): RecommendResponse => ({ status: 'ok', evidence_policy: 'test',
     recommendations: Array.from({ length: n }, (_, i) => rec(`C${i}`)), data_quality: {}, conditions: {} });
   it('covers every state', () => {
     expect(resolvePageState(true, null, null)).toBe('loading');

@@ -87,6 +87,27 @@ async def test_median_is_cached():
     assert len(calls) == 1
 
 
+async def test_median_cache_is_per_purpose_and_scope_names_it():
+    dao, calls = _dao([{"median": 5000.0, "n": 42}], [{"median": 21000.0, "n": 7}])
+    main = await dao.get_crop_yield_median("ZEAMX", None)
+    forage = await dao.get_crop_yield_median("ZEAMX", None, "forage")
+    assert (main["median_kg_ha"], main["scope"]) == (5000.0, "crop")
+    assert (forage["median_kg_ha"], forage["scope"]) == (21000.0, "crop:forage")
+    assert len(calls) == 2
+    q = calls[1][0]
+    assert "ep_y IS NOT NULL" in q and "ep_tier = 'field'" in q  # policy rows, field evidence only
+    assert "COLLECT {" in q  # content-identical trials counted once
+
+
+async def test_unknown_purpose_or_tier_is_rejected():
+    dao, calls = _dao()
+    with pytest.raises(ValueError):
+        await dao.get_crop_yield_median("TRZAX", None, "grain")
+    with pytest.raises(ValueError):
+        await dao.extrapolate_varieties("TRZAX", climate_class="Cfb", tier="national")
+    assert calls == []
+
+
 async def test_evidence_maps_and_paginates():
     rows = [{"trial_id": "k1", "variety": "V1", "site": "site-a", "year": 2020, "yield_kg_ha": 5000.0,
              "irrigation_regime": "secano", "production_system": "conventional", "source_id": "SRC1",
@@ -103,7 +124,7 @@ async def test_evidence_page_past_end():
     dao, _ = _dao([{"total": 3}], [])
     out = await dao.list_trial_evidence(crop="TRZAX", similar_sites=["site-a"], variety=None,
                                         irrigation_uri=None, page=9, page_size=50)
-    assert out == {"items": [], "total": 3, "page": 9, "page_size": 50}
+    assert out == {"items": [], "total": 3, "page": 9, "page_size": 50, "purpose": "main", "tier": "field"}
 
 
 async def test_evidence_query_is_total_order_and_page_clamped():
@@ -139,7 +160,7 @@ def _patched(extrap, crops, median=5000.0, heat=None):
                      AsyncMock(return_value=[{"eppo_code": c, "scientific_name": c} for c in crops])),
         patch.object(GraphDAO, "extrapolate_varieties", extrap),
         patch.object(GraphDAO, "get_crop_yield_medians", AsyncMock(
-            side_effect=lambda crops, irrigation_uri: {
+            side_effect=lambda crops, irrigation_uri, purpose="main": {
                 c: {"median_kg_ha": median, "n_trials": 40, "scope": "crop"} for c in crops})),
         patch.object(GraphDAO, "get_soil_suitability", AsyncMock(return_value=None)),
         patch.object(GraphDAO, "get_heat_tolerance", AsyncMock(return_value=heat)),
@@ -419,7 +440,7 @@ async def test_extrapolate_maps_sorted_source_ids():
     out = await dao.extrapolate_varieties("TRZAX", climate_class="Cfb")
     assert out["ranked_varieties"][0]["source_ids"] == ["s1", "s2"]
     query = calls[0][0]
-    assert "collect(DISTINCT vt.source_id) AS source_ids" in query
+    assert "collect(DISTINCT vt.source_id) AS g_sources" in query and "AS source_ids" in query
 
 
 # ── fix round 2: best variety needs enough trials ───────────────────────────

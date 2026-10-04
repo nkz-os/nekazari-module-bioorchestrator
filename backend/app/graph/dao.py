@@ -37,6 +37,7 @@ from nkz_platform_sdk.subscriptions import SubscriptionDef, SubscriptionRegistra
 
 from app.core.config import settings
 from app.graph import agroclimatic
+from app.graph import evidence_policy as ep
 from app.services.country_lookup import country_at
 from app.services.soil_client import assess_soil_suitability, get_parcel_soil_properties
 from app.species_registry import get_species_info, resolve_species
@@ -55,60 +56,96 @@ _CROP_MATCH_PREDICATE = (
     "(vt.cropEppo = $crop OR vt.cropScientific CONTAINS $crop "
     "OR toLower(vt.cropScientific) = toLower($crop))"
 )
-# Per-variety aggregation shared by extrapolate_varieties and its batched variant
-# (input rows: one per (vt, ts) match; output: top $top_n varieties). A single
-# definition keeps both paths' filters and weights identical; ties (equal mean at the
-# displayed 0.1 precision) are broken by variety name (ASC), so ranking never depends on the query plan.
-_EXTRAPOLATE_AGGREGATE_CYPHER = """
-                // Dedupe stage: collapse each trial to ONE row regardless of how
-                // many (same-name duplicate) sites it links to, so the numeric
-                // aggregations below count every trial exactly once (G2/G9 guard).
-                WITH vt.varietyNormalized AS variety, vt,
+# Row stream -> ranked varieties, shared by extrapolate_varieties and its batched variant.
+# A single definition keeps both paths' filters and weights identical; ties (equal mean at the
+# displayed 0.1 precision) are broken by variety name (ASC), so ranking never depends on the
+# query plan. The evidence policy (``app.graph.evidence_policy``) classifies each (trial, site)
+# row once (``cypher_row_policy``); nothing below re-implements a rule:
+#   * trials with identical observed content are ONE observation (content-key dedup);
+#   * ``ep_y`` is the policy yield (null for excluded sources, forage in main mode, ...), so
+#     ``numeric_yield_count`` / means / intervals only see eligible kg/ha, and ``trial_count``
+#     counts distinct in-mode trials, numeric or not;
+#   * forage trials of a main-mode answer are only counted (``other_n``, deduplicated).
+_EXTRAPOLATE_BODY_CYPHER = """
+                // Count the other-purpose trials of the crop once (grouping treats nulls as
+                // equal, unlike an IN test over the key lists).
+                CALL (hits) {
+                  UNWIND [x IN hits WHERE x.other] AS o
+                  WITH DISTINCT o.ck AS ck
+                  RETURN count(*) AS other_n
+                }
+                CALL (hits) {
+                  UNWIND [x IN hits WHERE x.in_mode] AS h
+                  WITH h.vt AS vt, h.ts AS ts, h.y AS ep_y, h.unconv AS ep_unconv
+                // Collapse each trial to ONE row regardless of how many (same-name
+                // duplicate) sites it links to (G2/G9 guard).
+                WITH vt.varietyNormalized AS variety, vt, ep_y, ep_unconv,
                      collect(DISTINCT ts.name) AS trial_sites
-                // Per-trial weight = nearest analog site (C.1) × recency (C.4) ×
+                // Dedup stage: content-identical trials (re-ingest twins) are ONE
+                // observation, so every count and mean below sees it once.
+                WITH variety, vt, trial_sites, ep_y, ep_unconv, {content_key} AS ck
+                WITH variety, ck,
+                     max(ep_y) AS g_y,
+                     max(CASE WHEN ep_unconv THEN 1 ELSE 0 END) AS g_unconv,
+                     min(vt.year) AS g_year,
+                     min(vt.irrigationRegime) AS g_regime,
+                     min(vt.productionSystem) AS g_system,
+                     reduce(acc = [], sl IN collect(trial_sites) | acc + [x IN sl WHERE NOT x IN acc]) AS g_sites,
+                     collect(DISTINCT vt.diseaseScoresUnified) AS g_disease,
+                     collect(DISTINCT vt.agronomicTraitsUnified) AS g_traits,
+                     collect(DISTINCT vt.confidence) AS g_confidence,
+                     collect(DISTINCT vt.source_id) AS g_sources,
+                     max(CASE WHEN vt.yieldDerivationMethod IS NOT NULL THEN 1 ELSE 0 END) AS g_derived
+                // Per-observation weight = nearest analog site (C.1) x recency (C.4) x
                 // water-regime match (C.4). $site_weights are 1.0 on the legacy
                 // path; with no target year/regime the extra factors are 1.0 too,
                 // so the weighted mean collapses to a flat average.
-                WITH variety, vt, trial_sites,
-                     reduce(mw = 0.0, n IN trial_sites |
+                WITH variety, g_y, g_unconv, g_year, g_regime, g_system, g_sites, g_disease,
+                     g_traits, g_confidence, g_sources, g_derived,
+                     reduce(mw = 0.0, n IN g_sites |
                         CASE WHEN coalesce($site_weights[n], 0.0) > mw
                              THEN $site_weights[n] ELSE mw END) AS w_site
-                WITH variety, vt, trial_sites,
+                WITH variety, g_y, g_unconv, g_year, g_regime, g_system, g_sites, g_disease,
+                     g_traits, g_confidence, g_sources, g_derived,
                      w_site
-                     * (CASE WHEN vt.year IS NOT NULL AND (toFloat($now_year) - toFloat(vt.year)) > 0
-                             THEN 0.5 ^ ((toFloat($now_year) - toFloat(vt.year)) / $half_life)
+                     * (CASE WHEN g_year IS NOT NULL AND (toFloat($now_year) - toFloat(g_year)) > 0
+                             THEN 0.5 ^ ((toFloat($now_year) - toFloat(g_year)) / $half_life)
                              ELSE 1.0 END)
-                     * (CASE WHEN $target_regime IS NULL OR vt.irrigationRegime IS NULL
-                                  OR vt.irrigationRegime = $target_regime
+                     * (CASE WHEN $target_regime IS NULL OR g_regime IS NULL
+                                  OR g_regime = $target_regime
                              THEN 1.0 ELSE $regime_penalty END) AS w
                 WITH variety,
-                     collect(DISTINCT vt.year) AS years,
-                     collect(trial_sites) AS site_lists,
-                     collect(DISTINCT vt.irrigationRegime) AS irrigation_regimes,
-                     collect(DISTINCT vt.productionSystem) AS production_systems,
-                     collect(DISTINCT vt.diseaseScoresUnified) AS disease_scores_list,
-                     collect(DISTINCT vt.agronomicTraitsUnified) AS agronomic_traits_list,
-                     collect(DISTINCT vt.confidence) AS confidence_levels,
-                     collect(DISTINCT vt.source_id) AS source_ids,
-                     avg(vt.yieldKgHa) AS mean_yield_flat,
-                     sum(CASE WHEN vt.yieldKgHa IS NOT NULL THEN w * vt.yieldKgHa ELSE 0.0 END) AS wsum,
-                     sum(CASE WHEN vt.yieldKgHa IS NOT NULL THEN w ELSE 0.0 END) AS wtot,
-                     min(vt.yieldKgHa) AS min_yield,
-                     max(vt.yieldKgHa) AS max_yield,
-                     stDev(vt.yieldKgHa) AS stddev_yield,
-                     count(vt.yieldKgHa) AS numeric_yield_count,
-                     count(vt) AS trial_count,
-                     sum(CASE WHEN vt.yieldDerivationMethod IS NOT NULL THEN 1 ELSE 0 END) AS derived_count
+                     collect(DISTINCT g_year) AS years,
+                     collect(g_sites) AS site_lists,
+                     collect(DISTINCT g_regime) AS irrigation_regimes,
+                     collect(DISTINCT g_system) AS production_systems,
+                     collect(g_disease) AS disease_lists,
+                     collect(g_traits) AS trait_lists,
+                     collect(g_confidence) AS confidence_lists,
+                     collect(g_sources) AS source_lists,
+                     avg(g_y) AS mean_yield_flat,
+                     sum(CASE WHEN g_y IS NOT NULL THEN w * g_y ELSE 0.0 END) AS wsum,
+                     sum(CASE WHEN g_y IS NOT NULL THEN w ELSE 0.0 END) AS wtot,
+                     min(g_y) AS min_yield,
+                     max(g_y) AS max_yield,
+                     stDev(g_y) AS stddev_yield,
+                     count(g_y) AS numeric_yield_count,
+                     count(*) AS trial_count,
+                     sum(g_derived) AS derived_count,
+                     sum(CASE WHEN g_y IS NULL AND g_unconv = 1 THEN 1 ELSE 0 END) AS unconverted_count
                 WHERE trial_count >= 1
                   AND ($irrigation_uri IS NULL OR $irrigation_uri IN irrigation_regimes)
                   AND ($production_system IS NULL OR $production_system IN production_systems)
                 WITH variety,
                      CASE WHEN wtot > 0 THEN wsum / wtot ELSE mean_yield_flat END AS mean_yield,
                      min_yield, max_yield, stddev_yield,
-                     numeric_yield_count, trial_count, derived_count, years,
+                     numeric_yield_count, trial_count, derived_count, unconverted_count, years,
                      reduce(acc = [], sl IN site_lists | acc + [x IN sl WHERE NOT x IN acc]) AS sites,
-                     irrigation_regimes, production_systems, disease_scores_list,
-                     agronomic_traits_list, confidence_levels, source_ids
+                     irrigation_regimes, production_systems,
+                     reduce(acc = [], l IN disease_lists | acc + [x IN l WHERE NOT x IN acc]) AS disease_scores_list,
+                     reduce(acc = [], l IN trait_lists | acc + [x IN l WHERE NOT x IN acc]) AS agronomic_traits_list,
+                     reduce(acc = [], l IN confidence_lists | acc + [x IN l WHERE NOT x IN acc]) AS confidence_levels,
+                     reduce(acc = [], l IN source_lists | acc + [x IN l WHERE NOT x IN acc]) AS source_ids
                 RETURN variety,
                        mean_yield,
                        min_yield,
@@ -117,6 +154,7 @@ _EXTRAPOLATE_AGGREGATE_CYPHER = """
                        numeric_yield_count,
                        trial_count,
                        derived_count,
+                       unconverted_count,
                        years,
                        sites,
                        irrigation_regimes,
@@ -127,8 +165,96 @@ _EXTRAPOLATE_AGGREGATE_CYPHER = """
                        source_ids
                 ORDER BY mean_yield IS NULL, round(mean_yield, 1) DESC, variety ASC
                 LIMIT $top_n
+                }
+                RETURN crop, variety, mean_yield, min_yield, max_yield, stddev_yield,
+                       numeric_yield_count, trial_count, derived_count, unconverted_count, years,
+                       sites, irrigation_regimes, production_systems, disease_scores_list,
+                       agronomic_traits_list, confidence_levels, source_ids, other_n
+                ORDER BY crop, mean_yield IS NULL, round(mean_yield, 1) DESC, variety ASC
 """
-_MEDIAN_CACHE: dict[tuple[str, str | None], tuple[float, dict]] = {}
+
+# One entry of the per-crop ``hits`` list built from the policy-classified rows.
+_HIT_MAP_CYPHER = (
+    "{{vt: vt, ts: ts, y: ep_y, in_mode: ep_in_mode, other: ep_other, unconv: ep_unconv, "
+    "ck: CASE WHEN ep_other THEN {content_key} END}}"
+)
+
+
+def _tier_gate_cypher(tier: str, with_other: bool = True) -> str:
+    """Row gate of an evidence tier (see ``evidence_policy``): field rows of the mode (plus the
+    other-purpose rows to count when ``with_other``), or regional rows that carry a
+    policy-eligible number."""
+    if tier == ep.EVIDENCE_TIER_REGIONAL:
+        return f"WHERE ep_tier = '{ep.EVIDENCE_TIER_REGIONAL}' AND ep_in_mode AND ep_y IS NOT NULL\n"
+    if tier == ep.EVIDENCE_TIER_FIELD:
+        rows = "(ep_in_mode OR ep_other)" if with_other else "ep_in_mode"
+        return f"WHERE ep_tier = '{ep.EVIDENCE_TIER_FIELD}' AND {rows}\n"
+    raise ValueError(f"unknown evidence tier: {tier!r}")
+
+
+def _tier_row_filter_cypher(tier: str) -> str:
+    """Cheap WHERE terms (before the row policy runs) that only drop rows the tier's gate would
+    drop anyway: the regional tier keeps numeric, non-excluded-source rows, so the bulk of
+    excluded-source (BSL) rows at the aggregate containers never reaches the policy."""
+    if tier == ep.EVIDENCE_TIER_REGIONAL:
+        return f"AND vt.yieldKgHa IS NOT NULL AND NOT {ep.cypher_excluded_source('vt')}"
+    return ""
+
+
+_EXCLUDED_SITES_PREDICATE = """($excluded_sites IS NULL OR NOT EXISTS {
+                      MATCH (vt)-[:TRIAL_AT]->(x:TrialSite)
+                      WHERE toLower(x.name) IN $excluded_sites
+                  })"""
+
+
+def _extrapolate_single_query(mode: str, tier: str) -> str:
+    """Ranked varieties of ONE crop at ``$site_names`` (params: see extrapolate_varieties)."""
+    ck = ep.cypher_content_key("vt")
+    return (
+        f"""
+                MATCH (vt:VarietyTrial)-[:TRIAL_AT]->(ts:TrialSite)
+                WHERE ts.name IN $site_names
+                  AND (vt.yieldKgHa IS NOT NULL OR vt.yieldNoteS1 IS NOT NULL)
+                  AND coalesce(vt.rankingEligible, true) = true
+                  AND {_CROP_MATCH_PREDICATE}
+                  AND {_EXCLUDED_SITES_PREDICATE}
+                  {_tier_row_filter_cypher(tier)}
+                """
+        + ep.cypher_row_policy(mode)
+        + _tier_gate_cypher(tier)
+        + "WITH $crop AS crop, collect(" + _HIT_MAP_CYPHER.format(content_key=ck) + ") AS hits\n"
+        + _EXTRAPOLATE_BODY_CYPHER.replace("{content_key}", ck)
+    )
+
+
+def _extrapolate_batch_query(mode: str, tier: str) -> str:
+    """Ranked varieties of every crop in ``$crops`` at ``$site_names``, in one scan."""
+    ck = ep.cypher_content_key("vt")
+    return (
+        f"""
+                MATCH (vt:VarietyTrial)-[:TRIAL_AT]->(ts:TrialSite)
+                WHERE ts.name IN $site_names
+                  AND (vt.yieldKgHa IS NOT NULL OR vt.yieldNoteS1 IS NOT NULL)
+                  AND coalesce(vt.rankingEligible, true) = true
+                  AND {_EXCLUDED_SITES_PREDICATE}
+                  {_tier_row_filter_cypher(tier)}
+                // Same crop predicate as extrapolate_varieties, evaluated once per
+                // trial row for every requested crop; rows of other crops stop here.
+                WITH vt, ts, [c IN $crops WHERE
+                      vt.cropEppo = c
+                      OR vt.cropScientific CONTAINS c
+                      OR toLower(vt.cropScientific) = toLower(c)] AS matched
+                WHERE size(matched) > 0
+                """
+        + ep.cypher_row_policy(mode, carry=("matched",))
+        + _tier_gate_cypher(tier)
+        + "UNWIND matched AS crop\n"
+        + "WITH crop, collect(" + _HIT_MAP_CYPHER.format(content_key=ck) + ") AS hits\n"
+        + _EXTRAPOLATE_BODY_CYPHER.replace("{content_key}", ck)
+    )
+
+
+_MEDIAN_CACHE: dict[tuple[str, str | None, str], tuple[float, dict]] = {}
 _MEDIAN_TTL = 3600.0
 
 # Whole-response cache for recommend_for_conditions: the answer depends only on the
@@ -172,6 +298,9 @@ def _inflight_done(inflight: dict[str, asyncio.Future], key: str, task: asyncio.
 
 # Crops evaluated per request, counted after the analog-trial prefilter.
 _RECOMMEND_MAX_CROPS = 30
+# Varieties kept per crop on the regional tier (aggregate sites hold few trials), so the
+# crop's regional trial count is exact.
+_REGIONAL_TOP_N = 500
 # Crop cycle used for water demand when the crop reference has none.
 _DEFAULT_GROWING_SEASON_DAYS = 180
 
@@ -204,6 +333,11 @@ _IRRIGATION_URIS = {
     "irrigated": "http://aims.fao.org/aos/agrovoc/c_3954",
     "irrigado": "http://aims.fao.org/aos/agrovoc/c_3954",
 }
+
+
+def _median_scope(irrigation_uri: str | None, purpose: str) -> str:
+    scope = "crop×irrigation" if irrigation_uri is not None else "crop"
+    return scope if purpose == ep.MODE_MAIN else f"{scope}:{purpose}"
 
 
 def _irrigation_uri(regime: str | None) -> str | None:
@@ -310,6 +444,22 @@ def _climate_task_done(key: str, task: asyncio.Task) -> None:
     exc = task.exception()  # retrieves it: no "never retrieved" warning
     if exc is not None:
         logger.warning("background climate cell %s failed: %s", key, type(exc).__name__)
+
+
+def _cap_field_sites(sites: list[dict], limit: int | None) -> list[dict]:
+    """Keep the first ``limit`` field sites (all of them when ``limit`` is None); aggregate
+    sites, present only when the caller asked for them, are never cut."""
+    if limit is None:
+        return sites
+    kept = 0
+    out: list[dict] = []
+    for site in sites:
+        if site["site_kind"] == ep.SITE_KIND_AGGREGATE:
+            out.append(site)
+        elif kept < limit:
+            out.append(site)
+            kept += 1
+    return out
 
 
 class GraphDAO:
@@ -1586,11 +1736,20 @@ class GraphDAO:
         soil_type: str | None = None,
         rainfall_min: float | None = None,
         rainfall_max: float | None = None,
-        limit: int = 10,
+        limit: int | None = 10,
         target_features: dict[str, float | None] | None = None,
         vector_version: str = "v1",
+        include_aggregate: bool = False,
     ) -> list[dict]:
         """Find TrialSites agro-climatically similar to a target (C.1).
+
+        Each site carries ``site_kind`` (``field`` | ``aggregate``, see ``evidence_policy``).
+        Only field sites are returned by default: an aggregate pseudo-site (national or regional
+        registry, "average of N locations") is not a place, so it never enters a field analog
+        set. ``include_aggregate`` also returns the aggregate sites of the same climate class
+        (they carry no soil or rainfall, so those filters do not apply to them) for the
+        regional evidence tier. ``limit`` caps the field sites only (``None`` = no cap, the
+        Köppen path's contract: every matching field site, ordered by name).
 
         ``vector_version`` "v1" uses rainfall/et0/frost/elevation; "v2" uses the
         CHELSA vector (rainfall/et0/coldest_min/annual_temp) on both sides.
@@ -1688,6 +1847,8 @@ class GraphDAO:
         async with self._driver.session() as session:
             result = await session.run(query)
             rows = [dict(r) async for r in result]
+        for r in rows:
+            r["site_kind"] = ep.site_kind(r["name"])
 
         # ── Distance path (C.1): rank by agro-climatic distance ─────────────
         if target_vec is not None:
@@ -1714,6 +1875,8 @@ class GraphDAO:
             bounds = agroclimatic.normalize_bounds(vectors + [target_vec], features=features)
             scored: list[dict] = []
             for r, vec in zip(rows, vectors):
+                if r["site_kind"] == ep.SITE_KIND_AGGREGATE and not include_aggregate:
+                    continue
                 if vec is not None:
                     d = agroclimatic.distance(
                         target_vec, vec, bounds, weights=weights, features=features,
@@ -1727,24 +1890,28 @@ class GraphDAO:
                 r["distance"] = round(d, 4)
                 scored.append(r)
             scored.sort(key=lambda s: (s["distance"], s["name"]))
-            return scored[:limit]
+            return _cap_field_sites(scored, limit)
 
         # ── Legacy path: Köppen / soil / rainfall filter, no distance ───────
         filtered: list[dict] = []
         for r in rows:
+            is_aggregate = r["site_kind"] == ep.SITE_KIND_AGGREGATE
+            if is_aggregate and not include_aggregate:
+                continue
             if climate_class and r["climate_class"] != climate_class:
                 continue
-            if soil_type and (not r["soil_type"] or soil_type not in r["soil_type"]):
-                continue
-            rain = r["annual_rainfall_mm"]
-            if rainfall_min is not None and (rain is None or rain < rainfall_min):
-                continue
-            if rainfall_max is not None and (rain is None or rain > rainfall_max):
-                continue
+            if not is_aggregate:  # aggregate sites carry no soil or rainfall to filter on
+                if soil_type and (not r["soil_type"] or soil_type not in r["soil_type"]):
+                    continue
+                rain = r["annual_rainfall_mm"]
+                if rainfall_min is not None and (rain is None or rain < rainfall_min):
+                    continue
+                if rainfall_max is not None and (rain is None or rain > rainfall_max):
+                    continue
             r["distance"] = None
             filtered.append(r)
         filtered.sort(key=lambda s: s["name"])
-        return filtered[:limit]
+        return _cap_field_sites(filtered, limit)
 
     async def _crops_with_analog_trials(
         self,
@@ -1752,12 +1919,15 @@ class GraphDAO:
         site_names: list[str],
         irrigation_uri: str | None = None,
         exclude_sites: list[str] | None = None,
+        purpose: str = ep.MODE_MAIN,
+        tier: str = ep.EVIDENCE_TIER_FIELD,
     ) -> set[str]:
         """EPPO codes for which ``extrapolate_varieties`` would return >= 1 variety.
 
         Mirrors extrapolate's eligibility exactly: same site/crop predicates,
         ranking-eligible trials with a yield value (numeric or note), the same
-        held-out-site rule, and, when ``irrigation_uri`` is given, at least one such
+        held-out-site rule, the same evidence-policy row gate (``purpose`` and
+        ``tier``), and, when ``irrigation_uri`` is given, at least one such
         trial in that regime (extrapolate keeps a variety only if its regimes include
         it). One round trip for all crops, so an
         empty result means extrapolate would return nothing for every crop.
@@ -1785,6 +1955,9 @@ class GraphDAO:
                       MATCH (vt)-[:TRIAL_AT]->(x:TrialSite)
                       WHERE toLower(x.name) IN $excluded_sites
                   }})
+                  {_tier_row_filter_cypher(tier)}
+                {ep.cypher_row_policy(purpose)}
+                {_tier_gate_cypher(tier, with_other=False)}
                 RETURN DISTINCT vt.cropEppo AS eppo, vt.cropScientific AS sci
                 """,
                 site_names=list(site_names),
@@ -1847,12 +2020,21 @@ class GraphDAO:
         recency_half_life: float = 8.0,
         vector_version: str = "v1",
         similar_sites_override: list[dict] | None = None,
+        purpose: str = ep.MODE_MAIN,
+        tier: str = ep.EVIDENCE_TIER_FIELD,
     ) -> dict:
         """Extrapolate best varieties for a target environment.
 
         ``similar_sites_override``: precomputed ``get_similar_sites`` output (same
         shape) used instead of the internal lookup, so a caller evaluating many
         crops against identical inputs pays for the site scan once.
+
+        ``purpose`` (``main`` | ``forage``) and ``tier`` (``field`` | ``regional``) select the
+        evidence under the policy of ``app.graph.evidence_policy``: duplicate trials count once,
+        excluded sources (BSL) add no kg/ha, and the analog sites are field sites (default) or
+        the aggregate sites of the climate (``regional``, numeric evidence only). The result
+        names both (``purpose``, ``evidence_tier``) and each ranked variety carries
+        ``crop_other_purpose_trials`` (main mode: forage trials of the crop at these sites).
 
         This is the combined "killer endpoint" that:
           1. Finds TrialSites similar to the target environment
@@ -1883,6 +2065,8 @@ class GraphDAO:
               "data_quality": {"total_trials_analyzed": N, "unique_varieties": M}
             }
         """
+        purpose = ep.check_mode(purpose)
+        tier = ep.check_tier(tier)
         # ── Step 1: resolve target environment ──────────────────────────
         target_env: dict[str, Any] = {
             "crop": crop,
@@ -1949,15 +2133,23 @@ class GraphDAO:
                 raise TypeError("similar_sites_override must be a list of site dicts")
             similar_sites_result = similar_sites_override
         else:
+            regional = tier == ep.EVIDENCE_TIER_REGIONAL
             similar_sites_result = await self.get_similar_sites(
                 climate_class=target_env.get("climate_class"),
                 soil_type=target_env.get("soil_type"),
                 rainfall_min=target_env.get("rainfall_min"),
                 rainfall_max=target_env.get("rainfall_max"),
-                limit=50,
+                # The Köppen path takes every matching field site (no alphabetical cut);
+                # the distance path keeps the 50 nearest.
+                limit=None if target_features is None else 50,
                 target_features=target_features,
                 vector_version=vector_version,
+                include_aggregate=regional,
             )
+            similar_sites_result = [
+                s for s in similar_sites_result
+                if (s.get("site_kind", ep.SITE_KIND_FIELD) == ep.SITE_KIND_AGGREGATE) == regional
+            ]
         similar_site_names = [s["name"] for s in similar_sites_result]
 
         # Per-site weight for distance-weighted aggregation (C.1): nearer analog →
@@ -1984,6 +2176,8 @@ class GraphDAO:
                 "target_environment": target_env,
                 "similar_sites": [],
                 "ranked_varieties": [],
+                "purpose": purpose,
+                "evidence_tier": tier,
                 "evidence": _assess_evidence([]),
                 "data_quality": {"total_trials_analyzed": 0, "unique_varieties": 0},
             }
@@ -1991,21 +2185,7 @@ class GraphDAO:
         # ── Step 3: aggregate variety trials from similar sites ─────────
         async with self._driver.session() as session:
             result = await session.run(
-                """
-                MATCH (vt:VarietyTrial)-[:TRIAL_AT]->(ts:TrialSite)
-                WHERE ts.name IN $site_names
-                  AND (vt.yieldKgHa IS NOT NULL OR vt.yieldNoteS1 IS NOT NULL)
-                  AND coalesce(vt.rankingEligible, true) = true
-                  AND (
-                      vt.cropEppo = $crop
-                      OR vt.cropScientific CONTAINS $crop
-                      OR toLower(vt.cropScientific) = toLower($crop)
-                  )
-                  AND ($excluded_sites IS NULL OR NOT EXISTS {
-                      MATCH (vt)-[:TRIAL_AT]->(x:TrialSite)
-                      WHERE toLower(x.name) IN $excluded_sites
-                  })
-                """ + _EXTRAPOLATE_AGGREGATE_CYPHER,
+                _extrapolate_single_query(purpose, tier),
                 site_names=similar_site_names,
                 crop=crop,
                 irrigation_uri=irrigation_uri,
@@ -2060,6 +2240,8 @@ class GraphDAO:
             "similar_sites": [s["name"] for s in similar_sites_result],
             "similar_sites_detail": similar_sites_result[:5],
             "ranked_varieties": ranked,
+            "purpose": purpose,
+            "evidence_tier": tier,
             "excluded_by_soil": excluded_by_soil,
             "soil_gate": soil_gate,
             "soil_filter_applied": bool(soil_gate and soil_gate["verdict"] != "unknown"),
@@ -2083,18 +2265,22 @@ class GraphDAO:
         top_n: int = 10,
         exclude_sites: list[str] | None = None,
         recency_half_life: float = 8.0,
+        purpose: str = ep.MODE_MAIN,
+        tier: str = ep.EVIDENCE_TIER_FIELD,
     ) -> dict[str, list[dict]]:
         """``ranked_varieties`` of ``extrapolate_varieties`` for many crops in one query.
 
         For each crop, the list equals ``extrapolate_varieties(crop,
         similar_sites_override=similar_sites, irrigation_regime=..., top_n=...,
-        exclude_sites=..., recency_half_life=...)["ranked_varieties"]`` (no soil
-        gate, no parcel weather). The analog sites' trials are expanded once and
-        split by crop with the same predicate; each crop's rows then go, in the
-        same order, through the same aggregation (``_EXTRAPOLATE_AGGREGATE_CYPHER``)
-        and the same per-crop ORDER BY/LIMIT. Every requested crop is a key; a crop
-        without trials maps to ``[]``.
+        exclude_sites=..., recency_half_life=..., purpose=..., tier=...)["ranked_varieties"]``
+        (no soil gate, no parcel weather). The analog sites' trials are expanded once, classified
+        by the evidence policy once per row, and split by crop with the same predicate; each
+        crop's rows then go through the same aggregation (``_EXTRAPOLATE_BODY_CYPHER``) and the
+        same per-crop ORDER BY/LIMIT. Every requested crop is a key; a crop without trials
+        maps to ``[]``.
         """
+        purpose = ep.check_mode(purpose)
+        tier = ep.check_tier(tier)
         if not isinstance(similar_sites, list):
             raise TypeError("similar_sites must be a list of site dicts")
         crops = list(dict.fromkeys(crops))
@@ -2117,33 +2303,7 @@ class GraphDAO:
         rows = 0
         async with self._driver.session() as session:
             result = await session.run(
-                """
-                MATCH (vt:VarietyTrial)-[:TRIAL_AT]->(ts:TrialSite)
-                WHERE ts.name IN $site_names
-                  AND (vt.yieldKgHa IS NOT NULL OR vt.yieldNoteS1 IS NOT NULL)
-                  AND coalesce(vt.rankingEligible, true) = true
-                  AND ($excluded_sites IS NULL OR NOT EXISTS {
-                      MATCH (vt)-[:TRIAL_AT]->(x:TrialSite)
-                      WHERE toLower(x.name) IN $excluded_sites
-                  })
-                // Same crop predicate as extrapolate_varieties, evaluated once per
-                // trial row for every requested crop.
-                WITH vt, ts, [c IN $crops WHERE
-                      vt.cropEppo = c
-                      OR vt.cropScientific CONTAINS c
-                      OR toLower(vt.cropScientific) = toLower(c)] AS matched
-                UNWIND matched AS crop
-                WITH crop, collect({vt: vt, ts: ts}) AS hits
-                CALL (hits) {
-                  UNWIND hits AS h
-                  WITH h.vt AS vt, h.ts AS ts
-                """ + _EXTRAPOLATE_AGGREGATE_CYPHER + """
-                }
-                RETURN crop, variety, mean_yield, min_yield, max_yield, stddev_yield,
-                       numeric_yield_count, trial_count, derived_count, years, sites,
-                       irrigation_regimes, production_systems, disease_scores_list,
-                       agronomic_traits_list, confidence_levels, source_ids
-                """,
+                _extrapolate_batch_query(purpose, tier),
                 site_names=site_names,
                 crops=crops,
                 irrigation_uri=irrigation_uri,
@@ -2195,13 +2355,18 @@ class GraphDAO:
                 sites.append(dict(record))
             return sites
 
-    async def get_crop_yield_median(self, crop: str, irrigation_uri: str | None) -> dict:
+    async def get_crop_yield_median(
+        self, crop: str, irrigation_uri: str | None, purpose: str = ep.MODE_MAIN,
+    ) -> dict:
         """Median trial yield for a crop, optionally within one irrigation regime.
 
-        Cached in-process for ``_MEDIAN_TTL`` seconds: the graph only changes
-        through ingestion, so bounded staleness is acceptable.
+        Reads the evidence policy (``app.graph.evidence_policy``): only field evidence of the
+        ``purpose`` with a policy-eligible number (no BSL kg/ha; forage as kg dry matter/ha),
+        and content-identical trials count once. Cached in-process for ``_MEDIAN_TTL``
+        seconds: the graph only changes through ingestion, so bounded staleness is acceptable.
         """
-        key = (crop, irrigation_uri)
+        purpose = ep.check_mode(purpose)
+        key = (crop, irrigation_uri, purpose)
         hit = _MEDIAN_CACHE.get(key)
         now = time.monotonic()
         if hit is not None and now - hit[0] < _MEDIAN_TTL:
@@ -2211,12 +2376,16 @@ class GraphDAO:
         async with self._driver.session() as session:
             result = await session.run(
                 f"""
-                MATCH (vt:VarietyTrial)
+                MATCH (vt:VarietyTrial)-[:TRIAL_AT]->(ts:TrialSite)
                 WHERE vt.yieldKgHa IS NOT NULL
                   AND {RANKING_ELIGIBLE_PREDICATE}
                   AND {_CROP_MATCH_PREDICATE}
                   AND ($irrigation_uri IS NULL OR vt.irrigationRegime = $irrigation_uri)
-                RETURN percentileCont(vt.yieldKgHa, 0.5) AS median, count(vt) AS n
+                {ep.cypher_row_policy(purpose)}
+                WHERE ep_tier = '{ep.EVIDENCE_TIER_FIELD}' AND ep_y IS NOT NULL
+                WITH DISTINCT vt, ep_y
+                WITH {ep.cypher_content_key("vt")} AS ck, max(ep_y) AS y
+                RETURN percentileCont(y, 0.5) AS median, count(y) AS n
                 """,
                 crop=crop,
                 irrigation_uri=irrigation_uri,
@@ -2227,24 +2396,27 @@ class GraphDAO:
         out = {
             "median_kg_ha": float(median) if median is not None else None,
             "n_trials": n,
-            "scope": "crop×irrigation" if irrigation_uri is not None else "crop",
+            "scope": _median_scope(irrigation_uri, purpose),
         }
         _MEDIAN_CACHE[key] = (now, out)
         return dict(out)
 
-    async def get_crop_yield_medians(self, crops: list[str], irrigation_uri: str | None) -> dict[str, dict]:
+    async def get_crop_yield_medians(
+        self, crops: list[str], irrigation_uri: str | None, purpose: str = ep.MODE_MAIN,
+    ) -> dict[str, dict]:
         """Batch ``get_crop_yield_median``: one scan of the trials for all cache misses.
 
-        Same semantics per crop (crop predicate, ranking-eligible, numeric yield,
-        per-trial regime filter, median); shares ``_MEDIAN_CACHE`` with the
+        Same semantics per crop (crop predicate, ranking-eligible, evidence policy for
+        ``purpose``, per-trial regime filter, median); shares ``_MEDIAN_CACHE`` with the
         single-crop method. Crops without trials map to a null median and n=0.
         """
-        scope = "crop×irrigation" if irrigation_uri is not None else "crop"
+        purpose = ep.check_mode(purpose)
+        scope = _median_scope(irrigation_uri, purpose)
         now = time.monotonic()
         out: dict[str, dict] = {}
         misses: list[str] = []
         for crop in dict.fromkeys(crops):
-            hit = _MEDIAN_CACHE.get((crop, irrigation_uri))
+            hit = _MEDIAN_CACHE.get((crop, irrigation_uri, purpose))
             if hit is not None and now - hit[0] < _MEDIAN_TTL:
                 out[crop] = dict(hit[1])
             else:
@@ -2256,13 +2428,19 @@ class GraphDAO:
             async with self._driver.session() as session:
                 result = await session.run(
                     f"""
-                    MATCH (vt:VarietyTrial)
+                    MATCH (vt:VarietyTrial)-[:TRIAL_AT]->(ts:TrialSite)
                     WHERE vt.yieldKgHa IS NOT NULL
                       AND {RANKING_ELIGIBLE_PREDICATE}
                       AND ($irrigation_uri IS NULL OR vt.irrigationRegime = $irrigation_uri)
-                    UNWIND [c IN $crops WHERE vt.cropEppo = c OR vt.cropScientific CONTAINS c
-                            OR toLower(vt.cropScientific) = toLower(c)] AS crop
-                    RETURN crop, percentileCont(vt.yieldKgHa, 0.5) AS median, count(vt) AS n
+                    WITH vt, ts, [c IN $crops WHERE vt.cropEppo = c OR vt.cropScientific CONTAINS c
+                                  OR toLower(vt.cropScientific) = toLower(c)] AS matched
+                    WHERE size(matched) > 0
+                    {ep.cypher_row_policy(purpose, carry=("matched",))}
+                    WHERE ep_tier = '{ep.EVIDENCE_TIER_FIELD}' AND ep_y IS NOT NULL
+                    WITH DISTINCT vt, ep_y, matched
+                    UNWIND matched AS crop
+                    WITH crop, {ep.cypher_content_key("vt")} AS ck, max(ep_y) AS y
+                    RETURN crop, percentileCont(y, 0.5) AS median, count(y) AS n
                     """,
                     crops=misses,
                     irrigation_uri=irrigation_uri,
@@ -2275,7 +2453,7 @@ class GraphDAO:
                 n = int(row["n"]) if row and row["n"] else 0
                 value = {"median_kg_ha": float(median) if median is not None else None,
                          "n_trials": n, "scope": scope}
-                _MEDIAN_CACHE[(crop, irrigation_uri)] = (stamp, value)
+                _MEDIAN_CACHE[(crop, irrigation_uri, purpose)] = (stamp, value)
                 out[crop] = dict(value)
             logger.debug("medians batch misses=%d elapsed_s=%.3f", len(misses), stamp - t0)
         return {c: out[c] for c in crops}
@@ -2289,8 +2467,19 @@ class GraphDAO:
         irrigation_uri: str | None,
         page: int,
         page_size: int,
+        purpose: str = ep.MODE_MAIN,
+        tier: str = ep.EVIDENCE_TIER_FIELD,
     ) -> dict:
-        """Paginated trials behind a recommendation (count query first, then page)."""
+        """Paginated trials behind a recommendation (count query first, then page).
+
+        The page lists the distinct trials of the evidence policy that carry a number in the
+        recommendation: content-identical trials appear once, excluded sources (BSL) and
+        off-purpose records never appear, and ``tier`` selects field or regional (aggregate
+        site) evidence. Each item names its ``tier``; in forage mode ``yield_kg_ha`` is kg dry
+        matter/ha and ``basis`` says so.
+        """
+        purpose = ep.check_mode(purpose)
+        tier = ep.check_tier(tier)
         where = f"""
             ts.name IN $sites
             AND vt.yieldKgHa IS NOT NULL
@@ -2298,13 +2487,17 @@ class GraphDAO:
             AND {_CROP_MATCH_PREDICATE}
             AND ($variety IS NULL OR vt.varietyNormalized = $variety)
             AND ($irrigation_uri IS NULL OR vt.irrigationRegime = $irrigation_uri)
+            {_tier_row_filter_cypher(tier)}
         """
+        gate = (f"WHERE ep_tier = '{tier}' AND ep_in_mode AND ep_y IS NOT NULL")
         params: dict[str, Any] = {
             "crop": crop,
             "sites": similar_sites,
             "variety": variety,
             "irrigation_uri": irrigation_uri,
         }
+        basis = "dry_matter" if purpose == ep.MODE_FORAGE else None
+        ck = ep.cypher_content_key("vt")
 
         page = max(1, page)
 
@@ -2316,7 +2509,11 @@ class GraphDAO:
                 f"""
                 MATCH (vt:VarietyTrial)-[:TRIAL_AT]->(ts:TrialSite)
                 WHERE {where}
-                RETURN count(DISTINCT vt) AS total
+                {ep.cypher_row_policy(purpose)}
+                {gate}
+                WITH DISTINCT vt
+                WITH {ck} AS ck
+                RETURN count(DISTINCT ck) AS total
                 """,
                 **params,
             )
@@ -2326,18 +2523,23 @@ class GraphDAO:
                 f"""
                 MATCH (vt:VarietyTrial)-[:TRIAL_AT]->(ts:TrialSite)
                 WHERE {where}
-                WITH vt, ts
+                {ep.cypher_row_policy(purpose)}
+                {gate}
+                WITH vt, ts, ep_y
                 ORDER BY ts.name
-                WITH vt, head(collect(DISTINCT ts.name)) AS site
-                RETURN coalesce(vt.mergeKey, elementId(vt)) AS trial_id,
-                       vt.varietyNormalized AS variety,
-                       site,
-                       vt.year AS year,
-                       vt.yieldKgHa AS yield_kg_ha,
-                       vt.irrigationRegime AS irrigation_regime,
-                       vt.productionSystem AS production_system,
-                       vt.source_id AS source_id,
-                       vt.confidence AS confidence
+                WITH vt, ep_y, head(collect(DISTINCT ts.name)) AS site
+                WITH {ck} AS ck,
+                     max(ep_y) AS yield_kg_ha,
+                     min(coalesce(vt.mergeKey, elementId(vt))) AS trial_id,
+                     min(vt.varietyNormalized) AS variety,
+                     min(site) AS site,
+                     min(vt.year) AS year,
+                     min(vt.irrigationRegime) AS irrigation_regime,
+                     min(vt.productionSystem) AS production_system,
+                     min(vt.source_id) AS source_id,
+                     min(vt.confidence) AS confidence
+                RETURN trial_id, variety, site, year, yield_kg_ha, irrigation_regime,
+                       production_system, source_id, confidence
                 ORDER BY year DESC, variety, site, trial_id
                 SKIP $skip LIMIT $limit
                 """,
@@ -2347,8 +2549,9 @@ class GraphDAO:
             )
             items = []
             async for rec in items_res:
-                items.append({k: _s(v) for k, v in dict(rec).items()})
-        return {"items": items, "total": total, "page": page, "page_size": page_size}
+                items.append({**{k: _s(v) for k, v in dict(rec).items()}, "tier": tier, "basis": basis})
+        return {"items": items, "total": total, "page": page, "page_size": page_size,
+                "purpose": purpose, "tier": tier}
 
     async def get_available_crops(self) -> list[dict]:
         """Return distinct crops (one per EPPO code) available in VarietyTrial data.
@@ -3492,6 +3695,12 @@ class GraphDAO:
         ``evidence.trial_count`` of each recommendation is the number of trials
         summed over ALL returned varieties (including non-numeric ones), while
         ``yield.n_trials`` is the numeric trials of the best variety only.
+
+        ``purpose`` (``main`` default = each crop's main harvested product, or ``forage``)
+        selects the evidence under ``app.graph.evidence_policy``. Field evidence ranks first;
+        a crop with no numeric field evidence but numeric aggregate (regional/national)
+        evidence at the climate's aggregate sites is returned with ``evidence.tier ==
+        "regional"`` (see ``app.graph.recommend`` for the contract).
         """
         from app.graph.recommend import (
             LOW_TRIAL_COUNT,
@@ -3504,6 +3713,7 @@ class GraphDAO:
         from app.services.crop_reference import CROP_REFERENCE, get_crop_ref_sync
 
         cond = dict(conditions)
+        purpose = ep.check_mode(cond.pop("purpose", None) or ep.MODE_MAIN)
         detail = cond.pop("climate_detail", None) or {}
         for k in _CLIMATE_KEYS:
             if cond.get(k) is None and detail.get(k) is not None:
@@ -3529,10 +3739,12 @@ class GraphDAO:
         v2_vector_ok = mode in ("v2", "hybrid") and \
             agroclimatic.feature_vector_v2(rain, et0, cold, temp) is not None
         agro_cond = {k: v for k, v in cond.items() if k not in ("top_n", "crops")}
+        if purpose != ep.MODE_MAIN:  # the default keeps its recommendation ids
+            agro_cond["purpose"] = purpose
 
         cache_key = json.dumps(
             {"c": {**agro_cond, "frost_margin_c": margin}, "top_n": top_n, "crops": cond.get("crops"), "season": season,
-             "management": management, "frost_margin_c": margin, "mode": mode},
+             "management": management, "frost_margin_c": margin, "mode": mode, "purpose": purpose},
             sort_keys=True, default=str,
         )
         cache_key = hashlib.sha256(cache_key.encode()).hexdigest()
@@ -3580,12 +3792,18 @@ class GraphDAO:
             # compute them once instead of once per extrapolate call.
             t_sites = time.monotonic()
             koppen_sites: list[dict] | None
+            regional_sites: list[dict] = []
             try:
-                koppen_sites = await self.get_similar_sites(
+                # Every matching field site (no alphabetical cut), plus the climate's aggregate
+                # sites for the regional tier; one site scan serves both.
+                found = await self.get_similar_sites(
                     climate_class=climate_class, soil_type=cond.get("soil_type"),
-                    rainfall_min=None, rainfall_max=None, limit=50,
-                    target_features=None, vector_version="v1",
+                    rainfall_min=None, rainfall_max=None, limit=None,
+                    target_features=None, vector_version="v1", include_aggregate=True,
                 )
+                koppen_sites = [s for s in found
+                                if s.get("site_kind", ep.SITE_KIND_FIELD) != ep.SITE_KIND_AGGREGATE]
+                regional_sites = [s for s in found if s.get("site_kind") == ep.SITE_KIND_AGGREGATE]
             except Exception as e:  # noqa: BLE001
                 logger.warning("recommend: shared site lookup failed (%s); per-crop fallback",
                                type(e).__name__)
@@ -3597,7 +3815,8 @@ class GraphDAO:
 
             all_eppos = [c["eppo_code"] for c in crop_entries]
 
-            async def _prefilter(sites: list[dict] | None, stage: str) -> set[str] | None:
+            async def _prefilter(sites: list[dict] | None, stage: str,
+                                 tier: str = ep.EVIDENCE_TIER_FIELD) -> set[str] | None:
                 """EPPO codes with analog trials at ``sites``; None = unknown, do not skip."""
                 if sites is None:
                     return None
@@ -3605,6 +3824,7 @@ class GraphDAO:
                 try:
                     ok = await self._crops_with_analog_trials(
                         all_eppos, [s["name"] for s in sites], irrigation_uri=irrigation_uri,
+                        purpose=purpose, tier=tier,
                     )
                 except Exception as e:  # noqa: BLE001
                     logger.warning("recommend: %s prefilter failed (%s); evaluating all crops",
@@ -3617,6 +3837,11 @@ class GraphDAO:
                 return ok
 
             koppen_ok = await _prefilter(koppen_sites, "koppen")
+            # Crops whose only numeric evidence is regional/national (aggregate sites).
+            regional_ok: set[str] = (
+                (await _prefilter(regional_sites, "regional", ep.EVIDENCE_TIER_REGIONAL) or set())
+                if regional_sites else set()
+            )
 
             v2_lock = asyncio.Lock()
             v2_state: dict[str, Any] = {}
@@ -3646,7 +3871,7 @@ class GraphDAO:
             async def _extrapolate(eppo: str, **extra: Any) -> dict:
                 return await self.extrapolate_varieties(
                     crop=eppo, climate_class=climate_class, soil_type=cond.get("soil_type"),
-                    irrigation_regime=irrigation_regime, top_n=5, **extra,
+                    irrigation_regime=irrigation_regime, top_n=5, purpose=purpose, **extra,
                 )
 
             async def _eval_one(entry: dict) -> dict | None:
@@ -3679,6 +3904,15 @@ class GraphDAO:
                                              eppo, time.monotonic() - t_v2)
                             similarity = "vector_v2_fallback"
                             varieties = result.get("ranked_varieties", [])
+                        # No numeric field evidence: numeric aggregate (regional/national) evidence
+                        # at the climate's aggregate sites backs the crop instead, flagged as such.
+                        tier = ep.EVIDENCE_TIER_FIELD
+                        regional_rows = (regional_batch or {}).get(eppo) or []
+                        regional_n = sum(_numeric_trials(v) for v in regional_rows)
+                        if regional_rows and not any(v.get("mean_yield_kg_ha") is not None for v in varieties):
+                            varieties = regional_rows[:5]
+                            tier = ep.EVIDENCE_TIER_REGIONAL
+                            similarity = "koppen"
                         if not varieties:
                             return None
                         # Best variety = highest mean among those with enough trials;
@@ -3689,7 +3923,7 @@ class GraphDAO:
                         )
                         reference = (medians or {}).get(eppo)
                         if reference is None:
-                            reference = await self.get_crop_yield_median(eppo, irrigation_uri)
+                            reference = await self.get_crop_yield_median(eppo, irrigation_uri, purpose)
                         species = resolve_species(eppo) or eppo
                         heat_tol = await self.get_heat_tolerance(species)
                         soil_verdict = assess_soil_suitability(await self.get_soil_suitability(species), parcel_soil)
@@ -3746,6 +3980,9 @@ class GraphDAO:
                             conditions=agro_cond, varieties=varieties, reference=reference,
                             soil_verdict=soil_verdict, water=water, frost_level=frost_level,
                             sowing=sowing, data_gaps_extra=gaps, assumptions=assumptions,
+                            tier=tier, purpose=purpose,
+                            regional_trial_count=regional_n if tier == ep.EVIDENCE_TIER_FIELD
+                            and regional_batch is not None else None,
                         )
                         if rec is None:
                             return None
@@ -3772,13 +4009,16 @@ class GraphDAO:
             if koppen_ok is None or ("ok" in v2_state and v2_state["ok"] is None):
                 candidates = list(all_eppos)[:_RECOMMEND_MAX_CROPS]
             else:
-                candidates = [e for e in all_eppos
-                              if e in koppen_ok or e in (v2_state.get("ok") or ())][:_RECOMMEND_MAX_CROPS]
+                field_capable = [e for e in all_eppos
+                                 if e in koppen_ok or e in (v2_state.get("ok") or ())]
+                regional_only = [e for e in all_eppos if e in regional_ok and e not in set(field_capable)]
+                candidates = (field_capable + regional_only)[:_RECOMMEND_MAX_CROPS]
             candidate_set = set(candidates)
             crop_entries = [c for c in crop_entries if c["eppo_code"] in candidate_set]
             t_med = time.monotonic()
             try:
-                medians: dict[str, dict] | None = await self.get_crop_yield_medians(candidates, irrigation_uri)
+                medians: dict[str, dict] | None = await self.get_crop_yield_medians(
+                    candidates, irrigation_uri, purpose)
             except Exception as e:  # noqa: BLE001
                 logger.warning("recommend: batch medians failed (%s); per-crop fallback", type(e).__name__)
                 medians = None
@@ -3796,12 +4036,31 @@ class GraphDAO:
                 try:
                     koppen_batch = await self.extrapolate_varieties_batch(
                         batch_crops, koppen_sites, irrigation_regime=irrigation_regime, top_n=5,
+                        purpose=purpose,
                     )
                 except Exception as e:  # noqa: BLE001
                     logger.warning("recommend: batched extrapolation failed (%s); per-crop fallback",
                                    type(e).__name__)
                 logger.debug("recommend stage=extrapolate_koppen_batch crops=%d elapsed_s=%.3f",
                              len(batch_crops), time.monotonic() - t_batch)
+
+            # Regional tier: the same batched extrapolation over the aggregate sites (numeric
+            # evidence only), every variety kept so the crop's regional trial count is exact.
+            regional_batch: dict[str, list[dict]] | None = None
+            regional_crops = [c["eppo_code"] for c in crop_entries if c["eppo_code"] in regional_ok]
+            if regional_sites and regional_crops:
+                t_reg = time.monotonic()
+                try:
+                    regional_batch = await self.extrapolate_varieties_batch(
+                        regional_crops, regional_sites, irrigation_regime=irrigation_regime,
+                        top_n=_REGIONAL_TOP_N, purpose=purpose, tier=ep.EVIDENCE_TIER_REGIONAL,
+                    )
+                except Exception as e:  # noqa: BLE001
+                    logger.warning("recommend: regional tier failed (%s); field evidence only",
+                                   type(e).__name__)
+                    degraded = True
+                logger.debug("recommend stage=extrapolate_regional crops=%d elapsed_s=%.3f",
+                             len(regional_crops), time.monotonic() - t_reg)
 
             t_eval = time.monotonic()
             results = await asyncio.gather(*(_eval_one(c) for c in crop_entries))
@@ -3811,10 +4070,11 @@ class GraphDAO:
             if koppen_ok is None or ("ok" in v2_state and v2_state["ok"] is None):
                 with_analogs: int | None = None  # a prefilter was unavailable: count unknown
             else:
-                with_analogs = len(koppen_ok | (v2_state.get("ok") or set()))
-            echo = {k: v for k, v in cond.items() if k != "climate_detail"}
+                with_analogs = len(koppen_ok | (v2_state.get("ok") or set()) | regional_ok)
+            echo = {**{k: v for k, v in cond.items() if k != "climate_detail"}, "purpose": purpose}
             response = {
                 "status": "ok",
+                "evidence_policy": ep.POLICY_VERSION,
                 "conditions": echo,
                 "recommendations": rank_recommendations(recs)[:top_n],
                 "data_quality": {"crops_evaluated": len(crop_entries), "crops_with_trials": len(recs),
@@ -5287,6 +5547,11 @@ def _ranked_variety(record: Any, crop: str) -> dict:
         "stddev_yield_kg_ha": round(record["stddev_yield"], 1) if record["stddev_yield"] else None,
         "trial_count": record["trial_count"],
         "numeric_yield_count": record["numeric_yield_count"],
+        # forage mode: distinct trials with a kg value but no known basis (no number from them)
+        "unknown_basis_trial_count": int(record.get("unconverted_count") or 0),
+        # crop level, repeated on every row: distinct trials of the other purpose (main mode:
+        # forage) at the same sites, counted and never averaged
+        "crop_other_purpose_trials": int(record.get("other_n") or 0),
         "derived_trial_count": record["derived_count"],
         "yield_provenance": _yield_provenance(record["derived_count"], record["trial_count"]),
         "trial_years": sorted(record["years"]),

@@ -51,6 +51,13 @@ Rules (owner decisions 2026-10-04):
    site names — are one observation, whatever their ``mergeKey``. The orchard fields keep
    perennial-crop trials that differ only in rootstock, density or cycle distinct.
 
+6. **Evidence tier.** A (trial, site) row is ``field`` evidence when rule 4 holds and
+   ``regional`` evidence otherwise (aggregate pseudo-sites, regional/national scope).
+   Regional evidence never enters a field aggregate; it backs a recommendation only when
+   the crop has no numeric field evidence, and the answer then says so. ``cypher_row_policy``
+   classifies every row of a query once (tier, purpose gate, policy yield) so no query
+   re-evaluates the rules per aggregate.
+
 Explicit properties written by ingestion (``yieldBasis`` today; ``siteKind`` and a
 grain/forage ``yieldMetric`` vocabulary later) are read first, here; callers do not change.
 
@@ -72,7 +79,7 @@ from typing import Any, NamedTuple
 from app.ingestion.trial_site_geo import AGGREGATE_PATTERNS, is_aggregate_site_name
 
 # Bump when a rule changes, so backtest baselines name the policy they were measured under.
-POLICY_VERSION = "2026-10-04.1"
+POLICY_VERSION = "2026-10-04.2"
 
 # ── (a) source policy ────────────────────────────────────────────────────────
 # Lowercased ``source_id`` / ``dataSource`` values whose kg/ha are not measurements.
@@ -222,6 +229,11 @@ SITE_KIND_FIELD = "field"
 SITE_KIND_AGGREGATE = "aggregate"
 FIELD_SCOPE = "site"  # aggregationScope of a located field trial (others: national, regional, unlocated)
 
+# Evidence tier of a (trial, site) row (rule 6).
+EVIDENCE_TIER_FIELD = "field"
+EVIDENCE_TIER_REGIONAL = "regional"
+EVIDENCE_TIERS: tuple[str, ...] = (EVIDENCE_TIER_FIELD, EVIDENCE_TIER_REGIONAL)
+
 # Substring patterns beyond the geo-backfill ones in ``trial_site_geo``.
 EXTRA_AGGREGATE_SITE_PATTERNS: tuple[str, ...] = (
     "bsl deutschland",  # BSL Köppen containers ("BSL Deutschland Cfb/Dfb/Uebergang")
@@ -287,7 +299,7 @@ def yield_purpose(yield_metric: str | None,
     return PURPOSE_UNKNOWN
 
 
-def _check_mode(mode: str) -> str:
+def check_mode(mode: str) -> str:
     if mode not in PURPOSE_MODES:
         raise ValueError(f"unknown purpose mode: {mode!r}")
     return mode
@@ -295,7 +307,7 @@ def _check_mode(mode: str) -> str:
 
 def in_purpose_mode(purpose: str, mode: str = MODE_MAIN) -> bool:
     """Main mode takes every purpose but forage; forage mode takes forage only."""
-    if _check_mode(mode) == MODE_FORAGE:
+    if check_mode(mode) == MODE_FORAGE:
         return purpose == PURPOSE_FORAGE
     return purpose != PURPOSE_FORAGE
 
@@ -416,6 +428,48 @@ def is_field_evidence(aggregation_scope: str | None, site_name: str | None) -> b
     return is_field_scope(aggregation_scope) and not is_aggregate_site(site_name)
 
 
+def check_tier(tier: str) -> str:
+    if tier not in EVIDENCE_TIERS:
+        raise ValueError(f"unknown evidence tier: {tier!r}")
+    return tier
+
+
+def evidence_tier(aggregation_scope: str | None, site_name: str | None) -> str:
+    """``field`` or ``regional`` for one (trial, site) row (rule 6)."""
+    return (EVIDENCE_TIER_FIELD if is_field_evidence(aggregation_scope, site_name)
+            else EVIDENCE_TIER_REGIONAL)
+
+
+def policy_yield(trial: Mapping[str, Any], mode: str = MODE_MAIN) -> float | None:
+    """The kg/ha a trial contributes to a numeric aggregate of ``mode``, or None.
+
+    Main mode: ``yieldKgHa`` of a record that passes ``is_numeric_yield_eligible``. Forage
+    mode: ``forage_dm_yield`` (kg dry matter/ha) of a record that is
+    ``is_forage_numeric_evidence``. None never means 0: the trial adds no number.
+    """
+    if not is_numeric_yield_eligible(trial, mode):
+        return None
+    if check_mode(mode) == MODE_FORAGE:
+        return forage_dm_yield(trial)
+    kg = trial.get("yieldKgHa")
+    return None if kg is None else float(kg)
+
+
+def is_other_purpose_evidence(trial: Mapping[str, Any], mode: str = MODE_MAIN) -> bool:
+    """A trial of the other purpose that a ``mode`` answer reports as a count only.
+
+    Main mode counts forage trials from a non-excluded source (the "N forage trials" notice).
+    Forage mode reports no off-mode count, so it is always False there.
+    """
+    return check_mode(mode) == MODE_MAIN and is_numeric_yield_eligible(trial, MODE_FORAGE)
+
+
+def has_unconverted_kg(trial: Mapping[str, Any], mode: str = MODE_MAIN) -> bool:
+    """Eligible trial with a kg value that contributes no number (forage basis unknown)."""
+    return (is_numeric_yield_eligible(trial, mode) and trial.get("yieldKgHa") is not None
+            and policy_yield(trial, mode) is None)
+
+
 # Trial properties null-coalesced to '' in the dedup key (mirrors the Cypher ``coalesce``):
 # an absent value and an empty one are the same observation, a present one is not.
 CONTENT_KEY_BLANK_DEFAULT_FIELDS: tuple[str, ...] = (
@@ -474,18 +528,20 @@ def _cypher_any_contains(expr: str, tokens: Iterable[str], var: str) -> str:
     return f"any({var} IN {_cypher_list(tokens)} WHERE {expr} CONTAINS {var})"
 
 
+def _cypher_forage_indicators_over(quality_lower: str) -> str:
+    keys = (f'"{k}"' for k in sorted(FORAGE_QUALITY_KEYS))
+    return _cypher_any_contains(quality_lower, keys, "ep_key")
+
+
 def cypher_forage_indicators(vt: str = "vt") -> str:
     vt = _alias(vt)
-    keys = (f'"{k}"' for k in sorted(FORAGE_QUALITY_KEYS))
-    return _cypher_any_contains(f"toLower(coalesce({vt}.qualityParams, ''))", keys, "ep_key")
+    return _cypher_forage_indicators_over(f"toLower(coalesce({vt}.qualityParams, ''))")
 
 
-def cypher_yield_purpose(vt: str = "vt") -> str:
-    """String expression: 'grain' | 'forage' | 'fresh' | 'unknown' (see ``yield_purpose``)."""
-    vt = _alias(vt)
-    metric = _cypher_norm(f"{vt}.yieldMetric")
+def _cypher_yield_purpose_over(quality_lower: str, metric: str) -> str:
+    """The purpose CASE over a lowercased ``qualityParams`` text and a normalised metric."""
     return (
-        f"(CASE WHEN {cypher_forage_indicators(vt)} "
+        f"(CASE WHEN {_cypher_forage_indicators_over(quality_lower)} "
         f"OR {_cypher_any_contains(metric, FORAGE_METRIC_TOKENS, 'ep_tok')} "
         f"THEN {_cypher_str(PURPOSE_FORAGE)} "
         f"WHEN {_cypher_any_contains(metric, GRAIN_METRIC_TOKENS, 'ep_tok')} "
@@ -496,9 +552,21 @@ def cypher_yield_purpose(vt: str = "vt") -> str:
     )
 
 
+def cypher_yield_purpose(vt: str = "vt") -> str:
+    """String expression: 'grain' | 'forage' | 'fresh' | 'unknown' (see ``yield_purpose``)."""
+    vt = _alias(vt)
+    return _cypher_yield_purpose_over(f"toLower(coalesce({vt}.qualityParams, ''))",
+                                      _cypher_norm(f"{vt}.yieldMetric"))
+
+
+def cypher_purpose_mode_gate(purpose_expr: str, mode: str = MODE_MAIN) -> str:
+    """``in_purpose_mode`` over an already computed purpose expression (evaluate it once)."""
+    op = "=" if check_mode(mode) == MODE_FORAGE else "<>"
+    return f"({purpose_expr} {op} {_cypher_str(PURPOSE_FORAGE)})"
+
+
 def cypher_in_purpose_mode(vt: str = "vt", mode: str = MODE_MAIN) -> str:
-    op = "=" if _check_mode(mode) == MODE_FORAGE else "<>"
-    return f"({cypher_yield_purpose(vt)} {op} {_cypher_str(PURPOSE_FORAGE)})"
+    return cypher_purpose_mode_gate(cypher_yield_purpose(vt), mode)
 
 
 def cypher_crop_family(vt: str = "vt") -> str:
@@ -607,4 +675,55 @@ def cypher_content_key(vt: str = "vt") -> str:
         f"{blanks}, "
         f"COLLECT {{ MATCH ({vt})-[:TRIAL_AT]->(ep_site:TrialSite) "
         f"RETURN DISTINCT ep_site.name AS ep_name ORDER BY ep_name }}]"
+    )
+
+
+def cypher_evidence_tier(vt: str = "vt", ts: str = "ts") -> str:
+    """String expression: 'field' | 'regional' for the (trial, site) row."""
+    return (f"(CASE WHEN {cypher_field_evidence(vt, ts)} THEN {_cypher_str(EVIDENCE_TIER_FIELD)} "
+            f"ELSE {_cypher_str(EVIDENCE_TIER_REGIONAL)} END)")
+
+
+ROW_POLICY_COLUMNS: tuple[str, ...] = (
+    "ep_tier", "ep_in_mode", "ep_other", "ep_y", "ep_unconv",
+)
+
+
+def cypher_row_policy(mode: str = MODE_MAIN, vt: str = "vt", ts: str = "ts",
+                      carry: Iterable[str] = ()) -> str:
+    """Chained ``WITH`` clauses that classify every (trial, site) row ONCE.
+
+    Place it right after the ``MATCH ... WHERE`` cheap filters. It keeps ``vt``, ``ts`` and
+    the ``carry`` variables and adds the columns of ``ROW_POLICY_COLUMNS``:
+
+    - ``ep_tier``: 'field' | 'regional' (rule 6);
+    - ``ep_in_mode``: the record's purpose fits ``mode`` (rule 2);
+    - ``ep_other``: a trial of the other purpose to count (main mode only, see
+      ``is_other_purpose_evidence``), else false;
+    - ``ep_y``: the kg/ha the row adds to a numeric aggregate of ``mode`` (``policy_yield``),
+      null for an excluded source, an off-mode record, no kg, or a forage yield that cannot be
+      converted to dry matter;
+    - ``ep_unconv``: eligible trial with kg but no number (``has_unconverted_kg``).
+
+    The purpose expression (the costly one) is evaluated once per row; the dry-matter yield
+    only for rows already in forage mode.
+    """
+    vt, ts = _alias(vt), _alias(ts)
+    carried = "".join(f", {_alias(c)}" for c in carry)
+    mode = check_mode(mode)
+    yield_expr = (cypher_forage_dm_yield(vt) if mode == MODE_FORAGE else f"toFloat({vt}.yieldKgHa)")
+    other = "(NOT ep_excluded AND NOT ep_in_mode)" if mode == MODE_MAIN else "false"
+    # The lowercased text and metric are computed once, so each of the purpose's keys and tokens
+    # is tested against a variable, not against a recomputed expression.
+    purpose = _cypher_yield_purpose_over("ep_text", "ep_metric")
+    return (
+        f"WITH {vt}, {ts}{carried}, toLower(coalesce({vt}.qualityParams, '')) AS ep_text, "
+        f"{_cypher_norm(f'{vt}.yieldMetric')} AS ep_metric, "
+        f"{cypher_excluded_source(vt)} AS ep_excluded, {cypher_evidence_tier(vt, ts)} AS ep_tier\n"
+        f"WITH {vt}, {ts}{carried}, ep_tier, ep_excluded, "
+        f"{cypher_purpose_mode_gate(purpose, mode)} AS ep_in_mode\n"
+        f"WITH {vt}, {ts}{carried}, ep_tier, ep_in_mode, ep_excluded, {other} AS ep_other, "
+        f"CASE WHEN ep_in_mode AND NOT ep_excluded THEN {yield_expr} END AS ep_y\n"
+        f"WITH {vt}, {ts}{carried}, ep_tier, ep_in_mode, ep_other, ep_y, "
+        f"(ep_in_mode AND NOT ep_excluded AND {vt}.yieldKgHa IS NOT NULL AND ep_y IS NULL) AS ep_unconv\n"
     )

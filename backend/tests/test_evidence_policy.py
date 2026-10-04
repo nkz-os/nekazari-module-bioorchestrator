@@ -441,3 +441,78 @@ def test_cypher_field_evidence_composes_trial_and_site_aliases():
 
 def test_cypher_literals_are_escaped():
     assert ep._cypher_list(["a'b", "c\\d"]) == "['a\\'b', 'c\\\\d']"
+
+
+# ── (f) evidence tiers, policy yield and off-mode counts (row policy twins) ──
+
+@pytest.mark.parametrize(("scope", "site", "tier"), [
+    ("site", "Cadreita", "field"),
+    (None, "Cadreita", "field"),
+    ("regional", "Cadreita", "regional"),
+    ("national", "Cadreita", "regional"),
+    ("site", "UK national list", "regional"),
+    ("site", "Media 8 Località", "regional"),
+    ("site", "", "regional"),
+    (None, None, "regional"),
+])
+def test_evidence_tier_of_a_row(scope, site, tier):
+    assert ep.evidence_tier(scope, site) == tier
+
+
+def test_policy_yield_main_mode():
+    base = {"source_id": "GENVCE", "cropEppo": "TRZAX", "yieldKgHa": 6200}
+    assert ep.policy_yield(base) == 6200.0
+    assert ep.policy_yield({**base, "yieldKgHa": None}) is None            # missing is None, never 0
+    assert ep.policy_yield({**base, "source_id": "BSL"}) is None           # note x constant, not kg
+    forage = {**base, "qualityParams": '{"ndf_pct": 41}'}
+    assert ep.policy_yield(forage) is None                                 # off-mode in main
+    assert ep.policy_yield({**base, "yieldMetric": "fruit_weight_kg_ha"}) == 6200.0
+
+
+def test_policy_yield_forage_mode_is_dry_matter_only():
+    qp = '{"ndf_pct": 41, "dry_matter_pct": 33}'
+    dry = {"source_id": "NAVARRA-AGRARIA", "cropEppo": "ZEAMX", "year": 2019, "yieldKgHa": 25000,
+           "qualityParams": qp}
+    assert ep.policy_yield(dry, "forage") == 25000.0                       # cited source rule
+    fresh = {"source_id": "X", "cropEppo": "ZEAMX", "yieldBasis": "fresh_matter", "yieldKgHa": 60000,
+             "qualityParams": qp}
+    assert ep.policy_yield(fresh, "forage") == pytest.approx(19800.0)      # converted with the DM %
+    unknown = {"source_id": "X", "cropEppo": "ZEAMX", "year": 2015, "yieldKgHa": 18000, "qualityParams": qp}
+    assert ep.policy_yield(unknown, "forage") is None                      # basis never inferred
+    assert ep.policy_yield({**dry, "source_id": "BSL"}, "forage") is None
+    assert ep.policy_yield({"source_id": "GENVCE", "yieldKgHa": 6200}, "forage") is None  # not forage
+
+
+def test_off_mode_and_unconverted_counts():
+    forage = {"source_id": "X", "cropEppo": "ZEAMX", "year": 2015, "yieldKgHa": 18000,
+              "qualityParams": '{"ndf_pct": 41}'}
+    grain = {"source_id": "X", "cropEppo": "ZEAMX", "yieldKgHa": 12000}
+    assert ep.is_other_purpose_evidence(forage) and not ep.is_other_purpose_evidence(grain)
+    assert not ep.is_other_purpose_evidence({**forage, "source_id": "BSL"})   # excluded source
+    assert not ep.is_other_purpose_evidence(forage, "forage")                 # never counted off-mode there
+    assert ep.has_unconverted_kg(forage, "forage")                            # kg, basis unknown
+    assert not ep.has_unconverted_kg(forage)                                  # off-mode in main
+    assert not ep.has_unconverted_kg({**forage, "yieldKgHa": None}, "forage")
+    assert not ep.has_unconverted_kg(grain)                                   # has a number
+
+
+def test_unknown_tier_is_rejected():
+    with pytest.raises(ValueError):
+        ep.check_tier("national")
+
+
+def test_row_policy_validates_aliases_carry_and_mode():
+    block = ep.cypher_row_policy("forage", "t", "s", carry=("matched",))
+    assert "t.qualityParams" in block and "s.name" in block and ", matched" in block
+    assert all(col in block for col in ep.ROW_POLICY_COLUMNS)
+    with pytest.raises(ValueError):
+        ep.cypher_row_policy("grain")
+    with pytest.raises(ValueError):
+        ep.cypher_row_policy("main", carry=("x) DETACH DELETE (n",))
+
+
+def test_row_policy_evaluates_the_purpose_once_and_counts_other_purpose_in_main_only():
+    main, forage = ep.cypher_row_policy("main"), ep.cypher_row_policy("forage")
+    assert main.count("ndf_pct") == 1 and forage.count("ndf_pct") == 1
+    assert "(NOT ep_excluded AND NOT ep_in_mode) AS ep_other" in main
+    assert "false AS ep_other" in forage

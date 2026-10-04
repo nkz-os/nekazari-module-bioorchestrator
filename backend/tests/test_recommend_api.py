@@ -181,7 +181,7 @@ def test_evidence_passes_pagination(client):
     assert r.status_code == 200 and r.json() == page
     assert m.call_args.kwargs["similar_sites"] == ["site-a"]
     assert m.call_args.kwargs["page"] == 2 and m.call_args.kwargs["page_size"] == 10
-    assert sim.call_args.kwargs["limit"] == 50
+    assert sim.call_args.kwargs["limit"] is None  # every matching field site
 
 
 @pytest.mark.parametrize("bad", [{"page": 0}, {"page_size": 0}, {"page_size": 51}])
@@ -410,3 +410,56 @@ def test_conditions_route_sends_no_point(client):
         client.get("/api/graph/agriculture/recommend", params={"climate_class": "Cfb", "lat": 1, "lon": 2})
     c = m.call_args.args[0]
     assert "lat" not in c and "lon" not in c
+
+
+# ── purpose and tier ────────────────────────────────────────────────────────
+def test_purpose_defaults_to_main_and_is_forwarded_on_conditions(client):
+    with patch.object(GraphDAO, "recommend_for_conditions", AsyncMock(return_value=OK)) as m:
+        client.get("/api/graph/agriculture/recommend", params={"climate_class": "Cfb"})
+        assert m.call_args.args[0]["purpose"] == "main"
+        r = client.get("/api/graph/agriculture/recommend", params={"climate_class": "Cfb", "purpose": "forage"})
+    assert r.status_code == 200 and m.call_args.args[0]["purpose"] == "forage"
+
+
+@pytest.mark.parametrize("path", ["/api/graph/agriculture/recommend", "/api/graph/agriculture/recommend/evidence"])
+def test_unknown_purpose_rejected(client, path):
+    params = {"climate_class": "Cfb", "crop": "TRZAX", "purpose": "grain"}
+    assert client.get(path, params=params).status_code == 422
+
+
+def test_parcel_route_forwards_purpose(client):
+    env = {"climate_class": "Csa", "soil": {"data_available": False}, "irrigation": {"inferred": None},
+           "climate_detail": None, "inputs_used": {}}
+    with patch.object(GraphDAO, "get_parcel_environment", AsyncMock(return_value=env)), \
+         patch.object(GraphDAO, "recommend_for_conditions", AsyncMock(return_value=OK)) as m:
+        client.get(f"/api/graph/recommend/parcel/{URN}")
+        assert m.call_args.args[0]["purpose"] == "main"
+        client.get(f"/api/graph/recommend/parcel/{URN}", params={"purpose": "forage"})
+    assert m.call_args.args[0]["purpose"] == "forage"
+
+
+def test_evidence_forwards_purpose_and_tier_with_field_sites_by_default(client):
+    r, sites, m = _evidence_call(client, purpose="forage")
+    assert r.status_code == 200
+    assert m.call_args.kwargs["purpose"] == "forage" and m.call_args.kwargs["tier"] == "field"
+    assert sites.await_args.kwargs["limit"] is None and "include_aggregate" not in sites.await_args.kwargs
+
+
+def test_evidence_regional_tier_uses_the_aggregate_sites_of_the_climate(client):
+    sites = AsyncMock(return_value=[{"name": "f01", "site_kind": "field"},
+                                    {"name": "UK national list", "site_kind": "aggregate"}])
+    with patch.object(GraphDAO, "get_similar_sites", sites), \
+         patch.object(GraphDAO, "list_trial_evidence", AsyncMock(return_value=_EV_PAGE)) as m:
+        r = client.get("/api/graph/agriculture/recommend/evidence",
+                       params={"climate_class": "Cfb", "crop": "LYPES", "tier": "regional", "soil_type": "Loam"})
+    assert r.status_code == 200
+    assert m.call_args.kwargs["similar_sites"] == ["UK national list"] and m.call_args.kwargs["tier"] == "regional"
+    kw = sites.await_args.kwargs
+    assert kw["include_aggregate"] is True and kw["soil_type"] is None  # aggregates carry no soil
+
+
+def test_evidence_regional_tier_needs_koppen_similarity(client):
+    r, sites, _ = _evidence_call(client, tier="regional", similarity="vector_v2_fallback", **_VEC)
+    assert r.status_code == 422 and sites.await_count == 0
+    assert client.get("/api/graph/agriculture/recommend/evidence",
+                      params={"climate_class": "Cfb", "crop": "TRZAX", "tier": "national"}).status_code == 422
