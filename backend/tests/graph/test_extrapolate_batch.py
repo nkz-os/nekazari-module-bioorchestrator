@@ -220,7 +220,6 @@ _VEC = {"annual_rainfall_mm": 700.0, "annual_et0_mm": 650.0, "coldest_month_min_
 
 async def _recommend(dao, conds, batched: bool):
     dao_mod._RECOMMEND_CACHE.clear()
-    dao_mod._MEDIAN_CACHE.clear()
     calls = []
     real = GraphDAO.extrapolate_varieties
 

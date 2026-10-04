@@ -65,7 +65,12 @@ _CROP_MATCH_PREDICATE = (
 #   * ``ep_y`` is the policy yield (null for excluded sources, forage in main mode, ...), so
 #     ``numeric_yield_count`` / means / intervals only see eligible kg/ha, and ``trial_count``
 #     counts distinct in-mode trials, numeric or not;
-#   * forage trials of a main-mode answer are only counted (``other_n``, deduplicated).
+#   * forage trials of a main-mode answer are only counted (``other_n``, deduplicated);
+#   * the content key is computed once per row, in the hit map, and read by the variety
+#     aggregation and by the reference median alike (``ref_median``/``ref_n``): the median of the
+#     crop's deduplicated policy numbers at these same sites, in the requested irrigation regime
+#     (a trial with no regime never counts for one), independent of ``top_n`` and of the
+#     variety-level filters.
 _EXTRAPOLATE_BODY_CYPHER = """
                 // Count the other-purpose trials of the crop once (grouping treats nulls as
                 // equal, unlike an IN test over the key lists).
@@ -74,16 +79,23 @@ _EXTRAPOLATE_BODY_CYPHER = """
                   WITH DISTINCT o.ck AS ck
                   RETURN count(*) AS other_n
                 }
+                // Reference: the median of the crop's distinct policy numbers at these sites in
+                // the requested regime (content-identical trials once).
+                CALL (hits) {
+                  UNWIND [x IN hits WHERE x.in_mode AND x.y IS NOT NULL
+                          AND ($irrigation_uri IS NULL OR x.regime = $irrigation_uri)] AS r
+                  WITH r.ck AS ck, max(r.y) AS y
+                  RETURN percentileCont(y, 0.5) AS ref_median, count(y) AS ref_n
+                }
                 CALL (hits) {
                   UNWIND [x IN hits WHERE x.in_mode] AS h
-                  WITH h.vt AS vt, h.ts AS ts, h.y AS ep_y, h.unconv AS ep_unconv
+                  WITH h.vt AS vt, h.ts AS ts, h.y AS ep_y, h.unconv AS ep_unconv, h.ck AS ck
                 // Collapse each trial to ONE row regardless of how many (same-name
-                // duplicate) sites it links to (G2/G9 guard).
-                WITH vt.varietyNormalized AS variety, vt, ep_y, ep_unconv,
+                // duplicate) sites it links to (G2/G9 guard). The key ``ck`` makes
+                // content-identical trials (re-ingest twins) ONE observation below, so every
+                // count and mean sees them once.
+                WITH vt.varietyNormalized AS variety, vt, ep_y, ep_unconv, ck,
                      collect(DISTINCT ts.name) AS trial_sites
-                // Dedup stage: content-identical trials (re-ingest twins) are ONE
-                // observation, so every count and mean below sees it once.
-                WITH variety, vt, trial_sites, ep_y, ep_unconv, {content_key} AS ck
                 WITH variety, ck,
                      max(ep_y) AS g_y,
                      max(CASE WHEN ep_unconv THEN 1 ELSE 0 END) AS g_unconv,
@@ -183,14 +195,15 @@ _EXTRAPOLATE_BODY_CYPHER = """
                 RETURN crop, variety, mean_yield, min_yield, max_yield, stddev_yield,
                        numeric_yield_count, trial_count, derived_count, unconverted_count, years,
                        sites, irrigation_regimes, production_systems, disease_scores_list,
-                       agronomic_traits_list, confidence_levels, source_ids, other_n, crop_numeric_n
+                       agronomic_traits_list, confidence_levels, source_ids, other_n, crop_numeric_n,
+                       ref_median, ref_n
                 ORDER BY crop, mean_yield IS NULL, round(mean_yield, 1) DESC, variety ASC
 """
 
 # One entry of the per-crop ``hits`` list built from the policy-classified rows.
 _HIT_MAP_CYPHER = (
     "{{vt: vt, ts: ts, y: ep_y, in_mode: ep_in_mode, other: ep_other, unconv: ep_unconv, "
-    "ck: CASE WHEN ep_other THEN {content_key} END}}"
+    "regime: vt.irrigationRegime, ck: {content_key}}}"
 )
 
 
@@ -216,7 +229,7 @@ def _extrapolate_single_query(mode: str, tier: str) -> str:
         + ep.cypher_row_policy(mode)
         + ep.cypher_tier_gate(tier)
         + "WITH $crop AS crop, collect(" + _HIT_MAP_CYPHER.format(content_key=ck) + ") AS hits\n"
-        + _EXTRAPOLATE_BODY_CYPHER.replace("{content_key}", ck)
+        + _EXTRAPOLATE_BODY_CYPHER
     )
 
 
@@ -243,12 +256,9 @@ def _extrapolate_batch_query(mode: str, tier: str) -> str:
         + ep.cypher_tier_gate(tier)
         + "UNWIND matched AS crop\n"
         + "WITH crop, collect(" + _HIT_MAP_CYPHER.format(content_key=ck) + ") AS hits\n"
-        + _EXTRAPOLATE_BODY_CYPHER.replace("{content_key}", ck)
+        + _EXTRAPOLATE_BODY_CYPHER
     )
 
-
-_MEDIAN_CACHE: dict[tuple[str, str | None, str], tuple[float, dict]] = {}
-_MEDIAN_TTL = 3600.0
 
 # Whole-response cache for recommend_for_conditions: the answer depends only on the
 # request conditions and on graph data that changes through ingestion, so bounded
@@ -325,9 +335,34 @@ _IRRIGATION_URIS = {
 }
 
 
-def _median_scope(irrigation_uri: str | None, purpose: str) -> str:
-    scope = "crop×irrigation" if irrigation_uri is not None else "crop"
+def _regime_label(irrigation_uri: str | None) -> str:
+    """Stable ASCII label of the irrigation regime of a reference: secano | regadio | any."""
+    if irrigation_uri is None:
+        return "any"
+    for label in ("secano", "regadio"):
+        if _IRRIGATION_URIS[label] == irrigation_uri:
+            return label
+    return "other"
+
+
+def _reference_scope(climate: str | None, irrigation_uri: str | None, purpose: str) -> str:
+    """``fit.reference.scope`` of a field recommendation: the trials the reference median is over.
+
+    ``analog_sites:<climate>:<regime>`` (``analog_sites:Csa:secano``): the same analog field
+    sites as the recommendation (``<climate>`` = the Köppen class, ``vector_v2`` for the
+    vector-similarity fallback, ``any`` when the request has no class) and the same irrigation
+    regime (``any`` = no regime requested). The forage purpose appends ``:forage``.
+    """
+    scope = f"analog_sites:{climate or 'any'}:{_regime_label(irrigation_uri)}"
     return scope if purpose == ep.MODE_MAIN else f"{scope}:{purpose}"
+
+
+def _analog_reference(rows: list[dict], scope: str) -> dict:
+    """The reference of a recommendation from its ranked rows (the median is crop level, so
+    every row carries the same one). No rows or no trials: null median, n 0 (a data gap, not 0)."""
+    row = rows[0] if rows else {}
+    return {"median_kg_ha": row.get("crop_reference_median_kg_ha"),
+            "n_trials": int(row.get("crop_reference_n") or 0), "scope": scope}
 
 
 def _irrigation_uri(regime: str | None) -> str | None:
@@ -2440,109 +2475,6 @@ class GraphDAO:
                 sites.append(dict(record))
             return sites
 
-    async def get_crop_yield_median(
-        self, crop: str, irrigation_uri: str | None, purpose: str = ep.MODE_MAIN,
-    ) -> dict:
-        """Median trial yield for a crop, optionally within one irrigation regime.
-
-        Reads the evidence policy (``app.graph.evidence_policy``): only field evidence of the
-        ``purpose`` with a policy-eligible number (no BSL kg/ha; forage as kg dry matter/ha),
-        and content-identical trials count once. Cached in-process for ``_MEDIAN_TTL``
-        seconds: the graph only changes through ingestion, so bounded staleness is acceptable.
-        """
-        purpose = ep.check_mode(purpose)
-        key = (crop, irrigation_uri, purpose)
-        hit = _MEDIAN_CACHE.get(key)
-        now = time.monotonic()
-        if hit is not None and now - hit[0] < _MEDIAN_TTL:
-            return dict(hit[1])
-        # Per-trial regime filter: trials with a null regime are excluded on purpose
-        # (the reference is regime-specific, unlike extrapolate_varieties' variety-level filter).
-        async with self._driver.session() as session:
-            result = await session.run(
-                f"""
-                MATCH (vt:VarietyTrial)-[:TRIAL_AT]->(ts:TrialSite)
-                WHERE {ep.cypher_numeric_candidate("vt")}
-                  AND {RANKING_ELIGIBLE_PREDICATE}
-                  AND {_CROP_MATCH_PREDICATE}
-                  AND ($irrigation_uri IS NULL OR vt.irrigationRegime = $irrigation_uri)
-                {ep.cypher_row_policy(purpose)}
-                {ep.cypher_numeric_tier_gate(ep.EVIDENCE_TIER_FIELD).rstrip()}
-                WITH DISTINCT vt, ep_y
-                WITH {ep.cypher_content_key("vt")} AS ck, max(ep_y) AS y
-                RETURN percentileCont(y, 0.5) AS median, count(y) AS n
-                """,
-                crop=crop,
-                irrigation_uri=irrigation_uri,
-            )
-            row = await result.single()
-        median = row["median"] if row else None
-        n = int(row["n"]) if row and row["n"] else 0
-        out = {
-            "median_kg_ha": float(median) if median is not None else None,
-            "n_trials": n,
-            "scope": _median_scope(irrigation_uri, purpose),
-        }
-        _MEDIAN_CACHE[key] = (now, out)
-        return dict(out)
-
-    async def get_crop_yield_medians(
-        self, crops: list[str], irrigation_uri: str | None, purpose: str = ep.MODE_MAIN,
-    ) -> dict[str, dict]:
-        """Batch ``get_crop_yield_median``: one scan of the trials for all cache misses.
-
-        Same semantics per crop (crop predicate, ranking-eligible, evidence policy for
-        ``purpose``, per-trial regime filter, median); shares ``_MEDIAN_CACHE`` with the
-        single-crop method. Crops without trials map to a null median and n=0.
-        """
-        purpose = ep.check_mode(purpose)
-        scope = _median_scope(irrigation_uri, purpose)
-        now = time.monotonic()
-        out: dict[str, dict] = {}
-        misses: list[str] = []
-        for crop in dict.fromkeys(crops):
-            hit = _MEDIAN_CACHE.get((crop, irrigation_uri, purpose))
-            if hit is not None and now - hit[0] < _MEDIAN_TTL:
-                out[crop] = dict(hit[1])
-            else:
-                misses.append(crop)
-        if misses:
-            t0 = time.monotonic()
-            # Scan the trials once and test every missing crop per trial (an UNWIND
-            # of crops before the MATCH rescans all trials once per crop).
-            async with self._driver.session() as session:
-                result = await session.run(
-                    f"""
-                    MATCH (vt:VarietyTrial)-[:TRIAL_AT]->(ts:TrialSite)
-                    WHERE {ep.cypher_numeric_candidate("vt")}
-                      AND {RANKING_ELIGIBLE_PREDICATE}
-                      AND ($irrigation_uri IS NULL OR vt.irrigationRegime = $irrigation_uri)
-                    WITH vt, ts, [c IN $crops WHERE vt.cropEppo = c OR vt.cropScientific CONTAINS c
-                                  OR toLower(vt.cropScientific) = toLower(c)] AS matched
-                    WHERE size(matched) > 0
-                    {ep.cypher_row_policy(purpose, carry=("matched",))}
-                    {ep.cypher_numeric_tier_gate(ep.EVIDENCE_TIER_FIELD).rstrip()}
-                    WITH DISTINCT vt, ep_y, matched
-                    UNWIND matched AS crop
-                    WITH crop, {ep.cypher_content_key("vt")} AS ck, max(ep_y) AS y
-                    RETURN crop, percentileCont(y, 0.5) AS median, count(y) AS n
-                    """,
-                    crops=misses,
-                    irrigation_uri=irrigation_uri,
-                )
-                rows = {r["crop"]: r async for r in result}
-            stamp = time.monotonic()
-            for crop in misses:
-                row = rows.get(crop)
-                median = row["median"] if row else None
-                n = int(row["n"]) if row and row["n"] else 0
-                value = {"median_kg_ha": float(median) if median is not None else None,
-                         "n_trials": n, "scope": scope}
-                _MEDIAN_CACHE[(crop, irrigation_uri, purpose)] = (stamp, value)
-                out[crop] = dict(value)
-            logger.debug("medians batch misses=%d elapsed_s=%.3f", len(misses), stamp - t0)
-        return {c: out[c] for c in crops}
-
     async def list_trial_evidence(
         self,
         *,
@@ -4014,9 +3946,13 @@ class GraphDAO:
                             [v for v in varieties if _numeric_trials(v) >= LOW_TRIAL_COUNT]
                             + [v for v in varieties if _numeric_trials(v) < LOW_TRIAL_COUNT]
                         )
-                        reference = (medians or {}).get(eppo)
-                        if reference is None:
-                            reference = await self.get_crop_yield_median(eppo, irrigation_uri, purpose)
+                        # Reference for the relative yield: the median of the crop's trials at the
+                        # SAME analog field sites and irrigation regime (it comes with the rows).
+                        reference = _analog_reference(
+                            varieties,
+                            _reference_scope(climate_class if similarity == "koppen" else "vector_v2",
+                                             irrigation_uri, purpose),
+                        )
                         species = resolve_species(eppo) or eppo
                         heat_tol = await self.get_heat_tolerance(species)
                         soil_verdict = assess_soil_suitability(await self.get_soil_suitability(species), parcel_soil)
@@ -4092,8 +4028,7 @@ class GraphDAO:
                         return None
 
             # Resolve the v2 candidate set up front when some crop may need the fallback,
-            # so the reference medians can be fetched in ONE batch for every crop that
-            # can possibly produce a recommendation.
+            # so the crop cap below sees every crop that can produce a recommendation.
             if v2_vector_ok and koppen_ok is not None and any(e not in koppen_ok for e in all_eppos):
                 await _v2()
             # Crops with no evidence at either tier whose only evidence is presence (excluded-source
@@ -4129,15 +4064,6 @@ class GraphDAO:
                 candidates = (field_capable + regional_only + presence_only)[:_RECOMMEND_MAX_CROPS]
             candidate_set = set(candidates)
             crop_entries = [c for c in crop_entries if c["eppo_code"] in candidate_set]
-            t_med = time.monotonic()
-            try:
-                medians: dict[str, dict] | None = await self.get_crop_yield_medians(
-                    candidates, irrigation_uri, purpose)
-            except Exception as e:  # noqa: BLE001
-                logger.warning("recommend: batch medians failed (%s); per-crop fallback", type(e).__name__)
-                medians = None
-            logger.debug("recommend stage=medians crops=%d elapsed_s=%.3f", len(candidates),
-                         time.monotonic() - t_med)
 
             # Köppen extrapolation for every evaluated crop in ONE query: the analog
             # sites' trials are scanned once instead of once per crop. Same result
@@ -5669,6 +5595,11 @@ def _ranked_variety(record: Any, crop: str) -> dict:
         # crop level, repeated on every row: numeric trials summed over ALL the crop's varieties
         # (before the top_n cut), so a capped list never truncates the count
         "crop_numeric_trial_count": int(record.get("crop_numeric_n") or 0),
+        # crop level, repeated on every row: median of the crop's distinct policy numbers at the
+        # query's sites in the requested irrigation regime, and how many trials it rests on
+        "crop_reference_median_kg_ha": (float(record["ref_median"])
+                                         if record.get("ref_median") is not None else None),
+        "crop_reference_n": int(record.get("ref_n") or 0),
         "derived_trial_count": record["derived_count"],
         "yield_provenance": _yield_provenance(record["derived_count"], record["trial_count"]),
         "trial_years": sorted(record["years"]),

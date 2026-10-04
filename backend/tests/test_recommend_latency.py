@@ -55,12 +55,6 @@ async def test_empty_override_means_no_sites_not_recompute():
     assert out["ranked_varieties"] == [] and calls == []
 
 
-def _medians_mock():
-    async def fn(crops, irrigation_uri, purpose="main"):
-        return {c: {"median_kg_ha": 5000.0, "n_trials": 40, "scope": "crop"} for c in crops}
-    return AsyncMock(side_effect=fn)
-
-
 def _run_with(conds, crops, extrap, sites_mock):
     dao, _ = _dao()
     patches = (
@@ -68,7 +62,6 @@ def _run_with(conds, crops, extrap, sites_mock):
                      AsyncMock(return_value=[{"eppo_code": c, "scientific_name": c} for c in crops])),
         patch.object(GraphDAO, "extrapolate_varieties", extrap),
         patch.object(GraphDAO, "get_similar_sites", sites_mock),
-        patch.object(GraphDAO, "get_crop_yield_medians", _medians_mock()),
         patch.object(GraphDAO, "get_soil_suitability", AsyncMock(return_value=None)),
         patch.object(GraphDAO, "get_heat_tolerance", AsyncMock(return_value=None)),
     )
@@ -77,7 +70,7 @@ def _run_with(conds, crops, extrap, sites_mock):
 
 async def _recommend(conds, crops, extrap, sites_mock):
     dao, p = _run_with(conds, crops, extrap, sites_mock)
-    with p[0], p[1], p[2], p[3], p[4], p[5]:
+    with p[0], p[1], p[2], p[3], p[4]:
         return await dao.recommend_for_conditions(conds)
 
 
@@ -185,7 +178,7 @@ async def _recommend_pf(conds, crops, extrap, koppen_ok, v2_ok=None):
                       else [{"name": "site-v2", "distance": 0.1}])
     dao, p = _run_with(conds, crops, extrap, sites)
     pf = patch.object(GraphDAO, "_crops_with_analog_trials", _prefilter(koppen_ok, v2_ok))
-    with p[0], p[1], p[2], p[3], p[4], p[5], pf:
+    with p[0], p[1], p[2], p[3], p[4], pf:
         return await dao.recommend_for_conditions(conds)
 
 
@@ -248,7 +241,7 @@ async def test_prefilter_failure_falls_back_to_evaluating_every_crop():
     sites = AsyncMock(return_value=_SITES)
     dao, p = _run_with(_conds(), ["TRZAX", "HORVX"], extrap, sites)
     pf = patch.object(GraphDAO, "_crops_with_analog_trials", AsyncMock(side_effect=RuntimeError("x")))
-    with p[0], p[1], p[2], p[3], p[4], p[5], pf:
+    with p[0], p[1], p[2], p[3], p[4], pf:
         out = await dao.recommend_for_conditions(_conds())
     assert sorted(seen) == ["HORVX", "TRZAX"]
     assert out["data_quality"]["crops_with_analog_trials"] is None
@@ -271,7 +264,7 @@ async def _cached_run(conds, crops=("TRZAX",), extrap=_ok_extrap):
     dao, p = _run_with(conds, list(crops), spy, sites)
     pf = patch.object(GraphDAO, "_crops_with_analog_trials",
                       AsyncMock(side_effect=lambda eppos, names, **kw: set(eppos)))
-    with p[0], p[1], p[2], p[3], p[4], p[5], pf:
+    with p[0], p[1], p[2], p[3], p[4], pf:
         out = await dao.recommend_for_conditions(conds)
     return out, sites, seen
 
@@ -375,7 +368,7 @@ async def test_recommend_prefilter_receives_irrigation_uri():
 
     sites = AsyncMock(return_value=_SITES)
     dao, p = _run_with(_conds(irrigation_regime="secano"), ["TRZAX"], _ok_extrap, sites)
-    with p[0], p[1], p[2], p[3], p[4], p[5], patch.object(GraphDAO, "_crops_with_analog_trials", pf):
+    with p[0], p[1], p[2], p[3], p[4], patch.object(GraphDAO, "_crops_with_analog_trials", pf):
         await dao.recommend_for_conditions(_conds(irrigation_regime="secano"))
     assert seen[0]["irrigation_uri"] == "http://aims.fao.org/aos/agrovoc/c_6436"
 
@@ -414,7 +407,7 @@ async def _batched_run(conds, crops, batch, koppen_ok=None, sites=None):
     pf = patch.object(GraphDAO, "_crops_with_analog_trials",
                       AsyncMock(side_effect=lambda eppos, names, **kw: ok & set(eppos)))
     pb = patch.object(GraphDAO, "extrapolate_varieties_batch", batch)
-    with p[0], p[1], p[2], p[3], p[4], p[5], pf, pb:
+    with p[0], p[1], p[2], p[3], p[4], pf, pb:
         return await dao.recommend_for_conditions(conds)
 
 
@@ -450,7 +443,7 @@ async def test_no_batch_when_shared_site_lookup_failed():
         return {"ranked_varieties": [_variety()]}
 
     dao, p = _run_with(_conds(), ["TRZAX"], extrap, AsyncMock(side_effect=RuntimeError("down")))
-    with p[0], p[1], p[2], p[3], p[4], p[5], patch.object(GraphDAO, "extrapolate_varieties_batch", batch):
+    with p[0], p[1], p[2], p[3], p[4], patch.object(GraphDAO, "extrapolate_varieties_batch", batch):
         out = await dao.recommend_for_conditions(_conds())
     assert seen == [None] and len(out["recommendations"]) == 1
 
@@ -462,68 +455,55 @@ async def test_batch_result_without_numeric_yield_still_triggers_v2(hybrid):
     assert out["recommendations"][0]["trust"]["similarity"] == "vector_v2_fallback"
 
 
-# ── round 3: batched medians ────────────────────────────────────────────────
-@pytest.fixture(autouse=True)
-def _clear_median_cache():
-    dao_mod._MEDIAN_CACHE.clear()
-    yield
-    dao_mod._MEDIAN_CACHE.clear()
-
-
-async def test_batch_is_one_call_for_many_misses_and_fills_defaults():
-    dao, calls = _dao([{"crop": "TRZAX", "median": 5000.0, "n": 42}])
-    out = await dao.get_crop_yield_medians(["TRZAX", "HORVX", "ZZZZZ"], None)
-    assert len(calls) == 1
-    assert out["TRZAX"] == {"median_kg_ha": 5000.0, "n_trials": 42, "scope": "crop"}
-    assert out["HORVX"] == {"median_kg_ha": None, "n_trials": 0, "scope": "crop"}
-    assert set(out) == {"TRZAX", "HORVX", "ZZZZZ"}
-    assert calls[0][1]["crops"] == ["TRZAX", "HORVX", "ZZZZZ"]
-
-
-async def test_batch_zero_calls_when_all_cached():
-    dao, calls = _dao([{"crop": "TRZAX", "median": 5000.0, "n": 42}])
-    await dao.get_crop_yield_medians(["TRZAX", "HORVX"], "uri:secano")
-    out = await dao.get_crop_yield_medians(["HORVX", "TRZAX"], "uri:secano")
-    assert len(calls) == 1 and out["TRZAX"]["scope"] == "crop×irrigation"
-
-
-async def test_batch_and_single_share_cache():
-    dao, calls = _dao([{"crop": "TRZAX", "median": 5000.0, "n": 42}], [{"crop": "HORVX", "median": 4000.0, "n": 9}])
-    await dao.get_crop_yield_medians(["TRZAX"], None)
-    assert (await dao.get_crop_yield_median("TRZAX", None))["median_kg_ha"] == 5000.0
-    assert len(calls) == 1
-    out = await dao.get_crop_yield_medians(["TRZAX", "HORVX"], None)   # only HORVX is a miss
-    assert calls[1][1]["crops"] == ["HORVX"] and out["HORVX"]["median_kg_ha"] == 4000.0
-
-
-async def test_batch_empty_input_makes_no_call():
-    dao, calls = _dao()
-    assert await dao.get_crop_yield_medians([], None) == {}
-    assert calls == []
-
-
-async def test_recommend_calls_batch_once_for_prefiltered_crops():
-    medians = _medians_mock()
+# ── the reference comes with the extrapolation rows ──────────────────────────
+async def test_recommend_reads_the_reference_from_the_rows_and_makes_no_median_query():
     sites = AsyncMock(return_value=_SITES)
-    dao, p = _run_with(_conds(), ["TRZAX", "HORVX", "ZEAMX"], _ok_extrap, sites)
+    dao, p = _run_with(_conds(), ["TRZAX", "HORVX"], _ok_extrap, sites)
+    pf = patch.object(GraphDAO, "_crops_with_analog_trials", AsyncMock(return_value={"TRZAX", "HORVX"}))
+    with p[0], p[1], p[2], p[3], p[4], pf:
+        out = await dao.recommend_for_conditions(_conds())
+    assert not hasattr(GraphDAO, "get_crop_yield_medians")  # the global median scan is gone
+    for rec in out["recommendations"]:
+        ref = rec["fit"]["reference"]
+        assert (ref["median_kg_ha"], ref["n_trials"]) == (5000.0, 40)
+        assert ref["scope"] == "analog_sites:Cfb:any"
+        assert rec["fit"]["relative_yield_pct"] is not None
+
+
+async def test_v2_fallback_reference_comes_from_the_v2_rows_and_names_them(hybrid):
+    note_only = {**_variety(), "mean_yield_kg_ha": None, "numeric_yield_count": 0,
+                 "crop_reference_median_kg_ha": 111.0, "crop_reference_n": 9}   # the Köppen rows' own set
+    v2_row = _variety(mean=6000.0, ref=4000.0, ref_n=7)
+
+    async def extrap(self_, crop, **kw):
+        assert kw.get("vector_version") == "v2"
+        return {"ranked_varieties": [v2_row]}
+
+    batch = AsyncMock(side_effect=lambda crops, sites, **kw: {c: [note_only] for c in crops})
+    dao, p = _run_with(_conds(irrigation_regime="secano", **_VEC), ["TRZAX"], extrap, AsyncMock(return_value=_SITES))
     pf = patch.object(GraphDAO, "_crops_with_analog_trials",
-                      AsyncMock(return_value={"TRZAX", "ZEAMX"}))
-    with p[0], p[1], p[2], p[3], p[4], p[5], pf, patch.object(GraphDAO, "get_crop_yield_medians", medians):
-        out = await dao.recommend_for_conditions(_conds())
-    assert medians.await_count == 1
-    assert sorted(medians.await_args.args[0]) == ["TRZAX", "ZEAMX"]
-    assert len(out["recommendations"]) == 2
+                      AsyncMock(side_effect=lambda eppos, names, **kw: set(eppos)))
+    with p[0], p[1], p[2], p[3], p[4], pf, patch.object(GraphDAO, "extrapolate_varieties_batch", batch):
+        out = await dao.recommend_for_conditions(_conds(irrigation_regime="secano", **_VEC))
+    rec = out["recommendations"][0]
+    assert rec["trust"]["similarity"] == "vector_v2_fallback"
+    assert rec["fit"]["reference"] == {"median_kg_ha": 4000.0, "n_trials": 7, "scope": "analog_sites:vector_v2:secano"}
+    assert rec["fit"]["relative_yield_pct"] == 50.0
 
 
-async def test_recommend_medians_failure_falls_back_to_per_crop():
-    sites = AsyncMock(return_value=_SITES)
-    dao, p = _run_with(_conds(), ["TRZAX"], _ok_extrap, sites)
-    single = AsyncMock(return_value={"median_kg_ha": 5000.0, "n_trials": 40, "scope": "crop"})
-    with p[0], p[1], p[2], p[3], p[4], p[5], \
-            patch.object(GraphDAO, "get_crop_yield_medians", AsyncMock(side_effect=RuntimeError("x"))), \
-            patch.object(GraphDAO, "get_crop_yield_median", single):
-        out = await dao.recommend_for_conditions(_conds())
-    assert single.await_count == 1 and len(out["recommendations"]) == 1
+async def test_small_or_missing_reference_gives_the_gap_and_no_relative_yield():
+    async def extrap(self_, crop, **kw):
+        return {"ranked_varieties": [_variety(ref=5000.0, ref_n=2) if crop == "SMALL"
+                                     else _variety(ref=None, ref_n=0)]}
+
+    out = await _cached_run(_conds(), crops=("SMALL", "NONE"), extrap=extrap)
+    recs = {r["crop"]["eppo"]: r for r in out[0]["recommendations"]}
+    for eppo in ("SMALL", "NONE"):
+        assert recs[eppo]["fit"]["relative_yield_pct"] is None
+        assert "reference_too_small" in recs[eppo]["trust"]["data_gaps"]
+    assert recs["SMALL"]["fit"]["reference"] == {"median_kg_ha": 5000.0, "n_trials": 2,
+                                                 "scope": "analog_sites:Cfb:any"}
+    assert recs["NONE"]["fit"]["reference"]["median_kg_ha"] is None
 
 
 # ── final fix wave: process-wide cold-computation guard ─────────────────────
@@ -543,7 +523,7 @@ async def test_identical_concurrent_cold_calls_compute_once():
 
     sites = AsyncMock(return_value=_SITES)
     dao, p = _run_with(_conds(), ["TRZAX"], extrap, sites)
-    with p[0], p[1], p[2], p[3], p[4], p[5], _all_pass():
+    with p[0], p[1], p[2], p[3], p[4], _all_pass():
         a, b = await asyncio.gather(dao.recommend_for_conditions(_conds()),
                                     dao.recommend_for_conditions(_conds()))
     assert seen == ["TRZAX"] and sites.await_count == 1
@@ -565,7 +545,7 @@ async def test_at_most_two_cold_computations_run_concurrently():
 
     sites = AsyncMock(return_value=_SITES)
     dao, p = _run_with(_conds(), ["TRZAX"], extrap, sites)
-    with p[0], p[1], p[2], p[3], p[4], p[5], _all_pass():
+    with p[0], p[1], p[2], p[3], p[4], _all_pass():
         outs = await asyncio.gather(*(dao.recommend_for_conditions(_conds(annual_rainfall_mm=100.0 + i))
                                       for i in range(3)))
     assert state["peak"] == 2
@@ -612,7 +592,7 @@ async def _recommend_tiers(conds, crops, extrap, field_ok, regional_ok, sites=No
     sites = sites or AsyncMock(return_value=[_FIELD_SITE, _AGG_SITE])
     dao, p = _run_with(conds, crops, extrap, sites)
     pf = patch.object(GraphDAO, "_crops_with_analog_trials", _tier_prefilter(field_ok, regional_ok))
-    with p[0], p[1], p[2], p[3], p[4], p[5], pf:
+    with p[0], p[1], p[2], p[3], p[4], pf:
         return await dao.recommend_for_conditions(conds), sites
 
 
@@ -723,7 +703,7 @@ async def _recommend_presence(conds, crops, extrap, field_ok, regional_ok, prese
     sites = AsyncMock(return_value=[_FIELD_SITE, _AGG_SITE])
     dao, p = _run_with(conds, crops, extrap, sites)
     pf = patch.object(GraphDAO, "_crops_with_analog_trials", _tier_prefilter(field_ok, regional_ok))
-    with p[0], p[1], p[2], p[3], p[4], p[5], pf, patch.object(GraphDAO, "regional_presence_trials", scan):
+    with p[0], p[1], p[2], p[3], p[4], pf, patch.object(GraphDAO, "regional_presence_trials", scan):
         return await dao.recommend_for_conditions(conds), calls
 
 
@@ -798,11 +778,7 @@ async def test_no_aggregate_sites_means_no_regional_pass():
 
 
 async def test_purpose_reaches_every_stage_and_the_cache_key():
-    seen, med = [], []
-
-    async def medians(crops, irrigation_uri, purpose="main"):
-        med.append(purpose)
-        return {c: {"median_kg_ha": 5000.0, "n_trials": 40, "scope": "crop"} for c in crops}
+    seen = []
 
     async def prefilter(self_, eppos, site_names, **kw):
         seen.append(("prefilter", kw.get("purpose")))
@@ -813,11 +789,10 @@ async def test_purpose_reaches_every_stage_and_the_cache_key():
     for purpose in ("main", "forage"):
         dao, p = _run_with(_conds(purpose=purpose), ["ZEAMX"], extrap,
                            AsyncMock(return_value=[_FIELD_SITE]))
-        with p[0], p[1], p[2], p[4], p[5], patch.object(GraphDAO, "get_crop_yield_medians",
-                                                         AsyncMock(side_effect=medians)), \
-                patch.object(GraphDAO, "_crops_with_analog_trials", prefilter):
+        with p[0], p[1], p[2], p[3], p[4], patch.object(GraphDAO, "_crops_with_analog_trials", prefilter):
             out[purpose] = await dao.recommend_for_conditions(_conds(purpose=purpose))
-    assert med == ["main", "forage"]  # distinct cache entries: both computed
+    assert out["forage"]["recommendations"][0]["fit"]["reference"]["scope"] == "analog_sites:Cfb:any:forage"
+    assert out["main"]["recommendations"][0]["fit"]["reference"]["scope"] == "analog_sites:Cfb:any"
     assert ("prefilter", "forage") in seen and any(s[0] == "ZEAMX" and s[2] == "forage" for s in seen if len(s) == 4)
     assert out["main"]["conditions"]["purpose"] == "main" and out["forage"]["conditions"]["purpose"] == "forage"
     main_id = out["main"]["recommendations"][0]["recommendation_id"]

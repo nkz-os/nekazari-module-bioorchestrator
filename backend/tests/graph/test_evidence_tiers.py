@@ -1,4 +1,4 @@
-"""Evidence policy applied to extrapolation, medians, evidence listing and recommend, on real Neo4j:
+"""Evidence policy applied to extrapolation, the reference median, evidence listing and recommend, on real Neo4j:
 duplicates collapse, BSL kg is ignored, forage is excluded from the main answer (counted apart)
 and averaged in kg dry matter/ha in forage mode only when the basis is known, aggregate sites
 back a ``regional`` tier that never mixes with field numbers, and the Köppen analog set is every
@@ -40,7 +40,10 @@ _SITES = (
     + [{"name": n, "climateClass": "Cfb"} for n in _AGG]
     + [{"name": "Media 5 Località"}, {"name": "g01", "climateClass": "Csa", "soilType": "Loam"},
        {"name": "Poland (national average)", "climateClass": "Dfb"}]
+    + [{"name": f"g{i:02d}", "climateClass": "Csa"} for i in range(2, 7)]
 )
+_SECANO = "http://aims.fao.org/aos/agrovoc/c_6436"
+_REGADIO = "http://aims.fao.org/aos/agrovoc/c_3954"
 
 
 def _t(crop, variety, sites, kg=None, key=None, **props):
@@ -85,6 +88,18 @@ _TRIALS = [
     _t("SECCE", "R2", ["BSL Deutschland Cfb"], 2500.0, source_id="BSL", aggregationScope="regional"),
     _t("BRSNN", "B1", ["BSL Deutschland Cfb"], None, source_id="BSL", aggregationScope="regional",
        yieldNoteS1="7"),
+    # CIEAR at the Csa field sites (g01-g06), for the reference per irrigation regime: five secano
+    # trials (V2@g04 is a re-ingest twin), two regadio, one without a regime, one BSL kg at a field
+    # site (never a number).
+    _t("CIEAR", "V1", ["g01"], 1000.0, irrigationRegime=_SECANO), _t("CIEAR", "V1", ["g02"], 2000.0, irrigationRegime=_SECANO),
+    _t("CIEAR", "V2", ["g03"], 3000.0, irrigationRegime=_SECANO),
+    _t("CIEAR", "V2", ["g04"], 4000.0, irrigationRegime=_SECANO, key="c-twin-a"),
+    _t("CIEAR", "V2", ["g04"], 4000.0, irrigationRegime=_SECANO, key="c-twin-b"),
+    _t("CIEAR", "V3", ["g05"], 9000.0, irrigationRegime=_SECANO),
+    _t("CIEAR", "V1", ["g01"], 5000.0, irrigationRegime=_REGADIO, year=2021),
+    _t("CIEAR", "V1", ["g02"], 6000.0, irrigationRegime=_REGADIO, year=2021),
+    _t("CIEAR", "V4", ["g06"], 10000.0),
+    _t("CIEAR", "V5", ["g06"], 99999.0, source_id="BSL"),
     # CPSAN: eight varieties with one trial each at an aggregate site of another climate.
     *[_t("CPSAN", f"C{i}", ["Poland (national average)"], 40000.0 + i, source_id="NATIONAL")
       for i in range(8)],
@@ -120,10 +135,8 @@ async def _seed(dao):
 
 @pytest.fixture(autouse=True)
 def _clear_caches():
-    dao_mod._MEDIAN_CACHE.clear()
     dao_mod._RECOMMEND_CACHE.clear()
     yield
-    dao_mod._MEDIAN_CACHE.clear()
     dao_mod._RECOMMEND_CACHE.clear()
 
 
@@ -263,26 +276,48 @@ def test_batch_equals_per_crop_and_prefilter(dao, purpose, tier, sites):
     assert members == {c for c in _CROPS if batch[c]}
 
 
-# ── medians ──────────────────────────────────────────────────────────────────
+# ── reference median: the same analog sites, per irrigation regime ───────────
 
-def test_medians_use_distinct_eligible_field_trials_of_the_purpose(dao):
-    m = _run(dao.get_crop_yield_medians(["TRZAX", "ZEAMX", "LYPES", "SECCE"], None))
-    assert (m["TRZAX"]["median_kg_ha"], m["TRZAX"]["n_trials"]) == (7000.0, 3)  # no BSL, twin once
-    assert (m["ZEAMX"]["median_kg_ha"], m["ZEAMX"]["n_trials"]) == (13000.0, 2)  # forage left out
-    assert m["LYPES"] == {"median_kg_ha": None, "n_trials": 0, "scope": "crop"}  # aggregate only
-    assert m["SECCE"]["median_kg_ha"] is None
-    f = _run(dao.get_crop_yield_medians(["ZEAMX", "SETIT"], None, "forage"))
-    assert (f["ZEAMX"]["median_kg_ha"], f["ZEAMX"]["n_trials"], f["ZEAMX"]["scope"]) == (21000.0, 2, "crop:forage")
-    assert f["SETIT"]["median_kg_ha"] is None and f["SETIT"]["n_trials"] == 0
+_CSA = [{"name": f"g{i:02d}", "distance": None} for i in range(1, 7)]
 
 
-def test_single_median_equals_batch(dao):
-    for purpose in ("main", "forage"):
-        for crop in _CROPS:
-            dao_mod._MEDIAN_CACHE.clear()
-            single = _run(dao.get_crop_yield_median(crop, None, purpose))
-            dao_mod._MEDIAN_CACHE.clear()
-            assert single == _run(dao.get_crop_yield_medians([crop], None, purpose))[crop]
+def _ref(row):
+    return row["crop_reference_median_kg_ha"], row["crop_reference_n"]
+
+
+def test_reference_is_the_median_of_distinct_eligible_trials_at_the_analog_sites(dao):
+    out = _run(dao.extrapolate_varieties_batch(["TRZAX", "ZEAMX", "LYPES", "SECCE"], _FIELD_SITES))
+    assert {_ref(v) for v in out["TRZAX"]} == {(7000.0, 3)}  # twin once, note-only and BSL never counted
+    assert {_ref(v) for v in out["ZEAMX"]} == {(13000.0, 2)}  # forage left out of the main reference
+    assert out["LYPES"] == [] and out["SECCE"] == []  # no field evidence: no rows, so no reference
+    forage = _run(dao.extrapolate_varieties_batch(["ZEAMX"], _FIELD_SITES, purpose="forage"))["ZEAMX"]
+    assert {_ref(v) for v in forage} == {(21000.0, 2)}  # same purpose: dry-matter numbers only (twin once)
+
+
+def test_reference_follows_the_site_set_and_ignores_the_variety_cut(dao):
+    one = _run(dao.extrapolate_varieties_batch(["TRZAX"], [{"name": "f01", "distance": None}]))["TRZAX"]
+    assert {_ref(v) for v in one} == {(6000.0, 1)}  # only the trials at f01
+    held_out = _run(dao.extrapolate_varieties_batch(["TRZAX"], _FIELD_SITES, exclude_sites=["F58"]))["TRZAX"]
+    assert {_ref(v) for v in held_out} == {(6500.0, 2)}  # a held-out site leaves the reference too
+    cut = _run(dao.extrapolate_varieties_batch(["TRZAX"], _FIELD_SITES, top_n=1))["TRZAX"]
+    assert len(cut) == 1 and _ref(cut[0]) == (7000.0, 3)  # the cut limits varieties, not the reference
+    single = _run(dao.extrapolate_varieties("TRZAX", similar_sites_override=_FIELD_SITES, top_n=1))
+    assert single["ranked_varieties"] == cut
+
+
+def test_reference_is_split_by_irrigation_regime(dao):
+    def ref(regime):
+        rows = _run(dao.extrapolate_varieties_batch(["CIEAR"], _CSA, irrigation_regime=regime))["CIEAR"]
+        assert len({_ref(v) for v in rows}) == 1  # crop level: every row carries the same reference
+        return _ref(rows[0])
+
+    assert ref("secano") == (3000.0, 5)       # 1000 2000 3000 4000 (twin once) 9000
+    assert ref("regadío") == (5500.0, 2)      # 5000 6000
+    assert ref(None) == (4500.0, 8)           # every regime, and the one without a regime; no BSL
+    # per-crop extrapolation returns the same rows as the batch
+    rows = _run(dao.extrapolate_varieties_batch(["CIEAR"], _CSA, irrigation_regime="secano"))["CIEAR"]
+    single = _run(dao.extrapolate_varieties("CIEAR", similar_sites_override=_CSA, irrigation_regime="secano"))
+    assert single["ranked_varieties"] == rows
 
 
 # ── evidence listing ─────────────────────────────────────────────────────────
@@ -329,12 +364,15 @@ def test_recommend_main_field_before_regional_with_honest_numbers(dao):
     assert set(recs) == {"TRZAX", "ZEAMX", "HORVX", "LYPES", "SECCE", "BRSNN"}
     trz = recs["TRZAX"]
     assert trz["evidence"]["tier"] == "field" and trz["yield"]["expected_kg_ha"] == 7000.0
+    assert trz["fit"]["reference"] == {"median_kg_ha": 7000.0, "n_trials": 3, "scope": "analog_sites:Cfb:any"}
+    assert trz["fit"]["relative_yield_pct"] == 0.0
     assert trz["evidence"]["regional_trial_count"] == 0
     assert recs["ZEAMX"]["yield"]["expected_kg_ha"] == 13000.0
     assert recs["ZEAMX"]["evidence"]["other_purpose_trials"] == {"forage": 3}
     lyp = recs["LYPES"]
     assert lyp["evidence"]["tier"] == "regional" and lyp["yield"]["expected_kg_ha"] == 50000.0
     assert lyp["trust"]["level"] == "low" and lyp["fit"]["relative_yield_pct"] is None
+    assert lyp["fit"]["reference"] == {"median_kg_ha": None, "n_trials": 0, "scope": "regional"}
     assert {"regional_evidence_only", "regional_not_comparable"} <= set(lyp["trust"]["data_gaps"])
     assert recs["HORVX"]["yield"]["expected_kg_ha"] is None  # presence only: null, never 0
     tiers = [r["evidence"]["tier"] for r in out["recommendations"]]
@@ -373,3 +411,33 @@ def test_recommend_forage_mode(dao):
     assert "regional_evidence_only" not in s["trust"]["data_gaps"]
     assert s["evidence"]["unknown_basis_trials"] == 1 and s["trust"]["level"] == "low"
     assert out["conditions"]["purpose"] == "forage"
+
+
+def test_recommend_reference_per_climate_and_regime_and_the_small_reference_gap(dao):
+    def cie(**kw):
+        recs = {r["crop"]["eppo"]: r for r in _recommend(dao, climate_class="Csa", **kw)["recommendations"]}
+        assert set(recs) == {"CIEAR"}
+        return recs["CIEAR"]
+
+    sec = cie(irrigation_regime="secano")
+    assert sec["fit"]["reference"] == {"median_kg_ha": 3000.0, "n_trials": 5, "scope": "analog_sites:Csa:secano"}
+    exp = sec["yield"]["expected_kg_ha"]
+    assert sec["fit"]["relative_yield_pct"] == round((exp / 3000.0 - 1) * 100, 1)
+    assert "reference_too_small" not in sec["trust"]["data_gaps"]
+
+    reg = cie(irrigation_regime="regadío")
+    assert reg["fit"]["reference"] == {"median_kg_ha": 5500.0, "n_trials": 2, "scope": "analog_sites:Csa:regadio"}
+    assert reg["fit"]["relative_yield_pct"] is None  # two trials: below the minimum reference
+    assert "reference_too_small" in reg["trust"]["data_gaps"]
+
+    anyr = cie()
+    assert anyr["fit"]["reference"] == {"median_kg_ha": 4500.0, "n_trials": 8, "scope": "analog_sites:Csa:any"}
+    assert anyr["fit"]["relative_yield_pct"] is not None
+
+
+def test_recommend_forage_reference_scope_names_the_purpose(dao):
+    recs = {r["crop"]["eppo"]: r for r in _recommend(dao, purpose="forage")["recommendations"]}
+    z = recs["ZEAMX"]
+    assert z["fit"]["reference"] == {"median_kg_ha": 21000.0, "n_trials": 2,
+                                     "scope": "analog_sites:Cfb:any:forage"}
+    assert z["fit"]["relative_yield_pct"] is None  # two trials: below the minimum reference

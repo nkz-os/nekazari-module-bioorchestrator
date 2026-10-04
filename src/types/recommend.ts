@@ -32,6 +32,13 @@ export interface Recommendation {
   fit: {
     relative_yield_pct: number | null;
     stability_cv: number | null;
+    /**
+     * Median kg/ha of the crop's trials at the same analog field sites and irrigation regime.
+     * `scope` names the set: `analog_sites:<climate>:<regime>` (e.g. `analog_sites:Csa:secano`;
+     * climate = Koppen class or `vector_v2`; regime = `secano` | `regadio` | `any`; `:forage`
+     * appended in forage mode), or `regional` (null median) for regional recommendations.
+     * Too few trials: `reference_too_small` in `trust.data_gaps` and a null `relative_yield_pct`.
+     */
     reference: { median_kg_ha: number | null; n_trials: number; scope: string };
   };
   yield: {
@@ -60,6 +67,10 @@ export interface Recommendation {
     /** True when an irrigated parcel shows the rainfed GGCMI calendar (no irrigated value there). */
     typical_rainfed_fallback?: boolean | null;
   };
+  /**
+   * `data_gaps` ids: ..., `no_measured_yield` (regional recommendation backed only by trials of an
+   * excluded source such as BSL: `yield.expected_kg_ha` null, `yield.n_trials` = those trials).
+   */
   trust: { level: TrustLevel; data_gaps: string[]; similarity: Similarity };
   varieties: VarietyRec[];
   evidence: {

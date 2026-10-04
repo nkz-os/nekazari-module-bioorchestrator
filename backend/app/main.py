@@ -131,29 +131,6 @@ async def _run_cypher_migrations(driver):
     return executed
 
 
-def _recommend_warmup_enabled() -> bool:
-    return os.getenv("RECOMMEND_WARMUP", "1").strip().lower() not in ("0", "false", "no", "off")
-
-
-async def _warm_recommend_caches() -> None:
-    """Fill the reference-median cache for every catalog crop and regime (best-effort).
-
-    The first recommend request after a restart would otherwise pay for the full
-    trial scan. Never raises: a failed warm-up only means a cold first request.
-    """
-    try:
-        from app.graph.dao import _irrigation_uri
-        dao = GraphDAO(get_driver())
-        eppos = list(dict.fromkeys(
-            c["eppo_code"] for c in await dao.get_available_crops() if c.get("eppo_code")
-        ))
-        for uri in (None, _irrigation_uri("secano"), _irrigation_uri("regadío")):
-            await dao.get_crop_yield_medians(eppos, uri)
-        logger.info("recommend warm-up done crops=%d", len(eppos))
-    except Exception as exc:  # noqa: BLE001
-        logger.warning("recommend warm-up failed: %s", type(exc).__name__)
-
-
 async def _start_background_tasks():
     """Initialize background workers after uvicorn has bound its socket."""
     await asyncio.sleep(2)  # Give uvicorn a moment to complete startup
@@ -217,10 +194,6 @@ async def lifespan(app: FastAPI):
     # Schedule background tasks after uvicorn binds (don't block startup)
     loop = asyncio.get_running_loop()
     loop.call_soon(lambda: asyncio.ensure_future(_start_background_tasks()))
-    if _recommend_warmup_enabled():
-        task = asyncio.create_task(_warm_recommend_caches())
-        _BG_TASKS.add(task)
-        task.add_done_callback(_BG_TASKS.discard)
 
     yield
 

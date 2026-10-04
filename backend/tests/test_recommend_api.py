@@ -316,7 +316,7 @@ def _real_recommend_patches():
     variety = {"variety": "V1", "variety_uri": "urn:x", "mean_yield_kg_ha": 5500.0, "min_yield_kg_ha": 4000.0,
                "max_yield_kg_ha": 7000.0, "stddev_yield_kg_ha": 550.0, "numeric_yield_count": 12,
                "trial_count": 12, "trial_sites": ["site-a"], "trial_years": [2020], "disease_scores": {},
-               "confidence": "high"}
+               "confidence": "high", "crop_reference_median_kg_ha": 5000.0, "crop_reference_n": 40}
     dao_mod._RECOMMEND_CACHE.clear()
     return (
         patch.object(GraphDAO, "get_available_crops", AsyncMock(return_value=[
@@ -326,8 +326,6 @@ def _real_recommend_patches():
         patch.object(GraphDAO, "get_similar_sites", AsyncMock(return_value=[{"name": "site-a"}])),
         patch.object(GraphDAO, "_crops_with_analog_trials",
                      AsyncMock(side_effect=lambda eppos, names, **kw: set(eppos))),
-        patch.object(GraphDAO, "get_crop_yield_medians", AsyncMock(side_effect=lambda crops, uri: {
-            c: {"median_kg_ha": 5000.0, "n_trials": 40, "scope": "crop"} for c in crops})),
         patch.object(GraphDAO, "get_soil_suitability", AsyncMock(return_value=None)),
         patch.object(GraphDAO, "get_heat_tolerance", AsyncMock(return_value=None)),
     )
@@ -337,7 +335,7 @@ def test_parcel_and_conditions_routes_give_identical_recommendations(client):
     from app.graph import dao as dao_mod
     env = _env({"data_available": False}, climate_class="Cfb")
     p = _real_recommend_patches()
-    with p[0], p[1], p[2], p[3], p[4], p[5], p[6], \
+    with p[0], p[1], p[2], p[3], p[4], p[5], \
          patch.object(GraphDAO, "get_parcel_environment", AsyncMock(return_value=env)):
         by_parcel = client.get(f"/api/graph/recommend/parcel/{URN}")
         dao_mod._RECOMMEND_CACHE.clear()

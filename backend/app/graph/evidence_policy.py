@@ -85,7 +85,7 @@ from typing import Any, NamedTuple
 from app.ingestion.trial_site_geo import AGGREGATE_PATTERNS, is_aggregate_site_name
 
 # Bump when a rule changes, so backtest baselines name the policy they were measured under.
-POLICY_VERSION = "2026-10-04.2"
+POLICY_VERSION = "2026-10-04.3"
 
 # ── (a) source policy ────────────────────────────────────────────────────────
 # Lowercased ``source_id`` / ``dataSource`` values whose kg/ha are not measurements.

@@ -1,4 +1,4 @@
-"""Median reference and evidence listing — query shape and result mapping."""
+"""Evidence listing and recommend_for_conditions — query shape and result mapping."""
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
@@ -44,7 +44,6 @@ def _dao(*results):
 
 @pytest.fixture(autouse=True)
 def _clear_cache():
-    dao_mod._MEDIAN_CACHE.clear()
     dao_mod._RECOMMEND_CACHE.clear()
     yield
     dao_mod._RECOMMEND_CACHE.clear()
@@ -61,48 +60,10 @@ def _shared_sites():
         yield
 
 
-async def test_median_with_regime():
-    dao, calls = _dao([{"median": 5000.0, "n": 42}])
-    out = await dao.get_crop_yield_median("TRZAX", "uri:secano")
-    assert out == {"median_kg_ha": 5000.0, "n_trials": 42, "scope": "crop×irrigation"}
-    assert calls[0][1]["irrigation_uri"] == "uri:secano"
-
-
-async def test_median_without_regime_uses_all_trials():
-    dao, calls = _dao([{"median": 4800.0, "n": 90}])
-    out = await dao.get_crop_yield_median("TRZAX", None)
-    assert out["scope"] == "crop"
-    assert calls[0][1]["irrigation_uri"] is None
-
-
-async def test_median_no_trials():
-    dao, _ = _dao([{"median": None, "n": 0}])
-    assert (await dao.get_crop_yield_median("ZZZZZ", None))["median_kg_ha"] is None
-
-
-async def test_median_is_cached():
-    dao, calls = _dao([{"median": 5000.0, "n": 42}])
-    await dao.get_crop_yield_median("TRZAX", None)
-    await dao.get_crop_yield_median("TRZAX", None)
-    assert len(calls) == 1
-
-
-async def test_median_cache_is_per_purpose_and_scope_names_it():
-    dao, calls = _dao([{"median": 5000.0, "n": 42}], [{"median": 21000.0, "n": 7}])
-    main = await dao.get_crop_yield_median("ZEAMX", None)
-    forage = await dao.get_crop_yield_median("ZEAMX", None, "forage")
-    assert (main["median_kg_ha"], main["scope"]) == (5000.0, "crop")
-    assert (forage["median_kg_ha"], forage["scope"]) == (21000.0, "crop:forage")
-    assert len(calls) == 2
-    q = calls[1][0]
-    assert "ep_y IS NOT NULL" in q and "ep_tier = 'field'" in q  # policy rows, field evidence only
-    assert "COLLECT {" in q  # content-identical trials counted once
-
-
 async def test_unknown_purpose_or_tier_is_rejected():
     dao, calls = _dao()
     with pytest.raises(ValueError):
-        await dao.get_crop_yield_median("TRZAX", None, "grain")
+        await dao.extrapolate_varieties("TRZAX", climate_class="Cfb", purpose="grain")
     with pytest.raises(ValueError):
         await dao.extrapolate_varieties("TRZAX", climate_class="Cfb", tier="national")
     assert calls == []
@@ -141,11 +102,13 @@ async def test_evidence_query_is_total_order_and_page_clamped():
 from unittest.mock import patch
 
 
-def _variety(mean=5500.0, n=12):
+def _variety(mean=5500.0, n=12, ref=5000.0, ref_n=40):
+    """A ranked-variety row as the query returns it; ``ref``/``ref_n`` are the crop-level reference
+    median over the same analog sites and the number of trials it rests on."""
     return {"variety": "V1", "variety_uri": "urn:x", "mean_yield_kg_ha": mean, "min_yield_kg_ha": 4000.0,
             "max_yield_kg_ha": 7000.0, "stddev_yield_kg_ha": 550.0, "numeric_yield_count": n,
             "trial_count": n, "trial_sites": ["site-a"], "trial_years": [2020], "disease_scores": {},
-            "confidence": "high"}
+            "confidence": "high", "crop_reference_median_kg_ha": ref, "crop_reference_n": ref_n}
 
 
 def _conds(**kw):
@@ -154,27 +117,24 @@ def _conds(**kw):
     return {**base, **kw}
 
 
-def _patched(extrap, crops, median=5000.0, heat=None):
+def _patched(extrap, crops, heat=None):
     return (
         patch.object(GraphDAO, "get_available_crops",
                      AsyncMock(return_value=[{"eppo_code": c, "scientific_name": c} for c in crops])),
         patch.object(GraphDAO, "extrapolate_varieties", extrap),
-        patch.object(GraphDAO, "get_crop_yield_medians", AsyncMock(
-            side_effect=lambda crops, irrigation_uri, purpose="main": {
-                c: {"median_kg_ha": median, "n_trials": 40, "scope": "crop"} for c in crops})),
         patch.object(GraphDAO, "get_soil_suitability", AsyncMock(return_value=None)),
         patch.object(GraphDAO, "get_heat_tolerance", AsyncMock(return_value=heat)),
     )
 
 
-async def _run(conds, extrap_by_crop, median=5000.0, heat=None):
+async def _run(conds, extrap_by_crop, heat=None):
     dao, _ = _dao()
 
     async def extrap(self_, crop, **_):
         return {"ranked_varieties": extrap_by_crop.get(crop, [])}
 
-    p = _patched(extrap, list(extrap_by_crop), median, heat)
-    with p[0], p[1], p[2], p[3], p[4]:
+    p = _patched(extrap, list(extrap_by_crop), heat)
+    with p[0], p[1], p[2], p[3]:
         return await dao.recommend_for_conditions(conds)
 
 
@@ -259,7 +219,7 @@ async def test_failing_crop_is_skipped():
         return {"ranked_varieties": [_variety()]}
 
     p = _patched(extrap, ["BAD", "TRZAX"])
-    with p[0], p[1], p[2], p[3], p[4]:
+    with p[0], p[1], p[2], p[3]:
         out = await dao.recommend_for_conditions(_conds())
     assert [r["crop"]["eppo"] for r in out["recommendations"]] == ["TRZAX"]
 
@@ -276,7 +236,7 @@ async def _run_hybrid(conds, first, second):
         return {"ranked_varieties": first if "target_features" not in kw else second}
 
     p = _patched(extrap, ["TRZAX"])
-    with p[0], p[1], p[2], p[3], p[4]:
+    with p[0], p[1], p[2], p[3]:
         out = await dao.recommend_for_conditions(conds)
     return out, calls
 
@@ -326,7 +286,7 @@ async def test_heat_tolerance_is_looked_up_by_species_slug():
         return {"ranked_varieties": [_variety()]}
 
     p = _patched(extrap, ["TRZAX"], heat={"frost_damage_c": -3.0})
-    with p[0], p[1], p[2], p[3], p[4] as heat_mock:
+    with p[0], p[1], p[2], p[3] as heat_mock:
         out = await dao.recommend_for_conditions(_conds(coldest_month_min_c=-7.0))
     heat_mock.assert_awaited_with("wheat")
     assert out["recommendations"][0]["suitability"]["frost"]["level"] == "risk"
@@ -343,7 +303,7 @@ async def test_season_filter_applied_before_cap():
         return {"ranked_varieties": [_variety()]}
 
     p = _patched(extrap, crops)
-    with p[0], p[1], p[2], p[3], p[4]:
+    with p[0], p[1], p[2], p[3]:
         out = await dao.recommend_for_conditions(_conds(season="spring"))
     assert seen == ["ZEAMX"]
     assert out["data_quality"]["crops_evaluated"] == 1
@@ -483,7 +443,7 @@ async def test_requested_crops_get_catalog_names_in_request_order():
                {"eppo_code": "ZEAMX", "scientific_name": "Zea mays"}]
     p = _patched(extrap, [])
     with patch.object(GraphDAO, "get_available_crops", AsyncMock(return_value=catalog)), \
-            p[1], p[2], p[3], p[4]:
+            p[1], p[2], p[3]:
         out = await dao.recommend_for_conditions(_conds(crops=["TRZAX", "ZZZZZ", "HORVX"]))
     assert seen == ["TRZAX", "ZZZZZ", "HORVX"]
     names = {r["crop"]["eppo"]: r["crop"]["scientific_name"] for r in out["recommendations"]}
@@ -500,7 +460,7 @@ async def _run_capped(crops, prefilter):
         return {"ranked_varieties": [_variety()]}
 
     p = _patched(extrap, crops)
-    with p[0], p[1], p[2], p[3], p[4], patch.object(GraphDAO, "_crops_with_analog_trials", prefilter):
+    with p[0], p[1], p[2], p[3], patch.object(GraphDAO, "_crops_with_analog_trials", prefilter):
         out = await dao.recommend_for_conditions(_conds())
     return out, seen
 
@@ -554,7 +514,7 @@ async def test_requested_crops_survive_catalog_failure_uncached():
 
     p = _patched(extrap, [])
     with patch.object(GraphDAO, "get_available_crops", AsyncMock(side_effect=RuntimeError("down"))), \
-            p[1], p[2], p[3], p[4]:
+            p[1], p[2], p[3]:
         out = await dao.recommend_for_conditions(_conds(crops=["TRZAX"]))
     assert out["recommendations"][0]["crop"]["scientific_name"] == "TRZAX"
     assert dao_mod._RECOMMEND_CACHE == {}
@@ -619,3 +579,36 @@ async def test_recommend_cache_is_keyed_by_point():
         madrid = (await _run(_conds(lat=40.4, lon=-3.7), {"TRZAX": [_variety()]}))["recommendations"][0]
     assert paris["season"]["typical_sowing_doy"] == 304
     assert madrid["season"]["typical_sowing_doy"] == 332
+
+
+# ── reference scope helpers ──────────────────────────────────────────────────
+_SECANO_URI = "http://aims.fao.org/aos/agrovoc/c_6436"
+_REGADIO_URI = "http://aims.fao.org/aos/agrovoc/c_3954"
+
+
+@pytest.mark.parametrize("climate,uri,purpose,scope", [
+    ("Csa", _SECANO_URI, "main", "analog_sites:Csa:secano"),
+    ("Cfb", _REGADIO_URI, "main", "analog_sites:Cfb:regadio"),
+    ("Dfb", None, "main", "analog_sites:Dfb:any"),
+    (None, None, "main", "analog_sites:any:any"),
+    ("vector_v2", _REGADIO_URI, "forage", "analog_sites:vector_v2:regadio:forage"),
+])
+def test_reference_scope_names_climate_regime_and_purpose(climate, uri, purpose, scope):
+    assert dao_mod._reference_scope(climate, uri, purpose) == scope
+
+
+def test_analog_reference_from_rows():
+    row = {"crop_reference_median_kg_ha": 4200.5, "crop_reference_n": 17}
+    assert dao_mod._analog_reference([row, row], "s") == {"median_kg_ha": 4200.5, "n_trials": 17, "scope": "s"}
+    assert dao_mod._analog_reference([], "s") == {"median_kg_ha": None, "n_trials": 0, "scope": "s"}
+    assert dao_mod._analog_reference([{}], "s")["n_trials"] == 0
+
+
+async def test_recommend_relative_yield_uses_the_rows_reference_and_organic_scales_it():
+    out = await _run(_conds(), {"TRZAX": [_variety(5500.0, ref=5000.0, ref_n=40)]})
+    rec = out["recommendations"][0]
+    assert rec["fit"]["relative_yield_pct"] == 10.0
+    assert rec["fit"]["reference"] == {"median_kg_ha": 5000.0, "n_trials": 40, "scope": "analog_sites:Cfb:any"}
+    org = (await _run(_conds(management="organic"), {"TRZAX": [_variety(5000.0, ref=5000.0)]}))["recommendations"][0]
+    assert org["fit"]["reference"]["median_kg_ha"] == pytest.approx(4000.0)  # same factor as the yield
+    assert org["fit"]["relative_yield_pct"] == 0.0

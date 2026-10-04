@@ -26,6 +26,15 @@ Evidence policy contract (additions of the evidence-policy change; the rules liv
   are never read), ``yield.n_trials`` = distinct such trials, no ``varieties``, trust ``low`` and
   the data gaps ``no_measured_yield`` (new) + ``regional_evidence_only`` + ``no_expected_yield``.
   It ranks after the regional recommendations that have a number.
+- Reference of ``fit.relative_yield_pct`` (field recommendations): the median kg/ha of the crop's
+  distinct, policy-eligible trials at the SAME analog field sites that back the recommendation
+  and in the same irrigation regime (a trial with no regime never counts for a requested one);
+  ``fit.reference.n_trials`` is how many trials it rests on and ``fit.reference.scope`` names the
+  set: ``analog_sites:<climate>:<regime>`` (e.g. ``analog_sites:Csa:secano``; climate = the Köppen
+  class, ``vector_v2`` when the vector-similarity fallback supplied the sites, ``any`` without a
+  class; regime = ``secano`` | ``regadio`` | ``any``; ``:forage`` appended in forage mode).
+  Fewer than ``MIN_REFERENCE_TRIALS`` trials: ``reference_too_small`` and a null relative yield.
+  Regional recommendations keep a null relative yield and scope ``regional``.
 - ``evidence.regional_trial_count``: distinct numeric regional trials of a ``field`` crop at
   the climate's aggregate sites (supplementary; in no number). null when not computed.
 - ``evidence.other_purpose_trials``: main mode ``{"forage": N}`` — distinct forage trials of
