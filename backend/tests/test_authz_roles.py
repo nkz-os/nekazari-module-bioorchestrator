@@ -19,10 +19,10 @@ from starlette.requests import Request
 
 from app import auth
 from app.graph.dao import GraphDAO
+from tests.gateway_token import gateway_token
 
 ISS = "https://idp.example/realms/r"
 _KEY = rsa.generate_private_key(public_exponent=65537, key_size=2048)
-BEARER = "opaque-user-token"
 TENANT = "tenant-a"
 
 ADMIN = "PlatformAdmin"
@@ -51,24 +51,43 @@ ALL_ENDPOINTS = [(*e, (ADMIN,)) for e in ADMIN_ONLY] + [
 ALL_ROLES = ("Farmer", "TechnicalConsultant", "TenantAdmin", "PlatformAdmin")
 
 
-def _gateway_headers(roles: str, user: str = "u1", tenant: str = TENANT) -> dict:
+def _gateway_headers(
+    roles: str, user: str = "u1", tenant: str = TENANT, extra_claims: dict | None = None
+) -> dict:
+    """Headers as the api-gateway sends them: a signed token plus identity headers.
+
+    ``roles`` is a comma-separated string; it goes into the token claims and
+    (as the gateway does) into X-User-Roles. Only the claims are trusted.
+    """
+    token = gateway_token(sub=user, tenant=tenant, roles=[r for r in roles.split(",") if r])
+    if extra_claims:
+        token = jwt.encode(
+            {**jwt.decode(token, options={"verify_signature": False}), **extra_claims},
+            "gateway-test-key-0123456789abcdef0123456789",
+            algorithm="HS256",
+        )
     return {
-        "Authorization": f"Bearer {BEARER}",
+        "Authorization": f"Bearer {token}",
         "X-Tenant-ID": tenant,
         "X-User-ID": user,
         "X-User-Roles": roles,
-        "X-Auth-Signature": generate_hmac_signature("hmac-test", BEARER, tenant),
+        "X-Auth-Signature": generate_hmac_signature("hmac-test", token, tenant),
     }
 
 
 class _Result:
+    def __init__(self, created: int):
+        self.created = created
+
     async def single(self):
-        return {"status": "pending_review", "source": "Contributed: anonymous"}
+        return {"status": "pending_review", "source": "Contributed: anonymous",
+                "created": self.created}
 
 
 class _Session:
-    def __init__(self, sink):
+    def __init__(self, sink, created):
         self.sink = sink
+        self.created = created
 
     async def __aenter__(self):
         return self
@@ -78,15 +97,16 @@ class _Session:
 
     async def run(self, query, **params):
         self.sink.append({"query": query, **params})
-        return _Result()
+        return _Result(self.created)
 
 
 class _Driver:
     def __init__(self):
         self.runs: list[dict] = []
+        self.created = 1  # rows the MATCH found; 0 simulates an unknown crop
 
     def session(self):
-        return _Session(self.runs)
+        return _Session(self.runs, self.created)
 
 
 class _FakeDAO(GraphDAO):
@@ -148,6 +168,7 @@ def prod(monkeypatch, driver):
 
         client = TestClient(app, raise_server_exceptions=False)
         client.popen = popen
+        client.orion = orion
         yield client
 
 
@@ -170,9 +191,9 @@ def test_forged_role_header_without_signature_is_401(prod, name, method, path, k
 
 @pytest.mark.parametrize("name,method,path,kwargs,roles", ALL_ENDPOINTS)
 def test_forged_role_header_with_wrong_signature_is_401(prod, name, method, path, kwargs, roles):
-    headers = _gateway_headers("Farmer")
-    headers["X-Auth-Signature"] = generate_hmac_signature("another-secret", BEARER, TENANT)
-    headers["X-User-Roles"] = ADMIN
+    headers = _gateway_headers(ADMIN)
+    token = headers["Authorization"].removeprefix("Bearer ")
+    headers["X-Auth-Signature"] = generate_hmac_signature("another-secret", token, TENANT)
     assert _call(prod, method, path, kwargs, headers).status_code == 401
 
 
@@ -202,9 +223,57 @@ def test_unrelated_role_string_is_403(prod, name, method, path, kwargs, allowed)
 
 
 @pytest.mark.parametrize("name,method,path,kwargs,allowed", ALL_ENDPOINTS)
-def test_roles_header_whitespace_is_tolerated(prod, name, method, path, kwargs, allowed):
-    resp = _call(prod, method, path, kwargs, _gateway_headers("Farmer, PlatformAdmin "))
+def test_roles_header_cannot_grant_what_the_signed_token_lacks(prod, name, method, path, kwargs, allowed):
+    # A signed Farmer token with a forged X-User-Roles header stays a Farmer.
+    headers = _gateway_headers("Farmer")
+    headers["X-User-Roles"] = "PlatformAdmin"
+    assert _call(prod, method, path, kwargs, headers).status_code == 403
+
+
+@pytest.mark.parametrize("name,method,path,kwargs,allowed", ALL_ENDPOINTS)
+def test_roles_come_from_signed_token_claims_not_the_header(prod, name, method, path, kwargs, allowed):
+    headers = _gateway_headers("PlatformAdmin")
+    del headers["X-User-Roles"]
+    assert _call(prod, method, path, kwargs, headers).status_code == 200
+
+
+def test_gateway_role_parity_realm_and_client_roles(prod):
+    # Same union the gateway builds: realm_access + resource_access + roles claim.
+    for claims in (
+        {"realm_access": {"roles": [ADMIN]}},
+        {"realm_access": {"roles": []}, "resource_access": {"nekazari-frontend": {"roles": [ADMIN]}}},
+        {"realm_access": {"roles": []}, "roles": [ADMIN]},
+    ):
+        headers = _gateway_headers("", extra_claims=claims)
+        resp = prod.post("/api/pipeline/run", json={}, headers=headers)
+        assert resp.status_code == 200, claims
+
+
+def test_gateway_user_id_header_is_ignored(prod, driver):
+    headers = _gateway_headers("TenantAdmin", user="user-7")
+    headers["X-User-ID"] = "spoofed"
+    resp = prod.post("/api/graph/phenology-params/contribute", params=_PHENO, headers=headers)
     assert resp.status_code == 200
+    assert driver.runs[0]["contributed_by"] == "user-7"
+
+
+def test_gateway_signed_non_jwt_token_is_not_an_identity(prod):
+    token = "opaque-token"
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "X-Tenant-ID": TENANT,
+        "X-User-ID": "u1",
+        "X-User-Roles": ADMIN,
+        "X-Auth-Signature": generate_hmac_signature("hmac-test", token, TENANT),
+    }
+    assert prod.post("/api/pipeline/run", json={}, headers=headers).status_code == 401
+
+
+def test_unverified_jwt_grants_no_roles(prod, monkeypatch):
+    # AUTH_STRICT=false skips signature verification, so claims must not grant roles.
+    monkeypatch.setenv("AUTH_STRICT", "false")
+    resp = prod.post("/api/pipeline/run", json={}, headers=_bearer({"realm_access": {"roles": [ADMIN]}}))
+    assert resp.status_code == 403
 
 
 @pytest.mark.parametrize("name,method,path,kwargs,allowed", ALL_ENDPOINTS)
@@ -288,9 +357,20 @@ def test_catalog_contribution_records_subject_and_tenant(prod, driver):
     )
     assert resp.status_code == 200
     run = driver.runs[0]
-    assert run["user_id"] == "user-42"
-    assert run["tenant_id"] == "tenant-z"
-    assert "contributedByTenant" in run["query"]
+    assert run["contributed_by"] == "user-42"
+    assert run["contributor_tenant"] == "tenant-z"
+    assert "contributorTenant" in run["query"]
+
+
+def test_both_contribution_paths_use_the_same_property_names(prod, driver):
+    prod.post("/api/crop/catalog/contribute", json=_CONTRIB_BODY,
+              headers=_gateway_headers("TenantAdmin"))
+    prod.post("/api/graph/phenology-params/contribute", params=_PHENO,
+              headers=_gateway_headers("TenantAdmin"))
+    catalog_run, phenology_run = driver.runs
+    for run in (catalog_run, phenology_run):
+        assert "contributedBy" in run["query"] and "contributorTenant" in run["query"]
+        assert run["contributed_by"] == "u1" and run["contributor_tenant"] == TENANT
 
 
 def test_phenology_contribution_records_subject_and_tenant(prod, driver):
@@ -316,6 +396,68 @@ def test_contributor_identity_comes_from_the_token_not_the_query(prod, driver):
     assert resp.status_code == 200
     assert driver.runs[0]["contributed_by"] == "user-7"
     assert driver.runs[0]["contributor_tenant"] == "tenant-y"
+
+
+# ── catalog contribute: allow-listed keys, crop must exist, Orion is admin-only ──
+
+def _contribute(client, body, roles="TechnicalConsultant"):
+    return client.post("/api/crop/catalog/contribute", json=body, headers=_gateway_headers(roles))
+
+
+@pytest.mark.parametrize(
+    "reserved",
+    ["status", "contributedBy", "contributorTenant", "contributedAt", "sourceDoi", "uri", "isDefault"],
+)
+def test_catalog_contribute_rejects_reserved_keys(prod, driver, reserved):
+    body = {**_CONTRIB_BODY, "params": {"kc": 0.5, reserved: "approved"}}
+    resp = _contribute(prod, body)
+    assert resp.status_code == 400
+    assert reserved in resp.json()["detail"]
+    assert driver.runs == []  # nothing written
+
+
+@pytest.mark.parametrize("value", ["0.5", None, True, float("inf"), {"a": 1}, [1]])
+def test_catalog_contribute_rejects_non_numeric_values(prod, driver, value):
+    body = {**_CONTRIB_BODY, "params": {"kc": value}}
+    resp = prod.post("/api/crop/catalog/contribute", content=__import__("json").dumps(body, allow_nan=True),
+                     headers={**_gateway_headers("TechnicalConsultant"), "Content-Type": "application/json"})
+    assert resp.status_code == 400
+    assert driver.runs == []
+
+
+def test_catalog_contribute_rejects_non_scalar_provenance(prod, driver):
+    body = {**_CONTRIB_BODY, "provenance": {"doi": {"nested": "map"}}}
+    assert _contribute(prod, body).status_code == 400
+    assert driver.runs == []
+
+
+def test_catalog_contribute_unknown_crop_is_404_and_pushes_nothing(prod, driver):
+    driver.created = 0
+    body = {**_CONTRIB_BODY, "params": {"kcIni": 0.3}}
+    resp = _contribute(prod, body, roles="PlatformAdmin")
+    assert resp.status_code == 404
+    prod.orion.return_value.append_entity_attrs.assert_not_called()
+
+
+def test_catalog_contribute_does_not_touch_orion_for_non_admins(prod, driver):
+    body = {**_CONTRIB_BODY, "params": {"kcIni": 0.3, "kcMid": 1.1, "kcEnd": 0.6}}
+    for roles in ("TechnicalConsultant", "TenantAdmin"):
+        resp = _contribute(prod, body, roles=roles)
+        assert resp.status_code == 200
+        assert resp.json()["applied_to_catalog"] is False
+    assert len(driver.runs) == 2  # still recorded for review
+    prod.orion.assert_not_called()
+
+
+def test_catalog_contribute_by_platform_admin_applies_to_orion(prod, driver):
+    body = {**_CONTRIB_BODY, "params": {"kcIni": 0.3, "kcMid": 1.1, "d1": 5}}
+    resp = _contribute(prod, body, roles="PlatformAdmin")
+    assert resp.status_code == 200
+    assert resp.json()["applied_to_catalog"] is True
+    prod.orion.return_value.append_entity_attrs.assert_awaited_once_with(
+        _CONTRIB_BODY["crop_id"],
+        {"kcIni": {"type": "Property", "value": 0.3}, "kcMid": {"type": "Property", "value": 1.1}},
+    )
 
 
 def test_derive_thermal_spawns_nothing_for_unauthorised_caller(prod):

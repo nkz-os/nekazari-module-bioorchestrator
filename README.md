@@ -227,7 +227,7 @@ Full i18n support in **6 languages**: English, Spanish, Basque, French, Portugue
 | `GET /` | List crops with variety counts, data flags |
 | `GET /{id}` | Full crop detail with phenology, thermal, NPK, rotation |
 | `POST /ingest` | Trigger ingestion from source (PlatformAdmin) |
-| `POST /contribute` | Submit agronomic parameter with DOI (TechnicalConsultant, TenantAdmin or PlatformAdmin) |
+| `POST /contribute` | Submit agronomic parameters (`kc`, `kcIni`, `kcMid`, `kcEnd`, `d1`, `d2`, `mdsRef`, `ky`) with DOI (TechnicalConsultant, TenantAdmin or PlatformAdmin). Stored as `pending_review` with the verified contributor; applied to the Orion catalog only when the caller is PlatformAdmin (approval is a PlatformAdmin action). 404 for an unknown crop |
 | `GET /thermal-summary` | Species with/without thermal data |
 | `GET /npk-summary` | Species with/without NPK data |
 | `POST /derive-thermal` | Auto-derive thermal thresholds from EcoCrop (PlatformAdmin) |

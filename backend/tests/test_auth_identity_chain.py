@@ -8,6 +8,8 @@ import pytest
 from fastapi.testclient import TestClient
 from nkz_platform_sdk.crypto import generate_hmac_signature
 
+from tests.gateway_token import USER_TOKEN
+
 URN = "urn:ngsi-ld:AgriParcel:tenant-a:p1"
 PATH = f"/api/graph/agriculture/parcel-environment?parcel_id={URN}"
 
@@ -40,23 +42,23 @@ def test_spoofed_gateway_headers_without_signature_are_rejected(prod_client):
 
 
 def test_gateway_headers_with_valid_signature_are_accepted(prod_client):
-    sig = generate_hmac_signature("hmac-test", "user-token", "tenant-a")
-    r = prod_client.get(PATH, headers={"Authorization": "Bearer user-token", "X-Tenant-ID": "tenant-a", "X-User-ID": "u1",
+    sig = generate_hmac_signature("hmac-test", USER_TOKEN, "tenant-a")
+    r = prod_client.get(PATH, headers={"Authorization": f"Bearer {USER_TOKEN}", "X-Tenant-ID": "tenant-a", "X-User-ID": "u1",
                                        "X-Auth-Signature": sig})
     assert r.status_code == 200
     assert r.json()["tenant_seen"] == "tenant-a"
 
 
 def test_gateway_signature_for_other_tenant_is_rejected(prod_client):
-    sig = generate_hmac_signature("hmac-test", "user-token", "tenant-b")
-    r = prod_client.get(PATH, headers={"Authorization": "Bearer user-token", "X-Tenant-ID": "tenant-a", "X-User-ID": "u1",
+    sig = generate_hmac_signature("hmac-test", USER_TOKEN, "tenant-b")
+    r = prod_client.get(PATH, headers={"Authorization": f"Bearer {USER_TOKEN}", "X-Tenant-ID": "tenant-a", "X-User-ID": "u1",
                                        "X-Auth-Signature": sig})
     assert r.status_code == 401
 
 
 def test_stale_gateway_signature_is_rejected(prod_client):
-    sig = generate_hmac_signature("hmac-test", "user-token", "tenant-a", int(time.time()) - 301)
-    r = prod_client.get(PATH, headers={"Authorization": "Bearer user-token", "X-Tenant-ID": "tenant-a", "X-User-ID": "u1",
+    sig = generate_hmac_signature("hmac-test", USER_TOKEN, "tenant-a", int(time.time()) - 301)
+    r = prod_client.get(PATH, headers={"Authorization": f"Bearer {USER_TOKEN}", "X-Tenant-ID": "tenant-a", "X-User-ID": "u1",
                                        "X-Auth-Signature": sig})
     assert r.status_code == 401
 

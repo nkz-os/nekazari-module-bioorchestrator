@@ -1,14 +1,33 @@
 """Crop catalog API — species/varieties from Orion-LD + Neo4j."""
+import math
+
 from fastapi import APIRouter, Depends, HTTPException, Query
 from nkz_platform_sdk.orion import OrionClient
 
 from app.core.config import settings
-from app.core.dependencies import get_dao, require_contributor, require_platform_admin
+from app.core.dependencies import (
+    ROLE_PLATFORM_ADMIN,
+    get_dao,
+    require_contributor,
+    require_platform_admin,
+)
 from app.graph.dao import GraphDAO
 from app.ingestion.ecocrop_ingester import EcoCropIngester
 from app.ingestion.variety_ingester import VarietyIngester
 
 router = APIRouter(prefix="/catalog", tags=["crop-catalog"])
+
+# Parameter keys a contribution may set on the pending-review node. Anything
+# else (review status, contributor identity, ...) is rejected, not stored.
+CONTRIBUTABLE_PARAMS = frozenset({"kc", "kcIni", "kcMid", "kcEnd", "d1", "d2", "mdsRef", "ky"})
+
+
+def _is_finite_number(value: object) -> bool:
+    return (
+        isinstance(value, (int, float))
+        and not isinstance(value, bool)
+        and math.isfinite(value)
+    )
 
 
 @router.get("")
@@ -160,53 +179,49 @@ async def contribute_parameter(
 ):
     """Contribute phenological/agronomic parameters for a crop.
 
-    Body: {crop_id, params: {kc?, d1?, d2?, mds?, npk?, rotation?}, provenance}
-    Requires TechnicalConsultant, TenantAdmin or PlatformAdmin; the verified
-    subject and tenant are recorded on the pending-review node.
+    Body: {crop_id, params: {kc?, kcIni?, kcMid?, kcEnd?, d1?, d2?, mdsRef?, ky?}, provenance}
+    Requires TechnicalConsultant, TenantAdmin or PlatformAdmin. The contribution
+    is stored as a pending-review node in the graph, tagged with the verified
+    subject and tenant. It is applied to the global Orion catalog only when the
+    caller is PlatformAdmin: approval is a PlatformAdmin action. 404 if the crop
+    does not exist (nothing is written).
     """
     crop_id = body.get("crop_id")
     params = body.get("params", {})
     provenance = body.get("provenance", {})
 
-    if not crop_id or not params:
+    if not crop_id or not isinstance(crop_id, str) or not params:
         raise HTTPException(status_code=400, detail="crop_id and params required")
-
-    async with dao._driver.session() as session:
-        await session.run("""
-            MATCH (c:AgriCrop {uri: $uri})
-            CREATE (p:PhenologyParams {
-                status: 'pending_review',
-                contributedBy: $user_id,
-                contributedByTenant: $tenant_id,
-                contributedAt: datetime(),
-                sourceDoi: $doi,
-                sourceAuthor: $author,
-                sourceYear: $year,
-                sourceInstitution: $institution,
-                sourceMethod: $method,
-                sourceConditions: $conditions
-            })
-            SET p += $params
-            CREATE (c)-[:HAS_PARAMETER]->(p)
-        """,
-            uri=crop_id,
-            user_id=user["sub"],
-            tenant_id=user.get("tenant_id"),
-            doi=provenance.get("doi"),
-            author=provenance.get("author"),
-            year=provenance.get("year"),
-            institution=provenance.get("institution"),
-            method=provenance.get("method"),
-            conditions=provenance.get("conditions"),
-            params=params,
+    if not isinstance(params, dict) or not isinstance(provenance, dict):
+        raise HTTPException(status_code=400, detail="params and provenance must be objects")
+    unsupported = sorted(set(params) - CONTRIBUTABLE_PARAMS)
+    if unsupported:
+        raise HTTPException(
+            status_code=400,
+            detail=f"unsupported parameters: {', '.join(map(str, unsupported))}",
         )
+    if not all(_is_finite_number(v) for v in params.values()):
+        raise HTTPException(status_code=400, detail="parameter values must be numbers")
+    if not all(v is None or isinstance(v, (str, int, float)) for v in provenance.values()):
+        raise HTTPException(status_code=400, detail="provenance values must be scalars")
 
-    # Also push Kc values to Orion-LD if provided
-    if any(k in params for k in ("kc", "kcIni", "kcMid", "kcEnd")):
-        orion_attrs = {}
-        for key in ("kcIni", "kcMid", "kcEnd"):
-            if key in params:
-                orion_attrs[key] = {"type": "Property", "value": params[key]}
+    stored = await dao.contribute_crop_parameters(
+        crop_id,
+        params,
+        contributed_by=user["sub"],
+        contributor_tenant=user.get("tenant_id"),
+        provenance=provenance,
+    )
+    if not stored:
+        raise HTTPException(status_code=404, detail="crop not found")
+
+    applied = False
+    if ROLE_PLATFORM_ADMIN in (user.get("roles") or ()):
+        orion_attrs = {
+            key: {"type": "Property", "value": params[key]}
+            for key in ("kcIni", "kcMid", "kcEnd")
+            if key in params
+        }
         if orion_attrs:
             orion = OrionClient(
                 settings.catalog_tenant,
@@ -217,8 +232,9 @@ async def contribute_parameter(
                 await orion.append_entity_attrs(crop_id, orion_attrs)
             finally:
                 await orion.close()
+            applied = True
 
-    return {"status": "submitted", "crop_id": crop_id}
+    return {"status": "submitted", "crop_id": crop_id, "applied_to_catalog": applied}
 
 
 @router.post("/derive-thermal", dependencies=[Depends(require_platform_admin)])

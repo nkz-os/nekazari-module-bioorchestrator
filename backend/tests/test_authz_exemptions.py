@@ -37,23 +37,55 @@ def test_allowlist_has_no_stale_entries():
     assert WRITE_EXEMPT_ALLOWLIST <= set(SKIP_AUTH_PREFIXES)
 
 
-def _exempt_writes() -> list[tuple[str, str]]:
-    """(method, path) of every registered non-GET route the middleware lets through."""
+def _effective_routes(routes):
+    """Every (path, methods) the app serves, including include_in_schema=False routes.
+
+    Newer FastAPI keeps included routers lazy: ``app.routes`` then holds router
+    branches that expand through ``effective_candidates()``.
+    """
+    for route in routes:
+        if hasattr(route, "effective_candidates"):
+            yield from _effective_routes(route.effective_candidates())
+            if hasattr(route, "effective_low_priority_routes"):
+                yield from _effective_routes(route.effective_low_priority_routes())
+        elif getattr(route, "path", None) and getattr(route, "methods", None):
+            yield route.path, route.methods
+
+
+def _served_writes() -> set[tuple[str, str]]:
     from app.main import app
 
-    found = []
-    for path, operations in app.openapi()["paths"].items():
-        for method in operations:
-            method = method.upper()
-            if method in SAFE_METHODS:
-                continue
-            for prefix, methods in SKIP_AUTH_PREFIXES.items():
-                if path.startswith(prefix) and ("*" in methods or method in methods):
-                    found.append((method, path))
-    return found
+    return {
+        (method.upper(), path)
+        for path, methods in _effective_routes(app.routes)
+        for method in methods
+        if method.upper() not in SAFE_METHODS
+    }
 
 
-def test_every_registered_exempt_write_route_is_allowlisted():
+def _exempt_writes() -> list[tuple[str, str]]:
+    """(method, path) of every served non-GET route the middleware lets through."""
+    return sorted(
+        (method, path)
+        for method, path in _served_writes()
+        for prefix, methods in SKIP_AUTH_PREFIXES.items()
+        if path.startswith(prefix) and ("*" in methods or method in methods)
+    )
+
+
+def test_route_walk_sees_the_known_write_routes():
+    # Guards the walker itself: an empty result would make the checks below vacuous.
+    served = _served_writes()
+    assert {
+        ("POST", "/api/pipeline/run"),
+        ("POST", "/api/crop/catalog/contribute"),
+        ("POST", "/api/graph/phenology-params/contribute"),
+        ("PUT", "/api/graph/action-rules/{rule_id}"),
+        ("POST", "/api/ngsi-ld/notify"),
+    } <= served
+
+
+def test_every_served_exempt_write_route_is_allowlisted():
     stray = [
         (m, p)
         for m, p in _exempt_writes()

@@ -93,8 +93,8 @@ def require_roles(*roles: str) -> Callable[..., Coroutine[Any, Any, dict]]:
     return _require_roles
 
 
-# ASSUMPTION: writes to global (cross-tenant) data are PlatformAdmin-only, and
-# contributions for review are open to consultants and admins — owner to confirm.
+# Writes to global (cross-tenant) data are PlatformAdmin-only; contributions for
+# review are open to consultants and admins.
 require_platform_admin = require_roles(ROLE_PLATFORM_ADMIN)
 require_contributor = require_roles(
     ROLE_TECHNICAL_CONSULTANT, ROLE_TENANT_ADMIN, ROLE_PLATFORM_ADMIN

@@ -79,6 +79,8 @@ class TestAssignCrop:
         """
         from nkz_platform_sdk.crypto import generate_hmac_signature
 
+        from tests.gateway_token import USER_TOKEN
+
         monkeypatch.setenv("HMAC_SECRET", "hmac-test")
         captured = {}
 
@@ -95,10 +97,10 @@ class TestAssignCrop:
             resp = client.post(
                 "/api/graph/agriculture/assign-crop",
                 headers={
-                    "Authorization": "Bearer user-token",
+                    "Authorization": f"Bearer {USER_TOKEN}",
             "X-Tenant-ID": "tenant-a",
                     "X-User-ID": "smoke-test",
-                    "X-Auth-Signature": generate_hmac_signature("hmac-test", "user-token", "tenant-a"),
+                    "X-Auth-Signature": generate_hmac_signature("hmac-test", USER_TOKEN, "tenant-a"),
                 },
                 json={
                     "parcel_id": "urn:ngsi-ld:AgriParcel:test-1",

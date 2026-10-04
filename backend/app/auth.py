@@ -68,11 +68,18 @@ SKIP_AUTH_PREFIXES: dict[str, set[str]] = {
 }
 
 
-def _roles_from_claims(payload: dict) -> list[str]:
-    """Roles of a verified Keycloak token: realm roles, client roles, `roles` claim.
+def _auth_strict() -> bool:
+    """False only when AUTH_STRICT=false: JWT signatures are then NOT verified."""
+    return os.getenv("AUTH_STRICT", "true").strip().lower() != "false"
 
-    Mirrors what the api-gateway forwards in X-User-Roles, so a direct-ingress
-    JWT and a gateway-signed request resolve to the same role set.
+
+def _roles_from_claims(payload: dict) -> list[str]:
+    """Roles carried by a Keycloak token: realm roles, client roles, `roles` claim.
+
+    Same union the api-gateway builds for its X-User-Roles header
+    (realm_access.roles + resource_access.*.roles + roles), so a direct-ingress
+    JWT and a gateway-signed request resolve to the same role set. Only call
+    this on claims that were verified, or vouched for by the gateway HMAC.
     """
     roles: list[str] = []
     claim = payload.get("roles")
@@ -134,9 +141,8 @@ class NKZAuthMiddleware(BaseHTTPMiddleware):
 
     def _gateway_identity(self, request: Request) -> bool:
         tenant = request.headers.get("X-Tenant-ID", "").strip()
-        user = request.headers.get("X-User-ID", "").strip()
         signature = request.headers.get("X-Auth-Signature", "")
-        if not tenant or not user or not signature:
+        if not tenant or not signature:
             return False
         token = request.headers.get("Authorization", "").removeprefix("Bearer ").strip()
         if not token:
@@ -149,10 +155,19 @@ class NKZAuthMiddleware(BaseHTTPMiddleware):
             return False
         if not valid:
             return False
-        # The gateway rebuilds this header from the verified token; the signature
-        # check above is what makes it trustworthy.
-        roles = [r.strip() for r in request.headers.get("X-User-Roles", "").split(",")]
-        self._set_identity(request, tenant, user, [r for r in roles if r])
+        # The HMAC covers exactly this token and tenant, so it proves the gateway
+        # validated the token: its claims can be read without re-verifying the
+        # JWT signature. `sub` and roles come from those claims, never from
+        # X-User-ID / X-User-Roles, which the HMAC does not cover. A token that
+        # does not decode is not an identity (the gateway only signs JWTs).
+        try:
+            claims = jwt.decode(token, options={"verify_signature": False})
+        except (jwt.PyJWTError, ValueError):
+            return False
+        sub = claims.get("sub")
+        if not isinstance(sub, str) or not sub:
+            return False
+        self._set_identity(request, tenant, sub, _roles_from_claims(claims))
         return True
 
     async def dispatch(self, request: Request, call_next: Callable):
@@ -206,7 +221,9 @@ class NKZAuthMiddleware(BaseHTTPMiddleware):
             request.state.user = {
                 **payload,
                 "tenant_id": request.state.tenant_id,
-                "roles": _roles_from_claims(payload),
+                # With AUTH_STRICT=false the token signature was not verified,
+                # so its claims must not grant any role.
+                "roles": _roles_from_claims(payload) if _auth_strict() else [],
             }
             if needs_identity and not request.state.tenant_id:
                 return JSONResponse(
@@ -241,7 +258,7 @@ class NKZAuthMiddleware(BaseHTTPMiddleware):
 
     async def _validate_token(self, token: str) -> dict:
         """Validate a Keycloak RS256 JWT: signature via JWKS, exact issuer whitelist, expiry."""
-        if os.getenv("AUTH_STRICT", "true").strip().lower() == "false":
+        if not _auth_strict():
             logger.critical(
                 "AUTH_STRICT=false: accepting a JWT WITHOUT signature verification"
             )
