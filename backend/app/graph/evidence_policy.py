@@ -58,6 +58,12 @@ Rules (owner decisions 2026-10-04):
    classifies every row of a query once (tier, purpose gate, policy yield) so no query
    re-evaluates the rules per aggregate.
 
+7. **Presence-only evidence.** A trial of an excluded source (rule 1) at a regional-tier row adds
+   no number, but it shows that the crop was tested at that climate. In the main mode (forage
+   records are never BSL) a crop whose ONLY evidence is such trials is reported as a regional
+   recommendation with no yield (``presence_only_applies``, ``cypher_presence_gate``); the
+   excluded kg/ha are never read.
+
 Explicit properties written by ingestion (``yieldBasis`` today; ``siteKind`` and a
 grain/forage ``yieldMetric`` vocabulary later) are read first, here; callers do not change.
 
@@ -753,6 +759,38 @@ def passes_tier_gate(tier: str, row_tier: str, in_mode: bool, other: bool, y: fl
     if tier == EVIDENCE_TIER_REGIONAL:
         return in_mode and y is not None
     return in_mode or (with_other and other)
+
+
+def presence_only_applies(mode: str = MODE_MAIN) -> bool:
+    """Presence-only evidence (rule 7) is reported in the main mode only."""
+    return check_mode(mode) == MODE_MAIN
+
+
+def cypher_presence_gate_expr() -> str:
+    """Boolean over the row-policy columns: a regional-tier row of an excluded source within the
+    purpose mode (it proves presence and carries no policy number)."""
+    return (f"ep_tier = {_cypher_str(EVIDENCE_TIER_REGIONAL)} AND ep_in_mode AND ep_excluded")
+
+
+def cypher_presence_gate() -> str:
+    """``WHERE`` clause of ``cypher_presence_gate_expr`` (ends with a newline)."""
+    return f"WHERE {cypher_presence_gate_expr()}\n"
+
+
+def cypher_presence_prefilter(vt: str = "vt") -> str:
+    """Cheap ``AND`` term (before the row policy): only excluded-source trials can be presence-only."""
+    return f"AND {cypher_excluded_source(vt)}"
+
+
+def is_presence_only_evidence(trial: Mapping[str, Any], site_name: str | None,
+                              mode: str = MODE_MAIN) -> bool:
+    """Python twin of the presence gate over one (trial, site) row (graph property names)."""
+    return (
+        presence_only_applies(mode)
+        and evidence_tier(trial.get("aggregationScope"), site_name) == EVIDENCE_TIER_REGIONAL
+        and is_excluded_source(trial.get("source_id"), trial.get("dataSource"))
+        and in_purpose_mode(yield_purpose(trial.get("yieldMetric"), trial.get("qualityParams")), mode)
+    )
 
 
 def yield_basis(mode: str = MODE_MAIN) -> str | None:

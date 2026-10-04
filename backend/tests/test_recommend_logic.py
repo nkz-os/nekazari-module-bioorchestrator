@@ -368,3 +368,37 @@ def test_field_recommendations_rank_before_regional_ones():
         rec["crop"]["eppo"] = eppo
     assert [x["crop"]["eppo"] for x in r.rank_recommendations([regional, field_blocked, field_low])] == \
         ["A", "B", "C"]
+
+
+def _presence(**kw):
+    return {"variety": None, "variety_uri": None, "presence_only": True, "mean_yield_kg_ha": None,
+            "min_yield_kg_ha": None, "max_yield_kg_ha": None, "stddev_yield_kg_ha": None,
+            "numeric_yield_count": 0, "unknown_basis_trial_count": 0, "trial_count": 40,
+            "trial_sites": ["BSL container"], "trial_years": [2016, 2020], "disease_scores": {},
+            "confidence": None, "source_ids": ["BSL"], **kw}
+
+
+def test_presence_only_recommendation_has_trials_no_number_and_its_own_gap():
+    rec = _build_many([_presence()], tier="regional")
+    assert rec["yield"]["expected_kg_ha"] is None and rec["yield"]["interval"] == [None, None]
+    assert rec["yield"]["n_trials"] == 40 and rec["yield"]["n_sites"] == 1
+    assert rec["varieties"] == []                       # no variety carries a number
+    assert rec["trust"]["level"] == "low" and rec["fit"]["relative_yield_pct"] is None
+    gaps = rec["trust"]["data_gaps"]
+    assert {"no_measured_yield", "regional_evidence_only", "no_expected_yield"} <= set(gaps)
+    assert "low_trial_count" not in gaps                # 40 trials: the count is real, the number is not
+    ev = rec["evidence"]
+    assert (ev["tier"], ev["trial_count"], ev["sources"], ev["years"]) == ("regional", 40, ["BSL"], [2016, 2020])
+
+
+def test_measured_regional_recommendation_has_no_presence_gap():
+    assert "no_measured_yield" not in _build_many([_tv()], tier="regional")["trust"]["data_gaps"]
+
+
+def test_presence_only_ranks_after_regional_recs_with_a_number_and_after_field_recs():
+    field = _build_many([_tv(mean_yield_kg_ha=4500.0)])
+    measured = _build_many([_tv(numeric_yield_count=3)], tier="regional")
+    presence = _build_many([_presence(trial_count=900)], tier="regional")   # many trials, no number
+    for rec, eppo in ((field, "A"), (measured, "B"), (presence, "C")):
+        rec["crop"]["eppo"] = eppo
+    assert [x["crop"]["eppo"] for x in r.rank_recommendations([presence, measured, field])] == ["A", "B", "C"]

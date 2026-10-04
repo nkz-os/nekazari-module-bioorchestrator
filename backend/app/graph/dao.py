@@ -357,6 +357,26 @@ def _numeric_trials(v: dict) -> int:
     return int(v.get("numeric_yield_count") or 0)
 
 
+def _crop_matches_label(crop: str, eppo: str | None, scientific: str | None) -> bool:
+    """``_CROP_MATCH_PREDICATE`` over one distinct (cropEppo, cropScientific) label."""
+    return eppo == crop or (scientific is not None
+                            and (crop in scientific or scientific.lower() == crop.lower()))
+
+
+def _presence_variety(info: dict) -> dict:
+    """The single ranked-variety row of a crop whose evidence is presence only: trials, no number."""
+    return {
+        "variety": None, "variety_uri": None, "presence_only": True,
+        "mean_yield_kg_ha": None, "min_yield_kg_ha": None, "max_yield_kg_ha": None,
+        "stddev_yield_kg_ha": None, "numeric_yield_count": 0, "unknown_basis_trial_count": 0,
+        "trial_count": int(info["trial_count"]), "crop_other_purpose_trials": 0,
+        "crop_numeric_trial_count": 0, "trial_years": list(info["years"]),
+        "trial_sites": list(info["sites"]), "source_ids": list(info["sources"]),
+        "irrigation_regimes": [], "production_systems": [], "disease_scores": {},
+        "agronomic_traits": {}, "confidence": None,
+    }
+
+
 def _has_numeric_mean(rows: list[dict]) -> bool:
     return any(v.get("mean_yield_kg_ha") is not None for v in rows)
 
@@ -1979,14 +1999,67 @@ class GraphDAO:
             labels = [(r["eppo"], r["sci"]) async for r in result]
         logger.debug("analog prefilter labels=%d elapsed_s=%.3f", len(labels), time.monotonic() - t0)
 
-        def _matches(crop: str) -> bool:
-            crop_l = crop.lower()
-            return any(
-                eppo == crop or (sci is not None and (crop in sci or sci.lower() == crop_l))
-                for eppo, sci in labels
-            )
+        return {c for c in eppos if any(_crop_matches_label(c, eppo, sci) for eppo, sci in labels)}
 
-        return {c for c in eppos if _matches(c)}
+    async def regional_presence_trials(
+        self,
+        crops: list[str],
+        site_names: list[str],
+        irrigation_uri: str | None = None,
+        purpose: str = ep.MODE_MAIN,
+    ) -> dict[str, dict]:
+        """Crops whose evidence at the aggregate ``site_names`` is presence only (policy rule 7).
+
+        One scan for every crop: the trials of an excluded source (BSL) at the aggregate sites,
+        ranking-eligible, with a yield value or note (extrapolate's eligibility), in the same
+        irrigation regime when ``irrigation_uri`` is given. Per crop (same crop predicate as
+        extrapolate): ``{"trial_count": distinct trials (content key), "years", "sites",
+        "sources"}``. The excluded kg/ha are never read. Crops without such trials are absent;
+        any purpose but ``main`` returns ``{}`` (``evidence_policy.presence_only_applies``).
+        """
+        purpose = ep.check_mode(purpose)
+        if not ep.presence_only_applies(purpose) or not crops or not site_names:
+            return {}
+        t0 = time.monotonic()
+        async with self._driver.session() as session:
+            result = await session.run(
+                f"""
+                MATCH (ts:TrialSite)
+                WHERE ts.name IN $site_names
+                MATCH (vt:VarietyTrial)-[:TRIAL_AT]->(ts)
+                WHERE (vt.yieldKgHa IS NOT NULL OR vt.yieldNoteS1 IS NOT NULL)
+                  AND {RANKING_ELIGIBLE_PREDICATE}
+                  AND ($irrigation_uri IS NULL OR vt.irrigationRegime = $irrigation_uri)
+                  AND any(c IN $crops WHERE vt.cropEppo = c OR vt.cropScientific CONTAINS c
+                          OR toLower(vt.cropScientific) = toLower(c))
+                  {ep.cypher_presence_prefilter()}
+                {ep.cypher_row_policy(purpose)}
+                {ep.cypher_presence_gate().rstrip()}
+                WITH vt, collect(DISTINCT ts.name) AS sites
+                WITH vt.cropEppo AS eppo, vt.cropScientific AS sci, vt.year AS year,
+                     vt.source_id AS source, sites, {ep.cypher_content_key("vt")} AS ck
+                RETURN eppo, sci, count(DISTINCT ck) AS n, collect(DISTINCT year) AS years,
+                       collect(DISTINCT source) AS sources, collect(sites) AS site_lists
+                """,
+                site_names=list(site_names),
+                crops=list(crops),
+                irrigation_uri=irrigation_uri,
+            )
+            labels = [dict(r) async for r in result]
+        out: dict[str, dict] = {}
+        for crop in dict.fromkeys(crops):
+            matched = [r for r in labels if _crop_matches_label(crop, r["eppo"], r["sci"])]
+            if not matched:
+                continue
+            out[crop] = {
+                "trial_count": sum(int(r["n"]) for r in matched),
+                "years": sorted({y for r in matched for y in r["years"] if y is not None}),
+                "sites": sorted({n for r in matched for sl in r["site_lists"] for n in sl}),
+                "sources": sorted({x for r in matched for x in r["sources"] if x}),
+            }
+        logger.debug("presence labels=%d crops=%d elapsed_s=%.3f", len(labels), len(out),
+                     time.monotonic() - t0)
+        return out
 
     async def _soil_gate(self, crop: str, parcel_id: str | None, tenant_id: str) -> dict:
         """Grade a crop against a parcel's REAL soil (C.5 soil-suitability gate).
@@ -3929,6 +4002,10 @@ class GraphDAO:
                             varieties = regional_rows[:5]
                             tier = ep.EVIDENCE_TIER_REGIONAL
                             similarity = "koppen"
+                        if not varieties and eppo in presence:
+                            varieties = [_presence_variety(presence[eppo])]
+                            tier = ep.EVIDENCE_TIER_REGIONAL
+                            similarity = "koppen"
                         if not varieties:
                             return None
                         # Best variety = highest mean among those with enough trials;
@@ -4019,6 +4096,26 @@ class GraphDAO:
             # can possibly produce a recommendation.
             if v2_vector_ok and koppen_ok is not None and any(e not in koppen_ok for e in all_eppos):
                 await _v2()
+            # Crops with no evidence at either tier whose only evidence is presence (excluded-source
+            # trials, e.g. BSL, at the climate's aggregate sites): one batched scan, main mode only.
+            # They are reported as regional recommendations with no yield (policy rule 7).
+            presence: dict[str, dict] = {}
+            if regional_sites and ep.presence_only_applies(purpose):
+                has_evidence = (koppen_ok or set()) | (v2_state.get("ok") or set()) | regional_ok
+                presence_candidates = [e for e in all_eppos if e not in has_evidence]
+                if presence_candidates:
+                    t_pres = time.monotonic()
+                    try:
+                        presence = await self.regional_presence_trials(
+                            presence_candidates, [s["name"] for s in regional_sites],
+                            irrigation_uri=irrigation_uri, purpose=purpose,
+                        )
+                    except Exception as e:  # noqa: BLE001
+                        logger.warning("recommend: presence evidence failed (%s); skipped",
+                                       type(e).__name__)
+                        degraded = True
+                    logger.debug("recommend stage=presence crops=%d with_presence=%d elapsed_s=%.3f",
+                                 len(presence_candidates), len(presence), time.monotonic() - t_pres)
             # The crop cap applies to the crops that can produce a recommendation
             # (analog trials under Köppen or v2); skipped crops cost nothing. When a
             # prefilter is unavailable the cap falls back to the catalog head.
@@ -4028,7 +4125,8 @@ class GraphDAO:
                 field_capable = [e for e in all_eppos
                                  if e in koppen_ok or e in (v2_state.get("ok") or ())]
                 regional_only = [e for e in all_eppos if e in regional_ok and e not in set(field_capable)]
-                candidates = (field_capable + regional_only)[:_RECOMMEND_MAX_CROPS]
+                presence_only = [e for e in all_eppos if e in presence]
+                candidates = (field_capable + regional_only + presence_only)[:_RECOMMEND_MAX_CROPS]
             candidate_set = set(candidates)
             crop_entries = [c for c in crop_entries if c["eppo_code"] in candidate_set]
             t_med = time.monotonic()
@@ -4086,7 +4184,7 @@ class GraphDAO:
             if koppen_ok is None or ("ok" in v2_state and v2_state["ok"] is None):
                 with_analogs: int | None = None  # a prefilter was unavailable: count unknown
             else:
-                with_analogs = len(koppen_ok | (v2_state.get("ok") or set()) | regional_ok)
+                with_analogs = len(koppen_ok | (v2_state.get("ok") or set()) | regional_ok | set(presence))
             echo = {**{k: v for k, v in cond.items() if k != "climate_detail"}, "purpose": purpose}
             response = {
                 "status": "ok",

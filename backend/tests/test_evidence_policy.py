@@ -579,3 +579,28 @@ def test_yield_basis_names_the_unit_of_the_reported_numbers():
     assert ep.yield_basis("main") is None and ep.yield_basis() is None
     with pytest.raises(ValueError):
         ep.yield_basis("grain")
+
+
+# ── presence-only evidence (rule 7) ──────────────────────────────────────────
+def test_presence_only_applies_to_the_main_mode_only():
+    assert ep.presence_only_applies("main") is True and ep.presence_only_applies("forage") is False
+    with pytest.raises(ValueError):
+        ep.presence_only_applies("grain")
+
+
+@pytest.mark.parametrize("trial,site,mode,expected", [
+    ({"source_id": "BSL", "aggregationScope": "regional", "yieldKgHa": 9500.0}, "BSL Deutschland Cfb", "main", True),
+    ({"source_id": "X", "dataSource": "bsa", "aggregationScope": "national"}, "Bundesweit", "main", True),
+    ({"source_id": "BSL", "aggregationScope": "regional"}, "BSL Deutschland Cfb", "forage", False),
+    ({"source_id": "AHDB", "aggregationScope": "national", "yieldKgHa": 5000.0}, "UK national list", "main", False),
+    ({"source_id": "BSL", "aggregationScope": "site"}, "Cadreita", "main", False),          # a field row
+    ({"source_id": "BSL", "aggregationScope": "regional", "yieldMetric": "forage_dry_matter_kg_ha"},
+     "BSL Deutschland Cfb", "main", False),                                                  # off-purpose
+])
+def test_is_presence_only_evidence(trial, site, mode, expected):
+    assert ep.is_presence_only_evidence(trial, site, mode) is expected
+
+
+def test_presence_gate_and_prefilter_fragments():
+    assert ep.cypher_presence_gate() == "WHERE ep_tier = 'regional' AND ep_in_mode AND ep_excluded\n"
+    assert ep.cypher_presence_prefilter("t") == "AND " + ep.cypher_excluded_source("t")

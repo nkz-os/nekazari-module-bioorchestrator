@@ -78,6 +78,13 @@ _TRIALS = [
     # in forage mode the field rows (unknown basis) must still win over it.
     _t("SETIT", "S2", ["UK national list"], 5000.0, source_id="AHDB", yieldBasis="dry_matter",
        qualityParams=_FORAGE_QP),
+    # Presence only: SECCE has two distinct BSL trials (one re-ingested twin) and BRSNN one BSL
+    # trial with a note and no kg, all at the aggregate container; no field or regional number.
+    _t("SECCE", "R1", ["BSL Deutschland Cfb"], 3000.0, source_id="BSL", aggregationScope="regional",
+       key="r1-twin"),
+    _t("SECCE", "R2", ["BSL Deutschland Cfb"], 2500.0, source_id="BSL", aggregationScope="regional"),
+    _t("BRSNN", "B1", ["BSL Deutschland Cfb"], None, source_id="BSL", aggregationScope="regional",
+       yieldNoteS1="7"),
     # CPSAN: eight varieties with one trial each at an aggregate site of another climate.
     *[_t("CPSAN", f"C{i}", ["Poland (national average)"], 40000.0 + i, source_id="NATIONAL")
       for i in range(8)],
@@ -220,6 +227,25 @@ def test_regional_numeric_trial_count_is_exact_under_a_top_n_cut(dao):
     assert single["ranked_varieties"] == capped
 
 
+# ── presence-only evidence ───────────────────────────────────────────────────
+
+def test_presence_scan_counts_distinct_excluded_source_trials_at_aggregate_sites(dao):
+    out = _run(dao.regional_presence_trials(_CROPS + ["BRSNN"], _AGG))
+    assert set(out) == {"TRZAX", "SECCE", "BRSNN"}  # BSL only: LYPES (AHDB) and the rest are not presence
+    assert out["SECCE"] == {"trial_count": 2, "years": [2020], "sites": ["BSL Deutschland Cfb"],
+                            "sources": ["BSL"]}  # the re-ingested twin counts once
+    assert out["BRSNN"]["trial_count"] == 1 and out["TRZAX"]["trial_count"] == 1  # note-only counts too
+    assert _run(dao.regional_presence_trials(["SECCE"], _FIELD)) == {}  # field sites are never presence
+    assert _run(dao.regional_presence_trials(["SECCE"], _AGG, purpose="forage")) == {}  # main mode only
+    assert _run(dao.regional_presence_trials(["SECCE"], _AGG, irrigation_uri="uri:secano")) == {}
+    assert _run(dao.regional_presence_trials([], _AGG)) == {} and _run(dao.regional_presence_trials(["SECCE"], [])) == {}
+
+
+def test_regional_numeric_tier_still_ignores_bsl_kg(dao):
+    out = _run(dao.extrapolate_varieties_batch(["SECCE", "BRSNN"], _AGG_SITES, tier="regional"))
+    assert out == {"SECCE": [], "BRSNN": []}  # presence is not a numeric aggregate
+
+
 # ── per-crop == batch, and the prefilter agrees with both ────────────────────
 
 @pytest.mark.parametrize("purpose,tier,sites", [
@@ -298,9 +324,9 @@ def test_recommend_main_field_before_regional_with_honest_numbers(dao):
     out = _recommend(dao)
     recs = {r["crop"]["eppo"]: r for r in out["recommendations"]}
     assert out["evidence_policy"] == ep.POLICY_VERSION and out["conditions"]["purpose"] == "main"
-    # SECCE: BSL only; SETIT: forage only; AVESA: regional scope at a field-named site, which
-    # no production trial does, is outside both site sets.
-    assert set(recs) == {"TRZAX", "ZEAMX", "HORVX", "LYPES"}
+    # SECCE and BRSNN: BSL only (presence); SETIT: forage only; AVESA: regional scope at a
+    # field-named site, which no production trial does, is outside both site sets.
+    assert set(recs) == {"TRZAX", "ZEAMX", "HORVX", "LYPES", "SECCE", "BRSNN"}
     trz = recs["TRZAX"]
     assert trz["evidence"]["tier"] == "field" and trz["yield"]["expected_kg_ha"] == 7000.0
     assert trz["evidence"]["regional_trial_count"] == 0
@@ -313,6 +339,23 @@ def test_recommend_main_field_before_regional_with_honest_numbers(dao):
     assert recs["HORVX"]["yield"]["expected_kg_ha"] is None  # presence only: null, never 0
     tiers = [r["evidence"]["tier"] for r in out["recommendations"]]
     assert tiers == sorted(tiers, key=lambda t: t == "regional")  # field recs first
+    # BSL-only crops: regional, no number (the BSL kg are never read), distinct trials, own gap
+    for eppo, n in (("SECCE", 2), ("BRSNN", 1)):
+        pres = recs[eppo]
+        assert pres["evidence"]["tier"] == "regional" and pres["trust"]["level"] == "low"
+        assert pres["yield"]["expected_kg_ha"] is None and pres["yield"]["interval"] == [None, None]
+        assert pres["yield"]["n_trials"] == n and pres["varieties"] == []
+        assert pres["evidence"]["sites"] == ["BSL Deutschland Cfb"] and pres["evidence"]["sources"] == ["BSL"]
+        assert {"no_measured_yield", "regional_evidence_only"} <= set(pres["trust"]["data_gaps"])
+    assert [r["crop"]["eppo"] for r in out["recommendations"]][-2:] == ["SECCE", "BRSNN"]  # after LYPES, more trials first
+    assert out["data_quality"]["crops_with_analog_trials"] == 6
+
+
+def test_recommend_has_no_presence_recs_in_forage_mode_or_with_an_irrigation_filter(dao):
+    forage = {r["crop"]["eppo"] for r in _recommend(dao, purpose="forage")["recommendations"]}
+    assert not forage & {"SECCE", "BRSNN"}
+    secano = {r["crop"]["eppo"] for r in _recommend(dao, irrigation_regime="secano")["recommendations"]}
+    assert not secano & {"SECCE", "BRSNN"}  # BSL carries no irrigation regime: it cannot match one
 
 
 def test_recommend_forage_mode(dao):

@@ -20,6 +20,12 @@ Evidence policy contract (additions of the evidence-policy change; the rules liv
   average is not comparable to the field-trial reference), ``fit.reference.scope`` =
   ``regional`` and a null median. Ranking: ``field`` before ``regional``, then the former
   order (blockers, relative yield, trials, crop code).
+- Presence-only recommendation (main mode): a crop with no numeric evidence at either tier, whose
+  only evidence is trials of an excluded source (BSL) at the climate's aggregate sites, is
+  returned with ``evidence.tier`` ``regional``, ``yield.expected_kg_ha`` null (the excluded kg/ha
+  are never read), ``yield.n_trials`` = distinct such trials, no ``varieties``, trust ``low`` and
+  the data gaps ``no_measured_yield`` (new) + ``regional_evidence_only`` + ``no_expected_yield``.
+  It ranks after the regional recommendations that have a number.
 - ``evidence.regional_trial_count``: distinct numeric regional trials of a ``field`` crop at
   the climate's aggregate sites (supplementary; in no number). null when not computed.
 - ``evidence.other_purpose_trials``: main mode ``{"forage": N}`` — distinct forage trials of
@@ -127,7 +133,10 @@ def rank_recommendations(recs: list[dict]) -> list[dict]:
         rel = rec["fit"]["relative_yield_pct"]
         # Field evidence first, then regional; within a tier the former order.
         regional = rec.get("evidence", {}).get("tier") == ep.EVIDENCE_TIER_REGIONAL
-        return (regional, count_blockers(rec), rel is None, -(rel or 0.0),
+        # ... and a regional recommendation with a measured yield before one without (its trial
+        # count says how often the crop was tested, not how well it did).
+        no_number = regional and rec["yield"]["expected_kg_ha"] is None
+        return (regional, no_number, count_blockers(rec), rel is None, -(rel or 0.0),
                 -rec["yield"]["n_trials"], rec["crop"]["eppo"])
     return sorted(recs, key=key)
 
@@ -154,11 +163,16 @@ def build_recommendation(*, eppo, scientific_name, conditions, varieties, refere
     best = varieties[0]
     regional = tier == ep.EVIDENCE_TIER_REGIONAL
     forage = purpose == ep.MODE_FORAGE
+    # Presence only: the crop's regional evidence is trials of an excluded source (BSL), counted
+    # and never read for a number.
+    presence_only = bool(best.get("presence_only"))
     # Numeric trials only: a trial without a yield value backs no yield figure.
     n_numeric = int(best.get("numeric_yield_count") or 0)
     unknown_basis = int(best.get("unknown_basis_trial_count") or 0)
     # Forage trials whose basis is unknown carry kg but no comparable number: report how many.
     n_trials = n_numeric if (n_numeric or not forage) else unknown_basis
+    if presence_only:
+        n_trials = int(best.get("trial_count") or 0)
     expected = best.get("mean_yield_kg_ha")
     if regional:
         # A registry average is not comparable to the field-trial reference median.
@@ -171,6 +185,8 @@ def build_recommendation(*, eppo, scientific_name, conditions, varieties, refere
     gaps = [g for g in (rel_gap, cv_gap) if g] + list(data_gaps_extra)
     if regional:
         gaps.append("regional_evidence_only")
+    if presence_only:
+        gaps.append("no_measured_yield")
     if forage and expected is None and unknown_basis:
         gaps.append("forage_basis_unknown")
     if n_trials < LOW_TRIAL_COUNT:
@@ -214,7 +230,7 @@ def build_recommendation(*, eppo, scientific_name, conditions, varieties, refere
              "interval": [v.get("min_yield_kg_ha"), v.get("max_yield_kg_ha")],
              "n_trials": int(v.get("numeric_yield_count") or 0),
              "disease_summary": disease_summary(v.get("disease_scores") or {})}
-            for v in varieties[:5]
+            for v in varieties[:5] if not v.get("presence_only")
         ],
         # trial_count = all trials (numeric or not) of the listed varieties;
         # years is null when no trial year is known.

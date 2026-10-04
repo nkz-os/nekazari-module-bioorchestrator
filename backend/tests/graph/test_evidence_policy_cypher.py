@@ -152,7 +152,8 @@ def test_row_policy_columns_match_python(driver, mode):
         MATCH (vt:VarietyTrial)-[:TRIAL_AT]->(ts:TrialSite)
         {ep.cypher_row_policy(mode)}
         RETURN vt.i AS i, ep_tier, ep_in_mode, ep_other, ep_y, ep_unconv, ep_excluded,
-               {ep.cypher_numeric_candidate("vt")} AS candidate
+               {ep.cypher_numeric_candidate("vt")} AS candidate,
+               ({ep.cypher_presence_gate_expr()}) AS presence
         ORDER BY i
         """,
     ))
@@ -166,6 +167,8 @@ def test_row_policy_columns_match_python(driver, mode):
         assert row["ep_other"] is ep.is_other_purpose_evidence(t, mode), t
         assert row["ep_unconv"] is ep.has_unconverted_kg(t, mode), t
         assert row["ep_excluded"] is ep.is_excluded_source(t.get("source_id"), t.get("dataSource")), t
+        if mode == "main":  # presence-only evidence is a main-mode notion (the DAO returns {} otherwise)
+            assert row["presence"] is ep.is_presence_only_evidence(t, site, mode), t
         # the cheap WHERE predicate is a necessary condition of a policy yield (a query that
         # applies it first can never drop a number) and equals it in the main mode
         assert row["candidate"] is (t.get("yieldKgHa") is not None and not row["ep_excluded"]), t
@@ -178,6 +181,8 @@ def test_row_policy_columns_match_python(driver, mode):
             assert row["ep_y"] is None, t
         else:
             assert row["ep_y"] == pytest.approx(expected), t
+    if mode == "main":
+        assert {r["presence"] for r in rows} == {True, False}
     # both tiers, and yields / non-yields / unconverted kg occur among the rows
     assert {r["ep_tier"] for r in rows} == {"field", "regional"}
     assert {r["ep_y"] is None for r in rows} == {True, False}

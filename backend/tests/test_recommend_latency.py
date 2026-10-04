@@ -706,6 +706,64 @@ async def test_forage_unknown_basis_field_rows_survive_the_v2_fallback(hybrid):
     assert "forage_basis_unknown" in rec["trust"]["data_gaps"]
 
 
+def _presence_info(n=40):
+    return {"trial_count": n, "years": [2016, 2020], "sites": ["BSL container"], "sources": ["BSL"]}
+
+
+async def _recommend_presence(conds, crops, extrap, field_ok, regional_ok, presence):
+    """``_recommend_tiers`` with the presence scan stubbed; returns the answer and the scan's calls."""
+    calls = []
+
+    async def scan(self_, crop_list, site_names, **kw):
+        calls.append((list(crop_list), list(site_names), kw))
+        if isinstance(presence, Exception):
+            raise presence
+        return {c: v for c, v in presence.items() if c in crop_list}
+
+    sites = AsyncMock(return_value=[_FIELD_SITE, _AGG_SITE])
+    dao, p = _run_with(conds, crops, extrap, sites)
+    pf = patch.object(GraphDAO, "_crops_with_analog_trials", _tier_prefilter(field_ok, regional_ok))
+    with p[0], p[1], p[2], p[3], p[4], p[5], pf, patch.object(GraphDAO, "regional_presence_trials", scan):
+        return await dao.recommend_for_conditions(conds), calls
+
+
+async def test_presence_only_crops_are_regional_recs_without_a_number():
+    extrap = _by_tier_extrap(field={"TRZAX": [_variety(5500.0, 12)]}, regional={"LYPES": [_variety(50000.0, 5)]})
+    out, calls = await _recommend_presence(
+        _conds(), ["SECCE", "TRZAX", "LYPES"], extrap, {"TRZAX"}, {"LYPES"}, {"SECCE": _presence_info()})
+    # one scan, only for the crops with no evidence at either tier, over the aggregate sites
+    assert len(calls) == 1 and calls[0][0] == ["SECCE"] and calls[0][1] == ["UK national list"]
+    assert calls[0][2] == {"irrigation_uri": None, "purpose": "main"}
+    recs = {r["crop"]["eppo"]: r for r in out["recommendations"]}
+    sec = recs["SECCE"]
+    assert sec["evidence"]["tier"] == "regional" and sec["yield"]["expected_kg_ha"] is None
+    assert sec["yield"]["n_trials"] == 40 and sec["varieties"] == [] and sec["trust"]["level"] == "low"
+    assert "no_measured_yield" in sec["trust"]["data_gaps"]
+    assert [r["crop"]["eppo"] for r in out["recommendations"]] == ["TRZAX", "LYPES", "SECCE"]
+    assert out["data_quality"]["crops_with_analog_trials"] == 3
+
+
+async def test_presence_scan_is_main_mode_only_and_failures_degrade():
+    extrap = _by_tier_extrap(field={}, regional={})
+    out, calls = await _recommend_presence(
+        _conds(purpose="forage"), ["SECCE"], extrap, set(), set(), {"SECCE": _presence_info()})
+    assert calls == [] and out["recommendations"] == []
+    dao_mod._RECOMMEND_CACHE.clear()
+    out, calls = await _recommend_presence(
+        _conds(), ["SECCE", "TRZAX"], _by_tier_extrap(field={"TRZAX": [_variety()]}, regional={}),
+        {"TRZAX"}, set(), RuntimeError("neo4j hiccup"))
+    assert len(calls) == 1 and [r["crop"]["eppo"] for r in out["recommendations"]] == ["TRZAX"]
+    assert not dao_mod._RECOMMEND_CACHE  # a degraded answer is never pinned
+
+
+async def test_presence_only_crops_come_last_under_the_cap(monkeypatch):
+    monkeypatch.setattr(dao_mod, "_RECOMMEND_MAX_CROPS", 2)
+    extrap = _by_tier_extrap(field={"FLD1": [_variety()]}, regional={"REG1": [_variety()]})
+    out, _ = await _recommend_presence(
+        _conds(), ["PRES1", "REG1", "FLD1"], extrap, {"FLD1"}, {"REG1"}, {"PRES1": _presence_info()})
+    assert sorted(r["crop"]["eppo"] for r in out["recommendations"]) == ["FLD1", "REG1"]
+
+
 async def test_regional_failure_keeps_field_answer_and_is_not_cached():
     calls = []
 
