@@ -169,6 +169,9 @@ describe('lensAvailability', () => {
     expect(lensAvailability([rec('A', { window: true })], { A: 150 }))
       .toEqual({ fit: true, calendar: true, rotation: true, euros: true });
     expect(lensAvailability([rec('A')], { B: 150 }).euros).toBe(false);
+    const typical = rec('A');
+    typical.season = { ...typical.season, typical_sowing_doy: 304, typical_maturity_doy: 190 };
+    expect(lensAvailability([typical], {}).calendar).toBe(true);
     expect(lensAvailability([], {})).toEqual({ fit: true, calendar: false, rotation: true, euros: false });
   });
 });

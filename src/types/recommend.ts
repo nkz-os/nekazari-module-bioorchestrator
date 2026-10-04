@@ -46,6 +46,12 @@ export interface Recommendation {
     sowing_window: { start_month: number; end_month: number } | null;
     cycle_days: number | null;
     source: string | null;
+    /** Typical sowing day of year (GGCMI crop calendar); set only when sowing_window is null. */
+    typical_sowing_doy?: number | null;
+    /** Typical maturity day of year (GGCMI crop calendar). */
+    typical_maturity_doy?: number | null;
+    /** True when an irrigated parcel shows the rainfed GGCMI calendar (no irrigated value there). */
+    typical_rainfed_fallback?: boolean | null;
   };
   trust: { level: TrustLevel; data_gaps: string[]; similarity: Similarity };
   varieties: VarietyRec[];

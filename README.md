@@ -268,6 +268,7 @@ Full i18n support in **6 languages**: English, Spanish, Basque, French, Portugue
 | **IkerKeta** | ETL pipeline | All initial graph seeding |
 | **Neo4j (internal)** | Knowledge graph | Variety trials, parameters |
 | **Orion-LD (internal)** | NGSI-LD context broker | Entity state |
+| **GGCMI Phase 3 crop calendar** v1.01 (Jägermeyr et al. 2021, [doi:10.5281/zenodo.5062513](https://doi.org/10.5281/zenodo.5062513), CC BY 4.0) | Typical sowing/maturity day per crop, 0.5° grid | What to sow: typical sowing calendar at the parcel (`backend/data/ggcmi_calendar_europe.json`, built by `backend/scripts/build_ggcmi_calendar.py`) |
 
 ---
 

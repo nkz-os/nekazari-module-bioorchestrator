@@ -6,8 +6,10 @@ import type { Recommendation } from '../../types/recommend';
 import { useCropName } from './RecommendationCard';
 import { compareRows, grossIncome, levelKey, type LevelKind } from './viewModel';
 import {
-  barPct, fmtCell, loadPrice, monthSegments, parsePrice, rotationSummary, savePrice, type RotationSummary,
+  barPct, fmtCell, formatDoy, loadPrice, monthSegments, parsePrice, rotationSummary, savePrice, typicalCalendar,
+  type RotationSummary,
 } from './compareModel';
+import { useExpertMode } from './expertModeContext';
 
 const MONTHS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] as const;
 const BAR_ROWS = new Set(['expectedYield']);
@@ -77,27 +79,58 @@ function FitLens({ recs }: { recs: Recommendation[] }) {
 }
 
 function CalendarRow({ rec }: { rec: Recommendation }) {
-  const { t } = useTranslation('bioorchestrator');
+  const { t, i18n } = useTranslation('bioorchestrator');
+  const { expert } = useExpertMode();
   const name = useCropName(rec);
   const segments = monthSegments(rec.season.sowing_window);
+  const typical = typicalCalendar(rec.season);
   const cycle = rec.season.cycle_days;
   return (
     <div className="grid grid-cols-1 md:grid-cols-4 gap-2 items-center py-2 border-b border-nkz-border">
       <span className="text-nkz-sm font-medium text-nkz-text-primary">{name}</span>
       <div className="md:col-span-3">
-        {segments.length > 0 ? (
+        {segments.length > 0 && (
           <div className="relative h-3 w-full rounded-full bg-nkz-surface-sunken overflow-hidden" aria-hidden>
             {segments.map((s) => (
               <div key={s.leftPct} className="absolute top-0 h-full bg-nkz-accent-base"
                 style={{ left: `${s.leftPct}%`, width: `${s.widthPct}%` }} />
             ))}
           </div>
-        ) : (
+        )}
+        {segments.length === 0 && typical && (
+          <>
+            <div className="relative h-3 w-full rounded-full bg-nkz-surface-sunken overflow-hidden" aria-hidden>
+              {typical.segments.map((s) => (
+                <div key={s.leftPct} className="absolute top-0 h-full bg-nkz-accent-base opacity-60"
+                  style={{ left: `${s.leftPct}%`, width: `${s.widthPct}%` }} />
+              ))}
+              <div className="absolute top-0 h-full w-1 bg-nkz-text-primary"
+                style={{ left: `${typical.markerPct}%` }} />
+            </div>
+            <p className="text-nkz-xs text-nkz-text-secondary mt-1">
+              {typical.maturityDoy != null
+                ? t('whatToSow.compare.calendar.typical', {
+                  sow: formatDoy(typical.sowingDoy, i18n.language),
+                  harvest: formatDoy(typical.maturityDoy, i18n.language),
+                })
+                : t('whatToSow.compare.calendar.typicalSowOnly', { sow: formatDoy(typical.sowingDoy, i18n.language) })}
+              {expert && rec.season.typical_rainfed_fallback && (
+                <> {t('whatToSow.compare.calendar.rainfedData')}</>
+              )}
+            </p>
+          </>
+        )}
+        {segments.length === 0 && !typical && (
           <span className="text-nkz-sm text-nkz-text-muted">{t('whatToSow.compare.calendar.none')}</span>
         )}
         <p className="text-nkz-xs text-nkz-text-muted mt-1">
           {cycle != null ? t('whatToSow.compare.calendar.cycle', { days: cycle }) : t('whatToSow.compare.calendar.noCycle')}
         </p>
+        {expert && typical && rec.season.source && (
+          <p className="text-nkz-xs text-nkz-text-muted">
+            {t('whatToSow.compare.calendar.source', { source: rec.season.source })}
+          </p>
+        )}
       </div>
     </div>
   );
@@ -105,7 +138,7 @@ function CalendarRow({ rec }: { rec: Recommendation }) {
 
 function CalendarLens({ recs }: { recs: Recommendation[] }) {
   const { t } = useTranslation('bioorchestrator');
-  const anyWindow = recs.some((r) => monthSegments(r.season.sowing_window).length > 0);
+  const anyWindow = recs.some((r) => monthSegments(r.season.sowing_window).length > 0 || typicalCalendar(r.season) != null);
   return (
     <Stack gap="stack">
       {!anyWindow && (

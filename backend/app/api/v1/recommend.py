@@ -221,6 +221,11 @@ async def recommend_for_parcel(
         "frost_margin_c": frost_margin_c,
         "country": env.get("country"),
     }
+    centroid = env.get("centroid") or {}
+    if centroid.get("lat") is not None and centroid.get("lon") is not None:
+        # The parcel point selects the GGCMI crop calendar cell (typical sowing day).
+        # Added only when known, so a pointless parcel keys and ids like the conditions route.
+        conditions["lat"], conditions["lon"] = centroid["lat"], centroid["lon"]
     for key in _CLIMATE_KEYS:
         conditions[key] = detail.get(key)
     result = await dao.recommend_for_conditions(conditions)
