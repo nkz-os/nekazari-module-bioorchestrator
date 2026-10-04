@@ -37,17 +37,30 @@ Rules (owner decisions 2026-10-04):
    cited source-level rule (``FORAGE_BASIS_SOURCE_RULES``) — never from a dry-matter %
    or from magnitude. A dry-matter % in ``qualityParams`` only converts a fresh-matter
    yield to dry matter. Unknown-basis forage yields are never averaged with known-basis
-   ones.
+   ones: numeric forage aggregates take ``is_forage_numeric_evidence`` (forage-eligible
+   AND convertible to kg dry matter/ha, value ``forage_dm_yield``), never the bare
+   forage-mode eligibility, which says only that the record is forage from a measured
+   source and is what counts and presence use.
 4. **Site kind.** A (trial, site) row is *field* evidence only when the trial's
    ``aggregationScope`` is ``'site'`` (or absent) and the site is not an aggregate
    pseudo-site (national/regional registries, "average of N locations", zones, unknown
    or empty names). Aggregate evidence is shown apart, never mixed with field evidence.
 5. **Content dedup.** Trials with identical observed content — crop, normalized variety,
-   year, yield (kg/ha and note), irrigation regime, production system and the set of
-   linked site names — are one observation, whatever their ``mergeKey``.
+   year, yield (kg/ha and note), irrigation regime, production system, rootstock, scion,
+   training system, planting year, planting density, crop cycle and the set of linked
+   site names — are one observation, whatever their ``mergeKey``. The orchard fields keep
+   perennial-crop trials that differ only in rootstock, density or cycle distinct.
 
 Explicit properties written by ingestion (``yieldBasis`` today; ``siteKind`` and a
 grain/forage ``yieldMetric`` vocabulary later) are read first, here; callers do not change.
+
+Cost on hot paths: the Cypher fragments run once per trial row. The purpose, basis and
+dry-matter fragments scan the ``qualityParams`` text, and ``cypher_content_key`` runs a
+per-trial relationship expand (``COLLECT``). Put the cheap filters first (``yieldKgHa IS
+NOT NULL``, crop, source), then the policy predicates, and build the dedup key last on the
+rows that survive. Measure any per-request query that would evaluate them over the whole
+graph; if latency requires it, have ingestion write the answer as a property (the policy
+already reads ``yieldBasis`` first).
 """
 from __future__ import annotations
 
@@ -120,6 +133,10 @@ CROP_FAMILY_FORAGE = "forage"
 CROP_FAMILY_FRESH = "fresh"
 CROP_FAMILY_OTHER = "other"
 CROP_FAMILIES: Mapping[str, frozenset[str]] = {
+    # ASSUMPTION: VICSA (common vetch), VICNA (narbonne vetch) and SETIT (foxtail millet / moha)
+    # are listed as grain although they are often grown for forage; their forage records are
+    # still routed to forage by the record evidence, and the family only drives labels and the
+    # grain-only backtest — confirm before relying on it elsewhere.
     # cereals, pseudo-cereals, grain legumes, oilseeds
     CROP_FAMILY_GRAIN: frozenset({
         "TRZAX", "TRZDU", "TRZAW", "TRZSP", "HORVX", "ZEAMX", "ZEAMA", "SECCE", "TTLSS",
@@ -139,6 +156,9 @@ CROP_FAMILIES: Mapping[str, frozenset[str]] = {
         "MABSD", "PYUCO", "VITVI",
     }),
     # nuts, olive, tubers, roots, industrial crops (and any unmapped code)
+    # ASSUMPTION: OLVEU (olive), PRNDU (almond) and SOLTU (potato) are "other": their main
+    # product (fruit, kernel, tuber) is neither grain nor fresh produce, and the family is
+    # metadata only — confirm before relying on it elsewhere.
     CROP_FAMILY_OTHER: frozenset({"PRNDU", "PIAVE", "OLVEU", "SOLTU", "BEAVX", "CNISA"}),
 }
 
@@ -289,13 +309,25 @@ def crop_family(crop_eppo: str | None) -> str:
 
 
 def is_numeric_yield_eligible(trial: Mapping[str, Any], mode: str = MODE_MAIN) -> bool:
-    """May this trial's ``yieldKgHa`` enter a numeric aggregate of ``mode``? (graph property names)
+    """Source and purpose gate for ``mode`` (graph property names): not an excluded source and
+    the purpose fits the mode.
 
-    Forage mode additionally needs a known basis before averaging (``forage_basis``).
+    It checks nothing about the forage basis, so in forage mode it only says the record is
+    forage evidence (use it for counts and presence). A numeric forage aggregate must use
+    ``is_forage_numeric_evidence``, which also needs a kg dry-matter value.
     """
     if is_excluded_source(trial.get("source_id"), trial.get("dataSource")):
         return False
     return in_purpose_mode(yield_purpose(trial.get("yieldMetric"), trial.get("qualityParams")), mode)
+
+
+def is_forage_numeric_evidence(trial: Mapping[str, Any]) -> bool:
+    """Forage-eligible AND convertible to kg dry matter/ha (the value is ``forage_dm_yield``).
+
+    Unknown-basis rows, and fresh-matter rows without a usable DM %, fail it: they count as
+    forage evidence but never contribute a number.
+    """
+    return is_numeric_yield_eligible(trial, MODE_FORAGE) and forage_dm_yield(trial) is not None
 
 
 def is_grain_yield(trial: Mapping[str, Any]) -> bool:
@@ -384,6 +416,14 @@ def is_field_evidence(aggregation_scope: str | None, site_name: str | None) -> b
     return is_field_scope(aggregation_scope) and not is_aggregate_site(site_name)
 
 
+# Trial properties null-coalesced to '' in the dedup key (mirrors the Cypher ``coalesce``):
+# an absent value and an empty one are the same observation, a present one is not.
+CONTENT_KEY_BLANK_DEFAULT_FIELDS: tuple[str, ...] = (
+    "irrigationRegime", "productionSystem",
+    "rootstock", "scion", "trainingSystem", "plantingYear", "plantingDensityTreesHa", "cropCycle",
+)
+
+
 def content_key(trial: Mapping[str, Any], site_names: Iterable[str]) -> tuple:
     """Dedup key of one trial (graph property names); equal keys = one observation."""
     return (
@@ -392,8 +432,7 @@ def content_key(trial: Mapping[str, Any], site_names: Iterable[str]) -> tuple:
         trial.get("year"),
         trial.get("yieldKgHa"),
         trial.get("yieldNoteS1"),
-        trial.get("irrigationRegime") or "",
-        trial.get("productionSystem") or "",
+        *("" if trial.get(f) is None else trial.get(f) for f in CONTENT_KEY_BLANK_DEFAULT_FIELDS),
         tuple(sorted(set(site_names))),
     )
 
@@ -536,6 +575,12 @@ def cypher_forage_dm_yield(vt: str = "vt") -> str:
     )
 
 
+def cypher_forage_numeric_evidence(vt: str = "vt") -> str:
+    """True when the trial is forage-eligible and has a kg dry-matter value (see ``is_forage_numeric_evidence``)."""
+    return (f"({cypher_numeric_yield_eligible(vt, MODE_FORAGE)} "
+            f"AND {cypher_forage_dm_yield(vt)} IS NOT NULL)")
+
+
 def cypher_field_scope(vt: str = "vt") -> str:
     vt = _alias(vt)
     return f"(coalesce(toLower(trim({vt}.aggregationScope)), {_cypher_str(FIELD_SCOPE)}) = {_cypher_str(FIELD_SCOPE)})"
@@ -556,9 +601,10 @@ def cypher_field_evidence(vt: str = "vt", ts: str = "ts") -> str:
 def cypher_content_key(vt: str = "vt") -> str:
     """List expression: group by it to count content-identical trials once."""
     vt = _alias(vt)
+    blanks = ", ".join(f"coalesce({vt}.{f}, '')" for f in CONTENT_KEY_BLANK_DEFAULT_FIELDS)
     return (
         f"[{vt}.cropEppo, {vt}.varietyNormalized, {vt}.year, {vt}.yieldKgHa, {vt}.yieldNoteS1, "
-        f"coalesce({vt}.irrigationRegime, ''), coalesce({vt}.productionSystem, ''), "
+        f"{blanks}, "
         f"COLLECT {{ MATCH ({vt})-[:TRIAL_AT]->(ep_site:TrialSite) "
         f"RETURN DISTINCT ep_site.name AS ep_name ORDER BY ep_name }}]"
     )

@@ -11,7 +11,7 @@ import json
 import pytest
 
 from app.graph import evidence_policy as ep
-from app.ingestion.normalization_registry import canonical_source_id
+from app.ingestion.normalization_registry import _SOURCE_ALIASES, canonical_source_id
 from app.ingestion.trial_site_geo import AGGREGATE_PATTERNS
 
 # ── (a) source policy ────────────────────────────────────────────────────────
@@ -47,6 +47,15 @@ def test_every_excluded_variant_canonicalises_to_bsl():
     for variant in ep.NUMERIC_YIELD_EXCLUDED_SOURCES:
         assert variant == variant.strip().lower()
         assert canonical_source_id(variant) == "BSL"
+
+
+def test_every_bsl_alias_is_an_excluded_source():
+    """Reverse direction: a new BSL alias in the registry cannot slip past the policy."""
+    bsl_aliases = {alias for alias, canon in _SOURCE_ALIASES.items() if canon == "BSL"} | {"bsl"}
+    assert {"bsa", "bsa bundessortenamt", "bundessortenamt", "bsl"} <= bsl_aliases
+    assert bsl_aliases <= ep.NUMERIC_YIELD_EXCLUDED_SOURCES
+    for alias in bsl_aliases:
+        assert ep.is_excluded_source(alias, None) and ep.is_excluded_source(None, alias)
 
 
 # ── (b) purpose ──────────────────────────────────────────────────────────────
@@ -242,6 +251,37 @@ def test_forage_dm_yield_converts_only_known_basis():
     assert ep.forage_dm_yield({**_SILAGE, "yieldKgHa": None}) is None
 
 
+# Mixed forage set: only rows convertible to kg dry matter/ha contribute a number, while
+# every forage-eligible row still counts.
+_FORAGE_MIX = {
+    "dry_matter": {"source_id": "X", "yieldMetric": "forage_dry_matter_kg_ha",
+                   "yieldKgHa": 18000.0, "qualityParams": '{"ms_pct": 21.0, "fnd_pct": 50.0}'},
+    "unknown": {"source_id": "X", "yieldKgHa": 9604.0, "qualityParams": '{"ms_pct": 17.1, "fnd_pct": 66.6}'},
+    "fresh_with_dm": {"source_id": "X", "yieldBasis": "fresh_matter", "yieldKgHa": 60000.0,
+                      "qualityParams": '{"dry_matter_pct": 33.0, "ndf_pct": 40.0}'},
+    "fresh_without_dm": {"source_id": "X", "yieldMetric": "forage_fresh_matter_kg_ha", "yieldKgHa": 50000.0},
+}
+
+
+def test_forage_numeric_evidence_needs_a_convertible_dry_matter_yield():
+    eligible = {k: ep.is_numeric_yield_eligible(t, "forage") for k, t in _FORAGE_MIX.items()}
+    numeric = {k: ep.is_forage_numeric_evidence(t) for k, t in _FORAGE_MIX.items()}
+    assert eligible == dict.fromkeys(_FORAGE_MIX, True)  # counts: all four rows are forage evidence
+    assert numeric == {"dry_matter": True, "unknown": False,
+                       "fresh_with_dm": True, "fresh_without_dm": False}
+    values = [ep.forage_dm_yield(t) for t in _FORAGE_MIX.values() if ep.is_forage_numeric_evidence(t)]
+    assert values == [18000.0, pytest.approx(19800.0)]
+
+
+def test_forage_numeric_evidence_keeps_source_purpose_and_value_gates():
+    dm = _FORAGE_MIX["dry_matter"]
+    assert not ep.is_forage_numeric_evidence({**dm, "source_id": "BSL"})          # excluded source
+    assert not ep.is_forage_numeric_evidence({**dm, "qualityParams": None,
+                                              "yieldMetric": "grain_kg_ha"})       # not forage
+    assert not ep.is_forage_numeric_evidence({**dm, "yieldKgHa": None})            # no value
+    assert not ep.is_forage_numeric_evidence({})
+
+
 # ── (c) site kind ────────────────────────────────────────────────────────────
 
 _AGGREGATE_SITES = [
@@ -338,6 +378,36 @@ def test_content_key_distinguishes_observed_content(field, value):
         ep.content_key({**_TRIAL, field: value}, ["Doneztebe"])
 
 
+# The orchard / perennial fields of one block: trials that differ only in one of them
+# are different observations (almond rootstock trials, planting density trials, ...).
+_ORCHARD = {
+    **_TRIAL, "cropEppo": "PRNDU", "rootstock": "GF-677", "scion": "Guara",
+    "trainingSystem": "open vase", "plantingYear": 2008, "plantingDensityTreesHa": 400,
+    "cropCycle": "perennial",
+}
+
+
+def test_content_key_ignores_nothing_orchard_when_identical():
+    assert ep.content_key(_ORCHARD, ["Sesma"]) == ep.content_key({**_ORCHARD, "mergeKey": "z"}, ["Sesma"])
+
+
+@pytest.mark.parametrize(("field", "value"), [
+    ("rootstock", "Garnem"), ("scion", "Lauranne"), ("trainingSystem", "hedgerow"),
+    ("plantingYear", 2010), ("plantingDensityTreesHa", 625), ("cropCycle", "annual"),
+    ("rootstock", None), ("plantingDensityTreesHa", None),
+])
+def test_content_key_keeps_orchard_differences_distinct(field, value):
+    assert ep.content_key(_ORCHARD, ["Sesma"]) != ep.content_key({**_ORCHARD, field: value}, ["Sesma"])
+
+
+def test_content_key_treats_absent_and_empty_orchard_fields_alike():
+    absent = {k: v for k, v in _ORCHARD.items() if k not in ep.CONTENT_KEY_BLANK_DEFAULT_FIELDS}
+    blank = {**absent, **{f: "" for f in ep.CONTENT_KEY_BLANK_DEFAULT_FIELDS}}
+    nulls = {**absent, **dict.fromkeys(ep.CONTENT_KEY_BLANK_DEFAULT_FIELDS)}
+    assert ep.content_key(absent, []) == ep.content_key(blank, []) == ep.content_key(nulls, [])
+    assert ep.content_key({**absent, "plantingDensityTreesHa": 0}, []) != ep.content_key(absent, [])
+
+
 def test_content_key_distinguishes_sites():
     assert ep.content_key(_TRIAL, ["Doneztebe"]) != ep.content_key(_TRIAL, ["Oskotz"])
 
@@ -347,7 +417,7 @@ def test_content_key_distinguishes_sites():
 @pytest.mark.parametrize("builder", [
     ep.cypher_excluded_source, ep.cypher_yield_purpose, ep.cypher_numeric_yield_eligible,
     ep.cypher_crop_family, ep.cypher_grain_yield, ep.cypher_forage_basis,
-    ep.cypher_dry_matter_pct, ep.cypher_forage_dm_yield,
+    ep.cypher_dry_matter_pct, ep.cypher_forage_dm_yield, ep.cypher_forage_numeric_evidence,
     ep.cypher_field_scope, ep.cypher_aggregate_site, ep.cypher_content_key,
 ])
 def test_cypher_builders_use_the_given_alias(builder):
