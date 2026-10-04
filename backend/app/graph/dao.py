@@ -861,6 +861,8 @@ class GraphDAO:
         author: str | None = None,
         conditions: str | None = None,
         contact_email: str | None = None,
+        contributed_by: str | None = None,
+        contributor_tenant: str | None = None,
     ) -> dict:
         """Submit a contributed phenology parameter for review.
 
@@ -888,6 +890,8 @@ class GraphDAO:
                     sourceConditions: $conditions,
                     status: 'pending_review',
                     contactEmail: $contact_email,
+                    contributedBy: $contributed_by,
+                    contributorTenant: $contributor_tenant,
                     submittedAt: datetime()
                 })
                 RETURN p.status AS status, p.sourceShort AS source
@@ -904,11 +908,62 @@ class GraphDAO:
                 author=author,
                 conditions=conditions,
                 contact_email=contact_email,
+                contributed_by=contributed_by,
+                contributor_tenant=contributor_tenant,
             )
             record = await result.single()
             if record is None:
                 return {"status": "error", "detail": "Failed to create"}
             return {"status": record["status"], "source": record["source"]}
+
+    async def contribute_crop_parameters(
+        self,
+        crop_uri: str,
+        params: dict,
+        *,
+        contributed_by: str,
+        contributor_tenant: str | None,
+        provenance: dict,
+    ) -> bool:
+        """Store contributed parameters for a crop as a pending-review node.
+
+        Returns False, writing nothing, when no AgriCrop has ``crop_uri``.
+        ``params`` is applied first and the review state, contributor identity
+        and provenance are set after it, so no key in ``params`` can overwrite
+        them. Callers still allow-list the keys (api/v1/catalog.py).
+        """
+        async with self._driver.session() as session:
+            result = await session.run(
+                """
+                MATCH (c:AgriCrop {uri: $uri})
+                CREATE (p:PhenologyParams)
+                SET p += $params
+                SET p.status = 'pending_review',
+                    p.contributedBy = $contributed_by,
+                    p.contributorTenant = $contributor_tenant,
+                    p.contributedAt = datetime(),
+                    p.sourceDoi = $doi,
+                    p.sourceAuthor = $author,
+                    p.sourceYear = $year,
+                    p.sourceInstitution = $institution,
+                    p.sourceMethod = $method,
+                    p.sourceConditions = $conditions
+                CREATE (c)-[:HAS_PARAMETER]->(p)
+                RETURN count(p) AS created
+                """,
+                uri=crop_uri,
+                params=params,
+                contributed_by=contributed_by,
+                contributor_tenant=contributor_tenant,
+                doi=provenance.get("doi"),
+                author=provenance.get("author"),
+                year=provenance.get("year"),
+                institution=provenance.get("institution"),
+                method=provenance.get("method"),
+                conditions=provenance.get("conditions"),
+            )
+            record = await result.single()
+            return bool(record and record["created"])
 
     # ── Phenology Fallback (Orion-LD CropHealthAssessment) ──────────────────────
 

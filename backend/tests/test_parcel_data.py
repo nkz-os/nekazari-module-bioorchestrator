@@ -4,6 +4,7 @@ import pytest
 from nkz_platform_sdk.crypto import generate_hmac_signature
 
 from app.services.timescale import compute_trend
+from tests.gateway_token import USER_TOKEN
 
 
 def test_compute_trend_up():
@@ -129,9 +130,9 @@ def test_vegetation_uses_request_tenant(client, monkeypatch):
     with patch("app.api.v1.parcel_data.OrionClient", _RecordingOrion):
         resp = client.get(
             "/api/parcel/P1/vegetation",
-            headers={"Authorization": "Bearer user-token", "X-Tenant-ID": "tenant-a", "X-User-ID": "u1",
+            headers={"Authorization": f"Bearer {USER_TOKEN}", "X-Tenant-ID": "tenant-a", "X-User-ID": "u1",
                      "X-User-Roles": "Tecnico",
-                     "X-Auth-Signature": generate_hmac_signature("hmac-test", "user-token", "tenant-a")},
+                     "X-Auth-Signature": generate_hmac_signature("hmac-test", USER_TOKEN, "tenant-a")},
         )
     assert resp.status_code == 200
     assert "tenant-a" in _RecordingOrion.constructed_tenants
@@ -144,9 +145,9 @@ def test_soil_uses_request_tenant(client, monkeypatch):
     with patch("app.api.v1.parcel_data.OrionClient", _RecordingOrion):
         resp = client.get(
             "/api/parcel/P1/soil",
-            headers={"Authorization": "Bearer user-token", "X-Tenant-ID": "tenant-a", "X-User-ID": "u1",
+            headers={"Authorization": f"Bearer {USER_TOKEN}", "X-Tenant-ID": "tenant-a", "X-User-ID": "u1",
                      "X-User-Roles": "Tecnico",
-                     "X-Auth-Signature": generate_hmac_signature("hmac-test", "user-token", "tenant-a")},
+                     "X-Auth-Signature": generate_hmac_signature("hmac-test", USER_TOKEN, "tenant-a")},
         )
     assert resp.status_code == 200
     assert "tenant-a" in _RecordingOrion.constructed_tenants

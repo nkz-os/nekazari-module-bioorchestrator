@@ -13,11 +13,12 @@ from nkz_platform_sdk.crypto import generate_hmac_signature
 
 from app import auth
 from app.api.v1 import graph as graph_mod
+from tests.gateway_token import USER_TOKEN
 
 ISS = "https://idp.example/realms/r"
 _KEY = rsa.generate_private_key(public_exponent=65537, key_size=2048)
 URN = "urn:ngsi-ld:AgriParcel:tenant-a:p1"
-BEARER = "opaque-user-token"
+BEARER = USER_TOKEN
 
 
 def _rs256(claims: dict) -> str:

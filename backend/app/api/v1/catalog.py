@@ -1,14 +1,37 @@
 """Crop catalog API — species/varieties from Orion-LD + Neo4j."""
+import math
+
 from fastapi import APIRouter, Depends, HTTPException, Query
 from nkz_platform_sdk.orion import OrionClient
 
 from app.core.config import settings
-from app.core.dependencies import get_current_user, get_dao
+from app.core.dependencies import (
+    ROLE_PLATFORM_ADMIN,
+    get_dao,
+    require_contributor,
+    require_platform_admin,
+)
 from app.graph.dao import GraphDAO
 from app.ingestion.ecocrop_ingester import EcoCropIngester
 from app.ingestion.variety_ingester import VarietyIngester
 
 router = APIRouter(prefix="/catalog", tags=["crop-catalog"])
+
+# Parameter keys a contribution may set on the pending-review node. Anything
+# else (review status, contributor identity, ...) is rejected, not stored.
+CONTRIBUTABLE_PARAMS = frozenset({"kc", "kcIni", "kcMid", "kcEnd", "d1", "d2", "mdsRef", "ky"})
+
+
+_MAX_ABS_PARAM = 1e9  # far above any agronomic coefficient; keeps ints in int64
+
+
+def _is_finite_number(value: object) -> bool:
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        return False
+    try:
+        return math.isfinite(value) and abs(value) <= _MAX_ABS_PARAM
+    except OverflowError:  # int too large for a float
+        return False
 
 
 @router.get("")
@@ -124,14 +147,13 @@ async def get_crop_detail(
     }
 
 
-@router.post("/ingest")
+@router.post("/ingest", dependencies=[Depends(require_platform_admin)])
 async def trigger_ingestion(
     source: str = Query(..., description="ecocrop or cpvo"),
     species_filter: str | None = Query(None),
-    user: dict = Depends(get_current_user),  # noqa: B008
     dao: GraphDAO = Depends(get_dao),  # noqa: B008
 ):
-    """Trigger ingestion from an external source. Requires technician/admin."""
+    """Trigger ingestion from an external source. Requires PlatformAdmin."""
     orion = OrionClient(
         settings.catalog_tenant,
         base_url=settings.orion_ld_url,
@@ -156,55 +178,54 @@ async def trigger_ingestion(
 @router.post("/contribute")
 async def contribute_parameter(
     body: dict,
-    user: dict = Depends(get_current_user),  # noqa: B008
+    user: dict = Depends(require_contributor),  # noqa: B008
     dao: GraphDAO = Depends(get_dao),  # noqa: B008
 ):
     """Contribute phenological/agronomic parameters for a crop.
 
-    Body: {crop_id, params: {kc?, d1?, d2?, mds?, npk?, rotation?}, provenance}
-    Requires technician/admin role.
+    Body: {crop_id, params: {kc?, kcIni?, kcMid?, kcEnd?, d1?, d2?, mdsRef?, ky?}, provenance}
+    Requires TechnicalConsultant, TenantAdmin or PlatformAdmin. The contribution
+    is stored as a pending-review node in the graph, tagged with the verified
+    subject and tenant. It is applied to the global Orion catalog only when the
+    caller is PlatformAdmin: approval is a PlatformAdmin action. 404 if the crop
+    does not exist (nothing is written).
     """
     crop_id = body.get("crop_id")
     params = body.get("params", {})
     provenance = body.get("provenance", {})
 
-    if not crop_id or not params:
+    if not crop_id or not isinstance(crop_id, str) or not params:
         raise HTTPException(status_code=400, detail="crop_id and params required")
-
-    async with dao._driver.session() as session:
-        await session.run("""
-            MATCH (c:AgriCrop {uri: $uri})
-            CREATE (p:PhenologyParams {
-                status: 'pending_review',
-                contributedBy: $user_id,
-                contributedAt: datetime(),
-                sourceDoi: $doi,
-                sourceAuthor: $author,
-                sourceYear: $year,
-                sourceInstitution: $institution,
-                sourceMethod: $method,
-                sourceConditions: $conditions
-            })
-            SET p += $params
-            CREATE (c)-[:HAS_PARAMETER]->(p)
-        """,
-            uri=crop_id,
-            user_id=user.get("sub", "unknown"),
-            doi=provenance.get("doi"),
-            author=provenance.get("author"),
-            year=provenance.get("year"),
-            institution=provenance.get("institution"),
-            method=provenance.get("method"),
-            conditions=provenance.get("conditions"),
-            params=params,
+    if not isinstance(params, dict) or not isinstance(provenance, dict):
+        raise HTTPException(status_code=400, detail="params and provenance must be objects")
+    unsupported = sorted(set(params) - CONTRIBUTABLE_PARAMS)
+    if unsupported:
+        raise HTTPException(
+            status_code=400,
+            detail=f"unsupported parameters: {', '.join(map(str, unsupported))}",
         )
+    if not all(_is_finite_number(v) for v in params.values()):
+        raise HTTPException(status_code=400, detail="parameter values must be numbers")
+    if not all(v is None or isinstance(v, (str, int, float)) for v in provenance.values()):
+        raise HTTPException(status_code=400, detail="provenance values must be scalars")
 
-    # Also push Kc values to Orion-LD if provided
-    if any(k in params for k in ("kc", "kcIni", "kcMid", "kcEnd")):
-        orion_attrs = {}
-        for key in ("kcIni", "kcMid", "kcEnd"):
-            if key in params:
-                orion_attrs[key] = {"type": "Property", "value": params[key]}
+    stored = await dao.contribute_crop_parameters(
+        crop_id,
+        params,
+        contributed_by=user["sub"],
+        contributor_tenant=user.get("tenant_id"),
+        provenance=provenance,
+    )
+    if not stored:
+        raise HTTPException(status_code=404, detail="crop not found")
+
+    applied = False
+    if ROLE_PLATFORM_ADMIN in (user.get("roles") or ()):
+        orion_attrs = {
+            key: {"type": "Property", "value": params[key]}
+            for key in ("kcIni", "kcMid", "kcEnd")
+            if key in params
+        }
         if orion_attrs:
             orion = OrionClient(
                 settings.catalog_tenant,
@@ -215,18 +236,17 @@ async def contribute_parameter(
                 await orion.append_entity_attrs(crop_id, orion_attrs)
             finally:
                 await orion.close()
+            applied = True
 
-    return {"status": "submitted", "crop_id": crop_id}
+    return {"status": "submitted", "crop_id": crop_id, "applied_to_catalog": applied}
 
 
-@router.post("/derive-thermal")
-async def derive_thermal(
-    user: dict = Depends(get_current_user),  # noqa: B008
-):
+@router.post("/derive-thermal", dependencies=[Depends(require_platform_admin)])
+async def derive_thermal():
     """Trigger thermal limits derivation for all species with EcoCrop temp data.
 
     Runs derive_thermal_limits.py as a background subprocess.
-    Requires technician/admin role.
+    Requires PlatformAdmin.
     """
     import subprocess
     import sys

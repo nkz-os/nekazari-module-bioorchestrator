@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
-from collections.abc import AsyncGenerator
+from collections.abc import AsyncGenerator, Callable, Coroutine
+from typing import Any
+
+from fastapi import Depends, HTTPException, Request
 
 from app.core.config import settings
 from neo4j import AsyncDriver, AsyncGraphDatabase
@@ -51,7 +54,48 @@ def get_dao() -> GraphDAO:  # noqa: F821 — GraphDAO imported inside body to av
     return GraphDAO(get_driver())
 
 
-async def get_current_user() -> dict:
-    """Extract user info from api-gateway headers. Placeholder for JWT validation."""
-    return {"sub": "system", "roles": ["admin"]}
+# Platform role vocabulary (matches Keycloak realm roles and X-User-Roles).
+ROLE_TECHNICAL_CONSULTANT = "TechnicalConsultant"
+ROLE_TENANT_ADMIN = "TenantAdmin"
+ROLE_PLATFORM_ADMIN = "PlatformAdmin"
 
+
+async def get_current_user(request: Request) -> dict:
+    """Return the identity NKZAuthMiddleware verified for this request.
+
+    The middleware sets ``request.state.user`` only from a signed gateway
+    request, the internal service secret, or a validated JWT. Nothing here
+    reads headers, so an unauthenticated request (including one that reached
+    a public prefix) has no identity and is rejected.
+    """
+    user = getattr(request.state, "user", None)
+    if not isinstance(user, dict) or not user.get("sub"):
+        raise HTTPException(status_code=401, detail="Authentication required")
+    return user
+
+
+def require_roles(*roles: str) -> Callable[..., Coroutine[Any, Any, dict]]:
+    """Dependency factory: the verified user must hold at least one of ``roles``.
+
+    401 if unauthenticated, 403 if authenticated without a listed role.
+    Role names are matched exactly.
+    """
+    if not roles:
+        raise ValueError("require_roles needs at least one role")
+    allowed = frozenset(roles)
+
+    async def _require_roles(user: dict = Depends(get_current_user)) -> dict:  # noqa: B008
+        held = user.get("roles") or ()
+        if not allowed.intersection(held):
+            raise HTTPException(status_code=403, detail="Insufficient role")
+        return user
+
+    return _require_roles
+
+
+# Writes to global (cross-tenant) data are PlatformAdmin-only; contributions for
+# review are open to consultants and admins.
+require_platform_admin = require_roles(ROLE_PLATFORM_ADMIN)
+require_contributor = require_roles(
+    ROLE_TECHNICAL_CONSULTANT, ROLE_TENANT_ADMIN, ROLE_PLATFORM_ADMIN
+)
