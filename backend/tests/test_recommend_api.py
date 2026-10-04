@@ -389,3 +389,24 @@ def test_parcel_country_from_environment(client, country):
     assert r.status_code == 200
     assert m.call_args.args[0]["country"] == country
     assert r.json()["parcel_environment"]["country"] == country
+
+
+def test_parcel_passes_centroid_to_conditions(client):
+    env = {**_env({"data_available": False}), "centroid": {"lat": 48.85, "lon": 2.35}}
+    _, m = _parcel_call(client, env)
+    c = m.call_args.args[0]
+    assert c["lat"] == 48.85 and c["lon"] == 2.35
+
+
+@pytest.mark.parametrize("centroid", [None, {"lat": None, "lon": None}, {"lat": 48.85, "lon": None}])
+def test_parcel_without_centroid_sends_no_point(client, centroid):
+    _, m = _parcel_call(client, {**_env({"data_available": False}), "centroid": centroid})
+    c = m.call_args.args[0]
+    assert "lat" not in c and "lon" not in c
+
+
+def test_conditions_route_sends_no_point(client):
+    with patch.object(GraphDAO, "recommend_for_conditions", AsyncMock(return_value=OK)) as m:
+        client.get("/api/graph/agriculture/recommend", params={"climate_class": "Cfb", "lat": 1, "lon": 2})
+    c = m.call_args.args[0]
+    assert "lat" not in c and "lon" not in c

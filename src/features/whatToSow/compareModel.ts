@@ -23,6 +23,64 @@ export function monthSegments(win: SowingWindow | null | undefined): MonthSegmen
   return [seg(win.start_month, 12), seg(1, win.end_month)];
 }
 
+const YEAR_DAYS = 365;
+const isDoy = (n: unknown): n is number => Number.isInteger(n) && (n as number) >= 1 && (n as number) <= YEAR_DAYS;
+
+/** Position (in % of a 365-day year) of the start of a day of year (1-365). Null if invalid. */
+export function doyPct(doy: number | null | undefined): number | null {
+  return isDoy(doy) ? ((doy - 1) / YEAR_DAYS) * 100 : null;
+}
+
+export interface TypicalSeason {
+  sowing_window: SowingWindow | null;
+  typical_sowing_doy?: number | null;
+  typical_maturity_doy?: number | null;
+}
+
+export interface TypicalCalendar {
+  sowingDoy: number;
+  maturityDoy: number | null;
+  /** Sowing-day marker, % of the year. */
+  markerPct: number;
+  /** Sowing → maturity bar; split in two when it crosses the year end; empty without maturity. */
+  segments: MonthSegment[];
+}
+
+/**
+ * Typical sowing marker and growing bar (GGCMI crop calendar), only when no sowing window exists:
+ * a typical day is never drawn as a window.
+ */
+export function typicalCalendar(season: TypicalSeason): TypicalCalendar | null {
+  if (season.sowing_window != null) return null;
+  const sow = season.typical_sowing_doy;
+  const markerPct = doyPct(sow);
+  if (markerPct == null || sow == null) return null;
+  const mat = season.typical_maturity_doy;
+  const matPct = doyPct(mat);
+  let segments: MonthSegment[] = [];
+  if (matPct != null) {
+    const end = matPct + 100 / YEAR_DAYS; // through the end of the maturity day
+    segments = end > markerPct
+      ? [{ leftPct: markerPct, widthPct: Math.min(end, 100) - markerPct }]
+      : [{ leftPct: markerPct, widthPct: 100 - markerPct }, { leftPct: 0, widthPct: end }];
+  }
+  return { sowingDoy: sow, maturityDoy: matPct == null ? null : (mat as number), markerPct, segments };
+}
+
+const doyDate = (doy: number) => new Date(Date.UTC(2001, 0, doy)); // 2001: non-leap year
+
+/** Day of year as a locale month-day ("Oct 31", "31 oct"). */
+export function formatDoy(doy: number, locale: string): string {
+  return new Intl.DateTimeFormat(locale, { month: 'short', day: 'numeric', timeZone: 'UTC' }).format(doyDate(doy));
+}
+
+/** Locale month name of the typical sowing day; null when a sowing window exists or no typical day. */
+export function typicalSowingMonth(season: TypicalSeason, locale: string): string | null {
+  const cal = typicalCalendar(season);
+  if (!cal) return null;
+  return new Intl.DateTimeFormat(locale, { month: 'long', timeZone: 'UTC' }).format(doyDate(cal.sowingDoy));
+}
+
 /** €/t from free text (dot or comma); null unless a finite number above zero. */
 export function parsePrice(raw: string): number | null {
   const text = raw.trim().replace(',', '.');

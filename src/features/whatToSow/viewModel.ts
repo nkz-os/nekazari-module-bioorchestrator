@@ -158,7 +158,7 @@ export function lensAvailability(
 ): { fit: true; calendar: boolean; rotation: true; euros: boolean } {
   return {
     fit: true,
-    calendar: recs.some((r) => r.season.sowing_window != null),
+    calendar: recs.some((r) => r.season.sowing_window != null || r.season.typical_sowing_doy != null),
     rotation: true,
     euros: recs.some((r) => {
       const p = prices[r.crop.eppo];

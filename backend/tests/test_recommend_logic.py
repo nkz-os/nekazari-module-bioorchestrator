@@ -35,7 +35,8 @@ def test_disease_summary_counts_resistant_at_or_above_0_7():
 def test_sowing_info_falls_back_to_season_slot():
     info = r.sowing_info("TRZAX", "Cfb", [])
     assert info == {"sowing_type": "autumn", "sowing_window": None, "cycle_days": None,
-                    "source": "crop_season_slot"}
+                    "source": "crop_season_slot", "typical_sowing_doy": None,
+                    "typical_maturity_doy": None, "typical_rainfed_fallback": None}
 
 
 def test_sowing_info_both_slots_is_null_type():
@@ -47,7 +48,8 @@ def test_sowing_info_table_row_wins():
            "end_month": 3, "cycle_days": 120, "source": "ref-1"}
     info = r.sowing_info("CIEAR", "Cfb", [row])
     assert info == {"sowing_type": "spring", "sowing_window": {"start_month": 2, "end_month": 3},
-                    "cycle_days": 120, "source": "ref-1"}
+                    "cycle_days": 120, "source": "ref-1", "typical_sowing_doy": None,
+                    "typical_maturity_doy": None, "typical_rainfed_fallback": None}
 
 
 _ES_ROW = {"eppo": "TRZAX", "sowing_type": "autumn", "koppen": ["Csa"], "start_month": 10,
@@ -91,6 +93,111 @@ def test_rank_blockers_first_then_relative_then_trials_then_eppo():
             _rec("DDD", None, 50), _rec("EEE", 10.0, 3, frost="risk"), _rec("FFF", 5.0, 20)]
     assert [x["crop"]["eppo"] for x in r.rank_recommendations(recs)] == \
         ["CCC", "FFF", "BBB", "DDD", "AAA", "EEE"]
+
+
+# ── GGCMI crop calendar between the table and the season slot ──────────────
+PARIS = (48.85, 2.35)
+
+
+def test_sowing_info_ggcmi_beats_season_slot():
+    from app.services import ggcmi_calendar as g
+    info = r.sowing_info("TRZAX", "Cfb", [], lat=PARIS[0], lon=PARIS[1])
+    assert info["source"] == g.citation("SAGE")
+    assert info["sowing_window"] is None  # a typical day is never turned into a range
+    assert info["typical_sowing_doy"] == 304
+    assert info["typical_maturity_doy"] is not None
+    assert info["cycle_days"] == g.lookup("TRZAX", *PARIS)["cycle_days"]
+    assert info["sowing_type"] == "autumn"  # 31 Oct
+
+
+def test_sowing_info_table_row_beats_ggcmi():
+    row = {**_ANY_ROW, "koppen": ["Cfb"], "source": "ref-fr"}
+    info = r.sowing_info("TRZAX", "Cfb", [row], country="FR", lat=PARIS[0], lon=PARIS[1])
+    assert info["source"] == "ref-fr"
+    assert info["sowing_window"] == {"start_month": 10, "end_month": 12}
+    assert info["typical_sowing_doy"] is None and info["typical_maturity_doy"] is None
+
+
+def test_sowing_info_mirca_cell_falls_back_to_season_slot():
+    dublin = (53.35, -6.26)  # winter wheat there is MIRCA2000-sourced: dropped
+    info = r.sowing_info("TRZAX", "Cfb", [], lat=dublin[0], lon=dublin[1])
+    assert info["source"] == "crop_season_slot" and info["typical_sowing_doy"] is None
+
+
+def test_sowing_info_without_coordinates_skips_ggcmi():
+    assert r.sowing_info("TRZAX", "Cfb", [])["source"] == "crop_season_slot"
+
+
+def test_sowing_info_unmapped_crop_or_sea_falls_back_to_slot():
+    assert r.sowing_info("CIEAR", "Cfb", [], lat=PARIS[0], lon=PARIS[1])["source"] == "crop_season_slot"
+    assert r.sowing_info("TRZAX", "Cfb", [], lat=45.0, lon=-20.0)["source"] == "crop_season_slot"
+
+
+def test_sowing_info_passes_irrigation_to_calendar():
+    from unittest.mock import patch
+
+    from app.services import ggcmi_calendar as g
+    hit = {"planting_doy": 120, "maturity_doy": 250, "cycle_days": 130, "source": g.citation("SAGE"),
+           "layer": "ir", "rainfed_fallback": False}
+    with patch.object(g, "lookup", return_value=hit) as m:
+        info = r.sowing_info("ZEAMX", "Cfb", [], lat=1.0, lon=2.0, irrigation="regadío")
+    m.assert_called_once_with("ZEAMX", 1.0, 2.0, irrigation="regadío")
+    assert info["sowing_type"] == "spring" and info["cycle_days"] == 130
+
+
+@pytest.mark.parametrize("doy,season", [(100, "spring"), (190, "summer"), (280, "autumn")])
+def test_sowing_info_sowing_type_from_ggcmi_month(doy, season):
+    from unittest.mock import patch
+
+    from app.services import ggcmi_calendar as g
+    hit = {"planting_doy": doy, "maturity_doy": 1, "cycle_days": 1, "source": g.citation("SAGE"),
+           "layer": "rf", "rainfed_fallback": False}
+    with patch.object(g, "lookup", return_value=hit):
+        assert r.sowing_info("ZEAMX", None, [], lat=1.0, lon=2.0)["sowing_type"] == season
+
+
+def test_build_recommendation_carries_typical_days():
+    v = {"variety": "V1", "mean_yield_kg_ha": 5000.0, "numeric_yield_count": 5, "trial_count": 5}
+    sowing = r.sowing_info("TRZAX", "Cfb", [], lat=PARIS[0], lon=PARIS[1])
+    rec = r.build_recommendation(
+        eppo="TRZAX", scientific_name="T", conditions={}, varieties=[v],
+        reference={"median_kg_ha": 5000.0, "n_trials": 40, "scope": "crop"},
+        soil_verdict={"verdict": "unknown", "reason": ""}, water=None, frost_level="unknown",
+        sowing=sowing, data_gaps_extra=[], assumptions=[])
+    assert rec["season"]["typical_sowing_doy"] == 304
+    assert rec["season"]["typical_maturity_doy"] == sowing["typical_maturity_doy"]
+    assert rec["season"]["sowing_window"] is None
+    assert "sowing_window_unavailable" not in rec["trust"]["data_gaps"]
+
+
+def test_sowing_info_and_season_carry_rainfed_fallback_mark():
+    madrid = (40.4, -3.7)  # irrigated winter wheat dropped (MIRCA); rainfed SAGE used
+    info = r.sowing_info("TRZAX", "Csa", [], lat=madrid[0], lon=madrid[1], irrigation="regadío")
+    assert info["typical_sowing_doy"] == 332 and info["typical_rainfed_fallback"] is True
+    assert "rainfed calendar used for irrigated parcel" in info["source"]
+    secano = r.sowing_info("TRZAX", "Csa", [], lat=madrid[0], lon=madrid[1], irrigation="secano")
+    assert secano["typical_rainfed_fallback"] is False
+    v = {"variety": "V1", "mean_yield_kg_ha": 5000.0, "numeric_yield_count": 5, "trial_count": 5}
+    rec = r.build_recommendation(
+        eppo="TRZAX", scientific_name="T", conditions={}, varieties=[v],
+        reference={"median_kg_ha": 5000.0, "n_trials": 40, "scope": "crop"},
+        soil_verdict={"verdict": "unknown", "reason": ""}, water=None, frost_level="unknown",
+        sowing=info, data_gaps_extra=[], assumptions=[])
+    assert rec["season"]["typical_rainfed_fallback"] is True
+
+
+def test_build_recommendation_slot_has_null_typical_days():
+    rec = _build_slot()
+    assert rec["season"]["typical_sowing_doy"] is None and rec["season"]["typical_maturity_doy"] is None
+
+
+def _build_slot():
+    v = {"variety": "V1", "mean_yield_kg_ha": 5000.0, "numeric_yield_count": 5, "trial_count": 5}
+    return r.build_recommendation(
+        eppo="TRZAX", scientific_name="T", conditions={}, varieties=[v],
+        reference={"median_kg_ha": 5000.0, "n_trials": 40, "scope": "crop"},
+        soil_verdict={"verdict": "unknown", "reason": ""}, water=None, frost_level="unknown",
+        sowing=r.sowing_info("TRZAX", "Cfb", []), data_gaps_extra=[], assumptions=[])
 
 
 def test_recommendation_id_stable_and_condition_sensitive():
