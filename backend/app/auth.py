@@ -32,33 +32,32 @@ SKIP_AUTH_PATHS = {"/healthz", "/readyz", "/docs", "/openapi.json"}
 # available to all users regardless of auth state.
 #
 # Each prefix maps to the set of HTTP methods exempted from auth for that prefix.
-# "*" means all methods are exempt — this is the legacy default, preserved here
-# for every pre-existing entry so today's behavior is unchanged (the broader
-# audit of which of these should also be method-restricted is a separate,
-# deliberate follow-up — NOT part of this fix).
+# Public reference prefixes are exempt for GET only: a write under them (a
+# contribution, an ingest, a rule edit) must always carry a verified identity.
 #
-# "/api/graph/action-rules" is the one entry that is intentionally NOT "*":
-# it carries the life-critical agronomic action-rule catalog. GET (read) stays
-# public for the crop-health worker, but POST/PUT (agronomist edits) must
-# require auth — an unauthenticated in-cluster pod must not be able to mutate
-# the rule catalog.
+# "*" (every method) is reserved for the three prefixes below, where an
+# unauthenticated non-GET is intended and guarded by something other than the
+# bearer token (tests/test_authz_exemptions.py pins this allow-list):
+#   /api/graph/agriculture/ — writes need an identity (auth_policy.requires_identity)
+#   /api/ngsi-ld/           — Orion notify receiver, X-Internal-Service-Secret
+#   /api/graph/internal/    — in-cluster receiver, X-Internal-Service-Secret
 SKIP_AUTH_PREFIXES: dict[str, set[str]] = {
     "/api/graph/agriculture/": {"*"},
-    "/api/graph/species": {"*"},
-    "/api/graph/phenology-params": {"*"},
-    "/api/graph/phenology-stages": {"*"},
+    "/api/graph/species": {"GET"},
+    "/api/graph/phenology-params": {"GET"},
+    "/api/graph/phenology-stages": {"GET"},
     "/api/graph/action-rules": {"GET"},
-    "/api/graph/heat-tolerance": {"*"},
-    "/api/graph/nutrient-profile": {"*"},
-    "/api/graph/soil-suitability": {"*"},
-    "/api/graph/rotation-constraints": {"*"},
-    "/api/graph/recommendations/": {"*"},
-    "/api/graph/varieties": {"*"},
-    "/api/crop/catalog": {"*"},
-    "/api/v1/sources": {"*"},
-    "/api/v1/catalog": {"*"},
-    "/api/v1/capability": {"*"},
-    "/ngsi-ld/": {"*"},
+    "/api/graph/heat-tolerance": {"GET"},
+    "/api/graph/nutrient-profile": {"GET"},
+    "/api/graph/soil-suitability": {"GET"},
+    "/api/graph/rotation-constraints": {"GET"},
+    "/api/graph/recommendations/": {"GET"},
+    "/api/graph/varieties": {"GET"},
+    "/api/crop/catalog": {"GET"},
+    "/api/v1/sources": {"GET"},
+    "/api/v1/catalog": {"GET"},
+    "/api/v1/capability": {"GET"},
+    "/ngsi-ld/": {"GET"},
     # Orion-LD subscription notifications POST here directly (in-cluster, no
     # api-gateway, no JWT). NetworkPolicy gates ingress. Without this the
     # production auth branch 401s every notification and the catalog sync dies.
@@ -68,6 +67,26 @@ SKIP_AUTH_PREFIXES: dict[str, set[str]] = {
     "/api/graph/internal/": {"*"},
 }
 
+
+def _roles_from_claims(payload: dict) -> list[str]:
+    """Roles of a verified Keycloak token: realm roles, client roles, `roles` claim.
+
+    Mirrors what the api-gateway forwards in X-User-Roles, so a direct-ingress
+    JWT and a gateway-signed request resolve to the same role set.
+    """
+    roles: list[str] = []
+    claim = payload.get("roles")
+    if isinstance(claim, list):
+        roles.extend(claim)
+    realm = payload.get("realm_access")
+    if isinstance(realm, dict) and isinstance(realm.get("roles"), list):
+        roles.extend(realm["roles"])
+    resources = payload.get("resource_access")
+    if isinstance(resources, dict):
+        for resource in resources.values():
+            if isinstance(resource, dict) and isinstance(resource.get("roles"), list):
+                roles.extend(resource["roles"])
+    return sorted({r for r in roles if isinstance(r, str) and r})
 
 
 @functools.lru_cache(maxsize=4)
@@ -130,10 +149,10 @@ class NKZAuthMiddleware(BaseHTTPMiddleware):
             return False
         if not valid:
             return False
-        roles_header = request.headers.get("X-User-Roles", "")
-        self._set_identity(
-            request, tenant, user, roles_header.split(",") if roles_header else []
-        )
+        # The gateway rebuilds this header from the verified token; the signature
+        # check above is what makes it trustworthy.
+        roles = [r.strip() for r in request.headers.get("X-User-Roles", "").split(",")]
+        self._set_identity(request, tenant, user, [r for r in roles if r])
         return True
 
     async def dispatch(self, request: Request, call_next: Callable):
@@ -180,11 +199,15 @@ class NKZAuthMiddleware(BaseHTTPMiddleware):
 
         try:
             payload = await self._validate_token(token)
-            request.state.user = payload
             # Extract tenant_id following platform convention:
             # canonical attribute is 'tenant_id' (underscore), fallback 'tenant'
             raw_tenant = payload.get("tenant_id") or payload.get("tenant", "")
             request.state.tenant_id = normalize_tenant_id(raw_tenant) if raw_tenant else ""
+            request.state.user = {
+                **payload,
+                "tenant_id": request.state.tenant_id,
+                "roles": _roles_from_claims(payload),
+            }
             if needs_identity and not request.state.tenant_id:
                 return JSONResponse(
                     status_code=401, content={"detail": "Token carries no tenant"}
