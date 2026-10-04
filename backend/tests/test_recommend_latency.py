@@ -651,6 +651,61 @@ async def test_regional_tier_backs_crops_without_numeric_field_evidence():
     assert all(n == ["site-a"] for _, t, _, n in seen if t == "field")
 
 
+async def test_regional_trial_count_is_the_crop_total_not_the_listed_rows():
+    # the query reports the crop total on every row; the listed rows are only the top_n cut
+    capped = [{**_variety(7000.0, 9), "crop_numeric_trial_count": 740}, _variety(6000.0, 4)]
+    extrap = _by_tier_extrap(field={"TRZAX": [_variety(5500.0, 12)]}, regional={"TRZAX": capped})
+    out, _ = await _recommend_tiers(_conds(), ["TRZAX"], extrap, {"TRZAX"}, {"TRZAX"})
+    assert out["recommendations"][0]["evidence"]["regional_trial_count"] == 740
+    # rows without the crop-level field (older shape) fall back to the listed rows
+    dao_mod._RECOMMEND_CACHE.clear()
+    extrap = _by_tier_extrap(field={"TRZAX": [_variety(5500.0, 12)]},
+                             regional={"TRZAX": [_variety(7000.0, 9), _variety(6000.0, 4)]})
+    out, _ = await _recommend_tiers(_conds(), ["TRZAX"], extrap, {"TRZAX"}, {"TRZAX"})
+    assert out["recommendations"][0]["evidence"]["regional_trial_count"] == 13
+
+
+def _unknown_basis_rows(n=3):
+    return [{**_variety(), "mean_yield_kg_ha": None, "min_yield_kg_ha": None, "max_yield_kg_ha": None,
+             "stddev_yield_kg_ha": None, "numeric_yield_count": 0, "trial_count": n,
+             "unknown_basis_trial_count": n}]
+
+
+async def test_forage_field_crop_with_only_unknown_basis_keeps_its_field_rec():
+    extrap = _by_tier_extrap(field={"SETIT": _unknown_basis_rows()},
+                             regional={"SETIT": [_variety(5000.0, 4)]})
+    out, _ = await _recommend_tiers(_conds(purpose="forage"), ["SETIT"], extrap, {"SETIT"}, {"SETIT"})
+    rec = out["recommendations"][0]
+    assert rec["evidence"]["tier"] == "field" and rec["evidence"]["regional_trial_count"] == 4
+    assert rec["yield"]["expected_kg_ha"] is None and rec["yield"]["n_trials"] == 3
+    assert "forage_basis_unknown" in rec["trust"]["data_gaps"]
+    assert "regional_evidence_only" not in rec["trust"]["data_gaps"]
+
+
+async def test_main_mode_field_crop_without_a_number_still_falls_back_to_regional():
+    # the unknown-basis rule is forage only: a main-mode crop with presence-only field rows is
+    # backed by numeric regional evidence as before
+    extrap = _by_tier_extrap(field={"TRZAX": _unknown_basis_rows()},
+                             regional={"TRZAX": [_variety(5000.0, 4)]})
+    out, _ = await _recommend_tiers(_conds(), ["TRZAX"], extrap, {"TRZAX"}, {"TRZAX"})
+    assert out["recommendations"][0]["evidence"]["tier"] == "regional"
+
+
+async def test_forage_unknown_basis_field_rows_survive_the_v2_fallback(hybrid):
+    async def extrap(self_, crop, **kw):
+        if kw.get("tier") == "regional":
+            return {"ranked_varieties": [_variety(5000.0, 4)]}
+        if kw.get("vector_version") == "v2":
+            return {"ranked_varieties": []}  # nothing at the vector-similar sites either
+        return {"ranked_varieties": _unknown_basis_rows()}
+
+    conds = _conds(purpose="forage", **_VEC)
+    out, _ = await _recommend_tiers(conds, ["SETIT"], extrap, {"SETIT"}, {"SETIT"})
+    rec = out["recommendations"][0]
+    assert rec["evidence"]["tier"] == "field" and rec["trust"]["similarity"] == "koppen"
+    assert "forage_basis_unknown" in rec["trust"]["data_gaps"]
+
+
 async def test_regional_failure_keeps_field_answer_and_is_not_cached():
     calls = []
 

@@ -146,30 +146,44 @@ _EXTRAPOLATE_BODY_CYPHER = """
                      reduce(acc = [], l IN trait_lists | acc + [x IN l WHERE NOT x IN acc]) AS agronomic_traits_list,
                      reduce(acc = [], l IN confidence_lists | acc + [x IN l WHERE NOT x IN acc]) AS confidence_levels,
                      reduce(acc = [], l IN source_lists | acc + [x IN l WHERE NOT x IN acc]) AS source_ids
-                RETURN variety,
-                       mean_yield,
-                       min_yield,
-                       max_yield,
-                       stddev_yield,
-                       numeric_yield_count,
-                       trial_count,
-                       derived_count,
-                       unconverted_count,
-                       years,
-                       sites,
-                       irrigation_regimes,
-                       production_systems,
-                       disease_scores_list,
-                       agronomic_traits_list,
-                       confidence_levels,
-                       source_ids
+                // The crop's numeric trial total is summed over every variety BEFORE the cut,
+                // so LIMIT $top_n never truncates it (a trial belongs to exactly one variety).
+                WITH collect({variety: variety, mean_yield: mean_yield, min_yield: min_yield,
+                              max_yield: max_yield, stddev_yield: stddev_yield,
+                              numeric_yield_count: numeric_yield_count, trial_count: trial_count,
+                              derived_count: derived_count, unconverted_count: unconverted_count,
+                              years: years, sites: sites, irrigation_regimes: irrigation_regimes,
+                              production_systems: production_systems,
+                              disease_scores_list: disease_scores_list,
+                              agronomic_traits_list: agronomic_traits_list,
+                              confidence_levels: confidence_levels, source_ids: source_ids}) AS vrows,
+                     sum(numeric_yield_count) AS crop_numeric_n
+                UNWIND vrows AS r
+                RETURN r.variety AS variety,
+                       r.mean_yield AS mean_yield,
+                       r.min_yield AS min_yield,
+                       r.max_yield AS max_yield,
+                       r.stddev_yield AS stddev_yield,
+                       r.numeric_yield_count AS numeric_yield_count,
+                       r.trial_count AS trial_count,
+                       r.derived_count AS derived_count,
+                       r.unconverted_count AS unconverted_count,
+                       r.years AS years,
+                       r.sites AS sites,
+                       r.irrigation_regimes AS irrigation_regimes,
+                       r.production_systems AS production_systems,
+                       r.disease_scores_list AS disease_scores_list,
+                       r.agronomic_traits_list AS agronomic_traits_list,
+                       r.confidence_levels AS confidence_levels,
+                       r.source_ids AS source_ids,
+                       crop_numeric_n
                 ORDER BY mean_yield IS NULL, round(mean_yield, 1) DESC, variety ASC
                 LIMIT $top_n
                 }
                 RETURN crop, variety, mean_yield, min_yield, max_yield, stddev_yield,
                        numeric_yield_count, trial_count, derived_count, unconverted_count, years,
                        sites, irrigation_regimes, production_systems, disease_scores_list,
-                       agronomic_traits_list, confidence_levels, source_ids, other_n
+                       agronomic_traits_list, confidence_levels, source_ids, other_n, crop_numeric_n
                 ORDER BY crop, mean_yield IS NULL, round(mean_yield, 1) DESC, variety ASC
 """
 
@@ -178,27 +192,6 @@ _HIT_MAP_CYPHER = (
     "{{vt: vt, ts: ts, y: ep_y, in_mode: ep_in_mode, other: ep_other, unconv: ep_unconv, "
     "ck: CASE WHEN ep_other THEN {content_key} END}}"
 )
-
-
-def _tier_gate_cypher(tier: str, with_other: bool = True) -> str:
-    """Row gate of an evidence tier (see ``evidence_policy``): field rows of the mode (plus the
-    other-purpose rows to count when ``with_other``), or regional rows that carry a
-    policy-eligible number."""
-    if tier == ep.EVIDENCE_TIER_REGIONAL:
-        return f"WHERE ep_tier = '{ep.EVIDENCE_TIER_REGIONAL}' AND ep_in_mode AND ep_y IS NOT NULL\n"
-    if tier == ep.EVIDENCE_TIER_FIELD:
-        rows = "(ep_in_mode OR ep_other)" if with_other else "ep_in_mode"
-        return f"WHERE ep_tier = '{ep.EVIDENCE_TIER_FIELD}' AND {rows}\n"
-    raise ValueError(f"unknown evidence tier: {tier!r}")
-
-
-def _tier_row_filter_cypher(tier: str) -> str:
-    """Cheap WHERE terms (before the row policy runs) that only drop rows the tier's gate would
-    drop anyway: the regional tier keeps numeric, non-excluded-source rows, so the bulk of
-    excluded-source (BSL) rows at the aggregate containers never reaches the policy."""
-    if tier == ep.EVIDENCE_TIER_REGIONAL:
-        return f"AND vt.yieldKgHa IS NOT NULL AND NOT {ep.cypher_excluded_source('vt')}"
-    return ""
 
 
 _EXCLUDED_SITES_PREDICATE = """($excluded_sites IS NULL OR NOT EXISTS {
@@ -218,10 +211,10 @@ def _extrapolate_single_query(mode: str, tier: str) -> str:
                   AND coalesce(vt.rankingEligible, true) = true
                   AND {_CROP_MATCH_PREDICATE}
                   AND {_EXCLUDED_SITES_PREDICATE}
-                  {_tier_row_filter_cypher(tier)}
+                  {ep.cypher_tier_prefilter(tier)}
                 """
         + ep.cypher_row_policy(mode)
-        + _tier_gate_cypher(tier)
+        + ep.cypher_tier_gate(tier)
         + "WITH $crop AS crop, collect(" + _HIT_MAP_CYPHER.format(content_key=ck) + ") AS hits\n"
         + _EXTRAPOLATE_BODY_CYPHER.replace("{content_key}", ck)
     )
@@ -237,7 +230,7 @@ def _extrapolate_batch_query(mode: str, tier: str) -> str:
                   AND (vt.yieldKgHa IS NOT NULL OR vt.yieldNoteS1 IS NOT NULL)
                   AND coalesce(vt.rankingEligible, true) = true
                   AND {_EXCLUDED_SITES_PREDICATE}
-                  {_tier_row_filter_cypher(tier)}
+                  {ep.cypher_tier_prefilter(tier)}
                 // Same crop predicate as extrapolate_varieties, evaluated once per
                 // trial row for every requested crop; rows of other crops stop here.
                 WITH vt, ts, [c IN $crops WHERE
@@ -247,7 +240,7 @@ def _extrapolate_batch_query(mode: str, tier: str) -> str:
                 WHERE size(matched) > 0
                 """
         + ep.cypher_row_policy(mode, carry=("matched",))
-        + _tier_gate_cypher(tier)
+        + ep.cypher_tier_gate(tier)
         + "UNWIND matched AS crop\n"
         + "WITH crop, collect(" + _HIT_MAP_CYPHER.format(content_key=ck) + ") AS hits\n"
         + _EXTRAPOLATE_BODY_CYPHER.replace("{content_key}", ck)
@@ -298,9 +291,6 @@ def _inflight_done(inflight: dict[str, asyncio.Future], key: str, task: asyncio.
 
 # Crops evaluated per request, counted after the analog-trial prefilter.
 _RECOMMEND_MAX_CROPS = 30
-# Varieties kept per crop on the regional tier (aggregate sites hold few trials), so the
-# crop's regional trial count is exact.
-_REGIONAL_TOP_N = 500
 # Crop cycle used for water demand when the crop reference has none.
 _DEFAULT_GROWING_SEASON_DAYS = 180
 
@@ -365,6 +355,28 @@ _ORGANIC_YIELD_FACTOR = 0.8
 
 def _numeric_trials(v: dict) -> int:
     return int(v.get("numeric_yield_count") or 0)
+
+
+def _has_numeric_mean(rows: list[dict]) -> bool:
+    return any(v.get("mean_yield_kg_ha") is not None for v in rows)
+
+
+def _crop_numeric_trials(rows: list[dict]) -> int:
+    """Distinct numeric trials of the crop behind ranked ``rows``. The query sums them over every
+    variety before its ``top_n`` cut (``crop_numeric_trial_count``), so a capped list does not
+    truncate the count; rows without that field fall back to the sum of the listed rows."""
+    if not rows:
+        return 0
+    total = rows[0].get("crop_numeric_trial_count")
+    return int(total) if total is not None else sum(_numeric_trials(v) for v in rows)
+
+
+def _forage_basis_unknown_only(rows: list[dict], purpose: str) -> bool:
+    """Forage mode: the field rows hold forage trials but no number, because every kg value has an
+    unknown basis. Such a crop keeps its field recommendation (null yield, gap
+    ``forage_basis_unknown``) instead of being replaced by regional evidence."""
+    return (purpose == ep.MODE_FORAGE and not _has_numeric_mean(rows)
+            and any(int(v.get("unknown_basis_trial_count") or 0) for v in rows))
 
 
 def _scale_variety(v: dict, factor: float) -> dict:
@@ -1955,9 +1967,9 @@ class GraphDAO:
                       MATCH (vt)-[:TRIAL_AT]->(x:TrialSite)
                       WHERE toLower(x.name) IN $excluded_sites
                   }})
-                  {_tier_row_filter_cypher(tier)}
+                  {ep.cypher_tier_prefilter(tier)}
                 {ep.cypher_row_policy(purpose)}
-                {_tier_gate_cypher(tier, with_other=False)}
+                {ep.cypher_tier_gate(tier, with_other=False).rstrip()}
                 RETURN DISTINCT vt.cropEppo AS eppo, vt.cropScientific AS sci
                 """,
                 site_names=list(site_names),
@@ -2377,12 +2389,12 @@ class GraphDAO:
             result = await session.run(
                 f"""
                 MATCH (vt:VarietyTrial)-[:TRIAL_AT]->(ts:TrialSite)
-                WHERE vt.yieldKgHa IS NOT NULL
+                WHERE {ep.cypher_numeric_candidate("vt")}
                   AND {RANKING_ELIGIBLE_PREDICATE}
                   AND {_CROP_MATCH_PREDICATE}
                   AND ($irrigation_uri IS NULL OR vt.irrigationRegime = $irrigation_uri)
                 {ep.cypher_row_policy(purpose)}
-                WHERE ep_tier = '{ep.EVIDENCE_TIER_FIELD}' AND ep_y IS NOT NULL
+                {ep.cypher_numeric_tier_gate(ep.EVIDENCE_TIER_FIELD).rstrip()}
                 WITH DISTINCT vt, ep_y
                 WITH {ep.cypher_content_key("vt")} AS ck, max(ep_y) AS y
                 RETURN percentileCont(y, 0.5) AS median, count(y) AS n
@@ -2429,14 +2441,14 @@ class GraphDAO:
                 result = await session.run(
                     f"""
                     MATCH (vt:VarietyTrial)-[:TRIAL_AT]->(ts:TrialSite)
-                    WHERE vt.yieldKgHa IS NOT NULL
+                    WHERE {ep.cypher_numeric_candidate("vt")}
                       AND {RANKING_ELIGIBLE_PREDICATE}
                       AND ($irrigation_uri IS NULL OR vt.irrigationRegime = $irrigation_uri)
                     WITH vt, ts, [c IN $crops WHERE vt.cropEppo = c OR vt.cropScientific CONTAINS c
                                   OR toLower(vt.cropScientific) = toLower(c)] AS matched
                     WHERE size(matched) > 0
                     {ep.cypher_row_policy(purpose, carry=("matched",))}
-                    WHERE ep_tier = '{ep.EVIDENCE_TIER_FIELD}' AND ep_y IS NOT NULL
+                    {ep.cypher_numeric_tier_gate(ep.EVIDENCE_TIER_FIELD).rstrip()}
                     WITH DISTINCT vt, ep_y, matched
                     UNWIND matched AS crop
                     WITH crop, {ep.cypher_content_key("vt")} AS ck, max(ep_y) AS y
@@ -2482,21 +2494,20 @@ class GraphDAO:
         tier = ep.check_tier(tier)
         where = f"""
             ts.name IN $sites
-            AND vt.yieldKgHa IS NOT NULL
+            AND {ep.cypher_numeric_candidate("vt")}
             AND {RANKING_ELIGIBLE_PREDICATE}
             AND {_CROP_MATCH_PREDICATE}
             AND ($variety IS NULL OR vt.varietyNormalized = $variety)
             AND ($irrigation_uri IS NULL OR vt.irrigationRegime = $irrigation_uri)
-            {_tier_row_filter_cypher(tier)}
         """
-        gate = (f"WHERE ep_tier = '{tier}' AND ep_in_mode AND ep_y IS NOT NULL")
+        gate = ep.cypher_numeric_tier_gate(tier).rstrip()
         params: dict[str, Any] = {
             "crop": crop,
             "sites": similar_sites,
             "variety": variety,
             "irrigation_uri": irrigation_uri,
         }
-        basis = "dry_matter" if purpose == ep.MODE_FORAGE else None
+        basis = ep.yield_basis(purpose)
         ck = ep.cypher_content_key("vt")
 
         page = max(1, page)
@@ -3890,7 +3901,8 @@ class GraphDAO:
                                          eppo, time.monotonic() - t_crop)
                         similarity = "koppen"
                         varieties = result.get("ranked_varieties", [])
-                        if v2_vector_ok and not any(v.get("mean_yield_kg_ha") is not None for v in varieties):
+                        koppen_rows = varieties
+                        if v2_vector_ok and not _has_numeric_mean(varieties):
                             v2_sites, v2_ok = await _v2()
                             if v2_ok is not None and eppo not in v2_ok:
                                 result = {"ranked_varieties": []}
@@ -3904,12 +3916,16 @@ class GraphDAO:
                                              eppo, time.monotonic() - t_v2)
                             similarity = "vector_v2_fallback"
                             varieties = result.get("ranked_varieties", [])
+                            if not _has_numeric_mean(varieties) and _forage_basis_unknown_only(koppen_rows, purpose):
+                                varieties, similarity = koppen_rows, "koppen"
                         # No numeric field evidence: numeric aggregate (regional/national) evidence
-                        # at the climate's aggregate sites backs the crop instead, flagged as such.
+                        # at the climate's aggregate sites backs the crop instead, flagged as such
+                        # (unless the field rows are forage trials of unknown basis, see above).
                         tier = ep.EVIDENCE_TIER_FIELD
                         regional_rows = (regional_batch or {}).get(eppo) or []
-                        regional_n = sum(_numeric_trials(v) for v in regional_rows)
-                        if regional_rows and not any(v.get("mean_yield_kg_ha") is not None for v in varieties):
+                        regional_n = _crop_numeric_trials(regional_rows)
+                        if (regional_rows and not _has_numeric_mean(varieties)
+                                and not _forage_basis_unknown_only(varieties, purpose)):
                             varieties = regional_rows[:5]
                             tier = ep.EVIDENCE_TIER_REGIONAL
                             similarity = "koppen"
@@ -4045,7 +4061,7 @@ class GraphDAO:
                              len(batch_crops), time.monotonic() - t_batch)
 
             # Regional tier: the same batched extrapolation over the aggregate sites (numeric
-            # evidence only), every variety kept so the crop's regional trial count is exact.
+            # evidence only); the crop's regional trial count comes from the query, uncut.
             regional_batch: dict[str, list[dict]] | None = None
             regional_crops = [c["eppo_code"] for c in crop_entries if c["eppo_code"] in regional_ok]
             if regional_sites and regional_crops:
@@ -4053,7 +4069,7 @@ class GraphDAO:
                 try:
                     regional_batch = await self.extrapolate_varieties_batch(
                         regional_crops, regional_sites, irrigation_regime=irrigation_regime,
-                        top_n=_REGIONAL_TOP_N, purpose=purpose, tier=ep.EVIDENCE_TIER_REGIONAL,
+                        top_n=5, purpose=purpose, tier=ep.EVIDENCE_TIER_REGIONAL,
                     )
                 except Exception as e:  # noqa: BLE001
                     logger.warning("recommend: regional tier failed (%s); field evidence only",
@@ -5552,6 +5568,9 @@ def _ranked_variety(record: Any, crop: str) -> dict:
         # crop level, repeated on every row: distinct trials of the other purpose (main mode:
         # forage) at the same sites, counted and never averaged
         "crop_other_purpose_trials": int(record.get("other_n") or 0),
+        # crop level, repeated on every row: numeric trials summed over ALL the crop's varieties
+        # (before the top_n cut), so a capped list never truncates the count
+        "crop_numeric_trial_count": int(record.get("crop_numeric_n") or 0),
         "derived_trial_count": record["derived_count"],
         "yield_provenance": _yield_provenance(record["derived_count"], record["trial_count"]),
         "trial_years": sorted(record["years"]),

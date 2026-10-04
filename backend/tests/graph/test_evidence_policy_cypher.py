@@ -151,7 +151,8 @@ def test_row_policy_columns_match_python(driver, mode):
         f"""
         MATCH (vt:VarietyTrial)-[:TRIAL_AT]->(ts:TrialSite)
         {ep.cypher_row_policy(mode)}
-        RETURN vt.i AS i, ep_tier, ep_in_mode, ep_other, ep_y, ep_unconv
+        RETURN vt.i AS i, ep_tier, ep_in_mode, ep_other, ep_y, ep_unconv, ep_excluded,
+               {ep.cypher_numeric_candidate("vt")} AS candidate
         ORDER BY i
         """,
     ))
@@ -164,6 +165,14 @@ def test_row_policy_columns_match_python(driver, mode):
             ep.yield_purpose(t.get("yieldMetric"), t.get("qualityParams")), mode), t
         assert row["ep_other"] is ep.is_other_purpose_evidence(t, mode), t
         assert row["ep_unconv"] is ep.has_unconverted_kg(t, mode), t
+        assert row["ep_excluded"] is ep.is_excluded_source(t.get("source_id"), t.get("dataSource")), t
+        # the cheap WHERE predicate is a necessary condition of a policy yield (a query that
+        # applies it first can never drop a number) and equals it in the main mode
+        assert row["candidate"] is (t.get("yieldKgHa") is not None and not row["ep_excluded"]), t
+        if row["ep_y"] is not None:
+            assert row["candidate"], t
+        if mode == "main":
+            assert row["ep_y"] is not None or not (row["candidate"] and row["ep_in_mode"]), t
         expected = ep.policy_yield(t, mode)
         if expected is None:
             assert row["ep_y"] is None, t
@@ -371,3 +380,33 @@ def test_policy_aggregate_counts_duplicate_once_and_takes_no_excluded_kg(driver)
         """,
     ))
     assert rows == [{"variety": "V", "mean_kg": 7000.0, "n_trials": 2}]
+
+
+def test_tier_gate_fragments_match_python(driver):
+    """The Cypher gate expression equals ``passes_tier_gate`` on every combination of the policy columns."""
+    import itertools
+
+    combos = [
+        {"t": t, "rt": rt, "m": m, "o": o, "y": y}
+        for t, rt, m, o, y in itertools.product(
+            ["field", "regional"], ["field", "regional"], [True, False], [True, False], [None, 7.5])
+    ]
+    for with_other in (True, False):
+        for tier in ("field", "regional"):
+            rows = _run(_query(
+                driver,
+                f"""
+                UNWIND $combos AS c
+                WITH c WHERE c.t = $tier
+                WITH c.rt AS ep_tier, c.m AS ep_in_mode, c.o AS ep_other, c.y AS ep_y
+                RETURN ep_tier, ep_in_mode, ep_other, ep_y,
+                       ({ep.cypher_tier_gate_expr(tier, with_other)}) AS gate,
+                       ({ep.cypher_numeric_gate_expr(tier)}) AS numeric_gate
+                """,
+                combos=combos, tier=tier,
+            ))
+            assert len(rows) == 16
+            for r in rows:
+                assert r["gate"] is ep.passes_tier_gate(
+                    tier, r["ep_tier"], r["ep_in_mode"], r["ep_other"], r["ep_y"], with_other), r
+                assert r["numeric_gate"] is (r["ep_tier"] == tier and r["ep_in_mode"] and r["ep_y"] is not None), r

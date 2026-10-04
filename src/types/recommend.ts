@@ -135,6 +135,6 @@ export interface EvidencePage {
   total: number;
   page: number;
   page_size: number;
-  purpose?: Purpose;
-  tier?: EvidenceTier;
+  purpose: Purpose;
+  tier: EvidenceTier;
 }

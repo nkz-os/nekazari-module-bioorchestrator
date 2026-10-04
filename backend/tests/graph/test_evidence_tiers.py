@@ -38,7 +38,8 @@ _AGG = ["UK national list", "BSL Deutschland Cfb"]
 _SITES = (
     [{"name": n, "climateClass": "Cfb", "soilType": "Loam"} for n in _FIELD]
     + [{"name": n, "climateClass": "Cfb"} for n in _AGG]
-    + [{"name": "Media 5 Località"}, {"name": "g01", "climateClass": "Csa", "soilType": "Loam"}]
+    + [{"name": "Media 5 Località"}, {"name": "g01", "climateClass": "Csa", "soilType": "Loam"},
+       {"name": "Poland (national average)", "climateClass": "Dfb"}]
 )
 
 
@@ -73,6 +74,13 @@ _TRIALS = [
     _t("AVESA", "A1", ["f07"], 4000.0, source_id="LFL-BAYERN", aggregationScope="regional"),
     _t("SECCE", "R1", ["BSL Deutschland Cfb"], 3000.0, source_id="BSL", aggregationScope="regional"),
     _t("HORVX", "H1", ["f08"], None, yieldNoteS1="6"),
+    # SETIT also has a numeric forage trial (dry-matter basis on the record) at an aggregate site:
+    # in forage mode the field rows (unknown basis) must still win over it.
+    _t("SETIT", "S2", ["UK national list"], 5000.0, source_id="AHDB", yieldBasis="dry_matter",
+       qualityParams=_FORAGE_QP),
+    # CPSAN: eight varieties with one trial each at an aggregate site of another climate.
+    *[_t("CPSAN", f"C{i}", ["Poland (national average)"], 40000.0 + i, source_id="NATIONAL")
+      for i in range(8)],
 ]
 
 
@@ -114,7 +122,7 @@ def _clear_caches():
 
 _FIELD_SITES = [{"name": n, "distance": None} for n in _FIELD]
 _AGG_SITES = [{"name": n, "distance": None} for n in _AGG]
-_CROPS = ["TRZAX", "ZEAMX", "SETIT", "LYPES", "AVESA", "SECCE", "HORVX"]
+_CROPS = ["TRZAX", "ZEAMX", "SETIT", "LYPES", "AVESA", "SECCE", "HORVX", "CPSAN"]
 
 
 def _by_variety(ranked):
@@ -198,6 +206,18 @@ def test_regional_tier_carries_numeric_aggregate_evidence_only(dao):
     assert out["AVESA"][0]["mean_yield_kg_ha"] == 4000.0  # scope regional at f07
     assert out["SECCE"] == [] and out["TRZAX"] == []  # BSL kg never numeric evidence
     assert out["ZEAMX"] == [] and out["HORVX"] == []
+
+
+def test_regional_numeric_trial_count_is_exact_under_a_top_n_cut(dao):
+    sites = [{"name": "Poland (national average)", "distance": None}]
+    capped = _run(dao.extrapolate_varieties_batch(["CPSAN"], sites, top_n=3, tier="regional"))["CPSAN"]
+    assert len(capped) == 3  # the list is cut ...
+    assert {v["crop_numeric_trial_count"] for v in capped} == {8}  # ... the crop total is not
+    full = _run(dao.extrapolate_varieties_batch(["CPSAN"], sites, top_n=50, tier="regional"))["CPSAN"]
+    assert len(full) == 8 and sum(v["numeric_yield_count"] for v in full) == 8
+    assert [v["variety"] for v in capped] == [v["variety"] for v in full][:3]  # same order, cut only
+    single = _run(dao.extrapolate_varieties("CPSAN", similar_sites_override=sites, top_n=3, tier="regional"))
+    assert single["ranked_varieties"] == capped
 
 
 # ── per-crop == batch, and the prefilter agrees with both ────────────────────
@@ -303,7 +323,10 @@ def test_recommend_forage_mode(dao):
     assert z["yield"]["expected_kg_ha"] == 21000.0 and z["yield"]["basis"] == "dry_matter"
     assert z["evidence"]["purpose"] == "forage" and z["evidence"]["other_purpose_trials"] == {}
     s = recs["SETIT"]
+    # the field forage trial has an unknown basis; the numeric regional one must not replace it
+    assert s["evidence"]["tier"] == "field" and s["evidence"]["regional_trial_count"] == 1
     assert s["yield"]["expected_kg_ha"] is None and s["yield"]["basis"] is None
     assert s["yield"]["n_trials"] == 1 and "forage_basis_unknown" in s["trust"]["data_gaps"]
+    assert "regional_evidence_only" not in s["trust"]["data_gaps"]
     assert s["evidence"]["unknown_basis_trials"] == 1 and s["trust"]["level"] == "low"
     assert out["conditions"]["purpose"] == "forage"

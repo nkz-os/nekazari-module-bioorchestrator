@@ -516,3 +516,66 @@ def test_row_policy_evaluates_the_purpose_once_and_counts_other_purpose_in_main_
     assert main.count("ndf_pct") == 1 and forage.count("ndf_pct") == 1
     assert "(NOT ep_excluded AND NOT ep_in_mode) AS ep_other" in main
     assert "false AS ep_other" in forage
+
+
+# ── single home of the tier gates, prefilters and the numeric predicate ──────
+def test_numeric_candidate_is_the_predicate_the_row_policy_builds_ep_y_from():
+    block = ep.cypher_row_policy("main")
+    candidate = ep.cypher_numeric_candidate("vt", excluded="ep_excluded")
+    assert candidate == "(vt.yieldKgHa IS NOT NULL AND NOT ep_excluded)"
+    assert block.count(candidate) == 2  # ep_y and ep_unconv
+    # a query's cheap WHERE uses the same predicate with the source test inlined
+    assert ep.cypher_numeric_candidate("vt") == f"(vt.yieldKgHa IS NOT NULL AND NOT {ep.cypher_excluded_source('vt')})"
+    assert ep.cypher_tier_prefilter("regional") == "AND " + ep.cypher_numeric_candidate("vt")
+    assert ep.cypher_tier_prefilter("regional", "t") == "AND " + ep.cypher_numeric_candidate("t")
+    assert ep.cypher_tier_prefilter("field") == ""
+    with pytest.raises(ValueError):
+        ep.cypher_tier_prefilter("national")
+
+
+def test_site_name_is_normalised_once_per_row_not_once_per_pattern():
+    block = ep.cypher_row_policy("main")
+    assert block.count("toLower(trim(coalesce(ts.name, '')))") == 1
+    assert block.count("ep_site_lc CONTAINS ep_pat") == 1
+    assert "ts.name" not in block.replace("toLower(trim(coalesce(ts.name, '')))", "")
+    # the standalone fragment keeps the inline name (it is used outside the row policy)
+    assert "ts.name" in ep.cypher_aggregate_site("ts")
+
+
+def test_row_policy_exposes_the_excluded_flag():
+    assert "ep_excluded" in ep.ROW_POLICY_COLUMNS
+    last_with = ep.cypher_row_policy("forage").rstrip("\n").split("\n")[-1]
+    assert "ep_excluded" in last_with.split("AS ep_unconv")[0]  # carried to the caller's next clause
+
+
+@pytest.mark.parametrize("tier,row_tier,in_mode,other,y,expected", [
+    ("field", "field", True, False, None, True),       # in-mode rows count even without a number
+    ("field", "field", False, True, None, True),       # other-purpose rows are counted (with_other)
+    ("field", "field", False, False, None, False),
+    ("field", "regional", True, False, 1.0, False),
+    ("regional", "regional", True, False, 1.0, True),
+    ("regional", "regional", True, False, None, False),  # regional: numeric rows only
+    ("regional", "regional", False, True, 1.0, False),
+    ("regional", "field", True, False, 1.0, False),
+])
+def test_tier_gate_python_twin(tier, row_tier, in_mode, other, y, expected):
+    assert ep.passes_tier_gate(tier, row_tier, in_mode, other, y) is expected
+
+
+def test_tier_gate_without_other_purpose_rows_and_validation():
+    assert ep.passes_tier_gate("field", "field", False, True, None, with_other=False) is False
+    assert "ep_other" not in ep.cypher_tier_gate_expr("field", with_other=False)
+    assert "ep_other" in ep.cypher_tier_gate_expr("field")
+    assert ep.cypher_tier_gate("regional").startswith("WHERE ") and ep.cypher_tier_gate("regional").endswith("\n")
+    assert ep.cypher_numeric_tier_gate("field") == "WHERE ep_tier = 'field' AND ep_in_mode AND ep_y IS NOT NULL\n"
+    with pytest.raises(ValueError):
+        ep.passes_tier_gate("national", "field", True, False, None)
+    with pytest.raises(ValueError):
+        ep.cypher_tier_gate_expr("national")
+
+
+def test_yield_basis_names_the_unit_of_the_reported_numbers():
+    assert ep.yield_basis("forage") == ep.BASIS_DRY_MATTER
+    assert ep.yield_basis("main") is None and ep.yield_basis() is None
+    with pytest.raises(ValueError):
+        ep.yield_basis("grain")

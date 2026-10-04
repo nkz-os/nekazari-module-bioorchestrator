@@ -190,7 +190,7 @@ def build_recommendation(*, eppo, scientific_name, conditions, varieties, refere
             "expected_kg_ha": best.get("mean_yield_kg_ha"),
             "interval": [best.get("min_yield_kg_ha"), best.get("max_yield_kg_ha")],
             "interval_method": "observed_range",
-            "basis": ep.BASIS_DRY_MATTER if forage and expected is not None else None,
+            "basis": ep.yield_basis(purpose) if expected is not None else None,
             "sd": best.get("stddev_yield_kg_ha"),
             "n_trials": n_trials,
             "n_sites": len(best.get("trial_sites") or []),

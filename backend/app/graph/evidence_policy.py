@@ -654,11 +654,16 @@ def cypher_field_scope(vt: str = "vt") -> str:
     return f"(coalesce(toLower(trim({vt}.aggregationScope)), {_cypher_str(FIELD_SCOPE)}) = {_cypher_str(FIELD_SCOPE)})"
 
 
-def cypher_aggregate_site(ts: str = "ts") -> str:
-    ts = _alias(ts)
-    name = _cypher_norm(f"{ts}.name")
+def _cypher_aggregate_site_over(name: str) -> str:
+    """The aggregate-site test over an already lowercased, trimmed name expression: the name is
+    referenced once per site-name list and once per pattern, so callers pass a variable."""
     return (f"({name} = '' OR {name} IN {_cypher_list(AGGREGATE_SITE_NAMES)} "
             f"OR any(ep_pat IN {_cypher_list(AGGREGATE_SITE_PATTERNS)} WHERE {name} CONTAINS ep_pat))")
+
+
+def cypher_aggregate_site(ts: str = "ts") -> str:
+    ts = _alias(ts)
+    return _cypher_aggregate_site_over(_cypher_norm(f"{ts}.name"))
 
 
 def cypher_field_evidence(vt: str = "vt", ts: str = "ts") -> str:
@@ -678,14 +683,86 @@ def cypher_content_key(vt: str = "vt") -> str:
     )
 
 
+def _cypher_evidence_tier_over(vt: str, site_name: str) -> str:
+    return (f"(CASE WHEN ({cypher_field_scope(vt)} AND NOT {_cypher_aggregate_site_over(site_name)}) "
+            f"THEN {_cypher_str(EVIDENCE_TIER_FIELD)} ELSE {_cypher_str(EVIDENCE_TIER_REGIONAL)} END)")
+
+
 def cypher_evidence_tier(vt: str = "vt", ts: str = "ts") -> str:
     """String expression: 'field' | 'regional' for the (trial, site) row."""
-    return (f"(CASE WHEN {cypher_field_evidence(vt, ts)} THEN {_cypher_str(EVIDENCE_TIER_FIELD)} "
-            f"ELSE {_cypher_str(EVIDENCE_TIER_REGIONAL)} END)")
+    vt, ts = _alias(vt), _alias(ts)
+    return _cypher_evidence_tier_over(vt, _cypher_norm(f"{ts}.name"))
+
+
+# ── numeric candidates and tier gates ────────────────────────────────────────
+def cypher_numeric_candidate(vt: str = "vt", excluded: str | None = None) -> str:
+    """Necessary condition of a policy yield: a kg/ha value from a source that is not excluded.
+
+    ``cypher_row_policy`` builds ``ep_y`` (and ``ep_unconv``) from this same predicate, so a
+    query can put it in its cheap ``WHERE`` (BSL rows never reach the policy block) and stay
+    equal to the policy by construction. ``excluded`` is an already computed boolean (the row
+    policy passes its ``ep_excluded`` column); by default the source test is inlined.
+    """
+    vt = _alias(vt)
+    excluded = excluded or cypher_excluded_source(vt)
+    return f"({vt}.yieldKgHa IS NOT NULL AND NOT {excluded})"
+
+
+def cypher_tier_prefilter(tier: str, vt: str = "vt") -> str:
+    """Cheap ``AND`` term (before the row policy) that drops only rows ``cypher_tier_gate`` would
+    drop anyway: the regional tier keeps numeric rows, so the excluded-source (BSL) bulk at the
+    aggregate containers never reaches the policy. Empty for the field tier."""
+    if check_tier(tier) == EVIDENCE_TIER_REGIONAL:
+        return f"AND {cypher_numeric_candidate(vt)}"
+    return ""
+
+
+def cypher_numeric_gate_expr(tier: str) -> str:
+    """Boolean over the row-policy columns: a (trial, site) row of ``tier`` that carries a policy
+    number (``ep_y`` is non-null only for an in-mode record of a source that is not excluded)."""
+    return f"ep_tier = {_cypher_str(check_tier(tier))} AND ep_in_mode AND ep_y IS NOT NULL"
+
+
+def cypher_tier_gate_expr(tier: str, with_other: bool = True) -> str:
+    """Boolean over the row-policy columns that selects the rows an answer of ``tier`` reads.
+
+    Regional: numeric rows only. Field: the rows of the purpose mode, plus (``with_other``) the
+    other-purpose rows that are counted and never averaged.
+    """
+    if check_tier(tier) == EVIDENCE_TIER_REGIONAL:
+        return cypher_numeric_gate_expr(tier)
+    rows = "(ep_in_mode OR ep_other)" if with_other else "ep_in_mode"
+    return f"ep_tier = {_cypher_str(tier)} AND {rows}"
+
+
+def cypher_tier_gate(tier: str, with_other: bool = True) -> str:
+    """``WHERE`` clause of ``cypher_tier_gate_expr`` (ends with a newline)."""
+    return f"WHERE {cypher_tier_gate_expr(tier, with_other)}\n"
+
+
+def cypher_numeric_tier_gate(tier: str) -> str:
+    """``WHERE`` clause of ``cypher_numeric_gate_expr`` (ends with a newline)."""
+    return f"WHERE {cypher_numeric_gate_expr(tier)}\n"
+
+
+def passes_tier_gate(tier: str, row_tier: str, in_mode: bool, other: bool, y: float | None,
+                     with_other: bool = True) -> bool:
+    """Python twin of ``cypher_tier_gate_expr`` over one row's policy columns."""
+    if row_tier != check_tier(tier):
+        return False
+    if tier == EVIDENCE_TIER_REGIONAL:
+        return in_mode and y is not None
+    return in_mode or (with_other and other)
+
+
+def yield_basis(mode: str = MODE_MAIN) -> str | None:
+    """Basis of the numbers a ``mode`` answer reports: forage yields are kg dry matter/ha
+    (``policy_yield`` converts them); the main mode reports the record's own unit (None)."""
+    return BASIS_DRY_MATTER if check_mode(mode) == MODE_FORAGE else None
 
 
 ROW_POLICY_COLUMNS: tuple[str, ...] = (
-    "ep_tier", "ep_in_mode", "ep_other", "ep_y", "ep_unconv",
+    "ep_tier", "ep_in_mode", "ep_other", "ep_y", "ep_unconv", "ep_excluded",
 )
 
 
@@ -702,28 +779,31 @@ def cypher_row_policy(mode: str = MODE_MAIN, vt: str = "vt", ts: str = "ts",
       ``is_other_purpose_evidence``), else false;
     - ``ep_y``: the kg/ha the row adds to a numeric aggregate of ``mode`` (``policy_yield``),
       null for an excluded source, an off-mode record, no kg, or a forage yield that cannot be
-      converted to dry matter;
-    - ``ep_unconv``: eligible trial with kg but no number (``has_unconverted_kg``).
+      converted to dry matter (it is built from ``cypher_numeric_candidate``);
+    - ``ep_unconv``: eligible trial with kg but no number (``has_unconverted_kg``);
+    - ``ep_excluded``: the trial's source is excluded from numeric aggregates (rule 1).
 
-    The purpose expression (the costly one) is evaluated once per row; the dry-matter yield
-    only for rows already in forage mode.
+    The lowercased ``qualityParams`` text, the normalised metric and the lowercased site name
+    are each computed once per row, and every key, token and pattern is tested against that
+    variable; the dry-matter yield is evaluated only for rows already in forage mode.
     """
     vt, ts = _alias(vt), _alias(ts)
     carried = "".join(f", {_alias(c)}" for c in carry)
     mode = check_mode(mode)
     yield_expr = (cypher_forage_dm_yield(vt) if mode == MODE_FORAGE else f"toFloat({vt}.yieldKgHa)")
     other = "(NOT ep_excluded AND NOT ep_in_mode)" if mode == MODE_MAIN else "false"
-    # The lowercased text and metric are computed once, so each of the purpose's keys and tokens
-    # is tested against a variable, not against a recomputed expression.
     purpose = _cypher_yield_purpose_over("ep_text", "ep_metric")
+    candidate = cypher_numeric_candidate(vt, excluded="ep_excluded")
     return (
         f"WITH {vt}, {ts}{carried}, toLower(coalesce({vt}.qualityParams, '')) AS ep_text, "
         f"{_cypher_norm(f'{vt}.yieldMetric')} AS ep_metric, "
-        f"{cypher_excluded_source(vt)} AS ep_excluded, {cypher_evidence_tier(vt, ts)} AS ep_tier\n"
-        f"WITH {vt}, {ts}{carried}, ep_tier, ep_excluded, "
+        f"{_cypher_norm(f'{ts}.name')} AS ep_site_lc, "
+        f"{cypher_excluded_source(vt)} AS ep_excluded\n"
+        f"WITH {vt}, {ts}{carried}, ep_excluded, "
+        f"{_cypher_evidence_tier_over(vt, 'ep_site_lc')} AS ep_tier, "
         f"{cypher_purpose_mode_gate(purpose, mode)} AS ep_in_mode\n"
         f"WITH {vt}, {ts}{carried}, ep_tier, ep_in_mode, ep_excluded, {other} AS ep_other, "
-        f"CASE WHEN ep_in_mode AND NOT ep_excluded THEN {yield_expr} END AS ep_y\n"
-        f"WITH {vt}, {ts}{carried}, ep_tier, ep_in_mode, ep_other, ep_y, "
-        f"(ep_in_mode AND NOT ep_excluded AND {vt}.yieldKgHa IS NOT NULL AND ep_y IS NULL) AS ep_unconv\n"
+        f"CASE WHEN ep_in_mode AND {candidate} THEN {yield_expr} END AS ep_y\n"
+        f"WITH {vt}, {ts}{carried}, ep_tier, ep_in_mode, ep_other, ep_y, ep_excluded, "
+        f"(ep_in_mode AND {candidate} AND ep_y IS NULL) AS ep_unconv\n"
     )
