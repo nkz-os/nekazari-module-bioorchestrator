@@ -11,7 +11,7 @@ from app.graph.capability_dao import CapabilityDao
 logger = logging.getLogger("bioorchestrator.capability")
 
 EXTERNAL_CAPABILITY_URLS = [
-    "https://raw.githubusercontent.com/nkz-os/nkz-module-soil/main/capabilities.yaml",
+    "https://raw.githubusercontent.com/nkz-os/nkz-module-soil/master/capabilities.yaml",
     "https://raw.githubusercontent.com/nkz-os/vegetation-health-nkz/main/capabilities.yaml",
 ]
 
