@@ -9,6 +9,10 @@ Honesty rules (see plan Task C.3):
   * Ground truth = MEASURED yields only: `yieldKgHa IS NOT NULL` **and**
     `yieldDerivationMethod IS NULL`. Note-derived / fabricated yields never act
     as an observation you validate against.
+  * Ground truth follows the evidence policy (`app.graph.evidence_policy`): grain
+    yields of grain-family crops only (no forage/fresh records, no kg/ha from excluded
+    sources such as BSL note × constant); only field evidence (located trials at real
+    sites — pseudo-sites are never held out); content-identical trials count once.
   * The prediction side calls `extrapolate_varieties` unchanged — the backtest
     measures the advisor as it ships, not an idealized variant.
 
@@ -22,7 +26,7 @@ from __future__ import annotations
 import statistics
 from typing import Any
 
-from app.graph import agroclimatic
+from app.graph import agroclimatic, evidence_policy
 
 # Pull a deep ranking per fold so predicted means exist for every observed
 # variety; top-3 overlap still uses only the first three ranked.
@@ -73,25 +77,30 @@ class Backtester:
 
     async def _folds(self) -> list[dict[str, Any]]:
         """One row per (site, crop): observed per-variety mean measured yield."""
-        query = """
+        query = f"""
             MATCH (v:VarietyTrial)-[:TRIAL_AT]->(t:TrialSite)
             WHERE v.yieldKgHa IS NOT NULL
               AND v.yieldDerivationMethod IS NULL
               AND coalesce(v.rankingEligible, true) = true
-              AND NOT coalesce(v.yieldMetric, '') IN ['fresh_fruit_kg_ha', 'fresh_grape_kg_ha', 'fresh grape', 'fresh_fruit']
-              AND NOT coalesce(v.yieldMetric, '') CONTAINS 'fresh'
+              AND {evidence_policy.cypher_grain_yield("v")}
+              AND {evidence_policy.cypher_field_evidence("v", "t")}
               AND coalesce(t.climateClassChelsa, t.climateClass) IS NOT NULL
               AND v.cropEppo IS NOT NULL
               AND v.varietyNormalized IS NOT NULL
+            // One observation per distinct trial content (re-ingest twins and
+            // same-name duplicate sites count once).
             WITH t.name AS site,
                  coalesce(t.climateClassChelsa, t.climateClass) AS climate, v.cropEppo AS crop,
                  coalesce(t.annualRainfallMmChelsa, t.annualRainfallMm) AS rainfall,
                  coalesce(t.annualET0MmChelsa, t.annualET0Mm) AS et0,
                  t.frostDaysPerYear AS frost, t.elevationM AS elevation,
                  t.coldestMonthMinCChelsa AS coldest_min, t.annualTempCChelsa AS annual_temp,
-                 v.varietyNormalized AS variety, avg(v.yieldKgHa) AS obs_mean
+                 v.varietyNormalized AS variety, {evidence_policy.cypher_content_key("v")} AS ck,
+                 min(v.yieldKgHa) AS kg
+            WITH site, climate, crop, rainfall, et0, frost, elevation, coldest_min, annual_temp,
+                 variety, avg(kg) AS obs_mean
             RETURN site, climate, crop, rainfall, et0, frost, elevation, coldest_min, annual_temp,
-                   collect({variety: variety, obs: obs_mean}) AS observed
+                   collect({{variety: variety, obs: obs_mean}}) AS observed
         """
         async with self._dao._driver.session() as session:
             result = await session.run(query)
@@ -187,6 +196,7 @@ class Backtester:
         return {
             "strategy": "leave_one_site_out",
             "similarity": strategy,
+            "evidence_policy": evidence_policy.POLICY_VERSION,
             "eval_pool_observations": eval_pool,
             "overall": overall.summary(),
             "by_crop": {c: b.summary() for c, b in sorted(by_crop.items())},

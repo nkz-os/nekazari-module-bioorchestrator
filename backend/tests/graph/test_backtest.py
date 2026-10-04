@@ -278,3 +278,113 @@ def test_backtest_report_route(dao):
     report = _run(agriculture_backtest_report(dao._driver))
     assert report["strategy"] == "leave_one_site_out"
     assert report["overall"]["folds"] == 2
+
+
+# ── Evidence policy on the ground truth (honest baseline) ────────────────────
+
+def _fold_obs(dao, site: str) -> dict[str, float]:
+    from app.eval.backtest import Backtester
+
+    folds = _run(Backtester(dao)._folds())
+    fold = next((f for f in folds if f["site"] == site), None)
+    return {} if fold is None else {o["variety"]: o["obs"] for o in fold["observed"]}
+
+
+def test_backtest_folds_count_a_duplicated_trial_once(dao):
+    """Re-ingest twins (same content, different mergeKey) are ONE observation."""
+    _reset_and_seed(
+        dao,
+        """
+        CREATE (a:TrialSite {name:'SiteA', climateClass:'Csa', annualRainfallMm:500})
+        CREATE (t1:VarietyTrial {mergeKey:'g|1', source_id:'GENVCE', aggregationScope:'site',
+                cropEppo:'TRZAX', varietyNormalized:'V1', variety:'V1', year:2020, yieldKgHa:9000.0})
+        CREATE (t2:VarietyTrial {mergeKey:'g|2', source_id:'GENVCE', aggregationScope:'site',
+                cropEppo:'TRZAX', varietyNormalized:'V1', variety:'V1', year:2020, yieldKgHa:9000.0})
+        CREATE (t3:VarietyTrial {mergeKey:'g|3', source_id:'GENVCE', aggregationScope:'site',
+                cropEppo:'TRZAX', varietyNormalized:'V1', variety:'V1', year:2021, yieldKgHa:6000.0})
+        CREATE (t1)-[:TRIAL_AT]->(a) CREATE (t2)-[:TRIAL_AT]->(a) CREATE (t3)-[:TRIAL_AT]->(a)
+        """,
+    )
+    assert _fold_obs(dao, "SiteA") == {"V1": 7500.0}  # not (9000+9000+6000)/3
+
+
+def test_backtest_folds_take_no_kg_from_bsl(dao):
+    """BSL kg/ha (note × constant) never act as observed yield, whatever the variant."""
+    _reset_and_seed(
+        dao,
+        """
+        CREATE (a:TrialSite {name:'SiteA', climateClass:'Cfb', annualRainfallMm:700})
+        CREATE (m:VarietyTrial {source_id:'LFL-BAYERN', aggregationScope:'site', cropEppo:'TRZAX',
+                varietyNormalized:'M', variety:'M', year:2020, yieldKgHa:8000.0})
+        // Unflagged BSL kg (no yieldDerivationMethod) and dataSource-only variants.
+        CREATE (b1:VarietyTrial {source_id:'BSL', aggregationScope:'site', cropEppo:'TRZAX',
+                varietyNormalized:'B1', variety:'B1', year:2020, yieldKgHa:12600.0})
+        CREATE (b2:VarietyTrial {source_id:'X', dataSource:'bsa', aggregationScope:'site', cropEppo:'TRZAX',
+                varietyNormalized:'B2', variety:'B2', year:2020, yieldKgHa:11200.0})
+        CREATE (b3:VarietyTrial {source_id:'X', dataSource:'bsa bundessortenamt', aggregationScope:'site',
+                cropEppo:'TRZAX', varietyNormalized:'B3', variety:'B3', year:2020, yieldKgHa:9800.0})
+        CREATE (m)-[:TRIAL_AT]->(a) CREATE (b1)-[:TRIAL_AT]->(a)
+        CREATE (b2)-[:TRIAL_AT]->(a) CREATE (b3)-[:TRIAL_AT]->(a)
+        """,
+    )
+    assert _fold_obs(dao, "SiteA") == {"M": 8000.0}
+
+
+def test_backtest_folds_are_grain_yields_of_grain_crops(dao):
+    """Forage and fresh records, and crops outside the grain family, are not ground truth."""
+    from app.eval.backtest import Backtester
+
+    _reset_and_seed(
+        dao,
+        """
+        CREATE (a:TrialSite {name:'SiteA', climateClass:'Cfb', annualRainfallMm:900})
+        CREATE (g:VarietyTrial {source_id:'NAVARRA-AGRARIA', aggregationScope:'site', cropEppo:'ZEAMX',
+                varietyNormalized:'GRAIN', variety:'GRAIN', year:2019, yieldKgHa:12300.0,
+                qualityParams:'{"humidity_pct": 22.0, "thousand_grain_weight_g": 350.0}'})
+        CREATE (s:VarietyTrial {source_id:'NAVARRA-AGRARIA', aggregationScope:'site', cropEppo:'ZEAMX',
+                varietyNormalized:'SILAGE', variety:'SILAGE', year:2019, yieldKgHa:26176.0,
+                qualityParams:'{"dry_matter_pct": 34.8, "ndf_pct": 40.1, "starch_pct": 31.0}'})
+        CREATE (f:VarietyTrial {source_id:'NAVARRA-AGRARIA', aggregationScope:'site', cropEppo:'ZEAMX',
+                varietyNormalized:'FRESH', variety:'FRESH', year:2019, yieldKgHa:40000.0,
+                yieldMetric:'fresh_fruit_kg_ha'})
+        CREATE (tom:VarietyTrial {source_id:'CTIFL', dataSource:'ctifl', aggregationScope:'site',
+                cropEppo:'LYPES', varietyNormalized:'T', variety:'T', year:2019, yieldKgHa:289000.0})
+        CREATE (g)-[:TRIAL_AT]->(a) CREATE (s)-[:TRIAL_AT]->(a) CREATE (f)-[:TRIAL_AT]->(a)
+        CREATE (tom)-[:TRIAL_AT]->(a)
+        """,
+    )
+    folds = _run(Backtester(dao)._folds())
+    assert [(f["site"], f["crop"]) for f in folds] == [("SiteA", "ZEAMX")]
+    assert _fold_obs(dao, "SiteA") == {"GRAIN": 12300.0}
+
+
+def test_backtest_folds_skip_aggregate_sites_and_non_site_scopes(dao):
+    """Pseudo-sites are never held-out folds; regional/national rows are not observations."""
+    from app.eval.backtest import Backtester
+
+    _reset_and_seed(
+        dao,
+        """
+        CREATE (a:TrialSite {name:'SiteA', climateClass:'Cfb', annualRainfallMm:700})
+        CREATE (uk:TrialSite {name:'UK national list', climateClass:'Cfb'})
+        CREATE (k:VarietyTrial {source_id:'AHDB', aggregationScope:'site', cropEppo:'TRZAX',
+                varietyNormalized:'K', variety:'K', year:2025, yieldKgHa:10500.0})
+        CREATE (f:VarietyTrial {source_id:'LFL-BAYERN', aggregationScope:'site', cropEppo:'TRZAX',
+                varietyNormalized:'F', variety:'F', year:2020, yieldKgHa:8000.0})
+        CREATE (r:VarietyTrial {source_id:'LFL-BAYERN', aggregationScope:'regional', cropEppo:'TRZAX',
+                varietyNormalized:'R', variety:'R', year:2020, yieldKgHa:7700.0})
+        CREATE (k)-[:TRIAL_AT]->(uk) CREATE (f)-[:TRIAL_AT]->(a) CREATE (r)-[:TRIAL_AT]->(a)
+        """,
+    )
+    folds = _run(Backtester(dao)._folds())
+    assert [f["site"] for f in folds] == ["SiteA"]
+    assert _fold_obs(dao, "SiteA") == {"F": 8000.0}
+
+
+def test_backtest_report_names_the_evidence_policy(dao):
+    from app.eval.backtest import Backtester
+    from app.graph import evidence_policy
+
+    _reset_and_seed(dao, _TWO_SITE_SEED)
+    report = _run(Backtester(dao).run())
+    assert report["evidence_policy"] == evidence_policy.POLICY_VERSION
