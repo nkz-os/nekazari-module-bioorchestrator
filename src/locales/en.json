@@ -901,7 +901,8 @@
       "few": " (few)",
       "similarityV2": "Sites chosen by climate similarity",
       "compare": "Compare",
-      "chooseVariety": "Choose variety →"
+      "chooseVariety": "Choose variety →",
+      "typicalSowing": "Typical sowing: {{month}}"
     },
     "expert": {
       "eppo": "EPPO code",
@@ -1008,6 +1009,10 @@
         "emptyHint": "There are no sowing windows for these crops yet. They will appear here once available.",
         "cycle": "Cycle: {{days}} days",
         "noCycle": "Cycle: no data",
+        "typical": "typical sowing ≈ {{sow}} → harvest ≈ {{harvest}}",
+        "typicalSowOnly": "typical sowing ≈ {{sow}}",
+        "rainfedData": "(rainfed data)",
+        "source": "Source: {{source}}",
         "month": {
           "1": "J",
           "2": "F",

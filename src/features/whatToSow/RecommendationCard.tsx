@@ -4,6 +4,7 @@ import { Badge, Button, Card, Checkbox, Inline, Stack } from '@nekazari/ui-kit';
 import type { Interval, Recommendation } from '../../types/recommend';
 import { levelKey, rangeBar, soilWarning } from './viewModel';
 import { isFewTrials, seasonKey } from './pageModel';
+import { typicalSowingMonth } from './compareModel';
 import ExpertDetails from './ExpertDetails';
 
 /** Crop common name, scientific name as fallback. */
@@ -62,13 +63,17 @@ export default function RecommendationCard({
   const fmt = (n: number | null) => (n == null ? noData : n.toLocaleString(i18n.language, { maximumFractionDigits: 0 }));
   const [lo, hi] = rec.yield.interval;
   const warning = soilWarning(rec);
+  const typicalMonth = typicalSowingMonth(rec.season, i18n.language);
 
   return (
     <Card padding="md">
       <Stack gap="stack">
         <div>
           <h3 className="text-nkz-base font-semibold text-nkz-text-primary">{name}</h3>
-          <p className="text-nkz-sm text-nkz-text-muted">{t(seasonKey(rec.crop.sowing_type))}</p>
+          <p className="text-nkz-sm text-nkz-text-muted">
+            {t(seasonKey(rec.crop.sowing_type))}
+            {typicalMonth && <> · {t('whatToSow.card.typicalSowing', { month: typicalMonth })}</>}
+          </p>
         </div>
 
         <Stack gap="tight">

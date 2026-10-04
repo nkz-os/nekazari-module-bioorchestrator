@@ -10,6 +10,7 @@ from __future__ import annotations
 import hashlib
 import json
 
+from app.services import ggcmi_calendar
 from app.services.crop_reference import get_season_slots
 
 RESISTANT_THRESHOLD = 0.7
@@ -40,11 +41,19 @@ def disease_summary(disease_scores: dict) -> dict:
     return {"resistant": sum(1 for v in values if v >= RESISTANT_THRESHOLD), "total": len(values)}
 
 
-def sowing_info(eppo: str, koppen: str | None, table_rows: list[dict], country: str | None = None) -> dict:
-    """First matching table row, else the coarse season slot.
+def sowing_info(eppo: str, koppen: str | None, table_rows: list[dict], country: str | None = None,
+                *, lat: float | None = None, lon: float | None = None,
+                irrigation: str | None = None) -> dict:
+    """Sowing calendar of a crop: table row > GGCMI calendar > season slot.
 
-    A row with ``countries`` applies only when ``country`` is one of them (an
-    unknown country matches no scoped row); a row without it applies anywhere.
+    1. First matching table row (a month range). A row with ``countries``
+       applies only when ``country`` is one of them (an unknown country matches
+       no scoped row); a row without it applies anywhere.
+    2. With a point (``lat``/``lon``), the GGCMI crop calendar cell: a typical
+       sowing and maturity day, never a range, so ``sowing_window`` stays null.
+       ``irrigation`` ``"regadío"`` reads the irrigated calendar, else the
+       rainfed one (``typical_rainfed_fallback`` True).
+    3. The coarse season slot of the crop.
     """
     for row in table_rows:
         if "countries" in row and country not in row["countries"]:
@@ -55,11 +64,27 @@ def sowing_info(eppo: str, koppen: str | None, table_rows: list[dict], country: 
                 "sowing_window": {"start_month": row["start_month"], "end_month": row["end_month"]},
                 "cycle_days": row.get("cycle_days"),
                 "source": row["source"],
+                "typical_sowing_doy": None,
+                "typical_maturity_doy": None,
+                "typical_rainfed_fallback": None,
+            }
+    if lat is not None and lon is not None:
+        cal = ggcmi_calendar.lookup(eppo, lat, lon, irrigation=irrigation)
+        if cal is not None:
+            return {
+                "sowing_type": ggcmi_calendar.sowing_type_from_doy(cal["planting_doy"]),
+                "sowing_window": None,
+                "cycle_days": cal["cycle_days"],
+                "source": cal["source"],
+                "typical_sowing_doy": cal["planting_doy"],
+                "typical_maturity_doy": cal["maturity_doy"],
+                "typical_rainfed_fallback": cal["rainfed_fallback"],
             }
     slots = get_season_slots(eppo)
     sowing_type = _SLOT_TO_SOWING[next(iter(slots))] if len(slots) == 1 else None
     return {"sowing_type": sowing_type, "sowing_window": None, "cycle_days": None,
-            "source": "crop_season_slot"}
+            "source": "crop_season_slot", "typical_sowing_doy": None, "typical_maturity_doy": None,
+            "typical_rainfed_fallback": None}
 
 
 def count_blockers(rec: dict) -> int:
@@ -126,7 +151,10 @@ def build_recommendation(*, eppo, scientific_name, conditions, varieties, refere
             "frost": {"level": frost_level},
         },
         "season": {"sowing_window": sowing["sowing_window"], "cycle_days": sowing["cycle_days"],
-                   "source": sowing["source"]},
+                   "source": sowing["source"],
+                   "typical_sowing_doy": sowing.get("typical_sowing_doy"),
+                   "typical_maturity_doy": sowing.get("typical_maturity_doy"),
+                   "typical_rainfed_fallback": sowing.get("typical_rainfed_fallback")},
         "trust": {"level": _trust_level(n_trials, best.get("confidence")), "data_gaps": gaps},
         "varieties": [
             {"variety": v.get("variety"), "variety_uri": v.get("variety_uri"),
