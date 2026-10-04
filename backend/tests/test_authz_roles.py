@@ -521,3 +521,14 @@ def test_require_roles_needs_at_least_one_role():
 
     with pytest.raises(ValueError):
         require_roles()
+
+
+def test_contribution_number_check_rejects_overflow_and_huge_values():
+    from app.api.v1.catalog import _is_finite_number
+
+    assert _is_finite_number(0.85)
+    assert _is_finite_number(12)
+    assert not _is_finite_number(10**400)
+    assert not _is_finite_number(1e19)
+    assert not _is_finite_number(float("nan"))
+    assert not _is_finite_number(True)

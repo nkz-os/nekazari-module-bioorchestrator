@@ -22,12 +22,16 @@ router = APIRouter(prefix="/catalog", tags=["crop-catalog"])
 CONTRIBUTABLE_PARAMS = frozenset({"kc", "kcIni", "kcMid", "kcEnd", "d1", "d2", "mdsRef", "ky"})
 
 
+_MAX_ABS_PARAM = 1e9  # far above any agronomic coefficient; keeps ints in int64
+
+
 def _is_finite_number(value: object) -> bool:
-    return (
-        isinstance(value, (int, float))
-        and not isinstance(value, bool)
-        and math.isfinite(value)
-    )
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        return False
+    try:
+        return math.isfinite(value) and abs(value) <= _MAX_ABS_PARAM
+    except OverflowError:  # int too large for a float
+        return False
 
 
 @router.get("")
