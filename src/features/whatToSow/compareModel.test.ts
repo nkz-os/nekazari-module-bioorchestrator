@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
-  barPct, fmtCell, loadPrice, monthSegments, parsePrice, priceKey, rotationSummary, savePrice,
+  barPct, doyPct, fmtCell, formatDoy, loadPrice, monthSegments, parsePrice, priceKey, rotationSummary, savePrice,
+  typicalCalendar, typicalSowingMonth,
 } from './compareModel';
 
 describe('monthSegments', () => {
@@ -113,5 +114,69 @@ describe('fmtCell', () => {
     expect(fmtCell('+5.3', 'es')).toBe('+5,3');
     expect(fmtCell('-2', 'en')).toBe('-2');
     expect(fmtCell('1234', 'en')).toBe('1,234');
+  });
+});
+
+describe('doyPct', () => {
+  it('maps day 1 to 0% and 31 Dec to the last day of a 365-day year', () => {
+    expect(doyPct(1)).toBe(0);
+    expect(doyPct(365)).toBeCloseTo((364 / 365) * 100);
+    expect(doyPct(183)).toBeCloseTo((182 / 365) * 100);
+  });
+  it('is null for invalid days', () => {
+    for (const d of [0, 366, 367, 1.5, NaN, null, undefined]) expect(doyPct(d as number)).toBeNull();
+  });
+});
+
+describe('typicalCalendar', () => {
+  const season = (sow: number | null, mat: number | null, window = false) => ({
+    sowing_window: window ? { start_month: 10, end_month: 11 } : null,
+    cycle_days: null, source: 'GGCMI', typical_sowing_doy: sow, typical_maturity_doy: mat,
+  });
+  it('draws a marker at the sowing day and one bar to maturity inside the year', () => {
+    const cal = typicalCalendar(season(100, 250))!;
+    expect(cal.markerPct).toBeCloseTo((99 / 365) * 100);
+    expect(cal.segments).toHaveLength(1);
+    expect(cal.segments[0].leftPct).toBeCloseTo((99 / 365) * 100);
+    expect(cal.segments[0].widthPct).toBeCloseTo((151 / 365) * 100);
+  });
+  it('wraps the year end into two bars (winter wheat: Nov to Jul)', () => {
+    const cal = typicalCalendar(season(304, 190))!;
+    expect(cal.segments).toHaveLength(2);
+    expect(cal.segments[0].leftPct).toBeCloseTo((303 / 365) * 100);
+    expect(cal.segments[0].leftPct + cal.segments[0].widthPct).toBeCloseTo(100);
+    expect(cal.segments[1].leftPct).toBe(0);
+    expect(cal.segments[1].widthPct).toBeCloseTo((190 / 365) * 100);
+  });
+  it('keeps the marker without a maturity day', () => {
+    const cal = typicalCalendar(season(120, null))!;
+    expect(cal.segments).toEqual([]);
+    expect(cal.maturityDoy).toBeNull();
+  });
+  it('is null when a sowing window exists or there is no typical day', () => {
+    expect(typicalCalendar(season(100, 250, true))).toBeNull();
+    expect(typicalCalendar(season(null, 250))).toBeNull();
+    const tableOnly = { sowing_window: null, cycle_days: null, source: null };
+    expect(typicalCalendar(tableOnly)).toBeNull();
+  });
+});
+
+describe('formatDoy', () => {
+  it('formats a day of year as month-day in the locale (non-leap calendar)', () => {
+    expect(formatDoy(304, 'en')).toBe('Oct 31');
+    expect(formatDoy(1, 'en')).toBe('Jan 1');
+    expect(formatDoy(365, 'en')).toBe('Dec 31');
+    expect(formatDoy(60, 'en')).toBe('Mar 1');
+    expect(formatDoy(304, 'es')).toMatch(/31 oct/);
+  });
+});
+
+describe('typicalSowingMonth', () => {
+  it('names the month of the typical sowing day only when there is no window', () => {
+    const base = { sowing_window: null, cycle_days: null, source: 'GGCMI', typical_maturity_doy: null };
+    expect(typicalSowingMonth({ ...base, typical_sowing_doy: 304 }, 'en')).toBe('October');
+    expect(typicalSowingMonth({ ...base, typical_sowing_doy: null }, 'en')).toBeNull();
+    expect(typicalSowingMonth({ ...base, sowing_window: { start_month: 1, end_month: 2 },
+      typical_sowing_doy: 304 }, 'en')).toBeNull();
   });
 });

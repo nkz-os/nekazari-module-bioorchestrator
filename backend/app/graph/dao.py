@@ -3425,7 +3425,9 @@ class GraphDAO:
         inputs ``annual_rainfall_mm``, ``annual_et0_mm``, ``coldest_month_min_c``,
         ``annual_temp_c`` and ``frost_margin_c``, and ``country`` (ISO 3166
         alpha-2 or None; scopes country-specific sowing windows and is part of
-        the cache key through ``agro_cond``). A ``climate_detail`` dict with
+        the cache key through ``agro_cond``), and ``lat``/``lon`` (parcel
+        centroid or None; select the GGCMI crop calendar cell, also part of the
+        cache key through ``agro_cond``). A ``climate_detail`` dict with
         the same keys is also accepted; explicit top-level keys win.
 
         Only ``management="organic"`` changes the computation (yields and the
@@ -3509,7 +3511,9 @@ class GraphDAO:
                 crop_entries = await self.get_available_crops()
             crop_entries = [c for c in crop_entries if c.get("eppo_code")]
             sowings = {c["eppo_code"]: sowing_info(c["eppo_code"], climate_class, table_rows,
-                                                   country=cond.get("country"))
+                                                   country=cond.get("country"),
+                                                   lat=cond.get("lat"), lon=cond.get("lon"),
+                                                   irrigation=irrigation_regime)
                        for c in crop_entries}
             if season != "all":
                 crop_entries = [c for c in crop_entries if sowings[c["eppo_code"]]["sowing_type"] == season]

@@ -899,7 +899,8 @@
       "few": " (pocos)",
       "similarityV2": "Sitios elegidos por parecido climático",
       "compare": "Comparar",
-      "chooseVariety": "Elegir variedad →"
+      "chooseVariety": "Elegir variedad →",
+      "typicalSowing": "Siembra típica: {{month}}"
     },
     "expert": {
       "eppo": "Código EPPO",
@@ -1006,6 +1007,10 @@
         "emptyHint": "Todavía no hay ventanas de siembra para estos cultivos. Aparecerán aquí cuando existan.",
         "cycle": "Ciclo: {{days}} días",
         "noCycle": "Ciclo: sin datos",
+        "typical": "siembra típica ≈ {{sow}} → cosecha ≈ {{harvest}}",
+        "typicalSowOnly": "siembra típica ≈ {{sow}}",
+        "rainfedData": "(dato de secano)",
+        "source": "Fuente: {{source}}",
         "month": {
           "1": "E",
           "2": "F",

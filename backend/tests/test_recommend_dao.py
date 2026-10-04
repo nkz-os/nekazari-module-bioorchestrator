@@ -559,3 +559,42 @@ async def test_recommend_cache_is_keyed_by_country():
         fr = (await _run(_conds(country="FR"), {"TRZAX": [_variety()]}))["recommendations"][0]
     assert es["season"]["source"] == "ref-es"
     assert fr["season"]["source"] == "crop_season_slot"
+
+
+# ── GGCMI crop calendar on the parcel path (point known) ────────────────────
+_PARIS = {"lat": 48.85, "lon": 2.35}
+
+
+async def test_parcel_point_fills_typical_days_from_ggcmi():
+    from app.services import ggcmi_calendar, sowing_windows
+    with patch.object(sowing_windows, "load_rows", return_value=[]):
+        rec = (await _run(_conds(**_PARIS), {"TRZAX": [_variety()]}))["recommendations"][0]
+    assert rec["season"]["source"] == ggcmi_calendar.citation("SAGE")
+    assert rec["season"]["typical_sowing_doy"] == 304
+    assert rec["season"]["sowing_window"] is None
+    assert rec["crop"]["sowing_type"] == "autumn"
+
+
+async def test_no_point_keeps_season_slot():
+    from app.services import sowing_windows
+    with patch.object(sowing_windows, "load_rows", return_value=[]):
+        rec = (await _run(_conds(), {"TRZAX": [_variety()]}))["recommendations"][0]
+    assert rec["season"]["source"] == "crop_season_slot"
+    assert rec["season"]["typical_sowing_doy"] is None
+
+
+async def test_dao_passes_point_and_irrigation_to_sowing_info():
+    from app.services import ggcmi_calendar, sowing_windows
+    with patch.object(sowing_windows, "load_rows", return_value=[]), \
+            patch.object(ggcmi_calendar, "lookup", return_value=None) as m:
+        await _run(_conds(irrigation_regime="regadío", **_PARIS), {"ZEAMX": [_variety()]})
+    m.assert_called_once_with("ZEAMX", 48.85, 2.35, irrigation="regadío")
+
+
+async def test_recommend_cache_is_keyed_by_point():
+    from app.services import sowing_windows
+    with patch.object(sowing_windows, "load_rows", return_value=[]):
+        paris = (await _run(_conds(**_PARIS), {"TRZAX": [_variety()]}))["recommendations"][0]
+        madrid = (await _run(_conds(lat=40.4, lon=-3.7), {"TRZAX": [_variety()]}))["recommendations"][0]
+    assert paris["season"]["typical_sowing_doy"] == 304
+    assert madrid["season"]["typical_sowing_doy"] == 332
