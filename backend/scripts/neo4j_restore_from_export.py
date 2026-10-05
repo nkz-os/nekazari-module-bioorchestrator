@@ -28,15 +28,16 @@ import base64
 import gzip
 import hashlib
 import json
+import math
 import os
-import sys
 import tarfile
 import time
-import pytz  # installed with the neo4j driver; it is what the driver uses for named zones
 
-from neo4j import GraphDatabase
+import pytz  # installed with the neo4j driver; it is what the driver uses for named zones
 from neo4j.spatial import CartesianPoint, Point, WGS84Point
 from neo4j.time import Date, DateTime, Duration, Time
+
+from neo4j import GraphDatabase
 
 FORMAT = "nkz-neo4j-export"
 SUPPORTED_FORMAT_VERSION = 1
@@ -61,7 +62,7 @@ def enc(v):
     if v is None or isinstance(v, (bool, int, str)):
         return v
     if isinstance(v, float):
-        if v != v or v in (float("inf"), float("-inf")):
+        if math.isnan(v) or math.isinf(v):
             return {"$t": "float", "v": repr(v)}
         return v
     if type(v) in (list, tuple):
