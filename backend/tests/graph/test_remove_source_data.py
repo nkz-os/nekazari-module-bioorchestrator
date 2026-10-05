@@ -13,7 +13,6 @@ from testcontainers.neo4j import Neo4jContainer
 
 from neo4j import READ_ACCESS, GraphDatabase
 from scripts.remove_source_data import (
-    LegacyIndex,
     resolve_variants,
     run,
     site_keys,

@@ -715,7 +715,9 @@ def _parse_args(argv: Sequence[str] | None) -> argparse.Namespace:
 def main(argv: Sequence[str] | None = None) -> int:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
     args = _parse_args(argv)
-    from app.core.config import settings  # deferred: tests inject a driver and never reach this
+    from app.core.config import (
+        settings,  # deferred: tests inject a driver and never reach this
+    )
 
     target = canonical_source_id(args.source) or args.source
     mode = "apply" if args.apply else "dry-run"
