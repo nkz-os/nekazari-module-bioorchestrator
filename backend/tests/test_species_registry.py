@@ -33,6 +33,7 @@ _ALIASES = {
     "BRSNW": ("rapeseed", "Brassica napus"),
     "PIBAR": ("pea", "Pisum sativum"),
     "BRSOX": ("broccoli", "Brassica oleracea var. italica"),
+    "BROOL": ("broccoli", "Brassica oleracea var. italica"),
     "CIEAS": ("chickpea", "Cicer arietinum"),
     "LINUS": ("flax", "Linum usitatissimum"),
     "CYNSC": ("artichoke", "Cynara cardunculus var. scolymus"),

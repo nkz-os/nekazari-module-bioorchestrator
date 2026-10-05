@@ -222,7 +222,8 @@ species:
     scientific_name: "Brassica oleracea var. italica"
     eppo_code: "BRSOK"
     # alias BRSOX: Brassica oleracea var. italica: every trial of the code carries the same scientific name
-    eppo_aliases: ["BRSOX"]
+    # alias BROOL: the code the graph Species node and the phenology seed use for this species
+    eppo_aliases: ["BRSOX", "BROOL"]
     agrovoc_uri: "http://aims.fao.org/aos/agrovoc/c_1093"
     common_names: { es: "brócoli", en: "broccoli", eu: "brokoli", fr: "brocoli", ca: "bròquil", pt: "brócolos" }
 
