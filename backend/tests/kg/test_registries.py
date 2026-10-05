@@ -785,3 +785,113 @@ def test_reviewed_range_with_a_reviewer_is_accepted(copy_dir):
     dest, edit = copy_dir
     edit("ranges.yaml", lambda d: d["ranges"][0].update(status="reviewed", reviewer="agronomist-1"))
     assert load_registries(dest).ranges[0].status == "reviewed"
+
+
+# ── varieties ────────────────────────────────────────────────────────────────
+
+def test_varieties_cover_the_four_crops_with_unique_ids(reg):
+    assert {v.crop for v in reg.varieties} == {"ZEAMX", "HORVX", "TRZAX", "BRSNN"}
+    assert len({v.id for v in reg.varieties}) == len(reg.varieties) > 700
+    for variety in reg.varieties:
+        assert reg.crop(variety.crop).eppo == variety.crop
+        assert variety.sources and all(reg.source(s) for s in variety.sources)
+
+
+def test_every_variety_name_and_alias_resolves_to_one_variety_per_crop(reg):
+    for variety in reg.varieties:
+        for name in (variety.name, *variety.aliases):
+            assert reg.variety(variety.crop, name) is variety
+
+
+def test_no_variety_is_reviewed_yet_and_alias_groups_state_their_evidence(reg):
+    assert {v.status for v in reg.varieties} == {"candidate", "assumption"}
+    for variety in reg.varieties:
+        if variety.aliases:
+            assert variety.status == "assumption"
+            assert variety.evidence
+        else:
+            assert variety.status == "candidate"
+    groups = [v for v in reg.varieties if v.aliases]
+    assert 40 <= len(groups) <= 80
+
+
+def test_annotation_variants_resolve_to_the_clean_name(reg):
+    clean = reg.variety("ZEAMX", "DKC6667YG")
+    assert clean.status == "assumption"
+    for raw in ("DKC6667YG (T)", "DKC6667YG (T) *", "dkc6667yg (t)*", "  DKC6667YG  "):
+        assert reg.variety("ZEAMX", raw) is clean
+    assert reg.variety("HORVX", "Pewter (R)") is reg.variety("HORVX", "PEWTER (T)")
+    assert reg.variety("ZEAMA", "P1921 *") is reg.variety("ZEAMX", "P1921")
+
+
+def test_breeder_code_and_denomination_in_one_raw_string_are_one_variety(reg):
+    maya = reg.variety("HORVX", "96054-518 (MAYA)")
+    assert maya.name == "MAYA" and reg.variety("HORVX", "96054-518") is maya
+    mufasa = reg.variety("TRZAX", "MUFASA (FD14WW060)")
+    assert mufasa.name == "MUFASA" and reg.variety("TRZAX", "FD14WW060") is mufasa
+    rocio = reg.variety("HORVX", "ROCÍO (NSL03-6838)")
+    assert rocio.name == "ROCÍO" and reg.variety("HORVX", "NSL03-6838") is rocio
+
+
+def test_formatting_variants_are_not_merged(reg):
+    # no fuzzy fusion: spacing/punctuation variants stay separate until a person decides
+    pairs = [("ZEAMX", "LG30.444", "LG 30.444"), ("ZEAMX", "MAS 68K", "MAS 68.K"),
+             ("ZEAMX", "INDEM668", "INDEM 668"), ("HORVX", "ROCIO", "ROCÍO")]
+    for crop, a, b in pairs:
+        first, second = reg.variety(crop, a), reg.variety(crop, b)
+        assert first is not None and second is not None, (a, b)
+        assert first is not second
+
+
+def test_a_variety_belongs_to_one_crop(reg):
+    assert reg.variety("HORVX", "HISPANIC") is not None
+    assert reg.variety("ZEAMX", "HISPANIC") is None
+
+
+@pytest.mark.parametrize("name", ["FDL Columna", "FDL Abund", "Pitar", "Antalis", "Claudio", "Svevo"])
+def test_names_of_out_of_scope_rows_are_not_registered(reg, name):
+    # Romanian wheat stored under CREA (unlicensed paper) and the placeholder durum rows
+    for crop in ("TRZAX", "ZEAMX"):
+        assert reg.variety(crop, name) is None
+
+
+@pytest.mark.parametrize(("crop", "name"), [(None, "P1921"), ("ZEAMX", None), ("ZEAMX", ""), ("NOPE", "P1921"),
+                                            ("ZEAMX", "NOT A VARIETY")])
+def test_unregistered_variety_is_none(reg, crop, name):
+    assert reg.variety(crop, name) is None
+
+
+def test_variety_alias_shared_by_two_varieties_is_an_error(copy_dir):
+    dest, edit = copy_dir
+
+    def clash(d):
+        first, second = d["varieties"][0], d["varieties"][1]
+        second.update(aliases=[first["name"]], evidence="x", status="assumption")
+
+    edit("varieties.yaml", clash)
+    with pytest.raises(RegistryError, match="more than one variety"):
+        load_registries(dest)
+
+
+def test_alias_group_without_evidence_or_with_candidate_status_is_an_error(copy_dir):
+    dest, edit = copy_dir
+    edit("varieties.yaml", lambda d: d["varieties"][0].update(aliases=["X1"], status="assumption", evidence=None))
+    with pytest.raises(RegistryError, match="evidence"):
+        load_registries(dest)
+    edit("varieties.yaml", lambda d: d["varieties"][0].update(evidence="because", status="candidate"))
+    with pytest.raises(RegistryError, match="not a candidate"):
+        load_registries(dest)
+
+
+def test_variety_with_unregistered_crop_or_source_is_an_error(copy_dir):
+    dest, edit = copy_dir
+    edit("varieties.yaml", lambda d: d["varieties"][0].update(sources=["NOSRC"]))
+    with pytest.raises(RegistryError, match="unknown source"):
+        load_registries(dest)
+
+
+def test_variety_id_must_start_with_its_crop(copy_dir):
+    dest, edit = copy_dir
+    edit("varieties.yaml", lambda d: d["varieties"][0].update(crop="HORVX"))
+    with pytest.raises(RegistryError, match="starts with its crop"):
+        load_registries(dest)

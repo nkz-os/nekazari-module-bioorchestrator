@@ -1,0 +1,806 @@
+# Variety registry (KG ingestion, E3).
+#
+# One entry per variety per crop. `status`:
+#   candidate  - seeded from a raw name, one variety per name, no alias evidence
+#   assumption - alias group with stated evidence, not yet reviewed by a person
+#   reviewed   - confirmed by a person (none yet)
+# Aliases exist ONLY where the raw data itself evidences them (see `evidence`).
+# Names that differ only in spacing or punctuation (e.g. "LG30.444" / "LG 30.444") are NOT merged:
+# the build writes a review queue, and a person decides. No fuzzy matching, no automatic fusion.
+# Lookup: exact match after Unicode NFC, case-folding and whitespace collapsing.
+# Seeded 2026-10-05 from the GENVCE and CREA raw extractions (GENVCE 2006-2025, CREA 2021-2025).
+version: 1
+varieties:
+  - {id: 'BRSNN:addition', crop: BRSNN, name: ADDITION, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:agile', crop: BRSNN, name: AGILE, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:albatros', crop: BRSNN, name: ALBATROS, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:alicante', crop: BRSNN, name: ALICANTE, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:amazzonite', crop: BRSNN, name: AMAZZONITE, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:ambassador', crop: BRSNN, name: AMBASSADOR, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:anisse', crop: BRSNN, name: ANISSE, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:aquarel-cl', crop: BRSNN, name: AQUAREL CL, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:arazzo', crop: BRSNN, name: ARAZZO, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:arkansas', crop: BRSNN, name: ARKANSAS, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:arsenal', crop: BRSNN, name: ARSENAL, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:artemis', crop: BRSNN, name: ARTEMIS, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:artoga', crop: BRSNN, name: ARTOGA, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:astronom', crop: BRSNN, name: ASTRONOM, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:atenzo', crop: BRSNN, name: ATENZO, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:attica', crop: BRSNN, name: ATTICA, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:avatar', crop: BRSNN, name: AVATAR, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:azurite', crop: BRSNN, name: AZURITE, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:basalti', crop: BRSNN, name: BASALTI, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:basalti-cs', crop: BRSNN, name: BASALTI CS, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:beatrix-cl', crop: BRSNN, name: BEATRIX CL, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:bellevue', crop: BRSNN, name: BELLEVUE, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:bluestar', crop: BRSNN, name: BLUESTAR, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:bonanza', crop: BRSNN, name: BONANZA, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:brazzil', crop: BRSNN, name: BRAZZIL, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:capti-cs', crop: BRSNN, name: CAPTI CS, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:carlitat', crop: BRSNN, name: CARLITAT, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:carlton-cl', crop: BRSNN, name: CARLTON CL, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:cello-cl', crop: BRSNN, name: CELLO CL, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:ceos', crop: BRSNN, name: CEOS, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:chrome', crop: BRSNN, name: CHROME, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:clavier-cl', crop: BRSNN, name: CLAVIER CL, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:columbia', crop: BRSNN, name: COLUMBIA, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:conrad-cl', crop: BRSNN, name: CONRAD CL, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:coutrie', crop: BRSNN, name: COUTRIE, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:cs-calculati-cl', crop: BRSNN, name: CS CALCULATI CL, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:dariot', crop: BRSNN, name: DARIOT, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:dax-cl', crop: BRSNN, name: DAX CL, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:decibel-cl', crop: BRSNN, name: DECIBEL CL, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:delrico', crop: BRSNN, name: DELRICO, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:diffusion', crop: BRSNN, name: DIFFUSION, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:dk-exception', crop: BRSNN, name: DK EXCEPTION, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:dk-excited', crop: BRSNN, name: DK EXCITED, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:dk-exkio', crop: BRSNN, name: DK EXKIO, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:dk-exlevel', crop: BRSNN, name: DK EXLEVEL, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:dk-expedient', crop: BRSNN, name: DK EXPEDIENT, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:dk-expertise', crop: BRSNN, name: DK EXPERTISE, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:dk-expo', crop: BRSNN, name: DK EXPO, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:dk-expower', crop: BRSNN, name: DK EXPOWER, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:dk-expression', crop: BRSNN, name: DK EXPRESSION, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:dk-exssence', crop: BRSNN, name: DK EXSSENCE, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:dk-immortal-cl', crop: BRSNN, name: DK IMMORTAL CL, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:dk-imove-cl', crop: BRSNN, name: DK IMOVE CL, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:dk-implement-cl', crop: BRSNN, name: DK IMPLEMENT CL, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:dk-importer-cl', crop: BRSNN, name: DK IMPORTER CL, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:duke', crop: BRSNN, name: DUKE, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:duplo', crop: BRSNN, name: DUPLO, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:edimax-cl', crop: BRSNN, name: EDIMAX CL, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:elmer-cl', crop: BRSNN, name: ELMER CL, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:equip', crop: BRSNN, name: EQUIP, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:es-alonso', crop: BRSNN, name: ES ALONSO, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:es-amadeo', crop: BRSNN, name: ES AMADEO, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:es-capello', crop: BRSNN, name: ES CAPELLO, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:es-cesario', crop: BRSNN, name: ES CESARIO, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:es-gracio', crop: BRSNN, name: ES GRACIO, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:es-imperio', crop: BRSNN, name: ES IMPERIO, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:es-jason', crop: BRSNN, name: ES JASON, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:es-mercure', crop: BRSNN, name: ES MERCURE, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:es-neptune', crop: BRSNN, name: ES NEPTUNE, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:es-vito', crop: BRSNN, name: ES VITO, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:feliciano-kws', crop: BRSNN, name: FELICIANO KWS, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:franklin', crop: BRSNN, name: FRANKLIN, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:fricola', crop: BRSNN, name: FRICOLA, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:galia', crop: BRSNN, name: GALIA, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:generoso', crop: BRSNN, name: GENEROSO, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:ginfizz', crop: BRSNN, name: GINFIZZ, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:gordon', crop: BRSNN, name: GORDON, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:gordon-kws', crop: BRSNN, name: GORDON KWS, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:graf', crop: BRSNN, name: GRAF, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:halexia', crop: BRSNN, name: HALEXIA, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:harcol', crop: BRSNN, name: HARCOL, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:harpege', crop: BRSNN, name: HARPEGE, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:haya', crop: BRSNN, name: HAYA, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:hekip', crop: BRSNN, name: HEKIP, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:hillico', crop: BRSNN, name: HILLICO, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:himmedia-cl', crop: BRSNN, name: HIMMEDIA CL, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:hostine', crop: BRSNN, name: HOSTINE, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:hybrilord', crop: BRSNN, name: HYBRILORD, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:hybrisurf', crop: BRSNN, name: HYBRISURF, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:hystar', crop: BRSNN, name: HYSTAR, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:inv1120', crop: BRSNN, name: INV1120, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:inv1166-cl', crop: BRSNN, name: INV1166 CL, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:inv1170', crop: BRSNN, name: INV1170, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:inv1266-cl', crop: BRSNN, name: INV1266 CL, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:invigor-2040', crop: BRSNN, name: INVIGOR 2040, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:iwan', crop: BRSNN, name: IWAN, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:jazzie', crop: BRSNN, name: JAZZIE, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:kasalla', crop: BRSNN, name: KASALLA, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:kombia', crop: BRSNN, name: KOMBIA, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:kws-granos', crop: BRSNN, name: KWS GRANOS, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:lg-aphrodite', crop: BRSNN, name: LG APHRODITE, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:lg-atlas', crop: BRSNN, name: LG ATLAS, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:lg-calvin-cl', crop: BRSNN, name: LG CALVIN CL, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:lid-invicto', crop: BRSNN, name: LID INVICTO, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:lid-ultimo', crop: BRSNN, name: LID ULTIMO, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:loki', crop: BRSNN, name: LOKI, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:marc-kws', crop: BRSNN, name: MARC KWS, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:medea', crop: BRSNN, name: MEDEA, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:melodie', crop: BRSNN, name: MELODIE, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:memori', crop: BRSNN, name: MEMORI, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:memori-cs', crop: BRSNN, name: MEMORI CS, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:memphis', crop: BRSNN, name: MEMPHIS, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:merano', crop: BRSNN, name: MERANO, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:miraculix-cl', crop: BRSNN, name: MIRACULIX CL, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:miranda', crop: BRSNN, name: MIRANDA, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:monica', crop: BRSNN, name: MONICA, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:ms-aramis', crop: BRSNN, name: MS ARAMIS, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:muzzical', crop: BRSNN, name: MUZZICAL, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:nizza-cl', crop: BRSNN, name: NIZZA CL, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:nk-alamir', crop: BRSNN, name: NK ALAMIR, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:nk-aviator', crop: BRSNN, name: NK AVIATOR, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:nk-boheme', crop: BRSNN, name: NK BOHEME, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:nk-caravel', crop: BRSNN, name: NK CARAVEL, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:nk-diamond', crop: BRSNN, name: NK DIAMOND, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:nk-grandia', crop: BRSNN, name: NK GRANDIA, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:nk-linus', crop: BRSNN, name: NK LINUS, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:nk-molten', crop: BRSNN, name: NK MOLTEN, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:nk-silic', crop: BRSNN, name: NK SILIC, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:nk-tecnic', crop: BRSNN, name: NK TECNIC, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:nk-tores', crop: BRSNN, name: NK TORES, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:nodari', crop: BRSNN, name: NODARI, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:nymphea', crop: BRSNN, name: NYMPHEA, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:olimpico', crop: BRSNN, name: OLIMPICO, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:oren', crop: BRSNN, name: OREN, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:phoenix-cl', crop: BRSNN, name: PHOENIX CL, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:pr44w29', crop: BRSNN, name: PR44W29, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:pr46w14', crop: BRSNN, name: PR46W14, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:pr46w35', crop: BRSNN, name: PR46W35, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:president', crop: BRSNN, name: PRESIDENT, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:pt200cl', crop: BRSNN, name: PT200CL, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:pt221', crop: BRSNN, name: PT221, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:pt225', crop: BRSNN, name: PT225, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:pt256', crop: BRSNN, name: PT256, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:pt264', crop: BRSNN, name: PT264, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:pt271', crop: BRSNN, name: PT271, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:pt279cl', crop: BRSNN, name: PT279CL, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:pt303', crop: BRSNN, name: PT303, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:pt312', crop: BRSNN, name: PT312, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:puncher', crop: BRSNN, name: PUNCHER, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:regis', crop: BRSNN, name: REGIS, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:rgt-arazzo', crop: BRSNN, name: RGT ARAZZO, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:rgt-ginfizz', crop: BRSNN, name: RGT GINFIZZ, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:rgt-jakuzzi', crop: BRSNN, name: RGT JAKUZZI, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:rgt-manzzana', crop: BRSNN, name: RGT MANZZANA, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:rgt-paradizze', crop: BRSNN, name: RGT PARADIZZE, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:rgt-sensation', crop: BRSNN, name: RGT SENSATION, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:rgt-windozz', crop: BRSNN, name: RGT WINDOZZ, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:rythmie', crop: BRSNN, name: RYTHMIE, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:sensation', crop: BRSNN, name: SENSATION, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:shield', crop: BRSNN, name: SHIELD, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:sidoni-cs', crop: BRSNN, name: SIDONI CS, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:simona', crop: BRSNN, name: SIMONA, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:sirtaki-cs', crop: BRSNN, name: SIRTAKI CS, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:sokti-cs', crop: BRSNN, name: SOKTI CS, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:sonie', crop: BRSNN, name: SONIE, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:sy-alibaba', crop: BRSNN, name: SY ALIBABA, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:sy-alistorm', crop: BRSNN, name: SY ALISTORM, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:sy-carlo', crop: BRSNN, name: SY CARLO, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:sy-cassidy', crop: BRSNN, name: SY CASSIDY, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:sy-columb', crop: BRSNN, name: SY COLUMB, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:sy-floretta', crop: BRSNN, name: SY FLORETTA, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:sy-florida', crop: BRSNN, name: SY FLORIDA, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:sy-harnas', crop: BRSNN, name: SY HARNAS, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:sy-iowa', crop: BRSNN, name: SY IOWA, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:sy-kolum', crop: BRSNN, name: SY KOLUM, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:sy-miami', crop: BRSNN, name: SY MIAMI, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:sy-robot-cl', crop: BRSNN, name: SY ROBOT CL, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:tactic', crop: BRSNN, name: TACTIC, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:tores', crop: BRSNN, name: TORES, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:trezzor', crop: BRSNN, name: TREZZOR, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:trust-cl', crop: BRSNN, name: TRUST CL, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:umberto-kws', crop: BRSNN, name: UMBERTO KWS, status: candidate, sources: [GENVCE]}
+  - {id: 'BRSNN:vestal-cl', crop: BRSNN, name: VESTAL CL, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:agueda', crop: HORVX, name: AGUEDA, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:amidala', crop: HORVX, name: AMIDALA, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:anaconda', crop: HORVX, name: ANACONDA, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:anakin', crop: HORVX, name: ANAKIN, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:ansola', crop: HORVX, name: ANSOLA, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:arba', crop: HORVX, name: ARBA, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:arturio', crop: HORVX, name: ARTURIO, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:aruva', crop: HORVX, name: ARUVA, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:auriga', crop: HORVX, name: AURIGA, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:austen-pg', crop: HORVX, name: AUSTEN pG, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:avus', crop: HORVX, name: AVUS, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:azara', crop: HORVX, name: AZARA, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:azurel', crop: HORVX, name: AZUREL, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:baliner', crop: HORVX, name: BALINER, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:basic', crop: HORVX, name: BASIC, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:bastille', crop: HORVX, name: BASTILLE, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:beatrix', crop: HORVX, name: BEATRIX, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:belgrano', crop: HORVX, name: BELGRANO, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:belgravia', crop: HORVX, name: BELGRAVIA, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:boost', crop: HORVX, name: BOOST, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:boreale', crop: HORVX, name: BOREALE, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:braemar', crop: HORVX, name: BRAEMAR, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:carat', crop: HORVX, name: CARAT, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:cartel', crop: HORVX, name: CARTEL, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:christopher', crop: HORVX, name: CHRISTOPHER, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:chronicle', crop: HORVX, name: CHRONICLE, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:cib-777', crop: HORVX, name: CIB 777, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:cib-333', crop: HORVX, name: CIB-333, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:cierzo', crop: HORVX, name: CIERZO, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:clairion', crop: HORVX, name: CLAIRION, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:clamor', crop: HORVX, name: CLAMOR, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:class', crop: HORVX, name: CLASS, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:cometa', crop: HORVX, name: COMETA, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:concerto', crop: HORVX, name: CONCERTO, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:crescendo', crop: HORVX, name: CRESCENDO, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:cristalia', crop: HORVX, name: CRISTALIA, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:dingo', crop: HORVX, name: DINGO, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:doblona', crop: HORVX, name: DOBLONA, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:dona-pepa', crop: HORVX, name: DOÑA PEPA, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:duero', crop: HORVX, name: DUERO, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:ellinor', crop: HORVX, name: ELLINOR, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:eloise', crop: HORVX, name: ELOISE, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:encarna', crop: HORVX, name: ENCARNA, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:envie', crop: HORVX, name: ENVIE, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:erlina', crop: HORVX, name: ERLINA, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:estrella', crop: HORVX, name: ESTRELLA, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:etincel', crop: HORVX, name: ETINCEL, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:explorer', crop: HORVX, name: EXPLORER, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:fairing', crop: HORVX, name: FAIRING, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:fandaga', crop: HORVX, name: FANDAGA, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:farandole', crop: HORVX, name: FARANDOLE, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:fatima', crop: HORVX, name: FATIMA, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:flanelle', crop: HORVX, name: FLANELLE, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:florence', crop: HORVX, name: FLORENCE, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:forcada', crop: HORVX, name: FORCADA, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:gala', crop: HORVX, name: GALA, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:garner', crop: HORVX, name: GARNER, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:graphic', crop: HORVX, name: GRAPHIC, status: assumption, aliases: [GRAPHIC (T)], evidence: 'table annotation markers only: (T) check, (R) reference, * footnote; every annotated raw row carries special_status testigo/referencia/transgenico', sources: [GENVCE]}
+  - {id: 'HORVX:gretchen', crop: HORVX, name: GRETCHEN, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:gretchen-pg', crop: HORVX, name: GRETCHEN pG, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:gustav', crop: HORVX, name: GUSTAV, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:henley', crop: HORVX, name: HENLEY, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:himalaya', crop: HORVX, name: HIMALAYA, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:hispanic', crop: HORVX, name: HISPANIC, status: assumption, aliases: [HISPANIC (T)], evidence: 'table annotation markers only: (T) check, (R) reference, * footnote; every annotated raw row carries special_status testigo/referencia/transgenico', sources: [GENVCE]}
+  - {id: 'HORVX:ibaiona', crop: HORVX, name: IBAIONA, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:icaria', crop: HORVX, name: ICARIA, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:isocel', crop: HORVX, name: ISOCEL, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:jb-maltasia', crop: HORVX, name: JB MALTASIA, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:jennifer', crop: HORVX, name: JENNIFER, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:jimena', crop: HORVX, name: JIMENA, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:jonathan', crop: HORVX, name: JONATHAN, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:jucar', crop: HORVX, name: JUCAR, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:kalea', crop: HORVX, name: KALEA, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:kamalamai', crop: HORVX, name: KAMALAMAI, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:kathmandu', crop: HORVX, name: KATHMANDU, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:ketos', crop: HORVX, name: KETOS, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:kiwi', crop: HORVX, name: KIWI, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:klarinette', crop: HORVX, name: KLARINETTE, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:kws-chrissie', crop: HORVX, name: KWS CHRISSIE, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:kws-glacier', crop: HORVX, name: KWS GLACIER, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:kws-mattis', crop: HORVX, name: KWS MATTIS, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:kws-ovnis', crop: HORVX, name: KWS OVNIS, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:kws-thalis', crop: HORVX, name: KWS THALIS, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:lagalia', crop: HORVX, name: LAGALIA, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:lamari', crop: HORVX, name: LAMARI, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:laureate', crop: HORVX, name: LAUREATE, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:lavanda', crop: HORVX, name: LAVANDA, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:lavinia', crop: HORVX, name: LAVINIA, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:lazuli', crop: HORVX, name: LAZULI, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:lexy', crop: HORVX, name: LEXY, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:lg-aitana', crop: HORVX, name: LG AITANA, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:lg-allegro', crop: HORVX, name: LG ALLEGRO, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:lg-amparo', crop: HORVX, name: LG AMPARO, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:lg-andante', crop: HORVX, name: LG ANDANTE, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:lg-austral', crop: HORVX, name: LG AUSTRAL, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:lg-belcanto', crop: HORVX, name: LG BELCANTO, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:lg-carolina', crop: HORVX, name: LG CAROLINA, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:lg-centella', crop: HORVX, name: LG CENTELLA, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:lg-flamenco', crop: HORVX, name: LG FLAMENCO, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:lg-flamenco-pg', crop: HORVX, name: LG FLAMENCO pG, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:lg-hipatia', crop: HORVX, name: LG HIPATIA, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:loyola', crop: HORVX, name: LOYOLA, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:lukhas', crop: HORVX, name: LUKHAS, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:magallon', crop: HORVX, name: MAGALLON, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:magenta', crop: HORVX, name: MAGENTA, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:magnitude', crop: HORVX, name: MAGNITUDE, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:maltesse', crop: HORVX, name: MALTESSE, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:manava', crop: HORVX, name: MANAVA, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:mandolin', crop: HORVX, name: MANDOLIN, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:manett', crop: HORVX, name: MANETT, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:marado', crop: HORVX, name: MARADO, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:marnie', crop: HORVX, name: MARNIE, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:marthe', crop: HORVX, name: MARTHE, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:mascara', crop: HORVX, name: MASCARA, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:maya', crop: HORVX, name: MAYA, status: assumption, aliases: [96054-518 (MAYA), 96054-518], evidence: same raw string pairs the breeder code with the denomination (breeder-code co-occurrence), sources: [GENVCE]}
+  - {id: 'HORVX:mendiola', crop: HORVX, name: MENDIOLA, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:meseta', crop: HORVX, name: MESETA, status: assumption, aliases: [MESETA (T)], evidence: 'table annotation markers only: (T) check, (R) reference, * footnote; every annotated raw row carries special_status testigo/referencia/transgenico', sources: [GENVCE]}
+  - {id: 'HORVX:mickle', crop: HORVX, name: MICKLE, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:moonshine', crop: HORVX, name: MOONSHINE, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:nerea', crop: HORVX, name: NEREA, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:noblesse', crop: HORVX, name: NOBLESSE, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:noblesse-pg', crop: HORVX, name: NOBLESSE pG, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:nuevo', crop: HORVX, name: NUEVO, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:nuevo-ser', crop: HORVX, name: NUEVO SER, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:odyssey', crop: HORVX, name: ODYSSEY, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:olivia', crop: HORVX, name: OLIVIA, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:orchella', crop: HORVX, name: ORCHELLA, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:orchesta', crop: HORVX, name: ORCHESTA, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:origami', crop: HORVX, name: ORIGAMI, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:orione', crop: HORVX, name: ORIONE, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:orkide', crop: HORVX, name: ORKIDE, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:orofil', crop: HORVX, name: OROFIL, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:ortilus', crop: HORVX, name: ORTILUS, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:panaka', crop: HORVX, name: PANAKA, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:pandora', crop: HORVX, name: PANDORA, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:pariglia', crop: HORVX, name: PARIGLIA, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:parma', crop: HORVX, name: PARMA, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:pewter', crop: HORVX, name: PEWTER, status: assumption, aliases: [PEWTER (R), PEWTER (T)], evidence: 'table annotation markers only: (T) check, (R) reference, * footnote; every annotated raw row carries special_status testigo/referencia/transgenico', sources: [GENVCE]}
+  - {id: 'HORVX:pinocchio', crop: HORVX, name: PINOCCHIO, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:pirene', crop: HORVX, name: PIRENE, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:ponente', crop: HORVX, name: PONENTE, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:propino', crop: HORVX, name: PROPINO, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:protide', crop: HORVX, name: PROTIDE, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:publican', crop: HORVX, name: PUBLICAN, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:quench', crop: HORVX, name: QUENCH, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:raquel', crop: HORVX, name: RAQUEL, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:regalia', crop: HORVX, name: REGALIA, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:rgt-alcantara', crop: HORVX, name: RGT ALCANTARA, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:rgt-atocha', crop: HORVX, name: RGT ATOCHA, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:rgt-campera', crop: HORVX, name: RGT CAMPERA, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:rgt-covadonga', crop: HORVX, name: RGT COVADONGA, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:rgt-demeter', crop: HORVX, name: RGT DEMETER, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:rgt-demetria', crop: HORVX, name: RGT DEMETRIA, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:rgt-dulcinea', crop: HORVX, name: RGT DULCINEA, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:rgt-eclipse', crop: HORVX, name: RGT ECLIPSE, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:rgt-flecha', crop: HORVX, name: RGT FLECHA, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:rgt-gagarin', crop: HORVX, name: RGT GAGARIN, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:rgt-gibraltar', crop: HORVX, name: RGT GIBRALTAR, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:rgt-luzia', crop: HORVX, name: RGT LUZIA, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:rgt-medinaceli', crop: HORVX, name: RGT MEDINACELI, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:rgt-orijino', crop: HORVX, name: RGT ORIJINO, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:rgt-planet', crop: HORVX, name: RGT PLANET, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:rgt-samarkanda', crop: HORVX, name: RGT SAMARKANDA, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:rgt-segontia', crop: HORVX, name: RGT SEGONTIA, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:rgt-serenata', crop: HORVX, name: RGT SERENATA, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:rgt-skylab', crop: HORVX, name: RGT SKYLAB, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:rgt-slida', crop: HORVX, name: RGT SLIDA, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:rgt-verona', crop: HORVX, name: RGT VERONA, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:rocio', crop: HORVX, name: ROCIO, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:rocio-809e', crop: HORVX, name: ROCÍO, status: assumption, aliases: [ROCÍO (NSL03-6838), NSL03-6838], evidence: same raw string pairs the breeder code with the denomination (breeder-code co-occurrence), sources: [GENVCE]}
+  - {id: 'HORVX:ronny', crop: HORVX, name: RONNY, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:rubiales', crop: HORVX, name: RUBIALES, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:saber-pg', crop: HORVX, name: SABER pG, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:salamandre', crop: HORVX, name: SALAMANDRE, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:sanette', crop: HORVX, name: SANETTE, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:saratoga', crop: HORVX, name: SARATOGA, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:saxo', crop: HORVX, name: SAXO, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:scarlett', crop: HORVX, name: SCARLETT, status: assumption, aliases: [SCARLETT (T)], evidence: 'table annotation markers only: (T) check, (R) reference, * footnote; every annotated raw row carries special_status testigo/referencia/transgenico', sources: [GENVCE]}
+  - {id: 'HORVX:scrabble', crop: HORVX, name: SCRABBLE, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:seduction', crop: HORVX, name: SEDUCTION, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:shakira', crop: HORVX, name: SHAKIRA, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:shetty', crop: HORVX, name: SHETTY, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:shuffle', crop: HORVX, name: SHUFFLE, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:signora', crop: HORVX, name: SIGNORA, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:skyway', crop: HORVX, name: SKYWAY, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:spazio', crop: HORVX, name: SPAZIO, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:sting', crop: HORVX, name: STING, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:streif', crop: HORVX, name: STREIF, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:style', crop: HORVX, name: STYLE, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:su-ruzena', crop: HORVX, name: SU RUZENA, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:sunbeam', crop: HORVX, name: SUNBEAM, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:sunrise', crop: HORVX, name: SUNRISE, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:sunshine', crop: HORVX, name: SUNSHINE, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:sw-catriona', crop: HORVX, name: SW CATRIONA, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:sw-maaren', crop: HORVX, name: SW MAAREN, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:sy-amity', crop: HORVX, name: SY AMITY, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:sy-signet', crop: HORVX, name: SY SIGNET, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:sy-solar', crop: HORVX, name: SY SOLAR, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:sy-stanza', crop: HORVX, name: SY STANZA, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:sy-tungsten', crop: HORVX, name: SY TUNGSTEN, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:sydney', crop: HORVX, name: SYDNEY, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:tauri', crop: HORVX, name: TAURI, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:thorgall', crop: HORVX, name: THORGALL, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:traveler', crop: HORVX, name: TRAVELER, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:tudela', crop: HORVX, name: TUDELA, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:valerian', crop: HORVX, name: VALÉRIAN, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:vinagrosa', crop: HORVX, name: VINAGROSA, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:vivaldi', crop: HORVX, name: VIVALDI, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:yoda', crop: HORVX, name: YODA, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:yoole', crop: HORVX, name: YOOLE, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:yuriko', crop: HORVX, name: YURIKO, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:zeppelin', crop: HORVX, name: ZEPPELIN, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:zerbo', crop: HORVX, name: ZERBO, status: candidate, sources: [GENVCE]}
+  - {id: 'TRZAX:adriatic', crop: TRZAX, name: ADRIATIC, status: candidate, sources: [GENVCE]}
+  - {id: 'TRZAX:advisor', crop: TRZAX, name: ADVISOR, status: candidate, sources: [GENVCE]}
+  - {id: 'TRZAX:aerobic', crop: TRZAX, name: AEROBIC, status: candidate, sources: [GENVCE]}
+  - {id: 'TRZAX:alagir', crop: TRZAX, name: ALAGIR, status: candidate, sources: [GENVCE]}
+  - {id: 'TRZAX:arayo', crop: TRZAX, name: ARAYO, status: candidate, sources: [GENVCE]}
+  - {id: 'TRZAX:artur-nick', crop: TRZAX, name: ARTUR NICK, status: candidate, sources: [GENVCE]}
+  - {id: 'TRZAX:avelino', crop: TRZAX, name: AVELINO, status: candidate, sources: [GENVCE]}
+  - {id: 'TRZAX:aviso', crop: TRZAX, name: AVISO, status: candidate, sources: [GENVCE]}
+  - {id: 'TRZAX:basilio', crop: TRZAX, name: BASILIO, status: candidate, sources: [GENVCE]}
+  - {id: 'TRZAX:bologna', crop: TRZAX, name: BOLOGNA, status: candidate, sources: [GENVCE]}
+  - {id: 'TRZAX:bonifacio', crop: TRZAX, name: BONIFACIO, status: candidate, sources: [GENVCE]}
+  - {id: 'TRZAX:botticelli', crop: TRZAX, name: BOTTICELLI, status: candidate, sources: [GENVCE]}
+  - {id: 'TRZAX:camargo', crop: TRZAX, name: CAMARGO, status: candidate, sources: [GENVCE]}
+  - {id: 'TRZAX:campesino', crop: TRZAX, name: CAMPESINO, status: candidate, sources: [GENVCE]}
+  - {id: 'TRZAX:carles', crop: TRZAX, name: CARLES, status: candidate, sources: [GENVCE]}
+  - {id: 'TRZAX:ccb-ingenio', crop: TRZAX, name: CCB INGENIO, status: assumption, aliases: [CCB INGENIO (T)], evidence: 'table annotation markers only: (T) check, (R) reference, * footnote; every annotated raw row carries special_status testigo/referencia/transgenico', sources: [GENVCE]}
+  - {id: 'TRZAX:chambo', crop: TRZAX, name: CHAMBO, status: candidate, sources: [GENVCE]}
+  - {id: 'TRZAX:complice', crop: TRZAX, name: COMPLICE, status: candidate, sources: [GENVCE]}
+  - {id: 'TRZAX:conil', crop: TRZAX, name: CONIL, status: candidate, sources: [GENVCE]}
+  - {id: 'TRZAX:denicius', crop: TRZAX, name: DENICIUS, status: candidate, sources: [GENVCE]}
+  - {id: 'TRZAX:filon', crop: TRZAX, name: FILON, status: candidate, sources: [GENVCE]}
+  - {id: 'TRZAX:florence-aurora', crop: TRZAX, name: FLORENCE AURORA, status: candidate, sources: [GENVCE]}
+  - {id: 'TRZAX:galera', crop: TRZAX, name: GALERA, status: candidate, sources: [GENVCE]}
+  - {id: 'TRZAX:ganduja', crop: TRZAX, name: GANDUJA, status: candidate, sources: [GENVCE]}
+  - {id: 'TRZAX:gavrik', crop: TRZAX, name: GAVRIK, status: candidate, sources: [GENVCE]}
+  - {id: 'TRZAX:gazeo', crop: TRZAX, name: GAZEO, status: candidate, sources: [GENVCE]}
+  - {id: 'TRZAX:grimm', crop: TRZAX, name: GRIMM, status: candidate, sources: [GENVCE]}
+  - {id: 'TRZAX:illico', crop: TRZAX, name: ILLICO, status: candidate, sources: [GENVCE]}
+  - {id: 'TRZAX:kws-extreme', crop: TRZAX, name: KWS EXTREME, status: candidate, sources: [GENVCE]}
+  - {id: 'TRZAX:kws-lazuli', crop: TRZAX, name: KWS LAZULI, status: candidate, sources: [GENVCE]}
+  - {id: 'TRZAX:lavandou', crop: TRZAX, name: LAVANDOU, status: candidate, sources: [GENVCE]}
+  - {id: 'TRZAX:lg-acorazado', crop: TRZAX, name: LG ACORAZADO, status: candidate, sources: [GENVCE]}
+  - {id: 'TRZAX:lg-antique', crop: TRZAX, name: LG ANTIQUE, status: candidate, sources: [GENVCE]}
+  - {id: 'TRZAX:lg-asterion', crop: TRZAX, name: LG ASTERIÓN, status: candidate, sources: [GENVCE]}
+  - {id: 'TRZAX:lg-becquer', crop: TRZAX, name: LG BECQUER, status: candidate, sources: [GENVCE]}
+  - {id: 'TRZAX:lg-filosofo', crop: TRZAX, name: LG FILOSOFO, status: candidate, sources: [GENVCE]}
+  - {id: 'TRZAX:lg-fortunato', crop: TRZAX, name: LG FORTUNATO, status: candidate, sources: [GENVCE]}
+  - {id: 'TRZAX:lg-quorum', crop: TRZAX, name: LG QUORUM, status: candidate, sources: [GENVCE]}
+  - {id: 'TRZAX:lg-rosendo', crop: TRZAX, name: LG ROSENDO, status: candidate, sources: [GENVCE]}
+  - {id: 'TRZAX:marcopolo', crop: TRZAX, name: MARCOPOLO, status: candidate, sources: [GENVCE]}
+  - {id: 'TRZAX:metropolis', crop: TRZAX, name: METROPOLIS, status: candidate, sources: [GENVCE]}
+  - {id: 'TRZAX:mufasa', crop: TRZAX, name: MUFASA, status: assumption, aliases: [MUFASA (FD14WW060), FD14WW060], evidence: same raw string pairs the breeder code with the denomination (breeder-code co-occurrence), sources: [GENVCE]}
+  - {id: 'TRZAX:nemo', crop: TRZAX, name: NEMO, status: candidate, sources: [GENVCE]}
+  - {id: 'TRZAX:nogal', crop: TRZAX, name: NOGAL, status: assumption, aliases: [NOGAL (T)], evidence: 'table annotation markers only: (T) check, (R) reference, * footnote; every annotated raw row carries special_status testigo/referencia/transgenico', sources: [GENVCE]}
+  - {id: 'TRZAX:nudel', crop: TRZAX, name: NUDEL, status: candidate, sources: [GENVCE]}
+  - {id: 'TRZAX:obiwan', crop: TRZAX, name: OBIWAN, status: candidate, sources: [GENVCE]}
+  - {id: 'TRZAX:ovalo', crop: TRZAX, name: OVALO, status: candidate, sources: [GENVCE]}
+  - {id: 'TRZAX:paledor', crop: TRZAX, name: PALEDOR, status: assumption, aliases: [PALEDOR (T)], evidence: 'table annotation markers only: (T) check, (R) reference, * footnote; every annotated raw row carries special_status testigo/referencia/transgenico', sources: [GENVCE]}
+  - {id: 'TRZAX:pibrac', crop: TRZAX, name: PIBRAC, status: candidate, sources: [GENVCE]}
+  - {id: 'TRZAX:porticcio', crop: TRZAX, name: PORTICCIO, status: candidate, sources: [GENVCE]}
+  - {id: 'TRZAX:prestance', crop: TRZAX, name: PRESTANCE, status: candidate, sources: [GENVCE]}
+  - {id: 'TRZAX:rebelde', crop: TRZAX, name: REBELDE, status: candidate, sources: [GENVCE]}
+  - {id: 'TRZAX:rgt-altavista', crop: TRZAX, name: RGT ALTAVISTA, status: candidate, sources: [GENVCE]}
+  - {id: 'TRZAX:rgt-borsalino', crop: TRZAX, name: RGT BORSALINO, status: candidate, sources: [GENVCE]}
+  - {id: 'TRZAX:rgt-campurriano', crop: TRZAX, name: RGT CAMPURRIANO, status: candidate, sources: [GENVCE]}
+  - {id: 'TRZAX:rgt-cesario', crop: TRZAX, name: RGT CESARIO, status: candidate, sources: [GENVCE]}
+  - {id: 'TRZAX:rgt-distingo', crop: TRZAX, name: RGT DISTINGO, status: candidate, sources: [GENVCE]}
+  - {id: 'TRZAX:rgt-mikelino', crop: TRZAX, name: RGT MIKELINO, status: candidate, sources: [GENVCE]}
+  - {id: 'TRZAX:rgt-miolo', crop: TRZAX, name: RGT MIOLO, status: candidate, sources: [GENVCE]}
+  - {id: 'TRZAX:rgt-montecarlo', crop: TRZAX, name: RGT MONTECARLO, status: candidate, sources: [GENVCE]}
+  - {id: 'TRZAX:rgt-montreal', crop: TRZAX, name: RGT MONTREAL, status: candidate, sources: [GENVCE]}
+  - {id: 'TRZAX:rgt-quiriko', crop: TRZAX, name: RGT QUIRIKO, status: candidate, sources: [GENVCE]}
+  - {id: 'TRZAX:rgt-sacramento', crop: TRZAX, name: RGT SACRAMENTO, status: candidate, sources: [GENVCE]}
+  - {id: 'TRZAX:rgt-tocayo', crop: TRZAX, name: RGT TOCAYO, status: candidate, sources: [GENVCE]}
+  - {id: 'TRZAX:rgt-vecino', crop: TRZAX, name: RGT VECINO, status: candidate, sources: [GENVCE]}
+  - {id: 'TRZAX:soissons', crop: TRZAX, name: SOISSONS, status: assumption, aliases: [SOISSONS (T)], evidence: 'table annotation markers only: (T) check, (R) reference, * footnote; every annotated raw row carries special_status testigo/referencia/transgenico', sources: [GENVCE]}
+  - {id: 'TRZAX:soledad', crop: TRZAX, name: SOLEDAD, status: candidate, sources: [GENVCE]}
+  - {id: 'TRZAX:sollario', crop: TRZAX, name: SOLLARIO, status: candidate, sources: [GENVCE]}
+  - {id: 'TRZAX:tujena', crop: TRZAX, name: TUJENA, status: candidate, sources: [GENVCE]}
+  - {id: 'TRZAX:valbona', crop: TRZAX, name: VALBONA, status: candidate, sources: [GENVCE]}
+  - {id: 'TRZAX:viriato', crop: TRZAX, name: VIRIATO, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:47m', crop: ZEAMX, name: 47M, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:529d', crop: ZEAMX, name: 529D, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:52p', crop: ZEAMX, name: 52P, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:53r', crop: ZEAMX, name: 53R, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:6130c', crop: ZEAMX, name: 6130C, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:672yg', crop: ZEAMX, name: 672YG, status: assumption, aliases: [672YG*], evidence: 'table annotation markers only: (T) check, (R) reference, * footnote; every annotated raw row carries special_status testigo/referencia/transgenico', sources: [GENVCE]}
+  - {id: 'ZEAMX:68-k', crop: ZEAMX, name: 68.K, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:68k', crop: ZEAMX, name: 68K, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:69yg', crop: ZEAMX, name: 69YG, status: assumption, aliases: [69YG *], evidence: 'table annotation markers only: (T) check, (R) reference, * footnote; every annotated raw row carries special_status testigo/referencia/transgenico', sources: [GENVCE]}
+  - {id: 'ZEAMX:7585c', crop: ZEAMX, name: 7585C, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:89may70', crop: ZEAMX, name: 89MAY70, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:aapotheoz', crop: ZEAMX, name: AAPOTHEOZ, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:altamira', crop: ZEAMX, name: ALTAMIRA, status: candidate, sources: [CREA]}
+  - {id: 'ZEAMX:anakin', crop: ZEAMX, name: ANAKIN, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:antilla', crop: ZEAMX, name: ANTILLA, status: candidate, sources: [CREA]}
+  - {id: 'ZEAMX:antiss', crop: ZEAMX, name: ANTISS, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:benazir', crop: ZEAMX, name: BENAZIR, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:benazir-yg', crop: ZEAMX, name: BENAZIR YG, status: assumption, aliases: [BENAZIR YG *], evidence: 'table annotation markers only: (T) check, (R) reference, * footnote; every annotated raw row carries special_status testigo/referencia/transgenico', sources: [GENVCE]}
+  - {id: 'ZEAMX:bengali', crop: ZEAMX, name: BENGALI, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:berlino', crop: ZEAMX, name: BERLINO, status: candidate, sources: [CREA]}
+  - {id: 'ZEAMX:berlioz', crop: ZEAMX, name: BERLIOZ, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:bobcat', crop: ZEAMX, name: BOBCAT, status: candidate, sources: [CREA]}
+  - {id: 'ZEAMX:brioso', crop: ZEAMX, name: BRIOSO, status: candidate, sources: [CREA]}
+  - {id: 'ZEAMX:cadixxio', crop: ZEAMX, name: CADIXXIO, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:capuzi', crop: ZEAMX, name: CAPUZI, status: candidate, sources: [CREA, GENVCE]}
+  - {id: 'ZEAMX:charleston', crop: ZEAMX, name: CHARLESTON, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:clischi', crop: ZEAMX, name: CLISCHI, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:costante', crop: ZEAMX, name: COSTANTE, status: candidate, sources: [CREA]}
+  - {id: 'ZEAMX:courtney', crop: ZEAMX, name: COURTNEY, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:debussy', crop: ZEAMX, name: DEBUSSY, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:dkc5032yg', crop: ZEAMX, name: DKC5032YG, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:dkc5362', crop: ZEAMX, name: DKC5362, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:dkc5401', crop: ZEAMX, name: DKC5401, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:dkc5526', crop: ZEAMX, name: DKC5526, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:dkc5542', crop: ZEAMX, name: DKC5542, status: assumption, aliases: [DKC5542 (T)], evidence: 'table annotation markers only: (T) check, (R) reference, * footnote; every annotated raw row carries special_status testigo/referencia/transgenico', sources: [GENVCE]}
+  - {id: 'ZEAMX:dkc5605', crop: ZEAMX, name: DKC5605, status: candidate, sources: [CREA]}
+  - {id: 'ZEAMX:dkc5685', crop: ZEAMX, name: DKC5685, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:dkc5709', crop: ZEAMX, name: DKC5709, status: candidate, sources: [CREA]}
+  - {id: 'ZEAMX:dkc6092', crop: ZEAMX, name: DKC6092, status: candidate, sources: [CREA]}
+  - {id: 'ZEAMX:dkc6131', crop: ZEAMX, name: DKC6131, status: candidate, sources: [CREA]}
+  - {id: 'ZEAMX:dkc6308', crop: ZEAMX, name: DKC6308, status: candidate, sources: [CREA]}
+  - {id: 'ZEAMX:dkc6351yg', crop: ZEAMX, name: DKC6351YG, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:dkc6351yg-y', crop: ZEAMX, name: DKC6351YG *Y, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:dkc6442', crop: ZEAMX, name: DKC6442, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:dkc6492', crop: ZEAMX, name: DKC6492, status: candidate, sources: [CREA]}
+  - {id: 'ZEAMX:dkc6503', crop: ZEAMX, name: DKC6503, status: candidate, sources: [CREA]}
+  - {id: 'ZEAMX:dkc6666', crop: ZEAMX, name: DKC6666, status: assumption, aliases: [DKC6666 (T)], evidence: 'table annotation markers only: (T) check, (R) reference, * footnote; every annotated raw row carries special_status testigo/referencia/transgenico', sources: [GENVCE]}
+  - {id: 'ZEAMX:dkc6667yg', crop: ZEAMX, name: DKC6667YG, status: assumption, aliases: [DKC6667YG (T), DKC6667YG (T) *, DKC6667YG (T)*], evidence: 'table annotation markers only: (T) check, (R) reference, * footnote; every annotated raw row carries special_status testigo/referencia/transgenico', sources: [GENVCE]}
+  - {id: 'ZEAMX:dkc6715', crop: ZEAMX, name: DKC6715, status: candidate, sources: [CREA, GENVCE]}
+  - {id: 'ZEAMX:dkc6717', crop: ZEAMX, name: DKC6717, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:dkc6728', crop: ZEAMX, name: DKC6728, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:dkc6729-yg', crop: ZEAMX, name: DKC6729 YG, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:dkc6729yg', crop: ZEAMX, name: DKC6729YG, status: assumption, aliases: [DKC6729YG* (T)], evidence: 'table annotation markers only: (T) check, (R) reference, * footnote; every annotated raw row carries special_status testigo/referencia/transgenico', sources: [GENVCE]}
+  - {id: 'ZEAMX:dkc6812', crop: ZEAMX, name: DKC6812, status: candidate, sources: [CREA, GENVCE]}
+  - {id: 'ZEAMX:dkc6980', crop: ZEAMX, name: DKC6980, status: candidate, sources: [CREA, GENVCE]}
+  - {id: 'ZEAMX:dm5312', crop: ZEAMX, name: DM5312, status: candidate, sources: [CREA]}
+  - {id: 'ZEAMX:dragster', crop: ZEAMX, name: DRAGSTER, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:eleonora', crop: ZEAMX, name: ELEONORA, status: assumption, aliases: [ELEONORA (T)], evidence: 'table annotation markers only: (T) check, (R) reference, * footnote; every annotated raw row carries special_status testigo/referencia/transgenico', sources: [GENVCE]}
+  - {id: 'ZEAMX:es-armandi', crop: ZEAMX, name: ES ARMANDI, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:es-nystar', crop: ZEAMX, name: ES NYSTAR, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:es-torquaz', crop: ZEAMX, name: ES TORQUAZ, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:es-zoom', crop: ZEAMX, name: ES ZOOM, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:es-zoom-yg', crop: ZEAMX, name: ES ZOOM YG, status: assumption, aliases: [ES ZOOM YG*], evidence: 'table annotation markers only: (T) check, (R) reference, * footnote; every annotated raw row carries special_status testigo/referencia/transgenico', sources: [GENVCE]}
+  - {id: 'ZEAMX:evoluxxion', crop: ZEAMX, name: EVOLUXXION, status: candidate, sources: [CREA, GENVCE]}
+  - {id: 'ZEAMX:expertize', crop: ZEAMX, name: EXPERTIZE, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:exxupery', crop: ZEAMX, name: EXXUPERY, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:fabio', crop: ZEAMX, name: FABIO, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:faraonixx', crop: ZEAMX, name: FARAONIXX, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:fatbox', crop: ZEAMX, name: FATBOX, status: candidate, sources: [CREA]}
+  - {id: 'ZEAMX:festilo', crop: ZEAMX, name: FESTILO, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:gianeri', crop: ZEAMX, name: GIANERI, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:gosol-yg-y', crop: ZEAMX, name: GOSOL YG Y, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:gossol-yg-y', crop: ZEAMX, name: GOSSOL YG Y, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:hatay', crop: ZEAMX, name: HATAY, status: candidate, sources: [CREA]}
+  - {id: 'ZEAMX:helen', crop: ZEAMX, name: HELEN, status: assumption, aliases: [HELEN (T)], evidence: 'table annotation markers only: (T) check, (R) reference, * footnote; every annotated raw row carries special_status testigo/referencia/transgenico', sources: [GENVCE]}
+  - {id: 'ZEAMX:helen-bt', crop: ZEAMX, name: HELEN Bt, status: assumption, aliases: [HELEN Bt (T) *], evidence: 'table annotation markers only: (T) check, (R) reference, * footnote; every annotated raw row carries special_status testigo/referencia/transgenico', sources: [GENVCE]}
+  - {id: 'ZEAMX:hillary', crop: ZEAMX, name: HILLARY, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:hoazix', crop: ZEAMX, name: HOAZIX, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:homeland', crop: ZEAMX, name: HOMELAND, status: candidate, sources: [CREA]}
+  - {id: 'ZEAMX:indaco', crop: ZEAMX, name: INDACO, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:indem-668', crop: ZEAMX, name: INDEM 668, status: candidate, sources: [CREA]}
+  - {id: 'ZEAMX:indem668', crop: ZEAMX, name: INDEM668, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:irrideos', crop: ZEAMX, name: IRRIDEOS, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:isulea', crop: ZEAMX, name: ISULEA, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:ixabel', crop: ZEAMX, name: IXABEL, status: assumption, aliases: [IXABEL (T)], evidence: 'table annotation markers only: (T) check, (R) reference, * footnote; every annotated raw row carries special_status testigo/referencia/transgenico', sources: [CREA, GENVCE]}
+  - {id: 'ZEAMX:izzly-yg-y', crop: ZEAMX, name: IZZLY YG Y, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:kamisetas', crop: ZEAMX, name: KAMISETAS, status: candidate, sources: [CREA]}
+  - {id: 'ZEAMX:kamisteas', crop: ZEAMX, name: KAMISTEAS, status: candidate, sources: [CREA]}
+  - {id: 'ZEAMX:katone', crop: ZEAMX, name: KATONE, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:kayras', crop: ZEAMX, name: KAYRAS, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:kayras-yg', crop: ZEAMX, name: KAYRAS YG, status: assumption, aliases: [KAYRAS YG *], evidence: 'table annotation markers only: (T) check, (R) reference, * footnote; every annotated raw row carries special_status testigo/referencia/transgenico', sources: [GENVCE]}
+  - {id: 'ZEAMX:kefieros', crop: ZEAMX, name: KEFIEROS, status: candidate, sources: [CREA, GENVCE]}
+  - {id: 'ZEAMX:kefieros-yg', crop: ZEAMX, name: KEFIEROS YG, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:kefrancos', crop: ZEAMX, name: KEFRANCOS, status: candidate, sources: [CREA, GENVCE]}
+  - {id: 'ZEAMX:kerbanis', crop: ZEAMX, name: KERBANIS, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:keridos', crop: ZEAMX, name: KERIDOS, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:kilowatt', crop: ZEAMX, name: KILOWATT, status: candidate, sources: [CREA]}
+  - {id: 'ZEAMX:klinker-yg', crop: ZEAMX, name: KLINKER YG, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:klinker-yg-y', crop: ZEAMX, name: KLINKER YG Y, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:konfites', crop: ZEAMX, name: KONFITES, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:konsens', crop: ZEAMX, name: KONSENS, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:kontigos', crop: ZEAMX, name: KONTIGOS, status: candidate, sources: [CREA, GENVCE]}
+  - {id: 'ZEAMX:kopias', crop: ZEAMX, name: KOPIAS, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:korimbos', crop: ZEAMX, name: KORIMBOS, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:korreos', crop: ZEAMX, name: KORREOS, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:koxx', crop: ZEAMX, name: KOXX, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:krups', crop: ZEAMX, name: KRUPS, status: candidate, sources: [CREA]}
+  - {id: 'ZEAMX:kws-alcanto', crop: ZEAMX, name: KWS ALCANTO, status: candidate, sources: [CREA]}
+  - {id: 'ZEAMX:kws-elektro', crop: ZEAMX, name: KWS ELEKTRO, status: candidate, sources: [CREA]}
+  - {id: 'ZEAMX:kws-inteligens', crop: ZEAMX, name: KWS INTELIGENS, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:kws-kaleido', crop: ZEAMX, name: KWS KALEIDO, status: candidate, sources: [CREA]}
+  - {id: 'ZEAMX:kws-kerubino', crop: ZEAMX, name: KWS KERUBINO, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:kws-kulmos', crop: ZEAMX, name: KWS KULMOS, status: candidate, sources: [CREA]}
+  - {id: 'ZEAMX:kws-omnio', crop: ZEAMX, name: KWS OMNIO, status: candidate, sources: [CREA]}
+  - {id: 'ZEAMX:kws-poseido', crop: ZEAMX, name: KWS POSEIDO, status: candidate, sources: [CREA, GENVCE]}
+  - {id: 'ZEAMX:kws-primato', crop: ZEAMX, name: KWS PRIMATO, status: candidate, sources: [CREA]}
+  - {id: 'ZEAMX:kws-romero', crop: ZEAMX, name: KWS ROMERO, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:kws-selecto', crop: ZEAMX, name: KWS SELECTO, status: candidate, sources: [CREA, GENVCE]}
+  - {id: 'ZEAMX:kws-sultanio', crop: ZEAMX, name: KWS SULTANIO, status: candidate, sources: [CREA]}
+  - {id: 'ZEAMX:kws-udo', crop: ZEAMX, name: KWS UDO, status: candidate, sources: [CREA]}
+  - {id: 'ZEAMX:kws4565-yg', crop: ZEAMX, name: KWS4565 YG, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:lampard-yg', crop: ZEAMX, name: LAMPARD YG, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:lg-30-444', crop: ZEAMX, name: LG 30.444, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:lg-30-490-yg', crop: ZEAMX, name: LG 30.490 YG, status: assumption, aliases: [LG 30.490 YG *, LG 30.490 YG*], evidence: 'table annotation markers only: (T) check, (R) reference, * footnote; every annotated raw row carries special_status testigo/referencia/transgenico', sources: [GENVCE]}
+  - {id: 'ZEAMX:lg-30-600', crop: ZEAMX, name: LG 30.600, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:lg-30-681', crop: ZEAMX, name: LG 30.681, status: assumption, aliases: [LG 30.681 (T)], evidence: 'table annotation markers only: (T) check, (R) reference, * footnote; every annotated raw row carries special_status testigo/referencia/transgenico', sources: [GENVCE]}
+  - {id: 'ZEAMX:lg-30-707-yg', crop: ZEAMX, name: LG 30.707 YG, status: assumption, aliases: [LG 30.707 YG*], evidence: 'table annotation markers only: (T) check, (R) reference, * footnote; every annotated raw row carries special_status testigo/referencia/transgenico', sources: [GENVCE]}
+  - {id: 'ZEAMX:lg-30-712-yg', crop: ZEAMX, name: LG 30.712 YG, status: assumption, aliases: [LG 30.712 YG *, LG 30.712 YG*], evidence: 'table annotation markers only: (T) check, (R) reference, * footnote; every annotated raw row carries special_status testigo/referencia/transgenico', sources: [GENVCE]}
+  - {id: 'ZEAMX:lg-34-90', crop: ZEAMX, name: LG 34.90, status: assumption, aliases: [LG 34.90 (T)], evidence: 'table annotation markers only: (T) check, (R) reference, * footnote; every annotated raw row carries special_status testigo/referencia/transgenico', sources: [GENVCE]}
+  - {id: 'ZEAMX:lg30-444', crop: ZEAMX, name: LG30.444, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:lg30-597', crop: ZEAMX, name: LG30.597, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:lg30-600', crop: ZEAMX, name: LG30.600, status: candidate, sources: [CREA, GENVCE]}
+  - {id: 'ZEAMX:lg30-601-yg', crop: ZEAMX, name: LG30.601 YG, status: assumption, aliases: [LG30.601 YG *], evidence: 'table annotation markers only: (T) check, (R) reference, * footnote; every annotated raw row carries special_status testigo/referencia/transgenico', sources: [GENVCE]}
+  - {id: 'ZEAMX:lg30-681', crop: ZEAMX, name: LG30.681, status: assumption, aliases: [LG30.681 (T)], evidence: 'table annotation markers only: (T) check, (R) reference, * footnote; every annotated raw row carries special_status testigo/referencia/transgenico', sources: [GENVCE]}
+  - {id: 'ZEAMX:lg30-707-yg', crop: ZEAMX, name: LG30.707 YG, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:lg30681', crop: ZEAMX, name: LG30681, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:lg30685', crop: ZEAMX, name: LG30685, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:lg31-555', crop: ZEAMX, name: LG31.555, status: candidate, sources: [CREA]}
+  - {id: 'ZEAMX:lg31-625', crop: ZEAMX, name: LG31.625, status: candidate, sources: [CREA]}
+  - {id: 'ZEAMX:lg31-642', crop: ZEAMX, name: LG31.642, status: candidate, sources: [CREA]}
+  - {id: 'ZEAMX:lg31-677', crop: ZEAMX, name: LG31.677, status: candidate, sources: [CREA]}
+  - {id: 'ZEAMX:lg31515', crop: ZEAMX, name: LG31515, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:lg31545', crop: ZEAMX, name: LG31545, status: assumption, aliases: [LG31545 *], evidence: 'table annotation markers only: (T) check, (R) reference, * footnote; every annotated raw row carries special_status testigo/referencia/transgenico', sources: [GENVCE]}
+  - {id: 'ZEAMX:lg31555', crop: ZEAMX, name: LG31555, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:lg31630', crop: ZEAMX, name: LG31630, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:lg31642', crop: ZEAMX, name: LG31642, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:lg31677', crop: ZEAMX, name: LG31677, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:lg31688', crop: ZEAMX, name: LG31688, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:lg31695', crop: ZEAMX, name: LG31695, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:lg31710-yg', crop: ZEAMX, name: LG31710 YG, status: assumption, aliases: [LG31710 YG*], evidence: 'table annotation markers only: (T) check, (R) reference, * footnote; every annotated raw row carries special_status testigo/referencia/transgenico', sources: [GENVCE]}
+  - {id: 'ZEAMX:lg3490', crop: ZEAMX, name: LG3490, status: assumption, aliases: [LG3490 (T)], evidence: 'table annotation markers only: (T) check, (R) reference, * footnote; every annotated raw row carries special_status testigo/referencia/transgenico', sources: [GENVCE]}
+  - {id: 'ZEAMX:lg36-27', crop: ZEAMX, name: LG36.27, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:lid-6130c', crop: ZEAMX, name: LID 6130C, status: candidate, sources: [CREA]}
+  - {id: 'ZEAMX:lid-7001c', crop: ZEAMX, name: LID 7001C, status: candidate, sources: [CREA, GENVCE]}
+  - {id: 'ZEAMX:lzm-462-09', crop: ZEAMX, name: LZM 462/09, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:mabuko', crop: ZEAMX, name: MABUKO, status: candidate, sources: [CREA]}
+  - {id: 'ZEAMX:mas-40-f', crop: ZEAMX, name: MAS 40.F, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:mas-48-f', crop: ZEAMX, name: MAS 48.F, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:mas-52-k', crop: ZEAMX, name: MAS 52.K, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:mas-524a', crop: ZEAMX, name: MAS 524A, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:mas-529d', crop: ZEAMX, name: MAS 529D, status: candidate, sources: [CREA]}
+  - {id: 'ZEAMX:mas-56-a', crop: ZEAMX, name: MAS 56.A, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:mas-56-e', crop: ZEAMX, name: MAS 56.E, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:mas-57-r', crop: ZEAMX, name: MAS 57.R, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:mas-576-n', crop: ZEAMX, name: MAS 576.N, status: candidate, sources: [CREA]}
+  - {id: 'ZEAMX:mas-576n', crop: ZEAMX, name: MAS 576N, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:mas-58-m', crop: ZEAMX, name: MAS 58.M, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:mas-582-d', crop: ZEAMX, name: MAS 582.D, status: candidate, sources: [CREA]}
+  - {id: 'ZEAMX:mas-59-k', crop: ZEAMX, name: MAS 59.K, status: candidate, sources: [CREA]}
+  - {id: 'ZEAMX:mas-59-p', crop: ZEAMX, name: MAS 59.P, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:mas-59k', crop: ZEAMX, name: MAS 59K, status: candidate, sources: [CREA, GENVCE]}
+  - {id: 'ZEAMX:mas-64p', crop: ZEAMX, name: MAS 64P, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:mas-65-yg', crop: ZEAMX, name: MAS 65.YG, status: assumption, aliases: [MAS 65.YG *], evidence: 'table annotation markers only: (T) check, (R) reference, * footnote; every annotated raw row carries special_status testigo/referencia/transgenico', sources: [GENVCE]}
+  - {id: 'ZEAMX:mas-66-c', crop: ZEAMX, name: MAS 66.C, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:mas-674-l', crop: ZEAMX, name: MAS 674.L, status: candidate, sources: [CREA]}
+  - {id: 'ZEAMX:mas-674l', crop: ZEAMX, name: MAS 674L, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:mas-68-k', crop: ZEAMX, name: MAS 68.K, status: candidate, sources: [CREA]}
+  - {id: 'ZEAMX:mas-68k', crop: ZEAMX, name: MAS 68K, status: candidate, sources: [CREA]}
+  - {id: 'ZEAMX:mas-70-f', crop: ZEAMX, name: MAS 70.F, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:mas-714m', crop: ZEAMX, name: MAS 714M, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:mas-75-a', crop: ZEAMX, name: MAS 75.A, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:mas-78-t', crop: ZEAMX, name: MAS 78.T, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:maxeed', crop: ZEAMX, name: MAXEED, status: candidate, sources: [CREA, GENVCE]}
+  - {id: 'ZEAMX:mexini', crop: ZEAMX, name: MEXINI, status: candidate, sources: [CREA, GENVCE]}
+  - {id: 'ZEAMX:miloxan', crop: ZEAMX, name: MILOXAN, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:miloxan-yg', crop: ZEAMX, name: MILOXAN YG, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:nkgalactic', crop: ZEAMX, name: NKGALACTIC, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:nkvitorino', crop: ZEAMX, name: NKVITORINO, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:noah', crop: ZEAMX, name: NOAH, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:nystar', crop: ZEAMX, name: NYSTAR, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:nystar-yg', crop: ZEAMX, name: NYSTAR YG, status: assumption, aliases: [NYSTAR YG *], evidence: 'table annotation markers only: (T) check, (R) reference, * footnote; every annotated raw row carries special_status testigo/referencia/transgenico', sources: [GENVCE]}
+  - {id: 'ZEAMX:p0260', crop: ZEAMX, name: P0260, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:p0710', crop: ZEAMX, name: P0710, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:p0837', crop: ZEAMX, name: P0837, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:p0848', crop: ZEAMX, name: P0848, status: candidate, sources: [CREA]}
+  - {id: 'ZEAMX:p0900', crop: ZEAMX, name: P0900, status: candidate, sources: [CREA, GENVCE]}
+  - {id: 'ZEAMX:p0933', crop: ZEAMX, name: P0933, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:p0933y', crop: ZEAMX, name: P0933Y, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:p0937', crop: ZEAMX, name: P0937, status: assumption, aliases: [P0937 (T), P0937 *], evidence: 'table annotation markers only: (T) check, (R) reference, * footnote; every annotated raw row carries special_status testigo/referencia/transgenico', sources: [CREA, GENVCE]}
+  - {id: 'ZEAMX:p0937y', crop: ZEAMX, name: P0937Y, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:p1049', crop: ZEAMX, name: P1049, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:p1049y', crop: ZEAMX, name: P1049Y, status: assumption, aliases: [P1049Y*], evidence: 'table annotation markers only: (T) check, (R) reference, * footnote; every annotated raw row carries special_status testigo/referencia/transgenico', sources: [GENVCE]}
+  - {id: 'ZEAMX:p1096', crop: ZEAMX, name: P1096, status: candidate, sources: [CREA]}
+  - {id: 'ZEAMX:p1114', crop: ZEAMX, name: P1114, status: assumption, aliases: [P1114 (T)], evidence: 'table annotation markers only: (T) check, (R) reference, * footnote; every annotated raw row carries special_status testigo/referencia/transgenico', sources: [GENVCE]}
+  - {id: 'ZEAMX:p1232', crop: ZEAMX, name: P1232, status: candidate, sources: [CREA]}
+  - {id: 'ZEAMX:p1275', crop: ZEAMX, name: P1275, status: candidate, sources: [CREA]}
+  - {id: 'ZEAMX:p1332', crop: ZEAMX, name: P1332, status: candidate, sources: [CREA]}
+  - {id: 'ZEAMX:p1441', crop: ZEAMX, name: P1441, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:p1524', crop: ZEAMX, name: P1524, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:p1524y', crop: ZEAMX, name: P1524Y, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:p15268', crop: ZEAMX, name: P15268, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:p1541', crop: ZEAMX, name: P1541, status: candidate, sources: [CREA]}
+  - {id: 'ZEAMX:p1547', crop: ZEAMX, name: P1547, status: candidate, sources: [CREA]}
+  - {id: 'ZEAMX:p1570', crop: ZEAMX, name: P1570, status: candidate, sources: [CREA, GENVCE]}
+  - {id: 'ZEAMX:p1570y', crop: ZEAMX, name: P1570Y, status: assumption, aliases: [P1570Y *], evidence: 'table annotation markers only: (T) check, (R) reference, * footnote; every annotated raw row carries special_status testigo/referencia/transgenico', sources: [GENVCE]}
+  - {id: 'ZEAMX:p1574', crop: ZEAMX, name: P1574, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:p1574y', crop: ZEAMX, name: P1574Y, status: assumption, aliases: [P1574Y *, P1574Y*], evidence: 'table annotation markers only: (T) check, (R) reference, * footnote; every annotated raw row carries special_status testigo/referencia/transgenico', sources: [GENVCE]}
+  - {id: 'ZEAMX:p1758y', crop: ZEAMX, name: P1758Y, status: assumption, aliases: [P1758Y *, P1758Y*], evidence: 'table annotation markers only: (T) check, (R) reference, * footnote; every annotated raw row carries special_status testigo/referencia/transgenico', sources: [GENVCE]}
+  - {id: 'ZEAMX:p1772', crop: ZEAMX, name: P1772, status: candidate, sources: [CREA, GENVCE]}
+  - {id: 'ZEAMX:p1884', crop: ZEAMX, name: P1884, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:p1916', crop: ZEAMX, name: P1916, status: candidate, sources: [CREA]}
+  - {id: 'ZEAMX:p1921', crop: ZEAMX, name: P1921, status: assumption, aliases: [P1921 (T), P1921 *], evidence: 'table annotation markers only: (T) check, (R) reference, * footnote; every annotated raw row carries special_status testigo/referencia/transgenico', sources: [GENVCE]}
+  - {id: 'ZEAMX:p1921y', crop: ZEAMX, name: P1921Y, status: assumption, aliases: [P1921Y *], evidence: 'table annotation markers only: (T) check, (R) reference, * footnote; every annotated raw row carries special_status testigo/referencia/transgenico', sources: [GENVCE]}
+  - {id: 'ZEAMX:p2105', crop: ZEAMX, name: P2105, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:pelota', crop: ZEAMX, name: PELOTA, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:phileaxx', crop: ZEAMX, name: PHILEAXX, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:pianello', crop: ZEAMX, name: PIANELLO, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:pl700', crop: ZEAMX, name: PL700, status: candidate, sources: [CREA]}
+  - {id: 'ZEAMX:platone', crop: ZEAMX, name: PLATONE, status: candidate, sources: [CREA]}
+  - {id: 'ZEAMX:portbou', crop: ZEAMX, name: PORTBOU, status: candidate, sources: [CREA]}
+  - {id: 'ZEAMX:portofino', crop: ZEAMX, name: PORTOFINO, status: candidate, sources: [CREA]}
+  - {id: 'ZEAMX:powair', crop: ZEAMX, name: POWAIR, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:pr32b41', crop: ZEAMX, name: PR32B41, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:pr32t16', crop: ZEAMX, name: PR32T16, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:pr32w86', crop: ZEAMX, name: PR32W86, status: assumption, aliases: [PR32W86 (T)], evidence: 'table annotation markers only: (T) check, (R) reference, * footnote; every annotated raw row carries special_status testigo/referencia/transgenico', sources: [GENVCE]}
+  - {id: 'ZEAMX:pr33d48', crop: ZEAMX, name: PR33D48, status: assumption, aliases: [PR33D48 *, PR33D48*], evidence: 'table annotation markers only: (T) check, (R) reference, * footnote; every annotated raw row carries special_status testigo/referencia/transgenico', sources: [GENVCE]}
+  - {id: 'ZEAMX:pr33y72', crop: ZEAMX, name: PR33Y72, status: assumption, aliases: [PR33Y72 (T), PR33Y72 (T) *, PR33Y72 (T)*], evidence: 'table annotation markers only: (T) check, (R) reference, * footnote; every annotated raw row carries special_status testigo/referencia/transgenico', sources: [GENVCE]}
+  - {id: 'ZEAMX:pr33y74', crop: ZEAMX, name: PR33Y74, status: assumption, aliases: [PR33Y74 (T)], evidence: 'table annotation markers only: (T) check, (R) reference, * footnote; every annotated raw row carries special_status testigo/referencia/transgenico', sources: [GENVCE]}
+  - {id: 'ZEAMX:pr34n43', crop: ZEAMX, name: PR34N43, status: assumption, aliases: [PR34N43 (T)], evidence: 'table annotation markers only: (T) check, (R) reference, * footnote; every annotated raw row carries special_status testigo/referencia/transgenico', sources: [GENVCE]}
+  - {id: 'ZEAMX:pr35a52', crop: ZEAMX, name: PR35A52, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:prestige', crop: ZEAMX, name: PRESTIGE, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:r-500-1', crop: ZEAMX, name: R_500_1, status: candidate, sources: [CREA]}
+  - {id: 'ZEAMX:r-700-1', crop: ZEAMX, name: R_700_1, status: candidate, sources: [CREA]}
+  - {id: 'ZEAMX:reboxx', crop: ZEAMX, name: REBOXX, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:reserve', crop: ZEAMX, name: RESERVE, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:rgt-cadixxio', crop: ZEAMX, name: RGT CADIXXIO, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:rgt-coruxxo', crop: ZEAMX, name: RGT CORUXXO, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:rgt-distinxxion', crop: ZEAMX, name: RGT DISTINXXION, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:rgt-elaraxx', crop: ZEAMX, name: RGT ELARAXX, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:rgt-huxxo', crop: ZEAMX, name: RGT HUXXO, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:rgt-huxxo-wx', crop: ZEAMX, name: RGT HUXXO WX, status: candidate, sources: [CREA]}
+  - {id: 'ZEAMX:rgt-iniexxta', crop: ZEAMX, name: RGT INIEXXTA, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:rgt-ixabel', crop: ZEAMX, name: RGT IXABEL, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:rgt-ixxel', crop: ZEAMX, name: RGT IXXEL, status: candidate, sources: [CREA]}
+  - {id: 'ZEAMX:rgt-lexxical-wx', crop: ZEAMX, name: RGT LEXXICAL wx, status: candidate, sources: [CREA]}
+  - {id: 'ZEAMX:rgt-lexxtour', crop: ZEAMX, name: RGT LEXXTOUR, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:rgt-mexxplede', crop: ZEAMX, name: RGT MEXXPLEDE, status: candidate, sources: [CREA, GENVCE]}
+  - {id: 'ZEAMX:rgt-miloxan', crop: ZEAMX, name: RGT MILOXAN, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:rgt-reflexxion', crop: ZEAMX, name: RGT REFLEXXION, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:romulo', crop: ZEAMX, name: ROMULO, status: candidate, sources: [CREA]}
+  - {id: 'ZEAMX:rosedo', crop: ZEAMX, name: ROSEDO, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:sancia', crop: ZEAMX, name: SANCIA, status: assumption, aliases: [SANCIA (T)], evidence: 'table annotation markers only: (T) check, (R) reference, * footnote; every annotated raw row carries special_status testigo/referencia/transgenico', sources: [GENVCE]}
+  - {id: 'ZEAMX:senko', crop: ZEAMX, name: SENKO, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:shaniya', crop: ZEAMX, name: SHANIYA, status: candidate, sources: [CREA, GENVCE]}
+  - {id: 'ZEAMX:sistematico', crop: ZEAMX, name: SISTEMATICO, status: candidate, sources: [CREA]}
+  - {id: 'ZEAMX:snh-0665', crop: ZEAMX, name: SNH 0665, status: candidate, sources: [CREA]}
+  - {id: 'ZEAMX:snh-4678', crop: ZEAMX, name: SNH 4678, status: candidate, sources: [CREA]}
+  - {id: 'ZEAMX:snh-8655', crop: ZEAMX, name: SNH 8655, status: candidate, sources: [CREA]}
+  - {id: 'ZEAMX:snh-9658', crop: ZEAMX, name: SNH 9658, status: candidate, sources: [CREA]}
+  - {id: 'ZEAMX:socalixx', crop: ZEAMX, name: SOCALIXX, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:spanixx', crop: ZEAMX, name: SPANIXX, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:sumbra', crop: ZEAMX, name: SUMBRA, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:superbia', crop: ZEAMX, name: SUPERBIA, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:suras-ds0218', crop: ZEAMX, name: SURAS DS0218, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:sy-andromeda', crop: ZEAMX, name: SY ANDROMEDA, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:sy-antex', crop: ZEAMX, name: SY ANTEX, status: candidate, sources: [CREA, GENVCE]}
+  - {id: 'ZEAMX:sy-arnold', crop: ZEAMX, name: SY ARNOLD, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:sy-atomic', crop: ZEAMX, name: SY ATOMIC, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:sy-bambus', crop: ZEAMX, name: SY BAMBUS, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:sy-bilbao', crop: ZEAMX, name: SY BILBAO, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:sy-blade', crop: ZEAMX, name: SY BLADE, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:sy-brabus', crop: ZEAMX, name: SY BRABUS, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:sy-cadmium', crop: ZEAMX, name: SY CADMIUM, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:sy-caliber', crop: ZEAMX, name: SY CALIBER, status: candidate, sources: [CREA]}
+  - {id: 'ZEAMX:sy-carioca', crop: ZEAMX, name: SY CARIOCA, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:sy-clipser', crop: ZEAMX, name: SY CLIPSER, status: candidate, sources: [CREA]}
+  - {id: 'ZEAMX:sy-competo', crop: ZEAMX, name: SY COMPETO, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:sy-cromatic', crop: ZEAMX, name: SY CROMATIC, status: candidate, sources: [CREA]}
+  - {id: 'ZEAMX:sy-evident', crop: ZEAMX, name: SY EVIDENT, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:sy-fontero', crop: ZEAMX, name: SY FONTERO, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:sy-fuerza', crop: ZEAMX, name: SY FUERZA, status: candidate, sources: [CREA, GENVCE]}
+  - {id: 'ZEAMX:sy-generoso', crop: ZEAMX, name: SY GENEROSO, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:sy-giants', crop: ZEAMX, name: SY GIANTS, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:sy-gibra', crop: ZEAMX, name: SY GIBRA, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:sy-gladius', crop: ZEAMX, name: SY GLADIUS, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:sy-helium', crop: ZEAMX, name: SY HELIUM, status: candidate, sources: [CREA, GENVCE]}
+  - {id: 'ZEAMX:sy-hydro', crop: ZEAMX, name: SY HYDRO, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:sy-itaka', crop: ZEAMX, name: SY ITAKA, status: candidate, sources: [CREA]}
+  - {id: 'ZEAMX:sy-jullen', crop: ZEAMX, name: SY JULLEN, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:sy-kursor', crop: ZEAMX, name: SY KURSOR, status: candidate, sources: [CREA]}
+  - {id: 'ZEAMX:sy-lavaredo', crop: ZEAMX, name: SY LAVAREDO, status: candidate, sources: [CREA, GENVCE]}
+  - {id: 'ZEAMX:sy-miami', crop: ZEAMX, name: SY MIAMI, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:sy-nepal', crop: ZEAMX, name: SY NEPAL, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:sy-parago', crop: ZEAMX, name: SY PARAGO, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:sy-performer', crop: ZEAMX, name: SY PERFORMER, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:sy-radioso', crop: ZEAMX, name: SY RADIOSO, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:sy-sandro', crop: ZEAMX, name: SY SANDRO, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:sy-savio', crop: ZEAMX, name: SY SAVIO, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:sy-senko', crop: ZEAMX, name: SY SENKO, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:sy-sycuro', crop: ZEAMX, name: SY SYCURO, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:sy-ultimate', crop: ZEAMX, name: SY ULTIMATE, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:sy-unitron', crop: ZEAMX, name: SY UNITRON, status: candidate, sources: [CREA, GENVCE]}
+  - {id: 'ZEAMX:sy-zoan', crop: ZEAMX, name: SY ZOAN, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:tentaxion', crop: ZEAMX, name: TENTAXION, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:torquaz', crop: ZEAMX, name: TORQUAZ, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:ubeda', crop: ZEAMX, name: UBEDA, status: candidate, sources: [CREA]}
+  - {id: 'ZEAMX:urbanix', crop: ZEAMX, name: URBANIX, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:yangxi', crop: ZEAMX, name: YANGXI, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:zapotek', crop: ZEAMX, name: ZAPOTEK, status: assumption, aliases: [ZAPOTEK *], evidence: 'table annotation markers only: (T) check, (R) reference, * footnote; every annotated raw row carries special_status testigo/referencia/transgenico', sources: [CREA, GENVCE]}
+  - {id: 'ZEAMX:zapotek-yg', crop: ZEAMX, name: ZAPOTEK YG, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:zapotek-yg-y', crop: ZEAMX, name: ZAPOTEK YG Y, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:zoom', crop: ZEAMX, name: ZOOM, status: candidate, sources: [GENVCE]}
+  - {id: 'ZEAMX:zoom-yg', crop: ZEAMX, name: ZOOM YG, status: assumption, aliases: [ZOOM YG *], evidence: 'table annotation markers only: (T) check, (R) reference, * footnote; every annotated raw row carries special_status testigo/referencia/transgenico', sources: [GENVCE]}
+  - {id: 'ZEAMX:zoran', crop: ZEAMX, name: ZORAN, status: candidate, sources: [CREA]}
+  - {id: 'ZEAMX:zoucale', crop: ZEAMX, name: ZOUCALE, status: candidate, sources: [CREA]}
+  - {id: 'ZEAMX:zuccardi', crop: ZEAMX, name: ZUCCARDI, status: candidate, sources: [CREA]}

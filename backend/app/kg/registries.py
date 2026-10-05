@@ -41,6 +41,7 @@ REGISTRY_FILES: tuple[str, ...] = (
     "sources.yaml",
     "sites.yaml",
     "ranges.yaml",
+    "varieties.yaml",
 )
 
 # Condition keys a contextual range may use, and the vocabulary each draws its values from
@@ -324,13 +325,43 @@ class RangesFile(_Model):
     ranges: tuple[Range, ...]
 
 
+# ── varieties ────────────────────────────────────────────────────────────────
+
+class Variety(_Model):
+    id: str = Field(pattern=r"^[A-Z0-9]{5,6}:[a-z0-9][a-z0-9-]*$")
+    crop: str = Field(min_length=1)
+    name: str = Field(min_length=1)
+    status: Literal["reviewed", "assumption", "candidate"]
+    aliases: tuple[str, ...] = ()
+    evidence: str | None = None
+    sources: tuple[str, ...] = ()
+
+    @model_validator(mode="after")
+    def _aliases_need_evidence(self) -> Variety:
+        if self.aliases and not (self.evidence or "").strip():
+            raise ValueError(f"{self.id}: aliases need the evidence that groups them")
+        if self.aliases and self.status == "candidate":
+            raise ValueError(f"{self.id}: an alias group is an assumption or reviewed, not a candidate")
+        if not self.id.startswith(f"{self.crop}:"):
+            raise ValueError(f"{self.id}: the id starts with its crop {self.crop}")
+        return self
+
+
+class VarietiesFile(_Model):
+    version: int
+    varieties: tuple[Variety, ...]
+
+
 # ── loading helpers ──────────────────────────────────────────────────────────
+
+_YAML_LOADER = getattr(yaml, "CSafeLoader", yaml.SafeLoader)  # the C loader gives the same result, faster
+
 
 def _read_yaml(path: Path) -> Any:
     if not path.is_file():
         raise RegistryError(f"missing registry file: {path}")
     try:
-        return yaml.safe_load(path.read_text(encoding="utf-8"))
+        return yaml.load(path.read_text(encoding="utf-8"), Loader=_YAML_LOADER)
     except yaml.YAMLError as exc:
         raise RegistryError(f"{path.name}: invalid YAML: {exc}") from exc
 
@@ -369,7 +400,7 @@ class Registries:
     def __init__(
         self, *, crops: CropsFile, units: UnitsFile, vocabularies: VocabFile,
         variables: VariablesFile, sources: SourcesFile, sites: SitesFile, ranges: RangesFile,
-        registries_hash: str, path: Path,
+        varieties: VarietiesFile, registries_hash: str, path: Path,
     ) -> None:
         self.path = path
         self.registries_hash = registries_hash
@@ -481,6 +512,23 @@ class Registries:
                         raise RegistryError(
                             f"ranges {first.id} and {second.id} are equally specific and can both match")
 
+        # varieties
+        self.varieties: tuple[Variety, ...] = varieties.varieties
+        _no_duplicates((v.id for v in self.varieties), "variety id")
+        canonical_crops = {c.eppo for c in crops.crops}
+        self._variety_index: dict[tuple[str, str], Variety] = {}
+        for variety in self.varieties:
+            if variety.crop not in canonical_crops:
+                raise RegistryError(
+                    f"variety {variety.id}: crop {variety.crop!r} is not a canonical EPPO code in crops.yaml")
+            for source_id in variety.sources:
+                self._require_source(source_id, f"variety {variety.id} sources")
+            for name in (variety.name, *variety.aliases):
+                key = (variety.crop, lookup_key(name))
+                if self._variety_index.setdefault(key, variety) is not variety:
+                    raise RegistryError(
+                        f"variety alias: {name!r} ({variety.crop}) resolves to more than one variety")
+
         # crops
         self.crops: tuple[Crop, ...] = crops.crops
         _no_duplicates((c.eppo for c in self.crops), "crop eppo")
@@ -511,6 +559,19 @@ class Registries:
     def _require_source(self, source_id: str, where: str) -> None:
         if source_id not in self._source_index:
             raise RegistryError(f"{where}: unknown source {source_id!r}")
+
+    # ── varieties ────────────────────────────────────────────────────────────
+
+    def variety(self, crop_eppo: str | None, raw_name: str | None) -> Variety | None:
+        """The registered variety for a crop and a raw name or alias; None when unregistered.
+
+        Exact match only (NFC, case-folded, whitespace collapsed). A name that is not registered is
+        never matched to a similar one: the build queues it for review and loads a candidate.
+        """
+        crop = self.crop(crop_eppo)
+        if crop is None or not raw_name:
+            return None
+        return self._variety_index.get((crop.eppo, lookup_key(raw_name)))
 
     # ── ranges ───────────────────────────────────────────────────────────────
 
@@ -651,6 +712,7 @@ def load_registries(path: str | Path | None = None) -> Registries:
         sources=_parse(SourcesFile, base / "sources.yaml"),
         sites=_parse(SitesFile, base / "sites.yaml"),
         ranges=_parse(RangesFile, base / "ranges.yaml"),
+        varieties=_parse(VarietiesFile, base / "varieties.yaml"),
         registries_hash=registries_hash(base),
         path=base,
     )
