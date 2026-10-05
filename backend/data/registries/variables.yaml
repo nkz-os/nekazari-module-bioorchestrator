@@ -1,0 +1,375 @@
+# Observed-variable registry (MIAPPE: trait + method + scale). Discovered from the GENVCE and CREA
+# raw extractions (60 GENVCE reports, five CREA maize booklets); a variable the sources do not
+# publish is not here.
+#
+# scale: ratio | percent | ordinal | categorical | date
+#   unit    - unit code from units.yaml for ratio and percent scales, else null
+#   domain  - [min, max] allowed values of an ordinal scale (the widest range the sources use:
+#             disease scores are printed "escala 0-9", emergence "0-5")
+#   method  - only what a source states; null when it does not say
+#   direction - higher_better | lower_better | neutral (no preferred direction)
+#   denormalize - the loader copies the value onto the unit (E4); the Observation stays the truth
+#   crop_ontology_id - Crop Ontology trait id ONLY if verified; none verified yet, so all null
+#   raw_keys - discovery evidence, not the contract: the raw field names (any extraction group:
+#              quality_params, disease_scores, agronomic_traits, yield_notes, or a top-level field)
+#              that publish this variable. A raw key belongs to one variable. The source contract
+#              stays authoritative for the mapping.
+#
+# Raw keys deliberately NOT mapped (scale or meaning not stated, so not inferred) are listed in the
+# task report; a contract either resolves them against the source document or ignores them with a
+# reason. Bare disease keys (oidio, roya_parda, helmintosporiosis, rincosporiosis) print a 0-9
+# score in some reports and a percentage in others, so they cannot be assigned a scale by name.
+version: 1
+variables:
+  # ── yield ──
+  - id: crop_yield
+    trait: yield of the main harvested product per area
+    method: null
+    scale: ratio
+    unit: kg/ha
+    direction: higher_better
+    denormalize: true
+    raw_keys: {GENVCE: [yield_kg_ha], CREA: [yield_kg_ha]}
+    notes: >-
+      Metric (grain, seed) and basis (standard moisture) are declared by the source contract, not
+      by the variable. GENVCE prints kg/ha at 13% (cereals), 14% (maize) or 9% (rapeseed) moisture;
+      CREA prints q/ha at 15.5% moisture (converted to kg/ha).
+  - id: relative_yield_pct
+    trait: yield relative to the reference of the published table
+    method: null
+    scale: percent
+    unit: "%"
+    direction: higher_better
+    denormalize: true
+    raw_keys: {GENVCE: [yield_relative_pct], CREA: [yield_relative_pct]}
+    notes: The reference (check mean or trial mean) is per table and not carried by the extraction.
+  # ── grain and seed quality ──
+  - id: test_weight
+    trait: hectolitre (test) weight
+    method: null
+    scale: ratio
+    unit: kg/hL
+    direction: higher_better
+    raw_keys:
+      GENVCE: [peso_especifico_kg_hl, peso_hectolitrico_kg_hl]
+      CREA: [peso_ettolitrico_kg_hl]
+  - id: thousand_kernel_weight
+    trait: thousand-kernel (thousand-seed) weight
+    method: null
+    scale: ratio
+    unit: g
+    direction: neutral
+    raw_keys: {GENVCE: [peso_mil_granos_g, peso_de_1000_granos_g, peso_mil_semillas_g]}
+  - id: grain_protein_content
+    trait: grain protein content
+    method: null
+    scale: percent
+    unit: "%"
+    direction: neutral
+    raw_keys: {GENVCE: [proteina_pct]}
+    notes: Moisture or dry-matter basis of the percentage is not stated in the extraction.
+  - id: seed_oil_content
+    trait: seed oil (fat) content
+    method: null
+    scale: percent
+    unit: "%"
+    direction: higher_better
+    raw_keys: {GENVCE: [contenido_grasa_pct, contenido_en_grasa_pct, grasa_pct]}
+    notes: Rapeseed. Moisture or dry-matter basis of the percentage is not stated in the extraction.
+  - id: grain_moisture_harvest
+    trait: grain moisture at harvest
+    method: null
+    scale: percent
+    unit: "%"
+    direction: lower_better
+    raw_keys:
+      GENVCE: [humedad_pct, humedad_grano_pct]
+      CREA: [umidita_pct, umidita_raccolta_pct]
+  # ── plant architecture ──
+  - id: plant_height
+    trait: plant height
+    method: null
+    scale: ratio
+    unit: cm
+    direction: neutral
+    raw_keys: {GENVCE: [altura_cm, altura_planta_cm], CREA: [altezza_pianta_cm]}
+  - id: ear_height
+    trait: ear (cob) insertion height
+    method: null
+    scale: ratio
+    unit: cm
+    direction: neutral
+    raw_keys:
+      GENVCE: [altura_insercion_mazorca_cm, altura_mazorca_cm, altura_nudo_mazorca_cm]
+      CREA: [altezza_spiga_cm]
+  - id: plant_density
+    trait: plant density at harvest
+    method: null
+    scale: ratio
+    unit: /m2
+    direction: neutral
+    raw_keys: {GENVCE: [densidad_plantas_m2], CREA: [piante_m2, piante_per_m2]}
+  - id: spike_density
+    trait: spike (ear) density, tillering capacity
+    method: null
+    scale: ratio
+    unit: /m2
+    direction: neutral
+    raw_keys: {GENVCE: [espigas_m2, capacidad_ahijamiento_espigas_m2, ahijamiento_espigas_m2]}
+  # ── lodging, breakage and damage ──
+  - id: lodging_pct
+    trait: lodged plants
+    method: null
+    scale: percent
+    unit: "%"
+    direction: lower_better
+    raw_keys: {GENVCE: [encamado_pct], CREA: [piante_allettate_pct]}
+  - id: stalk_breakage_pct
+    trait: broken plants (stalk breakage)
+    method: null
+    scale: percent
+    unit: "%"
+    direction: lower_better
+    raw_keys: {GENVCE: [plantas_rotas_pct], CREA: [piante_spezzate_pct]}
+  - id: stalk_rot_pct
+    trait: plants with stalk rot
+    method: null
+    scale: percent
+    unit: "%"
+    direction: lower_better
+    raw_keys: {GENVCE: [podredumbres_tallo_pct, podredumbre_tallo_pct]}
+  - id: dwarf_plants_pct
+    trait: dwarf plants
+    method: null
+    scale: percent
+    unit: "%"
+    direction: lower_better
+    raw_keys: {GENVCE: [plantas_enanas_pct]}
+  - id: cold_damage_pct
+    trait: cold (frost) damage
+    method: null
+    scale: percent
+    unit: "%"
+    direction: lower_better
+    raw_keys: {GENVCE: [danos_frio_pct]}
+  # ── vigour scores ──
+  - id: emergence_score
+    trait: emergence and establishment
+    method: visual score (0-5 as printed in recent reports; the 2006 report states 1-5)
+    scale: ordinal
+    unit: null
+    domain: [0, 5]
+    direction: higher_better
+    raw_keys:
+      GENVCE: [nacencia, nascencia, nacencia_0_5, nascencia_0_5, nacencia_escala_0_5, nascencia_escala_0_5]
+  - id: stay_green_score
+    trait: stay-green (leaf senescence delay)
+    method: visual score 0-5
+    scale: ordinal
+    unit: null
+    domain: [0, 5]
+    direction: higher_better
+    raw_keys: {GENVCE: [stay_green, "stay_ green", stay_green_0_5, stay_green_escala_0_5]}
+    notes: '"stay_ green" (with a space) is a typo of the extraction, kept as a raw key.'
+  # ── phenology ──
+  - id: fao_maturity_class
+    trait: FAO maturity class (cycle)
+    method: null
+    scale: ordinal
+    unit: null
+    direction: neutral
+    raw_keys: {GENVCE: [ciclo_fao]}
+  - id: cycle_class
+    trait: cycle class (short or long)
+    method: null
+    scale: categorical
+    unit: null
+    direction: neutral
+    raw_keys: {GENVCE: [ciclo]}
+  - id: heading_date
+    trait: heading date
+    method: null
+    scale: date
+    unit: null
+    direction: neutral
+    raw_keys: {GENVCE: [fecha_espigado]}
+    notes: Published as day-month text without a year (the trial year applies); formats vary.
+  - id: jointing_date
+    trait: jointing (stem elongation) date
+    method: null
+    scale: date
+    unit: null
+    direction: neutral
+    raw_keys: {GENVCE: [fecha_encanado]}
+  - id: maturity_date
+    trait: maturity date (stage not specified)
+    method: null
+    scale: date
+    unit: null
+    direction: neutral
+    raw_keys: {GENVCE: [fecha_madurez]}
+  - id: physiological_maturity_date
+    trait: physiological maturity date
+    method: null
+    scale: date
+    unit: null
+    direction: neutral
+    raw_keys: {GENVCE: [fecha_madurez_fisiologica]}
+  - id: flowering_start_date
+    trait: start of flowering date
+    method: null
+    scale: date
+    unit: null
+    direction: neutral
+    raw_keys: {GENVCE: [fecha_inicio_floracion]}
+  - id: flowering_end_date
+    trait: end of flowering date
+    method: null
+    scale: date
+    unit: null
+    direction: neutral
+    raw_keys: {GENVCE: [fecha_fin_floracion, fecha_final_floracion]}
+  - id: flowering_duration_days
+    trait: flowering duration
+    method: null
+    scale: ratio
+    unit: d
+    direction: neutral
+    raw_keys: {GENVCE: [duracion_floracion_dias, duracion_floracion]}
+  - id: heading_days_vs_check
+    trait: heading offset relative to a check variety
+    method: days earlier (negative) or later than the check named in the table
+    scale: ratio
+    unit: d
+    direction: neutral
+    raw_keys: {GENVCE: [espigado_dias_respecto_hispanic, espigado_dias_respecto_meseta, espigado_dias_respecto_sunrise]}
+    notes: The check variety is in the raw key suffix; the Observation must carry it as the reference.
+  - id: silking_days_vs_check
+    trait: female flowering (silking) offset relative to a check variety
+    method: days earlier (negative) or later than the check named in the table
+    scale: ratio
+    unit: d
+    direction: neutral
+    raw_keys:
+      GENVCE:
+        - dias_floracion_femenina_respecto_testigo
+        - diferencia_floracion_femenina_dias
+        - fecha_floracion_femenina_dias_respecto_P0937
+        - fecha_floracion_femenina_dias_respecto_P1921
+        - floracion_femenina_dias_ref
+        - floracion_femenina_dias_relativos
+        - floracion_femenina_dias_respecto_ELEONORA
+        - floracion_femenina_dias_respecto_P0937
+        - floracion_femenina_dias_respecto_P1921
+        - floracion_femenina_dias_respecto_p1921
+        - floracion_femenina_dias_respecto_testigo
+        - floracion_femenina_dias_vs_check
+    notes: The check variety is in the raw key suffix when present, otherwise it is not carried.
+  - id: physiological_maturity_days_vs_check
+    trait: physiological maturity offset relative to a check variety
+    method: days earlier (negative) or later than the check named in the table
+    scale: ratio
+    unit: d
+    direction: neutral
+    raw_keys: {GENVCE: [madurez_fisiologica_dias_vs_check]}
+  # ── diseases ──
+  - id: powdery_mildew_pct
+    trait: powdery mildew (oidio), affected share
+    method: null
+    scale: percent
+    unit: "%"
+    direction: lower_better
+    raw_keys: {GENVCE: [oidio_pct]}
+  - id: powdery_mildew_score_0_9
+    trait: powdery mildew (oidio) visual score
+    method: visual score 0-9 (GENVCE "Escala visual 0-9")
+    scale: ordinal
+    unit: null
+    domain: [0, 9]
+    direction: lower_better
+    raw_keys: {GENVCE: [oidio_escala_0_9]}
+    notes: Seven of the 66 raw values under this key exceed 9, outside the printed scale (extraction defects to be gated).
+  - id: brown_rust_pct
+    trait: brown rust (roya parda), affected share
+    method: null
+    scale: percent
+    unit: "%"
+    direction: lower_better
+    raw_keys: {GENVCE: [roya_parda_pct]}
+  - id: yellow_rust_pct
+    trait: yellow rust (roya amarilla), affected share
+    method: null
+    scale: percent
+    unit: "%"
+    direction: lower_better
+    raw_keys: {GENVCE: [roya_amarilla_pct]}
+  - id: yellow_rust_score_0_9
+    trait: yellow rust (roya amarilla) visual score
+    method: visual score 0-9
+    scale: ordinal
+    unit: null
+    domain: [0, 9]
+    direction: lower_better
+    raw_keys: {GENVCE: [roya_amarilla_0_9]}
+  - id: helminthosporium_pct
+    trait: helminthosporium (helmintosporiosis), affected share
+    method: null
+    scale: percent
+    unit: "%"
+    direction: lower_better
+    raw_keys: {GENVCE: [helmintosporiosis_pct]}
+  - id: helminthosporium_score_0_9
+    trait: helminthosporium (helmintosporiosis) visual score
+    method: visual score 0-9
+    scale: ordinal
+    unit: null
+    domain: [0, 9]
+    direction: lower_better
+    raw_keys: {GENVCE: [helmintosporiosis_escala_0_9]}
+  - id: scald_pct
+    trait: scald (rincosporiosis), affected share
+    method: null
+    scale: percent
+    unit: "%"
+    direction: lower_better
+    raw_keys: {GENVCE: [rincosporiosis_pct, rincoconporiosis_pct]}
+    notes: '"rincoconporiosis_pct" is a typo of the extraction, kept as a raw key.'
+  - id: scald_score_0_9
+    trait: scald (rincosporiosis) visual score
+    method: visual score 0-9
+    scale: ordinal
+    unit: null
+    domain: [0, 9]
+    direction: lower_better
+    raw_keys: {GENVCE: [rincosporiosis_0_9, rincosporiosis_escala_0_9]}
+  - id: septoria_pct
+    trait: septoria, affected share
+    method: null
+    scale: percent
+    unit: "%"
+    direction: lower_better
+    raw_keys: {GENVCE: [septoria_pct]}
+  - id: mrdv_virus_pct
+    trait: MRDV virus-affected plants
+    method: null
+    scale: percent
+    unit: "%"
+    direction: lower_better
+    raw_keys: {GENVCE: [virus_mrdv_pct]}
+    notes: MRDV is the abbreviation as written in the source.
+  # ── table metadata published as a number ──
+  - id: trial_count_in_mean
+    trait: number of trials averaged in the published value
+    method: null
+    scale: ratio
+    unit: "1"
+    direction: neutral
+    raw_keys:
+      GENVCE:
+        - numero_de_ensayos
+        - numero_ensayos
+        - numero_ensayos_2016_2017
+        - numero_ensayos_2022_2024
+        - numero_ensayos_2023_2024
+        - numero_ensayos_conjunto
+    notes: The period named in some raw keys is part of the key only; the Observation must carry it.

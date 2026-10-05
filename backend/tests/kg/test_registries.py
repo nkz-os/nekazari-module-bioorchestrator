@@ -304,3 +304,103 @@ def test_crop_with_unregistered_main_product_is_an_error(copy_dir):
     edit("crops.yaml", lambda d: d["crops"][0].update(main_product="tuber"))
     with pytest.raises(RegistryError, match="not a yield_metric"):
         load_registries(dest)
+
+
+# ── variables ────────────────────────────────────────────────────────────────
+
+def test_variable_ids_are_unique_stable_snake_case(reg):
+    ids = [v.id for v in reg.variables]
+    assert len(ids) == len(set(ids)) >= 40
+    for variable_id in ids:
+        assert reg.variable(variable_id).id == variable_id
+
+
+def test_every_variable_has_a_registered_unit_when_it_needs_one(reg):
+    for variable in reg.variables:
+        if variable.scale in ("ratio", "percent"):
+            assert reg.unit(variable.unit)
+        else:
+            assert variable.unit is None
+        if variable.scale == "ordinal" and variable.domain:
+            assert variable.domain[0] < variable.domain[1]
+
+
+def test_no_crop_ontology_id_is_unverified(reg):
+    assert all(v.crop_ontology_id is None for v in reg.variables)
+
+
+def test_unregistered_variable_raises(reg):
+    with pytest.raises(UnknownEntryError, match="unregistered variable"):
+        reg.variable("not_a_variable")
+
+
+def test_yield_variables_are_denormalized_and_everything_else_is_not(reg):
+    flagged = {v.id for v in reg.variables if v.denormalize}
+    assert flagged == {"crop_yield", "relative_yield_pct"}
+    assert reg.variable("crop_yield").unit == "kg/ha"
+
+
+def test_raw_keys_resolve_to_one_variable(reg):
+    assert reg.variable_for_raw_key("GENVCE", "proteina_pct").id == "grain_protein_content"
+    assert reg.variable_for_raw_key("CREA", "umidita_raccolta_pct").id == "grain_moisture_harvest"
+    assert reg.variable_for_raw_key("GENVCE", "oidio_pct").id == "powdery_mildew_pct"
+    # scale not stated by the source: deliberately unresolved, never guessed
+    for bare in ("oidio", "roya_parda", "helmintosporiosis", "rincosporiosis", "floracion_femenina_dias"):
+        assert reg.variable_for_raw_key("GENVCE", bare) is None
+    assert reg.variable_for_raw_key("NOPE", "proteina_pct") is None
+
+
+def test_disease_variables_state_their_scale(reg):
+    for variable in reg.variables:
+        if variable.id.endswith("_score_0_9"):
+            assert variable.scale == "ordinal"
+            assert variable.domain == (0, 9)
+        if variable.id.endswith("_pct"):
+            assert variable.scale == "percent"
+
+
+def test_raw_key_claimed_by_two_variables_is_an_error(copy_dir):
+    dest, edit = copy_dir
+    edit("variables.yaml", lambda d: d["variables"][2]["raw_keys"]["GENVCE"].append("proteina_pct"))
+    with pytest.raises(RegistryError, match="maps to both"):
+        load_registries(dest)
+
+
+def test_ratio_without_unit_and_unregistered_unit_are_errors(copy_dir):
+    dest, edit = copy_dir
+    edit("variables.yaml", lambda d: d["variables"][2].update(unit=None))
+    with pytest.raises(RegistryError, match="needs a unit"):
+        load_registries(dest)
+    edit("variables.yaml", lambda d: d["variables"][2].update(unit="bushel"))
+    with pytest.raises(RegistryError, match="unregistered unit"):
+        load_registries(dest)
+
+
+def test_ordinal_domain_and_ontology_id_format_are_enforced(copy_dir):
+    dest, edit = copy_dir
+
+    def bad_domain(d):
+        ordinal = next(v for v in d["variables"] if v["scale"] == "ordinal" and v.get("domain"))
+        ordinal["domain"] = [5, 5]
+
+    edit("variables.yaml", bad_domain)
+    with pytest.raises(RegistryError, match="min < max"):
+        load_registries(dest)
+
+
+def test_malformed_crop_ontology_id_is_rejected(copy_dir):
+    dest, edit = copy_dir
+    edit("variables.yaml", lambda d: d["variables"][0].update(crop_ontology_id="CO_321:abc"))
+    with pytest.raises(RegistryError, match="schema validation failed"):
+        load_registries(dest)
+
+
+def test_duplicate_variable_id_is_an_error(copy_dir):
+    dest, edit = copy_dir
+
+    def dup(d):
+        d["variables"].append({**d["variables"][3], "raw_keys": {}})
+
+    edit("variables.yaml", dup)
+    with pytest.raises(RegistryError, match="duplicate variable id"):
+        load_registries(dest)

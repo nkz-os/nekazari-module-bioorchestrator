@@ -17,10 +17,17 @@ import unicodedata
 from collections.abc import Iterable
 from fractions import Fraction
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 import yaml
-from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    ValidationError,
+    field_validator,
+    model_validator,
+)
 
 DEFAULT_REGISTRIES_PATH = Path(__file__).resolve().parents[2] / "data" / "registries"
 
@@ -29,6 +36,7 @@ REGISTRY_FILES: tuple[str, ...] = (
     "crops.yaml",
     "units.yaml",
     "vocabularies.yaml",
+    "variables.yaml",
 )
 
 # Vocabulary kinds every vocabularies.yaml must define (and nothing else).
@@ -134,6 +142,42 @@ class VocabFile(_Model):
     vocabularies: dict[str, tuple[VocabEntry, ...]]
 
 
+# ── variables ────────────────────────────────────────────────────────────────
+
+class Variable(_Model):
+    id: str = Field(pattern=r"^[a-z][a-z0-9_]*$")
+    trait: str = Field(min_length=1)
+    method: str | None = None
+    scale: Literal["ratio", "percent", "ordinal", "categorical", "date"]
+    unit: str | None = None
+    domain: tuple[float, float] | None = None
+    direction: Literal["higher_better", "lower_better", "neutral"]
+    denormalize: bool = False
+    crop_ontology_id: str | None = Field(default=None, pattern=r"^CO_\d+:\d{7}$")
+    raw_keys: dict[str, tuple[str, ...]] = {}
+    notes: str | None = None
+
+    @model_validator(mode="after")
+    def _scale_is_consistent(self) -> Variable:
+        if self.scale in ("ratio", "percent") and not self.unit:
+            raise ValueError(f"{self.id}: a {self.scale} scale needs a unit")
+        if self.scale in ("ordinal", "categorical", "date") and self.unit is not None:
+            raise ValueError(f"{self.id}: a {self.scale} scale has no unit")
+        if self.scale == "percent" and self.unit != "%":
+            raise ValueError(f"{self.id}: a percent scale uses the unit '%'")
+        if self.domain is not None:
+            if self.scale != "ordinal":
+                raise ValueError(f"{self.id}: only an ordinal scale has a domain")
+            if self.domain[0] >= self.domain[1]:
+                raise ValueError(f"{self.id}: domain must be [min, max] with min < max")
+        return self
+
+
+class VariablesFile(_Model):
+    version: int
+    variables: tuple[Variable, ...]
+
+
 # ── loading helpers ──────────────────────────────────────────────────────────
 
 def _read_yaml(path: Path) -> Any:
@@ -178,7 +222,7 @@ class Registries:
 
     def __init__(
         self, *, crops: CropsFile, units: UnitsFile, vocabularies: VocabFile,
-        registries_hash: str, path: Path,
+        variables: VariablesFile, registries_hash: str, path: Path,
     ) -> None:
         self.path = path
         self.registries_hash = registries_hash
@@ -219,6 +263,22 @@ class Registries:
                 resolved[key] = target
             self._source_units[source_id] = resolved
 
+        # variables
+        self.variables: tuple[Variable, ...] = variables.variables
+        _no_duplicates((v.id for v in self.variables), "variable id")
+        self._variable_index: dict[str, Variable] = {v.id: v for v in self.variables}
+        self._raw_key_index: dict[str, dict[str, Variable]] = {}
+        for variable in self.variables:
+            if variable.unit is not None and lookup_key(variable.unit) not in self._unit_index:
+                raise RegistryError(f"variable {variable.id}: unregistered unit {variable.unit!r}")
+            for source_id, keys in variable.raw_keys.items():
+                index = self._raw_key_index.setdefault(source_id, {})
+                for key in keys:
+                    if key in index:
+                        raise RegistryError(
+                            f"raw key {source_id}.{key} maps to both {index[key].id} and {variable.id}")
+                    index[key] = variable
+
         # crops
         self.crops: tuple[Crop, ...] = crops.crops
         _no_duplicates((c.eppo for c in self.crops), "crop eppo")
@@ -243,6 +303,19 @@ class Registries:
         if key.startswith("eppo:"):
             key = key[5:].strip()
         return self._crop_index.get(key)
+
+    # ── variables ────────────────────────────────────────────────────────────
+
+    def variable(self, variable_id: str) -> Variable:
+        """The variable for a stable id; raises :class:`UnknownEntryError` when unregistered."""
+        found = self._variable_index.get(variable_id) if isinstance(variable_id, str) else None
+        if found is None:
+            raise UnknownEntryError(f"unregistered variable: {variable_id!r}")
+        return found
+
+    def variable_for_raw_key(self, source_id: str, raw_key: str) -> Variable | None:
+        """The variable a source's raw field name publishes (discovery evidence), else None."""
+        return self._raw_key_index.get(source_id, {}).get(raw_key)
 
     # ── units ────────────────────────────────────────────────────────────────
 
@@ -306,6 +379,7 @@ def load_registries(path: str | Path | None = None) -> Registries:
         crops=_parse(CropsFile, base / "crops.yaml"),
         units=_parse(UnitsFile, base / "units.yaml"),
         vocabularies=_parse(VocabFile, base / "vocabularies.yaml"),
+        variables=_parse(VariablesFile, base / "variables.yaml"),
         registries_hash=registries_hash(base),
         path=base,
     )
