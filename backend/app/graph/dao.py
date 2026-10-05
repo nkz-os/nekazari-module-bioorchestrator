@@ -77,9 +77,11 @@ _CROP_MATCH_PREDICATE = (
 #     variety-level filters.
 _EXTRAPOLATE_BODY_TEMPLATE = """
                 // Count the other-purpose trials of the crop once (grouping treats nulls as
-                // equal, unlike an IN test over the key lists).
+                // equal, unlike an IN test over the key lists), in the requested irrigation
+                // regime like every number of the answer: the notice must not promise trials
+                // that "see as forage" would not list.
                 CALL (hits) {
-                  UNWIND [x IN hits WHERE x.other] AS o
+                  UNWIND [x IN hits WHERE x.other AND @IRRIGATION_REFERENCE@] AS o
                   WITH DISTINCT o.ck AS ck
                   RETURN count(*) AS other_n
                 }

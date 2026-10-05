@@ -101,6 +101,11 @@ _TRIALS = [
     _t("CIEAR", "V1", ["g02"], 6000.0, irrigationRegime=_REGADIO, year=2021),
     _t("CIEAR", "V4", ["g06"], 10000.0),
     _t("CIEAR", "V5", ["g06"], 99999.0, source_id="BSL"),
+    # CIEAR forage trials at Csa field sites, one per regime and one without a regime: the forage
+    # notice counts only the requested regime (a trial with no regime never matches one).
+    _t("CIEAR", "VF1", ["g01"], 20000.0, irrigationRegime=_SECANO, qualityParams=_FORAGE_QP, yieldBasis="dry_matter", year=2016),
+    _t("CIEAR", "VF2", ["g02"], 21000.0, irrigationRegime=_REGADIO, qualityParams=_FORAGE_QP, yieldBasis="dry_matter", year=2016),
+    _t("CIEAR", "VF3", ["g03"], 22000.0, qualityParams=_FORAGE_QP, yieldBasis="dry_matter", year=2016),
     # CPSAN: eight varieties with one trial each at an aggregate site of another climate.
     *[_t("CPSAN", f"C{i}", ["Poland (national average)"], 40000.0 + i, source_id="NATIONAL")
       for i in range(8)],
@@ -392,6 +397,21 @@ def test_recommend_main_field_before_regional_with_honest_numbers(dao):
         assert {"no_measured_yield", "regional_evidence_only"} <= set(pres["trust"]["data_gaps"])
     assert [r["crop"]["eppo"] for r in out["recommendations"]][-2:] == ["SECCE", "BRSNN"]  # after LYPES, more trials first
     assert out["data_quality"]["crops_with_analog_trials"] == 6
+
+
+def test_forage_notice_count_respects_the_irrigation_regime(dao):
+    def notice(**kw):
+        recs = {r["crop"]["eppo"]: r for r in _recommend(dao, climate_class="Csa", **kw)["recommendations"]}
+        return recs["CIEAR"]["evidence"]["other_purpose_trials"]
+
+    assert notice() == {"forage": 3}
+    assert notice(irrigation_regime="secano") == {"forage": 1}   # not the regadio nor the regime-less one
+    assert notice(irrigation_regime="regadío") == {"forage": 1}
+    # ... and "see as forage" lists exactly what the notice promised
+    page = _run(dao.list_trial_evidence(crop="CIEAR", similar_sites=[f"g0{i}" for i in range(1, 7)],
+                                        variety=None, irrigation_uri=_SECANO, purpose="forage",
+                                        page=1, page_size=50))
+    assert page["total"] == 1
 
 
 def test_recommend_has_no_presence_recs_in_forage_mode_or_with_an_irrigation_filter(dao):
