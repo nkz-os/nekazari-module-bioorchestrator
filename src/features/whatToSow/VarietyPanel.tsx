@@ -5,6 +5,7 @@ import type { Recommendation } from '../../types/recommend';
 import AssignVarietyModal, { type VarietyInfo } from '../../components/AssignVarietyModal';
 import { RangeBarValues, useCropName } from './RecommendationCard';
 import { showDiseaseSummary, toVarietyInfo, topVarieties, varietyScaleMax } from './varietyModel';
+import { formatYield, kgUnitKey, recYieldUnit, unitKey } from './viewModel';
 
 interface VarietyPanelProps {
   rec: Recommendation;
@@ -21,7 +22,8 @@ export default function VarietyPanel({ rec, parcelId, onSelectTool, onAssigned }
   const [assigning, setAssigning] = useState<VarietyInfo | null>(null);
   const [assigned, setAssigned] = useState<string | null>(null);
   const noData = t('whatToSow.noData');
-  const fmt = (n: number) => n.toLocaleString(i18n.language, { maximumFractionDigits: 0 });
+  const unit = recYieldUnit(rec);
+  const unitLabel = t(unitKey(unit));
 
   return (
     <Card padding="md">
@@ -37,12 +39,13 @@ export default function VarietyPanel({ rec, parcelId, onSelectTool, onAssigned }
         {varieties.map((v) => {
           const info = toVarietyInfo(v, rec.crop);
           const disabled = !parcelId || !info;
+          const expected = formatYield(v.expected_kg_ha, unit, i18n.language);
           return (
             <Stack key={v.variety_uri ?? v.variety} gap="tight">
               <Inline gap="inline" align="center" wrap>
                 <span className="text-nkz-sm font-medium text-nkz-text-primary">{v.variety}</span>
                 <span className="text-nkz-sm text-nkz-text-secondary">
-                  {v.expected_kg_ha == null ? noData : `${fmt(v.expected_kg_ha)} kg/ha`}
+                  {expected == null ? noData : `${expected} ${unitLabel}`}
                 </span>
               </Inline>
               <RangeBarValues interval={v.interval} expected={v.expected_kg_ha} scaleMax={scaleMax} />
@@ -51,7 +54,7 @@ export default function VarietyPanel({ rec, parcelId, onSelectTool, onAssigned }
                 {showDiseaseSummary(v) && ` · ${t('whatToSow.variety.disease', v.disease_summary)}`}
               </p>
               <div>
-                <Button size="sm" variant="secondary" disabled={disabled} onClick={() => info && setAssigning(info)}>
+                <Button size="sm" variant="secondary" disabled={disabled} onClick={() => info && setAssigning({ ...info, yieldUnit: t(kgUnitKey(unit)) })}>
                   {t('whatToSow.variety.assign')}
                 </Button>
                 {!parcelId && (

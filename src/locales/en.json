@@ -901,7 +901,7 @@
     },
     "card": {
       "expectedYield": "Expected yield",
-      "observedRange": "observed range {{low}}–{{high}} kg/ha",
+      "observedRange": "observed range {{low}}–{{high}} {{unit}}",
       "observedRangeLabel": "observed range",
       "trust": "Based on {{n_trials}} trials at {{n_sites}} sites",
       "few": " (few)",
@@ -911,13 +911,15 @@
       "typicalSowing": "Typical sowing: {{month}}",
       "forageNotice_one": "There is {{count}} forage trial of this crop in a similar climate; it is not included here",
       "forageNotice_other": "There are {{count}} forage trials of this crop in a similar climate; they are not included here",
-      "viewAsForage": "View as forage"
+      "viewAsForage": "View as forage",
+      "unknownBasisTrials_one": "{{count}} forage trial with no known dry or fresh matter basis",
+      "unknownBasisTrials_other": "{{count}} forage trials with no known dry or fresh matter basis"
     },
     "expert": {
       "eppo": "EPPO code",
       "relativeYield": "Relative yield",
       "referenceMedian": "Reference median",
-      "referenceValue": "{{value}} kg/ha (n={{n}}, {{scope}})",
+      "referenceValue": "{{value}} {{unit}} (n={{n}}, {{scope}})",
       "cv": "CV",
       "sd": "Standard deviation",
       "intervalMethod": "Interval method",
@@ -927,7 +929,9 @@
       "years": "Years",
       "assumptions": "Assumptions",
       "viewTrials": "View trials",
-      "reportValue": "This value looks wrong"
+      "reportValue": "This value looks wrong",
+      "yieldBasis": "Yield basis",
+      "unknownBasisTrials": "Forage trials with unknown basis"
     },
     "gap": {
       "no_expected_yield": "No expected yield",
@@ -949,7 +953,7 @@
       "variety": "Variety",
       "site": "Site",
       "year": "Year",
-      "yield": "Yield (kg/ha)",
+      "yield": "Yield ({{unit}})",
       "irrigation": "Irrigation",
       "system": "System",
       "source": "Source",
@@ -993,7 +997,7 @@
       "hide": "Hide comparison",
       "clear": "Clear",
       "best": "best",
-      "expectedYield": "Expected yield (kg/ha)",
+      "expectedYield": "Expected yield ({{unit}})",
       "relativeYield": "Vs. reference (%)",
       "stability": "Variability (CV)",
       "water": "Water demand",
@@ -1051,8 +1055,24 @@
         "addPrice": "add a price",
         "range": "range {{low}}–{{high}} €/ha",
         "noRange": "range: no data",
-        "note": "Gross income only: costs are not deducted."
+        "note": "Gross income only: costs are not deducted.",
+        "forageUnavailable": "The euro calculation is only available with the Harvest purpose."
       }
+    },
+    "unit": {
+      "kg_ha": "kg/ha",
+      "dry_matter": "t DM/ha",
+      "fresh_matter": "t FM/ha",
+      "kg_dry_matter": "kg DM/ha",
+      "kg_fresh_matter": "kg FM/ha"
+    },
+    "basis": {
+      "dry_matter": "dry matter",
+      "fresh_matter": "fresh matter"
+    },
+    "yieldStatus": {
+      "not_comparable": "Yield not comparable",
+      "no_measured": "No measured yield"
     }
   }
 }

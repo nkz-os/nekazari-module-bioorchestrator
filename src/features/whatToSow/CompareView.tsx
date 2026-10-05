@@ -4,7 +4,7 @@ import { Badge, Card, EmptyState, Input, ProgressBar, Skeleton, Stack, Tabs } fr
 import { useBioApi } from '../../services/api';
 import type { Recommendation } from '../../types/recommend';
 import { useCropName } from './RecommendationCard';
-import { compareRows, grossIncome, levelKey, type LevelKind } from './viewModel';
+import { compareRows, grossIncome, levelKey, recsYieldUnit, unitKey, type LevelKind } from './viewModel';
 import {
   barPct, fmtCell, formatDoy, loadPrice, monthSegments, parsePrice, rotationSummary, savePrice, typicalCalendar,
   type RotationSummary,
@@ -22,7 +22,8 @@ function CropHeading({ rec }: { rec: Recommendation }) {
 
 function FitLens({ recs }: { recs: Recommendation[] }) {
   const { t, i18n } = useTranslation('bioorchestrator');
-  const rows = useMemo(() => compareRows(recs), [recs]);
+  const unit = recsYieldUnit(recs);
+  const rows = useMemo(() => compareRows(recs, unit), [recs, unit]);
   const noData = t('whatToSow.noData');
   const fmt = (v: string) => fmtCell(v, i18n.language);
 
@@ -45,7 +46,7 @@ function FitLens({ recs }: { recs: Recommendation[] }) {
             return (
               <tr key={row.id} className="border-b border-nkz-border">
                 <th scope="row" className="py-2 pr-3 text-left font-medium text-nkz-text-muted">
-                  {t(row.labelKey)}
+                  {t(row.labelKey, { unit: t(unitKey(unit)) })}
                 </th>
                 {row.cells.map((cell, i) => {
                   const best = row.best.includes(i);
@@ -269,6 +270,11 @@ function EurosLens({ recs }: { recs: Recommendation[] }) {
     setPrices((p) => ({ ...p, [eppo]: text }));
     savePrice(eppo, text);
   };
+
+  // The saved prices are per tonne of harvested product: applied to forage dry matter they would be wrong money.
+  if (recsYieldUnit(recs) !== 'kg_ha') {
+    return <EmptyState title={t('whatToSow.compare.euros.forageUnavailable')} />;
+  }
 
   return (
     <Stack gap="stack">

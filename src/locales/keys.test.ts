@@ -62,6 +62,9 @@ const dynamicKeys = (): string[] => [
   ...MANAGEMENTS.map((v) => `whatToSow.filter.management.${v}`),
   ...IRRIGATIONS.map((v) => `whatToSow.filter.irrigation.${v}`),
   ...PURPOSES.map((v) => `whatToSow.filter.purpose.${v}`),
+  ...['kg_ha', 'dry_matter', 'fresh_matter', 'kg_dry_matter', 'kg_fresh_matter'].map((u) => `whatToSow.unit.${u}`),
+  ...['dry_matter', 'fresh_matter'].map((b) => `whatToSow.basis.${b}`),
+  ...['not_comparable', 'no_measured'].map((s) => `whatToSow.yieldStatus.${s}`),
   ...['high', 'medium', 'low', 'unknown'].map((l) => `whatToSow.compare.trustLevel.${l}`),
   ...Array.from({ length: 12 }, (_, i) => `whatToSow.compare.calendar.month.${i + 1}`),
   ...['expectedYield', 'relativeYield', 'stability', 'water', 'soil', 'frost', 'trust']

@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import type { Recommendation, RecommendResponse } from '../../types/recommend';
 import {
-  compareRows, forageNoticeCount, grossIncome, lensAvailability, levelKey, partitionRecommendations,
-  rangeBar, resolvePageState, soilWarning,
+  compareRows, forageNoticeCount, formatYield, grossIncome, kgUnitKey, lensAvailability, levelKey,
+  partitionRecommendations, rangeBar, recYieldUnit, recsYieldUnit, resolvePageState, soilWarning, unitKey,
+  yieldStatus, yieldUnit, yieldValue,
 } from './viewModel';
 
 function rec(eppo: string, over: {
@@ -232,5 +233,98 @@ describe('forageNoticeCount', () => {
   it('is null in forage mode and on regional recommendations', () => {
     expect(forageNoticeCount(withEvidence({ purpose: 'forage', other_purpose_trials: { forage: 4 } }))).toBeNull();
     expect(forageNoticeCount(withEvidence({ tier: 'regional', other_purpose_trials: { forage: 4 } }))).toBeNull();
+  });
+});
+
+/** A forage-mode recommendation as the API answers it. */
+function forageRec(eppo: string, over: {
+  exp?: number | null; basis?: Recommendation['yield']['basis']; gaps?: string[]; n?: number;
+} = {}): Recommendation {
+  const r = rec(eppo, { exp: over.exp === undefined ? 30106 : over.exp, n: over.n });
+  r.yield.basis = over.basis === undefined ? 'dry_matter' : over.basis;
+  r.trust.data_gaps = over.gaps ?? [];
+  r.evidence = { ...r.evidence, purpose: 'forage', unknown_basis_trials: 0 };
+  return r;
+}
+
+describe('yield unit and basis label', () => {
+  it('plain kg/ha without a basis; forage per its basis', () => {
+    expect(yieldUnit(null)).toBe('kg_ha');
+    expect(yieldUnit(undefined)).toBe('kg_ha');
+    expect(yieldUnit('dry_matter')).toBe('dry_matter');
+    expect(yieldUnit('fresh_matter')).toBe('fresh_matter');
+  });
+  it('label keys: tonnes for the displayed unit, kg for tables and dialogs', () => {
+    expect(unitKey('kg_ha')).toBe('whatToSow.unit.kg_ha');
+    expect(unitKey('dry_matter')).toBe('whatToSow.unit.dry_matter');
+    expect(kgUnitKey('kg_ha')).toBe('whatToSow.unit.kg_ha');
+    expect(kgUnitKey('dry_matter')).toBe('whatToSow.unit.kg_dry_matter');
+    expect(kgUnitKey('fresh_matter')).toBe('whatToSow.unit.kg_fresh_matter');
+  });
+  it('harvest-mode recommendations stay in kg/ha', () => {
+    expect(recYieldUnit(rec('A'))).toBe('kg_ha');
+  });
+  it('forage recommendations use their basis', () => {
+    expect(recYieldUnit(forageRec('A'))).toBe('dry_matter');
+    expect(recYieldUnit(forageRec('A', { basis: 'fresh_matter' }))).toBe('fresh_matter');
+  });
+  it('a forage answer without a basis holds dry-matter-normalised values only', () => {
+    expect(recYieldUnit(forageRec('A', { exp: null, basis: null }))).toBe('dry_matter');
+  });
+  it('a set takes the unit of the first recommendation that has a basis', () => {
+    expect(recsYieldUnit([])).toBe('kg_ha');
+    expect(recsYieldUnit([rec('A'), rec('B')])).toBe('kg_ha');
+    expect(recsYieldUnit([forageRec('A', { exp: null, basis: null }), forageRec('B')])).toBe('dry_matter');
+  });
+  it('shows forage in tonnes, kg/ha as whole kg, null stays null', () => {
+    expect(yieldValue(30106, 'dry_matter')).toBeCloseTo(30.106);
+    expect(yieldValue(3973, 'kg_ha')).toBe(3973);
+    expect(yieldValue(null, 'dry_matter')).toBeNull();
+    expect(yieldValue(Number.NaN, 'kg_ha')).toBeNull();
+    expect(formatYield(30106, 'dry_matter', 'en')).toBe('30.1');
+    expect(formatYield(3973.4, 'kg_ha', 'en')).toBe('3,973');
+    expect(formatYield(350, 'dry_matter', 'en', 2)).toBe('0.35');
+    expect(formatYield(null, 'dry_matter', 'en')).toBeNull();
+  });
+  it('0 is a value, not missing', () => {
+    expect(formatYield(0, 'kg_ha', 'en')).toBe('0');
+  });
+});
+
+describe('yieldStatus', () => {
+  it('measured when there is a number', () => {
+    expect(yieldStatus(rec('A'))).toBe('measured');
+    expect(yieldStatus(forageRec('A'))).toBe('measured');
+  });
+  it('forage with trials of unknown basis: not comparable (never a number)', () => {
+    expect(yieldStatus(forageRec('A', { exp: null, basis: null, gaps: ['forage_basis_unknown'], n: 4 })))
+      .toBe('not_comparable');
+  });
+  it('presence-only recommendation: no measured yield', () => {
+    expect(yieldStatus(rec('A', { exp: null }))).toBe('none');
+    const r = rec('A', { exp: null });
+    r.trust.data_gaps = ['no_measured_yield', 'regional_evidence_only', 'no_expected_yield'];
+    expect(yieldStatus(r)).toBe('no_measured');
+  });
+  it('a number wins over a stray gap', () => {
+    const r = rec('A', { exp: 1200 });
+    r.trust.data_gaps = ['no_measured_yield'];
+    expect(yieldStatus(r)).toBe('measured');
+  });
+  it('null without any gap is plain missing data', () => {
+    expect(yieldStatus(rec('A', { exp: null }))).toBe('none');
+  });
+});
+
+describe('compareRows in forage units', () => {
+  it('shows tonnes with one decimal and still ranks by the raw value', () => {
+    const rows = compareRows([forageRec('A', { exp: 30106 }), forageRec('B', { exp: 17006 })], 'dry_matter');
+    const exp = rows.find((r) => r.id === 'expectedYield');
+    expect(exp?.cells).toEqual(['30.1', '17']);
+    expect(exp?.best).toEqual([0]);
+  });
+  it('defaults to whole kg/ha', () => {
+    const exp = compareRows([rec('A', { exp: 4321.6 })]).find((r) => r.id === 'expectedYield');
+    expect(exp?.cells).toEqual(['4322']);
   });
 });

@@ -4,6 +4,7 @@ import { Button, Card, EmptyState, Inline, Skeleton, Stack } from '@nekazari/ui-
 import { fetchEvidence, type QueryParams } from '../../services/recommendApi';
 import type { EvidencePage, Similarity } from '../../types/recommend';
 import { EVIDENCE_PAGE_SIZE } from './pageModel';
+import { kgUnitKey, yieldUnit } from './viewModel';
 
 interface EvidenceDialogProps {
   cropName: string;
@@ -47,6 +48,8 @@ export default function EvidenceDialog({ cropName, eppo, conditions, similarity,
   }, [onClose]);
 
   const pages = data ? Math.max(1, Math.ceil(data.total / (data.page_size || EVIDENCE_PAGE_SIZE))) : 1;
+  // Forage rows are kg of dry matter (or fresh matter) per ha, not grain: say so in the column.
+  const unitLabel = t(kgUnitKey(yieldUnit(data?.items.find((it) => it.basis)?.basis)));
   const cell = (v: string | number | null) => (v == null || v === '' ? noData : v);
 
   return (
@@ -87,7 +90,7 @@ export default function EvidenceDialog({ cropName, eppo, conditions, similarity,
                       <th className="px-2 py-1">{t('whatToSow.evidence.variety')}</th>
                       <th className="px-2 py-1">{t('whatToSow.evidence.site')}</th>
                       <th className="px-2 py-1">{t('whatToSow.evidence.year')}</th>
-                      <th className="px-2 py-1 text-right">{t('whatToSow.evidence.yield')}</th>
+                      <th className="px-2 py-1 text-right">{t('whatToSow.evidence.yield', { unit: unitLabel })}</th>
                       <th className="px-2 py-1">{t('whatToSow.evidence.irrigation')}</th>
                       <th className="px-2 py-1">{t('whatToSow.evidence.system')}</th>
                       <th className="px-2 py-1">{t('whatToSow.evidence.source')}</th>

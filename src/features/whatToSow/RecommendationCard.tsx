@@ -2,7 +2,7 @@ import React from 'react';
 import { useTranslation } from '@nekazari/sdk';
 import { Badge, Button, Card, Checkbox, Inline, Stack } from '@nekazari/ui-kit';
 import type { Interval, Recommendation } from '../../types/recommend';
-import { levelKey, rangeBar, soilWarning } from './viewModel';
+import { formatYield, levelKey, rangeBar, recYieldUnit, soilWarning, unitKey, yieldStatus } from './viewModel';
 import { isFewTrials, seasonKey } from './pageModel';
 import { typicalSowingMonth } from './compareModel';
 import ExpertDetails from './ExpertDetails';
@@ -62,8 +62,13 @@ export default function RecommendationCard({
   const { t, i18n } = useTranslation('bioorchestrator');
   const name = useCropName(rec);
   const noData = t('whatToSow.noData');
-  const fmt = (n: number | null) => (n == null ? noData : n.toLocaleString(i18n.language, { maximumFractionDigits: 0 }));
+  const unit = recYieldUnit(rec);
+  const unitLabel = t(unitKey(unit));
+  const fmt = (n: number | null) => formatYield(n, unit, i18n.language) ?? noData;
   const [lo, hi] = rec.yield.interval;
+  const status = yieldStatus(rec);
+  // Without a number (basis unknown, presence only) there is no range to draw.
+  const hasNumber = status === 'measured' || status === 'none';
   const warning = soilWarning(rec);
   const typicalMonth = typicalSowingMonth(rec.season, i18n.language);
 
@@ -79,18 +84,24 @@ export default function RecommendationCard({
         </div>
 
         <Stack gap="tight">
-          <p className="text-nkz-sm text-nkz-text-secondary">
-            {t('whatToSow.card.expectedYield')}:{' '}
-            <span className="font-semibold text-nkz-text-primary">
-              {rec.yield.expected_kg_ha == null ? noData : `${fmt(rec.yield.expected_kg_ha)} kg/ha`}
-            </span>
-          </p>
-          <RangeBarView rec={rec} scaleMax={scaleMax} />
-          <p className="text-nkz-sm text-nkz-text-muted">
-            {lo != null && hi != null
-              ? t('whatToSow.card.observedRange', { low: fmt(lo), high: fmt(hi) })
-              : `${t('whatToSow.card.observedRangeLabel')}: ${noData}`}
-          </p>
+          {hasNumber ? (
+            <>
+              <p className="text-nkz-sm text-nkz-text-secondary">
+                {t('whatToSow.card.expectedYield')}:{' '}
+                <span className="font-semibold text-nkz-text-primary">
+                  {rec.yield.expected_kg_ha == null ? noData : `${fmt(rec.yield.expected_kg_ha)} ${unitLabel}`}
+                </span>
+              </p>
+              <RangeBarView rec={rec} scaleMax={scaleMax} />
+              <p className="text-nkz-sm text-nkz-text-muted">
+                {lo != null && hi != null
+                  ? t('whatToSow.card.observedRange', { low: fmt(lo), high: fmt(hi), unit: unitLabel })
+                  : `${t('whatToSow.card.observedRangeLabel')}: ${noData}`}
+              </p>
+            </>
+          ) : (
+            <p className="text-nkz-sm font-semibold text-nkz-text-primary">{t(`whatToSow.yieldStatus.${status}`)}</p>
+          )}
         </Stack>
 
         <Inline gap="tight" wrap>
@@ -106,10 +117,16 @@ export default function RecommendationCard({
 
         {warning && <p className="text-nkz-sm text-nkz-warning">{warning}</p>}
 
-        <p className="text-nkz-sm text-nkz-text-muted">
-          {t('whatToSow.card.trust', { n_trials: rec.yield.n_trials, n_sites: rec.yield.n_sites })}
-          {isFewTrials(rec.yield.n_trials) && t('whatToSow.card.few')}
-        </p>
+        {status === 'not_comparable' ? (
+          <p className="text-nkz-sm text-nkz-text-muted">
+            {t('whatToSow.card.unknownBasisTrials', { count: rec.yield.n_trials })}
+          </p>
+        ) : (
+          <p className="text-nkz-sm text-nkz-text-muted">
+            {t('whatToSow.card.trust', { n_trials: rec.yield.n_trials, n_sites: rec.yield.n_sites })}
+            {isFewTrials(rec.yield.n_trials) && t('whatToSow.card.few')}
+          </p>
+        )}
         {rec.trust.similarity === 'vector_v2_fallback' && (
           <p className="text-nkz-sm text-nkz-info">{t('whatToSow.card.similarityV2')}</p>
         )}

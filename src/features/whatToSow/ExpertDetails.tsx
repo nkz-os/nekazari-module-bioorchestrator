@@ -3,6 +3,7 @@ import { useTranslation } from '@nekazari/sdk';
 import { Button, DetailGrid, DetailItem, Inline, Stack } from '@nekazari/ui-kit';
 import type { Recommendation } from '../../types/recommend';
 import { formatAssumptionValue } from './pageModel';
+import { formatYield, recYieldUnit, unitKey } from './viewModel';
 
 interface ExpertDetailsProps {
   rec: Recommendation;
@@ -17,6 +18,8 @@ export default function ExpertDetails({ rec, onOpenEvidence, onReportValue }: Ex
   const num = (n: number | null | undefined, digits = 0) =>
     n == null ? noData : n.toLocaleString(i18n.language, { maximumFractionDigits: digits });
   const list = (items: string[]) => (items.length ? items.join(', ') : noData);
+  const unit = recYieldUnit(rec);
+  const unitLabel = t(unitKey(unit));
   const rel = rec.fit.relative_yield_pct;
   const ref = rec.fit.reference;
   const years = rec.evidence.years;
@@ -32,10 +35,24 @@ export default function ExpertDetails({ rec, onOpenEvidence, onReportValue }: Ex
         <DetailItem
           label={t('whatToSow.expert.referenceMedian')}
           value={ref.median_kg_ha == null ? noData
-            : t('whatToSow.expert.referenceValue', { value: num(ref.median_kg_ha), n: ref.n_trials, scope: ref.scope })}
+            : t('whatToSow.expert.referenceValue', {
+              value: formatYield(ref.median_kg_ha, unit, i18n.language), unit: unitLabel, n: ref.n_trials, scope: ref.scope,
+            })}
         />
+        {rec.evidence.purpose === 'forage' && (
+          <>
+            <DetailItem
+              label={t('whatToSow.expert.yieldBasis')}
+              value={rec.yield.basis ? t(`whatToSow.basis.${rec.yield.basis}`) : noData}
+            />
+            <DetailItem
+              label={t('whatToSow.expert.unknownBasisTrials')}
+              value={rec.evidence.unknown_basis_trials == null ? noData : String(rec.evidence.unknown_basis_trials)}
+            />
+          </>
+        )}
         <DetailItem label={t('whatToSow.expert.cv')} value={num(rec.fit.stability_cv, 2)} />
-        <DetailItem label={t('whatToSow.expert.sd')} value={rec.yield.sd == null ? noData : `${num(rec.yield.sd)} kg/ha`} />
+        <DetailItem label={t('whatToSow.expert.sd')} value={rec.yield.sd == null ? noData : `${formatYield(rec.yield.sd, unit, i18n.language, 2)} ${unitLabel}`} />
         <DetailItem label={t('whatToSow.expert.intervalMethod')} value={rec.yield.interval_method || noData} />
         <DetailItem
           label={t('whatToSow.expert.dataGaps')}

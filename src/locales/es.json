@@ -899,7 +899,7 @@
     },
     "card": {
       "expectedYield": "Rendimiento esperado",
-      "observedRange": "rango observado {{low}}–{{high}} kg/ha",
+      "observedRange": "rango observado {{low}}–{{high}} {{unit}}",
       "observedRangeLabel": "rango observado",
       "trust": "Basado en {{n_trials}} ensayos en {{n_sites}} sitios",
       "few": " (pocos)",
@@ -909,13 +909,15 @@
       "typicalSowing": "Siembra típica: {{month}}",
       "forageNotice_one": "Hay {{count}} ensayo de este cultivo como forraje en clima parecido; no se incluye aquí",
       "forageNotice_other": "Hay {{count}} ensayos de este cultivo como forraje en clima parecido; no se incluyen aquí",
-      "viewAsForage": "Ver como forraje"
+      "viewAsForage": "Ver como forraje",
+      "unknownBasisTrials_one": "{{count}} ensayo como forraje, sin base de materia seca o fresca conocida",
+      "unknownBasisTrials_other": "{{count}} ensayos como forraje, sin base de materia seca o fresca conocida"
     },
     "expert": {
       "eppo": "Código EPPO",
       "relativeYield": "Rendimiento relativo",
       "referenceMedian": "Mediana de referencia",
-      "referenceValue": "{{value}} kg/ha (n={{n}}, {{scope}})",
+      "referenceValue": "{{value}} {{unit}} (n={{n}}, {{scope}})",
       "cv": "CV",
       "sd": "Desviación típica",
       "intervalMethod": "Método del intervalo",
@@ -925,7 +927,9 @@
       "years": "Años",
       "assumptions": "Supuestos",
       "viewTrials": "Ver ensayos",
-      "reportValue": "Este valor parece incorrecto"
+      "reportValue": "Este valor parece incorrecto",
+      "yieldBasis": "Base del rendimiento",
+      "unknownBasisTrials": "Ensayos de forraje sin base conocida"
     },
     "gap": {
       "no_expected_yield": "Sin rendimiento esperado",
@@ -947,7 +951,7 @@
       "variety": "Variedad",
       "site": "Sitio",
       "year": "Año",
-      "yield": "Rendimiento (kg/ha)",
+      "yield": "Rendimiento ({{unit}})",
       "irrigation": "Riego",
       "system": "Sistema",
       "source": "Fuente",
@@ -991,7 +995,7 @@
       "hide": "Ocultar comparación",
       "clear": "Limpiar",
       "best": "mejor",
-      "expectedYield": "Rendimiento esperado (kg/ha)",
+      "expectedYield": "Rendimiento esperado ({{unit}})",
       "relativeYield": "Frente a la referencia (%)",
       "stability": "Variabilidad (CV)",
       "water": "Demanda de agua",
@@ -1049,8 +1053,24 @@
         "addPrice": "añade precio",
         "range": "rango {{low}}–{{high}} €/ha",
         "noRange": "rango: sin datos",
-        "note": "Solo ingreso bruto: no descuenta costes."
+        "note": "Solo ingreso bruto: no descuenta costes.",
+        "forageUnavailable": "El cálculo en euros solo está disponible con el destino Cosecha."
       }
+    },
+    "unit": {
+      "kg_ha": "kg/ha",
+      "dry_matter": "t MS/ha",
+      "fresh_matter": "t MF/ha",
+      "kg_dry_matter": "kg MS/ha",
+      "kg_fresh_matter": "kg MF/ha"
+    },
+    "basis": {
+      "dry_matter": "materia seca",
+      "fresh_matter": "materia fresca"
+    },
+    "yieldStatus": {
+      "not_comparable": "Rendimiento no comparable",
+      "no_measured": "Sin rendimiento medido"
     }
   }
 }
