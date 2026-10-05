@@ -93,16 +93,22 @@ _EXTRAPOLATE_BODY_TEMPLATE = """
                   WITH r.ck AS ck, max(r.y) AS y
                   RETURN percentileCont(y, 0.5) AS ref_median, count(y) AS ref_n
                 }
-                CALL (hits) {
-                  UNWIND [x IN hits WHERE x.in_mode] AS h
-                  WITH h.vt AS vt, h.ts AS ts, h.y AS ep_y, h.unconv AS ep_unconv, h.ck AS ck
+                // The variety aggregation runs in the main query, NOT in a CALL subquery: a
+                // subquery keeps its imported ``hits`` (every trial row of the crop) in each
+                // buffered row, so a sort inside it counted that list once per row it kept and
+                // memory grew with ``top_n``. Here every grouping step below drops ``hits``, and
+                // the crop-level scalars ride along as grouping keys.
+                UNWIND [x IN hits WHERE x.in_mode] AS h
+                WITH crop, other_n, ref_median, ref_n,
+                     h.vt AS vt, h.ts AS ts, h.y AS ep_y, h.unconv AS ep_unconv, h.ck AS ck
                 // Collapse each trial to ONE row regardless of how many (same-name
                 // duplicate) sites it links to (G2/G9 guard). The key ``ck`` makes
                 // content-identical trials (re-ingest twins) ONE observation below, so every
                 // count and mean sees them once.
-                WITH vt.varietyNormalized AS variety, vt, ep_y, ep_unconv, ck,
+                WITH crop, other_n, ref_median, ref_n,
+                     vt.varietyNormalized AS variety, vt, ep_y, ep_unconv, ck,
                      collect(DISTINCT ts.name) AS trial_sites
-                WITH variety, ck,
+                WITH crop, other_n, ref_median, ref_n, variety, ck,
                      max(ep_y) AS g_y,
                      max(CASE WHEN ep_unconv THEN 1 ELSE 0 END) AS g_unconv,
                      min(vt.year) AS g_year,
@@ -118,12 +124,14 @@ _EXTRAPOLATE_BODY_TEMPLATE = """
                 // water-regime match (C.4). $site_weights are 1.0 on the legacy
                 // path; with no target year/regime the extra factors are 1.0 too,
                 // so the weighted mean collapses to a flat average.
-                WITH variety, g_y, g_unconv, g_year, g_regime, g_system, g_sites, g_disease,
+                WITH crop, other_n, ref_median, ref_n,
+                     variety, g_y, g_unconv, g_year, g_regime, g_system, g_sites, g_disease,
                      g_traits, g_confidence, g_sources, g_derived,
                      reduce(mw = 0.0, n IN g_sites |
                         CASE WHEN coalesce($site_weights[n], 0.0) > mw
                              THEN $site_weights[n] ELSE mw END) AS w_site
-                WITH variety, g_y, g_unconv, g_year, g_regime, g_system, g_sites, g_disease,
+                WITH crop, other_n, ref_median, ref_n,
+                     variety, g_y, g_unconv, g_year, g_regime, g_system, g_sites, g_disease,
                      g_traits, g_confidence, g_sources, g_derived,
                      w_site
                      * (CASE WHEN g_year IS NOT NULL AND (toFloat($now_year) - toFloat(g_year)) > 0
@@ -131,7 +139,7 @@ _EXTRAPOLATE_BODY_TEMPLATE = """
                              ELSE 1.0 END)
                      * (CASE WHEN @IRRIGATION_WEIGHT@ OR g_regime IS NULL
                              THEN 1.0 ELSE $regime_penalty END) AS w
-                WITH variety,
+                WITH crop, other_n, ref_median, ref_n, variety,
                      collect(DISTINCT g_year) AS years,
                      collect(g_sites) AS site_lists,
                      collect(DISTINCT g_regime) AS irrigation_regimes,
@@ -153,7 +161,7 @@ _EXTRAPOLATE_BODY_TEMPLATE = """
                 WHERE trial_count >= 1
                   AND @IRRIGATION_VARIETY@
                   AND ($production_system IS NULL OR $production_system IN production_systems)
-                WITH variety,
+                WITH crop, other_n, ref_median, ref_n, variety,
                      CASE WHEN wtot > 0 THEN wsum / wtot ELSE mean_yield_flat END AS mean_yield,
                      min_yield, max_yield, stddev_yield,
                      numeric_yield_count, trial_count, derived_count, unconverted_count, years,
@@ -163,9 +171,15 @@ _EXTRAPOLATE_BODY_TEMPLATE = """
                      reduce(acc = [], l IN trait_lists | acc + [x IN l WHERE NOT x IN acc]) AS agronomic_traits_list,
                      reduce(acc = [], l IN confidence_lists | acc + [x IN l WHERE NOT x IN acc]) AS confidence_levels,
                      reduce(acc = [], l IN source_lists | acc + [x IN l WHERE NOT x IN acc]) AS source_ids
-                // The crop's numeric trial total is summed over every variety BEFORE the cut,
-                // so LIMIT $top_n never truncates it (a trial belongs to exactly one variety).
-                WITH collect({variety: variety, mean_yield: mean_yield, min_yield: min_yield,
+                // One row per variety: sort them (per crop) and keep the first $top_n. The cut
+                // is a slice of the ordered collection (never a sort over rows that carry a
+                // large value), so memory is the crop's variety rows once plus the returned
+                // rows. The crop's numeric trial total is summed over every variety BEFORE the
+                // cut, so $top_n never truncates it (a trial belongs to exactly one variety).
+                ORDER BY crop, mean_yield IS NULL, round(mean_yield, 1) DESC, variety ASC
+                WITH crop, other_n, ref_median, ref_n,
+                     sum(numeric_yield_count) AS crop_numeric_n,
+                     collect({variety: variety, mean_yield: mean_yield, min_yield: min_yield,
                               max_yield: max_yield, stddev_yield: stddev_yield,
                               numeric_yield_count: numeric_yield_count, trial_count: trial_count,
                               derived_count: derived_count, unconverted_count: unconverted_count,
@@ -173,10 +187,11 @@ _EXTRAPOLATE_BODY_TEMPLATE = """
                               production_systems: production_systems,
                               disease_scores_list: disease_scores_list,
                               agronomic_traits_list: agronomic_traits_list,
-                              confidence_levels: confidence_levels, source_ids: source_ids}) AS vrows,
-                     sum(numeric_yield_count) AS crop_numeric_n
-                UNWIND vrows AS r
-                RETURN r.variety AS variety,
+                              confidence_levels: confidence_levels, source_ids: source_ids})
+                       AS vrows
+                UNWIND vrows[0..$top_n] AS r
+                RETURN crop,
+                       r.variety AS variety,
                        r.mean_yield AS mean_yield,
                        r.min_yield AS min_yield,
                        r.max_yield AS max_yield,
@@ -193,16 +208,7 @@ _EXTRAPOLATE_BODY_TEMPLATE = """
                        r.agronomic_traits_list AS agronomic_traits_list,
                        r.confidence_levels AS confidence_levels,
                        r.source_ids AS source_ids,
-                       crop_numeric_n
-                ORDER BY mean_yield IS NULL, round(mean_yield, 1) DESC, variety ASC
-                LIMIT $top_n
-                }
-                RETURN crop, variety, mean_yield, min_yield, max_yield, stddev_yield,
-                       numeric_yield_count, trial_count, derived_count, unconverted_count, years,
-                       sites, irrigation_regimes, production_systems, disease_scores_list,
-                       agronomic_traits_list, confidence_levels, source_ids, other_n, crop_numeric_n,
-                       ref_median, ref_n
-                ORDER BY crop, mean_yield IS NULL, round(mean_yield, 1) DESC, variety ASC
+                       other_n, crop_numeric_n, ref_median, ref_n
 """
 # The regime tests (reference, weight, variety filter) are the policy's (rule 8): a literal
 # "secano"/"regadío" counts like its URI.
