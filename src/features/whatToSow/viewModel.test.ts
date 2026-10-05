@@ -371,4 +371,14 @@ describe('hasListableTrials', () => {
     expect(hasListableTrials(rec('A'))).toBe(true);
     expect(hasListableTrials(rec('B', { exp: null }))).toBe(true);
   });
+  it('forage crops "not comparable" have no trial with a number to list either', () => {
+    const forage = rec('F', { exp: null });
+    forage.trust.data_gaps = ['forage_basis_unknown', 'no_expected_yield'];
+    expect(yieldStatus(forage)).toBe('not_comparable');
+    expect(hasListableTrials(forage)).toBe(false);
+    // a measured forage number (known basis) is listable, whatever else is unknown
+    const measured = rec('G');
+    measured.trust.data_gaps = ['forage_basis_unknown'];
+    expect(hasListableTrials(measured)).toBe(true);
+  });
 });

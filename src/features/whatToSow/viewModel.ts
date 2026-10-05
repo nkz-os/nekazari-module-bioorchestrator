@@ -41,10 +41,14 @@ export function partitionByTier(recs: Recommendation[]): { field: Recommendation
 }
 
 /**
- * Whether the evidence page can list trials behind a recommendation: presence-only crops rest on
- * records of an excluded source, which the page never lists.
+ * Whether the evidence page can list trials behind a recommendation. It lists only trials that
+ * carry a number in the answer, so two states have nothing to list: presence-only crops (records
+ * of an excluded source) and forage crops "not comparable" (no known basis, hence no number).
  */
-export const hasListableTrials = (rec: Recommendation): boolean => yieldStatus(rec) !== 'no_measured';
+export const hasListableTrials = (rec: Recommendation): boolean => {
+  const status = yieldStatus(rec);
+  return status !== 'no_measured' && status !== 'not_comparable';
+};
 
 /**
  * Forage trials of the crop at the same analog sites that the harvest-mode numbers leave out
