@@ -1,10 +1,15 @@
 import { describe, expect, it } from 'vitest';
+import es from '../../locales/es.json';
+import en from '../../locales/en.json';
 import type { ParcelEnvironment, Recommendation } from '../../types/recommend';
 import {
   DEFAULT_FILTERS, KOPPEN_CODES, MAX_COMPARE, conditionsQuery, evidenceConditions,
   formatAssumptionValue, knownText, parcelQuery, parseFrostMargin, rangeScaleMax,
-  seasonKey, toggleCompare, isFewTrials, frostMarginStatus, irrigationOptions, pickIrrigation,
+  seasonKey, toggleCompare, isFewTrials, frostMarginStatus, irrigationOptions, pickIrrigation, PURPOSES,
+  describeReferenceScope, type ScopeTranslate,
+  DEFAULT_PURPOSE, carriesEvidencePolicy, effectiveFilters, nextPolicyAware,
 } from './pageModel';
+import type { RecommendResponse } from '../../types/recommend';
 
 const env = (detail: Record<string, unknown> | null): ParcelEnvironment => ({
   parcel_id: 'p1', area_ha: null, centroid: { lat: null, lon: null }, climate_class: 'Csb',
@@ -68,6 +73,26 @@ describe('parcelQuery', () => {
   });
 });
 
+describe('purpose filter', () => {
+  it('offers harvest (main) first and forage; harvest is the default', () => {
+    expect([...PURPOSES]).toEqual(['main', 'forage']);
+    expect(DEFAULT_FILTERS.purpose).toBe('main');
+  });
+  it('forage is sent to the API on both endpoints; the default is sent as nothing', () => {
+    expect(parcelQuery({ ...DEFAULT_FILTERS, purpose: 'forage' }, false).purpose).toBe('forage');
+    expect(conditionsQuery({ ...DEFAULT_FILTERS, climateClass: 'Csa', purpose: 'forage' }, false)?.purpose)
+      .toBe('forage');
+    // an older backend is asked exactly what it always was
+    expect(DEFAULT_PURPOSE).toBe('main');
+    expect('purpose' in parcelQuery(DEFAULT_FILTERS, true)).toBe(false);
+    expect('purpose' in (conditionsQuery({ ...DEFAULT_FILTERS, climateClass: 'Csa' }, false) ?? {})).toBe(false);
+  });
+  it('is never sent empty', () => {
+    const bad = { ...DEFAULT_FILTERS, purpose: '' as never };
+    expect('purpose' in parcelQuery(bad, false)).toBe(false);
+  });
+});
+
 describe('conditionsQuery', () => {
   it('is null without a climate class (endpoint requires one)', () => {
     expect(conditionsQuery(DEFAULT_FILTERS, false)).toBeNull();
@@ -101,6 +126,20 @@ describe('evidenceConditions', () => {
     const out = evidenceConditions({ ...echo, annual_temp_c: 'n/a' }, undefined, 'vector_v2_fallback');
     expect(out.annual_rainfall_mm).toBe(400);
     expect('annual_temp_c' in out).toBe(false);
+  });
+  it('carries the echoed purpose so the trials listed are the ones of the answer', () => {
+    expect(evidenceConditions({ climate_class: 'Csa', purpose: 'forage' }, undefined, 'koppen'))
+      .toEqual({ climate_class: 'Csa', purpose: 'forage' });
+    expect(evidenceConditions({ climate_class: 'Csa', purpose: 'main' }, undefined, 'koppen').purpose).toBe('main');
+  });
+  it('drops an unknown or empty purpose', () => {
+    expect('purpose' in evidenceConditions({ climate_class: 'Csa', purpose: '' }, undefined, 'koppen')).toBe(false);
+    expect('purpose' in evidenceConditions({ climate_class: 'Csa', purpose: 'silage' }, undefined, 'koppen')).toBe(false);
+  });
+  it('sends the tier only for regional recommendations', () => {
+    expect(evidenceConditions(echo, env(null), 'koppen', 'regional').tier).toBe('regional');
+    expect('tier' in evidenceConditions(echo, env(null), 'koppen', 'field')).toBe(false);
+    expect('tier' in evidenceConditions(echo, env(null), 'koppen')).toBe(false);
   });
   it('drops unknown irrigation values and empty strings', () => {
     const out = evidenceConditions({ climate_class: 'Csa', soil_type: '', irrigation_regime: 'drip' },
@@ -160,5 +199,86 @@ describe('irrigation options', () => {
     expect(pickIrrigation('inferred', 'regadío', false)).toBe('regadío');
     expect(conditionsQuery({ ...DEFAULT_FILTERS, climateClass: 'Csa',
       irrigation: pickIrrigation('secano', 'secano', false) }, false)?.irrigation_regime).toBeUndefined();
+  });
+});
+
+/** Translator over a real locale file: checks the sentence the farmer reads, not just the keys. */
+function translator(dict: unknown): ScopeTranslate {
+  return (key, opts) => {
+    const node = key.split('.').reduce<unknown>(
+      (n, part) => (n && typeof n === 'object' ? (n as Record<string, unknown>)[part] : undefined), dict);
+    if (typeof node !== 'string') throw new Error(`missing key ${key}`);
+    return node.replace(/\{\{(\w+)\}\}/g, (_m, k: string) => String(opts?.[k] ?? ''));
+  };
+}
+
+describe('describeReferenceScope', () => {
+  const tes = translator({ whatToSow: (es as { whatToSow: unknown }).whatToSow });
+  const ten = translator({ whatToSow: (en as { whatToSow: unknown }).whatToSow });
+
+  it('analog sites of a climate class and an irrigation regime', () => {
+    expect(describeReferenceScope('analog_sites:Csa:secano', tes)).toBe('sitios análogos Csa · secano');
+    expect(describeReferenceScope('analog_sites:Csa:regadio', tes)).toBe('sitios análogos Csa · regadío');
+    expect(describeReferenceScope('analog_sites:Csa:regadío', tes)).toBe('sitios análogos Csa · regadío');
+    expect(describeReferenceScope('analog_sites:Csa:secano', ten)).toBe('analog sites Csa · rainfed');
+  });
+  it('no regime split is said, not hidden', () => {
+    expect(describeReferenceScope('analog_sites:Dfb:any', tes)).toBe('sitios análogos Dfb · cualquier riego');
+    expect(describeReferenceScope('analog_sites:Dfb:any', ten)).toBe('analog sites Dfb · any irrigation');
+  });
+  it('sites picked by climate similarity, and without a climate class', () => {
+    expect(describeReferenceScope('analog_sites:vector_v2:any', tes))
+      .toBe('sitios análogos por parecido climático · cualquier riego');
+    expect(describeReferenceScope('analog_sites:any:secano', tes)).toBe('sitios análogos · secano');
+  });
+  it('forage mode adds the purpose', () => {
+    expect(describeReferenceScope('analog_sites:Cfb:secano:forage', tes)).toBe('sitios análogos Cfb · secano · forraje');
+    expect(describeReferenceScope('analog_sites:Cfb:secano:forage', ten)).toBe('analog sites Cfb · rainfed · forage');
+  });
+  it('regional recommendations have a regional scope', () => {
+    expect(describeReferenceScope('regional', tes)).toBe('registros regionales/nacionales');
+    expect(describeReferenceScope('regional', ten)).toBe('regional/national records');
+  });
+  it('returns an unrecognised scope as is (never invented)', () => {
+    for (const raw of ['crop', '', 'analog_sites:Csa', 'analog_sites:Csa:wet', 'analog_sites:Csa:secano:silage',
+      'analog_sites::secano', 'analog_sites:Csa:secano:forage:x']) {
+      expect(describeReferenceScope(raw, tes)).toBe(raw);
+    }
+  });
+});
+
+// Deploy order: the frontend can be published before the backend that applies the evidence policy.
+describe('evidence-policy awareness (old backend renders as before)', () => {
+  const ok = (extra: Record<string, unknown> = {}) => ({
+    status: 'ok', evidence_policy: '2026-10-05.1', recommendations: [], data_quality: {}, conditions: {}, ...extra,
+  }) as unknown as RecommendResponse;
+  const legacyOk = () => {
+    const { evidence_policy: _omit, ...rest } = ok() as unknown as Record<string, unknown>;
+    return rest as unknown as RecommendResponse;
+  };
+  const needsClimate = { status: 'needs_climate', parcel_environment: env(null) } as RecommendResponse;
+
+  it('an answer carries the policy only when the backend states its version', () => {
+    expect(carriesEvidencePolicy(ok())).toBe(true);
+    expect(carriesEvidencePolicy(legacyOk())).toBe(false);
+    expect(carriesEvidencePolicy(ok({ evidence_policy: '' }))).toBe(false);
+    expect(carriesEvidencePolicy(ok({ evidence_policy: null }))).toBe(false);
+    expect(carriesEvidencePolicy(needsClimate)).toBe(false);
+    expect(carriesEvidencePolicy(null)).toBe(false);
+    expect(carriesEvidencePolicy(undefined)).toBe(false);
+  });
+  it('only an ok answer updates the observed awareness', () => {
+    expect(nextPolicyAware(false, ok())).toBe(true);
+    expect(nextPolicyAware(true, legacyOk())).toBe(false);   // backend rolled back
+    expect(nextPolicyAware(true, needsClimate)).toBe(true);  // cannot tell: keep
+    expect(nextPolicyAware(false, needsClimate)).toBe(false);
+  });
+  it('against a backend not known to apply the policy there is only the default Destino', () => {
+    const forage = { ...DEFAULT_FILTERS, purpose: 'forage' as const, climateClass: 'Csa' };
+    expect(effectiveFilters(forage, false).purpose).toBe('main');
+    expect('purpose' in (conditionsQuery(effectiveFilters(forage, false), false) ?? {})).toBe(false);
+    expect(effectiveFilters(forage, true)).toBe(forage);
+    expect(conditionsQuery(effectiveFilters(forage, true), false)?.purpose).toBe('forage');
+    expect(effectiveFilters(DEFAULT_FILTERS, false)).toBe(DEFAULT_FILTERS);
   });
 });

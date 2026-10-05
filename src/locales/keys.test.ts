@@ -2,7 +2,7 @@
 import { describe, expect, it } from 'vitest';
 import es from './es.json';
 import en from './en.json';
-import { KOPPEN_CODES, SEASONS, MANAGEMENTS, IRRIGATIONS } from '../features/whatToSow/pageModel';
+import { KOPPEN_CODES, SEASONS, MANAGEMENTS, IRRIGATIONS, PURPOSES } from '../features/whatToSow/pageModel';
 import { CAMPAIGN_TOOL_IDS, LIBRARY_TOOL_IDS } from '../utils/navigation';
 
 
@@ -42,6 +42,7 @@ const GAP_IDS = [
   'climate_detail_unavailable', 'frost_tolerance_unavailable', 'sources_unavailable', 'soil_unavailable',
   'low_trial_count', 'conventional_only_trials', 'reference_too_small', 'reference_zero', 'cv_undefined',
   'sowing_window_unavailable', 'no_expected_yield',
+  'no_measured_yield', 'regional_evidence_only', 'regional_not_comparable', 'forage_basis_unknown',
 ];
 
 const LEVELS = {
@@ -57,10 +58,16 @@ const dynamicKeys = (): string[] => [
   ...Object.keys(LEVELS).map((kind) => `whatToSow.badge.${kind}`),
   ...['autumn', 'spring', 'summer', 'perennial', 'unknown'].map((s) => `whatToSow.season.${s}`),
   ...['secano', 'regadío'].map((i) => `whatToSow.irrigation.${i}`),
-  ...['season', 'management', 'irrigation'].map((n) => `whatToSow.filter.${n}.label`),
+  ...['season', 'management', 'irrigation', 'purpose'].map((n) => `whatToSow.filter.${n}.label`),
   ...SEASONS.map((v) => `whatToSow.filter.season.${v}`),
   ...MANAGEMENTS.map((v) => `whatToSow.filter.management.${v}`),
   ...IRRIGATIONS.map((v) => `whatToSow.filter.irrigation.${v}`),
+  ...PURPOSES.map((v) => `whatToSow.filter.purpose.${v}`),
+  ...['kg_ha', 'dry_matter', 'fresh_matter', 'kg_dry_matter', 'kg_fresh_matter'].map((u) => `whatToSow.unit.${u}`),
+  ...['dry_matter', 'fresh_matter'].map((b) => `whatToSow.basis.${b}`),
+  ...['not_comparable', 'no_measured'].map((s) => `whatToSow.yieldStatus.${s}`),
+  ...['field', 'regional'].map((tier) => `whatToSow.tier.${tier}`),
+  ...['secano', 'regadio', 'any'].map((r) => `whatToSow.scope.regime.${r}`),
   ...['high', 'medium', 'low', 'unknown'].map((l) => `whatToSow.compare.trustLevel.${l}`),
   ...Array.from({ length: 12 }, (_, i) => `whatToSow.compare.calendar.month.${i + 1}`),
   ...['expectedYield', 'relativeYield', 'stability', 'water', 'soil', 'frost', 'trust']

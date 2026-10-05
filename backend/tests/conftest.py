@@ -64,12 +64,6 @@ def client() -> TestClient:
         yield TestClient(app)
 
 
-@pytest.fixture(autouse=True)
-def _no_recommend_warmup(monkeypatch):
-    """Startup cache warm-up is off in tests unless a test turns it on."""
-    monkeypatch.setenv("RECOMMEND_WARMUP", "0")
-
-
 async def batch_via_per_crop(self, crops, similar_sites, irrigation_regime=None, top_n=10, **kw):
     """Stand-in for extrapolate_varieties_batch over the (mocked) per-crop method.
 

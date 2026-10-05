@@ -5,6 +5,7 @@ import type { Recommendation } from '../../types/recommend';
 import type { Intent } from './viewModel';
 import { MIN_TOP_TRIALS } from './viewModel';
 import { RangeBarView, levelOf, useCropName } from './RecommendationCard';
+import ForageNotice from './ForageNotice';
 
 const DOT: Record<Intent, string> = {
   positive: 'bg-nkz-success',
@@ -13,16 +14,37 @@ const DOT: Record<Intent, string> = {
   default: 'bg-nkz-border-strong',
 };
 
+/** Water, soil and frost as three coloured dots, each with its word as tooltip and label. */
+export function LevelDots({ rec }: { rec: Recommendation }) {
+  const { t } = useTranslation('bioorchestrator');
+  return (
+    <span className="flex items-center gap-1">
+      {(['water', 'soil', 'frost'] as const).map((kind) => {
+        const level = levelOf(rec, kind);
+        const word = `${t(`whatToSow.badge.${kind}`)}: ${t(level.key)}`;
+        return (
+          <Tooltip key={kind} content={word}>
+            <span role="img" aria-label={word} className={`inline-block w-2 h-2 rounded-full ${DOT[level.intent]}`} />
+          </Tooltip>
+        );
+      })}
+    </span>
+  );
+}
+
 interface MoreListProps {
   recs: Recommendation[];
   scaleMax: number | null;
   isCompared: (id: string) => boolean;
   compareFull: boolean;
   onToggleCompare: (id: string) => void;
+  /** Absent when the backend has no forage mode. */
+  onViewForage?: () => void;
 }
 
-function MoreRow({ rec, scaleMax, compared, compareDisabled, onToggle }: {
+function MoreRow({ rec, scaleMax, compared, compareDisabled, onToggle, onViewForage }: {
   rec: Recommendation; scaleMax: number | null; compared: boolean; compareDisabled: boolean; onToggle: () => void;
+  onViewForage?: () => void;
 }) {
   const { t } = useTranslation('bioorchestrator');
   const name = useCropName(rec);
@@ -35,17 +57,7 @@ function MoreRow({ rec, scaleMax, compared, compareDisabled, onToggle }: {
         )}
       </span>
       <div className="flex-1 min-w-0"><RangeBarView rec={rec} scaleMax={scaleMax} /></div>
-      <span className="flex items-center gap-1">
-        {(['water', 'soil', 'frost'] as const).map((kind) => {
-          const level = levelOf(rec, kind);
-          const word = `${t(`whatToSow.badge.${kind}`)}: ${t(level.key)}`;
-          return (
-            <Tooltip key={kind} content={word}>
-              <span role="img" aria-label={word} className={`inline-block w-2 h-2 rounded-full ${DOT[level.intent]}`} />
-            </Tooltip>
-          );
-        })}
-      </span>
+      <LevelDots rec={rec} />
       <Checkbox
         id={`compare-more-${rec.recommendation_id}`}
         checked={compared}
@@ -53,12 +65,13 @@ function MoreRow({ rec, scaleMax, compared, compareDisabled, onToggle }: {
         onChange={onToggle}
         label={t('whatToSow.card.compare')}
       />
+      <ForageNotice rec={rec} onViewForage={onViewForage} className="w-full" />
     </li>
   );
 }
 
 /** Compact rows for the recommendations outside the top cards; hidden when there are none. */
-export default function MoreList({ recs, scaleMax, isCompared, compareFull, onToggleCompare }: MoreListProps) {
+export default function MoreList({ recs, scaleMax, isCompared, compareFull, onToggleCompare, onViewForage }: MoreListProps) {
   const { t } = useTranslation('bioorchestrator');
   const [open, setOpen] = useState(false);
   if (recs.length === 0) return null;
@@ -79,6 +92,7 @@ export default function MoreList({ recs, scaleMax, isCompared, compareFull, onTo
               compared={isCompared(rec.recommendation_id)}
               compareDisabled={compareFull}
               onToggle={() => onToggleCompare(rec.recommendation_id)}
+              onViewForage={onViewForage}
             />
           ))}
         </ul>

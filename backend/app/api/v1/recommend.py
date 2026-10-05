@@ -25,10 +25,14 @@ Irrigation = Literal["secano", "regadío"]
 Management = Literal["any", "conventional", "organic"]
 Season = Literal["all", "autumn", "spring", "summer"]
 Similarity = Literal["koppen", "vector_v2_fallback"]
+Purpose = Literal["main", "forage"]
+Tier = Literal["field", "regional"]
 
 _MANAGEMENT_DOC = (
     "management: only `organic` changes the computation (yields scaled by a 0.8 factor, "
-    "recorded in `assumptions`); `any` and `conventional` use the trial data as-is."
+    "recorded in `assumptions`); `any` and `conventional` use the trial data as-is. "
+    "purpose: `main` (default) ranks each crop's main harvested product (grain, fruit, kernel, "
+    "tuber) and leaves forage records out; `forage` ranks forage records only, in kg dry matter/ha."
 )
 
 
@@ -72,6 +76,7 @@ class _Conditions:
         irrigation_regime: Irrigation | None = None,
         management: Management = "any",
         season: Season = "all",
+        purpose: Purpose = "main",
         annual_rainfall_mm: float | None = Query(None, ge=0, le=5000),
         annual_et0_mm: float | None = Query(None, ge=0, le=3000),
         coldest_month_min_c: float | None = Query(None, ge=-60, le=40),
@@ -86,6 +91,7 @@ class _Conditions:
         self.irrigation_regime = irrigation_regime
         self.management = management
         self.season = season
+        self.purpose = purpose
         self.annual_rainfall_mm = annual_rainfall_mm
         self.annual_et0_mm = annual_et0_mm
         self.coldest_month_min_c = coldest_month_min_c
@@ -121,7 +127,10 @@ async def recommend_for_conditions(
     "/agriculture/recommend/evidence",
     description=(
         "Trials behind a recommendation. `similarity` must match the recommendation's "
-        "`trust.similarity`: `vector_v2_fallback` needs all four numeric climate inputs."
+        "`trust.similarity`: `vector_v2_fallback` needs all four numeric climate inputs. "
+        "`purpose` must match the request; `tier` the recommendation's `evidence.tier` "
+        "(`regional` lists the aggregate-site trials and needs `similarity=koppen`). "
+        "Distinct trials only; each item names its tier."
     ),
 )
 async def recommend_evidence(
@@ -132,11 +141,14 @@ async def recommend_evidence(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=50),
     similarity: Similarity = "koppen",
+    tier: Tier = "field",
 ):
     from app.graph import agroclimatic
     from app.graph.dao import _irrigation_uri
 
     dao = GraphDAO(driver)
+    if tier == "regional" and similarity != "koppen":
+        raise HTTPException(status_code=422, detail="tier=regional needs similarity=koppen")
     if similarity == "vector_v2_fallback":
         rain, et0 = cond.annual_rainfall_mm, cond.annual_et0_mm
         cold, temp = cond.coldest_month_min_c, cond.annual_temp_c
@@ -153,9 +165,17 @@ async def recommend_evidence(
             target_features={"rainfall": rain, "et0": et0, "coldest_min": cold, "annual_temp": temp},
             vector_version="v2",
         )
+    elif tier == "regional":
+        # The aggregate sites of the climate (the regional tier of the recommendation).
+        sites = [
+            s for s in await dao.get_similar_sites(
+                climate_class=cond.climate_class, soil_type=None, limit=None, include_aggregate=True,
+            ) if s.get("site_kind") == "aggregate"
+        ]
     else:
+        # Every matching field site, as the recommendation's Köppen path uses.
         sites = await dao.get_similar_sites(
-            climate_class=cond.climate_class, soil_type=cond.soil_type, limit=50
+            climate_class=cond.climate_class, soil_type=cond.soil_type, limit=None
         )
     return await dao.list_trial_evidence(
         crop=crop.strip().upper(),
@@ -164,6 +184,8 @@ async def recommend_evidence(
         irrigation_uri=_irrigation_uri(cond.irrigation_regime),
         page=page,
         page_size=page_size,
+        purpose=cond.purpose,
+        tier=tier,
     )
 
 
@@ -177,6 +199,7 @@ async def recommend_for_parcel(
     irrigation_regime: Irrigation | None = None,
     management: Management = "any",
     season: Season = "all",
+    purpose: Purpose = "main",
     crops: str | None = None,
     top_n: int = Query(10, ge=1, le=30),
     frost_margin_c: float | None = Query(None, ge=0, le=15),
@@ -216,6 +239,7 @@ async def recommend_for_parcel(
         or (env.get("irrigation") or {}).get("inferred"),
         "management": management,
         "season": season,
+        "purpose": purpose,
         "crops": _parse_crops(crops),
         "top_n": top_n,
         "frost_margin_c": frost_margin_c,

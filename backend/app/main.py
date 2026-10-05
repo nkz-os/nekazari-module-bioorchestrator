@@ -16,6 +16,7 @@ import asyncio
 import json as _json
 import logging
 import os
+import time
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 
@@ -131,27 +132,46 @@ async def _run_cypher_migrations(driver):
     return executed
 
 
+# Climate classes the recommender is run for at startup (the most requested ones).
+_WARMUP_CLIMATE_CLASSES: tuple[str, ...] = ("Csa", "Cfb", "Dfb", "BSk")
+_WARMUP_DELAY_S = 5.0
+# Same shape as the what-to-sow page's default request, so a first request with default filters
+# can also hit the answer cache.
+_WARMUP_TOP_N = 15
+
+
 def _recommend_warmup_enabled() -> bool:
+    """On by default; ``RECOMMEND_WARMUP=0`` (or false/no/off) turns the warm-up off."""
     return os.getenv("RECOMMEND_WARMUP", "1").strip().lower() not in ("0", "false", "no", "off")
 
 
-async def _warm_recommend_caches() -> None:
-    """Fill the reference-median cache for every catalog crop and regime (best-effort).
+async def _warm_recommend() -> None:
+    """Run the recommender once per common climate class (best-effort, one at a time).
 
-    The first recommend request after a restart would otherwise pay for the full
-    trial scan. Never raises: a failed warm-up only means a cold first request.
+    The first request after a restart would otherwise pay for query-plan compilation (seconds,
+    per climate class). It scans no more than a user request does and runs after uvicorn has bound
+    its socket, so readiness is never blocked. A failed warm-up only means a cold first request:
+    it never raises (cancellation at shutdown still propagates).
     """
+    await asyncio.sleep(_WARMUP_DELAY_S)
     try:
-        from app.graph.dao import _irrigation_uri
         dao = GraphDAO(get_driver())
-        eppos = list(dict.fromkeys(
-            c["eppo_code"] for c in await dao.get_available_crops() if c.get("eppo_code")
-        ))
-        for uri in (None, _irrigation_uri("secano"), _irrigation_uri("regadío")):
-            await dao.get_crop_yield_medians(eppos, uri)
-        logger.info("recommend warm-up done crops=%d", len(eppos))
     except Exception as exc:  # noqa: BLE001
-        logger.warning("recommend warm-up failed: %s", type(exc).__name__)
+        logger.warning("recommend warm-up skipped: %s", type(exc).__name__)
+        return
+    for climate_class in _WARMUP_CLIMATE_CLASSES:
+        started = time.monotonic()
+        try:
+            await dao.recommend_for_conditions({
+                "climate_class": climate_class, "soil_type": None, "irrigation_regime": None,
+                "management": "any", "season": "all", "purpose": "main", "country": None,
+                "crops": None, "top_n": _WARMUP_TOP_N,
+            })
+            logger.info("recommend warm-up climate_class=%s elapsed_s=%.1f",
+                        climate_class, time.monotonic() - started)
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("recommend warm-up failed climate_class=%s: %s",
+                           climate_class, type(exc).__name__)
 
 
 async def _start_background_tasks():
@@ -173,6 +193,8 @@ async def _start_background_tasks():
             except Exception as exc:  # noqa: BLE001
                 print(f"[bioorchestrator] WARNING: catalog reconcile failed: {exc}")
         _BG_TASKS.add(asyncio.create_task(_reconcile_guarded()))
+        if _recommend_warmup_enabled():
+            _BG_TASKS.add(asyncio.create_task(_warm_recommend()))
         print("[bioorchestrator] background tasks started")
     except Exception as exc:  # noqa: BLE001
         print(f"[bioorchestrator] WARNING: background tasks init failed: {exc}")
@@ -217,10 +239,6 @@ async def lifespan(app: FastAPI):
     # Schedule background tasks after uvicorn binds (don't block startup)
     loop = asyncio.get_running_loop()
     loop.call_soon(lambda: asyncio.ensure_future(_start_background_tasks()))
-    if _recommend_warmup_enabled():
-        task = asyncio.create_task(_warm_recommend_caches())
-        _BG_TASKS.add(task)
-        task.add_done_callback(_BG_TASKS.discard)
 
     yield
 

@@ -567,6 +567,7 @@
     "loading": "Cargando..."
   },
   "yieldProjection": {
+    "noData": "sin datos",
     "title": "Proyección de Rendimiento",
     "subtitle": "Estimaciones de rendimiento desde ensayos (Fase A) y proyecciones corregidas por estrés en campaña (Fase B).",
     "selectParcel": "Selecciona una parcela para ver proyecciones",
@@ -658,6 +659,7 @@
     "phenology": "Fenología",
     "yieldGap": "Brecha de Rendimiento",
     "expected": "Esperado",
+    "noYieldData": "Sin datos de rendimiento medido",
     "soilSuitability": "Idoneidad del Suelo",
     "soilSensors": "Sensores de Suelo",
     "phenologySource": "Origen fenología",
@@ -858,7 +860,13 @@
         "regadío": "Regadío"
       },
       "frostMargin": "Margen de helada (°C)",
-      "frostMarginInvalid": "Introduce un valor entre 0 y 15, o déjalo vacío (5 por defecto)."
+      "frostMarginInvalid": "Introduce un valor entre 0 y 15, o déjalo vacío (5 por defecto).",
+      "purpose": {
+        "label": "Destino",
+        "main": "Cosecha",
+        "forage": "Forraje",
+        "mainHint": "grano, fruto, tubérculo…"
+      }
     },
     "season": {
       "autumn": "Siembra de otoño",
@@ -893,20 +901,25 @@
     },
     "card": {
       "expectedYield": "Rendimiento esperado",
-      "observedRange": "rango observado {{low}}–{{high}} kg/ha",
+      "observedRange": "rango observado {{low}}–{{high}} {{unit}}",
       "observedRangeLabel": "rango observado",
       "trust": "Basado en {{n_trials}} ensayos en {{n_sites}} sitios",
       "few": " (pocos)",
       "similarityV2": "Sitios elegidos por parecido climático",
       "compare": "Comparar",
       "chooseVariety": "Elegir variedad →",
-      "typicalSowing": "Siembra típica: {{month}}"
+      "typicalSowing": "Siembra típica: {{month}}",
+      "forageNotice_one": "Hay {{count}} ensayo de este cultivo como forraje en clima parecido; no se incluye aquí",
+      "forageNotice_other": "Hay {{count}} ensayos de este cultivo como forraje en clima parecido; no se incluyen aquí",
+      "viewAsForage": "Ver como forraje",
+      "unknownBasisTrials_one": "{{count}} ensayo como forraje, sin base de materia seca o fresca conocida",
+      "unknownBasisTrials_other": "{{count}} ensayos como forraje, sin base de materia seca o fresca conocida"
     },
     "expert": {
       "eppo": "Código EPPO",
       "relativeYield": "Rendimiento relativo",
       "referenceMedian": "Mediana de referencia",
-      "referenceValue": "{{value}} kg/ha (n={{n}}, {{scope}})",
+      "referenceValue": "{{value}} {{unit}} (n={{n}}, {{scope}})",
       "cv": "CV",
       "sd": "Desviación típica",
       "intervalMethod": "Método del intervalo",
@@ -916,7 +929,13 @@
       "years": "Años",
       "assumptions": "Supuestos",
       "viewTrials": "Ver ensayos",
-      "reportValue": "Este valor parece incorrecto"
+      "reportValue": "Este valor parece incorrecto",
+      "yieldBasis": "Base del rendimiento",
+      "unknownBasisTrials": "Ensayos de forraje sin base conocida",
+      "tier": "Nivel de evidencia",
+      "regionalTrials": "Ensayos regionales (fuera de las cifras)",
+      "referenceScope": "Ámbito de la referencia",
+      "policy": "Política de evidencia"
     },
     "gap": {
       "no_expected_yield": "Sin rendimiento esperado",
@@ -929,7 +948,11 @@
       "soil_unavailable": "Sin datos de suelo",
       "climate_detail_unavailable": "Sin detalle climático",
       "frost_tolerance_unavailable": "Sin datos de tolerancia a heladas",
-      "sources_unavailable": "Sin fuentes de datos"
+      "sources_unavailable": "Sin fuentes de datos",
+      "no_measured_yield": "Sin rendimiento medido",
+      "regional_evidence_only": "Solo evidencia regional/nacional, sin ensayos de parcela",
+      "regional_not_comparable": "No comparable con la media local",
+      "forage_basis_unknown": "Forraje sin base de materia seca o fresca conocida"
     },
     "evidence": {
       "title": "Ensayos de {{crop}}",
@@ -938,7 +961,7 @@
       "variety": "Variedad",
       "site": "Sitio",
       "year": "Año",
-      "yield": "Rendimiento (kg/ha)",
+      "yield": "Rendimiento ({{unit}})",
       "irrigation": "Riego",
       "system": "Sistema",
       "source": "Fuente",
@@ -982,7 +1005,7 @@
       "hide": "Ocultar comparación",
       "clear": "Limpiar",
       "best": "mejor",
-      "expectedYield": "Rendimiento esperado (kg/ha)",
+      "expectedYield": "Rendimiento esperado ({{unit}})",
       "relativeYield": "Frente a la referencia (%)",
       "stability": "Variabilidad (CV)",
       "water": "Demanda de agua",
@@ -1040,8 +1063,48 @@
         "addPrice": "añade precio",
         "range": "rango {{low}}–{{high}} €/ha",
         "noRange": "rango: sin datos",
-        "note": "Solo ingreso bruto: no descuenta costes."
+        "note": "Solo ingreso bruto: no descuenta costes.",
+        "forageUnavailable": "El cálculo en euros solo está disponible con el destino Cosecha."
       }
+    },
+    "unit": {
+      "kg_ha": "kg/ha",
+      "dry_matter": "t MS/ha",
+      "fresh_matter": "t MF/ha",
+      "kg_dry_matter": "kg MS/ha",
+      "kg_fresh_matter": "kg MF/ha"
+    },
+    "basis": {
+      "dry_matter": "materia seca",
+      "fresh_matter": "materia fresca"
+    },
+    "yieldStatus": {
+      "not_comparable": "Rendimiento no comparable",
+      "no_measured": "Sin rendimiento medido"
+    },
+    "scope": {
+      "regional": "registros regionales/nacionales",
+      "analog": "sitios análogos {{climate}}",
+      "analogAny": "sitios análogos",
+      "analogVector": "sitios análogos por parecido climático",
+      "regime": {
+        "secano": "secano",
+        "regadio": "regadío",
+        "any": "cualquier riego"
+      },
+      "forage": "forraje"
+    },
+    "tier": {
+      "field": "Ensayos de campo",
+      "regional": "Evidencia regional/nacional"
+    },
+    "regional": {
+      "title": "Evidencia regional/nacional",
+      "badge": "Regional/nacional",
+      "explanation": "Registros nacionales o regionales, no ensayos de parcela. No son comparables con la media local, por eso no se calcula rendimiento relativo.",
+      "noFieldEvidence": "No hay ensayos de parcela en sitios con clima parecido: solo hay registros regionales o nacionales.",
+      "trials_one": "{{count}} ensayo",
+      "trials_other": "{{count}} ensayos"
     }
   }
 }

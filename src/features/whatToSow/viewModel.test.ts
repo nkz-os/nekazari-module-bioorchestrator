@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import type { Recommendation, RecommendResponse } from '../../types/recommend';
 import {
-  compareRows, grossIncome, lensAvailability, levelKey, partitionRecommendations,
-  rangeBar, resolvePageState, soilWarning,
+  compareRows, forageNoticeCount, formatYield, grossIncome, hasListableTrials, isRegionalRec, kgUnitKey,
+  lensAvailability, levelKey, partitionByTier, partitionRecommendations, rangeBar, recYieldUnit, recsYieldUnit, resolvePageState, soilWarning, unitKey,
+  yieldStatus, yieldUnit, yieldValue,
 } from './viewModel';
 
 function rec(eppo: string, over: {
@@ -18,14 +19,14 @@ function rec(eppo: string, over: {
     fit: { relative_yield_pct: over.rel ?? null, stability_cv: over.cv ?? null,
            reference: { median_kg_ha: null, n_trials: 0, scope: 'crop' } },
     yield: { expected_kg_ha: over.exp === undefined ? 1000 : over.exp, interval: [800, 1200],
-             interval_method: 'observed_range', sd: null, n_trials: over.n ?? 5, n_sites: 2 },
+             interval_method: 'observed_range', basis: null, sd: null, n_trials: over.n ?? 5, n_sites: 2 },
     suitability: { soil: { level: over.soil ?? 'suitable', warnings: [] },
                    water: { level: over.water ?? 'low', etc_mm: null },
                    frost: { level: over.frost ?? 'none' } },
     season: { sowing_window: over.window ? { start_month: 10, end_month: 11 } : null,
               cycle_days: null, source: null },
     trust: { level: over.trust ?? 'medium', data_gaps: [], similarity: 'koppen' },
-    varieties: [], evidence: { trial_count: 0, sources: [], sites: [], years: null },
+    varieties: [], evidence: { trial_count: 0, sources: [], sites: [], years: null, tier: 'field', purpose: 'main', regional_trial_count: null, other_purpose_trials: {}, unknown_basis_trials: null },
     assumptions: [],
   };
 }
@@ -180,7 +181,7 @@ describe('resolvePageState', () => {
   const env = { parcel_id: 'p', area_ha: null, centroid: { lat: null, lon: null }, climate_class: null,
     climate_detail: null, soil: { data_available: false }, irrigation: { inferred: null, source: 'unknown', overridable: true },
     campaign: { assigned: false }, inputs_used: {} };
-  const ok = (n: number): RecommendResponse => ({ status: 'ok',
+  const ok = (n: number): RecommendResponse => ({ status: 'ok', evidence_policy: 'test',
     recommendations: Array.from({ length: n }, (_, i) => rec(`C${i}`)), data_quality: {}, conditions: {} });
   it('covers every state', () => {
     expect(resolvePageState(true, null, null)).toBe('loading');
@@ -210,5 +211,174 @@ describe('soilWarning', () => {
   it('hides warnings for suitable soil and when there are none', () => {
     expect(soilWarning(withSoil('suitable', ['note']))).toBeNull();
     expect(soilWarning(withSoil('marginal', []))).toBeNull();
+  });
+});
+
+describe('forageNoticeCount', () => {
+  const withEvidence = (over: Partial<Recommendation['evidence']>) => {
+    const r = rec('A');
+    r.evidence = { ...r.evidence, ...over };
+    return r;
+  };
+  it('is the forage trial count of a field recommendation in harvest mode', () => {
+    expect(forageNoticeCount(withEvidence({ other_purpose_trials: { forage: 115 } }))).toBe(115);
+    expect(forageNoticeCount(withEvidence({ other_purpose_trials: { forage: 1 } }))).toBe(1);
+  });
+  it('is null when there are none (missing, empty, zero)', () => {
+    expect(forageNoticeCount(rec('A'))).toBeNull();
+    expect(forageNoticeCount(withEvidence({ other_purpose_trials: { forage: 0 } }))).toBeNull();
+    expect(forageNoticeCount(withEvidence({ other_purpose_trials: {} }))).toBeNull();
+    expect(forageNoticeCount(withEvidence({ other_purpose_trials: undefined as never }))).toBeNull();
+  });
+  it('is null in forage mode and on regional recommendations', () => {
+    expect(forageNoticeCount(withEvidence({ purpose: 'forage', other_purpose_trials: { forage: 4 } }))).toBeNull();
+    expect(forageNoticeCount(withEvidence({ tier: 'regional', other_purpose_trials: { forage: 4 } }))).toBeNull();
+  });
+});
+
+/** A forage-mode recommendation as the API answers it. */
+function forageRec(eppo: string, over: {
+  exp?: number | null; basis?: Recommendation['yield']['basis']; gaps?: string[]; n?: number;
+} = {}): Recommendation {
+  const r = rec(eppo, { exp: over.exp === undefined ? 30106 : over.exp, n: over.n });
+  r.yield.basis = over.basis === undefined ? 'dry_matter' : over.basis;
+  r.trust.data_gaps = over.gaps ?? [];
+  r.evidence = { ...r.evidence, purpose: 'forage', unknown_basis_trials: 0 };
+  return r;
+}
+
+describe('yield unit and basis label', () => {
+  it('plain kg/ha without a basis; forage per its basis', () => {
+    expect(yieldUnit(null)).toBe('kg_ha');
+    expect(yieldUnit(undefined)).toBe('kg_ha');
+    expect(yieldUnit('dry_matter')).toBe('dry_matter');
+    expect(yieldUnit('fresh_matter')).toBe('fresh_matter');
+  });
+  it('label keys: tonnes for the displayed unit, kg for tables and dialogs', () => {
+    expect(unitKey('kg_ha')).toBe('whatToSow.unit.kg_ha');
+    expect(unitKey('dry_matter')).toBe('whatToSow.unit.dry_matter');
+    expect(kgUnitKey('kg_ha')).toBe('whatToSow.unit.kg_ha');
+    expect(kgUnitKey('dry_matter')).toBe('whatToSow.unit.kg_dry_matter');
+    expect(kgUnitKey('fresh_matter')).toBe('whatToSow.unit.kg_fresh_matter');
+  });
+  it('harvest-mode recommendations stay in kg/ha', () => {
+    expect(recYieldUnit(rec('A'))).toBe('kg_ha');
+  });
+  it('forage recommendations use their basis', () => {
+    expect(recYieldUnit(forageRec('A'))).toBe('dry_matter');
+    expect(recYieldUnit(forageRec('A', { basis: 'fresh_matter' }))).toBe('fresh_matter');
+  });
+  it('a forage answer without a basis holds dry-matter-normalised values only', () => {
+    expect(recYieldUnit(forageRec('A', { exp: null, basis: null }))).toBe('dry_matter');
+  });
+  it('a set takes the unit of the first recommendation that has a basis', () => {
+    expect(recsYieldUnit([])).toBe('kg_ha');
+    expect(recsYieldUnit([rec('A'), rec('B')])).toBe('kg_ha');
+    expect(recsYieldUnit([forageRec('A', { exp: null, basis: null }), forageRec('B')])).toBe('dry_matter');
+  });
+  it('shows forage in tonnes, kg/ha as whole kg, null stays null', () => {
+    expect(yieldValue(30106, 'dry_matter')).toBeCloseTo(30.106);
+    expect(yieldValue(3973, 'kg_ha')).toBe(3973);
+    expect(yieldValue(null, 'dry_matter')).toBeNull();
+    expect(yieldValue(Number.NaN, 'kg_ha')).toBeNull();
+    expect(formatYield(30106, 'dry_matter', 'en')).toBe('30.1');
+    expect(formatYield(3973.4, 'kg_ha', 'en')).toBe('3,973');
+    expect(formatYield(350, 'dry_matter', 'en', 2)).toBe('0.35');
+    expect(formatYield(null, 'dry_matter', 'en')).toBeNull();
+  });
+  it('0 is a value, not missing', () => {
+    expect(formatYield(0, 'kg_ha', 'en')).toBe('0');
+  });
+});
+
+describe('yieldStatus', () => {
+  it('measured when there is a number', () => {
+    expect(yieldStatus(rec('A'))).toBe('measured');
+    expect(yieldStatus(forageRec('A'))).toBe('measured');
+  });
+  it('forage with trials of unknown basis: not comparable (never a number)', () => {
+    expect(yieldStatus(forageRec('A', { exp: null, basis: null, gaps: ['forage_basis_unknown'], n: 4 })))
+      .toBe('not_comparable');
+  });
+  it('presence-only recommendation: no measured yield', () => {
+    expect(yieldStatus(rec('A', { exp: null }))).toBe('none');
+    const r = rec('A', { exp: null });
+    r.trust.data_gaps = ['no_measured_yield', 'regional_evidence_only', 'no_expected_yield'];
+    expect(yieldStatus(r)).toBe('no_measured');
+  });
+  it('a number wins over a stray gap', () => {
+    const r = rec('A', { exp: 1200 });
+    r.trust.data_gaps = ['no_measured_yield'];
+    expect(yieldStatus(r)).toBe('measured');
+  });
+  it('null without any gap is plain missing data', () => {
+    expect(yieldStatus(rec('A', { exp: null }))).toBe('none');
+  });
+});
+
+describe('compareRows in forage units', () => {
+  it('shows tonnes with one decimal and still ranks by the raw value', () => {
+    const rows = compareRows([forageRec('A', { exp: 30106 }), forageRec('B', { exp: 17006 })], 'dry_matter');
+    const exp = rows.find((r) => r.id === 'expectedYield');
+    expect(exp?.cells).toEqual(['30.1', '17']);
+    expect(exp?.best).toEqual([0]);
+  });
+  it('defaults to whole kg/ha', () => {
+    const exp = compareRows([rec('A', { exp: 4321.6 })]).find((r) => r.id === 'expectedYield');
+    expect(exp?.cells).toEqual(['4322']);
+  });
+});
+
+describe('partitionByTier', () => {
+  const regionalRec = (eppo: string, over: { exp?: number | null; gaps?: string[] } = {}) => {
+    const r = rec(eppo, { exp: over.exp });
+    r.evidence = { ...r.evidence, tier: 'regional' };
+    r.trust = { ...r.trust, level: 'low', data_gaps: over.gaps ?? ['regional_evidence_only', 'regional_not_comparable'] };
+    return r;
+  };
+  it('splits field and regional recommendations, keeping API order in each', () => {
+    const { field, regional } = partitionByTier([rec('A'), regionalRec('R1'), rec('B'), regionalRec('R2'), rec('C')]);
+    expect(field.map((r) => r.crop.eppo)).toEqual(['A', 'B', 'C']);
+    expect(regional.map((r) => r.crop.eppo)).toEqual(['R1', 'R2']);
+  });
+  it('a recommendation without a tier is a field one', () => {
+    const old = rec('A');
+    delete (old.evidence as { tier?: unknown }).tier;
+    expect(partitionByTier([old]).field).toHaveLength(1);
+    expect(isRegionalRec(old)).toBe(false);
+  });
+  it('regional recommendations never reach the top cards, whatever their trial count', () => {
+    const recs = [regionalRec('R1', { exp: 4000 }), rec('A'), rec('B'), regionalRec('R2'), rec('C'), rec('D')];
+    const { field, regional } = partitionByTier(recs);
+    const { top, more } = partitionRecommendations(field);
+    expect(top.map((r) => r.crop.eppo)).toEqual(['A', 'B', 'C']);
+    expect(more.map((r) => r.crop.eppo)).toEqual(['D']);
+    expect(regional.map((r) => r.crop.eppo)).toEqual(['R1', 'R2']);
+  });
+  it('handles empty input and all-regional input', () => {
+    expect(partitionByTier([])).toEqual({ field: [], regional: [] });
+    const { field, regional } = partitionByTier([regionalRec('R1')]);
+    expect(field).toEqual([]);
+    expect(regional).toHaveLength(1);
+  });
+});
+
+describe('hasListableTrials', () => {
+  it('presence-only recommendations rest on records the evidence page never lists', () => {
+    const presence = rec('P', { exp: null });
+    presence.trust.data_gaps = ['no_measured_yield', 'regional_evidence_only'];
+    expect(hasListableTrials(presence)).toBe(false);
+    expect(hasListableTrials(rec('A'))).toBe(true);
+    expect(hasListableTrials(rec('B', { exp: null }))).toBe(true);
+  });
+  it('forage crops "not comparable" have no trial with a number to list either', () => {
+    const forage = rec('F', { exp: null });
+    forage.trust.data_gaps = ['forage_basis_unknown', 'no_expected_yield'];
+    expect(yieldStatus(forage)).toBe('not_comparable');
+    expect(hasListableTrials(forage)).toBe(false);
+    // a measured forage number (known basis) is listable, whatever else is unknown
+    const measured = rec('G');
+    measured.trust.data_gaps = ['forage_basis_unknown'];
+    expect(hasListableTrials(measured)).toBe(true);
   });
 });

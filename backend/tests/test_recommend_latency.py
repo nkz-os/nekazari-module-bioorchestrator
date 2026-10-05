@@ -4,6 +4,7 @@ from unittest.mock import AsyncMock, patch
 import pytest
 
 from app.graph import dao as dao_mod
+from app.graph import evidence_policy as ep
 from app.graph.dao import GraphDAO
 from tests.test_recommend_dao import (
     _ROW,
@@ -55,12 +56,6 @@ async def test_empty_override_means_no_sites_not_recompute():
     assert out["ranked_varieties"] == [] and calls == []
 
 
-def _medians_mock():
-    async def fn(crops, irrigation_uri):
-        return {c: {"median_kg_ha": 5000.0, "n_trials": 40, "scope": "crop"} for c in crops}
-    return AsyncMock(side_effect=fn)
-
-
 def _run_with(conds, crops, extrap, sites_mock):
     dao, _ = _dao()
     patches = (
@@ -68,7 +63,6 @@ def _run_with(conds, crops, extrap, sites_mock):
                      AsyncMock(return_value=[{"eppo_code": c, "scientific_name": c} for c in crops])),
         patch.object(GraphDAO, "extrapolate_varieties", extrap),
         patch.object(GraphDAO, "get_similar_sites", sites_mock),
-        patch.object(GraphDAO, "get_crop_yield_medians", _medians_mock()),
         patch.object(GraphDAO, "get_soil_suitability", AsyncMock(return_value=None)),
         patch.object(GraphDAO, "get_heat_tolerance", AsyncMock(return_value=None)),
     )
@@ -77,7 +71,7 @@ def _run_with(conds, crops, extrap, sites_mock):
 
 async def _recommend(conds, crops, extrap, sites_mock):
     dao, p = _run_with(conds, crops, extrap, sites_mock)
-    with p[0], p[1], p[2], p[3], p[4], p[5]:
+    with p[0], p[1], p[2], p[3], p[4]:
         return await dao.recommend_for_conditions(conds)
 
 
@@ -92,7 +86,9 @@ async def test_koppen_sites_computed_once_and_passed_through():
     await _recommend(_conds(soil_type="Loam"), ["TRZAX", "HORVX", "ZEAMX"], extrap, sites)
     assert sites.await_count == 1
     kw = sites.await_args.kwargs
-    assert kw["climate_class"] == "Cfb" and kw["soil_type"] == "Loam" and kw["limit"] == 50
+    # every matching field site (no alphabetical cut) plus the climate's aggregate sites
+    assert kw["climate_class"] == "Cfb" and kw["soil_type"] == "Loam" and kw["limit"] is None
+    assert kw["include_aggregate"] is True
     assert kw.get("target_features") is None and kw.get("vector_version", "v1") == "v1"
     assert len(seen) == 3 and all(s["similar_sites_override"] is _SITES or
                                   s["similar_sites_override"] == _SITES for s in seen)
@@ -158,7 +154,7 @@ async def test_prefilter_query_shape_and_result():
     assert "ts.name IN $site_names" in q
     assert "vt.yieldKgHa IS NOT NULL OR vt.yieldNoteS1 IS NOT NULL" in q
     assert "rankingEligible" in q
-    assert "vt.irrigationRegime = $irrigation_uri" in q
+    assert ep.cypher_irrigation_match("vt.irrigationRegime") in q  # URI or literal spelling
     assert "$excluded_sites IS NULL" in q
     assert "DISTINCT" in q
     assert params["irrigation_uri"] is None and params["excluded_sites"] is None
@@ -183,7 +179,7 @@ async def _recommend_pf(conds, crops, extrap, koppen_ok, v2_ok=None):
                       else [{"name": "site-v2", "distance": 0.1}])
     dao, p = _run_with(conds, crops, extrap, sites)
     pf = patch.object(GraphDAO, "_crops_with_analog_trials", _prefilter(koppen_ok, v2_ok))
-    with p[0], p[1], p[2], p[3], p[4], p[5], pf:
+    with p[0], p[1], p[2], p[3], p[4], pf:
         return await dao.recommend_for_conditions(conds)
 
 
@@ -246,7 +242,7 @@ async def test_prefilter_failure_falls_back_to_evaluating_every_crop():
     sites = AsyncMock(return_value=_SITES)
     dao, p = _run_with(_conds(), ["TRZAX", "HORVX"], extrap, sites)
     pf = patch.object(GraphDAO, "_crops_with_analog_trials", AsyncMock(side_effect=RuntimeError("x")))
-    with p[0], p[1], p[2], p[3], p[4], p[5], pf:
+    with p[0], p[1], p[2], p[3], p[4], pf:
         out = await dao.recommend_for_conditions(_conds())
     assert sorted(seen) == ["HORVX", "TRZAX"]
     assert out["data_quality"]["crops_with_analog_trials"] is None
@@ -269,7 +265,7 @@ async def _cached_run(conds, crops=("TRZAX",), extrap=_ok_extrap):
     dao, p = _run_with(conds, list(crops), spy, sites)
     pf = patch.object(GraphDAO, "_crops_with_analog_trials",
                       AsyncMock(side_effect=lambda eppos, names, **kw: set(eppos)))
-    with p[0], p[1], p[2], p[3], p[4], p[5], pf:
+    with p[0], p[1], p[2], p[3], p[4], pf:
         out = await dao.recommend_for_conditions(conds)
     return out, sites, seen
 
@@ -373,7 +369,7 @@ async def test_recommend_prefilter_receives_irrigation_uri():
 
     sites = AsyncMock(return_value=_SITES)
     dao, p = _run_with(_conds(irrigation_regime="secano"), ["TRZAX"], _ok_extrap, sites)
-    with p[0], p[1], p[2], p[3], p[4], p[5], patch.object(GraphDAO, "_crops_with_analog_trials", pf):
+    with p[0], p[1], p[2], p[3], p[4], patch.object(GraphDAO, "_crops_with_analog_trials", pf):
         await dao.recommend_for_conditions(_conds(irrigation_regime="secano"))
     assert seen[0]["irrigation_uri"] == "http://aims.fao.org/aos/agrovoc/c_6436"
 
@@ -412,7 +408,7 @@ async def _batched_run(conds, crops, batch, koppen_ok=None, sites=None):
     pf = patch.object(GraphDAO, "_crops_with_analog_trials",
                       AsyncMock(side_effect=lambda eppos, names, **kw: ok & set(eppos)))
     pb = patch.object(GraphDAO, "extrapolate_varieties_batch", batch)
-    with p[0], p[1], p[2], p[3], p[4], p[5], pf, pb:
+    with p[0], p[1], p[2], p[3], p[4], pf, pb:
         return await dao.recommend_for_conditions(conds)
 
 
@@ -423,7 +419,7 @@ async def test_koppen_path_is_one_batch_for_prefiltered_crops():
     assert batch.await_count == 1
     args, kw = batch.await_args
     assert args == (["TRZAX", "ZEAMX"], _SITES)
-    assert kw == {"irrigation_regime": "secano", "top_n": 5}
+    assert kw == {"irrigation_regime": "secano", "top_n": 5, "purpose": "main"}
     assert sorted(r["crop"]["eppo"] for r in out["recommendations"]) == ["TRZAX", "ZEAMX"]
 
 
@@ -448,7 +444,7 @@ async def test_no_batch_when_shared_site_lookup_failed():
         return {"ranked_varieties": [_variety()]}
 
     dao, p = _run_with(_conds(), ["TRZAX"], extrap, AsyncMock(side_effect=RuntimeError("down")))
-    with p[0], p[1], p[2], p[3], p[4], p[5], patch.object(GraphDAO, "extrapolate_varieties_batch", batch):
+    with p[0], p[1], p[2], p[3], p[4], patch.object(GraphDAO, "extrapolate_varieties_batch", batch):
         out = await dao.recommend_for_conditions(_conds())
     assert seen == [None] and len(out["recommendations"]) == 1
 
@@ -460,68 +456,56 @@ async def test_batch_result_without_numeric_yield_still_triggers_v2(hybrid):
     assert out["recommendations"][0]["trust"]["similarity"] == "vector_v2_fallback"
 
 
-# ── round 3: batched medians ────────────────────────────────────────────────
-@pytest.fixture(autouse=True)
-def _clear_median_cache():
-    dao_mod._MEDIAN_CACHE.clear()
-    yield
-    dao_mod._MEDIAN_CACHE.clear()
-
-
-async def test_batch_is_one_call_for_many_misses_and_fills_defaults():
-    dao, calls = _dao([{"crop": "TRZAX", "median": 5000.0, "n": 42}])
-    out = await dao.get_crop_yield_medians(["TRZAX", "HORVX", "ZZZZZ"], None)
-    assert len(calls) == 1
-    assert out["TRZAX"] == {"median_kg_ha": 5000.0, "n_trials": 42, "scope": "crop"}
-    assert out["HORVX"] == {"median_kg_ha": None, "n_trials": 0, "scope": "crop"}
-    assert set(out) == {"TRZAX", "HORVX", "ZZZZZ"}
-    assert calls[0][1]["crops"] == ["TRZAX", "HORVX", "ZZZZZ"]
-
-
-async def test_batch_zero_calls_when_all_cached():
-    dao, calls = _dao([{"crop": "TRZAX", "median": 5000.0, "n": 42}])
-    await dao.get_crop_yield_medians(["TRZAX", "HORVX"], "uri:secano")
-    out = await dao.get_crop_yield_medians(["HORVX", "TRZAX"], "uri:secano")
-    assert len(calls) == 1 and out["TRZAX"]["scope"] == "crop×irrigation"
-
-
-async def test_batch_and_single_share_cache():
-    dao, calls = _dao([{"crop": "TRZAX", "median": 5000.0, "n": 42}], [{"crop": "HORVX", "median": 4000.0, "n": 9}])
-    await dao.get_crop_yield_medians(["TRZAX"], None)
-    assert (await dao.get_crop_yield_median("TRZAX", None))["median_kg_ha"] == 5000.0
-    assert len(calls) == 1
-    out = await dao.get_crop_yield_medians(["TRZAX", "HORVX"], None)   # only HORVX is a miss
-    assert calls[1][1]["crops"] == ["HORVX"] and out["HORVX"]["median_kg_ha"] == 4000.0
-
-
-async def test_batch_empty_input_makes_no_call():
-    dao, calls = _dao()
-    assert await dao.get_crop_yield_medians([], None) == {}
-    assert calls == []
-
-
-async def test_recommend_calls_batch_once_for_prefiltered_crops():
-    medians = _medians_mock()
+# ── the reference comes with the extrapolation rows ──────────────────────────
+async def test_recommend_reads_the_reference_from_the_rows_and_makes_no_median_query():
     sites = AsyncMock(return_value=_SITES)
-    dao, p = _run_with(_conds(), ["TRZAX", "HORVX", "ZEAMX"], _ok_extrap, sites)
+    dao, p = _run_with(_conds(), ["TRZAX", "HORVX"], _ok_extrap, sites)
+    pf = patch.object(GraphDAO, "_crops_with_analog_trials", AsyncMock(return_value={"TRZAX", "HORVX"}))
+    with p[0], p[1], p[2], p[3], p[4], pf:
+        out = await dao.recommend_for_conditions(_conds())
+    assert not hasattr(GraphDAO, "get_crop_yield_medians")  # the global median scan is gone
+    for rec in out["recommendations"]:
+        ref = rec["fit"]["reference"]
+        assert (ref["median_kg_ha"], ref["n_trials"]) == (5000.0, 40)
+        assert ref["scope"] == "analog_sites:Cfb:any"
+        assert rec["fit"]["relative_yield_pct"] is not None
+
+
+async def test_v2_fallback_reference_comes_from_the_v2_rows_and_names_them(hybrid):
+    note_only = {**_variety(), "mean_yield_kg_ha": None, "numeric_yield_count": 0,
+                 "crop_reference_median_kg_ha": 111.0, "crop_reference_n": 9}   # the Köppen rows' own set
+    v2_row = _variety(mean=6000.0, ref=4000.0, ref_n=7)
+
+    async def extrap(self_, crop, **kw):
+        assert kw.get("vector_version") == "v2"
+        return {"ranked_varieties": [v2_row]}
+
+    batch = AsyncMock(side_effect=lambda crops, sites, **kw: {c: [note_only] for c in crops})
+    dao, p = _run_with(_conds(irrigation_regime="secano", **_VEC), ["TRZAX"], extrap, AsyncMock(return_value=_SITES))
     pf = patch.object(GraphDAO, "_crops_with_analog_trials",
-                      AsyncMock(return_value={"TRZAX", "ZEAMX"}))
-    with p[0], p[1], p[2], p[3], p[4], p[5], pf, patch.object(GraphDAO, "get_crop_yield_medians", medians):
-        out = await dao.recommend_for_conditions(_conds())
-    assert medians.await_count == 1
-    assert sorted(medians.await_args.args[0]) == ["TRZAX", "ZEAMX"]
-    assert len(out["recommendations"]) == 2
+                      AsyncMock(side_effect=lambda eppos, names, **kw: set(eppos)))
+    with p[0], p[1], p[2], p[3], p[4], pf, patch.object(GraphDAO, "extrapolate_varieties_batch", batch):
+        out = await dao.recommend_for_conditions(_conds(irrigation_regime="secano", **_VEC))
+    rec = out["recommendations"][0]
+    assert rec["trust"]["similarity"] == "vector_v2_fallback"
+    assert rec["fit"]["reference"] == {"median_kg_ha": 4000.0, "n_trials": 7, "scope": "analog_sites:vector_v2:secano"}
+    assert rec["fit"]["relative_yield_pct"] == 50.0
 
 
-async def test_recommend_medians_failure_falls_back_to_per_crop():
-    sites = AsyncMock(return_value=_SITES)
-    dao, p = _run_with(_conds(), ["TRZAX"], _ok_extrap, sites)
-    single = AsyncMock(return_value={"median_kg_ha": 5000.0, "n_trials": 40, "scope": "crop"})
-    with p[0], p[1], p[2], p[3], p[4], p[5], \
-            patch.object(GraphDAO, "get_crop_yield_medians", AsyncMock(side_effect=RuntimeError("x"))), \
-            patch.object(GraphDAO, "get_crop_yield_median", single):
-        out = await dao.recommend_for_conditions(_conds())
-    assert single.await_count == 1 and len(out["recommendations"]) == 1
+async def test_small_or_missing_reference_gives_the_gap_and_no_relative_yield():
+    async def extrap(self_, crop, **kw):
+        return {"ranked_varieties": [_variety(ref=5000.0, ref_n=2) if crop == "SMALL"
+                                     else _variety(ref=5000.0, ref_n=4) if crop == "JUSTBELOW"
+                                     else _variety(ref=None, ref_n=0)]}
+
+    out = await _cached_run(_conds(), crops=("SMALL", "NONE", "JUSTBELOW"), extrap=extrap)
+    recs = {r["crop"]["eppo"]: r for r in out[0]["recommendations"]}
+    for eppo in ("SMALL", "NONE", "JUSTBELOW"):
+        assert recs[eppo]["fit"]["relative_yield_pct"] is None
+        assert "reference_too_small" in recs[eppo]["trust"]["data_gaps"]
+    assert recs["SMALL"]["fit"]["reference"] == {"median_kg_ha": 5000.0, "n_trials": 2,
+                                                 "scope": "analog_sites:Cfb:any"}
+    assert recs["NONE"]["fit"]["reference"]["median_kg_ha"] is None
 
 
 # ── final fix wave: process-wide cold-computation guard ─────────────────────
@@ -541,7 +525,7 @@ async def test_identical_concurrent_cold_calls_compute_once():
 
     sites = AsyncMock(return_value=_SITES)
     dao, p = _run_with(_conds(), ["TRZAX"], extrap, sites)
-    with p[0], p[1], p[2], p[3], p[4], p[5], _all_pass():
+    with p[0], p[1], p[2], p[3], p[4], _all_pass():
         a, b = await asyncio.gather(dao.recommend_for_conditions(_conds()),
                                     dao.recommend_for_conditions(_conds()))
     assert seen == ["TRZAX"] and sites.await_count == 1
@@ -563,7 +547,7 @@ async def test_at_most_two_cold_computations_run_concurrently():
 
     sites = AsyncMock(return_value=_SITES)
     dao, p = _run_with(_conds(), ["TRZAX"], extrap, sites)
-    with p[0], p[1], p[2], p[3], p[4], p[5], _all_pass():
+    with p[0], p[1], p[2], p[3], p[4], _all_pass():
         outs = await asyncio.gather(*(dao.recommend_for_conditions(_conds(annual_rainfall_mm=100.0 + i))
                                       for i in range(3)))
     assert state["peak"] == 2
@@ -592,3 +576,266 @@ async def test_inflight_entry_removed_after_completion_and_failure():
     await _cached_run(_conds(), extrap=boom)
     await _cached_run(_conds(annual_rainfall_mm=1.0))
     assert dao_mod._cold_guard().inflight == {}
+
+
+# ── evidence tiers and purpose through recommend_for_conditions ──────────────
+_FIELD_SITE = {"name": "site-a", "distance": None, "site_kind": "field"}
+_AGG_SITE = {"name": "UK national list", "distance": None, "site_kind": "aggregate"}
+
+
+def _tier_prefilter(field_ok, regional_ok):
+    async def fn(self_, eppos, site_names, **kw):
+        ok = regional_ok if kw.get("tier") == "regional" else field_ok
+        return {e for e in eppos if e in ok}
+    return fn
+
+
+async def _recommend_tiers(conds, crops, extrap, field_ok, regional_ok, sites=None):
+    sites = sites or AsyncMock(return_value=[_FIELD_SITE, _AGG_SITE])
+    dao, p = _run_with(conds, crops, extrap, sites)
+    pf = patch.object(GraphDAO, "_crops_with_analog_trials", _tier_prefilter(field_ok, regional_ok))
+    with p[0], p[1], p[2], p[3], p[4], pf:
+        return await dao.recommend_for_conditions(conds), sites
+
+
+def _by_tier_extrap(field, regional, seen=None):
+    async def extrap(self_, crop, **kw):
+        if seen is not None:
+            seen.append((crop, kw.get("tier", "field"), kw.get("purpose"),
+                         [s["name"] for s in kw.get("similar_sites_override") or []]))
+        rows = regional if kw.get("tier") == "regional" else field
+        return {"ranked_varieties": rows.get(crop, [])}
+    return extrap
+
+
+async def test_regional_tier_backs_crops_without_numeric_field_evidence():
+    seen = []
+    nonnum = {**_variety(), "mean_yield_kg_ha": None, "numeric_yield_count": 0}
+    extrap = _by_tier_extrap(
+        field={"TRZAX": [_variety(5500.0, 12)], "HORVX": [nonnum]},
+        regional={"TRZAX": [_variety(7000.0, 9)], "HORVX": [_variety(4000.0, 6)], "LYPES": [_variety(50000.0, 5)]},
+        seen=seen)
+    out, sites = await _recommend_tiers(_conds(), ["TRZAX", "HORVX", "LYPES"], extrap,
+                                        {"TRZAX", "HORVX"}, {"TRZAX", "HORVX", "LYPES"})
+    recs = {r["crop"]["eppo"]: r for r in out["recommendations"]}
+    assert sites.await_count == 1  # one site scan serves both tiers
+    assert recs["TRZAX"]["evidence"]["tier"] == "field" and recs["TRZAX"]["yield"]["expected_kg_ha"] == 5500.0
+    assert recs["TRZAX"]["evidence"]["regional_trial_count"] == 9  # supplementary, in no number
+    for eppo, kg in (("HORVX", 4000.0), ("LYPES", 50000.0)):
+        assert recs[eppo]["evidence"]["tier"] == "regional" and recs[eppo]["yield"]["expected_kg_ha"] == kg
+        assert recs[eppo]["trust"]["level"] == "low" and recs[eppo]["fit"]["relative_yield_pct"] is None
+    assert out["recommendations"][0]["evidence"]["tier"] == "field"
+    assert out["data_quality"]["crops_with_analog_trials"] == 3
+    # field extrapolation sees the field sites only, regional the aggregate ones
+    assert {(c, t, tuple(n)) for c, t, _, n in seen if t == "regional"} == {
+        ("TRZAX", "regional", ("UK national list",)), ("HORVX", "regional", ("UK national list",)),
+        ("LYPES", "regional", ("UK national list",))}
+    assert all(n == ["site-a"] for _, t, _, n in seen if t == "field")
+
+
+async def test_regional_trial_count_is_the_crop_total_not_the_listed_rows():
+    # the query reports the crop total on every row; the listed rows are only the top_n cut
+    capped = [{**_variety(7000.0, 9), "crop_numeric_trial_count": 740}, _variety(6000.0, 4)]
+    extrap = _by_tier_extrap(field={"TRZAX": [_variety(5500.0, 12)]}, regional={"TRZAX": capped})
+    out, _ = await _recommend_tiers(_conds(), ["TRZAX"], extrap, {"TRZAX"}, {"TRZAX"})
+    assert out["recommendations"][0]["evidence"]["regional_trial_count"] == 740
+    # rows without the crop-level field (older shape) fall back to the listed rows
+    dao_mod._RECOMMEND_CACHE.clear()
+    extrap = _by_tier_extrap(field={"TRZAX": [_variety(5500.0, 12)]},
+                             regional={"TRZAX": [_variety(7000.0, 9), _variety(6000.0, 4)]})
+    out, _ = await _recommend_tiers(_conds(), ["TRZAX"], extrap, {"TRZAX"}, {"TRZAX"})
+    assert out["recommendations"][0]["evidence"]["regional_trial_count"] == 13
+
+
+def _unknown_basis_rows(n=3):
+    return [{**_variety(), "mean_yield_kg_ha": None, "min_yield_kg_ha": None, "max_yield_kg_ha": None,
+             "stddev_yield_kg_ha": None, "numeric_yield_count": 0, "trial_count": n,
+             "unknown_basis_trial_count": n}]
+
+
+async def test_forage_field_crop_with_only_unknown_basis_keeps_its_field_rec():
+    extrap = _by_tier_extrap(field={"SETIT": _unknown_basis_rows()},
+                             regional={"SETIT": [_variety(5000.0, 4)]})
+    out, _ = await _recommend_tiers(_conds(purpose="forage"), ["SETIT"], extrap, {"SETIT"}, {"SETIT"})
+    rec = out["recommendations"][0]
+    assert rec["evidence"]["tier"] == "field" and rec["evidence"]["regional_trial_count"] == 4
+    assert rec["yield"]["expected_kg_ha"] is None and rec["yield"]["n_trials"] == 3
+    assert "forage_basis_unknown" in rec["trust"]["data_gaps"]
+    assert "regional_evidence_only" not in rec["trust"]["data_gaps"]
+
+
+async def test_main_mode_field_crop_without_a_number_still_falls_back_to_regional():
+    # the unknown-basis rule is forage only: a main-mode crop with presence-only field rows is
+    # backed by numeric regional evidence as before
+    extrap = _by_tier_extrap(field={"TRZAX": _unknown_basis_rows()},
+                             regional={"TRZAX": [_variety(5000.0, 4)]})
+    out, _ = await _recommend_tiers(_conds(), ["TRZAX"], extrap, {"TRZAX"}, {"TRZAX"})
+    assert out["recommendations"][0]["evidence"]["tier"] == "regional"
+
+
+async def test_forage_unknown_basis_field_rows_survive_the_v2_fallback(hybrid):
+    async def extrap(self_, crop, **kw):
+        if kw.get("tier") == "regional":
+            return {"ranked_varieties": [_variety(5000.0, 4)]}
+        if kw.get("vector_version") == "v2":
+            return {"ranked_varieties": []}  # nothing at the vector-similar sites either
+        return {"ranked_varieties": _unknown_basis_rows()}
+
+    conds = _conds(purpose="forage", **_VEC)
+    out, _ = await _recommend_tiers(conds, ["SETIT"], extrap, {"SETIT"}, {"SETIT"})
+    rec = out["recommendations"][0]
+    assert rec["evidence"]["tier"] == "field" and rec["trust"]["similarity"] == "koppen"
+    assert "forage_basis_unknown" in rec["trust"]["data_gaps"]
+
+
+def _presence_info(n=40):
+    return {"trial_count": n, "years": [2016, 2020], "sites": ["BSL container"], "sources": ["BSL"]}
+
+
+async def _recommend_presence(conds, crops, extrap, field_ok, regional_ok, presence):
+    """``_recommend_tiers`` with the presence scan stubbed; returns the answer and the scan's calls."""
+    calls = []
+
+    async def scan(self_, crop_list, site_names, **kw):
+        calls.append((list(crop_list), list(site_names), kw))
+        if isinstance(presence, Exception):
+            raise presence
+        return {c: v for c, v in presence.items() if c in crop_list}
+
+    sites = AsyncMock(return_value=[_FIELD_SITE, _AGG_SITE])
+    dao, p = _run_with(conds, crops, extrap, sites)
+    pf = patch.object(GraphDAO, "_crops_with_analog_trials", _tier_prefilter(field_ok, regional_ok))
+    with p[0], p[1], p[2], p[3], p[4], pf, patch.object(GraphDAO, "regional_presence_trials", scan):
+        return await dao.recommend_for_conditions(conds), calls
+
+
+async def test_presence_only_crops_are_regional_recs_without_a_number():
+    extrap = _by_tier_extrap(field={"TRZAX": [_variety(5500.0, 12)]}, regional={"LYPES": [_variety(50000.0, 5)]})
+    out, calls = await _recommend_presence(
+        _conds(), ["SECCE", "TRZAX", "LYPES"], extrap, {"TRZAX"}, {"LYPES"}, {"SECCE": _presence_info()})
+    # one scan, only for the crops with no evidence at either tier, over the aggregate sites
+    assert len(calls) == 1 and calls[0][0] == ["SECCE"] and calls[0][1] == ["UK national list"]
+    assert calls[0][2] == {"irrigation_uri": None, "purpose": "main"}
+    recs = {r["crop"]["eppo"]: r for r in out["recommendations"]}
+    sec = recs["SECCE"]
+    assert sec["evidence"]["tier"] == "regional" and sec["yield"]["expected_kg_ha"] is None
+    assert sec["yield"]["n_trials"] == 40 and sec["varieties"] == [] and sec["trust"]["level"] == "low"
+    assert "no_measured_yield" in sec["trust"]["data_gaps"]
+    assert [r["crop"]["eppo"] for r in out["recommendations"]] == ["TRZAX", "LYPES", "SECCE"]
+    assert out["data_quality"]["crops_with_analog_trials"] == 3
+
+
+async def test_presence_scan_is_main_mode_only_and_failures_degrade():
+    extrap = _by_tier_extrap(field={}, regional={})
+    out, calls = await _recommend_presence(
+        _conds(purpose="forage"), ["SECCE"], extrap, set(), set(), {"SECCE": _presence_info()})
+    assert calls == [] and out["recommendations"] == []
+    dao_mod._RECOMMEND_CACHE.clear()
+    out, calls = await _recommend_presence(
+        _conds(), ["SECCE", "TRZAX"], _by_tier_extrap(field={"TRZAX": [_variety()]}, regional={}),
+        {"TRZAX"}, set(), RuntimeError("neo4j hiccup"))
+    assert len(calls) == 1 and [r["crop"]["eppo"] for r in out["recommendations"]] == ["TRZAX"]
+    assert not dao_mod._RECOMMEND_CACHE  # a degraded answer is never pinned
+
+
+async def test_presence_only_crops_come_last_under_the_cap(monkeypatch):
+    monkeypatch.setattr(dao_mod, "_RECOMMEND_MAX_CROPS", 2)
+    extrap = _by_tier_extrap(field={"FLD1": [_variety()]}, regional={"REG1": [_variety()]})
+    out, _ = await _recommend_presence(
+        _conds(), ["PRES1", "REG1", "FLD1"], extrap, {"FLD1"}, {"REG1"}, {"PRES1": _presence_info()})
+    assert sorted(r["crop"]["eppo"] for r in out["recommendations"]) == ["FLD1", "REG1"]
+
+
+async def test_regional_failure_keeps_field_answer_and_is_not_cached():
+    calls = []
+
+    async def extrap(self_, crop, **kw):
+        calls.append(kw.get("tier", "field"))
+        if kw.get("tier") == "regional":
+            raise RuntimeError("neo4j hiccup")
+        return {"ranked_varieties": [_variety()]}
+
+    out, _ = await _recommend_tiers(_conds(), ["TRZAX"], extrap, {"TRZAX"}, {"TRZAX"})
+    assert [r["crop"]["eppo"] for r in out["recommendations"]] == ["TRZAX"]
+    assert out["recommendations"][0]["evidence"]["regional_trial_count"] is None
+    assert not dao_mod._RECOMMEND_CACHE  # a degraded answer is never pinned
+
+
+async def test_regional_only_crops_come_after_field_capable_ones_under_the_cap(monkeypatch):
+    monkeypatch.setattr(dao_mod, "_RECOMMEND_MAX_CROPS", 2)
+    crops = ["REG1", "REG2", "FLD1", "FLD2"]  # catalog order puts the regional-only crops first
+    extrap = _by_tier_extrap(field={"FLD1": [_variety()], "FLD2": [_variety()]},
+                             regional={"REG1": [_variety()], "REG2": [_variety()]})
+    out, _ = await _recommend_tiers(_conds(), crops, extrap, {"FLD1", "FLD2"}, {"REG1", "REG2"})
+    assert sorted(r["crop"]["eppo"] for r in out["recommendations"]) == ["FLD1", "FLD2"]
+
+
+async def test_no_aggregate_sites_means_no_regional_pass():
+    seen = []
+    extrap = _by_tier_extrap(field={"TRZAX": [_variety()]}, regional={}, seen=seen)
+    sites = AsyncMock(return_value=[_FIELD_SITE])
+    out, _ = await _recommend_tiers(_conds(), ["TRZAX"], extrap, {"TRZAX"}, {"TRZAX"}, sites)
+    assert all(t == "field" for _, t, _, _ in seen)
+    # the climate has no aggregate site: there is nothing regional to count, which is a known 0
+    assert out["recommendations"][0]["evidence"]["regional_trial_count"] == 0
+
+
+async def test_regional_count_is_zero_when_no_crop_qualifies_and_null_when_the_pass_failed():
+    extrap = _by_tier_extrap(field={"TRZAX": [_variety()]}, regional={})
+    # aggregate sites exist, the regional prefilter answered, and no crop has regional numbers
+    out, _ = await _recommend_tiers(_conds(), ["TRZAX"], extrap, {"TRZAX"}, set())
+    assert out["recommendations"][0]["evidence"]["regional_trial_count"] == 0
+    assert dao_mod._RECOMMEND_CACHE  # a complete answer is cached
+    dao_mod._RECOMMEND_CACHE.clear()
+
+    # the regional prefilter failed: the count is unknown, never a made-up 0, and the answer is not pinned
+    async def flaky(self_, eppos, site_names, **kw):
+        if kw.get("tier") == "regional":
+            raise RuntimeError("neo4j hiccup")
+        return set(eppos)
+
+    dao, p = _run_with(_conds(), ["TRZAX"], extrap, AsyncMock(return_value=[_FIELD_SITE, _AGG_SITE]))
+    with p[0], p[1], p[2], p[3], p[4], patch.object(GraphDAO, "_crops_with_analog_trials", flaky):
+        out = await dao.recommend_for_conditions(_conds())
+    assert out["recommendations"][0]["evidence"]["regional_trial_count"] is None
+    assert not dao_mod._RECOMMEND_CACHE
+
+
+async def test_regional_count_is_null_when_the_site_lookup_failed():
+    extrap = _by_tier_extrap(field={"TRZAX": [_variety()]}, regional={})
+    out, _ = await _recommend_tiers(_conds(), ["TRZAX"], extrap, {"TRZAX"}, set(),
+                                    AsyncMock(side_effect=RuntimeError("neo4j hiccup")))
+    assert out["recommendations"][0]["evidence"]["regional_trial_count"] is None
+
+
+async def test_purpose_reaches_every_stage_and_the_cache_key():
+    seen = []
+
+    async def prefilter(self_, eppos, site_names, **kw):
+        seen.append(("prefilter", kw.get("purpose")))
+        return set(eppos)
+
+    extrap = _by_tier_extrap(field={"ZEAMX": [_variety()]}, regional={}, seen=seen)
+    out = {}
+    for purpose in ("main", "forage"):
+        dao, p = _run_with(_conds(purpose=purpose), ["ZEAMX"], extrap,
+                           AsyncMock(return_value=[_FIELD_SITE]))
+        with p[0], p[1], p[2], p[3], p[4], patch.object(GraphDAO, "_crops_with_analog_trials", prefilter):
+            out[purpose] = await dao.recommend_for_conditions(_conds(purpose=purpose))
+    assert out["forage"]["recommendations"][0]["fit"]["reference"]["scope"] == "analog_sites:Cfb:any:forage"
+    assert out["main"]["recommendations"][0]["fit"]["reference"]["scope"] == "analog_sites:Cfb:any"
+    assert ("prefilter", "forage") in seen and any(s[0] == "ZEAMX" and s[2] == "forage" for s in seen if len(s) == 4)
+    assert out["main"]["conditions"]["purpose"] == "main" and out["forage"]["conditions"]["purpose"] == "forage"
+    main_id = out["main"]["recommendations"][0]["recommendation_id"]
+    assert main_id != out["forage"]["recommendations"][0]["recommendation_id"]
+    # the default purpose keeps the id it had before the parameter existed
+    from app.graph.recommend import recommendation_id
+    agro = {k: v for k, v in _conds().items() if k not in ("top_n", "crops")}
+    sow = out["main"]["recommendations"][0]["crop"]["sowing_type"]
+    assert main_id == recommendation_id(agro, "ZEAMX", sow)
+
+
+async def test_unknown_purpose_is_a_value_error():
+    dao, _ = _dao()
+    with pytest.raises(ValueError):
+        await dao.recommend_for_conditions(_conds(purpose="grain"))

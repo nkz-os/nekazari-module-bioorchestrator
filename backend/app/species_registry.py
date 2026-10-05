@@ -45,11 +45,11 @@ def _build_aliases() -> dict[str, str]:
             aliases[sci] = slug
             aliases[sci.lower()] = slug
 
-        # EPPO code
+        # EPPO code, and the other codes of the same species (``eppo_aliases``)
         eppo = data.get("eppo_code", "")
-        if eppo:
-            aliases[eppo] = slug
-            aliases[eppo.lower()] = slug
+        for code in ([eppo] if eppo else []) + list(data.get("eppo_aliases") or []):
+            aliases[code] = slug
+            aliases[code.lower()] = slug
 
         # All common names in all languages
         for name in data.get("common_names", {}).values():
@@ -84,7 +84,7 @@ def resolve_species(identifier: str) -> str | None:
         identifier: Any of:
             - canonical slug ("wheat")
             - scientific name ("Triticum aestivum")
-            - EPPO code ("TRZAX", "HORVX")
+            - EPPO code ("TRZAX", "HORVX") or an alias code of the same species ("ZEAMX")
             - common name in any language ("trigo", "blé", "gari")
 
     Returns:
@@ -122,6 +122,20 @@ def list_species() -> list[str]:
     if _registry is None:
         _load()
     return sorted(k for k in _registry if k != "_eppo_index")
+
+
+# Listing merge: exact sibling codes of ONE species whose trials are the same observations
+# (``{sibling: listed code}``). The crop catalog and the recommend candidates list the species
+# once, under the listed code. Every other ``eppo_aliases`` entry only resolves the species and is
+# NOT merged in listings (whether two codes are one crop for the farmer is an owner decision).
+# ZEAMA is the registry's code for maize; the trials and the graph use ZEAMX (the ingesters
+# already unify ZEAMA into ZEAMX).
+CATALOG_SIBLING_CODES: dict[str, str] = {"ZEAMA": "ZEAMX"}
+
+
+def catalog_code(eppo: str) -> str:
+    """The code a crop is listed under: its exact sibling's listed code, else itself."""
+    return CATALOG_SIBLING_CODES.get(eppo, eppo)
 
 
 def get_species_info(slug: str) -> dict[str, Any] | None:

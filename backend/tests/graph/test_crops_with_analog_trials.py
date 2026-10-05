@@ -110,31 +110,3 @@ def test_prefilter_membership_equals_extrapolate_non_emptiness(dao, regime_uri, 
         if out["ranked_varieties"]:
             non_empty.add(c)
     assert members == non_empty
-
-
-def test_batch_medians_equal_per_crop_results(dao):
-    import app.graph.dao as dao_mod
-
-    async def _seed():
-        async with dao._driver.session() as s:
-            await s.run("MATCH (n) DETACH DELETE n")
-            await s.run(
-                """
-                UNWIND range(1, 9) AS i
-                CREATE (:VarietyTrial {cropEppo:'TRZAX', yieldKgHa: 1000.0 * i, irrigationRegime: $sec})
-                CREATE (:VarietyTrial {cropEppo:'TRZAX', yieldKgHa: 100.0 * i, irrigationRegime: $reg})
-                CREATE (:VarietyTrial {cropEppo:'HORVX', yieldKgHa: 10.0 * i})
-                CREATE (:VarietyTrial {cropEppo:'INELI', yieldKgHa: 5.0, rankingEligible:false})
-                CREATE (:VarietyTrial {cropEppo:'NOTE1', yieldNoteS1:'x'})
-                CREATE (:VarietyTrial {cropScientific:'Triticum durum', yieldKgHa: 7.0 * i})
-                """,
-                sec=_SECANO, reg=_REGADIO,
-            )
-    _run(_seed())
-    crops = ["TRZAX", "HORVX", "INELI", "NOTE1", "ABSNT", "triticum durum"]
-    for uri in (None, _SECANO, _REGADIO):
-        dao_mod._MEDIAN_CACHE.clear()
-        single = {c: _run(dao.get_crop_yield_median(c, uri)) for c in crops}
-        dao_mod._MEDIAN_CACHE.clear()
-        batch = _run(dao.get_crop_yield_medians(crops, uri))
-        assert batch == single, uri

@@ -11,6 +11,11 @@ export type SowingType = 'autumn' | 'spring' | 'summer' | 'perennial';
 export type TrustLevel = 'high' | 'medium' | 'low';
 export type Similarity = 'koppen' | 'vector_v2_fallback';
 export type Interval = [number | null, number | null];
+/** `main` = each crop's main harvested product (grain, fruit, kernel, tuber); `forage` = forage records only. */
+export type Purpose = 'main' | 'forage';
+/** `field` = numbers from field trials; `regional` = aggregate national/regional sites only (never mixed). */
+export type EvidenceTier = 'field' | 'regional';
+export type YieldBasis = 'dry_matter' | 'fresh_matter';
 
 export interface VarietyRec {
   variety: string;
@@ -27,12 +32,21 @@ export interface Recommendation {
   fit: {
     relative_yield_pct: number | null;
     stability_cv: number | null;
+    /**
+     * Median kg/ha of the crop's trials at the same analog field sites and irrigation regime.
+     * `scope` names the set: `analog_sites:<climate>:<regime>` (e.g. `analog_sites:Csa:secano`;
+     * climate = Koppen class or `vector_v2`; regime = `secano` | `regadio` | `any`; `:forage`
+     * appended in forage mode), or `regional` (null median) for regional recommendations.
+     * Fewer than 5 trials: `reference_too_small` in `trust.data_gaps` and a null `relative_yield_pct`.
+     */
     reference: { median_kg_ha: number | null; n_trials: number; scope: string };
   };
   yield: {
     expected_kg_ha: number | null;
     interval: Interval;
     interval_method: string;
+    /** Forage mode with a number: `dry_matter` (kg dry matter/ha). null otherwise. */
+    basis: YieldBasis | null;
     sd: number | null;
     n_trials: number;
     n_sites: number;
@@ -53,9 +67,26 @@ export interface Recommendation {
     /** True when an irrigated parcel shows the rainfed GGCMI calendar (no irrigated value there). */
     typical_rainfed_fallback?: boolean | null;
   };
+  /**
+   * `data_gaps` ids: ..., `no_measured_yield` (regional recommendation backed only by trials of an
+   * excluded source such as BSL: `yield.expected_kg_ha` null, `yield.n_trials` = those trials).
+   */
   trust: { level: TrustLevel; data_gaps: string[]; similarity: Similarity };
   varieties: VarietyRec[];
-  evidence: { trial_count: number; sources: string[]; sites: string[]; years: [number, number] | null };
+  evidence: {
+    trial_count: number;
+    sources: string[];
+    sites: string[];
+    years: [number, number] | null;
+    tier: EvidenceTier;
+    purpose: Purpose;
+    /** Field recs: distinct numeric regional trials at the climate's aggregate sites (in no number). */
+    regional_trial_count: number | null;
+    /** Main mode: distinct forage trials of the crop at the same analog sites, counted not averaged. */
+    other_purpose_trials: { forage?: number };
+    /** Forage mode: best variety's forage trials with a kg value but no known basis (no number from them). */
+    unknown_basis_trials: number | null;
+  };
   assumptions: { id: string; value: unknown; citation: string }[];
 }
 
@@ -80,6 +111,8 @@ export interface ParcelEnvironment {
 
 export interface RecommendOk {
   status: 'ok';
+  /** Evidence-policy version the answer was computed under. */
+  evidence_policy: string;
   recommendations: Recommendation[];
   data_quality: Record<string, number | null>;
   conditions: Record<string, unknown>;
@@ -103,6 +136,9 @@ export interface EvidenceItem {
   production_system: string | null;
   source_id: string | null;
   confidence: string | null;
+  tier: EvidenceTier;
+  /** Forage mode: `yield_kg_ha` is kg dry matter/ha. */
+  basis: YieldBasis | null;
 }
 
 export interface EvidencePage {
@@ -110,4 +146,6 @@ export interface EvidencePage {
   total: number;
   page: number;
   page_size: number;
+  purpose: Purpose;
+  tier: EvidenceTier;
 }

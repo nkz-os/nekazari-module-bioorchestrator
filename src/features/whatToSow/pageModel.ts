@@ -1,7 +1,9 @@
 /** Pure helpers of the "what to sow" page: filters → query params, evidence params, formatting. */
 
 import type { QueryParams } from '../../services/recommendApi';
-import type { ParcelEnvironment, Recommendation, Similarity, SowingType } from '../../types/recommend';
+import type {
+  EvidenceTier, ParcelEnvironment, Purpose, Recommendation, RecommendResponse, Similarity, SowingType,
+} from '../../types/recommend';
 
 export const KOPPEN_CODES = [
   'Af', 'Am', 'Aw', 'BWh', 'BWk', 'BSh', 'BSk', 'Csa', 'Csb', 'Csc', 'Cwa', 'Cwb',
@@ -11,6 +13,10 @@ export const KOPPEN_CODES = [
 export const SEASONS = ['all', 'autumn', 'spring', 'summer'] as const;
 export const MANAGEMENTS = ['any', 'conventional', 'organic'] as const;
 export const IRRIGATIONS = ['inferred', 'secano', 'regadío'] as const;
+/** "Destino": the crop's main harvested product, or forage only. */
+export const PURPOSES: readonly Purpose[] = ['main', 'forage'];
+/** The backend's default: sent as no parameter at all, so an older backend is asked exactly what it always was. */
+export const DEFAULT_PURPOSE: Purpose = 'main';
 
 export type SeasonFilter = (typeof SEASONS)[number];
 export type ManagementFilter = (typeof MANAGEMENTS)[number];
@@ -32,6 +38,8 @@ export interface Filters {
   season: SeasonFilter;
   management: ManagementFilter;
   irrigation: IrrigationFilter;
+  /** `main` = harvested product (grain, fruit, tuber…); `forage` = forage records only. */
+  purpose: Purpose;
   /** Raw text of the expert frost-margin input; empty = server default. */
   frostMargin: string;
   /** Köppen override (parcel) or picked class (explore); empty = none. */
@@ -39,7 +47,7 @@ export interface Filters {
 }
 
 export const DEFAULT_FILTERS: Filters = {
-  season: 'all', management: 'any', irrigation: 'inferred', frostMargin: '', climateClass: '',
+  season: 'all', management: 'any', irrigation: 'inferred', purpose: DEFAULT_PURPOSE, frostMargin: '', climateClass: '',
 };
 
 export const TOP_N_REQUEST = 15;
@@ -60,6 +68,29 @@ export function parseFrostMargin(raw: string): number | undefined {
 
 export const FROST_DEBOUNCE_MS = 500;
 
+/**
+ * The backend that computed `res` applies the evidence policy: it states the policy version. An
+ * older backend ignores `purpose` and returns neither tiers nor forage counts, so the Destino chip,
+ * the forage notice and the regional section must not appear for its answers (they would promise a
+ * mode that is not in effect).
+ */
+export function carriesEvidencePolicy(res: RecommendResponse | null | undefined): boolean {
+  return res?.status === 'ok' && typeof res.evidence_policy === 'string' && res.evidence_policy !== '';
+}
+
+/**
+ * Whether the backend applies the evidence policy, as last observed. Only an `ok` answer can tell,
+ * so a `needs_climate` one keeps the previous value (the chip does not flicker while it loads).
+ */
+export function nextPolicyAware(prev: boolean, res: RecommendResponse): boolean {
+  return res.status === 'ok' ? carriesEvidencePolicy(res) : prev;
+}
+
+/** Filters as requested: against a backend not known to apply the policy there is only the default Destino. */
+export function effectiveFilters(f: Filters, policyAware: boolean): Filters {
+  return policyAware || f.purpose === DEFAULT_PURPOSE ? f : { ...f, purpose: DEFAULT_PURPOSE };
+}
+
 /** Whether the raw frost-margin text may be committed: empty (server default) or a value in 0–15. */
 export function frostMarginStatus(raw: string): 'empty' | 'valid' | 'invalid' {
   if (raw.trim() === '') return 'empty';
@@ -68,6 +99,7 @@ export function frostMarginStatus(raw: string): 'empty' | 'valid' | 'invalid' {
 
 function baseQuery(f: Filters, expert: boolean): QueryParams {
   const q: QueryParams = { top_n: TOP_N_REQUEST, season: f.season, management: f.management };
+  if (f.purpose && f.purpose !== DEFAULT_PURPOSE) q.purpose = f.purpose;
   if (f.irrigation !== 'inferred') q.irrigation_regime = f.irrigation;
   if (expert) {
     const margin = parseFrostMargin(f.frostMargin);
@@ -98,15 +130,21 @@ const finiteNumber = (v: unknown): number | undefined =>
 /**
  * Evidence conditions matching the recommendation: the resolved class, soil type and irrigation
  * echoed by the API, plus (for v2 similarity) the numeric climate inputs — taken from the parcel's
- * climate_detail, falling back to the echoed numbers on the conditions route.
+ * climate_detail, falling back to the echoed numbers on the conditions route. `purpose` is the
+ * echoed one; `tier` is sent only for regional recommendations (the evidence endpoint defaults to field).
  */
 export function evidenceConditions(
   echo: Record<string, unknown> | null | undefined,
   environment: ParcelEnvironment | null | undefined,
   similarity: Similarity,
+  tier: EvidenceTier = 'field',
 ): QueryParams {
   const src = echo ?? {};
   const out: QueryParams = {};
+  // The trials listed must be those of the answer: same purpose (forage yields are not grain yields)
+  // and, for a regional recommendation, the aggregate-site tier.
+  if (src.purpose === 'main' || src.purpose === 'forage') out.purpose = src.purpose;
+  if (tier === 'regional') out.tier = tier;
   const cls = nonEmptyString(src.climate_class);
   if (cls) out.climate_class = cls;
   const soil = nonEmptyString(src.soil_type);
@@ -159,4 +197,30 @@ export function rangeScaleMax(recs: Recommendation[]): number | null {
     }
   }
   return max;
+}
+
+/** Minimal translator the scope formatter needs (i18next's `t` fits). */
+export type ScopeTranslate = (key: string, options?: Record<string, unknown>) => string;
+
+const REGIME_IDS: Record<string, string> = { secano: 'secano', regadio: 'regadio', 'regadío': 'regadio', any: 'any' };
+
+/**
+ * Human-readable `fit.reference.scope`: `analog_sites:Csa:secano` → "sitios análogos Csa · secano".
+ * Climate is a Köppen class, `vector_v2` (sites picked by climate similarity) or `any`; regime is
+ * secano | regadio | any; a trailing `:forage` marks forage mode. `regional` has no reference
+ * median. Anything unrecognised is returned as is, never invented.
+ */
+export function describeReferenceScope(scope: string, t: ScopeTranslate): string {
+  if (scope === 'regional') return t('whatToSow.scope.regional');
+  const parts = scope.split(':');
+  if (parts[0] !== 'analog_sites' || (parts.length !== 3 && parts.length !== 4)) return scope;
+  const [, climate, regime, tail] = parts;
+  const regimeId = REGIME_IDS[regime];
+  if (!climate || !regimeId || (tail !== undefined && tail !== 'forage')) return scope;
+  const sites = climate === 'any' ? t('whatToSow.scope.analogAny')
+    : climate === 'vector_v2' ? t('whatToSow.scope.analogVector')
+      : t('whatToSow.scope.analog', { climate });
+  const out = [sites, t(`whatToSow.scope.regime.${regimeId}`)];
+  if (tail === 'forage') out.push(t('whatToSow.scope.forage'));
+  return out.join(' · ');
 }

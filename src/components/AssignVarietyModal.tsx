@@ -13,6 +13,8 @@ export interface VarietyInfo {
   expectedYield: number;
   confidenceInterval: [number, number];
   trialCount: number;
+  /** Unit of the two yield figures above, as displayed; kg/ha when absent. */
+  yieldUnit?: string;
 }
 
 interface Props {
@@ -93,7 +95,7 @@ export default function AssignVarietyModal({ variety, parcelId: propParcelId, on
                   <span className="text-nkz-sm italic text-nkz-text-muted">{variety.scientificName}</span>
                 )}
                 <span className="text-nkz-sm text-nkz-text-secondary">
-                  {t("assign.expectedYield")}: {variety.expectedYield.toLocaleString()} kg/ha
+                  {t("assign.expectedYield")}: {variety.expectedYield.toLocaleString()} {variety.yieldUnit ?? "kg/ha"}
                   {" ["}
                   {variety.confidenceInterval[0].toLocaleString()} –{" "}
                   {variety.confidenceInterval[1].toLocaleString()}

@@ -24,9 +24,11 @@ def _dao(rows):
     session.__aenter__ = AsyncMock(return_value=session)
     session.__aexit__ = AsyncMock(return_value=None)
     calls = []
+    params_seen = []
 
     async def run(query, **params):
         calls.append(query)
+        params_seen.append(params)
         return _Res(rows)
 
     session.run = run
@@ -34,6 +36,7 @@ def _dao(rows):
     driver.session.return_value = session
     dao = GraphDAO(driver)
     dao._calls = calls
+    dao._params = params_seen
     return dao
 
 
@@ -93,3 +96,13 @@ async def test_name_tie_break_is_deterministic():
     dao = _dao([_row("A", ["b", "a"], 1, 2, None, None)])
     out = await dao.get_available_crops()
     assert out[0]["scientific_name"] == "b" and out[0]["first_year"] is None
+
+
+async def test_exact_sibling_codes_are_merged_in_the_query_and_nothing_else():
+    dao = _dao([_row("ZEAMX", ["Zea mays"], 3, 5, 2019, 2024)])
+    out = await dao.get_available_crops()
+    assert out[0]["eppo_code"] == "ZEAMX" and out[0]["variety_count"] == 3
+    q = dao._calls[0]
+    # grouped by the listed code, so distinct varieties are counted across the siblings
+    assert "coalesce($catalog_codes[vt.cropEppo], vt.cropEppo) AS eppo_code" in q
+    assert dao._params[0]["catalog_codes"] == {"ZEAMA": "ZEAMX"}
