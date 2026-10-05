@@ -652,3 +652,136 @@ def test_assumption_without_a_note_is_an_error(copy_dir):
     edit("sites.yaml", lambda d: d["sites"][0].pop("note"))
     with pytest.raises(RegistryError, match="needs its note"):
         load_registries(dest)
+
+
+# ── ranges ───────────────────────────────────────────────────────────────────
+
+IRRIGATED_URI = "http://aims.fao.org/aos/agrovoc/c_3954"
+RAINFED_URI = "http://aims.fao.org/aos/agrovoc/c_6436"
+
+
+def test_every_range_is_an_assumption_pending_review(reg):
+    assert reg.ranges
+    for rng in reg.ranges:
+        assert rng.status == "assumption", rng.id
+        assert rng.reviewer is None
+        assert "pending agronomist review" in rng.note
+        assert rng.min < rng.max
+
+
+def test_ranges_are_unique_and_reference_registered_crops_variables_and_units(reg):
+    assert len({r.id for r in reg.ranges}) == len(reg.ranges)
+    keys = [(r.crop, r.variable, tuple(sorted(r.conditions.items()))) for r in reg.ranges]
+    assert len(keys) == len(set(keys))
+    for rng in reg.ranges:
+        assert reg.crop(rng.crop).eppo == rng.crop
+        assert reg.variable(rng.variable).unit == rng.unit
+
+
+def test_range_for_picks_the_most_specific_matching_range(reg):
+    base = reg.range_for("HORVX", "crop_yield", {"purpose": "grain"})
+    rainfed = reg.range_for("HORVX", "crop_yield", {"purpose": "grain", "irrigation": "rainfed"})
+    irrigated = reg.range_for("HORVX", "crop_yield", {"purpose": "grain", "irrigation": "irrigated"})
+    assert (base.id, rainfed.id, irrigated.id) == (
+        "crop_yield.HORVX.grain", "crop_yield.HORVX.grain.rainfed", "crop_yield.HORVX.grain.irrigated")
+    assert (base.max, rainfed.max, irrigated.max) == (14000, 10000, 13500)
+
+
+def test_range_for_accepts_literals_uris_and_eppo_aliases(reg):
+    expected = "crop_yield.ZEAMX.grain.irrigated"
+    for irrigation in ("irrigated", "regadío", "irrigato", IRRIGATED_URI):
+        assert reg.range_for("ZEAMA", "crop_yield", {"purpose": "grain", "irrigation": irrigation}).id == expected
+    assert reg.range_for("eppo:HORVX", "crop_yield", {"purpose": "grain", "irrigation": RAINFED_URI}).id == (
+        "crop_yield.HORVX.grain.rainfed")
+
+
+def test_range_for_falls_back_to_the_less_specific_range(reg):
+    # no rainfed maize range: the unconditional grain envelope applies
+    assert reg.range_for("ZEAMX", "crop_yield", {"purpose": "grain", "irrigation": "rainfed"}).id == (
+        "crop_yield.ZEAMX.grain")
+    # wheat has no irrigated range
+    assert reg.range_for("TRZAX", "crop_yield", {"purpose": "grain", "irrigation": "irrigated"}).id == (
+        "crop_yield.TRZAX.grain")
+    # an unrecognised or missing condition value is not a match for a conditional range
+    assert reg.range_for("HORVX", "crop_yield", {"purpose": "grain", "irrigation": "drip"}).id == (
+        "crop_yield.HORVX.grain")
+    assert reg.range_for("HORVX", "crop_yield", {"purpose": "grain", "irrigation": None}).id == (
+        "crop_yield.HORVX.grain")
+
+
+def test_range_for_without_purpose_or_with_forage_checks_nothing(reg):
+    assert reg.range_for("ZEAMX", "crop_yield") is None
+    assert reg.range_for("ZEAMX", "crop_yield", {"irrigation": "irrigated"}) is None
+    assert reg.range_for("ZEAMX", "crop_yield", {"purpose": "forage"}) is None
+
+
+def test_range_for_unknown_crop_is_none_and_unknown_variable_or_condition_raises(reg):
+    assert reg.range_for("NOPE", "crop_yield", {"purpose": "grain"}) is None
+    assert reg.range_for("CIEAR", "crop_yield", {"purpose": "grain"}) is None
+    with pytest.raises(UnknownEntryError):
+        reg.range_for("ZEAMX", "not_a_variable")
+    with pytest.raises(ValueError, match="unknown range condition"):
+        reg.range_for("ZEAMX", "crop_yield", {"colour": "red"})
+
+
+def test_range_with_a_climate_class_condition_is_more_specific(copy_dir):
+    dest, edit = copy_dir
+
+    def add(d):
+        d["ranges"].append({
+            "id": "crop_yield.HORVX.grain.rainfed.BSk", "crop": "HORVX", "variable": "crop_yield",
+            "conditions": {"purpose": "grain", "irrigation": "rainfed", "climate_class": "BSk"},
+            "min": 400, "max": 8000, "unit": "kg/ha", "status": "assumption", "note": "pending agronomist review"})
+
+    edit("ranges.yaml", add)
+    loaded = load_registries(dest)
+    conditions = {"purpose": "grain", "irrigation": "rainfed", "climate_class": "BSk"}
+    assert loaded.range_for("HORVX", "crop_yield", conditions).max == 8000
+    assert loaded.range_for("HORVX", "crop_yield", {**conditions, "climate_class": "Csa"}).max == 10000
+
+
+def test_equally_specific_overlapping_ranges_are_rejected(copy_dir):
+    dest, edit = copy_dir
+
+    def add(d):
+        d["ranges"].append({
+            "id": "crop_yield.HORVX.organic", "crop": "HORVX", "variable": "crop_yield",
+            "conditions": {"production_system": "organic"},
+            "min": 400, "max": 8000, "unit": "kg/ha", "status": "assumption", "note": "pending agronomist review"})
+
+    edit("ranges.yaml", add)  # one condition, like the base range, and both can match
+    with pytest.raises(RegistryError, match="equally specific"):
+        load_registries(dest)
+
+
+def test_ranges_with_identical_conditions_are_rejected(copy_dir):
+    dest, edit = copy_dir
+    edit("ranges.yaml", lambda d: d["ranges"].append({**d["ranges"][0], "id": "dup"}))
+    with pytest.raises(RegistryError, match="same conditions"):
+        load_registries(dest)
+
+
+@pytest.mark.parametrize(
+    ("mutate", "message"),
+    [
+        (lambda r: r.update(crop="CIEAS"), "canonical EPPO code"),
+        (lambda r: r.update(variable="nope"), "unregistered variable"),
+        (lambda r: r.update(unit="t/ha"), "differs from the variable"),
+        (lambda r: r.update(conditions={"purpose": "plot"}), "vocabulary id"),
+        (lambda r: r.update(conditions={"colour": "red"}), "unknown condition"),
+        (lambda r: r.update(min=9, max=9), "min must be below max"),
+        (lambda r: r.update(status="reviewed"), "names its reviewer"),
+        (lambda r: r.update(note="fine"), "pending agronomist review"),
+    ],
+)
+def test_invalid_range_is_an_error(copy_dir, mutate, message):
+    dest, edit = copy_dir
+    edit("ranges.yaml", lambda d: mutate(d["ranges"][0]))
+    with pytest.raises(RegistryError, match=message):
+        load_registries(dest)
+
+
+def test_reviewed_range_with_a_reviewer_is_accepted(copy_dir):
+    dest, edit = copy_dir
+    edit("ranges.yaml", lambda d: d["ranges"][0].update(status="reviewed", reviewer="agronomist-1"))
+    assert load_registries(dest).ranges[0].status == "reviewed"

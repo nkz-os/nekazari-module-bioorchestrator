@@ -1,0 +1,105 @@
+# Plausible-value ranges, contextual (E5): crop x variable x optional conditions. The most specific
+# range whose conditions all match the query wins (`Registries.range_for`); none matching means no
+# check. Condition keys: irrigation, production_system, purpose (vocabulary ids) and climate_class
+# (Koppen code). Every range here carries `purpose: grain` so a forage or fresh-produce yield is
+# never judged against a grain envelope.
+#
+# ALL ranges are `assumption`: generic agronomic envelopes, deliberately wide, NOT derived from the
+# trial data and NOT reviewed by an agronomist. The gate only warns on them; only a `reviewed` range
+# (with a named reviewer) may produce an error. `observed` is what the GENVCE and CREA raw
+# extractions hold today (2026-10-05), shown to the reviewer; it never feeds the bounds. Values are
+# yields as published, at the moisture basis of the source (cereals 13%, maize 14% or 15.5%, rapeseed 9%).
+#
+# Data caution for the reviewer: GENVCE maize rows labelled "secano" (rainfed) hold 14,025-19,451
+# kg/ha, implausible for rainfed maize and likely a labelling defect of the extraction. No rainfed
+# maize range is defined, so those rows are checked against the unconditional maize envelope.
+version: 1
+ranges:
+  - id: crop_yield.ZEAMX.grain
+    crop: ZEAMX
+    variable: crop_yield
+    conditions: {purpose: grain}
+    min: 3000
+    max: 24000
+    unit: kg/ha
+    status: assumption
+    reviewer: null
+    note: pending agronomist review
+    observed: {min: 10770, max: 21179, n: 1440}
+  - id: crop_yield.ZEAMX.grain.irrigated
+    crop: ZEAMX
+    variable: crop_yield
+    conditions: {purpose: grain, irrigation: irrigated}
+    min: 8000
+    max: 24000
+    unit: kg/ha
+    status: assumption
+    reviewer: null
+    note: pending agronomist review
+    observed: {min: 10770, max: 20680, n: 788}
+  - id: crop_yield.HORVX.grain
+    crop: HORVX
+    variable: crop_yield
+    conditions: {purpose: grain}
+    min: 500
+    max: 14000
+    unit: kg/ha
+    status: assumption
+    reviewer: null
+    note: pending agronomist review
+    observed: {min: 2186, max: 11850, n: 1191}
+  - id: crop_yield.HORVX.grain.rainfed
+    crop: HORVX
+    variable: crop_yield
+    conditions: {purpose: grain, irrigation: rainfed}
+    min: 500
+    max: 10000
+    unit: kg/ha
+    status: assumption
+    reviewer: null
+    note: pending agronomist review
+    observed: {min: 2186, max: 9383, n: 952}
+  - id: crop_yield.HORVX.grain.irrigated
+    crop: HORVX
+    variable: crop_yield
+    conditions: {purpose: grain, irrigation: irrigated}
+    min: 2000
+    max: 13500
+    unit: kg/ha
+    status: assumption
+    reviewer: null
+    note: pending agronomist review
+    observed: {min: 4037, max: 11850, n: 35}
+  - id: crop_yield.TRZAX.grain
+    crop: TRZAX
+    variable: crop_yield
+    conditions: {purpose: grain}
+    min: 500
+    max: 14000
+    unit: kg/ha
+    status: assumption
+    reviewer: null
+    note: pending agronomist review
+    observed: {min: 2111, max: 7315, n: 227}
+  - id: crop_yield.TRZAX.grain.rainfed
+    crop: TRZAX
+    variable: crop_yield
+    conditions: {purpose: grain, irrigation: rainfed}
+    min: 500
+    max: 9500
+    unit: kg/ha
+    status: assumption
+    reviewer: null
+    note: pending agronomist review
+    observed: {min: 2111, max: 7315, n: 227}
+  - id: crop_yield.BRSNN.grain
+    crop: BRSNN
+    variable: crop_yield
+    conditions: {purpose: grain}
+    min: 500
+    max: 7500
+    unit: kg/ha
+    status: assumption
+    reviewer: null
+    note: pending agronomist review
+    observed: {min: 2228, max: 5922, n: 811}

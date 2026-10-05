@@ -14,7 +14,7 @@ import hashlib
 import math
 import re
 import unicodedata
-from collections.abc import Iterable
+from collections.abc import Iterable, Mapping
 from datetime import date
 from fractions import Fraction
 from pathlib import Path
@@ -40,7 +40,17 @@ REGISTRY_FILES: tuple[str, ...] = (
     "variables.yaml",
     "sources.yaml",
     "sites.yaml",
+    "ranges.yaml",
 )
+
+# Condition keys a contextual range may use, and the vocabulary each draws its values from
+# (``None``: free-form, a Koppen climate code).
+RANGE_CONDITION_KINDS: dict[str, str | None] = {
+    "irrigation": "irrigation",
+    "production_system": "production_system",
+    "purpose": "purpose",
+    "climate_class": None,
+}
 
 # Values of ``commercial_use`` that let a source be loaded into a production-targeted build.
 LOADABLE_COMMERCIAL_USE: frozenset[str] = frozenset({"allowed", "permission_granted"})
@@ -273,6 +283,47 @@ class SitesFile(_Model):
     sites: tuple[Site, ...]
 
 
+# ── ranges ───────────────────────────────────────────────────────────────────
+
+class RangeObserved(_Model):
+    min: float
+    max: float
+    n: int = Field(ge=1)
+
+
+class Range(_Model):
+    id: str = Field(min_length=1)
+    crop: str = Field(min_length=1)
+    variable: str = Field(min_length=1)
+    conditions: dict[str, str] = {}
+    min: float
+    max: float
+    unit: str = Field(min_length=1)
+    status: Literal["reviewed", "assumption"]
+    reviewer: str | None = None
+    note: str | None = None
+    observed: RangeObserved | None = None
+
+    @model_validator(mode="after")
+    def _bounds_and_review_are_consistent(self) -> Range:
+        if self.min >= self.max:
+            raise ValueError(f"{self.id}: min must be below max")
+        if self.status == "reviewed" and not (self.reviewer or "").strip():
+            raise ValueError(f"{self.id}: a reviewed range names its reviewer")
+        if self.status == "assumption" and "pending agronomist review" not in (self.note or ""):
+            raise ValueError(f"{self.id}: an assumption range says 'pending agronomist review'")
+        return self
+
+    @property
+    def specificity(self) -> int:
+        return len(self.conditions)
+
+
+class RangesFile(_Model):
+    version: int
+    ranges: tuple[Range, ...]
+
+
 # ── loading helpers ──────────────────────────────────────────────────────────
 
 def _read_yaml(path: Path) -> Any:
@@ -317,7 +368,7 @@ class Registries:
 
     def __init__(
         self, *, crops: CropsFile, units: UnitsFile, vocabularies: VocabFile,
-        variables: VariablesFile, sources: SourcesFile, sites: SitesFile,
+        variables: VariablesFile, sources: SourcesFile, sites: SitesFile, ranges: RangesFile,
         registries_hash: str, path: Path,
     ) -> None:
         self.path = path
@@ -397,6 +448,39 @@ class Registries:
         self._site_index: dict[str, Site] = _unique_index(
             ((name, st) for st in self.sites for name in (st.id, st.name, *st.aliases)), "site alias")
 
+        # ranges (reference crops and variables, so they are validated after both)
+        self.ranges: tuple[Range, ...] = ranges.ranges
+        _no_duplicates((r.id for r in self.ranges), "range id")
+        self._ranges_by_cv: dict[tuple[str, str], list[Range]] = {}
+        for rng in self.ranges:
+            crop_entry = next((c for c in crops.crops if c.eppo == rng.crop), None)
+            if crop_entry is None:
+                raise RegistryError(f"range {rng.id}: crop {rng.crop!r} is not a canonical EPPO code in crops.yaml")
+            if rng.variable not in self._variable_index:
+                raise RegistryError(f"range {rng.id}: unregistered variable {rng.variable!r}")
+            variable = self._variable_index[rng.variable]
+            if variable.scale not in ("ratio", "percent"):
+                raise RegistryError(f"range {rng.id}: {variable.id} has no numeric scale")
+            if rng.unit != variable.unit:
+                raise RegistryError(f"range {rng.id}: unit {rng.unit!r} differs from the variable's {variable.unit!r}")
+            for key, value in rng.conditions.items():
+                if key not in RANGE_CONDITION_KINDS:
+                    raise RegistryError(f"range {rng.id}: unknown condition {key!r}")
+                kind = RANGE_CONDITION_KINDS[key]
+                if kind is not None and value not in {e.id for e in self._vocab[kind]}:
+                    raise RegistryError(f"range {rng.id}: condition {key}={value!r} is not a {kind} vocabulary id")
+            self._ranges_by_cv.setdefault((rng.crop, rng.variable), []).append(rng)
+        for group in self._ranges_by_cv.values():
+            for i, first in enumerate(group):
+                for second in group[i + 1:]:
+                    if first.conditions == second.conditions:
+                        raise RegistryError(f"ranges {first.id} and {second.id} have the same conditions")
+                    shared = first.conditions.keys() & second.conditions.keys()
+                    exclusive = any(first.conditions[k] != second.conditions[k] for k in shared)
+                    if first.specificity == second.specificity and not exclusive:
+                        raise RegistryError(
+                            f"ranges {first.id} and {second.id} are equally specific and can both match")
+
         # crops
         self.crops: tuple[Crop, ...] = crops.crops
         _no_duplicates((c.eppo for c in self.crops), "crop eppo")
@@ -427,6 +511,45 @@ class Registries:
     def _require_source(self, source_id: str, where: str) -> None:
         if source_id not in self._source_index:
             raise RegistryError(f"{where}: unknown source {source_id!r}")
+
+    # ── ranges ───────────────────────────────────────────────────────────────
+
+    def _canonical_condition(self, key: str, value: str | None) -> str | None:
+        """A query condition value in the form ranges store it; None when absent or unrecognised."""
+        if value is None:
+            return None
+        kind = RANGE_CONDITION_KINDS[key]
+        if kind is None:
+            return value.strip() or None
+        entry = self.vocab_entry(kind, value)
+        return entry.id if entry else None
+
+    def range_for(
+        self, eppo: str, variable_id: str, conditions: Mapping[str, str | None] | None = None,
+    ) -> Range | None:
+        """The most specific plausible range for a crop and variable under ``conditions``.
+
+        A range applies when each of its conditions equals the query's (vocabulary literals and
+        AGROVOC URIs are accepted and canonicalised). The one with the most conditions wins; the
+        registry guarantees no two ranges of equal specificity can both match. No match, an unknown
+        crop or a missing condition value gives None (no check), never a guess.
+        """
+        self.variable(variable_id)
+        crop = self.crop(eppo)
+        if crop is None:
+            return None
+        query: dict[str, str] = {}
+        for key, value in (conditions or {}).items():
+            if key not in RANGE_CONDITION_KINDS:
+                raise ValueError(f"unknown range condition {key!r}; expected one of {sorted(RANGE_CONDITION_KINDS)}")
+            canonical = self._canonical_condition(key, value)
+            if canonical is not None:
+                query[key] = canonical
+        candidates = [
+            r for r in self._ranges_by_cv.get((crop.eppo, variable_id), ())
+            if all(query.get(k) == v for k, v in r.conditions.items())
+        ]
+        return max(candidates, key=lambda r: r.specificity, default=None)
 
     # ── sites ────────────────────────────────────────────────────────────────
 
@@ -527,6 +650,7 @@ def load_registries(path: str | Path | None = None) -> Registries:
         variables=_parse(VariablesFile, base / "variables.yaml"),
         sources=_parse(SourcesFile, base / "sources.yaml"),
         sites=_parse(SitesFile, base / "sites.yaml"),
+        ranges=_parse(RangesFile, base / "ranges.yaml"),
         registries_hash=registries_hash(base),
         path=base,
     )
