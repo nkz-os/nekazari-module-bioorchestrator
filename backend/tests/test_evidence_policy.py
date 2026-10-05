@@ -182,6 +182,54 @@ def test_main_mode_keeps_every_family_but_forage_and_excluded_sources():
     assert ep.is_numeric_yield_eligible(_SILAGE, "forage")
 
 
+# A kg/ha that a backfill derived from a note (``yieldDerivationMethod``) is not a measurement,
+# whatever the source: the policy, not each reader, drops it.
+_DERIVED = {**_MEASURED, "source_id": "OTHER", "yieldKgHa": 6500.0,
+            "yieldDerivationMethod": "bsl_note_empirical_factor"}
+
+
+def test_a_derived_yield_is_excluded_whatever_the_source():
+    assert ep.is_derived_yield(_DERIVED) and not ep.is_derived_yield(_MEASURED)
+    assert not ep.is_excluded_source(_DERIVED["source_id"], _DERIVED.get("dataSource"))
+    assert ep.is_excluded_yield(_DERIVED) and ep.is_excluded_yield(_BSL)
+    assert not ep.is_excluded_yield(_MEASURED)
+    assert not ep.is_numeric_yield_eligible(_DERIVED)
+    assert not ep.is_numeric_yield_eligible(_DERIVED, "forage")
+    assert ep.policy_yield(_DERIVED) is None
+    assert ep.policy_yield({**_MEASURED, "yieldKgHa": 6500.0}) == 6500.0
+    assert not ep.is_grain_yield(_DERIVED) and ep.is_grain_yield(_MEASURED)
+    # forage yields derived from a note are no more numeric
+    forage = {**_SILAGE, "yieldDerivationMethod": "x", "yieldBasis": "dry_matter"}
+    assert ep.policy_yield(forage, "forage") is None
+    assert not ep.is_forage_numeric_evidence(forage)
+    # the kg is dropped but the trial still shows the crop was tested at a regional row
+    assert ep.is_presence_only_evidence({**_DERIVED, "aggregationScope": "regional"}, "Bundesweit")
+    assert not ep.is_presence_only_evidence({**_DERIVED, "aggregationScope": "site"}, "Cadreita")
+    assert not ep.has_unconverted_kg(_DERIVED)
+
+
+def test_derived_marker_is_presence_not_value():
+    """An empty-string marker is still a marker (the graph test is IS NOT NULL)."""
+    assert ep.is_derived_yield({"yieldDerivationMethod": ""})
+    assert not ep.is_derived_yield({"yieldDerivationMethod": None})
+    assert not ep.is_derived_yield({})
+
+
+def test_derived_yield_fragments():
+    assert ep.cypher_derived_yield("t") == "(t.yieldDerivationMethod IS NOT NULL)"
+    assert ep.cypher_excluded_yield("t") == (
+        f"({ep.cypher_excluded_source('t')} OR (t.yieldDerivationMethod IS NOT NULL))")
+    # every numeric gate runs through the combined test, the source test alone is not enough
+    assert ep.cypher_excluded_yield("vt") in ep.cypher_numeric_yield_eligible("vt")
+    assert ep.cypher_excluded_yield("vt") in ep.cypher_grain_yield("vt")
+    assert ep.cypher_excluded_yield("vt") in ep.cypher_row_policy("main")
+    assert ep.cypher_excluded_yield("vt") in ep.cypher_row_policy("forage")
+
+
+def test_policy_version_names_the_derived_rule():
+    assert ep.POLICY_VERSION == "2026-10-05.1"
+
+
 def test_grain_yield_is_grain_family_main_product_only():
     assert ep.is_grain_yield(_MEASURED)
     assert not ep.is_grain_yield(_BSL)
@@ -415,8 +463,8 @@ def test_content_key_distinguishes_sites():
 # ── (e) Cypher fragment builders ─────────────────────────────────────────────
 
 @pytest.mark.parametrize("builder", [
-    ep.cypher_excluded_source, ep.cypher_yield_purpose, ep.cypher_numeric_yield_eligible,
-    ep.cypher_crop_family, ep.cypher_grain_yield, ep.cypher_forage_basis,
+    ep.cypher_excluded_source, ep.cypher_derived_yield, ep.cypher_excluded_yield,
+    ep.cypher_yield_purpose, ep.cypher_numeric_yield_eligible, ep.cypher_crop_family, ep.cypher_grain_yield, ep.cypher_forage_basis,
     ep.cypher_dry_matter_pct, ep.cypher_forage_dm_yield, ep.cypher_forage_numeric_evidence,
     ep.cypher_field_scope, ep.cypher_aggregate_site, ep.cypher_content_key,
 ])
@@ -525,7 +573,7 @@ def test_numeric_candidate_is_the_predicate_the_row_policy_builds_ep_y_from():
     assert candidate == "(vt.yieldKgHa IS NOT NULL AND NOT ep_excluded)"
     assert block.count(candidate) == 2  # ep_y and ep_unconv
     # a query's cheap WHERE uses the same predicate with the source test inlined
-    assert ep.cypher_numeric_candidate("vt") == f"(vt.yieldKgHa IS NOT NULL AND NOT {ep.cypher_excluded_source('vt')})"
+    assert ep.cypher_numeric_candidate("vt") == f"(vt.yieldKgHa IS NOT NULL AND NOT {ep.cypher_excluded_yield('vt')})"
     assert ep.cypher_tier_prefilter("regional") == "AND " + ep.cypher_numeric_candidate("vt")
     assert ep.cypher_tier_prefilter("regional", "t") == "AND " + ep.cypher_numeric_candidate("t")
     assert ep.cypher_tier_prefilter("field") == ""
@@ -603,7 +651,7 @@ def test_is_presence_only_evidence(trial, site, mode, expected):
 
 def test_presence_gate_and_prefilter_fragments():
     assert ep.cypher_presence_gate() == "WHERE ep_tier = 'regional' AND ep_in_mode AND ep_excluded\n"
-    assert ep.cypher_presence_prefilter("t") == "AND " + ep.cypher_excluded_source("t")
+    assert ep.cypher_presence_prefilter("t") == "AND " + ep.cypher_excluded_yield("t")
 
 
 # ── irrigation regime (rule 8) ───────────────────────────────────────────────

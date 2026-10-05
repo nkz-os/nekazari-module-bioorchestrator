@@ -80,6 +80,11 @@ _TRIALS = [
     {"source_id": "NAVARRA-AGRARIA", "cropEppo": "SETIT", "year": 2014.0, "yieldKgHa": 3821.0,
      "qualityParams": '{"ms_pct": 134.0, "fnd_pct": 66.6}'},
     {"source_id": "CREA", "cropEppo": " zeama ", "aggregationScope": "site"},
+    # a note-derived kg/ha from a source that is not excluded, and one that also says forage
+    {"source_id": "OTHER", "cropEppo": "TRZAX", "aggregationScope": "site", "yieldKgHa": 6500.0,
+     "yieldDerivationMethod": "bsl_note_empirical_factor"},
+    {"source_id": "OTHER", "cropEppo": "ZEAMX", "aggregationScope": "regional", "yieldKgHa": 21000.0,
+     "yieldDerivationMethod": "x", "yieldBasis": "dry_matter", "qualityParams": '{"ndf_pct": 40.0}'},
     {},
 ]
 
@@ -93,6 +98,8 @@ def test_purpose_basis_and_eligibility_fragments_match_python(driver):
         MATCH (vt:VarietyTrial)
         RETURN vt.i AS i,
                {ep.cypher_excluded_source('vt')} AS excluded_source,
+               {ep.cypher_derived_yield('vt')} AS derived,
+               {ep.cypher_excluded_yield('vt')} AS excluded_yield,
                {ep.cypher_yield_purpose('vt')} AS purpose,
                {ep.cypher_numeric_yield_eligible('vt')} AS main,
                {ep.cypher_numeric_yield_eligible('vt', 'forage')} AS forage,
@@ -110,6 +117,8 @@ def test_purpose_basis_and_eligibility_fragments_match_python(driver):
     for row in rows:
         t = _TRIALS[row["i"]]
         assert row["excluded_source"] is ep.is_excluded_source(t.get("source_id"), t.get("dataSource")), t
+        assert row["derived"] is ep.is_derived_yield(t), t
+        assert row["excluded_yield"] is ep.is_excluded_yield(t), t
         assert row["purpose"] == ep.yield_purpose(t.get("yieldMetric"), t.get("qualityParams")), t
         assert row["main"] is ep.is_numeric_yield_eligible(t), t
         assert row["forage"] is ep.is_numeric_yield_eligible(t, "forage"), t
@@ -124,6 +133,8 @@ def test_purpose_basis_and_eligibility_fragments_match_python(driver):
             assert row["dm_yield"] == pytest.approx(expected_dm), t
         assert row["forage_numeric"] is ep.is_forage_numeric_evidence(t), t
         assert row["field_scope"] is ep.is_field_scope(t.get("aggregationScope")), t
+    # The fixtures exercise a derived kg/ha from a source the policy does not exclude.
+    assert any(r["derived"] and not r["excluded_source"] for r in rows)
     # The fixtures exercise every purpose and basis value.
     assert {r["purpose"] for r in rows} == {"grain", "forage", "fresh", "unknown"}
     assert {r["basis"] for r in rows} == {"dry_matter", "fresh_matter", "unknown"}
@@ -166,7 +177,7 @@ def test_row_policy_columns_match_python(driver, mode):
             ep.yield_purpose(t.get("yieldMetric"), t.get("qualityParams")), mode), t
         assert row["ep_other"] is ep.is_other_purpose_evidence(t, mode), t
         assert row["ep_unconv"] is ep.has_unconverted_kg(t, mode), t
-        assert row["ep_excluded"] is ep.is_excluded_source(t.get("source_id"), t.get("dataSource")), t
+        assert row["ep_excluded"] is ep.is_excluded_yield(t), t
         if mode == "main":  # presence-only evidence is a main-mode notion (the DAO returns {} otherwise)
             assert row["presence"] is ep.is_presence_only_evidence(t, site, mode), t
         # the cheap WHERE predicate is a necessary condition of a policy yield (a query that

@@ -2,8 +2,8 @@
 
 Makes "SOTA advisor" falsifiable: hold out a site, predict its variety ranking
 from the rest via `extrapolate_varieties`, compare to what was observed there.
-Only trials with a real `yieldKgHa` (yieldDerivationMethod IS NULL) enter the
-eval set — never note-derived / fabricated yields.
+Only trials with a real `yieldKgHa` enter the eval set (the evidence policy drops
+note-derived / fabricated yields) — never note-derived / fabricated yields.
 """
 from __future__ import annotations
 
@@ -325,6 +325,23 @@ def test_backtest_folds_take_no_kg_from_bsl(dao):
                 cropEppo:'TRZAX', varietyNormalized:'B3', variety:'B3', year:2020, yieldKgHa:9800.0})
         CREATE (m)-[:TRIAL_AT]->(a) CREATE (b1)-[:TRIAL_AT]->(a)
         CREATE (b2)-[:TRIAL_AT]->(a) CREATE (b3)-[:TRIAL_AT]->(a)
+        """,
+    )
+    assert _fold_obs(dao, "SiteA") == {"M": 8000.0}
+
+
+def test_backtest_folds_take_no_note_derived_kg_from_any_source(dao):
+    """A kg/ha derived from a note is not observed yield, even from a source the policy keeps."""
+    _reset_and_seed(
+        dao,
+        """
+        CREATE (a:TrialSite {name:'SiteA', climateClass:'Cfb', annualRainfallMm:700})
+        CREATE (m:VarietyTrial {source_id:'LFL-BAYERN', aggregationScope:'site', cropEppo:'TRZAX',
+                varietyNormalized:'M', variety:'M', year:2020, yieldKgHa:8000.0})
+        CREATE (d:VarietyTrial {source_id:'LFL-BAYERN', aggregationScope:'site', cropEppo:'TRZAX',
+                varietyNormalized:'D', variety:'D', year:2020, yieldKgHa:12600.0,
+                yieldDerivationMethod:'bsl_note_empirical_factor'})
+        CREATE (m)-[:TRIAL_AT]->(a) CREATE (d)-[:TRIAL_AT]->(a)
         """,
     )
     assert _fold_obs(dao, "SiteA") == {"M": 8000.0}

@@ -6,12 +6,10 @@ same `extrapolate_varieties` the API ships (so this is a valid regression gate
 for C.1/C.2/C.4), and compare against what was actually observed at that site.
 
 Honesty rules (see plan Task C.3):
-  * Ground truth = MEASURED yields only: `yieldKgHa IS NOT NULL` **and**
-    `yieldDerivationMethod IS NULL`. Note-derived / fabricated yields never act
-    as an observation you validate against.
-  * Ground truth follows the evidence policy (`app.graph.evidence_policy`): grain
-    yields of grain-family crops only (no forage/fresh records, no kg/ha from excluded
-    sources such as BSL note × constant); only field evidence (located trials at real
+  * Ground truth = MEASURED yields only, as the evidence policy
+    (`app.graph.evidence_policy`) defines them: grain yields of grain-family crops only (no
+    forage/fresh records, no kg/ha from excluded sources such as BSL note × constant, no
+    note-derived / fabricated kg/ha); only field evidence (located trials at real
     sites — pseudo-sites are never held out); content-identical trials count once.
   * The prediction side calls `extrapolate_varieties` unchanged — the backtest
     measures the advisor as it ships, not an idealized variant.
@@ -80,7 +78,6 @@ class Backtester:
         query = f"""
             MATCH (v:VarietyTrial)-[:TRIAL_AT]->(t:TrialSite)
             WHERE v.yieldKgHa IS NOT NULL
-              AND v.yieldDerivationMethod IS NULL
               AND coalesce(v.rankingEligible, true) = true
               AND {evidence_policy.cypher_grain_yield("v")}
               AND {evidence_policy.cypher_field_evidence("v", "t")}

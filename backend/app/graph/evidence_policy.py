@@ -8,10 +8,12 @@ dedup key) is written anywhere else.
 
 Rules (owner decisions 2026-10-04):
 
-1. **Source.** BSL ``yieldKgHa`` values are the 1–9 note times a per-crop constant, not
-   measurements. Trials from an excluded source never contribute kg/ha to a numeric
-   aggregate (expected yield, interval, medians, relative yield, backtest); they may
-   still count as presence evidence. Matched on ``source_id`` and ``dataSource``
+1. **Source and derivation.** BSL ``yieldKgHa`` values are the 1–9 note times a per-crop
+   constant, not measurements, and a persisted ``yieldKgHa`` that a backfill estimated from a
+   note (``yieldDerivationMethod`` set) is not a measurement whatever its source. Trials from an
+   excluded source, or with a derived kg/ha, never contribute kg/ha to a numeric aggregate
+   (expected yield, interval, medians, relative yield, backtest); they may still count as
+   presence evidence. The source is matched on ``source_id`` and ``dataSource``
    (case-insensitive, trimmed).
 2. **Purpose.** ``yield_purpose`` reads only the record and returns ``grain``,
    ``forage``, ``fresh`` or ``unknown``:
@@ -58,7 +60,7 @@ Rules (owner decisions 2026-10-04):
    classifies every row of a query once (tier, purpose gate, policy yield) so no query
    re-evaluates the rules per aggregate.
 
-7. **Presence-only evidence.** A trial of an excluded source (rule 1) at a regional-tier row adds
+7. **Presence-only evidence.** A trial with an excluded kg/ha (rule 1) at a regional-tier row adds
    no number, but it shows that the crop was tested at that climate. In the main mode (forage
    records are never BSL) a crop whose ONLY evidence is such trials is reported as a regional
    recommendation with no yield (``presence_only_applies``, ``cypher_presence_gate``); the
@@ -93,7 +95,7 @@ from typing import Any, NamedTuple
 from app.ingestion.trial_site_geo import AGGREGATE_PATTERNS, is_aggregate_site_name
 
 # Bump when a rule changes, so backtest baselines name the policy they were measured under.
-POLICY_VERSION = "2026-10-04.4"
+POLICY_VERSION = "2026-10-05.1"
 
 # ── (a) source policy ────────────────────────────────────────────────────────
 # Lowercased ``source_id`` / ``dataSource`` values whose kg/ha are not measurements.
@@ -282,6 +284,17 @@ def is_excluded_source(source_id: str | None, data_source: str | None) -> bool:
             or _norm(data_source) in NUMERIC_YIELD_EXCLUDED_SOURCES)
 
 
+def is_derived_yield(trial: Mapping[str, Any]) -> bool:
+    """The trial's ``yieldKgHa`` was estimated from a note by a backfill (``yieldDerivationMethod``
+    set): a fabricated number, whatever the source."""
+    return trial.get("yieldDerivationMethod") is not None
+
+
+def is_excluded_yield(trial: Mapping[str, Any]) -> bool:
+    """The trial's kg/ha is not a measurement (rule 1): an excluded source or a derived value."""
+    return is_excluded_source(trial.get("source_id"), trial.get("dataSource")) or is_derived_yield(trial)
+
+
 def _metric_has(yield_metric: str | None, tokens: Iterable[str]) -> bool:
     low = _norm(yield_metric)
     return any(tok in low for tok in tokens)
@@ -335,14 +348,14 @@ def crop_family(crop_eppo: str | None) -> str:
 
 
 def is_numeric_yield_eligible(trial: Mapping[str, Any], mode: str = MODE_MAIN) -> bool:
-    """Source and purpose gate for ``mode`` (graph property names): not an excluded source and
-    the purpose fits the mode.
+    """Source, derivation and purpose gate for ``mode`` (graph property names): not an excluded
+    source, not a derived kg/ha, and the purpose fits the mode.
 
     It checks nothing about the forage basis, so in forage mode it only says the record is
     forage evidence (use it for counts and presence). A numeric forage aggregate must use
     ``is_forage_numeric_evidence``, which also needs a kg dry-matter value.
     """
-    if is_excluded_source(trial.get("source_id"), trial.get("dataSource")):
+    if is_excluded_yield(trial):
         return False
     return in_purpose_mode(yield_purpose(trial.get("yieldMetric"), trial.get("qualityParams")), mode)
 
@@ -359,7 +372,7 @@ def is_forage_numeric_evidence(trial: Mapping[str, Any]) -> bool:
 def is_grain_yield(trial: Mapping[str, Any]) -> bool:
     """Grain yield of a grain-family crop (the backtest's ground truth)."""
     return (
-        not is_excluded_source(trial.get("source_id"), trial.get("dataSource"))
+        not is_excluded_yield(trial)
         and crop_family(trial.get("cropEppo")) == CROP_FAMILY_GRAIN
         and yield_purpose(trial.get("yieldMetric"), trial.get("qualityParams"))
         in (PURPOSE_GRAIN, PURPOSE_UNKNOWN)
@@ -585,6 +598,17 @@ def cypher_excluded_source(vt: str = "vt") -> str:
             f"OR {_cypher_norm(f'{vt}.dataSource')} IN {excluded})")
 
 
+def cypher_derived_yield(vt: str = "vt") -> str:
+    """True when the trial's kg/ha was derived from a note (see ``is_derived_yield``)."""
+    vt = _alias(vt)
+    return f"({vt}.yieldDerivationMethod IS NOT NULL)"
+
+
+def cypher_excluded_yield(vt: str = "vt") -> str:
+    """True when the trial's kg/ha is not a measurement (see ``is_excluded_yield``)."""
+    return f"({cypher_excluded_source(vt)} OR {cypher_derived_yield(vt)})"
+
+
 def _cypher_any_contains(expr: str, tokens: Iterable[str], var: str) -> str:
     return f"any({var} IN {_cypher_list(tokens)} WHERE {expr} CONTAINS {var})"
 
@@ -643,13 +667,13 @@ def cypher_crop_family(vt: str = "vt") -> str:
 
 def cypher_numeric_yield_eligible(vt: str = "vt", mode: str = MODE_MAIN) -> str:
     """True when the trial's ``yieldKgHa`` may enter a numeric aggregate of ``mode``."""
-    return f"(NOT {cypher_excluded_source(vt)} AND {cypher_in_purpose_mode(vt, mode)})"
+    return f"(NOT {cypher_excluded_yield(vt)} AND {cypher_in_purpose_mode(vt, mode)})"
 
 
 def cypher_grain_yield(vt: str = "vt") -> str:
     """True for a grain yield of a grain-family crop (see ``is_grain_yield``)."""
     grain_or_unknown = _cypher_list((PURPOSE_GRAIN, PURPOSE_UNKNOWN))
-    return (f"(NOT {cypher_excluded_source(vt)} "
+    return (f"(NOT {cypher_excluded_yield(vt)} "
             f"AND {cypher_crop_family(vt)} = {_cypher_str(CROP_FAMILY_GRAIN)} "
             f"AND {cypher_yield_purpose(vt)} IN {grain_or_unknown})")
 
@@ -780,15 +804,16 @@ def cypher_irrigation_any(regimes_expr: str, target: str = "$irrigation_uri") ->
 
 # ── numeric candidates and tier gates ────────────────────────────────────────
 def cypher_numeric_candidate(vt: str = "vt", excluded: str | None = None) -> str:
-    """Necessary condition of a policy yield: a kg/ha value from a source that is not excluded.
+    """Necessary condition of a policy yield: a kg/ha value that is a measurement (not from an
+    excluded source, not derived from a note).
 
     ``cypher_row_policy`` builds ``ep_y`` (and ``ep_unconv``) from this same predicate, so a
     query can put it in its cheap ``WHERE`` (BSL rows never reach the policy block) and stay
     equal to the policy by construction. ``excluded`` is an already computed boolean (the row
-    policy passes its ``ep_excluded`` column); by default the source test is inlined.
+    policy passes its ``ep_excluded`` column); by default the exclusion test is inlined.
     """
     vt = _alias(vt)
-    excluded = excluded or cypher_excluded_source(vt)
+    excluded = excluded or cypher_excluded_yield(vt)
     return f"({vt}.yieldKgHa IS NOT NULL AND NOT {excluded})"
 
 
@@ -845,8 +870,9 @@ def presence_only_applies(mode: str = MODE_MAIN) -> bool:
 
 
 def cypher_presence_gate_expr() -> str:
-    """Boolean over the row-policy columns: a regional-tier row of an excluded source within the
-    purpose mode (it proves presence and carries no policy number)."""
+    """Boolean over the row-policy columns: a regional-tier row with an excluded kg/ha (excluded
+    source or derived value) within the purpose mode (it proves presence and carries no policy
+    number)."""
     return (f"ep_tier = {_cypher_str(EVIDENCE_TIER_REGIONAL)} AND ep_in_mode AND ep_excluded")
 
 
@@ -856,8 +882,9 @@ def cypher_presence_gate() -> str:
 
 
 def cypher_presence_prefilter(vt: str = "vt") -> str:
-    """Cheap ``AND`` term (before the row policy): only excluded-source trials can be presence-only."""
-    return f"AND {cypher_excluded_source(vt)}"
+    """Cheap ``AND`` term (before the row policy): only trials with an excluded kg/ha (excluded
+    source or derived value) can be presence-only."""
+    return f"AND {cypher_excluded_yield(vt)}"
 
 
 def is_presence_only_evidence(trial: Mapping[str, Any], site_name: str | None,
@@ -866,7 +893,7 @@ def is_presence_only_evidence(trial: Mapping[str, Any], site_name: str | None,
     return (
         presence_only_applies(mode)
         and evidence_tier(trial.get("aggregationScope"), site_name) == EVIDENCE_TIER_REGIONAL
-        and is_excluded_source(trial.get("source_id"), trial.get("dataSource"))
+        and is_excluded_yield(trial)
         and in_purpose_mode(yield_purpose(trial.get("yieldMetric"), trial.get("qualityParams")), mode)
     )
 
@@ -897,7 +924,8 @@ def cypher_row_policy(mode: str = MODE_MAIN, vt: str = "vt", ts: str = "ts",
       null for an excluded source, an off-mode record, no kg, or a forage yield that cannot be
       converted to dry matter (it is built from ``cypher_numeric_candidate``);
     - ``ep_unconv``: eligible trial with kg but no number (``has_unconverted_kg``);
-    - ``ep_excluded``: the trial's source is excluded from numeric aggregates (rule 1).
+    - ``ep_excluded``: the trial's kg/ha is excluded from numeric aggregates: excluded source or
+      derived value (rule 1, ``is_excluded_yield``).
 
     The lowercased ``qualityParams`` text, the normalised metric and the lowercased site name
     are each computed once per row, and every key, token and pattern is tested against that
@@ -914,7 +942,7 @@ def cypher_row_policy(mode: str = MODE_MAIN, vt: str = "vt", ts: str = "ts",
         f"WITH {vt}, {ts}{carried}, toLower(coalesce({vt}.qualityParams, '')) AS ep_text, "
         f"{_cypher_norm(f'{vt}.yieldMetric')} AS ep_metric, "
         f"{_cypher_norm(f'{ts}.name')} AS ep_site_lc, "
-        f"{cypher_excluded_source(vt)} AS ep_excluded\n"
+        f"{cypher_excluded_yield(vt)} AS ep_excluded\n"
         f"WITH {vt}, {ts}{carried}, ep_excluded, "
         f"{_cypher_evidence_tier_over(vt, 'ep_site_lc')} AS ep_tier, "
         f"{cypher_purpose_mode_gate(purpose, mode)} AS ep_in_mode\n"

@@ -55,10 +55,11 @@ def _t(crop, variety, sites, kg=None, key=None, **props):
 
 _TRIALS = [
     # TRZAX field: V1 = 6000 and 8000 (f58 is past the old alphabetical cut), V2 = 7000 twice
-    # (a re-ingest twin: one observation), V3 note only; BSL kg at the aggregate container.
+    # (a re-ingest twin: one observation), V3 note only with a kg a backfill derived from the note
+    # (a source the policy keeps: still no number); BSL kg at the aggregate container.
     _t("TRZAX", "V1", ["f01"], 6000.0), _t("TRZAX", "V1", ["f58"], 8000.0),
     _t("TRZAX", "V2", ["f59"], 7000.0, key="twin-a"), _t("TRZAX", "V2", ["f59"], 7000.0, key="twin-b"),
-    _t("TRZAX", "V3", ["f60"], None, yieldNoteS1="5"),
+    _t("TRZAX", "V3", ["f60"], 9999.0, yieldNoteS1="5", yieldDerivationMethod="bsl_note_empirical_factor"),
     _t("TRZAX", "V9", ["BSL Deutschland Cfb"], 9500.0, source_id="BSL", aggregationScope="regional"),
     # ZEAMX: grain (unknown purpose), forage with a cited dry-matter basis (twin on f04),
     # forage with an unknown basis.
@@ -183,7 +184,9 @@ def test_field_main_dedups_ignores_bsl_and_counts_distinct_trials(dao):
     assert set(v) == {"V1", "V2", "V3"}  # the BSL variety is not at a field site
     assert (v["V1"]["mean_yield_kg_ha"], v["V1"]["numeric_yield_count"], v["V1"]["trial_count"]) == (7000.0, 2, 2)
     assert (v["V2"]["mean_yield_kg_ha"], v["V2"]["numeric_yield_count"], v["V2"]["trial_count"]) == (7000.0, 1, 1)
+    # the derived kg/ha (9999) is no number: the trial counts, the mean and the count stay empty
     assert v["V3"]["mean_yield_kg_ha"] is None and v["V3"]["trial_count"] == 1
+    assert v["V3"]["numeric_yield_count"] == 0 and v["V3"]["max_yield_kg_ha"] is None
     assert out["HORVX"][0]["numeric_yield_count"] == 0 and out["HORVX"][0]["trial_count"] == 1
     assert out["SECCE"] == [] and out["LYPES"] == []  # no field evidence
 
