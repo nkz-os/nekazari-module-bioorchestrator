@@ -908,7 +908,10 @@
       "similarityV2": "Sites chosen by climate similarity",
       "compare": "Compare",
       "chooseVariety": "Choose variety →",
-      "typicalSowing": "Typical sowing: {{month}}"
+      "typicalSowing": "Typical sowing: {{month}}",
+      "forageNotice_one": "There is {{count}} forage trial of this crop in a similar climate; it is not included here",
+      "forageNotice_other": "There are {{count}} forage trials of this crop in a similar climate; they are not included here",
+      "viewAsForage": "View as forage"
     },
     "expert": {
       "eppo": "EPPO code",

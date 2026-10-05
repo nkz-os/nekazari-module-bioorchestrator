@@ -906,7 +906,10 @@
       "similarityV2": "Sitios elegidos por parecido climático",
       "compare": "Comparar",
       "chooseVariety": "Elegir variedad →",
-      "typicalSowing": "Siembra típica: {{month}}"
+      "typicalSowing": "Siembra típica: {{month}}",
+      "forageNotice_one": "Hay {{count}} ensayo de este cultivo como forraje en clima parecido; no se incluye aquí",
+      "forageNotice_other": "Hay {{count}} ensayos de este cultivo como forraje en clima parecido; no se incluyen aquí",
+      "viewAsForage": "Ver como forraje"
     },
     "expert": {
       "eppo": "Código EPPO",

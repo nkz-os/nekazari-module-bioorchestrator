@@ -6,6 +6,7 @@ import { levelKey, rangeBar, soilWarning } from './viewModel';
 import { isFewTrials, seasonKey } from './pageModel';
 import { typicalSowingMonth } from './compareModel';
 import ExpertDetails from './ExpertDetails';
+import ForageNotice from './ForageNotice';
 
 /** Crop common name, scientific name as fallback. */
 export function useCropName(rec: Recommendation): string {
@@ -51,11 +52,12 @@ interface RecommendationCardProps {
   onChooseVariety: () => void;
   onOpenEvidence: () => void;
   onReportValue: () => void;
+  onViewForage: () => void;
 }
 
 export default function RecommendationCard({
   rec, scaleMax, expert, compared, compareDisabled, onToggleCompare, onChooseVariety,
-  onOpenEvidence, onReportValue,
+  onOpenEvidence, onReportValue, onViewForage,
 }: RecommendationCardProps) {
   const { t, i18n } = useTranslation('bioorchestrator');
   const name = useCropName(rec);
@@ -111,6 +113,8 @@ export default function RecommendationCard({
         {rec.trust.similarity === 'vector_v2_fallback' && (
           <p className="text-nkz-sm text-nkz-info">{t('whatToSow.card.similarityV2')}</p>
         )}
+
+        <ForageNotice rec={rec} onViewForage={onViewForage} />
 
         {expert && <ExpertDetails rec={rec} onOpenEvidence={onOpenEvidence} onReportValue={onReportValue} />}
 

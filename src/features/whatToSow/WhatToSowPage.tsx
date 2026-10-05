@@ -232,6 +232,7 @@ export default function WhatToSowPage({ parcelId, onSelectTool, onAssigned }: Wh
   const pickClimate = useCallback((code: string) => {
     if (code) setClimate({ parcel: parcelId, code });
   }, [parcelId]);
+  const viewForage = useCallback(() => setBaseFilters((f) => ({ ...f, purpose: 'forage' })), []);
   const onToggleCompare = useCallback((id: string) => setCompareIds((sel) => toggleCompare(sel, id)), []);
   // "Elegir variedad": toggles the variety panel under that card.
   const handleChooseVariety = useCallback(
@@ -312,6 +313,7 @@ export default function WhatToSowPage({ parcelId, onSelectTool, onAssigned }: Wh
                   onChooseVariety={() => handleChooseVariety(rec.recommendation_id)}
                   onOpenEvidence={() => openEvidence(rec)}
                   onReportValue={() => setReportFor(rec)}
+                  onViewForage={viewForage}
                 />
                 {varietyFor === rec.recommendation_id && (
                   <VarietyPanel rec={rec} parcelId={parcelId} onSelectTool={onSelectTool} onAssigned={onAssigned} />
@@ -325,6 +327,7 @@ export default function WhatToSowPage({ parcelId, onSelectTool, onAssigned }: Wh
             isCompared={(id) => compareIds.includes(id)}
             compareFull={compareFull}
             onToggleCompare={onToggleCompare}
+            onViewForage={viewForage}
           />
         </Stack>
       )}

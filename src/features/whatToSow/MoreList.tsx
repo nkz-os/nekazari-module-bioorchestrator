@@ -5,6 +5,7 @@ import type { Recommendation } from '../../types/recommend';
 import type { Intent } from './viewModel';
 import { MIN_TOP_TRIALS } from './viewModel';
 import { RangeBarView, levelOf, useCropName } from './RecommendationCard';
+import ForageNotice from './ForageNotice';
 
 const DOT: Record<Intent, string> = {
   positive: 'bg-nkz-success',
@@ -19,10 +20,12 @@ interface MoreListProps {
   isCompared: (id: string) => boolean;
   compareFull: boolean;
   onToggleCompare: (id: string) => void;
+  onViewForage: () => void;
 }
 
-function MoreRow({ rec, scaleMax, compared, compareDisabled, onToggle }: {
+function MoreRow({ rec, scaleMax, compared, compareDisabled, onToggle, onViewForage }: {
   rec: Recommendation; scaleMax: number | null; compared: boolean; compareDisabled: boolean; onToggle: () => void;
+  onViewForage: () => void;
 }) {
   const { t } = useTranslation('bioorchestrator');
   const name = useCropName(rec);
@@ -53,12 +56,13 @@ function MoreRow({ rec, scaleMax, compared, compareDisabled, onToggle }: {
         onChange={onToggle}
         label={t('whatToSow.card.compare')}
       />
+      <ForageNotice rec={rec} onViewForage={onViewForage} className="w-full" />
     </li>
   );
 }
 
 /** Compact rows for the recommendations outside the top cards; hidden when there are none. */
-export default function MoreList({ recs, scaleMax, isCompared, compareFull, onToggleCompare }: MoreListProps) {
+export default function MoreList({ recs, scaleMax, isCompared, compareFull, onToggleCompare, onViewForage }: MoreListProps) {
   const { t } = useTranslation('bioorchestrator');
   const [open, setOpen] = useState(false);
   if (recs.length === 0) return null;
@@ -79,6 +83,7 @@ export default function MoreList({ recs, scaleMax, isCompared, compareFull, onTo
               compared={isCompared(rec.recommendation_id)}
               compareDisabled={compareFull}
               onToggle={() => onToggleCompare(rec.recommendation_id)}
+              onViewForage={onViewForage}
             />
           ))}
         </ul>

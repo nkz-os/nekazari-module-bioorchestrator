@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Recommendation, RecommendResponse } from '../../types/recommend';
 import {
-  compareRows, grossIncome, lensAvailability, levelKey, partitionRecommendations,
+  compareRows, forageNoticeCount, grossIncome, lensAvailability, levelKey, partitionRecommendations,
   rangeBar, resolvePageState, soilWarning,
 } from './viewModel';
 
@@ -210,5 +210,27 @@ describe('soilWarning', () => {
   it('hides warnings for suitable soil and when there are none', () => {
     expect(soilWarning(withSoil('suitable', ['note']))).toBeNull();
     expect(soilWarning(withSoil('marginal', []))).toBeNull();
+  });
+});
+
+describe('forageNoticeCount', () => {
+  const withEvidence = (over: Partial<Recommendation['evidence']>) => {
+    const r = rec('A');
+    r.evidence = { ...r.evidence, ...over };
+    return r;
+  };
+  it('is the forage trial count of a field recommendation in harvest mode', () => {
+    expect(forageNoticeCount(withEvidence({ other_purpose_trials: { forage: 115 } }))).toBe(115);
+    expect(forageNoticeCount(withEvidence({ other_purpose_trials: { forage: 1 } }))).toBe(1);
+  });
+  it('is null when there are none (missing, empty, zero)', () => {
+    expect(forageNoticeCount(rec('A'))).toBeNull();
+    expect(forageNoticeCount(withEvidence({ other_purpose_trials: { forage: 0 } }))).toBeNull();
+    expect(forageNoticeCount(withEvidence({ other_purpose_trials: {} }))).toBeNull();
+    expect(forageNoticeCount(withEvidence({ other_purpose_trials: undefined as never }))).toBeNull();
+  });
+  it('is null in forage mode and on regional recommendations', () => {
+    expect(forageNoticeCount(withEvidence({ purpose: 'forage', other_purpose_trials: { forage: 4 } }))).toBeNull();
+    expect(forageNoticeCount(withEvidence({ tier: 'regional', other_purpose_trials: { forage: 4 } }))).toBeNull();
   });
 });

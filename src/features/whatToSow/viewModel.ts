@@ -25,6 +25,17 @@ export function partitionRecommendations(recs: Recommendation[]): {
   return { top, more };
 }
 
+/**
+ * Forage trials of the crop at the same analog sites that the harvest-mode numbers leave out
+ * (counted, never averaged). Null when there are none, in forage mode, or on a regional
+ * recommendation (the backend only counts them for field recommendations).
+ */
+export function forageNoticeCount(rec: Recommendation): number | null {
+  if (rec.evidence.purpose === 'forage' || rec.evidence.tier === 'regional') return null;
+  const n = rec.evidence.other_purpose_trials?.forage;
+  return typeof n === 'number' && Number.isFinite(n) && n > 0 ? n : null;
+}
+
 export interface RangeBar {
   leftPct: number;
   widthPct: number;
