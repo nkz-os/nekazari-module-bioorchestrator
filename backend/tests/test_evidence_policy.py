@@ -604,3 +604,49 @@ def test_is_presence_only_evidence(trial, site, mode, expected):
 def test_presence_gate_and_prefilter_fragments():
     assert ep.cypher_presence_gate() == "WHERE ep_tier = 'regional' AND ep_in_mode AND ep_excluded\n"
     assert ep.cypher_presence_prefilter("t") == "AND " + ep.cypher_excluded_source("t")
+
+
+# ── irrigation regime (rule 8) ───────────────────────────────────────────────
+
+_RAINFED_URI = "http://aims.fao.org/aos/agrovoc/c_6436"
+_IRRIGATED_URI = "http://aims.fao.org/aos/agrovoc/c_3954"
+
+
+@pytest.mark.parametrize("value,expected", [
+    (_RAINFED_URI, "secano"), ("secano", "secano"), ("Secano", "secano"), ("  SECANO ", "secano"),
+    (_IRRIGATED_URI, "regadio"), ("regadío", "regadio"), ("REGADÍO", "regadio"), ("regadio", "regadio"),
+    ("http://aims.fao.org/aos/agrovoc/c_9999", None), ("rainfed", None), ("", None), (None, None), (7, None),
+])
+def test_irrigation_regime_reads_the_uri_and_the_literals(value, expected):
+    assert ep.irrigation_regime(value) == expected
+
+
+@pytest.mark.parametrize("request_value,expected", [
+    ("secano", _RAINFED_URI), ("Rainfed", _RAINFED_URI), ("secano/rainfed", _RAINFED_URI),
+    ("regadío", _IRRIGATED_URI), ("regadio", _IRRIGATED_URI), ("irrigated", _IRRIGATED_URI),
+    ("irrigado", _IRRIGATED_URI), ("riego", None), ("", None), (None, None),
+])
+def test_irrigation_uri_of_a_request(request_value, expected):
+    assert ep.irrigation_uri(request_value) == expected
+
+
+def test_irrigation_match_counts_a_literal_like_its_uri():
+    assert ep.irrigation_matches("secano", _RAINFED_URI) and ep.irrigation_matches(_RAINFED_URI, "secano")
+    assert ep.irrigation_matches("regadío", _IRRIGATED_URI) and ep.irrigation_matches("regadio", _IRRIGATED_URI)
+    assert not ep.irrigation_matches("secano", _IRRIGATED_URI)
+    assert not ep.irrigation_matches(_IRRIGATED_URI, _RAINFED_URI)
+    # no regime requested: everything matches, including a trial with no regime
+    assert ep.irrigation_matches(None, None) and ep.irrigation_matches("secano", None)
+    # a regime requested: a trial without one, or with an unrecognised one, never matches
+    assert not ep.irrigation_matches(None, _RAINFED_URI) and not ep.irrigation_matches("", _RAINFED_URI)
+    assert not ep.irrigation_matches("rainfed", _RAINFED_URI)
+    assert not ep.irrigation_matches(_RAINFED_URI, "uri:unknown")
+
+
+def test_irrigation_fragments_embed_every_spelling_and_the_target():
+    frag = ep.cypher_irrigation_match("vt.irrigationRegime")
+    for spelling in ("secano", "regadío", "regadio", _RAINFED_URI, _IRRIGATED_URI):
+        assert f"'{spelling}'" in frag
+    assert frag.startswith("($irrigation_uri IS NULL OR coalesce(")
+    assert "$target_regime IS NULL" in ep.cypher_irrigation_match("g_regime", "$target_regime")
+    assert "any(ep_reg IN irrigation_regimes WHERE" in ep.cypher_irrigation_any("irrigation_regimes")

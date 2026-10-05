@@ -4,6 +4,7 @@ from unittest.mock import AsyncMock, patch
 import pytest
 
 from app.graph import dao as dao_mod
+from app.graph import evidence_policy as ep
 from app.graph.dao import GraphDAO
 from tests.test_recommend_dao import (
     _ROW,
@@ -153,7 +154,7 @@ async def test_prefilter_query_shape_and_result():
     assert "ts.name IN $site_names" in q
     assert "vt.yieldKgHa IS NOT NULL OR vt.yieldNoteS1 IS NOT NULL" in q
     assert "rankingEligible" in q
-    assert "vt.irrigationRegime = $irrigation_uri" in q
+    assert ep.cypher_irrigation_match("vt.irrigationRegime") in q  # URI or literal spelling
     assert "$excluded_sites IS NULL" in q
     assert "DISTINCT" in q
     assert params["irrigation_uri"] is None and params["excluded_sites"] is None

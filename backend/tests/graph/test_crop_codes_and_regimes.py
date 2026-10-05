@@ -31,7 +31,15 @@ def _run(coro):
     return _loop.run_until_complete(coro)
 
 
-_SITES = [{"name": "field-a", "climateClass": "Cfb"}, {"name": "field-b", "climateClass": "Cfb"}]
+_SECANO = "http://aims.fao.org/aos/agrovoc/c_6436"
+_REGADIO = "http://aims.fao.org/aos/agrovoc/c_3954"
+_SITES = [
+    {"name": "field-a", "climateClass": "Cfb"}, {"name": "field-b", "climateClass": "Cfb"},
+    # irrigation regimes: two field sites and an aggregate container of one climate
+    {"name": "reg-a", "climateClass": "Csa"}, {"name": "reg-b", "climateClass": "Csa"},
+    {"name": "UK national list", "climateClass": "Csa"},
+]
+_REG_SITES = [{"name": "reg-a", "distance": None}, {"name": "reg-b", "distance": None}]
 
 
 def _t(crop, variety, site, kg, **props):
@@ -50,6 +58,22 @@ _TRIALS = [
     _t("BRSNN", "R1", "field-a", 3000.0), _t("BRSNW", "R2", "field-a", 3200.0),
     _t("PIBSX", "P1", "field-a", 2500.0), _t("PIBAR", "P2", "field-a", 2600.0),
     _t("CIEAR", "C1", "field-a", 1500.0), _t("CIEAS", "C2", "field-a", 1600.0),
+    # regimes of HORVX: the AGROVOC URI, the literals of the one source that stores them, none
+    _t("HORVX", "L1", "reg-a", 4000.0, irrigationRegime="secano"),
+    _t("HORVX", "U1", "reg-a", 5000.0, irrigationRegime=_SECANO),
+    _t("HORVX", "U2", "reg-b", 6000.0, irrigationRegime=_SECANO),
+    _t("HORVX", "L2", "reg-b", 8000.0, irrigationRegime="regadío"),
+    _t("HORVX", "U3", "reg-a", 9000.0, irrigationRegime=_REGADIO),
+    _t("HORVX", "N1", "reg-b", 7000.0),
+    # PU (URIs) and PL (literals): the same two trials, spelled differently
+    _t("HORVX", "PU", "reg-a", 4000.0, irrigationRegime=_SECANO),
+    _t("HORVX", "PU", "reg-b", 8000.0, irrigationRegime=_REGADIO),
+    _t("HORVX", "PL", "reg-a", 4000.0, irrigationRegime="secano"),
+    _t("HORVX", "PL", "reg-b", 8000.0, irrigationRegime="regadío"),
+    # a crop whose only evidence is one literal trial (any case), and a BSL trial of the aggregate site
+    _t("LITONLY", "T1", "reg-a", 3000.0, irrigationRegime="Secano"),
+    _t("SECCE", "B1", "UK national list", 3500.0, source_id="BSL", aggregationScope="regional",
+       irrigationRegime="secano"),
 ]
 
 
@@ -121,3 +145,101 @@ def test_maize_regains_frost_and_soil_verdicts_in_recommend(dao):
     gaps = rec["trust"]["data_gaps"]
     assert "frost_tolerance_unavailable" not in gaps
     assert not any("soil_tolerance" in g for g in gaps)
+
+
+# ── irrigation literals ──────────────────────────────────────────────────────
+
+_SECANO_VARIETIES = {"L1", "U1", "U2", "PU", "PL"}   # a regime-less trial (N1) never matches
+_REGADIO_VARIETIES = {"L2", "U3", "PU", "PL"}
+
+
+def _batch(dao, crops, regime):
+    return _run(dao.extrapolate_varieties_batch(crops, _REG_SITES, irrigation_regime=regime, top_n=20))
+
+
+def _by_variety(rows):
+    return {v["variety"]: v for v in rows}
+
+
+def test_extrapolation_keeps_a_variety_with_a_literal_regime(dao):
+    for regime, expected in (("secano", _SECANO_VARIETIES), ("regadío", _REGADIO_VARIETIES),
+                             ("rainfed", _SECANO_VARIETIES)):
+        rows = _batch(dao, ["HORVX"], regime)["HORVX"]
+        assert set(_by_variety(rows)) == expected, regime
+    assert set(_by_variety(_batch(dao, ["HORVX"], None)["HORVX"])) == \
+        _SECANO_VARIETIES | _REGADIO_VARIETIES | {"N1"}
+
+
+def test_per_crop_extrapolation_equals_the_batch(dao):
+    rows = _batch(dao, ["HORVX"], "secano")["HORVX"]
+    single = _run(dao.extrapolate_varieties("HORVX", similar_sites_override=_REG_SITES,
+                                            irrigation_regime="secano", top_n=20))
+    assert single["ranked_varieties"] == rows
+
+
+def test_reference_counts_literal_and_uri_trials_of_the_regime(dao):
+    def ref(regime):
+        rows = _batch(dao, ["HORVX"], regime)["HORVX"]
+        assert len({(v["crop_reference_median_kg_ha"], v["crop_reference_n"]) for v in rows}) == 1
+        return rows[0]["crop_reference_median_kg_ha"], rows[0]["crop_reference_n"]
+
+    assert ref("secano") == (4000.0, 5)    # 4000 (literal) 4000 4000 5000 6000
+    assert ref("regadío") == (8000.0, 4)   # 8000 (literal) 8000 8000 9000
+    assert ref(None) == (6500.0, 10)       # both regimes and the trial without one
+
+
+def test_water_regime_weight_is_the_same_for_a_literal_and_its_uri(dao):
+    v = _by_variety(_batch(dao, ["HORVX"], "secano")["HORVX"])
+    # one matching trial (4000) and one of the other regime (8000, weight 0.4): the weighted mean
+    # is (4000 + 0.4 * 8000) / 1.4, whichever way the two regimes are spelled
+    expected = round((4000 + 0.4 * 8000) / 1.4, 1)
+    assert v["PU"]["mean_yield_kg_ha"] == v["PL"]["mean_yield_kg_ha"] == pytest.approx(expected, abs=0.1)
+
+
+def test_prefilter_counts_a_crop_whose_only_trial_is_a_literal(dao):
+    names = [s["name"] for s in _REG_SITES]
+    crops = ["HORVX", "LITONLY", "TRZAX"]
+    assert _run(dao._crops_with_analog_trials(crops, names, irrigation_uri=_SECANO)) == {"HORVX", "LITONLY"}
+    assert _run(dao._crops_with_analog_trials(crops, names, irrigation_uri=_REGADIO)) == {"HORVX"}
+    assert _run(dao._crops_with_analog_trials(crops, names)) == {"HORVX", "LITONLY"}
+
+
+def test_evidence_page_lists_literal_and_uri_trials(dao):
+    def total(uri):
+        page = _run(dao.list_trial_evidence(crop="HORVX", similar_sites=["reg-a", "reg-b"], variety=None,
+                                            irrigation_uri=uri, page=1, page_size=50))
+        return page["total"], {i["irrigation_regime"] for i in page["items"]}
+
+    assert total(_SECANO) == (5, {"secano", _SECANO})
+    assert total(_REGADIO) == (4, {"regadío", _REGADIO})
+    assert total(None)[0] == 10
+
+
+def test_presence_scan_counts_a_literal_regime(dao):
+    agg = ["UK national list"]
+    assert _run(dao.regional_presence_trials(["SECCE"], agg, irrigation_uri=_SECANO))["SECCE"]["trial_count"] == 1
+    assert _run(dao.regional_presence_trials(["SECCE"], agg, irrigation_uri=_REGADIO)) == {}
+
+
+def test_variety_trials_endpoint_filter_finds_both_spellings(dao):
+    def n(regime):
+        rows = _run(dao.get_variety_trials(crop="HORVX", irrigation_regime=regime, limit=50))
+        return len(rows), {r["irrigation_regime"] for r in rows}
+
+    assert n("secano") == (5, {"secano", _SECANO})
+    assert n("regadío") == (4, {"regadío", _REGADIO})
+    assert n(None)[0] == 10
+
+
+def test_recommend_with_a_regime_includes_a_crop_with_only_a_literal_trial(dao):
+    cond = {"climate_class": "Csa", "soil_type": None, "management": "any", "season": "all", "top_n": 30,
+            "irrigation_regime": "secano"}
+    out = _run(dao.recommend_for_conditions(cond))
+    recs = {r["crop"]["eppo"]: r for r in out["recommendations"]}
+    assert {"HORVX", "LITONLY"} <= set(recs)
+    assert recs["HORVX"]["fit"]["reference"]["scope"] == "analog_sites:Csa:secano"
+    assert recs["HORVX"]["fit"]["reference"]["n_trials"] == 5
+    dao_mod._RECOMMEND_CACHE.clear()
+    out = _run(dao.recommend_for_conditions({**cond, "irrigation_regime": "regadío"}))
+    assert {r["crop"]["eppo"] for r in out["recommendations"]} >= {"HORVX"}
+    assert "LITONLY" not in {r["crop"]["eppo"] for r in out["recommendations"]}

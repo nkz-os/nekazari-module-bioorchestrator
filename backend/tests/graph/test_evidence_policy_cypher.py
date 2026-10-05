@@ -415,3 +415,38 @@ def test_tier_gate_fragments_match_python(driver):
                 assert r["gate"] is ep.passes_tier_gate(
                     tier, r["ep_tier"], r["ep_in_mode"], r["ep_other"], r["ep_y"], with_other), r
                 assert r["numeric_gate"] is (r["ep_tier"] == tier and r["ep_in_mode"] and r["ep_y"] is not None), r
+
+
+_RAINFED = "http://aims.fao.org/aos/agrovoc/c_6436"
+_REGIME_VALUES = [
+    _RAINFED, _REGADIO, "secano", "Secano", " secano ", "regadío", "REGADÍO", "regadio", "Regadio",
+    "http://aims.fao.org/aos/agrovoc/c_9999", "rainfed", "irrigated", "secano/rainfed", "", None,
+]
+
+
+def test_irrigation_fragments_match_python(driver):
+    """The classifier and the match, as the queries use them, agree with the Python twins for every
+    spelling and every target (a literal counts like its URI; unrecognised or missing never match)."""
+    _reset(driver, "UNWIND range(0, size($vals) - 1) AS i CREATE (:VarietyTrial {i: i, regime: $vals[i]})",
+           vals=[v if v is not None else "<null>" for v in _REGIME_VALUES])
+    # a null-valued property is not storable: drop the placeholder property again
+    _run(_query(driver, "MATCH (v:VarietyTrial) WHERE v.regime = '<null>' REMOVE v.regime"))
+    targets = [None, *_REGIME_VALUES[:-1], "uri:unknown"]
+    for target in targets:
+        rows = _run(_query(
+            driver,
+            f"""
+            MATCH (v:VarietyTrial)
+            RETURN v.i AS i, v.regime AS regime,
+                   {ep.cypher_irrigation_regime('v.regime')} AS regime_class,
+                   {ep.cypher_irrigation_match('v.regime')} AS matches,
+                   {ep.cypher_irrigation_any('[v.regime, null]')} AS any_matches
+            ORDER BY i
+            """,
+            irrigation_uri=target,
+        ))
+        assert len(rows) == len(_REGIME_VALUES)
+        for r in rows:
+            assert r["regime_class"] == ep.irrigation_regime(r["regime"]), r["regime"]
+            assert r["matches"] is ep.irrigation_matches(r["regime"], target), (r["regime"], target)
+            assert r["any_matches"] is ep.irrigation_matches(r["regime"], target), (r["regime"], target)

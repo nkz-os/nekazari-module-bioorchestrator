@@ -64,6 +64,14 @@ Rules (owner decisions 2026-10-04):
    recommendation with no yield (``presence_only_applies``, ``cypher_presence_gate``); the
    excluded kg/ha are never read.
 
+8. **Irrigation regime.** A trial stores its regime as an AGROVOC URI (rainfed / irrigated), but
+   one source stores the literals ``secano`` / ``regadío``. ``irrigation_regime`` classifies a
+   stored value or a requested one as ``secano``, ``regadio`` or none, and every comparison of
+   regimes (the request filters, the reference median, the water-regime weight, the evidence
+   page, the presence scan) goes through it (``cypher_irrigation_match``), so a literal counts
+   exactly like its URI. A trial without a regime, or with an unrecognised value, never matches a
+   requested regime.
+
 Explicit properties written by ingestion (``yieldBasis`` today; ``siteKind`` and a
 grain/forage ``yieldMetric`` vocabulary later) are read first, here; callers do not change.
 
@@ -85,7 +93,7 @@ from typing import Any, NamedTuple
 from app.ingestion.trial_site_geo import AGGREGATE_PATTERNS, is_aggregate_site_name
 
 # Bump when a rule changes, so backtest baselines name the policy they were measured under.
-POLICY_VERSION = "2026-10-04.3"
+POLICY_VERSION = "2026-10-04.4"
 
 # ── (a) source policy ────────────────────────────────────────────────────────
 # Lowercased ``source_id`` / ``dataSource`` values whose kg/ha are not measurements.
@@ -446,6 +454,53 @@ def evidence_tier(aggregation_scope: str | None, site_name: str | None) -> str:
             else EVIDENCE_TIER_REGIONAL)
 
 
+# ── irrigation regime (rule 8) ───────────────────────────────────────────────
+REGIME_RAINFED = "secano"
+REGIME_IRRIGATED = "regadio"
+IRRIGATION_URIS: Mapping[str, str] = {
+    REGIME_RAINFED: "http://aims.fao.org/aos/agrovoc/c_6436",
+    REGIME_IRRIGATED: "http://aims.fao.org/aos/agrovoc/c_3954",
+}
+# Lowercased spellings under which a trial (or a request) names each regime: the URI and the
+# literals of the source that does not use it (INIAV: 306 trials with "secano").
+IRRIGATION_SPELLINGS: Mapping[str, tuple[str, ...]] = {
+    REGIME_RAINFED: (IRRIGATION_URIS[REGIME_RAINFED], "secano"),
+    REGIME_IRRIGATED: (IRRIGATION_URIS[REGIME_IRRIGATED], "regadío", "regadio"),
+}
+# Spellings of the farmer-facing request parameter, besides the stored ones above.
+IRRIGATION_REQUEST_ALIASES: Mapping[str, str] = {
+    "secano": REGIME_RAINFED, "rainfed": REGIME_RAINFED, "secano/rainfed": REGIME_RAINFED,
+    "regadío": REGIME_IRRIGATED, "regadio": REGIME_IRRIGATED,
+    "irrigated": REGIME_IRRIGATED, "irrigado": REGIME_IRRIGATED,
+}
+
+
+def irrigation_regime(value: Any) -> str | None:
+    """``secano`` | ``regadio`` for a stored or requested regime value (URI or literal,
+    case-insensitive, trimmed); None for no value or an unrecognised one."""
+    key = _norm(value)
+    for regime, spellings in IRRIGATION_SPELLINGS.items():
+        if key in spellings:
+            return regime
+    return None
+
+
+def irrigation_uri(request: str | None) -> str | None:
+    """The stored AGROVOC URI of a requested regime (``secano``, ``regadío``, ``rainfed``, ...);
+    None when nothing (or nothing recognised) is requested."""
+    regime = IRRIGATION_REQUEST_ALIASES.get(_norm(request))
+    return IRRIGATION_URIS[regime] if regime else None
+
+
+def irrigation_matches(value: Any, target: Any) -> bool:
+    """A trial's regime ``value`` satisfies the requested ``target``. No target: always. A target
+    that names no regime matches nothing; neither does a missing or unrecognised value."""
+    if target is None:
+        return True
+    regime = irrigation_regime(target)
+    return regime is not None and irrigation_regime(value) == regime
+
+
 def policy_yield(trial: Mapping[str, Any], mode: str = MODE_MAIN) -> float | None:
     """The kg/ha a trial contributes to a numeric aggregate of ``mode``, or None.
 
@@ -698,6 +753,29 @@ def cypher_evidence_tier(vt: str = "vt", ts: str = "ts") -> str:
     """String expression: 'field' | 'regional' for the (trial, site) row."""
     vt, ts = _alias(vt), _alias(ts)
     return _cypher_evidence_tier_over(vt, _cypher_norm(f"{ts}.name"))
+
+
+# ── irrigation regime (rule 8) ───────────────────────────────────────────────
+def cypher_irrigation_regime(expr: str) -> str:
+    """String expression: ``'secano'`` | ``'regadio'`` | null for a regime value ``expr``."""
+    norm = _cypher_norm(expr)
+    whens = " ".join(f"WHEN {norm} IN {_cypher_list(spellings)} THEN {_cypher_str(regime)}"
+                     for regime, spellings in IRRIGATION_SPELLINGS.items())
+    return f"(CASE {whens} END)"
+
+
+def cypher_irrigation_match(expr: str, target: str = "$irrigation_uri") -> str:
+    """Boolean (never null): no regime requested (``target`` null), or ``expr`` names the same
+    regime as ``target`` (a URI or a literal, whichever the trial and the request use)."""
+    same = f"{cypher_irrigation_regime(expr)} = {cypher_irrigation_regime(target)}"
+    return f"({target} IS NULL OR coalesce({same}, false))"
+
+
+def cypher_irrigation_any(regimes_expr: str, target: str = "$irrigation_uri") -> str:
+    """Boolean (never null): no regime requested, or some value of the list ``regimes_expr``
+    names the requested regime."""
+    same = f"{cypher_irrigation_regime('ep_reg')} = {cypher_irrigation_regime(target)}"
+    return (f"({target} IS NULL OR any(ep_reg IN {regimes_expr} WHERE coalesce({same}, false)))")
 
 
 # ── numeric candidates and tier gates ────────────────────────────────────────

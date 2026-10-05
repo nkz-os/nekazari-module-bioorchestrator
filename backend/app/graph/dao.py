@@ -75,7 +75,7 @@ _CROP_MATCH_PREDICATE = (
 #     crop's deduplicated policy numbers at these same sites, in the requested irrigation regime
 #     (a trial with no regime never counts for one), independent of ``top_n`` and of the
 #     variety-level filters.
-_EXTRAPOLATE_BODY_CYPHER = """
+_EXTRAPOLATE_BODY_TEMPLATE = """
                 // Count the other-purpose trials of the crop once (grouping treats nulls as
                 // equal, unlike an IN test over the key lists).
                 CALL (hits) {
@@ -87,7 +87,7 @@ _EXTRAPOLATE_BODY_CYPHER = """
                 // the requested regime (content-identical trials once).
                 CALL (hits) {
                   UNWIND [x IN hits WHERE x.in_mode AND x.y IS NOT NULL
-                          AND ($irrigation_uri IS NULL OR x.regime = $irrigation_uri)] AS r
+                          AND @IRRIGATION_REFERENCE@] AS r
                   WITH r.ck AS ck, max(r.y) AS y
                   RETURN percentileCont(y, 0.5) AS ref_median, count(y) AS ref_n
                 }
@@ -127,8 +127,7 @@ _EXTRAPOLATE_BODY_CYPHER = """
                      * (CASE WHEN g_year IS NOT NULL AND (toFloat($now_year) - toFloat(g_year)) > 0
                              THEN 0.5 ^ ((toFloat($now_year) - toFloat(g_year)) / $half_life)
                              ELSE 1.0 END)
-                     * (CASE WHEN $target_regime IS NULL OR g_regime IS NULL
-                                  OR g_regime = $target_regime
+                     * (CASE WHEN @IRRIGATION_WEIGHT@ OR g_regime IS NULL
                              THEN 1.0 ELSE $regime_penalty END) AS w
                 WITH variety,
                      collect(DISTINCT g_year) AS years,
@@ -150,7 +149,7 @@ _EXTRAPOLATE_BODY_CYPHER = """
                      sum(g_derived) AS derived_count,
                      sum(CASE WHEN g_y IS NULL AND g_unconv = 1 THEN 1 ELSE 0 END) AS unconverted_count
                 WHERE trial_count >= 1
-                  AND ($irrigation_uri IS NULL OR $irrigation_uri IN irrigation_regimes)
+                  AND @IRRIGATION_VARIETY@
                   AND ($production_system IS NULL OR $production_system IN production_systems)
                 WITH variety,
                      CASE WHEN wtot > 0 THEN wsum / wtot ELSE mean_yield_flat END AS mean_yield,
@@ -203,6 +202,14 @@ _EXTRAPOLATE_BODY_CYPHER = """
                        ref_median, ref_n
                 ORDER BY crop, mean_yield IS NULL, round(mean_yield, 1) DESC, variety ASC
 """
+# The regime tests (reference, weight, variety filter) are the policy's (rule 8): a literal
+# "secano"/"regadío" counts like its URI.
+_EXTRAPOLATE_BODY_CYPHER = (
+    _EXTRAPOLATE_BODY_TEMPLATE
+    .replace("@IRRIGATION_REFERENCE@", ep.cypher_irrigation_match("x.regime"))
+    .replace("@IRRIGATION_WEIGHT@", ep.cypher_irrigation_match("g_regime", "$target_regime"))
+    .replace("@IRRIGATION_VARIETY@", ep.cypher_irrigation_any("irrigation_regimes"))
+)
 
 # One entry of the per-crop ``hits`` list built from the policy-classified rows.
 _HIT_MAP_CYPHER = (
@@ -328,25 +335,11 @@ def _assess_evidence(ranked: list[dict]) -> dict:
 logger = logging.getLogger(__name__)
 
 
-_IRRIGATION_URIS = {
-    "secano": "http://aims.fao.org/aos/agrovoc/c_6436",
-    "rainfed": "http://aims.fao.org/aos/agrovoc/c_6436",
-    "secano/rainfed": "http://aims.fao.org/aos/agrovoc/c_6436",
-    "regadío": "http://aims.fao.org/aos/agrovoc/c_3954",
-    "regadio": "http://aims.fao.org/aos/agrovoc/c_3954",
-    "irrigated": "http://aims.fao.org/aos/agrovoc/c_3954",
-    "irrigado": "http://aims.fao.org/aos/agrovoc/c_3954",
-}
-
-
 def _regime_label(irrigation_uri: str | None) -> str:
     """Stable ASCII label of the irrigation regime of a reference: secano | regadio | any."""
     if irrigation_uri is None:
         return "any"
-    for label in ("secano", "regadio"):
-        if _IRRIGATION_URIS[label] == irrigation_uri:
-            return label
-    return "other"
+    return ep.irrigation_regime(irrigation_uri) or "other"
 
 
 def _reference_scope(climate: str | None, irrigation_uri: str | None, purpose: str) -> str:
@@ -371,9 +364,7 @@ def _analog_reference(rows: list[dict], scope: str) -> dict:
 
 def _irrigation_uri(regime: str | None) -> str | None:
     """Map a human-readable irrigation regime to the AGROVOC URI stored on trials."""
-    if not regime:
-        return None
-    return _IRRIGATION_URIS.get(regime.lower().strip())
+    return ep.irrigation_uri(regime)
 
 
 def _agroclimatic_mode() -> str:
@@ -1735,8 +1726,14 @@ class GraphDAO:
             params["texture"] = soil_texture
 
         if irrigation_regime:
-            where_clauses.append("vt.irrigationRegime CONTAINS $irrigation")
-            params["irrigation"] = irrigation_regime
+            irrigation_uri = ep.irrigation_uri(irrigation_regime)
+            if irrigation_uri:
+                # URI or literal spelling of the regime (evidence policy rule 8)
+                where_clauses.append(ep.cypher_irrigation_match("vt.irrigationRegime"))
+                params["irrigation_uri"] = irrigation_uri
+            else:  # not a known regime name: the caller's own substring of the stored value
+                where_clauses.append("vt.irrigationRegime CONTAINS $irrigation")
+                params["irrigation"] = irrigation_regime
 
         if min_yield_kg_ha is not None:
             where_clauses.append("vt.yieldKgHa >= $min_yield")
@@ -2021,7 +2018,7 @@ class GraphDAO:
                 MATCH (vt:VarietyTrial)-[:TRIAL_AT]->(ts)
                 WHERE (vt.yieldKgHa IS NOT NULL OR vt.yieldNoteS1 IS NOT NULL)
                   AND {RANKING_ELIGIBLE_PREDICATE}
-                  AND ($irrigation_uri IS NULL OR vt.irrigationRegime = $irrigation_uri)
+                  AND {ep.cypher_irrigation_match("vt.irrigationRegime")}
                   AND ($excluded_sites IS NULL OR NOT EXISTS {{
                       MATCH (vt)-[:TRIAL_AT]->(x:TrialSite)
                       WHERE toLower(x.name) IN $excluded_sites
@@ -2068,7 +2065,7 @@ class GraphDAO:
                 MATCH (vt:VarietyTrial)-[:TRIAL_AT]->(ts)
                 WHERE (vt.yieldKgHa IS NOT NULL OR vt.yieldNoteS1 IS NOT NULL)
                   AND {RANKING_ELIGIBLE_PREDICATE}
-                  AND ($irrigation_uri IS NULL OR vt.irrigationRegime = $irrigation_uri)
+                  AND {ep.cypher_irrigation_match("vt.irrigationRegime")}
                   AND any(c IN $crops WHERE vt.cropEppo = c OR vt.cropScientific CONTAINS c
                           OR toLower(vt.cropScientific) = toLower(c))
                   {ep.cypher_presence_prefilter()}
@@ -2507,7 +2504,7 @@ class GraphDAO:
             AND {RANKING_ELIGIBLE_PREDICATE}
             AND {_CROP_MATCH_PREDICATE}
             AND ($variety IS NULL OR vt.varietyNormalized = $variety)
-            AND ($irrigation_uri IS NULL OR vt.irrigationRegime = $irrigation_uri)
+            AND {ep.cypher_irrigation_match("vt.irrigationRegime")}
         """
         gate = ep.cypher_numeric_tier_gate(tier).rstrip()
         params: dict[str, Any] = {
