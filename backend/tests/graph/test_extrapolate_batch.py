@@ -72,24 +72,26 @@ def _trials(seed: int = 7) -> list[dict]:
         if t["cropEppo"] is None and t["cropScientific"] is None:
             t["cropEppo"] = eppo
         out.append(t)
+    # The measured rows below are built from ``out[0]``: they must not inherit its (random)
+    # note-derived marker, which the evidence policy excludes from every number.
     # Eight HORVX varieties with the exact same top mean: top_n=5 must cut inside the tie.
     for k in range(8):
         out.append({**out[0], "id": 1000 + k, "cropEppo": "HORVX", "cropScientific": None,
                     "varietyNormalized": f"HORVX-TIE{k}", "yieldKgHa": 99999.0, "yieldNoteS1": None,
-                    "rankingEligible": True, "irrigationRegime": None, "year": None, "sites": [k % 3]})
+                    "yieldDerivationMethod": None, "rankingEligible": True, "irrigationRegime": None, "year": None, "sites": [k % 3]})
     # PISSA: exact ties spread over sites; scan order must not influence their rank.
     for k in range(24):
         out.append({**out[0], "id": 3000 + k, "cropEppo": "PISSA", "cropScientific": None,
                     "varietyNormalized": f"PISSA-V{k:02d}", "yieldKgHa": 2000.0, "yieldNoteS1": None,
-                    "rankingEligible": True, "irrigationRegime": None, "year": None,
+                    "yieldDerivationMethod": None, "rankingEligible": True, "irrigationRegime": None, "year": None,
                     "sites": [(k * 7) % 4]})
     # SECCE: two numeric varieties + seven note-only ones (null means tie at the top_n cut).
     for k in range(9):
         numeric = k < 2
         out.append({**out[0], "id": 2000 + k, "cropEppo": "SECCE", "cropScientific": "Secale cereale",
                     "varietyNormalized": f"SECCE-V{k}", "yieldKgHa": 3000.0 + k if numeric else None,
-                    "yieldNoteS1": None if numeric else "6", "rankingEligible": True,
-                    "sites": [k % 3]})
+                    "yieldNoteS1": None if numeric else "6", "yieldDerivationMethod": None,
+                    "rankingEligible": True, "sites": [k % 3]})
     return out
 
 
