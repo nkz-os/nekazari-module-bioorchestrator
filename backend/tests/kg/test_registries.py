@@ -626,9 +626,9 @@ def test_aggregate_with_coordinates_is_an_error(copy_dir):
         load_registries(dest)
 
 
-def test_site_alias_collision_and_unknown_kind_are_errors(copy_dir):
+def test_site_alias_collision_is_an_error(copy_dir):
     dest, edit = copy_dir
-    edit("sites.yaml", lambda d: d["sites"][1]["aliases"].append("Valladolid"))
+    edit("sites.yaml", lambda d: d["sites"][1].setdefault("aliases", []).append("Valladolid"))
     with pytest.raises(RegistryError, match="site alias"):
         load_registries(dest)
 
