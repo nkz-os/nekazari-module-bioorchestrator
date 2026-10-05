@@ -1,0 +1,101 @@
+# Crop registry (KG ingestion). Single source of truth for crop identity: canonical EPPO code,
+# the other codes and names that unambiguously denote the same crop, family and main product.
+#
+# Scope (F1): every EPPO code present in the GENVCE and CREA raw data, plus the alias targets
+# named in the spec (CIEAS -> CIEAR). Further crops are added with their source contract.
+#
+# Aliases are resolved by exact match after Unicode NFC, case-folding and whitespace collapsing.
+# Only unambiguous aliases are listed; a code that may denote a different species is NOT aliased:
+#   - TRZAW is deliberately absent. The graph uses it for spelt (BSL) and a CREA conversion script
+#     emitted it for soft wheat. It is not resolved until an owner decision, so a contract that
+#     emits it fails the gate (unresolved EPPO) instead of silently mixing species.
+#   - BRSNW (winter rapeseed) is an alias of BRSNN: same species, winter cycle is a trial attribute
+#     (species_registry.yaml carries the same decision).
+#
+# `aliases` also lists the exact crop labels found in the raw data. The label's modifiers (cycle,
+# organic) are NOT part of the crop; the source contract extracts them as separate fields.
+#
+# `purposes` and `main_product` are agronomic declarations (status below), not data.
+version: 1
+crops:
+  - eppo: ZEAMX
+    scientific_name: Zea mays
+    family: Poaceae
+    main_product: grain
+    purposes: [grain, forage]
+    seen_in: [GENVCE, CREA]
+    aliases:
+      - ZEAMA
+      - Zea mays
+      - Maíz
+      - Maíz para grano
+      - Maíz ciclo 400-500
+      - Maíz ciclo 600
+      - Maíz ciclo 700
+      - Mais
+      - maize
+      - corn
+    notes: >-
+      ZEAMA is the species-registry code for maize; trials and the graph use ZEAMX. The 320 CREA
+      twins stored under ZEAMA are the same observations and collapse through this alias.
+  - eppo: HORVX
+    scientific_name: Hordeum vulgare
+    family: Poaceae
+    main_product: grain
+    purposes: [grain, forage]
+    seen_in: [GENVCE]
+    aliases:
+      - Hordeum vulgare
+      - Cebada
+      - Cebada de ciclo largo
+      - Cebada de ciclo corto
+      - Cebada de invierno
+      - Cebada de primavera
+      - barley
+  - eppo: TRZAX
+    scientific_name: Triticum aestivum
+    family: Poaceae
+    main_product: grain
+    purposes: [grain, forage]
+    seen_in: [GENVCE]
+    aliases:
+      - Triticum aestivum
+      - Trigo blando
+      - Trigo blando de invierno
+      - Trigo blando ecológico de invierno
+      - Trigo blando ecológico de primavera
+      - soft wheat
+      - bread wheat
+    notes: >-
+      Soft (bread) wheat. Durum wheat is TRZDU and is not registered yet: its only raw occurrence
+      (CREA) is a fabricated placeholder and is excluded. The Romanian wheat rows stored under
+      CREA (Fundulea) are not CREA data (unlicensed paper) and are out of scope, so their crop
+      label is not registered either.
+  - eppo: BRSNN
+    scientific_name: Brassica napus
+    family: Brassicaceae
+    main_product: seed
+    purposes: [grain]
+    seen_in: [GENVCE]
+    aliases:
+      - BRSNW
+      - Brassica napus
+      - Colza
+      - Colza de otoño
+      - rapeseed
+      - oilseed rape
+    notes: BRSNW (winter rapeseed) is the same species; the winter cycle is a trial attribute.
+  - eppo: CIEAR
+    scientific_name: Cicer arietinum
+    family: Fabaceae
+    main_product: grain
+    purposes: [grain]
+    seen_in: []
+    aliases:
+      - CIEAS
+      - Cicer arietinum
+      - garbanzo
+      - chickpea
+    notes: >-
+      Alias target named in the design (CIEAS -> CIEAR); every trial of CIEAS carries the same
+      scientific name (species_registry.yaml). Not present in the GENVCE or CREA raw data.
