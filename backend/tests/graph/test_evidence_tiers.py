@@ -365,7 +365,9 @@ def test_recommend_main_field_before_regional_with_honest_numbers(dao):
     trz = recs["TRZAX"]
     assert trz["evidence"]["tier"] == "field" and trz["yield"]["expected_kg_ha"] == 7000.0
     assert trz["fit"]["reference"] == {"median_kg_ha": 7000.0, "n_trials": 3, "scope": "analog_sites:Cfb:any"}
-    assert trz["fit"]["relative_yield_pct"] == 0.0
+    # three trials are below the reference floor (5): no relative yield, and the gap says why
+    assert trz["fit"]["relative_yield_pct"] is None
+    assert "reference_too_small" in trz["trust"]["data_gaps"]
     assert trz["evidence"]["regional_trial_count"] == 0
     assert recs["ZEAMX"]["yield"]["expected_kg_ha"] == 13000.0
     assert recs["ZEAMX"]["evidence"]["other_purpose_trials"] == {"forage": 3}
@@ -423,7 +425,7 @@ def test_recommend_reference_per_climate_and_regime_and_the_small_reference_gap(
     assert sec["fit"]["reference"] == {"median_kg_ha": 3000.0, "n_trials": 5, "scope": "analog_sites:Csa:secano"}
     exp = sec["yield"]["expected_kg_ha"]
     assert sec["fit"]["relative_yield_pct"] == round((exp / 3000.0 - 1) * 100, 1)
-    assert "reference_too_small" not in sec["trust"]["data_gaps"]
+    assert "reference_too_small" not in sec["trust"]["data_gaps"]  # five trials: the floor itself counts
 
     reg = cie(irrigation_regime="regadío")
     assert reg["fit"]["reference"] == {"median_kg_ha": 5500.0, "n_trials": 2, "scope": "analog_sites:Csa:regadio"}

@@ -59,7 +59,9 @@ from app.services import ggcmi_calendar
 from app.services.crop_reference import get_season_slots
 
 RESISTANT_THRESHOLD = 0.7
-MIN_REFERENCE_TRIALS = 3
+# A reference median of fewer trials than this is not a reference: no relative yield (controller
+# ruling 2026-10-04, raised from 3 now that the reference is local to the analog sites).
+MIN_REFERENCE_TRIALS = 5
 LOW_TRIAL_COUNT = 3
 _SLOT_TO_SOWING = {"winter": "autumn", "summer": "spring"}
 

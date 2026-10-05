@@ -37,7 +37,7 @@ export interface Recommendation {
      * `scope` names the set: `analog_sites:<climate>:<regime>` (e.g. `analog_sites:Csa:secano`;
      * climate = Koppen class or `vector_v2`; regime = `secano` | `regadio` | `any`; `:forage`
      * appended in forage mode), or `regional` (null median) for regional recommendations.
-     * Too few trials: `reference_too_small` in `trust.data_gaps` and a null `relative_yield_pct`.
+     * Fewer than 5 trials: `reference_too_small` in `trust.data_gaps` and a null `relative_yield_pct`.
      */
     reference: { median_kg_ha: number | null; n_trials: number; scope: string };
   };

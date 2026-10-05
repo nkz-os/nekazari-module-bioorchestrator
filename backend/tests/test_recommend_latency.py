@@ -495,11 +495,12 @@ async def test_v2_fallback_reference_comes_from_the_v2_rows_and_names_them(hybri
 async def test_small_or_missing_reference_gives_the_gap_and_no_relative_yield():
     async def extrap(self_, crop, **kw):
         return {"ranked_varieties": [_variety(ref=5000.0, ref_n=2) if crop == "SMALL"
+                                     else _variety(ref=5000.0, ref_n=4) if crop == "JUSTBELOW"
                                      else _variety(ref=None, ref_n=0)]}
 
-    out = await _cached_run(_conds(), crops=("SMALL", "NONE"), extrap=extrap)
+    out = await _cached_run(_conds(), crops=("SMALL", "NONE", "JUSTBELOW"), extrap=extrap)
     recs = {r["crop"]["eppo"]: r for r in out[0]["recommendations"]}
-    for eppo in ("SMALL", "NONE"):
+    for eppo in ("SMALL", "NONE", "JUSTBELOW"):
         assert recs[eppo]["fit"]["relative_yield_pct"] is None
         assert "reference_too_small" in recs[eppo]["trust"]["data_gaps"]
     assert recs["SMALL"]["fit"]["reference"] == {"median_kg_ha": 5000.0, "n_trials": 2,

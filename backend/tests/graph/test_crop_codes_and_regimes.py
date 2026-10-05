@@ -239,6 +239,7 @@ def test_recommend_with_a_regime_includes_a_crop_with_only_a_literal_trial(dao):
     assert {"HORVX", "LITONLY"} <= set(recs)
     assert recs["HORVX"]["fit"]["reference"]["scope"] == "analog_sites:Csa:secano"
     assert recs["HORVX"]["fit"]["reference"]["n_trials"] == 5
+    assert recs["HORVX"]["fit"]["relative_yield_pct"] is not None  # five trials: the floor itself counts
     dao_mod._RECOMMEND_CACHE.clear()
     out = _run(dao.recommend_for_conditions({**cond, "irrigation_regime": "regadío"}))
     assert {r["crop"]["eppo"] for r in out["recommendations"]} >= {"HORVX"}

@@ -9,9 +9,16 @@ def test_relative_yield_basic():
 
 
 @pytest.mark.parametrize("median,n,gap", [(0.0, 40, "reference_zero"), (5000.0, 2, "reference_too_small"),
+                                          (5000.0, 4, "reference_too_small"),
                                           (None, 40, "reference_too_small")])
 def test_relative_yield_undefined(median, n, gap):
     assert r.relative_yield(5000.0, median, n) == (None, gap)
+
+
+def test_reference_floor_is_five_trials():
+    assert r.MIN_REFERENCE_TRIALS == 5
+    assert r.relative_yield(5500.0, 5000.0, 5) == (pytest.approx(10.0), None)  # the floor itself counts
+    assert r.relative_yield(5500.0, 5000.0, 4) == (None, "reference_too_small")
 
 
 def test_relative_yield_missing_expected():
