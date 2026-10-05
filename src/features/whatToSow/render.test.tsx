@@ -47,6 +47,14 @@ describe('what-to-sow components render the evidence states (es)', () => {
     expect(html).toContain('sitios análogos Csa · secano');
     expect(html).toContain('2026-10-04.4');
   });
+  it('an older backend has no forage mode: the notice is not offered even if counts are present', () => {
+    const html = renderToStaticMarkup(
+      <RecommendationCard rec={base('ZEAMX')} scaleMax={5000} expert={false} compared={false} compareDisabled={false}
+        onToggleCompare={noop} onChooseVariety={noop} onOpenEvidence={noop} onReportValue={noop} policyVersion={null} />);
+    expect(html).not.toContain('como forraje');
+    expect(html).not.toContain('Ver como forraje');
+    expect(html).toContain('3500 kg/ha');
+  });
   it('forage card: t MS/ha with a number, "not comparable" with unknown-basis trials only', () => {
     const f = base('ZEAMX');
     f.yield = { ...f.yield, expected_kg_ha: 30106, interval: [28000, 32000], basis: 'dry_matter' };

@@ -52,7 +52,8 @@ interface RecommendationCardProps {
   onChooseVariety: () => void;
   onOpenEvidence: () => void;
   onReportValue: () => void;
-  onViewForage: () => void;
+  /** Absent when the backend has no forage mode (no forage notice then). */
+  onViewForage?: () => void;
   policyVersion?: string | null;
 }
 

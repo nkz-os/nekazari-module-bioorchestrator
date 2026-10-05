@@ -1,7 +1,9 @@
 /** Pure helpers of the "what to sow" page: filters → query params, evidence params, formatting. */
 
 import type { QueryParams } from '../../services/recommendApi';
-import type { EvidenceTier, ParcelEnvironment, Purpose, Recommendation, Similarity, SowingType } from '../../types/recommend';
+import type {
+  EvidenceTier, ParcelEnvironment, Purpose, Recommendation, RecommendResponse, Similarity, SowingType,
+} from '../../types/recommend';
 
 export const KOPPEN_CODES = [
   'Af', 'Am', 'Aw', 'BWh', 'BWk', 'BSh', 'BSk', 'Csa', 'Csb', 'Csc', 'Cwa', 'Cwb',
@@ -13,6 +15,8 @@ export const MANAGEMENTS = ['any', 'conventional', 'organic'] as const;
 export const IRRIGATIONS = ['inferred', 'secano', 'regadío'] as const;
 /** "Destino": the crop's main harvested product, or forage only. */
 export const PURPOSES: readonly Purpose[] = ['main', 'forage'];
+/** The backend's default: sent as no parameter at all, so an older backend is asked exactly what it always was. */
+export const DEFAULT_PURPOSE: Purpose = 'main';
 
 export type SeasonFilter = (typeof SEASONS)[number];
 export type ManagementFilter = (typeof MANAGEMENTS)[number];
@@ -43,7 +47,7 @@ export interface Filters {
 }
 
 export const DEFAULT_FILTERS: Filters = {
-  season: 'all', management: 'any', irrigation: 'inferred', purpose: 'main', frostMargin: '', climateClass: '',
+  season: 'all', management: 'any', irrigation: 'inferred', purpose: DEFAULT_PURPOSE, frostMargin: '', climateClass: '',
 };
 
 export const TOP_N_REQUEST = 15;
@@ -64,6 +68,29 @@ export function parseFrostMargin(raw: string): number | undefined {
 
 export const FROST_DEBOUNCE_MS = 500;
 
+/**
+ * The backend that computed `res` applies the evidence policy: it states the policy version. An
+ * older backend ignores `purpose` and returns neither tiers nor forage counts, so the Destino chip,
+ * the forage notice and the regional section must not appear for its answers (they would promise a
+ * mode that is not in effect).
+ */
+export function carriesEvidencePolicy(res: RecommendResponse | null | undefined): boolean {
+  return res?.status === 'ok' && typeof res.evidence_policy === 'string' && res.evidence_policy !== '';
+}
+
+/**
+ * Whether the backend applies the evidence policy, as last observed. Only an `ok` answer can tell,
+ * so a `needs_climate` one keeps the previous value (the chip does not flicker while it loads).
+ */
+export function nextPolicyAware(prev: boolean, res: RecommendResponse): boolean {
+  return res.status === 'ok' ? carriesEvidencePolicy(res) : prev;
+}
+
+/** Filters as requested: against a backend not known to apply the policy there is only the default Destino. */
+export function effectiveFilters(f: Filters, policyAware: boolean): Filters {
+  return policyAware || f.purpose === DEFAULT_PURPOSE ? f : { ...f, purpose: DEFAULT_PURPOSE };
+}
+
 /** Whether the raw frost-margin text may be committed: empty (server default) or a value in 0–15. */
 export function frostMarginStatus(raw: string): 'empty' | 'valid' | 'invalid' {
   if (raw.trim() === '') return 'empty';
@@ -72,7 +99,7 @@ export function frostMarginStatus(raw: string): 'empty' | 'valid' | 'invalid' {
 
 function baseQuery(f: Filters, expert: boolean): QueryParams {
   const q: QueryParams = { top_n: TOP_N_REQUEST, season: f.season, management: f.management };
-  if (f.purpose) q.purpose = f.purpose;
+  if (f.purpose && f.purpose !== DEFAULT_PURPOSE) q.purpose = f.purpose;
   if (f.irrigation !== 'inferred') q.irrigation_regime = f.irrigation;
   if (expert) {
     const margin = parseFrostMargin(f.frostMargin);

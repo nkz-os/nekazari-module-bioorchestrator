@@ -6,8 +6,8 @@ import { forageNoticeCount } from './viewModel';
 
 interface ForageNoticeProps {
   rec: Recommendation;
-  /** Switches the page to forage mode. */
-  onViewForage: () => void;
+  /** Switches the page to forage mode; absent when the backend has no forage mode (no notice then). */
+  onViewForage?: () => void;
   className?: string;
 }
 
@@ -15,7 +15,7 @@ interface ForageNoticeProps {
 export default function ForageNotice({ rec, onViewForage, className }: ForageNoticeProps) {
   const { t } = useTranslation('bioorchestrator');
   const count = forageNoticeCount(rec);
-  if (count == null) return null;
+  if (count == null || !onViewForage) return null;
   return (
     <Stack gap="tight" className={className}>
       <p className="text-nkz-sm text-nkz-info">{t('whatToSow.card.forageNotice', { count })}</p>

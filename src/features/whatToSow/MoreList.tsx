@@ -38,12 +38,13 @@ interface MoreListProps {
   isCompared: (id: string) => boolean;
   compareFull: boolean;
   onToggleCompare: (id: string) => void;
-  onViewForage: () => void;
+  /** Absent when the backend has no forage mode. */
+  onViewForage?: () => void;
 }
 
 function MoreRow({ rec, scaleMax, compared, compareDisabled, onToggle, onViewForage }: {
   rec: Recommendation; scaleMax: number | null; compared: boolean; compareDisabled: boolean; onToggle: () => void;
-  onViewForage: () => void;
+  onViewForage?: () => void;
 }) {
   const { t } = useTranslation('bioorchestrator');
   const name = useCropName(rec);

@@ -7,8 +7,9 @@ import ContributeWizard from '../../components/ContributeWizard';
 import { useExpertMode } from './expertModeContext';
 import { partitionByTier, partitionRecommendations, resolvePageState } from './viewModel';
 import {
-  DEFAULT_FILTERS, FROST_DEBOUNCE_MS, MANAGEMENTS, MAX_COMPARE, PURPOSES, SEASONS, conditionsQuery,
-  evidenceConditions, irrigationOptions, pickIrrigation, frostMarginStatus, parcelQuery, rangeScaleMax, toggleCompare, type Filters,
+  DEFAULT_FILTERS, FROST_DEBOUNCE_MS, MANAGEMENTS, MAX_COMPARE, PURPOSES, SEASONS, carriesEvidencePolicy,
+  conditionsQuery, effectiveFilters, evidenceConditions, irrigationOptions, nextPolicyAware, pickIrrigation,
+  frostMarginStatus, parcelQuery, rangeScaleMax, toggleCompare, type Filters,
 } from './pageModel';
 import EnvironmentChips from './EnvironmentChips';
 import KoppenPicker from './KoppenPicker';
@@ -102,15 +103,20 @@ function FrostMarginInput({ committed, onCommit }: { committed: string; onCommit
   );
 }
 
-function FilterChips({ filters, expert, hasParcel, onChange }: {
-  filters: Filters; expert: boolean; hasParcel: boolean; onChange: (patch: Partial<Filters>) => void;
+function FilterChips({ filters, expert, hasParcel, forageMode, onChange }: {
+  filters: Filters; expert: boolean; hasParcel: boolean;
+  /** The backend applies the evidence policy, so it has a forage mode; without one the chip would lie. */
+  forageMode: boolean;
+  onChange: (patch: Partial<Filters>) => void;
 }) {
   const { t } = useTranslation('bioorchestrator');
   return (
     <Stack gap="tight">
-      <FilterGroup name="purpose" values={PURPOSES} value={filters.purpose}
-        hints={{ main: t('whatToSow.filter.purpose.mainHint') }}
-        onChange={(purpose) => onChange({ purpose })} />
+      {forageMode && (
+        <FilterGroup name="purpose" values={PURPOSES} value={filters.purpose}
+          hints={{ main: t('whatToSow.filter.purpose.mainHint') }}
+          onChange={(purpose) => onChange({ purpose })} />
+      )}
       <FilterGroup name="season" values={SEASONS} value={filters.season} onChange={(season) => onChange({ season })} />
       <FilterGroup name="management" values={MANAGEMENTS} value={filters.management}
         onChange={(management) => onChange({ management })} />
@@ -167,6 +173,9 @@ export default function WhatToSowPage({ parcelId, onSelectTool, onAssigned }: Wh
   // The response is kept with the parcel it answers, so a parcel switch never flashes the old one.
   const [stored, setStored] = useState<{ parcel: string | null; data: RecommendResponse } | null>(null);
   const response = stored && stored.parcel === parcelId ? stored.data : null;
+  // Whether the backend applies the evidence policy (Destino filter, forage notice, regional section),
+  // as last observed in an answer: an older backend lacks all three.
+  const [policyAware, setPolicyAware] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<unknown>(null);
   const [reload, setReload] = useState(0);
@@ -176,10 +185,10 @@ export default function WhatToSowPage({ parcelId, onSelectTool, onAssigned }: Wh
   const [evidenceFor, setEvidenceFor] = useState<EvidenceTarget | null>(null);
   const [reportFor, setReportFor] = useState<Recommendation | null>(null);
 
-  const filters: Filters = {
+  const filters: Filters = effectiveFilters({
     ...baseFilters,
     climateClass: climate.parcel === parcelId ? climate.code : '',
-  };
+  }, policyAware);
   const query = parcelId ? parcelQuery(filters, expert) : conditionsQuery(filters, expert);
   const queryKey = query ? JSON.stringify(query) : null;
 
@@ -205,6 +214,7 @@ export default function WhatToSowPage({ parcelId, onSelectTool, onAssigned }: Wh
     request
       .then((res) => {
         setStored({ parcel: parcelId, data: res });
+        setPolicyAware((prev) => nextPolicyAware(prev, res));
         if (res.status === 'ok') {
           const ids = new Set(res.recommendations.map((r) => r.recommendation_id));
           setCompareIds((sel) => sel.filter((id) => ids.has(id)));
@@ -221,8 +231,12 @@ export default function WhatToSowPage({ parcelId, onSelectTool, onAssigned }: Wh
 
   const recs = useMemo(() => (response?.status === 'ok' ? response.recommendations : []), [response]);
   const environment: ParcelEnvironment | undefined = response?.parcel_environment;
+  // The answer comes from a backend that applies the evidence policy: only then are the forage notice
+  // and the regional section meaningful.
+  const answeredByPolicy = carriesEvidencePolicy(response);
   // Regional recommendations get their own section: never in the cards, nor on the cards' range scale.
-  const { field, regional } = useMemo(() => partitionByTier(recs), [recs]);
+  const { field, regional } = useMemo(
+    () => (answeredByPolicy ? partitionByTier(recs) : { field: recs, regional: [] }), [recs, answeredByPolicy]);
   const { top, more } = useMemo(() => partitionRecommendations(field), [field]);
   const scaleMax = useMemo(() => rangeScaleMax(field), [field]);
   const policyVersion = response?.status === 'ok' ? response.evidence_policy ?? null : null;
@@ -237,6 +251,7 @@ export default function WhatToSowPage({ parcelId, onSelectTool, onAssigned }: Wh
     if (code) setClimate({ parcel: parcelId, code });
   }, [parcelId]);
   const viewForage = useCallback(() => setBaseFilters((f) => ({ ...f, purpose: 'forage' })), []);
+  const forageAction = answeredByPolicy ? viewForage : undefined;
   const onToggleCompare = useCallback((id: string) => setCompareIds((sel) => toggleCompare(sel, id)), []);
   // "Elegir variedad": toggles the variety panel under that card.
   const handleChooseVariety = useCallback(
@@ -269,7 +284,7 @@ export default function WhatToSowPage({ parcelId, onSelectTool, onAssigned }: Wh
       )}
 
       {queryKey && (
-        <FilterChips filters={filters} expert={expert} hasParcel={parcelId != null}
+        <FilterChips filters={filters} expert={expert} hasParcel={parcelId != null} forageMode={policyAware}
           onChange={(patch) => setBaseFilters((f) => ({ ...f, ...patch }))} />
       )}
 
@@ -319,7 +334,7 @@ export default function WhatToSowPage({ parcelId, onSelectTool, onAssigned }: Wh
                   onChooseVariety={() => handleChooseVariety(rec.recommendation_id)}
                   onOpenEvidence={() => openEvidence(rec)}
                   onReportValue={() => setReportFor(rec)}
-                  onViewForage={viewForage}
+                  onViewForage={forageAction}
                   policyVersion={policyVersion}
                 />
                 {varietyFor === rec.recommendation_id && (
@@ -334,7 +349,7 @@ export default function WhatToSowPage({ parcelId, onSelectTool, onAssigned }: Wh
             isCompared={(id) => compareIds.includes(id)}
             compareFull={compareFull}
             onToggleCompare={onToggleCompare}
-            onViewForage={viewForage}
+            onViewForage={forageAction}
           />
           <RegionalList
             recs={regional}

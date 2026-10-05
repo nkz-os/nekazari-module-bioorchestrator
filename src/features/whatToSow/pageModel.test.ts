@@ -7,7 +7,9 @@ import {
   formatAssumptionValue, knownText, parcelQuery, parseFrostMargin, rangeScaleMax,
   seasonKey, toggleCompare, isFewTrials, frostMarginStatus, irrigationOptions, pickIrrigation, PURPOSES,
   describeReferenceScope, type ScopeTranslate,
+  DEFAULT_PURPOSE, carriesEvidencePolicy, effectiveFilters, nextPolicyAware,
 } from './pageModel';
+import type { RecommendResponse } from '../../types/recommend';
 
 const env = (detail: Record<string, unknown> | null): ParcelEnvironment => ({
   parcel_id: 'p1', area_ha: null, centroid: { lat: null, lon: null }, climate_class: 'Csb',
@@ -52,7 +54,7 @@ describe('frostMarginStatus', () => {
 describe('parcelQuery', () => {
   it('defaults: top_n 15, season/management, no irrigation, no climate, no frost', () => {
     expect(parcelQuery(DEFAULT_FILTERS, false)).toEqual({
-      top_n: 15, season: 'all', management: 'any', purpose: 'main',
+      top_n: 15, season: 'all', management: 'any',
     });
   });
   it('maps irrigation override and climate override', () => {
@@ -76,11 +78,14 @@ describe('purpose filter', () => {
     expect([...PURPOSES]).toEqual(['main', 'forage']);
     expect(DEFAULT_FILTERS.purpose).toBe('main');
   });
-  it('is always sent to the API, on both endpoints', () => {
+  it('forage is sent to the API on both endpoints; the default is sent as nothing', () => {
     expect(parcelQuery({ ...DEFAULT_FILTERS, purpose: 'forage' }, false).purpose).toBe('forage');
     expect(conditionsQuery({ ...DEFAULT_FILTERS, climateClass: 'Csa', purpose: 'forage' }, false)?.purpose)
       .toBe('forage');
-    expect(parcelQuery(DEFAULT_FILTERS, true).purpose).toBe('main');
+    // an older backend is asked exactly what it always was
+    expect(DEFAULT_PURPOSE).toBe('main');
+    expect('purpose' in parcelQuery(DEFAULT_FILTERS, true)).toBe(false);
+    expect('purpose' in (conditionsQuery({ ...DEFAULT_FILTERS, climateClass: 'Csa' }, false) ?? {})).toBe(false);
   });
   it('is never sent empty', () => {
     const bad = { ...DEFAULT_FILTERS, purpose: '' as never };
@@ -94,7 +99,7 @@ describe('conditionsQuery', () => {
   });
   it('carries the picked class plus filters', () => {
     expect(conditionsQuery({ ...DEFAULT_FILTERS, climateClass: 'BSk', season: 'spring' }, false))
-      .toEqual({ top_n: 15, season: 'spring', management: 'any', purpose: 'main', climate_class: 'BSk' });
+      .toEqual({ top_n: 15, season: 'spring', management: 'any', climate_class: 'BSk' });
   });
 });
 
@@ -239,5 +244,41 @@ describe('describeReferenceScope', () => {
       'analog_sites::secano', 'analog_sites:Csa:secano:forage:x']) {
       expect(describeReferenceScope(raw, tes)).toBe(raw);
     }
+  });
+});
+
+// Deploy order: the frontend can be published before the backend that applies the evidence policy.
+describe('evidence-policy awareness (old backend renders as before)', () => {
+  const ok = (extra: Record<string, unknown> = {}) => ({
+    status: 'ok', evidence_policy: '2026-10-05.1', recommendations: [], data_quality: {}, conditions: {}, ...extra,
+  }) as unknown as RecommendResponse;
+  const legacyOk = () => {
+    const { evidence_policy: _omit, ...rest } = ok() as unknown as Record<string, unknown>;
+    return rest as unknown as RecommendResponse;
+  };
+  const needsClimate = { status: 'needs_climate', parcel_environment: env(null) } as RecommendResponse;
+
+  it('an answer carries the policy only when the backend states its version', () => {
+    expect(carriesEvidencePolicy(ok())).toBe(true);
+    expect(carriesEvidencePolicy(legacyOk())).toBe(false);
+    expect(carriesEvidencePolicy(ok({ evidence_policy: '' }))).toBe(false);
+    expect(carriesEvidencePolicy(ok({ evidence_policy: null }))).toBe(false);
+    expect(carriesEvidencePolicy(needsClimate)).toBe(false);
+    expect(carriesEvidencePolicy(null)).toBe(false);
+    expect(carriesEvidencePolicy(undefined)).toBe(false);
+  });
+  it('only an ok answer updates the observed awareness', () => {
+    expect(nextPolicyAware(false, ok())).toBe(true);
+    expect(nextPolicyAware(true, legacyOk())).toBe(false);   // backend rolled back
+    expect(nextPolicyAware(true, needsClimate)).toBe(true);  // cannot tell: keep
+    expect(nextPolicyAware(false, needsClimate)).toBe(false);
+  });
+  it('against a backend not known to apply the policy there is only the default Destino', () => {
+    const forage = { ...DEFAULT_FILTERS, purpose: 'forage' as const, climateClass: 'Csa' };
+    expect(effectiveFilters(forage, false).purpose).toBe('main');
+    expect('purpose' in (conditionsQuery(effectiveFilters(forage, false), false) ?? {})).toBe(false);
+    expect(effectiveFilters(forage, true)).toBe(forage);
+    expect(conditionsQuery(effectiveFilters(forage, true), false)?.purpose).toBe('forage');
+    expect(effectiveFilters(DEFAULT_FILTERS, false)).toBe(DEFAULT_FILTERS);
   });
 });
