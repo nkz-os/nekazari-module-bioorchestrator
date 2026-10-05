@@ -929,7 +929,11 @@
       "viewTrials": "Ver ensayos",
       "reportValue": "Este valor parece incorrecto",
       "yieldBasis": "Base del rendimiento",
-      "unknownBasisTrials": "Ensayos de forraje sin base conocida"
+      "unknownBasisTrials": "Ensayos de forraje sin base conocida",
+      "tier": "Nivel de evidencia",
+      "regionalTrials": "Ensayos regionales (fuera de las cifras)",
+      "referenceScope": "Ámbito de la referencia",
+      "policy": "Política de evidencia"
     },
     "gap": {
       "no_expected_yield": "Sin rendimiento esperado",
@@ -1071,6 +1075,30 @@
     "yieldStatus": {
       "not_comparable": "Rendimiento no comparable",
       "no_measured": "Sin rendimiento medido"
+    },
+    "scope": {
+      "regional": "registros regionales/nacionales",
+      "analog": "sitios análogos {{climate}}",
+      "analogAny": "sitios análogos",
+      "analogVector": "sitios análogos por parecido climático",
+      "regime": {
+        "secano": "secano",
+        "regadio": "regadío",
+        "any": "cualquier riego"
+      },
+      "forage": "forraje"
+    },
+    "tier": {
+      "field": "Ensayos de campo",
+      "regional": "Evidencia regional/nacional"
+    },
+    "regional": {
+      "title": "Evidencia regional/nacional",
+      "badge": "Regional/nacional",
+      "explanation": "Registros nacionales o regionales, no ensayos de parcela. No son comparables con la media local, por eso no se calcula rendimiento relativo.",
+      "noFieldEvidence": "No hay ensayos de parcela en sitios con clima parecido: solo hay registros regionales o nacionales.",
+      "trials_one": "{{count}} ensayo",
+      "trials_other": "{{count}} ensayos"
     }
   }
 }

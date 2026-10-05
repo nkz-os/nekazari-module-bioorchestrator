@@ -26,6 +26,26 @@ export function partitionRecommendations(recs: Recommendation[]): {
   return { top, more };
 }
 
+/** Regional/national evidence only: numbers from aggregate registries, not from field trials. */
+export const isRegionalRec = (rec: Recommendation): boolean => rec.evidence.tier === 'regional';
+
+/**
+ * Field recommendations (the cards and the "more" list) and regional ones (their own section),
+ * each in API order. A recommendation without a tier (older backend) is a field one.
+ */
+export function partitionByTier(recs: Recommendation[]): { field: Recommendation[]; regional: Recommendation[] } {
+  const field: Recommendation[] = [];
+  const regional: Recommendation[] = [];
+  for (const rec of recs) (isRegionalRec(rec) ? regional : field).push(rec);
+  return { field, regional };
+}
+
+/**
+ * Whether the evidence page can list trials behind a recommendation: presence-only crops rest on
+ * records of an excluded source, which the page never lists.
+ */
+export const hasListableTrials = (rec: Recommendation): boolean => yieldStatus(rec) !== 'no_measured';
+
 /**
  * Forage trials of the crop at the same analog sites that the harvest-mode numbers leave out
  * (counted, never averaged). Null when there are none, in forage mode, or on a regional

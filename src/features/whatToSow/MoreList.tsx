@@ -14,6 +14,24 @@ const DOT: Record<Intent, string> = {
   default: 'bg-nkz-border-strong',
 };
 
+/** Water, soil and frost as three coloured dots, each with its word as tooltip and label. */
+export function LevelDots({ rec }: { rec: Recommendation }) {
+  const { t } = useTranslation('bioorchestrator');
+  return (
+    <span className="flex items-center gap-1">
+      {(['water', 'soil', 'frost'] as const).map((kind) => {
+        const level = levelOf(rec, kind);
+        const word = `${t(`whatToSow.badge.${kind}`)}: ${t(level.key)}`;
+        return (
+          <Tooltip key={kind} content={word}>
+            <span role="img" aria-label={word} className={`inline-block w-2 h-2 rounded-full ${DOT[level.intent]}`} />
+          </Tooltip>
+        );
+      })}
+    </span>
+  );
+}
+
 interface MoreListProps {
   recs: Recommendation[];
   scaleMax: number | null;
@@ -38,17 +56,7 @@ function MoreRow({ rec, scaleMax, compared, compareDisabled, onToggle, onViewFor
         )}
       </span>
       <div className="flex-1 min-w-0"><RangeBarView rec={rec} scaleMax={scaleMax} /></div>
-      <span className="flex items-center gap-1">
-        {(['water', 'soil', 'frost'] as const).map((kind) => {
-          const level = levelOf(rec, kind);
-          const word = `${t(`whatToSow.badge.${kind}`)}: ${t(level.key)}`;
-          return (
-            <Tooltip key={kind} content={word}>
-              <span role="img" aria-label={word} className={`inline-block w-2 h-2 rounded-full ${DOT[level.intent]}`} />
-            </Tooltip>
-          );
-        })}
-      </span>
+      <LevelDots rec={rec} />
       <Checkbox
         id={`compare-more-${rec.recommendation_id}`}
         checked={compared}

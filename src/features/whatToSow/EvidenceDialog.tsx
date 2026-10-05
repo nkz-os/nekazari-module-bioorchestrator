@@ -70,6 +70,10 @@ export default function EvidenceDialog({ cropName, eppo, conditions, similarity,
               <Button variant="ghost" size="sm" onClick={onClose}>{t('whatToSow.evidence.close')}</Button>
             </div>
 
+            {data?.tier === 'regional' && (
+              <p className="text-nkz-sm text-nkz-text-muted">{t('whatToSow.regional.explanation')}</p>
+            )}
+
             {loading && <Skeleton variant="rect" height={160} />}
             {!loading && error && (
               <Inline gap="inline" align="center">

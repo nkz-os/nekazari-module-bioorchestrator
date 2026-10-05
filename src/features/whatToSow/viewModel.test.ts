@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import type { Recommendation, RecommendResponse } from '../../types/recommend';
 import {
-  compareRows, forageNoticeCount, formatYield, grossIncome, kgUnitKey, lensAvailability, levelKey,
-  partitionRecommendations, rangeBar, recYieldUnit, recsYieldUnit, resolvePageState, soilWarning, unitKey,
+  compareRows, forageNoticeCount, formatYield, grossIncome, hasListableTrials, isRegionalRec, kgUnitKey,
+  lensAvailability, levelKey, partitionByTier, partitionRecommendations, rangeBar, recYieldUnit, recsYieldUnit, resolvePageState, soilWarning, unitKey,
   yieldStatus, yieldUnit, yieldValue,
 } from './viewModel';
 
@@ -326,5 +326,49 @@ describe('compareRows in forage units', () => {
   it('defaults to whole kg/ha', () => {
     const exp = compareRows([rec('A', { exp: 4321.6 })]).find((r) => r.id === 'expectedYield');
     expect(exp?.cells).toEqual(['4322']);
+  });
+});
+
+describe('partitionByTier', () => {
+  const regionalRec = (eppo: string, over: { exp?: number | null; gaps?: string[] } = {}) => {
+    const r = rec(eppo, { exp: over.exp });
+    r.evidence = { ...r.evidence, tier: 'regional' };
+    r.trust = { ...r.trust, level: 'low', data_gaps: over.gaps ?? ['regional_evidence_only', 'regional_not_comparable'] };
+    return r;
+  };
+  it('splits field and regional recommendations, keeping API order in each', () => {
+    const { field, regional } = partitionByTier([rec('A'), regionalRec('R1'), rec('B'), regionalRec('R2'), rec('C')]);
+    expect(field.map((r) => r.crop.eppo)).toEqual(['A', 'B', 'C']);
+    expect(regional.map((r) => r.crop.eppo)).toEqual(['R1', 'R2']);
+  });
+  it('a recommendation without a tier is a field one', () => {
+    const old = rec('A');
+    delete (old.evidence as { tier?: unknown }).tier;
+    expect(partitionByTier([old]).field).toHaveLength(1);
+    expect(isRegionalRec(old)).toBe(false);
+  });
+  it('regional recommendations never reach the top cards, whatever their trial count', () => {
+    const recs = [regionalRec('R1', { exp: 4000 }), rec('A'), rec('B'), regionalRec('R2'), rec('C'), rec('D')];
+    const { field, regional } = partitionByTier(recs);
+    const { top, more } = partitionRecommendations(field);
+    expect(top.map((r) => r.crop.eppo)).toEqual(['A', 'B', 'C']);
+    expect(more.map((r) => r.crop.eppo)).toEqual(['D']);
+    expect(regional.map((r) => r.crop.eppo)).toEqual(['R1', 'R2']);
+  });
+  it('handles empty input and all-regional input', () => {
+    expect(partitionByTier([])).toEqual({ field: [], regional: [] });
+    const { field, regional } = partitionByTier([regionalRec('R1')]);
+    expect(field).toEqual([]);
+    expect(regional).toHaveLength(1);
+  });
+});
+
+describe('hasListableTrials', () => {
+  it('presence-only recommendations rest on records the evidence page never lists', () => {
+    const presence = rec('P', { exp: null });
+    presence.trust.data_gaps = ['no_measured_yield', 'regional_evidence_only'];
+    expect(hasListableTrials(presence)).toBe(false);
+    expect(hasListableTrials(rec('A'))).toBe(true);
+    expect(hasListableTrials(rec('B', { exp: null }))).toBe(true);
   });
 });

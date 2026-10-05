@@ -931,7 +931,11 @@
       "viewTrials": "View trials",
       "reportValue": "This value looks wrong",
       "yieldBasis": "Yield basis",
-      "unknownBasisTrials": "Forage trials with unknown basis"
+      "unknownBasisTrials": "Forage trials with unknown basis",
+      "tier": "Evidence tier",
+      "regionalTrials": "Regional trials (not in the figures)",
+      "referenceScope": "Reference scope",
+      "policy": "Evidence policy"
     },
     "gap": {
       "no_expected_yield": "No expected yield",
@@ -1073,6 +1077,30 @@
     "yieldStatus": {
       "not_comparable": "Yield not comparable",
       "no_measured": "No measured yield"
+    },
+    "scope": {
+      "regional": "regional/national records",
+      "analog": "analog sites {{climate}}",
+      "analogAny": "analog sites",
+      "analogVector": "analog sites by climate similarity",
+      "regime": {
+        "secano": "rainfed",
+        "regadio": "irrigated",
+        "any": "any irrigation"
+      },
+      "forage": "forage"
+    },
+    "tier": {
+      "field": "Field trials",
+      "regional": "Regional/national evidence"
+    },
+    "regional": {
+      "title": "Regional/national evidence",
+      "badge": "Regional/national",
+      "explanation": "National or regional records, not field trials. They are not comparable with the local average, so no relative yield is computed.",
+      "noFieldEvidence": "There are no field trials at sites with a similar climate: only regional or national records.",
+      "trials_one": "{{count}} trial",
+      "trials_other": "{{count}} trials"
     }
   }
 }

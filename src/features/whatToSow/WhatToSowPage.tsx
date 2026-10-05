@@ -5,7 +5,7 @@ import { fetchRecommendConditions, fetchRecommendParcel, type QueryParams } from
 import type { ParcelEnvironment, Recommendation, RecommendResponse } from '../../types/recommend';
 import ContributeWizard from '../../components/ContributeWizard';
 import { useExpertMode } from './expertModeContext';
-import { partitionRecommendations, resolvePageState } from './viewModel';
+import { partitionByTier, partitionRecommendations, resolvePageState } from './viewModel';
 import {
   DEFAULT_FILTERS, FROST_DEBOUNCE_MS, MANAGEMENTS, MAX_COMPARE, PURPOSES, SEASONS, conditionsQuery,
   evidenceConditions, irrigationOptions, pickIrrigation, frostMarginStatus, parcelQuery, rangeScaleMax, toggleCompare, type Filters,
@@ -14,6 +14,7 @@ import EnvironmentChips from './EnvironmentChips';
 import KoppenPicker from './KoppenPicker';
 import RecommendationCard, { useCropName } from './RecommendationCard';
 import MoreList from './MoreList';
+import RegionalList from './RegionalList';
 import EvidenceDialog from './EvidenceDialog';
 import CompareTray from './CompareTray';
 import VarietyPanel from './VarietyPanel';
@@ -151,7 +152,7 @@ function EvidenceFor({ target, onClose }: { target: EvidenceTarget; onClose: () 
       cropName={name}
       eppo={target.rec.crop.eppo}
       conditions={target.conditions}
-      similarity={target.rec.trust.similarity}
+      similarity={target.rec.evidence.tier === 'regional' ? 'koppen' : target.rec.trust.similarity}
       onClose={onClose}
     />
   );
@@ -220,8 +221,11 @@ export default function WhatToSowPage({ parcelId, onSelectTool, onAssigned }: Wh
 
   const recs = useMemo(() => (response?.status === 'ok' ? response.recommendations : []), [response]);
   const environment: ParcelEnvironment | undefined = response?.parcel_environment;
-  const { top, more } = useMemo(() => partitionRecommendations(recs), [recs]);
-  const scaleMax = useMemo(() => rangeScaleMax(recs), [recs]);
+  // Regional recommendations get their own section: never in the cards, nor on the cards' range scale.
+  const { field, regional } = useMemo(() => partitionByTier(recs), [recs]);
+  const { top, more } = useMemo(() => partitionRecommendations(field), [field]);
+  const scaleMax = useMemo(() => rangeScaleMax(field), [field]);
+  const policyVersion = response?.status === 'ok' ? response.evidence_policy ?? null : null;
   const usedClimate =
     (response?.status === 'ok' && typeof response.conditions.climate_class === 'string'
       ? response.conditions.climate_class : null) ?? environment?.climate_class ?? null;
@@ -239,7 +243,9 @@ export default function WhatToSowPage({ parcelId, onSelectTool, onAssigned }: Wh
     (id: string) => setVarietyFor((cur) => (cur === id ? null : id)), []);
   const openEvidence = (rec: Recommendation) => {
     const echo = response?.status === 'ok' ? response.conditions : null;
-    setEvidenceFor({ rec, conditions: evidenceConditions(echo, environment, rec.trust.similarity) });
+    // Regional trials exist only for the Köppen class's aggregate sites.
+    const similarity = rec.evidence.tier === 'regional' ? 'koppen' : rec.trust.similarity;
+    setEvidenceFor({ rec, conditions: evidenceConditions(echo, environment, similarity, rec.evidence.tier) });
   };
 
   const compareFull = compareIds.length >= MAX_COMPARE;
@@ -314,6 +320,7 @@ export default function WhatToSowPage({ parcelId, onSelectTool, onAssigned }: Wh
                   onOpenEvidence={() => openEvidence(rec)}
                   onReportValue={() => setReportFor(rec)}
                   onViewForage={viewForage}
+                  policyVersion={policyVersion}
                 />
                 {varietyFor === rec.recommendation_id && (
                   <VarietyPanel rec={rec} parcelId={parcelId} onSelectTool={onSelectTool} onAssigned={onAssigned} />
@@ -328,6 +335,14 @@ export default function WhatToSowPage({ parcelId, onSelectTool, onAssigned }: Wh
             compareFull={compareFull}
             onToggleCompare={onToggleCompare}
             onViewForage={viewForage}
+          />
+          <RegionalList
+            recs={regional}
+            expert={expert}
+            policyVersion={policyVersion}
+            noFieldEvidence={field.length === 0}
+            onOpenEvidence={openEvidence}
+            onReportValue={setReportFor}
           />
         </Stack>
       )}

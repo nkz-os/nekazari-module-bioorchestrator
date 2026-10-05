@@ -1,9 +1,12 @@
 import { describe, expect, it } from 'vitest';
+import es from '../../locales/es.json';
+import en from '../../locales/en.json';
 import type { ParcelEnvironment, Recommendation } from '../../types/recommend';
 import {
   DEFAULT_FILTERS, KOPPEN_CODES, MAX_COMPARE, conditionsQuery, evidenceConditions,
   formatAssumptionValue, knownText, parcelQuery, parseFrostMargin, rangeScaleMax,
   seasonKey, toggleCompare, isFewTrials, frostMarginStatus, irrigationOptions, pickIrrigation, PURPOSES,
+  describeReferenceScope, type ScopeTranslate,
 } from './pageModel';
 
 const env = (detail: Record<string, unknown> | null): ParcelEnvironment => ({
@@ -191,5 +194,50 @@ describe('irrigation options', () => {
     expect(pickIrrigation('inferred', 'regadío', false)).toBe('regadío');
     expect(conditionsQuery({ ...DEFAULT_FILTERS, climateClass: 'Csa',
       irrigation: pickIrrigation('secano', 'secano', false) }, false)?.irrigation_regime).toBeUndefined();
+  });
+});
+
+/** Translator over a real locale file: checks the sentence the farmer reads, not just the keys. */
+function translator(dict: unknown): ScopeTranslate {
+  return (key, opts) => {
+    const node = key.split('.').reduce<unknown>(
+      (n, part) => (n && typeof n === 'object' ? (n as Record<string, unknown>)[part] : undefined), dict);
+    if (typeof node !== 'string') throw new Error(`missing key ${key}`);
+    return node.replace(/\{\{(\w+)\}\}/g, (_m, k: string) => String(opts?.[k] ?? ''));
+  };
+}
+
+describe('describeReferenceScope', () => {
+  const tes = translator({ whatToSow: (es as { whatToSow: unknown }).whatToSow });
+  const ten = translator({ whatToSow: (en as { whatToSow: unknown }).whatToSow });
+
+  it('analog sites of a climate class and an irrigation regime', () => {
+    expect(describeReferenceScope('analog_sites:Csa:secano', tes)).toBe('sitios análogos Csa · secano');
+    expect(describeReferenceScope('analog_sites:Csa:regadio', tes)).toBe('sitios análogos Csa · regadío');
+    expect(describeReferenceScope('analog_sites:Csa:regadío', tes)).toBe('sitios análogos Csa · regadío');
+    expect(describeReferenceScope('analog_sites:Csa:secano', ten)).toBe('analog sites Csa · rainfed');
+  });
+  it('no regime split is said, not hidden', () => {
+    expect(describeReferenceScope('analog_sites:Dfb:any', tes)).toBe('sitios análogos Dfb · cualquier riego');
+    expect(describeReferenceScope('analog_sites:Dfb:any', ten)).toBe('analog sites Dfb · any irrigation');
+  });
+  it('sites picked by climate similarity, and without a climate class', () => {
+    expect(describeReferenceScope('analog_sites:vector_v2:any', tes))
+      .toBe('sitios análogos por parecido climático · cualquier riego');
+    expect(describeReferenceScope('analog_sites:any:secano', tes)).toBe('sitios análogos · secano');
+  });
+  it('forage mode adds the purpose', () => {
+    expect(describeReferenceScope('analog_sites:Cfb:secano:forage', tes)).toBe('sitios análogos Cfb · secano · forraje');
+    expect(describeReferenceScope('analog_sites:Cfb:secano:forage', ten)).toBe('analog sites Cfb · rainfed · forage');
+  });
+  it('regional recommendations have a regional scope', () => {
+    expect(describeReferenceScope('regional', tes)).toBe('registros regionales/nacionales');
+    expect(describeReferenceScope('regional', ten)).toBe('regional/national records');
+  });
+  it('returns an unrecognised scope as is (never invented)', () => {
+    for (const raw of ['crop', '', 'analog_sites:Csa', 'analog_sites:Csa:wet', 'analog_sites:Csa:secano:silage',
+      'analog_sites::secano', 'analog_sites:Csa:secano:forage:x']) {
+      expect(describeReferenceScope(raw, tes)).toBe(raw);
+    }
   });
 });

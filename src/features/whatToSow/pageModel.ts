@@ -171,3 +171,29 @@ export function rangeScaleMax(recs: Recommendation[]): number | null {
   }
   return max;
 }
+
+/** Minimal translator the scope formatter needs (i18next's `t` fits). */
+export type ScopeTranslate = (key: string, options?: Record<string, unknown>) => string;
+
+const REGIME_IDS: Record<string, string> = { secano: 'secano', regadio: 'regadio', 'regadío': 'regadio', any: 'any' };
+
+/**
+ * Human-readable `fit.reference.scope`: `analog_sites:Csa:secano` → "sitios análogos Csa · secano".
+ * Climate is a Köppen class, `vector_v2` (sites picked by climate similarity) or `any`; regime is
+ * secano | regadio | any; a trailing `:forage` marks forage mode. `regional` has no reference
+ * median. Anything unrecognised is returned as is, never invented.
+ */
+export function describeReferenceScope(scope: string, t: ScopeTranslate): string {
+  if (scope === 'regional') return t('whatToSow.scope.regional');
+  const parts = scope.split(':');
+  if (parts[0] !== 'analog_sites' || (parts.length !== 3 && parts.length !== 4)) return scope;
+  const [, climate, regime, tail] = parts;
+  const regimeId = REGIME_IDS[regime];
+  if (!climate || !regimeId || (tail !== undefined && tail !== 'forage')) return scope;
+  const sites = climate === 'any' ? t('whatToSow.scope.analogAny')
+    : climate === 'vector_v2' ? t('whatToSow.scope.analogVector')
+      : t('whatToSow.scope.analog', { climate });
+  const out = [sites, t(`whatToSow.scope.regime.${regimeId}`)];
+  if (tail === 'forage') out.push(t('whatToSow.scope.forage'));
+  return out.join(' · ');
+}

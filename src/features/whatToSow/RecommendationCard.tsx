@@ -53,11 +53,12 @@ interface RecommendationCardProps {
   onOpenEvidence: () => void;
   onReportValue: () => void;
   onViewForage: () => void;
+  policyVersion?: string | null;
 }
 
 export default function RecommendationCard({
   rec, scaleMax, expert, compared, compareDisabled, onToggleCompare, onChooseVariety,
-  onOpenEvidence, onReportValue, onViewForage,
+  onOpenEvidence, onReportValue, onViewForage, policyVersion,
 }: RecommendationCardProps) {
   const { t, i18n } = useTranslation('bioorchestrator');
   const name = useCropName(rec);
@@ -133,7 +134,7 @@ export default function RecommendationCard({
 
         <ForageNotice rec={rec} onViewForage={onViewForage} />
 
-        {expert && <ExpertDetails rec={rec} onOpenEvidence={onOpenEvidence} onReportValue={onReportValue} />}
+        {expert && <ExpertDetails rec={rec} policyVersion={policyVersion} onOpenEvidence={onOpenEvidence} onReportValue={onReportValue} />}
 
         <div className="flex flex-wrap items-center justify-between gap-2">
           <Checkbox
