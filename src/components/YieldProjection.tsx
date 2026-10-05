@@ -5,6 +5,7 @@ import { TrendingUp, Activity, Globe, AlertTriangle, Sprout, BarChart3 } from 'l
 import { useBioApi } from '../services/api';
 import { useParcelContext } from '../context/ParcelContext';
 import { usePlanningScenario } from '../context/PlanningScenarioContext';
+import { toCompareRow, type CompareRow } from './yieldProjectionModel';
 
 interface VarietyResult {
   variety: string;
@@ -49,15 +50,6 @@ interface YieldProjResponse {
   yield_loss_pct: number;
   per_stage: PerStage[];
   methodology: string;
-}
-
-interface CompareRow {
-  crop: string;
-  best_variety: string;
-  expected_yield_kg_ha: number;
-  net_margin_eur_ha: number;
-  carbon_fixed_tco2e_ha: number;
-  soil_warnings: string[];
 }
 
 interface CompareResponse {
@@ -169,14 +161,7 @@ export default function YieldProjection() {
     try {
       const data = await api.compareCrops(selectedParcel, Array.from(selectedCrops));
       setCompareResult({
-        comparisons: (data.comparisons || []).map((c: any) => ({
-          crop: c.crop,
-          best_variety: c.agronomics?.best_variety || c.best_variety || '—',
-          expected_yield_kg_ha: c.agronomics?.expected_yield_kg_ha || 0,
-          net_margin_eur_ha: c.economic?.net_margin_eur_ha || 0,
-          carbon_fixed_tco2e_ha: c.environmental?.carbon_fixed_tco2e_ha || 0,
-          soil_warnings: c.soil_suitability?.warnings || [],
-        })),
+        comparisons: (data.comparisons || []).map(toCompareRow),
         target_environment: data.target_environment || {},
       });
     } catch (e: any) {
@@ -409,10 +394,10 @@ export default function YieldProjection() {
                         <td className="py-2 pr-3 font-medium">{c.crop}</td>
                         <td className="py-2 pr-3 text-nkz-text-secondary">{c.best_variety}</td>
                         <td className="py-2 pr-3 text-right font-semibold text-nkz-accent-base">
-                          {c.expected_yield_kg_ha?.toLocaleString()} kg/ha
+                          {c.expected_yield_kg_ha == null ? t('yieldProjection.noData') : `${c.expected_yield_kg_ha.toLocaleString()} kg/ha`}
                         </td>
                         <td className="py-2 pr-3 text-right text-nkz-positive">
-                          {c.net_margin_eur_ha?.toLocaleString()} €/ha
+                          {c.net_margin_eur_ha == null ? t('yieldProjection.noData') : `${c.net_margin_eur_ha.toLocaleString()} €/ha`}
                         </td>
                         <td className="py-2 pr-3 text-right">
                           {c.carbon_fixed_tco2e_ha?.toFixed(2)} tCO₂e/ha

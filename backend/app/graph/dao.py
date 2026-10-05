@@ -4449,13 +4449,15 @@ class GraphDAO:
             )
             best = (extrapolated.get("ranked_varieties") or [{}])[0] if isinstance(extrapolated, dict) else {}
 
-            yield_val = best.get("mean_yield_kg_ha", 0) or 0
+            # No eligible numeric evidence (evidence policy) is a null yield, never 0: revenue and
+            # margin depend on it and are null too.
+            yield_val = _eligible_yield(best)
             ops = ref["operations_count"]
             seed_cost = seed_price * 1
             ops_cost = ops * operation_cost
             total_cost = seed_cost + ops_cost
-            gross_rev = yield_val / 1000 * harvest_price
-            net_margin = gross_rev - total_cost
+            gross_rev = yield_val / 1000 * harvest_price if yield_val is not None else None
+            net_margin = gross_rev - total_cost if gross_rev is not None else None
             carbon = ref["carbon_fixed_tco2e_ha"]
 
             # Soil suitability
@@ -4473,7 +4475,7 @@ class GraphDAO:
                 "crop": crop,
                 "best_variety": best.get("variety", ""),
                 "agronomics": {
-                    "expected_yield_kg_ha": round(yield_val, 1),
+                    "expected_yield_kg_ha": round(yield_val, 1) if yield_val is not None else None,
                     "confidence_interval": best.get("confidence_interval") if best else None,
                     "trials_analyzed": best.get("trial_count", 0),
                     "growing_season_days": ref["growing_season_days"],
@@ -4488,11 +4490,13 @@ class GraphDAO:
                     "seed_cost_eur_ha": round(seed_cost, 2) if seed_price > 1 else None,
                     "operations_cost_eur_ha": round(ops_cost, 2) if operation_cost > 1 else None,
                     "total_cost_eur_ha": round(total_cost, 2),
-                    "gross_revenue_eur_ha": round(gross_rev, 2),
-                    "net_margin_eur_ha": round(net_margin, 2),
+                    "gross_revenue_eur_ha": round(gross_rev, 2) if gross_rev is not None else None,
+                    "net_margin_eur_ha": round(net_margin, 2) if net_margin is not None else None,
                 },
                 "soil_suitability": {"overall": "suitable" if not warnings else "warning", "warnings": warnings},
             }
+            if yield_val is None:
+                entry["data_gaps"] = [_NO_MEASURED_YIELD_GAP]
 
             # Attach source provenance metadata
             if "n_fixation_source" in ref:
@@ -4517,15 +4521,20 @@ class GraphDAO:
 
             comparisons.append(entry)
 
-        # Rankings
-        by_margin = sorted(comparisons, key=lambda x: x["economic"]["net_margin_eur_ha"], reverse=True)
+        # Rankings: a crop without a yield (hence without margin or score) goes last, never as a 0
+        scored = [c for c in comparisons if c["economic"]["net_margin_eur_ha"] is not None]
+        unscored = [c for c in comparisons if c["economic"]["net_margin_eur_ha"] is None]
+        by_margin = sorted(scored, key=lambda x: x["economic"]["net_margin_eur_ha"], reverse=True) + unscored
         by_carbon = sorted(comparisons, key=lambda x: x["environmental"]["carbon_fixed_tco2e_ha"], reverse=True)
-        # Composite score: yield 40% + margin 30% + carbon 20% + suitability 10%
+        # Composite score: yield 40% + margin 30% + carbon 20% + suitability 10% (null without a yield)
         if comparisons:
-            max_yield = max(c["agronomics"]["expected_yield_kg_ha"] for c in comparisons) or 1
-            max_margin = max(c["economic"]["net_margin_eur_ha"] for c in comparisons) or 1
+            max_yield = max((c["agronomics"]["expected_yield_kg_ha"] for c in scored), default=0) or 1
+            max_margin = max((c["economic"]["net_margin_eur_ha"] for c in scored), default=0) or 1
             max_carbon = max(c["environmental"]["carbon_fixed_tco2e_ha"] for c in comparisons) or 1
             for c in comparisons:
+                if c["economic"]["net_margin_eur_ha"] is None:
+                    c["composite_score"] = None
+                    continue
                 suit_score = 10 if c["soil_suitability"]["overall"] == "suitable" else 5
                 c["composite_score"] = round(
                     40 * c["agronomics"]["expected_yield_kg_ha"] / max_yield
@@ -4533,7 +4542,7 @@ class GraphDAO:
                     + 20 * c["environmental"]["carbon_fixed_tco2e_ha"] / max_carbon
                     + suit_score, 1
                 )
-            by_score = sorted(comparisons, key=lambda x: x.get("composite_score", 0), reverse=True)
+            by_score = sorted(scored, key=lambda x: x["composite_score"], reverse=True) + unscored
         else:
             by_score = []
 
@@ -4584,6 +4593,7 @@ class GraphDAO:
         cumulative_yield = 0.0
         cumulative_carbon = 0.0
         cumulative_margin = 0.0
+        years_with_yield = 0
 
         # Build crop pool: starting_crop first if provided, then successors
         if starting_crop:
@@ -4603,7 +4613,7 @@ class GraphDAO:
 
             extrapolated = await self.extrapolate_varieties(crop=crop, top_n=1)
             best = (extrapolated.get("ranked_varieties") or [{}])[0] if isinstance(extrapolated, dict) else {}
-            yield_val = best.get("mean_yield_kg_ha", 0) or 0
+            yield_val = _eligible_yield(best)  # null without eligible numeric evidence, never 0
 
             carbon = ref["carbon_fixed_tco2e_ha"]
             n_fix = ref["n_fixation_kg_ha"]
@@ -4613,24 +4623,28 @@ class GraphDAO:
 
             ops = ref["operations_count"]
             total_cost = (seed_price * 1) + (ops * operation_cost)
-            gross_rev = yield_val / 1000 * harvest_price
-            margin = gross_rev - total_cost
+            gross_rev = yield_val / 1000 * harvest_price if yield_val is not None else None
+            margin = gross_rev - total_cost if gross_rev is not None else None
 
-            cumulative_yield += yield_val
+            if yield_val is not None and margin is not None:
+                cumulative_yield += yield_val
+                cumulative_margin += margin
+                years_with_yield += 1
             cumulative_carbon += carbon
-            cumulative_margin += margin
 
             entry = {
                 "year": year_idx + 1, "crop": crop,
                 "variety": best.get("variety", ""),
-                "expected_yield_kg_ha": round(yield_val, 1),
+                "expected_yield_kg_ha": round(yield_val, 1) if yield_val is not None else None,
                 "carbon_fixed_tco2e": carbon,
-                "net_margin_eur_ha": round(margin, 2),
+                "net_margin_eur_ha": round(margin, 2) if margin is not None else None,
                 "n_balance_kg_ha": round(n_balance, 1),
                 "n_fixation_kg_ha": n_fix,
                 "n_requirement_kg_ha": n_req,
                 "soil_n_pool_after_kg_ha": round(soil_n_pool, 1),
             }
+            if yield_val is None:
+                entry["data_gaps"] = [_NO_MEASURED_YIELD_GAP]
 
             # Rotation constraint check
             if previous_crop:
@@ -4659,9 +4673,12 @@ class GraphDAO:
             "parcel_id": parcel_id, "years": years, "plan": plan,
             "initial_soil_n_kg_ha": initial_soil_n,
             "cumulative": {
-                "total_yield_kg_ha": round(cumulative_yield, 1),
+                # Yield and margin add up only the years with eligible evidence (null when none
+                # has any); ``years_with_yield`` says how many that is.
+                "total_yield_kg_ha": round(cumulative_yield, 1) if years_with_yield else None,
                 "total_carbon_fixed_tco2e": round(cumulative_carbon, 2),
-                "total_net_margin_eur_ha": round(cumulative_margin, 2),
+                "total_net_margin_eur_ha": round(cumulative_margin, 2) if years_with_yield else None,
+                "years_with_yield": years_with_yield,
                 "final_soil_n_pool_kg_ha": round(soil_n_pool, 1),
             },
             "pac_compliance": pac,
@@ -5680,6 +5697,15 @@ def _ranked_variety(record: Any, crop: str) -> dict:
         "confidence": best_confidence,
         "source_ids": sorted(s for s in (record.get("source_ids") or []) if s),
     }
+
+
+_NO_MEASURED_YIELD_GAP = "no_measured_yield"
+
+
+def _eligible_yield(variety: dict | None) -> float | None:
+    """Mean yield of a ranked variety under the evidence policy, or None (never 0) when it has none."""
+    kg = (variety or {}).get("mean_yield_kg_ha")
+    return float(kg) if kg is not None else None
 
 
 def _yield_provenance(derived_count: int | None, trial_count: int | None) -> str:

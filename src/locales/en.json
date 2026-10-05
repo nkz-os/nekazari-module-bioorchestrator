@@ -567,6 +567,7 @@
     "loading": "Loading..."
   },
   "yieldProjection": {
+    "noData": "no data",
     "title": "Yield Projection",
     "subtitle": "Yield estimates from trial data (Phase A) and stress-corrected in-campaign projections (Phase B).",
     "selectParcel": "Select a parcel to view yield projections",

@@ -567,6 +567,7 @@
     "loading": "Cargando..."
   },
   "yieldProjection": {
+    "noData": "sin datos",
     "title": "Proyección de Rendimiento",
     "subtitle": "Estimaciones de rendimiento desde ensayos (Fase A) y proyecciones corregidas por estrés en campaña (Fase B).",
     "selectParcel": "Selecciona una parcela para ver proyecciones",
