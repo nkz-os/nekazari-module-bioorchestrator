@@ -858,7 +858,13 @@
         "regadío": "Regadío"
       },
       "frostMargin": "Margen de helada (°C)",
-      "frostMarginInvalid": "Introduce un valor entre 0 y 15, o déjalo vacío (5 por defecto)."
+      "frostMarginInvalid": "Introduce un valor entre 0 y 15, o déjalo vacío (5 por defecto).",
+      "purpose": {
+        "label": "Destino",
+        "main": "Cosecha",
+        "forage": "Forraje",
+        "mainHint": "grano, fruto, tubérculo…"
+      }
     },
     "season": {
       "autumn": "Siembra de otoño",

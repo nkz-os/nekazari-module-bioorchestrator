@@ -860,7 +860,13 @@
         "regadío": "Irrigated"
       },
       "frostMargin": "Frost margin (°C)",
-      "frostMarginInvalid": "Enter a value between 0 and 15, or leave it empty (default 5)."
+      "frostMarginInvalid": "Enter a value between 0 and 15, or leave it empty (default 5).",
+      "purpose": {
+        "label": "Purpose",
+        "main": "Harvest",
+        "forage": "Forage",
+        "mainHint": "grain, fruit, tuber…"
+      }
     },
     "season": {
       "autumn": "Autumn sowing",

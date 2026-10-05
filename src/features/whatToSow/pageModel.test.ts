@@ -3,7 +3,7 @@ import type { ParcelEnvironment, Recommendation } from '../../types/recommend';
 import {
   DEFAULT_FILTERS, KOPPEN_CODES, MAX_COMPARE, conditionsQuery, evidenceConditions,
   formatAssumptionValue, knownText, parcelQuery, parseFrostMargin, rangeScaleMax,
-  seasonKey, toggleCompare, isFewTrials, frostMarginStatus, irrigationOptions, pickIrrigation,
+  seasonKey, toggleCompare, isFewTrials, frostMarginStatus, irrigationOptions, pickIrrigation, PURPOSES,
 } from './pageModel';
 
 const env = (detail: Record<string, unknown> | null): ParcelEnvironment => ({
@@ -49,7 +49,7 @@ describe('frostMarginStatus', () => {
 describe('parcelQuery', () => {
   it('defaults: top_n 15, season/management, no irrigation, no climate, no frost', () => {
     expect(parcelQuery(DEFAULT_FILTERS, false)).toEqual({
-      top_n: 15, season: 'all', management: 'any',
+      top_n: 15, season: 'all', management: 'any', purpose: 'main',
     });
   });
   it('maps irrigation override and climate override', () => {
@@ -68,13 +68,30 @@ describe('parcelQuery', () => {
   });
 });
 
+describe('purpose filter', () => {
+  it('offers harvest (main) first and forage; harvest is the default', () => {
+    expect([...PURPOSES]).toEqual(['main', 'forage']);
+    expect(DEFAULT_FILTERS.purpose).toBe('main');
+  });
+  it('is always sent to the API, on both endpoints', () => {
+    expect(parcelQuery({ ...DEFAULT_FILTERS, purpose: 'forage' }, false).purpose).toBe('forage');
+    expect(conditionsQuery({ ...DEFAULT_FILTERS, climateClass: 'Csa', purpose: 'forage' }, false)?.purpose)
+      .toBe('forage');
+    expect(parcelQuery(DEFAULT_FILTERS, true).purpose).toBe('main');
+  });
+  it('is never sent empty', () => {
+    const bad = { ...DEFAULT_FILTERS, purpose: '' as never };
+    expect('purpose' in parcelQuery(bad, false)).toBe(false);
+  });
+});
+
 describe('conditionsQuery', () => {
   it('is null without a climate class (endpoint requires one)', () => {
     expect(conditionsQuery(DEFAULT_FILTERS, false)).toBeNull();
   });
   it('carries the picked class plus filters', () => {
     expect(conditionsQuery({ ...DEFAULT_FILTERS, climateClass: 'BSk', season: 'spring' }, false))
-      .toEqual({ top_n: 15, season: 'spring', management: 'any', climate_class: 'BSk' });
+      .toEqual({ top_n: 15, season: 'spring', management: 'any', purpose: 'main', climate_class: 'BSk' });
   });
 });
 
@@ -101,6 +118,20 @@ describe('evidenceConditions', () => {
     const out = evidenceConditions({ ...echo, annual_temp_c: 'n/a' }, undefined, 'vector_v2_fallback');
     expect(out.annual_rainfall_mm).toBe(400);
     expect('annual_temp_c' in out).toBe(false);
+  });
+  it('carries the echoed purpose so the trials listed are the ones of the answer', () => {
+    expect(evidenceConditions({ climate_class: 'Csa', purpose: 'forage' }, undefined, 'koppen'))
+      .toEqual({ climate_class: 'Csa', purpose: 'forage' });
+    expect(evidenceConditions({ climate_class: 'Csa', purpose: 'main' }, undefined, 'koppen').purpose).toBe('main');
+  });
+  it('drops an unknown or empty purpose', () => {
+    expect('purpose' in evidenceConditions({ climate_class: 'Csa', purpose: '' }, undefined, 'koppen')).toBe(false);
+    expect('purpose' in evidenceConditions({ climate_class: 'Csa', purpose: 'silage' }, undefined, 'koppen')).toBe(false);
+  });
+  it('sends the tier only for regional recommendations', () => {
+    expect(evidenceConditions(echo, env(null), 'koppen', 'regional').tier).toBe('regional');
+    expect('tier' in evidenceConditions(echo, env(null), 'koppen', 'field')).toBe(false);
+    expect('tier' in evidenceConditions(echo, env(null), 'koppen')).toBe(false);
   });
   it('drops unknown irrigation values and empty strings', () => {
     const out = evidenceConditions({ climate_class: 'Csa', soil_type: '', irrigation_regime: 'drip' },

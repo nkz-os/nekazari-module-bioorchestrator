@@ -1,13 +1,13 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from '@nekazari/sdk';
-import { Button, Card, EmptyState, Inline, Input, Skeleton, Stack } from '@nekazari/ui-kit';
+import { Button, Card, EmptyState, Inline, Input, Skeleton, Stack, Tooltip } from '@nekazari/ui-kit';
 import { fetchRecommendConditions, fetchRecommendParcel, type QueryParams } from '../../services/recommendApi';
 import type { ParcelEnvironment, Recommendation, RecommendResponse } from '../../types/recommend';
 import ContributeWizard from '../../components/ContributeWizard';
 import { useExpertMode } from './expertModeContext';
 import { partitionRecommendations, resolvePageState } from './viewModel';
 import {
-  DEFAULT_FILTERS, FROST_DEBOUNCE_MS, MANAGEMENTS, MAX_COMPARE, SEASONS, conditionsQuery,
+  DEFAULT_FILTERS, FROST_DEBOUNCE_MS, MANAGEMENTS, MAX_COMPARE, PURPOSES, SEASONS, conditionsQuery,
   evidenceConditions, irrigationOptions, pickIrrigation, frostMarginStatus, parcelQuery, rangeScaleMax, toggleCompare, type Filters,
 } from './pageModel';
 import EnvironmentChips from './EnvironmentChips';
@@ -29,24 +29,29 @@ interface EvidenceTarget {
   conditions: QueryParams;
 }
 
-function FilterGroup<T extends string>({ name, values, value, onChange }: {
+function FilterGroup<T extends string>({ name, values, value, onChange, hints }: {
   name: string; values: readonly T[]; value: T; onChange: (v: T) => void;
+  /** Tooltip text per option, for options whose label alone is not enough. */
+  hints?: Partial<Record<T, string>>;
 }) {
   const { t } = useTranslation('bioorchestrator');
   return (
     <Inline gap="tight" wrap align="center" role="group" aria-label={t(`whatToSow.filter.${name}.label`)}>
       <span className="text-nkz-sm text-nkz-text-muted">{t(`whatToSow.filter.${name}.label`)}</span>
-      {values.map((v) => (
-        <Button
-          key={v}
-          size="sm"
-          variant={v === value ? 'primary' : 'secondary'}
-          aria-pressed={v === value}
-          onClick={() => onChange(v)}
-        >
-          {t(`whatToSow.filter.${name}.${v}`)}
-        </Button>
-      ))}
+      {values.map((v) => {
+        const button = (
+          <Button
+            size="sm"
+            variant={v === value ? 'primary' : 'secondary'}
+            aria-pressed={v === value}
+            onClick={() => onChange(v)}
+          >
+            {t(`whatToSow.filter.${name}.${v}`)}
+          </Button>
+        );
+        const hint = hints?.[v];
+        return hint ? <Tooltip key={v} content={hint}>{button}</Tooltip> : <React.Fragment key={v}>{button}</React.Fragment>;
+      })}
     </Inline>
   );
 }
@@ -99,8 +104,12 @@ function FrostMarginInput({ committed, onCommit }: { committed: string; onCommit
 function FilterChips({ filters, expert, hasParcel, onChange }: {
   filters: Filters; expert: boolean; hasParcel: boolean; onChange: (patch: Partial<Filters>) => void;
 }) {
+  const { t } = useTranslation('bioorchestrator');
   return (
     <Stack gap="tight">
+      <FilterGroup name="purpose" values={PURPOSES} value={filters.purpose}
+        hints={{ main: t('whatToSow.filter.purpose.mainHint') }}
+        onChange={(purpose) => onChange({ purpose })} />
       <FilterGroup name="season" values={SEASONS} value={filters.season} onChange={(season) => onChange({ season })} />
       <FilterGroup name="management" values={MANAGEMENTS} value={filters.management}
         onChange={(management) => onChange({ management })} />
