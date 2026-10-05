@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import hashlib
 import math
+import numbers
 import re
 import unicodedata
 from collections.abc import Iterable, Mapping
@@ -302,6 +303,7 @@ class Range(_Model):
     unit: str = Field(min_length=1)
     status: Literal["reviewed", "assumption"]
     reviewer: str | None = None
+    evidence: str | None = None  # required once reviewed: what the reviewer relied on
     note: str | None = None
     observed: RangeObserved | None = None
 
@@ -311,6 +313,8 @@ class Range(_Model):
             raise ValueError(f"{self.id}: min must be below max")
         if self.status == "reviewed" and not (self.reviewer or "").strip():
             raise ValueError(f"{self.id}: a reviewed range names its reviewer")
+        if self.status == "reviewed" and not (self.evidence or "").strip():
+            raise ValueError(f"{self.id}: a reviewed range carries its evidence")
         if self.status == "assumption" and "pending agronomist review" not in (self.note or ""):
             raise ValueError(f"{self.id}: an assumption range says 'pending agronomist review'")
         return self
@@ -334,10 +338,15 @@ class Variety(_Model):
     status: Literal["reviewed", "assumption", "candidate"]
     aliases: tuple[str, ...] = ()
     evidence: str | None = None
+    reviewer: str | None = None  # required once reviewed
     sources: tuple[str, ...] = ()
 
     @model_validator(mode="after")
     def _aliases_need_evidence(self) -> Variety:
+        if self.status == "reviewed" and not (self.reviewer or "").strip():
+            raise ValueError(f"{self.id}: a reviewed variety names its reviewer")
+        if self.status == "reviewed" and not (self.evidence or "").strip():
+            raise ValueError(f"{self.id}: a reviewed variety carries its evidence")
         if self.aliases and not (self.evidence or "").strip():
             raise ValueError(f"{self.id}: aliases need the evidence that groups them")
         if self.aliases and self.status == "candidate":
@@ -661,13 +670,13 @@ class Registries:
 
     def convert(self, value: float, from_unit: str, to_unit: str) -> float:
         """Convert between two units of the same dimension, exactly in decimal arithmetic."""
-        if isinstance(value, bool) or not isinstance(value, int | float) or not math.isfinite(value):
+        if isinstance(value, bool) or not isinstance(value, numbers.Real) or not math.isfinite(value):
             raise ValueError(f"cannot convert {value!r}")
         src, dst = self.unit(from_unit), self.unit(to_unit)
         if src.dimension != dst.dimension:
             raise RegistryError(
                 f"cannot convert {src.code} ({src.dimension}) to {dst.code} ({dst.dimension})")
-        exact = Fraction(value) if isinstance(value, int) else Fraction(repr(value))
+        exact = Fraction(str(float(value)))  # shortest decimal of the float; numpy scalars work too
         return float(exact * src.factor_fraction / dst.factor_fraction)
 
     # ── vocabularies ─────────────────────────────────────────────────────────

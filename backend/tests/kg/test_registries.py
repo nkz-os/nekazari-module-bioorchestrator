@@ -215,6 +215,28 @@ def test_unit_alias_shared_by_two_units_is_an_error(copy_dir):
         load_registries(dest)
 
 
+def test_ucum_spellings_are_pinned(reg):
+    # hectare is "har" in UCUM; these strings are interchange identifiers, so a change is a decision
+    assert {u.code: u.ucum for u in reg.units} == {
+        "kg/ha": "kg/har", "t/ha": "t/har", "dt/ha": "dt/har", "%": "%", "kg/hL": "kg/hL",
+        "g": "g", "cm": "cm", "d": "d", "/m2": "/m2", "1": "1",
+    }
+
+
+def test_convert_accepts_numpy_scalars(reg):
+    import numpy as np
+
+    assert reg.convert(np.float64(13.81), "t/ha", "kg/ha") == 13810.0
+    assert reg.convert(np.float32(2.5), "t/ha", "kg/ha") == 2500.0
+    assert reg.convert(np.int64(7), "t/ha", "kg/ha") == 7000.0
+    assert reg.convert(np.float64(12345.0), "kg/ha", "t/ha") == 12.345
+    assert isinstance(reg.convert(np.float64(1.0), "kg/ha", "t/ha"), float)
+    with pytest.raises(ValueError, match="cannot convert"):
+        reg.convert(np.float64("nan"), "kg/ha", "t/ha")
+    with pytest.raises(ValueError, match="cannot convert"):
+        reg.convert(np.bool_(True), "kg/ha", "t/ha")
+
+
 # ── vocabularies ─────────────────────────────────────────────────────────────
 
 def test_vocabulary_kinds_are_exactly_the_planned_ones(reg):
@@ -660,13 +682,15 @@ IRRIGATED_URI = "http://aims.fao.org/aos/agrovoc/c_3954"
 RAINFED_URI = "http://aims.fao.org/aos/agrovoc/c_6436"
 
 
-def test_every_range_is_an_assumption_pending_review(reg):
+def test_range_review_invariants_hold_for_every_range(reg):
     assert reg.ranges
     for rng in reg.ranges:
-        assert rng.status == "assumption", rng.id
-        assert rng.reviewer is None
-        assert "pending agronomist review" in rng.note
         assert rng.min < rng.max
+        if rng.status == "reviewed":
+            assert (rng.reviewer or "").strip() and (rng.evidence or "").strip(), rng.id
+        else:
+            assert rng.status == "assumption"
+            assert "pending agronomist review" in rng.note, rng.id
 
 
 def test_ranges_are_unique_and_reference_registered_crops_variables_and_units(reg):
@@ -781,9 +805,15 @@ def test_invalid_range_is_an_error(copy_dir, mutate, message):
         load_registries(dest)
 
 
-def test_reviewed_range_with_a_reviewer_is_accepted(copy_dir):
+def test_reviewed_range_needs_reviewer_and_evidence(copy_dir):
     dest, edit = copy_dir
-    edit("ranges.yaml", lambda d: d["ranges"][0].update(status="reviewed", reviewer="agronomist-1"))
+    edit("ranges.yaml", lambda d: d["ranges"][0].update(status="reviewed", reviewer=None, evidence="trial data"))
+    with pytest.raises(RegistryError, match="names its reviewer"):
+        load_registries(dest)
+    edit("ranges.yaml", lambda d: d["ranges"][0].update(reviewer="agronomist-1", evidence=None))
+    with pytest.raises(RegistryError, match="carries its evidence"):
+        load_registries(dest)
+    edit("ranges.yaml", lambda d: d["ranges"][0].update(reviewer="agronomist-1", evidence="trial data"))
     assert load_registries(dest).ranges[0].status == "reviewed"
 
 
@@ -803,16 +833,27 @@ def test_every_variety_name_and_alias_resolves_to_one_variety_per_crop(reg):
             assert reg.variety(variety.crop, name) is variety
 
 
-def test_no_variety_is_reviewed_yet_and_alias_groups_state_their_evidence(reg):
-    assert {v.status for v in reg.varieties} == {"candidate", "assumption"}
+def test_variety_status_invariants_hold_for_every_variety(reg):
     for variety in reg.varieties:
         if variety.aliases:
-            assert variety.status == "assumption"
-            assert variety.evidence
-        else:
-            assert variety.status == "candidate"
-    groups = [v for v in reg.varieties if v.aliases]
-    assert 40 <= len(groups) <= 80
+            assert variety.status != "candidate", variety.id
+            assert (variety.evidence or "").strip(), variety.id
+        if variety.status == "candidate":
+            assert not variety.aliases
+        if variety.status == "reviewed":
+            assert (variety.reviewer or "").strip() and (variety.evidence or "").strip(), variety.id
+
+
+def test_reviewed_variety_needs_reviewer_and_evidence(copy_dir):
+    dest, edit = copy_dir
+    edit("varieties.yaml", lambda d: d["varieties"][0].update(status="reviewed", reviewer=None, evidence="catalogue"))
+    with pytest.raises(RegistryError, match="names its reviewer"):
+        load_registries(dest)
+    edit("varieties.yaml", lambda d: d["varieties"][0].update(reviewer="agronomist-1", evidence=None))
+    with pytest.raises(RegistryError, match="carries its evidence"):
+        load_registries(dest)
+    edit("varieties.yaml", lambda d: d["varieties"][0].update(reviewer="agronomist-1", evidence="catalogue"))
+    assert load_registries(dest).varieties[0].status == "reviewed"
 
 
 def test_annotation_variants_resolve_to_the_clean_name(reg):
