@@ -612,3 +612,22 @@ async def test_recommend_relative_yield_uses_the_rows_reference_and_organic_scal
     org = (await _run(_conds(management="organic"), {"TRZAX": [_variety(5000.0, ref=5000.0)]}))["recommendations"][0]
     assert org["fit"]["reference"]["median_kg_ha"] == pytest.approx(4000.0)  # same factor as the yield
     assert org["fit"]["relative_yield_pct"] == 0.0
+
+
+async def test_maize_tolerances_are_looked_up_under_its_graph_code():
+    """ZEAMX is the code the trials and the graph use; the species lookup must reach 'maize'."""
+    dao, _ = _dao()
+
+    async def extrap(self_, crop, **_):
+        return {"ranked_varieties": [_variety()]}
+
+    soil = {"ph_min": 5.5, "ph_max": 7.5, "textures": ["loam"], "drainage": ["well_drained"]}
+    p = _patched(extrap, ["ZEAMX"], heat={"frost_damage_c": -2.0})
+    with p[0], p[1], patch.object(GraphDAO, "get_soil_suitability", AsyncMock(return_value=soil)) as soil_mock, \
+            p[3] as heat_mock:
+        out = await dao.recommend_for_conditions(
+            _conds(coldest_month_min_c=-6.0, soil_ph=7.0, soil_texture="loam"))
+    heat_mock.assert_awaited_with("maize")
+    soil_mock.assert_awaited_with("maize")
+    suit = out["recommendations"][0]["suitability"]
+    assert suit["frost"]["level"] == "risk" and suit["soil"]["level"] == "suitable"

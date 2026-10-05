@@ -6,6 +6,12 @@
 #
 # Add new species HERE. All subsystems resolve through resolve_species().
 # Never duplicate a species entry in module-specific YAMLs.
+#
+# eppo_aliases: other EPPO codes that denote the SAME species (resolve_species only; no merge
+# of trials). Add one only when the species identity is unambiguous: the code's trials all carry
+# this species' scientific name, or the graph Species node (phenology_sources.yaml) uses it for
+# this very species. Codes of another species (spelt TRZAW/TRZSP) and of species with no entry
+# here (triticale, sorghum, lupin) are not aliased.
 # =============================================================================
 
 species:
@@ -38,6 +44,8 @@ species:
   maize:
     scientific_name: "Zea mays"
     eppo_code: "ZEAMA"
+    # alias ZEAMX: Zea mays: the code the trials, the graph Species node and the phenology seed use
+    eppo_aliases: ["ZEAMX"]
     crop_group: "cereal"
     agrovoc_uri: "http://aims.fao.org/aos/agrovoc/c_8509"
     common_names: { es: "maíz", en: "maize", eu: "arto", fr: "maïs", ca: "blat de moro", pt: "milho" }
@@ -83,6 +91,8 @@ species:
   chickpea:
     scientific_name: "Cicer arietinum"
     eppo_code: "CIEAR"
+    # alias CIEAS: Cicer arietinum: every trial of the code carries the same scientific name
+    eppo_aliases: ["CIEAS"]
     agrovoc_uri: "http://aims.fao.org/aos/agrovoc/c_1612"
     common_names: { es: "garbanzo", en: "chickpea", eu: "txixtirio", fr: "pois chiche", ca: "cigró", pt: "grão-de-bico" }
 
@@ -95,6 +105,8 @@ species:
   pea:
     scientific_name: "Pisum sativum"
     eppo_code: "PIBSX"
+    # alias PIBAR: Pisum sativum: every trial of the code carries the same scientific name
+    eppo_aliases: ["PIBAR"]
     agrovoc_uri: "http://aims.fao.org/aos/agrovoc/c_5933"
     common_names: { es: "guisante", en: "pea", eu: "ilar", fr: "pois", ca: "pèsol", pt: "ervilha" }
 
@@ -147,6 +159,8 @@ species:
   rapeseed:
     scientific_name: "Brassica napus"
     eppo_code: "BRSNN"
+    # alias BRSNW: Brassica napus: every trial of the code carries the same scientific name (winter cycle is the trial's cropCycle, not another species)
+    eppo_aliases: ["BRSNW"]
     agrovoc_uri: "http://aims.fao.org/aos/agrovoc/c_1066"
     common_names: { es: "colza", en: "rapeseed", eu: "koltza", fr: "colza", ca: "colza", pt: "colza" }
 
@@ -159,12 +173,16 @@ species:
   hemp:
     scientific_name: "Cannabis sativa"
     eppo_code: "CNISA"
+    # alias CNUSA: Cannabis sativa: the code the graph Species node and the phenology seed use
+    eppo_aliases: ["CNUSA"]
     agrovoc_uri: "http://aims.fao.org/aos/agrovoc/c_1257"
     common_names: { es: "cáñamo", en: "hemp", eu: "kalamu", fr: "chanvre", ca: "cànem", pt: "cânhamo" }
 
   flax:
     scientific_name: "Linum usitatissimum"
     eppo_code: "LIUUT"
+    # alias LINUS: Linum usitatissimum: the code the graph Species node and the phenology seed use
+    eppo_aliases: ["LINUS"]
     agrovoc_uri: "http://aims.fao.org/aos/agrovoc/c_4355"
     common_names: { es: "lino", en: "flax", eu: "liho", fr: "lin", ca: "lli", pt: "linho" }
 
@@ -203,6 +221,8 @@ species:
   broccoli:
     scientific_name: "Brassica oleracea var. italica"
     eppo_code: "BRSOK"
+    # alias BRSOX: Brassica oleracea var. italica: every trial of the code carries the same scientific name
+    eppo_aliases: ["BRSOX"]
     agrovoc_uri: "http://aims.fao.org/aos/agrovoc/c_1093"
     common_names: { es: "brócoli", en: "broccoli", eu: "brokoli", fr: "brocoli", ca: "bròquil", pt: "brócolos" }
 
@@ -227,12 +247,16 @@ species:
   artichoke:
     scientific_name: "Cynara cardunculus var. scolymus"
     eppo_code: "CYUCA"
+    # alias CYNSC: Cynara cardunculus var. scolymus: the code the graph Species node and the phenology seed use
+    eppo_aliases: ["CYNSC"]
     agrovoc_uri: "http://aims.fao.org/aos/agrovoc/c_2048"
     common_names: { es: "alcachofa", en: "artichoke", eu: "alkatxofa", fr: "artichaut", ca: "carxofa", pt: "alcachofra" }
 
   cardoon:
     scientific_name: "Cynara cardunculus"
     eppo_code: "CYUCD"
+    # alias CYNCA: Cynara cardunculus: the code the graph Species node and the phenology seed use
+    eppo_aliases: ["CYNCA"]
     agrovoc_uri: "http://aims.fao.org/aos/agrovoc/c_2047"
     common_names: { es: "cardo", en: "cardoon", eu: "kardu", fr: "cardon", ca: "card", pt: "cardo" }
 

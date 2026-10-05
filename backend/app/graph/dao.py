@@ -40,7 +40,11 @@ from app.graph import agroclimatic
 from app.graph import evidence_policy as ep
 from app.services.country_lookup import country_at
 from app.services.soil_client import assess_soil_suitability, get_parcel_soil_properties
-from app.species_registry import get_species_info, resolve_species
+from app.species_registry import (
+    CATALOG_SIBLING_CODES,
+    get_species_info,
+    resolve_species,
+)
 from neo4j import AsyncDriver
 
 # C.2 — minimum numeric trials in a (crop, climate) cell for a "direct" (robust)
@@ -2574,19 +2578,22 @@ class GraphDAO:
 
         Scientific names are localized in the source data, so grouping by name
         duplicates crops. Rows are grouped by EPPO only; the name is the most
-        frequent non-"(unknown)" one by trial count.
+        frequent non-"(unknown)" one by trial count. Exact sibling codes of one species
+        (``CATALOG_SIBLING_CODES``: ZEAMA/ZEAMX) are one entry under the listed code, with
+        distinct varieties counted across both; no other codes are merged.
         """
         async with self._driver.session() as session:
             result = await session.run("""
                 MATCH (vt:VarietyTrial)
                 WHERE vt.cropEppo IS NOT NULL AND vt.cropEppo <> ''
-                RETURN vt.cropEppo AS eppo_code,
+                WITH coalesce($catalog_codes[vt.cropEppo], vt.cropEppo) AS eppo_code, vt
+                RETURN eppo_code,
                        count(DISTINCT vt.variety) AS variety_count,
                        count(*) AS trial_count,
                        min(vt.year) AS first_year,
                        max(vt.year) AS last_year,
                        collect(COALESCE(vt.cropScientific, '(unknown)')) AS names
-            """)
+            """, catalog_codes=dict(CATALOG_SIBLING_CODES))
             rows = [dict(record) async for record in result]
 
         merged: dict[str, dict] = {}
