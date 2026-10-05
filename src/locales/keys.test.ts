@@ -42,6 +42,7 @@ const GAP_IDS = [
   'climate_detail_unavailable', 'frost_tolerance_unavailable', 'sources_unavailable', 'soil_unavailable',
   'low_trial_count', 'conventional_only_trials', 'reference_too_small', 'reference_zero', 'cv_undefined',
   'sowing_window_unavailable', 'no_expected_yield',
+  'no_measured_yield', 'regional_evidence_only', 'regional_not_comparable', 'forage_basis_unknown',
 ];
 
 const LEVELS = {

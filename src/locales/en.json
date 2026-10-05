@@ -948,7 +948,11 @@
       "soil_unavailable": "No soil data",
       "climate_detail_unavailable": "No climate detail",
       "frost_tolerance_unavailable": "No frost tolerance data",
-      "sources_unavailable": "No data sources listed"
+      "sources_unavailable": "No data sources listed",
+      "no_measured_yield": "No measured yield",
+      "regional_evidence_only": "Regional/national evidence only, no field trials",
+      "regional_not_comparable": "Not comparable with the local average",
+      "forage_basis_unknown": "Forage with no known dry or fresh matter basis"
     },
     "evidence": {
       "title": "{{crop}} trials",
