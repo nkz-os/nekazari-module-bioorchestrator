@@ -15,6 +15,7 @@ import math
 import re
 import unicodedata
 from collections.abc import Iterable
+from datetime import date
 from fractions import Fraction
 from pathlib import Path
 from typing import Any, Literal
@@ -37,7 +38,11 @@ REGISTRY_FILES: tuple[str, ...] = (
     "units.yaml",
     "vocabularies.yaml",
     "variables.yaml",
+    "sources.yaml",
 )
+
+# Values of ``commercial_use`` that let a source be loaded into a production-targeted build.
+LOADABLE_COMMERCIAL_USE: frozenset[str] = frozenset({"allowed", "permission_granted"})
 
 # Vocabulary kinds every vocabularies.yaml must define (and nothing else).
 VOCAB_KINDS: tuple[str, ...] = (
@@ -178,6 +183,64 @@ class VariablesFile(_Model):
     variables: tuple[Variable, ...]
 
 
+# ── sources ──────────────────────────────────────────────────────────────────
+
+class SourceDocument(_Model):
+    title: str = Field(min_length=1)
+    year: int
+    url: str = Field(min_length=1)
+
+
+class Licence(_Model):
+    licence_id: str = Field(min_length=1)
+    terms_url: str | None = None
+    quote: str | None = None  # literal, in the original language
+    quote_language: str | None = None
+    checked_at: date
+    commercial_use: Literal["allowed", "permission_granted", "denied", "unknown"]
+    tdm_reserved: bool | None = None  # None: not assessed
+    attribution_text: str | None = None
+    attribution_url: str | None = None
+    download_date: date | None = None
+    permission_ref: str | None = None
+    conditions: tuple[str, ...] = ()
+    source_documents: tuple[SourceDocument, ...] = ()
+    processing_note: dict[str, str] = {}
+    notes: str | None = None
+
+    @model_validator(mode="after")
+    def _evidence_matches_the_verdict(self) -> Licence:
+        if self.commercial_use in LOADABLE_COMMERCIAL_USE and not (self.attribution_text or "").strip():
+            raise ValueError("a loadable source needs a mandatory attribution_text")
+        if self.commercial_use == "permission_granted" and not (self.permission_ref or "").strip():
+            raise ValueError("permission_granted needs a permission_ref (the written permission)")
+        if self.commercial_use not in LOADABLE_COMMERCIAL_USE and not (
+                (self.quote or "").strip() or (self.notes or "").strip()):
+            raise ValueError("a denied or unknown source needs its quote or a note saying why")
+        if self.quote and not self.quote_language:
+            raise ValueError("a quote needs its quote_language")
+        return self
+
+
+class Source(_Model):
+    source_id: str = Field(pattern=r"^[A-Za-z0-9][A-Za-z0-9_-]*$")
+    name: str = Field(min_length=1)
+    institution: str = Field(min_length=1)
+    country: str = Field(min_length=2, max_length=3)
+    url: str | None = None
+    licence: Licence
+
+    @property
+    def loadable(self) -> bool:
+        """May be loaded into a production-targeted build (the gate's licence rule)."""
+        return self.licence.commercial_use in LOADABLE_COMMERCIAL_USE
+
+
+class SourcesFile(_Model):
+    version: int
+    sources: tuple[Source, ...]
+
+
 # ── loading helpers ──────────────────────────────────────────────────────────
 
 def _read_yaml(path: Path) -> Any:
@@ -222,12 +285,17 @@ class Registries:
 
     def __init__(
         self, *, crops: CropsFile, units: UnitsFile, vocabularies: VocabFile,
-        variables: VariablesFile, registries_hash: str, path: Path,
+        variables: VariablesFile, sources: SourcesFile, registries_hash: str, path: Path,
     ) -> None:
         self.path = path
         self.registries_hash = registries_hash
 
-        # vocabularies (first: crops and metrics refer to them)
+        # sources (referenced by units, variables and crops)
+        self.sources: tuple[Source, ...] = sources.sources
+        _no_duplicates((src.source_id for src in self.sources), "source id")
+        self._source_index: dict[str, Source] = {src.source_id: src for src in self.sources}
+
+        # vocabularies (crops and metrics refer to them)
         if set(vocabularies.vocabularies) != set(VOCAB_KINDS):
             raise RegistryError(
                 f"vocabularies.yaml kinds must be exactly {sorted(VOCAB_KINDS)}, "
@@ -262,6 +330,8 @@ class Registries:
                     raise RegistryError(f"source_units {source_id}: {raw!r} maps to two units")
                 resolved[key] = target
             self._source_units[source_id] = resolved
+        for source_id in units.source_units:
+            self._require_source(source_id, "units.source_units")
 
         # variables
         self.variables: tuple[Variable, ...] = variables.variables
@@ -272,6 +342,7 @@ class Registries:
             if variable.unit is not None and lookup_key(variable.unit) not in self._unit_index:
                 raise RegistryError(f"variable {variable.id}: unregistered unit {variable.unit!r}")
             for source_id, keys in variable.raw_keys.items():
+                self._require_source(source_id, f"variable {variable.id} raw_keys")
                 index = self._raw_key_index.setdefault(source_id, {})
                 for key in keys:
                     if key in index:
@@ -288,6 +359,8 @@ class Registries:
         )
         metrics = {e.id for e in self._vocab["yield_metric"]}
         for crop in self.crops:
+            for source_id in crop.seen_in:
+                self._require_source(source_id, f"crop {crop.eppo} seen_in")
             if crop.main_product not in metrics:
                 raise RegistryError(
                     f"crop {crop.eppo}: main_product {crop.main_product!r} is not a yield_metric")
@@ -303,6 +376,23 @@ class Registries:
         if key.startswith("eppo:"):
             key = key[5:].strip()
         return self._crop_index.get(key)
+
+    def _require_source(self, source_id: str, where: str) -> None:
+        if source_id not in self._source_index:
+            raise RegistryError(f"{where}: unknown source {source_id!r}")
+
+    # ── sources ──────────────────────────────────────────────────────────────
+
+    def source(self, source_id: str) -> Source:
+        """The source for an id; raises :class:`UnknownEntryError` when unregistered."""
+        found = self._source_index.get(source_id) if isinstance(source_id, str) else None
+        if found is None:
+            raise UnknownEntryError(f"unregistered source: {source_id!r}")
+        return found
+
+    def loadable_sources(self) -> tuple[Source, ...]:
+        """Sources whose licence lets them into a production-targeted build."""
+        return tuple(src for src in self.sources if src.loadable)
 
     # ── variables ────────────────────────────────────────────────────────────
 
@@ -380,6 +470,7 @@ def load_registries(path: str | Path | None = None) -> Registries:
         units=_parse(UnitsFile, base / "units.yaml"),
         vocabularies=_parse(VocabFile, base / "vocabularies.yaml"),
         variables=_parse(VariablesFile, base / "variables.yaml"),
+        sources=_parse(SourcesFile, base / "sources.yaml"),
         registries_hash=registries_hash(base),
         path=base,
     )

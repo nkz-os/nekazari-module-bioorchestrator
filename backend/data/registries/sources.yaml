@@ -1,0 +1,509 @@
+# Source registry: holder, structured licence and mandatory attribution per data source.
+#
+# `commercial_use` is the gate's only licence input: a source can be loaded into a production-targeted
+# build ONLY when it is `allowed` or `permission_granted`. Today that is GENVCE and CREA. Everything
+# else is `denied` (terms prohibit or reserve commercial reuse) or `unknown` (ambiguous, unreadable or
+# not audited): both block loading until a written permission or a clear licence is recorded.
+#
+# Evidence: internal licence audit of 2026-10-04/05 (literal quotes, original language). `checked_at` is
+# the date the verdict was established. `tdm_reserved` is null when text-and-data-mining rights were not
+# assessed. `attribution_text` is the mandatory citation shown next to every datum; for GENVCE it is the
+# literal form the reuse notice requires, with the real download date. The attribution fields of GENVCE
+# and CREA equal the ones in sources_registry.json (attribution patch); that file is generated from this
+# one or retired in F2.
+version: 1
+sources:
+  - source_id: NAVARRA-AGRARIA
+    name: Navarra Agraria
+    institution: INTIA — Instituto Navarro de Tecnologías e Infraestructuras Agroalimentarias
+    country: ES
+    url: https://www.intiasa.es
+    licence:
+      licence_id: all-rights-reserved
+      terms_url: https://www.intiasa.es/es/nota-legal
+      quote: Su puesta a disposición y uso, no supone, en ningún caso, la cesión de su titularidad o la concesión de un derecho
+        de uso a favor del Usuario, por lo que toda reproducción, copia, distribución total o parcial, o, comercialización,
+        requerirá la autorización previa y escrita de INSTITUTO NAVARRO DE TECNOLOGIAS E INFRAESTRUCTURAS AGROALIMENTARIAS,
+        SA.
+      quote_language: es
+      checked_at: '2026-10-04'
+      commercial_use: denied
+      tdm_reserved: null
+      notes: Written permission from INTIA is required; none held.
+  - source_id: GENVCE
+    name: GENVCE
+    institution: GENVCE — Grupo para la Evaluación de Nuevas Variedades de Cultivos Extensivos en España
+    country: ES
+    url: https://genvce.org
+    licence:
+      licence_id: genvce-reuse-notice-ley-37-2007
+      terms_url: https://genvce.org/
+      quote: 'La reutilización de la información de los ensayos de GENVCE, ya sea de manera individual o agrupada, total o parcial,
+        queda estrictamente sometida a las siguientes condiciones: Integridad de los datos: Que el contenido de la información,
+        incluyendo sus metadatos, no sea alterado. Fidelidad: Que no se desnaturalice el sentido de la información. Reconocimiento:
+        Que se cite obligatoriamente la fuente de la siguiente manera: "Fuente: Datos Abiertos GENVCE. Url: https://genvce.org/mapa-de-resultados/
+        (Descarga: 14/05/2026.)" Actualización: Que se mencione la fecha de descarga.'
+      quote_language: es
+      checked_at: '2026-10-04'
+      commercial_use: allowed
+      tdm_reserved: null
+      attribution_text: 'Fuente: Datos Abiertos GENVCE. Url: https://genvce.org/mapa-de-resultados/ (Descarga: 01/06/2026.)'
+      attribution_url: https://genvce.org/mapa-de-resultados/
+      download_date: '2026-06-01'
+      conditions:
+      - data and metadata are not altered
+      - the meaning of the information is not distorted
+      - the source is cited in the literal form above, with the download date
+      - personal-data protection (LOPDGDD, RGPD); no re-identification
+      processing_note:
+        en: Trial values were extracted from the published GENVCE reports. Expected yields, medians and extrapolations are Nekazari
+          calculations based on GENVCE data; they are not data published by GENVCE.
+        es: Los valores de los ensayos se extrajeron de los informes publicados por GENVCE. Los rendimientos esperados, las
+          medianas y las extrapolaciones son cálculos de Nekazari a partir de datos de GENVCE; no son datos publicados por GENVCE.
+      notes: Reuse notice under Ley 18/2015 amending Ley 37/2007, for commercial or non-commercial use. The date in the notice
+        is its own example; the citation below carries the real download date of the Nekazari data (reports downloaded 2026-06-01,
+        from the file write times of the downloader). The notice covers the open data on the GENVCE website (results map); data
+        that reached the graph through other channels has its own terms.
+  - source_id: CTIFL
+    name: CTIFL
+    institution: CTIFL — Centre Technique Interprofessionnel des Fruits et Légumes
+    country: FR
+    url: https://www.ctifl.fr
+    licence:
+      licence_id: editorial-restricted
+      terms_url: https://www.ctifl.fr
+      quote: null
+      quote_language: null
+      checked_at: '2026-10-04'
+      commercial_use: denied
+      tdm_reserved: null
+      notes: Retired from production on 2026-10-05 as unlicensed. The 2026-10-04 licence audit records no literal quote for
+        CTIFL (it refers to it as the same case as INTIA); the registry class is editorial-restricted.
+  - source_id: LFL-BAYERN
+    name: LfL Bayern
+    institution: Bayerische Landesanstalt für Landwirtschaft (LfL)
+    country: DE
+    url: https://www.lfl.bayern.de
+    licence:
+      licence_id: all-rights-reserved
+      terms_url: https://www.stmelf.bayern.de/service/impressum
+      quote: Eine Vervielfältigung oder Verwendung urheberrechtlich geschützten Materials dieser Seiten oder Teilen davon in
+        anderen elektronischen oder gedruckten Publikationen und deren Veröffentlichung ist nur mit unserer Einwilligung gestattet.
+      quote_language: de
+      checked_at: '2026-10-04'
+      commercial_use: denied
+      tdm_reserved: null
+      notes: Written consent from the content owner (IPZ for varieties) is required; none held.
+  - source_id: NEBIH
+    name: NÉBIH / VSZT
+    institution: NÉBIH — Nemzeti Élelmiszerlánc-biztonsági Hivatal / VSZT — Vetőmag Szövetség
+    country: HU
+    url: https://portal.nebih.gov.hu
+    licence:
+      licence_id: hu-secondary-publication-position-2017
+      terms_url: https://portal.nebih.gov.hu/-/fajtakiserleti-eredmenyek
+      quote: A NÉBIH MGEI nem vállal felelősséget az eredmények módosított, megtévesztésre alkalmas formában való közléséért,
+        az ilyen publikációk hitelességéért.
+      quote_language: hu
+      checked_at: '2026-10-04'
+      commercial_use: unknown
+      tdm_reserved: null
+      notes: Mixed. Trials run by NÉBIH may be reused with source citation and without distortion (2017 position on secondary
+        publication), but NÉBIH does not want candidates ranked or compared and merging non-comparable trials is discouraged,
+        which conflicts with extrapolation; a written confirmation is advisable. The VSZT trials (a private seed association)
+        are unconfirmed. Not loadable until confirmed in writing.
+  - source_id: INIAV-LVR
+    name: INIAV / LVR
+    institution: INIAV — Instituto Nacional de Investigação Agrária e Veterinária / LVR — Lista de Variedades Recomendadas /
+      CerealTech-ANPOC
+    country: PT
+    url: https://www.iniav.pt
+    licence:
+      licence_id: all-rights-reserved
+      terms_url: https://www.iniav.pt/avisos-legais
+      quote: A informação aqui disponibilizada pode ser copiada, importada ou utilizada gratuitamente, para uso pessoal ou para
+        fins educativos, devendo o utilizador referir sempre a fonte de informação. A utilização que se fizer da informação
+        não deverá ter fins lucrativos ou ofensivos.
+      quote_language: pt
+      checked_at: '2026-10-04'
+      commercial_use: denied
+      tdm_reserved: null
+      notes: Commercial use needs INIAV authorisation; none held.
+  - source_id: ITACYL
+    name: ITACyL
+    institution: ITACyL — Instituto Tecnológico Agrario de Castilla y León
+    country: ES
+    url: https://www.itacyl.es
+    licence:
+      licence_id: all-rights-reserved
+      terms_url: https://www.itacyl.es/aviso-legal-y-politica-de-privacidad
+      quote: Los derechos de todos los contenidos de este portal pertenecen al Instituto Tecnológico Agrario de Castilla y León,
+        por lo que queda prohibida la reproducción total o parcial de los contenidos de esta Web sin autorización previa.
+      quote_language: es
+      checked_at: '2026-10-04'
+      commercial_use: denied
+      tdm_reserved: null
+      notes: Express authorisation from ITACyL is required; none held.
+  - source_id: IFAPA
+    name: IFAPA Servifapa
+    institution: IFAPA — Instituto Andaluz de Investigación y Formación Agraria, Pesquera, Alimentaria y de la Producción Ecológica
+    country: ES
+    url: https://www.juntadeandalucia.es/agriculturaypesca/ifapa
+    licence:
+      licence_id: cc-by-nc-nd-3.0-es-per-document
+      terms_url: https://www.juntadeandalucia.es/agriculturaypesca/ifapa/web/node/avisos-legales
+      quote: Este documento está bajo Licencia Creative Commons. Reconocimiento-No comercial-Sin obra derivada. http://creativecommons.org/licenses/by-nc-nd/3.0/es
+        ... © Edita JUNTA DE ANDALUCÍA. Instituto de Investigación y Formación Agraria y Pesquera.
+      quote_language: es
+      checked_at: '2026-10-04'
+      commercial_use: denied
+      tdm_reserved: null
+      notes: 'Licence is per document: the checked IFAPA/Servifapa report is CC BY-NC-ND 3.0 ES. The portal texts are CC BY
+        4.0 (read in a 2022 archive copy), which does not cover the reports. Denied until each ingested document is audited.'
+  - source_id: INTIA-EXP
+    name: INTIA Experimentación
+    institution: INTIA — Instituto Navarro de Tecnologías e Infraestructuras Agroalimentarias
+    country: ES
+    url: https://www.intiasa.es/es/experimentacion
+    licence:
+      licence_id: all-rights-reserved
+      terms_url: https://www.intiasa.es/es/nota-legal
+      quote: Su puesta a disposición y uso, no supone, en ningún caso, la cesión de su titularidad o la concesión de un derecho
+        de uso a favor del Usuario, por lo que toda reproducción, copia, distribución total o parcial, o, comercialización,
+        requerirá la autorización previa y escrita de INSTITUTO NAVARRO DE TECNOLOGIAS E INFRAESTRUCTURAS AGROALIMENTARIAS,
+        SA.
+      quote_language: es
+      checked_at: '2026-10-04'
+      commercial_use: denied
+      tdm_reserved: null
+      notes: Written permission from INTIA is required; none held.
+  - source_id: CREA
+    name: CREA
+    institution: CREA — Consiglio per la Ricerca in Agricoltura e l'Analisi dell'Economia Agraria
+    country: IT
+    url: https://www.crea.gov.it
+    licence:
+      licence_id: CC-BY-3.0-IT
+      terms_url: https://creativecommons.org/licenses/by/3.0/it/legalcode
+      quote: 'Salvo ove diversamente indicato, i dati pubblicati sul presente sito sono messi a disposizione con licenza CC-BY
+        3.0, il cui testo integrale è disponibile al seguente indirizzo: http://creativecommons.org/licenses/by/3.0/it/legalcode
+        Questo significa che, ove non diversamente specificato, i contenuti di questo sito sono liberamente distribuibili e
+        riutilizzabili, a patto che sia sempre citata la fonte e – ove possibile - riportato l''indirizzo web della pagina originale.'
+      quote_language: it
+      checked_at: '2026-10-04'
+      commercial_use: allowed
+      tdm_reserved: null
+      attribution_text: 'Fonte: CREA - Consiglio per la ricerca in agricoltura e l''analisi dell''economia agraria, Centro di
+        ricerca Cerealicoltura e Colture Industriali (sede di Bergamo), «Risultati reti nazionali di confronto varietale mais»
+        2021-2025, a cura di G. Mazzinelli. Licenza CC BY 3.0 IT. Dati modificati ed elaborati da Nekazari.'
+      attribution_url: https://www.crea.gov.it/web/cerealicoltura-e-colture-industriali/pubblicazioni-istituzionali-e-schede-tecniche
+      source_documents:
+      - title: Risultati reti nazionali di confronto varietale mais 2021
+        year: 2021
+        url: https://www.crea.gov.it/documents/43052/0/Fascicolo+risultati+Mais+2021.pdf
+      - title: Risultati reti nazionali di confronto varietale mais 2022
+        year: 2022
+        url: https://www.crea.gov.it/documents/43052/0/Fascicolo+risultati+Mais+2022.pdf
+      - title: Risultati reti nazionali di confronto varietale mais 2023
+        year: 2023
+        url: https://www.crea.gov.it/documents/43052/0/Fascicolo+risultati+Mais+2023.pdf
+      - title: Risultati reti nazionali di confronto varietale mais 2024
+        year: 2024
+        url: https://www.crea.gov.it/documents/43052/0/Fascicolo+risultati+Mais+2024.pdf
+      - title: Risultati reti nazionali di confronto varietale mais 2025
+        year: 2025
+        url: https://www.crea.gov.it/documents/43052/0/Fascicolo+risultati+Mais+2025.pdf
+      conditions:
+      - the source is cited
+      - the web address of the original page is given where possible
+      - changes made to the data are indicated
+      processing_note:
+        en: Trial values were extracted from the published CREA PDF reports and processed by Nekazari (normalised, aggregated,
+          extrapolated). Expected yields, medians and extrapolations are Nekazari calculations; they are not data published
+          by CREA.
+        es: Los valores de los ensayos se extrajeron de los informes PDF publicados por CREA y fueron procesados por Nekazari
+          (normalizados, agregados, extrapolados). Los rendimientos esperados, las medianas y las extrapolaciones son cálculos
+          de Nekazari; no son datos publicados por CREA.
+      notes: 'Terms page: https://www.crea.gov.it/note-legali. Scope: the five ''Fascicolo risultati Mais'' PDFs 2021-2025 (checked:
+        none carries a copyright or licence note of its own). The Romanian wheat rows once stored under CREA come from an unrelated
+        paper, are not CREA data and are out of scope.'
+  - source_id: BSL
+    name: Bundessortenamt (BSL)
+    institution: Bundessortenamt — Federal Plant Variety Office
+    country: DE
+    url: https://www.bundessortenamt.de
+    licence:
+      licence_id: unconfirmed
+      terms_url: https://www.bundessortenamt.de/bsa/impressum
+      quote: Sämtlicher Inhalt der Web-Seiten des Bundessortenamtes ist urheberrechtlich geschützt. Vervielfältigungen und sonstige
+        Verwertungen von Informationen oder Daten, insbesondere die Verwendung von Texten, Textteilen oder Bildmaterial bedürfen,
+        soweit nicht anders vermerkt, der vorherigen Zustimmung des Urhebers.
+      quote_language: de
+      checked_at: '2026-10-04'
+      commercial_use: unknown
+      tdm_reserved: null
+      notes: The PDF allows reprint with source ('Nachdruck nur mit Quellenangabe gestattet'), which covers the brochure, not
+        extraction into a commercial database. Written confirmation requested.
+  - source_id: AHDB
+    name: AHDB Recommended Lists
+    institution: AHDB — Agriculture and Horticulture Development Board
+    country: GB
+    url: https://ahdb.org.uk
+    licence:
+      licence_id: all-rights-reserved
+      terms_url: https://ahdb.org.uk/terms-and-conditions
+      quote: '5.5 You may not, except with our prior written permission: 5.5.1 commercially exploit any content owned or licensed
+        by AHDB; or 5.5.2 transmit or store in any other website or other form of electronic retrieval system any content owned
+        or licensed by AHDB.'
+      quote_language: en
+      checked_at: '2026-10-04'
+      commercial_use: denied
+      tdm_reserved: null
+      notes: Prior written permission from AHDB is required; none held.
+  - source_id: ECOCROP-GAEZ-V4
+    name: EcoCrop / GAEZ v4
+    institution: FAO/IIASA Global Agro-Ecological Zones v4 (EcoCrop crop requirements)
+    country: INT
+    url: https://gaez.fao.org/
+    licence:
+      licence_id: unconfirmed
+      terms_url: https://gaez.fao.org/pages/disclaimer
+      quote: Reproduction and dissemination of material contained in GAEZ v3.0 or educational, research, personal or other noncommercial
+        purposes are authorized without any prior written permission from the copyright holders, provided FAO and IIASA are
+        fully acknowledged.
+      quote_language: en
+      checked_at: '2026-10-04'
+      commercial_use: unknown
+      tdm_reserved: null
+      notes: The quote is the GAEZ v3.0 user agreement; the GAEZ v4 disclaimer page is a JavaScript application that could not
+        be read. The registry class (open-cc-by) is unverified.
+  - source_id: CPVO
+    name: Community Plant Variety Office
+    institution: Community Plant Variety Office (European Union)
+    country: EU
+    url: https://cpvo.europa.eu/
+    licence:
+      licence_id: unconfirmed
+      terms_url: https://cpvo.europa.eu/
+      quote: null
+      quote_language: null
+      checked_at: '2026-10-04'
+      commercial_use: unknown
+      tdm_reserved: null
+      notes: Not audited in the 2026-10-04 licence audit (section 4); treated as unknown until a person reads its terms.
+  - source_id: EU-TRIAL-REPORTS
+    name: European Institutional Trial Reports
+    institution: Multiple European public-sector institutions (LfL Bayern, COBORU, SLU, Arvalis, CSIC, IFAPA, BRESOV, orgprints)
+    country: EU
+    licence:
+      licence_id: per-document
+      terms_url: null
+      quote: null
+      quote_language: null
+      checked_at: '2026-10-04'
+      commercial_use: unknown
+      tdm_reserved: true
+      notes: 'Aggregate of 19 PDFs, each with its own licence (audit section 3): 89 trials CC BY (3 articles), 326 reserved
+        or non-commercial, 395 unconfirmed; SLU reserves text and data mining. The source id is not loadable as a whole: allowed
+        documents must be registered as sources of their own, with a per-document ArticleSource.'
+  - source_id: IFAPA_ALMOND
+    name: IFAPA Las Torres — Almond variety trials
+    institution: IFAPA — Instituto Andaluz de Investigación y Formación Agraria y Pesquera
+    country: ES
+    url: https://www.juntadeandalucia.es/agriculturaypesca/ifapa
+    licence:
+      licence_id: cc-by-nc-nd-3.0-es-per-document
+      terms_url: https://www.juntadeandalucia.es/agriculturaypesca/ifapa/web/node/avisos-legales
+      quote: Este documento está bajo Licencia Creative Commons. Reconocimiento-No comercial-Sin obra derivada. http://creativecommons.org/licenses/by-nc-nd/3.0/es
+        ... © Edita JUNTA DE ANDALUCÍA. Instituto de Investigación y Formación Agraria y Pesquera.
+      quote_language: es
+      checked_at: '2026-10-04'
+      commercial_use: denied
+      tdm_reserved: null
+      notes: 'Same as IFAPA: unknown which PDFs were ingested, treated as denied until audited document by document.'
+  - source_id: SCIENTIA-PIAVE
+    name: Scientia Horticulturae — Pistachio Phenology
+    institution: Scientia Horticulturae (Elsevier)
+    country: ES
+    url: https://www.sciencedirect.com/journal/scientia-horticulturae
+    licence:
+      licence_id: unconfirmed
+      terms_url: https://www.sciencedirect.com/journal/scientia-horticulturae
+      quote: null
+      quote_language: null
+      checked_at: '2026-10-04'
+      commercial_use: unknown
+      tdm_reserved: null
+      notes: Not audited in the 2026-10-04 licence audit (section 4); treated as unknown until a person reads its terms. Elsevier
+        article; the local PDF reportedly carries CC BY, not verified.
+  - source_id: INRAMAROC
+    name: INRA Maroc
+    institution: Institut National de la Recherche Agronomique (Maroc)
+    country: MA
+    url: https://www.inra.org.ma
+    licence:
+      licence_id: unconfirmed
+      terms_url: null
+      quote: null
+      quote_language: null
+      checked_at: '2026-10-04'
+      commercial_use: unknown
+      tdm_reserved: null
+      notes: 'No terms could be read: the publisher''s site closes the TLS connection and no legal page was found (2026-10-04).
+        Written authorisation requested.'
+  - source_id: TAGEM_TR_2012
+    name: TAGEM Turkey 2012
+    institution: TAGEM Turkey
+    country: TR
+    url: https://www.tarimorman.gov.tr/TAGEM
+    licence:
+      licence_id: all-rights-reserved
+      terms_url: https://www.tarimorman.gov.tr/
+      quote: © Türkiye Cumhuriyeti Tarım ve Orman Bakanlığı. Tüm Hakları Saklıdır.
+      quote_language: tr
+      checked_at: '2026-10-04'
+      commercial_use: denied
+      tdm_reserved: null
+      notes: No reuse policy or open licence found; written authorisation required.
+  - source_id: TAGEM_TR_CATALOG_2015
+    name: TAGEM Çeşit Kataloğu 2015-2016
+    institution: T.C. Tarım ve Orman Bakanlığı, Tohumluk Tescil ve Sertifikasyon Merkez Müdürlüğü (TTSM)
+    country: TR
+    url: https://www.tarimorman.gov.tr/BUGEM/TTSM
+    licence:
+      licence_id: all-rights-reserved
+      terms_url: https://www.tarimorman.gov.tr/
+      quote: © Türkiye Cumhuriyeti Tarım ve Orman Bakanlığı. Tüm Hakları Saklıdır.
+      quote_language: tr
+      checked_at: '2026-10-04'
+      commercial_use: denied
+      tdm_reserved: null
+      notes: No reuse policy or open licence found; written authorisation required.
+  - source_id: TAGEM_TR_CATALOG_2017
+    name: TAGEM Çeşit Kataloğu 2017
+    institution: T.C. Tarım ve Orman Bakanlığı, Tohumluk Tescil ve Sertifikasyon Merkez Müdürlüğü (TTSM)
+    country: TR
+    url: https://www.tarimorman.gov.tr/BUGEM/TTSM
+    licence:
+      licence_id: all-rights-reserved
+      terms_url: https://www.tarimorman.gov.tr/
+      quote: © Türkiye Cumhuriyeti Tarım ve Orman Bakanlığı. Tüm Hakları Saklıdır.
+      quote_language: tr
+      checked_at: '2026-10-04'
+      commercial_use: denied
+      tdm_reserved: null
+      notes: No reuse policy or open licence found; written authorisation required.
+  - source_id: IFAPA_ALMENDRO_2023
+    name: IFAPA Cultivo del Almendro Ecológico en Regadío
+    institution: IFAPA — Instituto Andaluz de Investigación y Formación Agraria, Pesquera, Alimentaria y de la Producción Ecológica
+    country: ES
+    url: https://www.juntadeandalucia.es/agriculturaypesca/ifapa/
+    licence:
+      licence_id: cc-by-nc-nd-3.0-es
+      terms_url: https://www.juntadeandalucia.es/agriculturaypesca/ifapa/web/node/avisos-legales
+      quote: Este documento está bajo Licencia Creative Commons. Reconocimiento-No comercial-Sin obra derivada. http://creativecommons.org/licenses/by-nc-nd/3.0/es
+        ... © Edita JUNTA DE ANDALUCÍA. Instituto de Investigación y Formación Agraria y Pesquera.
+      quote_language: es
+      checked_at: '2026-10-04'
+      commercial_use: denied
+      tdm_reserved: null
+      notes: The registry already records this document as CC BY-NC-ND (non-commercial).
+  - source_id: EVENA
+    name: EVENA — Estación de Viticultura y Enología de Navarra
+    institution: EVENA — Estación de Viticultura y Enología de Navarra
+    country: ES
+    url: https://www.evena.es/
+    licence:
+      licence_id: unconfirmed
+      terms_url: https://www.navarra.es/es/aviso-legal
+      quote: El uso no autorizado de los contenidos de este sitio web y los perjuicios que ello produzca en los derechos de
+        propiedad intelectual del Gobierno Navarra de Navarra, dará lugar al ejercicio de las acciones que le correspondan en
+        defensa de sus derechos.
+      quote_language: es
+      checked_at: '2026-10-04'
+      commercial_use: unknown
+      tdm_reserved: null
+      notes: The Navarre open-data CC BY 4.0 licence covers datasets of the open-data portal, not report PDFs. The registry's
+        own domain no longer resolves.
+  - source_id: VISION2024
+    name: NKZ Fungi Vision 2024 (dataset umbrella)
+    institution: Nekazari — aggregated fungal cultivation literature
+    country: EU
+    licence:
+      licence_id: unconfirmed
+      terms_url: null
+      quote: null
+      quote_language: null
+      checked_at: '2026-10-04'
+      commercial_use: unknown
+      tdm_reserved: null
+      notes: Not audited in the 2026-10-04 licence audit (section 4); treated as unknown until a person reads its terms.
+  - source_id: REDALYC-PLEUROTUS-2017
+    name: Ruilova et al. 2017 — C/N ratio in P. ostreatus
+    institution: Universidad Nacional de Cuyo — Rev. Fac. Ciencias Agrarias
+    country: EC
+    url: https://doi.org/10.18184/382853527023
+    licence:
+      licence_id: unconfirmed
+      terms_url: https://doi.org/10.18184/382853527023
+      quote: null
+      quote_language: null
+      checked_at: '2026-10-04'
+      commercial_use: unknown
+      tdm_reserved: null
+      notes: Not audited in the 2026-10-04 licence audit (section 4); treated as unknown until a person reads its terms.
+  - source_id: WAGENINGEN-FUNGAL-SUBSTRATES-2021
+    name: Wageningen ACRRES fungal substrate screening 2021
+    institution: Wageningen University & Research (ACRRES)
+    country: NL
+    url: https://doi.org/10.18174/541326
+    licence:
+      licence_id: unconfirmed
+      terms_url: https://doi.org/10.18174/541326
+      quote: null
+      quote_language: null
+      checked_at: '2026-10-04'
+      commercial_use: unknown
+      tdm_reserved: null
+      notes: Not audited in the 2026-10-04 licence audit (section 4); treated as unknown until a person reads its terms.
+  - source_id: NATURE-CORDYCEPS-2026
+    name: Cordyceps militaris cordycepin study 2026
+    institution: Nature Publishing Group (peer-reviewed)
+    country: CN
+    licence:
+      licence_id: unconfirmed
+      terms_url: null
+      quote: null
+      quote_language: null
+      checked_at: '2026-10-04'
+      commercial_use: unknown
+      tdm_reserved: null
+      notes: Not audited in the 2026-10-04 licence audit (section 4); treated as unknown until a person reads its terms.
+  - source_id: HUNGARY-KING-OYSTER-2016
+    name: Hungarian king oyster bottled cultivation 2016
+    institution: Hungarian University of Agriculture — Acta Horticulturae
+    country: HU
+    url: https://doi.org/10.17676/HAE.2016.29.5
+    licence:
+      licence_id: unconfirmed
+      terms_url: https://doi.org/10.17676/HAE.2016.29.5
+      quote: null
+      quote_language: null
+      checked_at: '2026-10-04'
+      commercial_use: unknown
+      tdm_reserved: null
+      notes: Not audited in the 2026-10-04 licence audit (section 4); treated as unknown until a person reads its terms.
+  - source_id: EXCALIBUR-H2020
+    name: EXCALIBUR H2020 — microbial inoculants
+    institution: EXCALIBUR project (EU Horizon 2020, GA 817946)
+    country: EU
+    url: https://www.excaliburproject.eu
+    licence:
+      licence_id: unconfirmed
+      terms_url: https://www.excaliburproject.eu
+      quote: null
+      quote_language: null
+      checked_at: '2026-10-04'
+      commercial_use: unknown
+      tdm_reserved: null
+      notes: Not audited in the 2026-10-04 licence audit (section 4); treated as unknown until a person reads its terms.

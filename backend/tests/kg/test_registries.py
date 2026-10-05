@@ -376,7 +376,7 @@ def test_ratio_without_unit_and_unregistered_unit_are_errors(copy_dir):
         load_registries(dest)
 
 
-def test_ordinal_domain_and_ontology_id_format_are_enforced(copy_dir):
+def test_ordinal_domain_must_have_min_below_max(copy_dir):
     dest, edit = copy_dir
 
     def bad_domain(d):
@@ -403,4 +403,151 @@ def test_duplicate_variable_id_is_an_error(copy_dir):
 
     edit("variables.yaml", dup)
     with pytest.raises(RegistryError, match="duplicate variable id"):
+        load_registries(dest)
+
+
+# ── sources ──────────────────────────────────────────────────────────────────
+
+def test_source_ids_match_the_current_sources_registry(reg):
+    import json
+
+    legacy = json.loads((DEFAULT_REGISTRIES_PATH.parents[1] / "data" / "sources_registry.json")
+                        .read_text(encoding="utf-8"))
+    assert {s.source_id for s in reg.sources} == {e["source_id"] for e in legacy}
+    for entry in legacy:
+        source = reg.source(entry["source_id"])
+        assert source.name == entry["name"]
+        assert source.institution == entry["institution"]
+        assert source.country == entry["country"]
+        assert source.url == entry.get("url")
+        # the attribution fields must agree with the attribution patch once it is in the legacy file
+        licence = source.licence
+        if "attribution_text" in entry:
+            assert licence.attribution_text == entry["attribution_text"]
+            assert licence.attribution_url == entry["attribution_url"]
+            assert licence.licence_id == entry["licence_id"]
+            assert licence.processing_note == entry["processing_note"]
+        if "download_date" in entry:
+            assert licence.download_date.isoformat() == entry["download_date"]
+        if "source_documents" in entry:
+            assert [d.model_dump() for d in licence.source_documents] == entry["source_documents"]
+
+
+def test_every_source_has_a_licence_block_with_checked_at(reg):
+    from datetime import date
+
+    for source in reg.sources:
+        assert isinstance(source.licence.checked_at, date), source.source_id
+        assert source.licence.commercial_use in {"allowed", "permission_granted", "denied", "unknown"}
+
+
+def test_only_genvce_and_crea_are_loadable_today(reg):
+    assert {s.source_id for s in reg.loadable_sources()} == {"GENVCE", "CREA"}
+    for source in reg.sources:
+        assert source.loadable == (source.licence.commercial_use in ("allowed", "permission_granted"))
+
+
+def test_audit_verdicts_are_recorded(reg):
+    denied = {"NAVARRA-AGRARIA", "INTIA-EXP", "CTIFL", "LFL-BAYERN", "INIAV-LVR", "ITACYL", "IFAPA",
+              "IFAPA_ALMOND", "IFAPA_ALMENDRO_2023", "AHDB", "TAGEM_TR_2012", "TAGEM_TR_CATALOG_2015",
+              "TAGEM_TR_CATALOG_2017"}
+    unknown = {"BSL", "NEBIH", "EVENA", "INRAMAROC", "EU-TRIAL-REPORTS", "ECOCROP-GAEZ-V4", "CPVO",
+               "SCIENTIA-PIAVE", "VISION2024", "REDALYC-PLEUROTUS-2017", "WAGENINGEN-FUNGAL-SUBSTRATES-2021",
+               "NATURE-CORDYCEPS-2026", "HUNGARY-KING-OYSTER-2016", "EXCALIBUR-H2020"}
+    assert {s.source_id for s in reg.sources if s.licence.commercial_use == "denied"} == denied
+    assert {s.source_id for s in reg.sources if s.licence.commercial_use == "unknown"} == unknown
+
+
+def test_genvce_attribution_is_the_literal_citation_with_the_real_download_date(reg):
+    licence = reg.source("GENVCE").licence
+    assert licence.commercial_use == "allowed"
+    assert licence.download_date.isoformat() == "2026-06-01"
+    assert licence.attribution_text == (
+        "Fuente: Datos Abiertos GENVCE. Url: https://genvce.org/mapa-de-resultados/ (Descarga: 01/06/2026.)")
+    assert licence.download_date.strftime("%d/%m/%Y") in licence.attribution_text
+    assert licence.quote and "Descarga" in licence.quote and licence.quote_language == "es"
+
+
+def test_crea_is_cc_by_with_the_five_booklets_and_a_processing_note(reg):
+    licence = reg.source("CREA").licence
+    assert licence.commercial_use == "allowed"
+    assert licence.licence_id == "CC-BY-3.0-IT"
+    assert [d.year for d in licence.source_documents] == [2021, 2022, 2023, 2024, 2025]
+    assert "CC BY 3.0 IT" in licence.attribution_text
+    assert licence.processing_note["en"] and licence.processing_note["es"]
+
+
+def test_unknown_source_raises(reg):
+    with pytest.raises(UnknownEntryError, match="unregistered source"):
+        reg.source("NOPE")
+
+
+def test_commercial_use_enum_is_enforced(copy_dir):
+    dest, edit = copy_dir
+    edit("sources.yaml", lambda d: d["sources"][0]["licence"].update(commercial_use="maybe"))
+    with pytest.raises(RegistryError, match="schema validation failed"):
+        load_registries(dest)
+
+
+def test_licence_block_is_required(copy_dir):
+    dest, edit = copy_dir
+    edit("sources.yaml", lambda d: d["sources"][0].pop("licence"))
+    with pytest.raises(RegistryError, match="schema validation failed"):
+        load_registries(dest)
+
+
+def test_checked_at_is_required(copy_dir):
+    dest, edit = copy_dir
+    edit("sources.yaml", lambda d: d["sources"][1]["licence"].pop("checked_at"))
+    with pytest.raises(RegistryError, match="schema validation failed"):
+        load_registries(dest)
+
+
+def test_loadable_source_needs_attribution_and_granted_permission_needs_a_reference(copy_dir):
+    dest, edit = copy_dir
+
+    def genvce(d):
+        return next(s for s in d["sources"] if s["source_id"] == "GENVCE")["licence"]
+
+    edit("sources.yaml", lambda d: genvce(d).update(attribution_text=""))
+    with pytest.raises(RegistryError, match="attribution_text"):
+        load_registries(dest)
+    edit("sources.yaml", lambda d: genvce(d).update(attribution_text="x", commercial_use="permission_granted"))
+    with pytest.raises(RegistryError, match="permission_ref"):
+        load_registries(dest)
+
+
+def test_denied_source_needs_evidence(copy_dir):
+    dest, edit = copy_dir
+    edit("sources.yaml", lambda d: d["sources"][0]["licence"].update(quote=None, notes=None))
+    with pytest.raises(RegistryError, match="quote or a note"):
+        load_registries(dest)
+
+
+def test_a_quote_needs_its_language(copy_dir):
+    dest, edit = copy_dir
+    edit("sources.yaml", lambda d: d["sources"][0]["licence"].update(quote_language=None))
+    with pytest.raises(RegistryError, match="quote_language"):
+        load_registries(dest)
+
+
+@pytest.mark.parametrize(
+    ("name", "mutate"),
+    [
+        ("variables.yaml", lambda d: d["variables"][0]["raw_keys"].update({"NOSRC": ["x"]})),
+        ("crops.yaml", lambda d: d["crops"][0].update(seen_in=["NOSRC"])),
+        ("units.yaml", lambda d: d["source_units"].update({"NOSRC": {"kg/ha": "kg/ha"}})),
+    ],
+)
+def test_references_to_unknown_sources_are_errors(copy_dir, name, mutate):
+    dest, edit = copy_dir
+    edit(name, mutate)
+    with pytest.raises(RegistryError, match="unknown source"):
+        load_registries(dest)
+
+
+def test_duplicate_source_id_is_an_error(copy_dir):
+    dest, edit = copy_dir
+    edit("sources.yaml", lambda d: d["sources"].append(dict(d["sources"][0])))
+    with pytest.raises(RegistryError, match="duplicate source id"):
         load_registries(dest)
