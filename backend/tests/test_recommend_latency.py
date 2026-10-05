@@ -776,6 +776,35 @@ async def test_no_aggregate_sites_means_no_regional_pass():
     sites = AsyncMock(return_value=[_FIELD_SITE])
     out, _ = await _recommend_tiers(_conds(), ["TRZAX"], extrap, {"TRZAX"}, {"TRZAX"}, sites)
     assert all(t == "field" for _, t, _, _ in seen)
+    # the climate has no aggregate site: there is nothing regional to count, which is a known 0
+    assert out["recommendations"][0]["evidence"]["regional_trial_count"] == 0
+
+
+async def test_regional_count_is_zero_when_no_crop_qualifies_and_null_when_the_pass_failed():
+    extrap = _by_tier_extrap(field={"TRZAX": [_variety()]}, regional={})
+    # aggregate sites exist, the regional prefilter answered, and no crop has regional numbers
+    out, _ = await _recommend_tiers(_conds(), ["TRZAX"], extrap, {"TRZAX"}, set())
+    assert out["recommendations"][0]["evidence"]["regional_trial_count"] == 0
+    assert dao_mod._RECOMMEND_CACHE  # a complete answer is cached
+    dao_mod._RECOMMEND_CACHE.clear()
+
+    # the regional prefilter failed: the count is unknown, never a made-up 0, and the answer is not pinned
+    async def flaky(self_, eppos, site_names, **kw):
+        if kw.get("tier") == "regional":
+            raise RuntimeError("neo4j hiccup")
+        return set(eppos)
+
+    dao, p = _run_with(_conds(), ["TRZAX"], extrap, AsyncMock(return_value=[_FIELD_SITE, _AGG_SITE]))
+    with p[0], p[1], p[2], p[3], p[4], patch.object(GraphDAO, "_crops_with_analog_trials", flaky):
+        out = await dao.recommend_for_conditions(_conds())
+    assert out["recommendations"][0]["evidence"]["regional_trial_count"] is None
+    assert not dao_mod._RECOMMEND_CACHE
+
+
+async def test_regional_count_is_null_when_the_site_lookup_failed():
+    extrap = _by_tier_extrap(field={"TRZAX": [_variety()]}, regional={})
+    out, _ = await _recommend_tiers(_conds(), ["TRZAX"], extrap, {"TRZAX"}, set(),
+                                    AsyncMock(side_effect=RuntimeError("neo4j hiccup")))
     assert out["recommendations"][0]["evidence"]["regional_trial_count"] is None
 
 

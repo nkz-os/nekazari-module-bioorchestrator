@@ -3898,10 +3898,15 @@ class GraphDAO:
 
             koppen_ok = await _prefilter(koppen_sites, "koppen")
             # Crops whose only numeric evidence is regional/national (aggregate sites).
-            regional_ok: set[str] = (
-                (await _prefilter(regional_sites, "regional", ep.EVIDENCE_TIER_REGIONAL) or set())
-                if regional_sites else set()
-            )
+            # ``regional_known``: the regional count is known (possibly 0), not merely unavailable:
+            # the site lookup answered and, when the climate has aggregate sites, so did the
+            # prefilter and (below) the batch. A failed pass leaves the count null.
+            regional_known = koppen_sites is not None
+            regional_ok: set[str] = set()
+            if regional_sites:
+                regional_pre = await _prefilter(regional_sites, "regional", ep.EVIDENCE_TIER_REGIONAL)
+                regional_known = regional_known and regional_pre is not None
+                regional_ok = regional_pre or set()
 
             v2_lock = asyncio.Lock()
             v2_state: dict[str, Any] = {}
@@ -4055,7 +4060,7 @@ class GraphDAO:
                             sowing=sowing, data_gaps_extra=gaps, assumptions=assumptions,
                             tier=tier, purpose=purpose,
                             regional_trial_count=regional_n if tier == ep.EVIDENCE_TIER_FIELD
-                            and regional_batch is not None else None,
+                            and regional_known else None,
                         )
                         if rec is None:
                             return None
@@ -4143,6 +4148,7 @@ class GraphDAO:
                     logger.warning("recommend: regional tier failed (%s); field evidence only",
                                    type(e).__name__)
                     degraded = True
+                    regional_known = False
                 logger.debug("recommend stage=extrapolate_regional crops=%d elapsed_s=%.3f",
                              len(regional_crops), time.monotonic() - t_reg)
 
