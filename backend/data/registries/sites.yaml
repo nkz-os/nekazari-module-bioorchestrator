@@ -1,0 +1,101 @@
+# Site registry: canonical sites with aliases, kind, country and published coordinates. `id` is the
+# stable site key units link to. Coordinates are as published or a municipality-level geocode, never
+# a farm coordinate; they stay null when no registry has them. Aggregates and regions carry none.
+#
+# Scope: the sites of the licensed sources (GENVCE, CREA). Sites of other sources are added with their
+# contract. NOT registered, on purpose:
+#   - Fundulea (Romania): the 19 rows stored under CREA are Romanian wheat from an unlicensed paper,
+#     not CREA data, and are out of scope.
+#   - Foggia: its three rows come from a placeholder test file, not from a trial report.
+#
+# status: reviewed = confirmed by a person; assumption = recorded with the reason in `note`.
+version: 1
+sites:
+  - id: ES-VALLADOLID
+    name: Valladolid
+    site_kind: field
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: >-
+      ASSUMPTION: kept as a field site only to reproduce what production holds today. The GENVCE raw
+      rows carry NO trial location; they are zone-level results (agroclimatic zones such as "Zona
+      Fría Semiárida", "Nacional") and the legacy adequacy step assigned this reference city. The
+      design rule "an aggregate is never disguised as a plot" argues for modelling the zones as
+      aggregate sites instead; that changes which evidence tier the GENVCE trials land in, so it is
+      an owner decision. Valladolid (GENVCE) and Zamadueñas (ITACyL farm) are NOT merged: nothing
+      in the licensed data says they are the same place.
+  - id: ES-LLEIDA
+    name: Lleida
+    site_kind: field
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: "ASSUMPTION: zone-level GENVCE results labelled with a reference city by the legacy adequacy step (see ES-VALLADOLID)."
+  - id: ES-CORDOBA
+    name: Córdoba
+    site_kind: field
+    country: ES
+    latitude: 37.88
+    longitude: -4.77
+    coordinate_source: municipality-level entry of trial_site_geo_registry.json
+    sources: [GENVCE]
+    status: assumption
+    note: "ASSUMPTION: zone-level GENVCE results labelled with a reference city by the legacy adequacy step (see ES-VALLADOLID)."
+  - id: ES-LUGO
+    name: Lugo
+    site_kind: field
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: "ASSUMPTION: zone-level GENVCE results labelled with a reference city by the legacy adequacy step (see ES-VALLADOLID)."
+  - id: ES-ZAMADUENAS
+    name: Zamadueñas
+    site_kind: field
+    country: ES
+    aliases: [Zamadueñas (Valladolid)]
+    sources: []
+    status: assumption
+    note: >-
+      ASSUMPTION: a separate site, not an alias of Valladolid (see ES-VALLADOLID). No licensed source
+      references it. No coordinates are registered because trial_site_geo_registry.json holds two
+      entries for it about 45 km apart, which cannot both be right.
+  - id: IT-VILLAFRANCA-PIEMONTE
+    name: Villafranca Piemonte (TO)
+    site_kind: field
+    country: IT
+    aliases: [Villafranca Piemonte]
+    latitude: 44.78824
+    longitude: 7.50788
+    coordinate_source: municipality geocode in trial_site_geo_registry.json
+    sources: [CREA]
+    status: assumption
+    note: Named as published in the CREA booklets (Piedmont trial of the national maize network).
+  - id: IT-CREA-AVG-8
+    name: Media 8 Località
+    site_kind: aggregate
+    country: IT
+    sources: [CREA]
+    status: assumption
+    note: Average over the 8 locations of that year's CREA network; the location set differs per year.
+  - id: IT-CREA-AVG-10
+    name: Media 10 Località
+    site_kind: aggregate
+    country: IT
+    sources: [CREA]
+    status: assumption
+    note: Average over the 10 locations of that year's CREA network; the location set differs per year.
+  - id: IT-CREA-AVG-13
+    name: Media 13 Località
+    site_kind: aggregate
+    country: IT
+    sources: [CREA]
+    status: assumption
+    note: Average over the 13 locations of that year's CREA network; the location set differs per year.
+  - id: IT-CREA-AVG-14
+    name: Media 14 Località
+    site_kind: aggregate
+    country: IT
+    sources: [CREA]
+    status: assumption
+    note: Average over the 14 locations of that year's CREA network; the location set differs per year.

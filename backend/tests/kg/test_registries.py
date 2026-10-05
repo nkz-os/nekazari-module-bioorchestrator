@@ -551,3 +551,104 @@ def test_duplicate_source_id_is_an_error(copy_dir):
     edit("sources.yaml", lambda d: d["sources"].append(dict(d["sources"][0])))
     with pytest.raises(RegistryError, match="duplicate source id"):
         load_registries(dest)
+
+
+# ── sites ────────────────────────────────────────────────────────────────────
+
+def test_site_ids_names_and_aliases_resolve_to_exactly_one_site(reg):
+    for site in reg.sites:
+        for name in (site.id, site.name, *site.aliases):
+            assert reg.site(name) is site
+    assert len({s.id for s in reg.sites}) == len(reg.sites)
+
+
+@pytest.mark.parametrize(
+    ("raw", "site_id"),
+    [
+        ("Valladolid", "ES-VALLADOLID"),
+        ("córdoba", "ES-CORDOBA"),
+        ("  Villafranca Piemonte (TO) ", "IT-VILLAFRANCA-PIEMONTE"),
+        ("Villafranca Piemonte", "IT-VILLAFRANCA-PIEMONTE"),
+        ("Media 14 Località", "IT-CREA-AVG-14"),
+        ("Zamadueñas (Valladolid)", "ES-ZAMADUENAS"),
+        ("ES-LUGO", "ES-LUGO"),
+    ],
+)
+def test_site_resolution(reg, raw, site_id):
+    assert reg.site(raw).id == site_id
+
+
+def test_valladolid_and_zamaduenas_are_not_merged_and_the_assumption_is_recorded(reg):
+    assert reg.site("Valladolid") is not reg.site("Zamadueñas")
+    for site_id in ("ES-VALLADOLID", "ES-ZAMADUENAS"):
+        site = reg.site(site_id)
+        assert site.status == "assumption"
+        assert "ASSUMPTION" in site.note
+
+
+@pytest.mark.parametrize("raw", [None, "", "Fundulea", "Foggia", "Nacional", "Narnia"])
+def test_unresolved_or_deliberately_unregistered_sites_are_none(reg, raw):
+    assert reg.site(raw) is None
+
+
+def test_aggregates_have_a_site_kind_and_no_coordinates(reg):
+    aggregates = [s for s in reg.sites if s.site_kind == "aggregate"]
+    assert {s.id for s in aggregates} == {"IT-CREA-AVG-8", "IT-CREA-AVG-10", "IT-CREA-AVG-13", "IT-CREA-AVG-14"}
+    for site in reg.sites:
+        assert site.site_kind in {e.id for e in reg.vocab_entries("site_kind")}
+        if site.site_kind != "field":
+            assert site.latitude is None and site.longitude is None
+
+
+def test_site_coordinates_are_documented_and_never_farm_precision(reg):
+    for site in reg.sites:
+        if site.latitude is not None:
+            assert site.coordinate_source
+            # municipality-level geocodes: no more than five decimals, never a surveyed point
+            assert round(site.latitude, 5) == site.latitude and round(site.longitude, 5) == site.longitude
+
+
+def test_site_sources_are_registered(reg):
+    for site in reg.sites:
+        for source_id in site.sources:
+            assert reg.source(source_id)
+
+
+def test_aggregate_with_coordinates_is_an_error(copy_dir):
+    dest, edit = copy_dir
+
+    def disguise(d):
+        site = next(s for s in d["sites"] if s["id"] == "IT-CREA-AVG-8")
+        site.update(latitude=45.0, longitude=9.0, coordinate_source="x")
+
+    edit("sites.yaml", disguise)
+    with pytest.raises(RegistryError, match="no coordinates"):
+        load_registries(dest)
+
+
+def test_site_alias_collision_and_unknown_kind_are_errors(copy_dir):
+    dest, edit = copy_dir
+    edit("sites.yaml", lambda d: d["sites"][1]["aliases"].append("Valladolid"))
+    with pytest.raises(RegistryError, match="site alias"):
+        load_registries(dest)
+
+
+def test_unknown_site_kind_is_an_error(copy_dir):
+    dest, edit = copy_dir
+    edit("sites.yaml", lambda d: d["sites"][0].update(site_kind="plot"))
+    with pytest.raises(RegistryError, match="unknown site_kind"):
+        load_registries(dest)
+
+
+def test_coordinates_need_a_source_and_come_in_pairs(copy_dir):
+    dest, edit = copy_dir
+    edit("sites.yaml", lambda d: d["sites"][2].pop("coordinate_source"))
+    with pytest.raises(RegistryError, match="coordinate_source"):
+        load_registries(dest)
+
+
+def test_assumption_without_a_note_is_an_error(copy_dir):
+    dest, edit = copy_dir
+    edit("sites.yaml", lambda d: d["sites"][0].pop("note"))
+    with pytest.raises(RegistryError, match="needs its note"):
+        load_registries(dest)

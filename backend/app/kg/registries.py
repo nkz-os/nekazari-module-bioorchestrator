@@ -39,6 +39,7 @@ REGISTRY_FILES: tuple[str, ...] = (
     "vocabularies.yaml",
     "variables.yaml",
     "sources.yaml",
+    "sites.yaml",
 )
 
 # Values of ``commercial_use`` that let a source be loaded into a production-targeted build.
@@ -241,6 +242,37 @@ class SourcesFile(_Model):
     sources: tuple[Source, ...]
 
 
+# ── sites ────────────────────────────────────────────────────────────────────
+
+class Site(_Model):
+    id: str = Field(pattern=r"^[A-Z]{2}-[A-Z0-9][A-Z0-9-]*$")
+    name: str = Field(min_length=1)
+    site_kind: str = Field(min_length=1)
+    country: str = Field(pattern=r"^[A-Z]{2}$")
+    latitude: float | None = Field(default=None, ge=-90, le=90)
+    longitude: float | None = Field(default=None, ge=-180, le=180)
+    coordinate_source: str | None = None
+    aliases: tuple[str, ...] = ()
+    sources: tuple[str, ...] = ()
+    status: Literal["reviewed", "assumption"]
+    note: str | None = None
+
+    @model_validator(mode="after")
+    def _coordinates_and_assumptions_are_documented(self) -> Site:
+        if (self.latitude is None) != (self.longitude is None):
+            raise ValueError(f"{self.id}: latitude and longitude come together")
+        if self.latitude is not None and not self.coordinate_source:
+            raise ValueError(f"{self.id}: coordinates need their coordinate_source")
+        if self.status == "assumption" and not (self.note or "").strip():
+            raise ValueError(f"{self.id}: an assumption needs its note")
+        return self
+
+
+class SitesFile(_Model):
+    version: int
+    sites: tuple[Site, ...]
+
+
 # ── loading helpers ──────────────────────────────────────────────────────────
 
 def _read_yaml(path: Path) -> Any:
@@ -285,7 +317,8 @@ class Registries:
 
     def __init__(
         self, *, crops: CropsFile, units: UnitsFile, vocabularies: VocabFile,
-        variables: VariablesFile, sources: SourcesFile, registries_hash: str, path: Path,
+        variables: VariablesFile, sources: SourcesFile, sites: SitesFile,
+        registries_hash: str, path: Path,
     ) -> None:
         self.path = path
         self.registries_hash = registries_hash
@@ -350,6 +383,20 @@ class Registries:
                             f"raw key {source_id}.{key} maps to both {index[key].id} and {variable.id}")
                     index[key] = variable
 
+        # sites
+        self.sites: tuple[Site, ...] = sites.sites
+        _no_duplicates((st.id for st in self.sites), "site id")
+        kinds = {e.id for e in self._vocab["site_kind"]}
+        for site in self.sites:
+            if site.site_kind not in kinds:
+                raise RegistryError(f"site {site.id}: unknown site_kind {site.site_kind!r}")
+            if site.site_kind != "field" and site.latitude is not None:
+                raise RegistryError(f"site {site.id}: an {site.site_kind} site has no coordinates")
+            for source_id in site.sources:
+                self._require_source(source_id, f"site {site.id} sources")
+        self._site_index: dict[str, Site] = _unique_index(
+            ((name, st) for st in self.sites for name in (st.id, st.name, *st.aliases)), "site alias")
+
         # crops
         self.crops: tuple[Crop, ...] = crops.crops
         _no_duplicates((c.eppo for c in self.crops), "crop eppo")
@@ -380,6 +427,14 @@ class Registries:
     def _require_source(self, source_id: str, where: str) -> None:
         if source_id not in self._source_index:
             raise RegistryError(f"{where}: unknown source {source_id!r}")
+
+    # ── sites ────────────────────────────────────────────────────────────────
+
+    def site(self, name_or_alias: str | None) -> Site | None:
+        """The canonical site for a name, alias or site id; None when unresolved."""
+        if not name_or_alias:
+            return None
+        return self._site_index.get(lookup_key(name_or_alias))
 
     # ── sources ──────────────────────────────────────────────────────────────
 
@@ -471,6 +526,7 @@ def load_registries(path: str | Path | None = None) -> Registries:
         vocabularies=_parse(VocabFile, base / "vocabularies.yaml"),
         variables=_parse(VariablesFile, base / "variables.yaml"),
         sources=_parse(SourcesFile, base / "sources.yaml"),
+        sites=_parse(SitesFile, base / "sites.yaml"),
         registries_hash=registries_hash(base),
         path=base,
     )
