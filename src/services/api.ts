@@ -385,13 +385,16 @@ export interface YieldPotentialResponse {
   variety: string;
   crop: string;
   target_environment: Record<string, unknown>;
-  expected_yield_kg_ha: number;
-  confidence_interval: [number, number];
+  /** Null when the variety has no field trial with a measured yield (never 0); see `data_gaps`. */
+  expected_yield_kg_ha: number | null;
+  confidence_interval: [number, number] | null;
+  /** `no_trial_data` | `no_field_trials` | `no_measured_yield`; absent when there is a number. */
+  data_gaps?: string[];
   trials_analyzed: number;
   similar_sites: string[];
   current_estimated_yield_kg_ha?: number;
   yield_gap_kg_ha?: number;
-  yield_gap_pct?: number;
+  yield_gap_pct?: number | null;
   limiting_factor?: string;
   stage_ky: Record<string, number>;
 }

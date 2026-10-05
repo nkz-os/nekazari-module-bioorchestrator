@@ -658,6 +658,7 @@
     "phenology": "Fenología",
     "yieldGap": "Brecha de Rendimiento",
     "expected": "Esperado",
+    "noYieldData": "Sin datos de rendimiento medido",
     "soilSuitability": "Idoneidad del Suelo",
     "soilSensors": "Sensores de Suelo",
     "phenologySource": "Origen fenología",

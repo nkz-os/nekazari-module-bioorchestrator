@@ -658,6 +658,7 @@
     "phenology": "Phenology",
     "yieldGap": "Yield Gap",
     "expected": "Expected",
+    "noYieldData": "No measured yield data",
     "soilSuitability": "Soil Suitability",
     "soilSensors": "Soil Sensors",
     "phenologySource": "Phenology source",

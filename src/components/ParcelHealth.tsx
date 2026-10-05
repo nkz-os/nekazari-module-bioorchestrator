@@ -15,6 +15,7 @@ import {
   HistoryPoint, AlertItem, authHeaders,
 } from "../services/api";
 import ParcelHealthChart from "./ParcelHealthChart";
+import { yieldPotentialView } from "./yieldPotentialModel";
 
 interface AssessmentData {
   cwsiValue?: number;
@@ -102,6 +103,7 @@ export default function ParcelHealth() {
   // Guard: no parcel selected
   if (!selectedParcel) return <EmptyState icon={<Heart className="w-6 h-6" />} title={t("parcelHealth.selectPrompt")} />;
 
+  const yieldView = yieldPotentialView(yp);
   const severityIntent = (s?: string): "negative" | "warning" | "positive" | "info" | "default" =>
     s === "CRITICAL" ? "negative" : s === "HIGH" ? "warning" : s === "MEDIUM" ? "info" : "positive";
 
@@ -243,8 +245,15 @@ export default function ParcelHealth() {
             </Card>
           )}
 
-          {/* Yield gap */}
-          {yp?.yield_gap_pct !== undefined && (
+          {/* Yield gap: no measured field yield for the variety is "no data", never 0 */}
+          {yieldView === "no_data" && (
+            <Card padding="md">
+              <DetailGrid columns={2}>
+                <DetailItem label={t("parcelHealth.expected")} value={t("parcelHealth.noYieldData")} />
+              </DetailGrid>
+            </Card>
+          )}
+          {yp && yieldView === "gap" && (
             <Card padding="md" className={(yp.yield_gap_pct ?? 0) > 10 ? "border-nkz-warning bg-nkz-warning-soft" : "border-nkz-positive bg-nkz-positive-soft"}>
               <DetailGrid columns={2}>
                 <DetailItem label={t("parcelHealth.yieldGap")} value={`${yp.yield_gap_pct}% (${yp.yield_gap_kg_ha} kg/ha)`} />

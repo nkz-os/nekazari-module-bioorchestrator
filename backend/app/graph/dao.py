@@ -1691,18 +1691,29 @@ class GraphDAO:
         min_rainfall_mm: float | None = None,
         max_rainfall_mm: float | None = None,
         limit: int = 50,
+        variety: str | None = None,
+        tier: str | None = ep.EVIDENCE_TIER_FIELD,
     ) -> list[dict]:
         """Ranked variety trial results with environmental filters.
 
-        Returns varieties sorted by yield (descending) with their TrialSite
-        environmental context. Supports filtering by crop, climate, soil,
-        irrigation regime, and rainfall range.
+        Returns trials sorted by yield (descending) with their TrialSite
+        environmental context. Supports filtering by crop, variety (case-insensitive
+        substring), climate, soil, irrigation regime, and rainfall range.
+
+        The numbers follow the evidence policy (``app.graph.evidence_policy``), the same one the
+        recommender uses: ``yield_kg_ha`` is the policy yield of the main purpose (null for a BSL
+        or note-derived kg/ha, and for forage, which this listing leaves out), content-identical
+        trials are one row (``site_names`` lists every site of the observation), and only
+        ``tier`` rows are listed: ``field`` (default) never mixes in national or regional
+        records; ``None`` lists every tier (``evidence_tier`` tells them apart). A trial with a
+        note and no number stays listed, with a null yield.
 
         This is the primary endpoint for:
           - "What wheat varieties perform best in BSk climate?"
           - "Show me tomato trials on calcareous soils under rainfed conditions"
         """
-        # Effective yield: prefer absolute yieldKgHa, fallback to BSL 1-9 notes scaled
+        if tier is not None:
+            ep.check_tier(tier)
         where_clauses = [
             "(vt.yieldKgHa IS NOT NULL OR vt.yieldNoteS1 IS NOT NULL)",
             RANKING_ELIGIBLE_PREDICATE,
@@ -1712,6 +1723,10 @@ class GraphDAO:
         if crop:
             where_clauses.append("(vt.cropEppo = $crop OR vt.cropScientific CONTAINS $crop OR toLower(vt.variety) CONTAINS toLower($crop))")
             params["crop"] = crop
+
+        if variety:
+            where_clauses.append("toUpper(coalesce(vt.variety, '')) CONTAINS toUpper($variety)")
+            params["variety"] = variety
 
         if climate_class:
             where_clauses.append("ts.climateClass = $climate")
@@ -1735,8 +1750,10 @@ class GraphDAO:
                 where_clauses.append("vt.irrigationRegime CONTAINS $irrigation")
                 params["irrigation"] = irrigation_regime
 
+        min_yield_term = ""
         if min_yield_kg_ha is not None:
-            where_clauses.append("vt.yieldKgHa >= $min_yield")
+            # on the policy yield: a BSL or derived kg/ha never satisfies a minimum yield
+            min_yield_term = "AND ep_y >= $min_yield\n"
             params["min_yield"] = min_yield_kg_ha
 
         if min_rainfall_mm is not None:
@@ -1748,15 +1765,36 @@ class GraphDAO:
             params["max_rain"] = max_rainfall_mm
 
         where_str = " AND ".join(where_clauses)
+        gate = ep.cypher_tier_gate_expr(tier, with_other=False) if tier else "ep_in_mode"
+        # Rows are classified by the policy once; the content key (a per-trial expand) is built only
+        # for the best ``fetch`` candidates, then content-identical trials collapse to one row.
+        params["fetch"] = max(limit, 1) * 3
 
-        query = f"""
+        query = (
+            f"""
             MATCH (vt:VarietyTrial)-[:TRIAL_AT]->(ts:TrialSite)
             WHERE {where_str}
+            """
+            + ep.cypher_row_policy(ep.MODE_MAIN)
+            + f"""WHERE {gate}
+            {min_yield_term}WITH vt, ts, ep_y, ep_tier
+            ORDER BY ep_y IS NULL, ep_y DESC, vt.mergeKey ASC, ts.name ASC
+            LIMIT $fetch
+            WITH vt, ts, ep_y, ep_tier, {ep.cypher_content_key("vt")} AS ck
+            WITH ck, collect({{vt: vt, ts: ts, y: ep_y, tier: ep_tier}}) AS rows
+            WITH rows[0] AS h,
+                 reduce(acc = [], r IN rows | CASE WHEN r.ts.name IN acc THEN acc ELSE acc + r.ts.name END)
+                   AS site_names
+            WITH h.vt AS vt, h.ts AS ts, h.y AS ep_y, h.tier AS ep_tier, site_names
+            ORDER BY ep_y IS NULL, ep_y DESC, vt.mergeKey ASC, ts.name ASC
+            LIMIT $limit
             OPTIONAL MATCH (vt)-[:SOURCED_FROM]->(as_article:ArticleSource)
             RETURN vt.cropEppo AS crop_eppo,
                    vt.cropScientific AS crop_scientific,
                    vt.variety AS variety,
-                   vt.yieldKgHa AS yield_kg_ha,
+                   ep_y AS yield_kg_ha,
+                   ep_tier AS evidence_tier,
+                   site_names AS site_names,
                    vt.yieldNoteS1 AS yield_note_s1,
                    vt.yieldRelativePct AS yield_relative_pct,
                    vt.qualityParams AS quality_params,
@@ -1784,9 +1822,9 @@ class GraphDAO:
                    as_article.articleTitle AS source_title,
                    as_article.issueNumber AS source_issue,
                    as_article.year AS source_year
-            ORDER BY vt.yieldKgHa IS NULL, vt.yieldKgHa DESC
-            LIMIT $limit
-        """
+            ORDER BY ep_y IS NULL, ep_y DESC, vt.mergeKey ASC, ts.name ASC
+            """
+        )
 
         async with self._driver.session() as session:
             result = await session.run(query, params)
@@ -4278,23 +4316,42 @@ class GraphDAO:
         return {"status": "cleared", "parcel_id": parcel_id}
 
     async def get_yield_potential(self, variety: str, crop: str, climate_class: str | None = None, soil_type: str | None = None, parcel_id: str | None = None, tenant_id: str = "") -> dict:
-        """Compute expected yield and yield gap for a variety."""
+        """Compute expected yield and yield gap for a variety.
+
+        The number is the mean of the variety's FIELD trials of the main purpose under the evidence
+        policy (``app.graph.evidence_policy``): no BSL or note-derived kg/ha, no forage, no national
+        or regional record, content-identical trials once (the same rules as the recommender).
+        With no such evidence the expected yield, its interval and the yield gap are null and
+        ``data_gaps`` says why (never 0): ``no_trial_data`` (no trial of the variety),
+        ``no_field_trials`` (trials only outside the field tier) or ``no_measured_yield`` (field
+        trials without a policy number).
+        """
         import math
-        trials = await self.get_variety_trials(crop=crop, climate_class=climate_class, soil_type=soil_type, limit=200)
-        variety_trials = [t for t in trials if variety.upper() in t.get("variety", "").upper()]
-        if not variety_trials:
-            return {"error": f"No trial data found for variety '{variety}' (crop={crop})"}
-        yields = [t["yield_kg_ha"] for t in variety_trials if t.get("yield_kg_ha") is not None]
-        if not yields:
-            return {"error": f"No yield data available for variety '{variety}'"}
-        mean_yield = sum(yields) / len(yields)
-        n = len(yields)
-        stddev = math.sqrt(sum((y - mean_yield) ** 2 for y in yields) / (n - 1)) if n > 1 else 0
-        ci_low = mean_yield - 1.96 * stddev / math.sqrt(n) if n > 1 else mean_yield
-        ci_high = mean_yield + 1.96 * stddev / math.sqrt(n) if n > 1 else mean_yield
-        sites = list({t.get("site_name") for t in variety_trials if t.get("site_name")})
-        result: dict = {"variety": variety, "crop": crop, "target_environment": {"climate_class": climate_class, "soil_type": soil_type}, "expected_yield_kg_ha": round(mean_yield, 1), "confidence_interval": [round(ci_low, 1), round(ci_high, 1)], "trials_analyzed": len(variety_trials), "similar_sites": sites[:10]}
-        if parcel_id:
+        # Every tier comes back (tagged) so the disease and trait enrichment below keeps the rows
+        # the numbers must not use.
+        variety_trials = await self.get_variety_trials(
+            crop=crop, variety=variety, climate_class=climate_class, soil_type=soil_type,
+            limit=200, tier=None,
+        )
+        field_trials = [t for t in variety_trials if t.get("evidence_tier", ep.EVIDENCE_TIER_FIELD) == ep.EVIDENCE_TIER_FIELD]
+        yields = [t["yield_kg_ha"] for t in field_trials if t.get("yield_kg_ha") is not None]
+        sites = list({n for t in field_trials for n in (t.get("site_names") or [t.get("site_name")]) if n})
+        result: dict = {"variety": variety, "crop": crop, "target_environment": {"climate_class": climate_class, "soil_type": soil_type}}
+        mean_yield: float | None = None
+        if yields:
+            mean_yield = sum(yields) / len(yields)
+            n = len(yields)
+            stddev = math.sqrt(sum((y - mean_yield) ** 2 for y in yields) / (n - 1)) if n > 1 else 0
+            ci_low = mean_yield - 1.96 * stddev / math.sqrt(n) if n > 1 else mean_yield
+            ci_high = mean_yield + 1.96 * stddev / math.sqrt(n) if n > 1 else mean_yield
+            result.update({"expected_yield_kg_ha": round(mean_yield, 1), "confidence_interval": [round(ci_low, 1), round(ci_high, 1)],
+                           "trials_analyzed": len(yields), "similar_sites": sites[:10]})
+        else:
+            gap_id = ("no_trial_data" if not variety_trials
+                      else "no_field_trials" if not field_trials else "no_measured_yield")
+            result.update({"expected_yield_kg_ha": None, "confidence_interval": None, "trials_analyzed": 0,
+                           "similar_sites": sites[:10], "data_gaps": [gap_id]})
+        if parcel_id and mean_yield is not None:
             try:
                 orion = OrionClient(tenant_id)
                 try:
@@ -4312,7 +4369,7 @@ class GraphDAO:
                         gap = mean_yield - current_yield
                         result["current_estimated_yield_kg_ha"] = round(current_yield, 1)
                         result["yield_gap_kg_ha"] = round(gap, 1)
-                        result["yield_gap_pct"] = round(gap / mean_yield * 100, 1) if mean_yield else 0
+                        result["yield_gap_pct"] = round(gap / mean_yield * 100, 1) if mean_yield else None
             except Exception:  # noqa: BLE001,S110
                 pass
         phenology = await self.get_phenology_params(species=crop)
