@@ -165,6 +165,26 @@ async def test_malformed_file_error_without_server_code_is_deterministic(main_mo
     assert client.get("/readyz").status_code == 200
 
 
+async def test_hung_attempt_times_out_as_transient_and_a_retry_succeeds(main_mod, client, monkeypatch):
+    calls = []
+
+    async def runner(*_a, **_k):
+        calls.append(1)
+        if len(calls) == 1:
+            await asyncio.sleep(3600)  # server accepts the connection and never answers
+        return _report()
+
+    monkeypatch.setattr(main_mod, "apply_migrations", runner)
+    monkeypatch.setattr(main_mod, "_MIGRATION_ATTEMPT_TIMEOUT_S", 0.05)
+
+    await asyncio.wait_for(main_mod._run_startup_migrations(object()), timeout=2)  # startup not held
+
+    assert main_mod._migration_failure is None
+    assert client.get("/readyz").status_code == 200
+    await _wait_for_retry_task(main_mod)
+    assert len(calls) == 2 and main_mod._migration_failure is None
+
+
 async def test_retry_task_is_strongly_referenced_and_cancelled_on_shutdown(main_mod, monkeypatch):
     monkeypatch.setattr(main_mod, "_MIGRATION_TRANSIENT_BACKOFF_START_S", 3600.0)
     monkeypatch.setattr(main_mod, "apply_migrations", AsyncMock(side_effect=ServiceUnavailable("down")))

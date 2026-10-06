@@ -57,6 +57,9 @@ _migration_task: asyncio.Task | None = None
 _MIGRATION_TRANSIENT_BACKOFF_START_S = 2.0
 _MIGRATION_TRANSIENT_BACKOFF_CAP_S = 60.0
 _MIGRATION_SCHEMA_RETRY_S = 300.0
+# Cap on one attempt, so a server that accepts the connection but never answers cannot hold
+# startup past the liveness probe; a timeout is transient and goes to the retry task.
+_MIGRATION_ATTEMPT_TIMEOUT_S = 45.0
 
 # Strong refs to long-lived background tasks (prevents GC of run_loop et al.).
 _BG_TASKS: set = set()
@@ -134,7 +137,8 @@ async def _attempt_startup_migrations(driver) -> bool:
     """
     global _migration_failure
     try:
-        report = await apply_migrations(driver, include_data=False)
+        report = await asyncio.wait_for(apply_migrations(driver, include_data=False),
+                                        timeout=_MIGRATION_ATTEMPT_TIMEOUT_S)
     except asyncio.CancelledError:
         raise
     except Exception as exc:
