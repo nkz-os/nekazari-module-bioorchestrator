@@ -404,7 +404,7 @@ EXPECTED_CONSTRAINTS = {
     "heat_tolerance_species": ("CropHeatTolerance", ("species",)),
     "frost_tolerance_species": ("CropFrostTolerance", ("species",)),
     "cropcoeff_crop": ("CropCoefficient", ("cropCommonName",)),
-    "nutrient_profile_species_stage": ("CropNutrientProfile", ("species", "stage")),
+    "nutrient_profile_species_stage": ("CropNutrientProfile", ("species", "stage", "element")),
     "soil_suitability_species": ("CropSoilSuitability", ("species",)),
     "management_trial_key": ("ManagementTrial", ("mergeKey",)),
     "harvest_data_key": ("HarvestData", ("mergeKey",)),
@@ -545,3 +545,4 @@ def test_enterprise_directory_holds_no_runnable_migration_names():
         "009_trial_site_name_index.cypher",
         "010_kg_identity.cypher",
     ]
+

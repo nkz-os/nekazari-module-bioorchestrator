@@ -65,9 +65,11 @@ FOR (ft:CropFrostTolerance) REQUIRE ft.species IS UNIQUE;
 CREATE CONSTRAINT cropcoeff_crop IF NOT EXISTS
 FOR (cc:CropCoefficient) REQUIRE cc.cropCommonName IS UNIQUE;
 
-// CropNutrientProfile (per species + stage)
+// CropNutrientProfile (per species + stage + element). One node per element (nitrogen,
+// phosphorus, potassium), so (species, stage) alone is not a key. The constraint keeps its
+// original name.
 CREATE CONSTRAINT nutrient_profile_species_stage IF NOT EXISTS
-FOR (np:CropNutrientProfile) REQUIRE (np.species, np.stage) IS UNIQUE;
+FOR (np:CropNutrientProfile) REQUIRE (np.species, np.stage, np.element) IS UNIQUE;
 
 // CropSoilSuitability
 CREATE CONSTRAINT soil_suitability_species IF NOT EXISTS

@@ -36,8 +36,9 @@ FOR (ft:CropFrostTolerance) REQUIRE (ft.species) IS NODE KEY;
 CREATE CONSTRAINT cropcoeff_crop IF NOT EXISTS
 FOR (cc:CropCoefficient) REQUIRE (cc.cropCommonName) IS NODE KEY;
 
+// Key is (species, stage, element): one node per element. (species, stage) alone is not unique.
 CREATE CONSTRAINT nutrient_profile_species_stage IF NOT EXISTS
-FOR (np:CropNutrientProfile) REQUIRE (np.species, np.stage) IS NODE KEY;
+FOR (np:CropNutrientProfile) REQUIRE (np.species, np.stage, np.element) IS NODE KEY;
 
 CREATE CONSTRAINT soil_suitability_species IF NOT EXISTS
 FOR (ss:CropSoilSuitability) REQUIRE (ss.species) IS NODE KEY;
