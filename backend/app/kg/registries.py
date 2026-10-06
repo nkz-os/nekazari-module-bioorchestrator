@@ -43,7 +43,12 @@ REGISTRY_FILES: tuple[str, ...] = (
     "sites.yaml",
     "ranges.yaml",
     "varieties.yaml",
+    "irrigation_thresholds.yaml",
 )
+
+# Id of the one derivation method of the irrigation regime from a yield (``irrigation_thresholds.yaml``).
+# The version is part of the name: another rule is another method, never a silent change of this one.
+IRRIGATION_DERIVATION_V1 = "yield_threshold_v1"
 
 # Condition keys a contextual range may use, and the vocabulary each draws its values from
 # (``None``: free-form, a Koppen climate code).
@@ -361,6 +366,66 @@ class VarietiesFile(_Model):
     varieties: tuple[Variety, ...]
 
 
+# ── irrigation yield thresholds ──────────────────────────────────────────────
+
+class ThresholdEvidence(_Model):
+    """What a threshold pair was calibrated on: the rows whose regime the source itself states."""
+
+    method: str = Field(min_length=1)
+    epsilon: float | None = Field(default=None, gt=0, lt=0.5)
+    labelled_sources: tuple[str, ...] = ()
+    n_rainfed: int = Field(ge=0)
+    n_irrigated: int = Field(ge=0)
+    rainfed_quantiles: dict[str, float] = {}
+    irrigated_quantiles: dict[str, float] = {}
+    misclassified_rainfed: int | None = Field(default=None, ge=0)
+    misclassified_irrigated: int | None = Field(default=None, ge=0)
+    error_rate: float | None = Field(default=None, ge=0, le=1)
+    raw_data_commit: str | None = None
+    reason: str | None = None  # why a crop has no cutoff
+
+
+class IrrigationThreshold(_Model):
+    """Per-crop yield cutoffs (kg/ha) that derive an irrigation regime where the source states none.
+
+    yield <= low_kg_ha is rainfed; yield >= high_kg_ha is irrigated; in between the regime stays
+    unknown. ``assumption`` values are calibrated but not approved: ``owner_approval`` is empty until
+    the owner signs them off. ``not_calibrated`` has no cutoff and says why.
+    """
+
+    crop: str = Field(pattern=r"^[A-Z0-9]{5,6}$")
+    status: Literal["assumption", "not_calibrated"]
+    low_kg_ha: float | None = Field(default=None, gt=0)
+    high_kg_ha: float | None = Field(default=None, gt=0)
+    owner_approval: str | None = None
+    evidence: ThresholdEvidence
+    note: str | None = None
+
+    @model_validator(mode="after")
+    def _values_follow_the_status(self) -> IrrigationThreshold:
+        if self.status == "not_calibrated":
+            if self.low_kg_ha is not None or self.high_kg_ha is not None:
+                raise ValueError(f"{self.crop}: a crop without a cutoff has no threshold values")
+            if not (self.evidence.reason or "").strip():
+                raise ValueError(f"{self.crop}: a crop without a cutoff says why")
+            if (self.owner_approval or "").strip():
+                raise ValueError(f"{self.crop}: there is nothing to approve without a cutoff")
+            return self
+        if self.low_kg_ha is None or self.high_kg_ha is None:
+            raise ValueError(f"{self.crop}: a calibrated crop has both thresholds")
+        if self.low_kg_ha >= self.high_kg_ha:
+            raise ValueError(f"{self.crop}: low must be below high (the two bands must not overlap)")
+        if not (self.evidence.n_rainfed and self.evidence.n_irrigated):
+            raise ValueError(f"{self.crop}: the calibration evidence counts rows of both regimes")
+        return self
+
+
+class IrrigationThresholdsFile(_Model):
+    version: int
+    method: Literal["yield_threshold_v1"]
+    thresholds: tuple[IrrigationThreshold, ...]
+
+
 # ── loading helpers ──────────────────────────────────────────────────────────
 
 _YAML_LOADER = getattr(yaml, "CSafeLoader", yaml.SafeLoader)  # the C loader gives the same result, faster
@@ -409,7 +474,8 @@ class Registries:
     def __init__(
         self, *, crops: CropsFile, units: UnitsFile, vocabularies: VocabFile,
         variables: VariablesFile, sources: SourcesFile, sites: SitesFile, ranges: RangesFile,
-        varieties: VarietiesFile, registries_hash: str, path: Path,
+        varieties: VarietiesFile, irrigation_thresholds: IrrigationThresholdsFile,
+        registries_hash: str, path: Path,
     ) -> None:
         self.path = path
         self.registries_hash = registries_hash
@@ -538,6 +604,16 @@ class Registries:
                     raise RegistryError(
                         f"variety alias: {name!r} ({variety.crop}) resolves to more than one variety")
 
+        # irrigation thresholds (per crop, canonical EPPO codes only)
+        self.irrigation_thresholds: tuple[IrrigationThreshold, ...] = irrigation_thresholds.thresholds
+        _no_duplicates((t.crop for t in self.irrigation_thresholds), "irrigation threshold crop")
+        self._threshold_index: dict[str, IrrigationThreshold] = {}
+        for threshold in self.irrigation_thresholds:
+            if threshold.crop not in canonical_crops:
+                raise RegistryError(
+                    f"irrigation threshold {threshold.crop}: not a canonical EPPO code in crops.yaml")
+            self._threshold_index[threshold.crop] = threshold
+
         # crops
         self.crops: tuple[Crop, ...] = crops.crops
         _no_duplicates((c.eppo for c in self.crops), "crop eppo")
@@ -620,6 +696,16 @@ class Registries:
             if all(query.get(k) == v for k, v in r.conditions.items())
         ]
         return max(candidates, key=lambda r: r.specificity, default=None)
+
+    # ── irrigation thresholds ────────────────────────────────────────────────
+
+    def irrigation_threshold(self, eppo_or_alias: str | None) -> IrrigationThreshold | None:
+        """The calibrated yield cutoffs of a crop, or None when it has none (never a default)."""
+        crop = self.crop(eppo_or_alias)
+        if crop is None:
+            return None
+        found = self._threshold_index.get(crop.eppo)
+        return found if found is not None and found.status == "assumption" else None
 
     # ── sites ────────────────────────────────────────────────────────────────
 
@@ -722,6 +808,7 @@ def load_registries(path: str | Path | None = None) -> Registries:
         sites=_parse(SitesFile, base / "sites.yaml"),
         ranges=_parse(RangesFile, base / "ranges.yaml"),
         varieties=_parse(VarietiesFile, base / "varieties.yaml"),
+        irrigation_thresholds=_parse(IrrigationThresholdsFile, base / "irrigation_thresholds.yaml"),
         registries_hash=registries_hash(base),
         path=base,
     )
@@ -729,6 +816,7 @@ def load_registries(path: str | Path | None = None) -> Registries:
 
 __all__ = [
     "DEFAULT_REGISTRIES_PATH",
+    "IRRIGATION_DERIVATION_V1",
     "Crop",
     "Registries",
     "RegistryError",

@@ -1,0 +1,35 @@
+# Per-crop yield cutoffs that derive an irrigation regime where the source states none (owner decision of
+# 2026-10-06: GENVCE and CREA rows mostly print no regime, and the extraction's own regimes were assumptions).
+#
+# Rule (method yield_threshold_v1, applied by the contract engine, never by an adapter):
+#   source states a regime        -> that regime, always; this file is not consulted
+#   source silent, yield <= low   -> rainfed
+#   source silent, yield >= high  -> irrigated
+#   source silent, in between     -> no regime, gap `irrigation_ambiguous_yield`
+#   no yield, or no cutoff for the crop -> no regime
+# The derived regime goes on the unit's canonical irrigation_regime only; raw_irrigation stays empty (so
+# the unit key never changes) and the unit records `irrigation_derivation: yield_threshold_v1` with the
+# two values used, so a derived regime is never mistaken for an observed one.
+#
+# Values are kg/ha at the standard moisture the sources state. They are calibrated, per crop, on the rows
+# whose regime the source itself states (zone label, agronomic sheet), never on the rows they are then
+# applied to. A crop with fewer than 15 labelled rows in a regime is NOT calibrated: it has no cutoff and
+# says why. Climate and zone differences are out of scope: one pair per crop.
+#
+# status: assumption = calibrated but not approved; owner_approval stays empty until the owner signs the
+# values off (before the recommendation equivalence of task 11).
+version: 1
+method: yield_threshold_v1
+thresholds:
+  - crop: ZEAMX
+    status: not_calibrated
+    evidence: {method: pending, n_rainfed: 0, n_irrigated: 0, reason: calibration pending}
+  - crop: HORVX
+    status: not_calibrated
+    evidence: {method: pending, n_rainfed: 0, n_irrigated: 0, reason: calibration pending}
+  - crop: TRZAX
+    status: not_calibrated
+    evidence: {method: pending, n_rainfed: 0, n_irrigated: 0, reason: calibration pending}
+  - crop: BRSNN
+    status: not_calibrated
+    evidence: {method: pending, n_rainfed: 0, n_irrigated: 0, reason: calibration pending}
