@@ -7,7 +7,9 @@ the source states; the real bundles (only where the private raw-data repository 
 from __future__ import annotations
 
 import copy
+import json
 import math
+import os
 import shutil
 from pathlib import Path
 
@@ -16,7 +18,14 @@ import yaml
 from pydantic import ValidationError
 
 from app.kg import identity
-from app.kg.contracts import Contract, ContractError, run_contract
+from app.kg.adapters import crea, genvce
+from app.kg.contracts import (
+    Contract,
+    ContractError,
+    Expected,
+    load_contract,
+    run_contract,
+)
 from app.kg.irrigation_cutoff import (
     EPSILON,
     STEP_KG_HA,
@@ -423,3 +432,98 @@ def test_the_thresholds_the_script_renders_load_back_through_the_registry(copy_d
     for crop in ("ZEAMX", "TRZAX", "BRSNN"):
         assert reg.irrigation_threshold(crop) is None
         assert next(t for t in reg.irrigation_thresholds if t.crop == crop).evidence.reason
+
+
+# ═════════════════════════════════════════════════════════════════════════════
+# 4. the real contracts: GENVCE and CREA fixtures, then the whole raw data
+# ═════════════════════════════════════════════════════════════════════════════
+
+SOURCES = Path(__file__).resolve().parents[2] / "data" / "sources"
+FIXTURES = Path(__file__).parent / "fixtures"
+
+
+def real_bundle(source_id, adapter, rows, expected=None, derive=True):
+    loaded = load_contract(SOURCES / f"{source_id}.yaml")
+    if not derive:
+        loaded = loaded.model_copy(update={"unit": loaded.unit.model_copy(update={"irrigation_derivation": None})})
+    if expected is not None:
+        loaded = loaded.model_copy(update={"expected": Expected(**expected)})
+    return run_contract(loaded, REGISTRIES, rows)
+
+
+@pytest.fixture(scope="module")
+def fixture_bundles():
+    out = {}
+    for source_id, adapter, expected in (
+        ("GENVCE", genvce, {"units": 32, "observations": 233, "sites": 14}),
+        ("CREA", crea, {"units": 16, "observations": 132, "sites": 5}),
+    ):
+        rows = adapter.load(FIXTURES / source_id.lower()).rows
+        out[source_id] = (real_bundle(source_id, adapter, rows, expected),
+                          real_bundle(source_id, adapter, rows, expected, derive=False))
+    return out
+
+
+@pytest.mark.parametrize("source_id", ["GENVCE", "CREA"])
+def test_both_contracts_ask_for_the_derivation_and_name_no_number(source_id):
+    spec = load_contract(SOURCES / f"{source_id}.yaml").unit.irrigation_derivation
+    assert spec is not None and spec.method == "yield_threshold_v1"
+    text = (SOURCES / f"{source_id}.yaml").read_text(encoding="utf-8")
+    assert "low_kg_ha" not in text and "high_kg_ha" not in text  # the cutoffs live in the registry only
+
+
+@pytest.mark.parametrize("source_id", ["GENVCE", "CREA"])
+def test_on_the_fixtures_every_unit_follows_the_rule_and_the_keys_do_not_move(fixture_bundles, source_id):
+    with_cutoff, without = fixture_bundles[source_id]
+    assert [identity.unit_key(u) for u in with_cutoff.units] == [identity.unit_key(u) for u in without.units]
+    for unit in with_cutoff.units:
+        if unit.raw_irrigation is not None:
+            assert unit.irrigation_derivation is None  # the source wins
+            continue
+        threshold = REGISTRIES.irrigation_threshold(unit.crop_eppo)
+        if threshold is None or unit.yield_kg_ha is None:
+            assert unit.irrigation_regime is None and unit.irrigation_derivation is None
+            continue
+        assert unit.irrigation_derivation == "yield_threshold_v1"
+        assert (unit.irrigation_yield_low_kg_ha, unit.irrigation_yield_high_kg_ha) == (
+            threshold.low_kg_ha, threshold.high_kg_ha)
+        band = classify_yield(unit.yield_kg_ha, threshold.low_kg_ha, threshold.high_kg_ha)
+        assert unit.irrigation_regime == (REGISTRIES.vocab("irrigation", band) if band else None)
+        assert (band is None) == any(g.reason.startswith("irrigation_ambiguous_yield") for g in unit.gaps)
+    assert all(u.raw_irrigation is None for u in with_cutoff.units if u.irrigation_derivation)
+
+
+def test_on_the_fixtures_barley_with_a_silent_regime_is_judged_by_the_registry_cutoffs(fixture_bundles):
+    threshold = REGISTRIES.irrigation_threshold("HORVX")
+    assert threshold is not None, "barley is the one crop the stated rows can calibrate"
+    judged = [u for u in fixture_bundles["GENVCE"][0].units if u.irrigation_derivation]
+    assert judged and {u.crop_eppo for u in judged} == {"HORVX"}
+
+
+RAW_REPO = os.environ.get("NKZ_DATA_SOURCES_DIR", "")
+
+
+@pytest.mark.skipif(not RAW_REPO, reason="set NKZ_DATA_SOURCES_DIR to the raw-data repository to run")
+def test_the_whole_raw_data_derives_barley_only_and_changes_no_key():
+    result = genvce.load(Path(RAW_REPO) / "genvce")
+    with_cutoff = real_bundle("GENVCE", genvce, result.rows)
+    without = real_bundle("GENVCE", genvce, result.rows, derive=False)
+    assert [identity.unit_key(u) for u in with_cutoff.units] == [identity.unit_key(u) for u in without.units]
+    derived = with_cutoff.report.irrigation_derived
+    assert set(derived) <= {"HORVX:rainfed", "HORVX:irrigated", "HORVX:ambiguous"}, "no other crop has a cutoff"
+    stated = [u for u in with_cutoff.units if u.raw_irrigation is not None]
+    assert stated and all(u.irrigation_derivation is None for u in stated)
+    assert not any(u.irrigation_regime for u in with_cutoff.units if u.crop_eppo != "HORVX" and not u.raw_irrigation)
+    judged = sum(derived.values())
+    assert judged == sum(1 for u in with_cutoff.units if u.irrigation_derivation)
+    print(f"\nGENVCE derived by band: {json.dumps(derived, sort_keys=True)}")
+
+
+@pytest.mark.skipif(not RAW_REPO, reason="set NKZ_DATA_SOURCES_DIR to the raw-data repository to run")
+def test_maize_has_no_cutoff_so_no_crea_unit_is_derived_and_every_stated_regime_stays():
+    result = crea.load(Path(RAW_REPO) / "crea")
+    with_cutoff = real_bundle("CREA", crea, result.rows)
+    assert with_cutoff.report.irrigation_derived == {}
+    assert sum(1 for u in with_cutoff.units if u.raw_irrigation) == 149
+    assert all(u.irrigation_derivation is None and u.irrigation_regime is None
+               for u in with_cutoff.units if u.raw_irrigation is None)

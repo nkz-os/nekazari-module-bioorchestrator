@@ -41,6 +41,10 @@ unit:
     site: {from: site}
     season: {from: season}
     irrigation: {from: irrigation, vocab: irrigation}
+  # Where the source states no regime, derive one from the unit's yield with the per-crop cutoffs of the
+  # irrigation_thresholds.yaml registry (owner decision 2026-10-06). The source always wins; the derived
+  # regime goes on the canonical field only, and the unit records the method and the cutoffs it used.
+  irrigation_derivation: {method: yield_threshold_v1}
   purpose:
     default: grain
     justification: >-
