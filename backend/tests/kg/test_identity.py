@@ -279,6 +279,10 @@ YIELD = {
     "purpose": "grain",
 }
 
+# a derivation exists only where the source states no regime: the base unit has none either
+DERIVED = {"raw_irrigation": None, "irrigation_derivation": "yield_threshold_v1",
+           "irrigation_yield_low_kg_ha": 4000.0, "irrigation_yield_high_kg_ha": 7000.0}
+
 NON_KEY_FIELD_VARIANTS = {
     "study_key": {"study_key": "c" * 64},
     "site_key": {"site_key": "ES-LLEIDA"},
@@ -295,6 +299,10 @@ NON_KEY_FIELD_VARIANTS = {
     "yield_unit_original": {"yield_unit_original": "q/ha"},
     "derivation_method": {"derivation_method": "mean of replicates"},
     "locator": {"locator": "table 3"},
+    # the three travel together: a derivation records the cutoffs it used (the unit has a yield here)
+    "irrigation_derivation": DERIVED,
+    "irrigation_yield_low_kg_ha": DERIVED,
+    "irrigation_yield_high_kg_ha": DERIVED,
     "gaps": {"gaps": (Gap(field="clone", reason="not stated"),)},
 }
 
@@ -312,8 +320,9 @@ def test_each_observed_unit_field_changes_the_key(field):
 
 @pytest.mark.parametrize("field", UNIT_NON_KEY_FIELDS)
 def test_no_derived_or_provenance_field_changes_the_key(field):
-    base = make_unit(**YIELD)
-    changed = make_unit(**{**YIELD, **NON_KEY_FIELD_VARIANTS[field]})
+    variant = NON_KEY_FIELD_VARIANTS[field]
+    base = make_unit(**{**YIELD, **({"raw_irrigation": None} if "raw_irrigation" in variant else {})})
+    changed = make_unit(**{**YIELD, **variant})
     assert changed != base  # the variant is a real change
     assert unit_key(changed) == unit_key(base)
 

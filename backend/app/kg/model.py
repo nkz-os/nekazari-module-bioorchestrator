@@ -232,6 +232,27 @@ class UnitRow(_Row):
     yield_unit_original: Text = None
     derivation_method: Text = None
     locator: Text = None  # page / table of the document
+    # How irrigation_regime was derived where the source states none (a yield cutoff, see
+    # irrigation_thresholds.yaml). Set whenever the rule was evaluated, so a derived regime (or an
+    # ambiguous yield, regime None) is never mistaken for an observed one; an observed regime has none.
+    irrigation_derivation: Text = None
+    irrigation_yield_low_kg_ha: float | None = Field(default=None, gt=0)
+    irrigation_yield_high_kg_ha: float | None = Field(default=None, gt=0)
+
+    @model_validator(mode="after")
+    def _irrigation_derivation_is_complete_or_absent(self) -> UnitRow:
+        bounds = (self.irrigation_yield_low_kg_ha, self.irrigation_yield_high_kg_ha)
+        if self.irrigation_derivation is None:
+            if any(value is not None for value in bounds):
+                raise ValueError("irrigation thresholds are set without irrigation_derivation")
+            return self
+        if self.raw_irrigation is not None:
+            raise ValueError("irrigation_derivation is set but the source states a regime: the source wins")
+        if any(value is None for value in bounds) or bounds[0] >= bounds[1]:
+            raise ValueError("irrigation_derivation needs both thresholds, low below high")
+        if self.yield_kg_ha is None:
+            raise ValueError("irrigation_derivation is set without a yield to derive from")
+        return self
 
     @model_validator(mode="after")
     def _factor_names_are_unique(self) -> UnitRow:
@@ -358,7 +379,8 @@ UNIT_KEY_FIELDS = (
 UNIT_NON_KEY_FIELDS = (
     "study_key", "site_key", "variety_key", "year", "irrigation_regime", "production_system", "purpose",
     "yield_kg_ha", "yield_metric", "yield_basis", "yield_moisture_pct", "yield_value_original",
-    "yield_unit_original", "derivation_method", "locator", "gaps",
+    "yield_unit_original", "derivation_method", "locator", "irrigation_derivation",
+    "irrigation_yield_low_kg_ha", "irrigation_yield_high_kg_ha", "gaps",
 )
 
 OBSERVATION_KEY_FIELDS = ("unit_key", "variable_id", "stage", "date", "qualifier")

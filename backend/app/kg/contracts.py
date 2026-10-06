@@ -105,7 +105,14 @@ from .model import (
     VariableId,
     VarietyRow,
 )
-from .registries import Registries, Site, Unit, UnknownEntryError, Variable
+from .registries import (
+    IRRIGATION_DERIVATION_V1,
+    Registries,
+    Site,
+    Unit,
+    UnknownEntryError,
+    Variable,
+)
 
 # The variable the ``unit.yield`` section produces; it cannot also be listed under ``observations``.
 YIELD_VARIABLE = "crop_yield"
@@ -295,11 +302,23 @@ class YieldSpec(_Closed):
         return self
 
 
+class IrrigationDerivationSpec(_Closed):
+    """Derive the irrigation regime from the unit's yield where the source states none.
+
+    The cutoffs are per-crop data (``irrigation_thresholds.yaml``), never part of the contract. The
+    source always wins; the derived regime is stored on the canonical field only and the unit records
+    the method and the cutoffs it used.
+    """
+
+    method: Literal["yield_threshold_v1"]
+
+
 class UnitSpec(_Closed):
     fields: UnitFields
     factors: tuple[Factor, ...] = ()
     purpose: Declared | None = None
     yield_: YieldSpec | None = Field(default=None, alias="yield")
+    irrigation_derivation: IrrigationDerivationSpec | None = None
 
     @model_validator(mode="after")
     def _yield_has_a_justified_purpose(self) -> UnitSpec:
@@ -481,6 +500,7 @@ class BuildReport(_Out):
     missing: dict[str, int] = {}  # mapped raw path -> rows where it was absent or blank
     unresolved_sites: dict[str, int] = {}  # raw site as printed -> units
     unresolved_vocab: dict[str, int] = {}  # "irrigation:<literal>" -> units
+    irrigation_derived: dict[str, int] = {}  # "<EPPO>:rainfed|irrigated|ambiguous" -> units the yield cutoff judged
     unregistered_varieties: dict[str, int] = {}  # "<EPPO>:<name>" -> units (the review queue)
     range_checks: RangeChecks = RangeChecks()
     warnings: tuple[str, ...] = ()
@@ -631,6 +651,12 @@ def _compile(contract: Contract, registries: Registries) -> _Plan:
         problems.append(f"study: {contract.study.type!r} is not in the study_type vocabulary")
 
     unit_spec = contract.unit
+    if unit_spec.irrigation_derivation is not None:
+        if unit_spec.fields.irrigation is None:
+            problems.append("irrigation_derivation: the contract reads no irrigation field, so 'the source states "
+                            "none' cannot be told from 'the source was not read'")
+        if unit_spec.yield_ is None:
+            problems.append("irrigation_derivation: needs a unit yield to derive from")
     purpose = unit_spec.purpose
     _check_declared(registries, purpose, "purpose", problems, vocab="purpose")
 
@@ -819,6 +845,7 @@ class _Builder:
         self.missing: Counter[str] = Counter()
         self.unresolved_sites: Counter[str] = Counter()
         self.unresolved_vocab: Counter[str] = Counter()
+        self.irrigation_derived: Counter[str] = Counter()
         self.unregistered: Counter[str] = Counter()  # variety_key -> units
         self.collapsed_units = 0
         self.collapsed_observations = 0
@@ -895,6 +922,10 @@ class _Builder:
         production_system = self._vocab("production_system", raw_system, "production_system", gaps)
 
         yield_fields, yield_obs_fields, purpose = self._yield(flat, eppo, gaps)
+        irrigation_derivation: dict[str, Any] = {}
+        if self.contract.unit.irrigation_derivation is not None and raw_irrigation is None:
+            # the source states no regime (a stated one always wins, even an unrecognised one)
+            irrigation, irrigation_derivation = self._derive_irrigation(eppo, yield_fields.get("yield_kg_ha"), gaps)
 
         values: dict[str, Any] = {
             "source_id": source_id, "document_key": document_key_, "crop_eppo": eppo,
@@ -904,7 +935,7 @@ class _Builder:
             "planting_year": planting_year, "row_discriminator": discriminator,
             "study_key": study_key_, "site_key": site_id, "variety_key": variety_key_, "year": year,
             "irrigation_regime": irrigation, "production_system": production_system, "purpose": purpose,
-            "locator": locator, **yield_fields,
+            "locator": locator, **yield_fields, **irrigation_derivation,
         }
         try:
             unit = UnitRow(**values, gaps=gaps.rows(values))
@@ -1057,6 +1088,38 @@ class _Builder:
                 raise _RowProblem(f"factor {factor.factor}: {value!r} is not finite")
             levels.append(FactorLevel(factor=factor.factor, level=value, unit=factor.unit))
         return tuple(levels)
+
+    # ── irrigation derived from the yield ───────────────────────────────────
+
+    def _derive_irrigation(
+        self, eppo: str, yield_kg_ha: float | None, gaps: _Gaps,
+    ) -> tuple[str | None, dict[str, Any]]:
+        """The regime a crop's yield cutoffs give, and the record of having applied them.
+
+        ``yield <= low`` is rainfed, ``yield >= high`` irrigated, in between there is no regime and a
+        gap ``irrigation_ambiguous_yield``. No yield or no calibrated cutoff for the crop: nothing is
+        derived and nothing is recorded.
+        """
+        threshold = self.registries.irrigation_threshold(eppo)
+        if threshold is None or yield_kg_ha is None:
+            return None, {}
+        assert threshold.low_kg_ha is not None and threshold.high_kg_ha is not None
+        record = {
+            "irrigation_derivation": IRRIGATION_DERIVATION_V1,
+            "irrigation_yield_low_kg_ha": threshold.low_kg_ha,
+            "irrigation_yield_high_kg_ha": threshold.high_kg_ha,
+        }
+        if yield_kg_ha <= threshold.low_kg_ha:
+            outcome, regime = "rainfed", self.registries.vocab("irrigation", "rainfed")
+        elif yield_kg_ha >= threshold.high_kg_ha:
+            outcome, regime = "irrigated", self.registries.vocab("irrigation", "irrigated")
+        else:
+            outcome, regime = "ambiguous", None
+            gaps.add("irrigation_regime",
+                     f"irrigation_ambiguous_yield: {yield_kg_ha:g} kg/ha lies between the {eppo} cutoffs "
+                     f"{threshold.low_kg_ha:g} and {threshold.high_kg_ha:g} kg/ha")
+        self.irrigation_derived[f"{eppo}:{outcome}"] += 1
+        return regime, record
 
     # ── yield and the unit purpose ──────────────────────────────────────────
 
@@ -1328,6 +1391,7 @@ def _finish(builder: _Builder, plan: _Plan, raw_rows: int) -> Bundle:
         gaps=dict(sorted(gaps.items())), missing=dict(sorted(builder.missing.items())),
         unresolved_sites=dict(sorted(builder.unresolved_sites.items())),
         unresolved_vocab=dict(sorted(builder.unresolved_vocab.items())),
+        irrigation_derived=dict(sorted(builder.irrigation_derived.items())),
         unregistered_varieties=dict(sorted(
             (f"{varieties[key].crop_eppo}:{varieties[key].name}", count)
             for key, count in builder.unregistered.items())),
