@@ -46,6 +46,10 @@ from .registries import Registries, load_registries
 
 logger = logging.getLogger(__name__)
 
+# Measured, not guessed (scripts/kg_sizing_benchmark.py, server sized like production: 768m heap): the
+# heaviest write step (the unit MERGE, about 2.4 KB of properties a row) commits 500 rows in one transaction
+# under a 16 MiB transaction-memory limit, 1000 rows need 32 MiB and 5000 rows 128 MiB; a single transaction
+# of 20000 units fails even under 256 MiB. 500 keeps a transaction under 1/48 of the heap.
 DEFAULT_BATCH_SIZE = 500
 
 # Extra label of an ObservationUnit by the type of its study; ``reference`` has no unit label in F1.
