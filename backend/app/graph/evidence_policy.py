@@ -6,7 +6,7 @@ classifiers or with the Cypher fragment builders below. Both implement the same 
 and the tests keep them in agreement; no rule (source, purpose, basis, site pattern,
 dedup key) is written anywhere else.
 
-Rules (owner decisions 2026-10-04):
+Rules (owner decisions 2026-10-04, rule 9 2026-10-06):
 
 1. **Source and derivation.** BSL ``yieldKgHa`` values are the 1–9 note times a per-crop
    constant, not measurements, and a persisted ``yieldKgHa`` that a backfill estimated from a
@@ -53,8 +53,9 @@ Rules (owner decisions 2026-10-04):
    site names — are one observation, whatever their ``mergeKey``. The orchard fields keep
    perennial-crop trials that differ only in rootstock, density or cycle distinct.
 
-6. **Evidence tier.** A (trial, site) row is ``field`` evidence when rule 4 holds and
-   ``regional`` evidence otherwise (aggregate pseudo-sites, regional/national scope).
+6. **Evidence tier.** A (trial, site) row is ``field`` evidence when rule 4 holds and its source is
+   not an aggregate source (rule 9), and ``regional`` evidence otherwise (aggregate pseudo-sites,
+   regional/national scope, aggregate sources).
    Regional evidence never enters a field aggregate; it backs a recommendation only when
    the crop has no numeric field evidence, and the answer then says so. ``cypher_row_policy``
    classifies every row of a query once (tier, purpose gate, policy yield) so no query
@@ -74,6 +75,14 @@ Rules (owner decisions 2026-10-04):
    exactly like its URI. A trial without a regime, or with an unrecognised value, never matches a
    requested regime.
 
+9. **Aggregate sources.** The rows of a source in ``AGGREGATE_SOURCES`` (GENVCE: zone and national
+   averages, no trial location published) are ``regional`` evidence whatever site they are linked
+   to: a representative city stands in for a zone, so the row is not a field trial there. The
+   source is matched like rule 1 (``source_id`` and ``dataSource``, every alias of the source
+   registry). Their kg/ha stay measured numbers: the regional tier averages them, the field tier
+   never sees them. A reader of the regional tier scans every site of the climate, not only the
+   aggregate pseudo-sites, because these rows sit at field-named ones.
+
 Explicit properties written by ingestion (``yieldBasis`` today; ``siteKind`` and a
 grain/forage ``yieldMetric`` vocabulary later) are read first, here; callers do not change.
 
@@ -92,10 +101,11 @@ import re
 from collections.abc import Iterable, Mapping
 from typing import Any, NamedTuple
 
+from app.ingestion.normalization_registry import source_spellings
 from app.ingestion.trial_site_geo import AGGREGATE_PATTERNS, is_aggregate_site_name
 
 # Bump when a rule changes, so backtest baselines name the policy they were measured under.
-POLICY_VERSION = "2026-10-05.1"
+POLICY_VERSION = "2026-10-06.1"
 
 # ── (a) source policy ────────────────────────────────────────────────────────
 # Lowercased ``source_id`` / ``dataSource`` values whose kg/ha are not measurements.
@@ -107,6 +117,17 @@ NUMERIC_YIELD_EXCLUDED_SOURCES: frozenset[str] = frozenset({
     "bsa bundessortenamt",
     "bundessortenamt",
 })
+
+# Canonical ``source_id`` of the sources whose rows are zone/national averages, with the reason.
+# Their rows are regional evidence whatever site they are linked to (rule 9).
+AGGREGATE_SOURCES: Mapping[str, str] = {
+    "GENVCE": "zone/national averages, no trial location published",
+}
+# Lowercased ``source_id`` / ``dataSource`` spellings of those sources (the ids and every alias of
+# the source registry), the same matching as the excluded sources.
+AGGREGATE_SOURCE_SPELLINGS: frozenset[str] = frozenset(
+    spelling for source in AGGREGATE_SOURCES for spelling in source_spellings(source)
+)
 
 # ── (b) purpose ──────────────────────────────────────────────────────────────
 PURPOSE_GRAIN = "grain"
@@ -284,6 +305,13 @@ def is_excluded_source(source_id: str | None, data_source: str | None) -> bool:
             or _norm(data_source) in NUMERIC_YIELD_EXCLUDED_SOURCES)
 
 
+def is_aggregate_source(source_id: str | None, data_source: str | None) -> bool:
+    """True when the trial's source publishes zone/national averages (rule 9): regional evidence
+    at whatever site the trial is linked to."""
+    return (_norm(source_id) in AGGREGATE_SOURCE_SPELLINGS
+            or _norm(data_source) in AGGREGATE_SOURCE_SPELLINGS)
+
+
 def is_derived_yield(trial: Mapping[str, Any]) -> bool:
     """The trial's ``yieldKgHa`` was estimated from a note by a backfill (``yieldDerivationMethod``
     set): a fabricated number, whatever the source."""
@@ -451,8 +479,12 @@ def site_kind(name: str | None) -> str:
     return SITE_KIND_AGGREGATE if is_aggregate_site(name) else SITE_KIND_FIELD
 
 
-def is_field_evidence(aggregation_scope: str | None, site_name: str | None) -> bool:
-    return is_field_scope(aggregation_scope) and not is_aggregate_site(site_name)
+def is_field_evidence(aggregation_scope: str | None, site_name: str | None, *,
+                      source_id: str | None = None, data_source: str | None = None) -> bool:
+    """Rule 4 (scope and site) and rule 9 (the trial's source; omit it and the row is judged on
+    scope and site alone)."""
+    return (is_field_scope(aggregation_scope) and not is_aggregate_site(site_name)
+            and not is_aggregate_source(source_id, data_source))
 
 
 def check_tier(tier: str) -> str:
@@ -461,9 +493,12 @@ def check_tier(tier: str) -> str:
     return tier
 
 
-def evidence_tier(aggregation_scope: str | None, site_name: str | None) -> str:
+def evidence_tier(aggregation_scope: str | None, site_name: str | None, *,
+                  source_id: str | None = None, data_source: str | None = None) -> str:
     """``field`` or ``regional`` for one (trial, site) row (rule 6)."""
-    return (EVIDENCE_TIER_FIELD if is_field_evidence(aggregation_scope, site_name)
+    return (EVIDENCE_TIER_FIELD
+            if is_field_evidence(aggregation_scope, site_name,
+                                 source_id=source_id, data_source=data_source)
             else EVIDENCE_TIER_REGIONAL)
 
 
@@ -596,6 +631,14 @@ def cypher_excluded_source(vt: str = "vt") -> str:
     excluded = _cypher_list(sorted(NUMERIC_YIELD_EXCLUDED_SOURCES))
     return (f"({_cypher_norm(f'{vt}.source_id')} IN {excluded} "
             f"OR {_cypher_norm(f'{vt}.dataSource')} IN {excluded})")
+
+
+def cypher_aggregate_source(vt: str = "vt") -> str:
+    """True when the trial's source publishes zone/national averages (see ``is_aggregate_source``)."""
+    vt = _alias(vt)
+    spellings = _cypher_list(sorted(AGGREGATE_SOURCE_SPELLINGS))
+    return (f"({_cypher_norm(f'{vt}.source_id')} IN {spellings} "
+            f"OR {_cypher_norm(f'{vt}.dataSource')} IN {spellings})")
 
 
 def cypher_derived_yield(vt: str = "vt") -> str:
@@ -753,7 +796,8 @@ def cypher_aggregate_site(ts: str = "ts") -> str:
 
 def cypher_field_evidence(vt: str = "vt", ts: str = "ts") -> str:
     """True when the (trial, site) row is field evidence."""
-    return f"({cypher_field_scope(vt)} AND NOT {cypher_aggregate_site(ts)})"
+    return (f"({cypher_field_scope(vt)} AND NOT {cypher_aggregate_site(ts)} "
+            f"AND NOT {cypher_aggregate_source(vt)})")
 
 
 def cypher_content_key(vt: str = "vt") -> str:
@@ -769,7 +813,8 @@ def cypher_content_key(vt: str = "vt") -> str:
 
 
 def _cypher_evidence_tier_over(vt: str, site_name: str) -> str:
-    return (f"(CASE WHEN ({cypher_field_scope(vt)} AND NOT {_cypher_aggregate_site_over(site_name)}) "
+    return (f"(CASE WHEN ({cypher_field_scope(vt)} AND NOT {_cypher_aggregate_site_over(site_name)} "
+            f"AND NOT {cypher_aggregate_source(vt)}) "
             f"THEN {_cypher_str(EVIDENCE_TIER_FIELD)} ELSE {_cypher_str(EVIDENCE_TIER_REGIONAL)} END)")
 
 
@@ -892,7 +937,8 @@ def is_presence_only_evidence(trial: Mapping[str, Any], site_name: str | None,
     """Python twin of the presence gate over one (trial, site) row (graph property names)."""
     return (
         presence_only_applies(mode)
-        and evidence_tier(trial.get("aggregationScope"), site_name) == EVIDENCE_TIER_REGIONAL
+        and evidence_tier(trial.get("aggregationScope"), site_name, source_id=trial.get("source_id"),
+                          data_source=trial.get("dataSource")) == EVIDENCE_TIER_REGIONAL
         and is_excluded_yield(trial)
         and in_purpose_mode(yield_purpose(trial.get("yieldMetric"), trial.get("qualityParams")), mode)
     )

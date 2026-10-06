@@ -2302,11 +2302,14 @@ class GraphDAO:
             similar_sites_result = similar_sites_override
         else:
             regional = tier == ep.EVIDENCE_TIER_REGIONAL
+            # The regional tier reads every site of the climate (its rows sit at the aggregate
+            # pseudo-sites and, for aggregate sources, at field-named ones: policy rule 9), so
+            # the soil and rainfall analog filters of the field tier do not apply to it.
             similar_sites_result = await self.get_similar_sites(
                 climate_class=target_env.get("climate_class"),
-                soil_type=target_env.get("soil_type"),
-                rainfall_min=target_env.get("rainfall_min"),
-                rainfall_max=target_env.get("rainfall_max"),
+                soil_type=None if regional else target_env.get("soil_type"),
+                rainfall_min=None if regional else target_env.get("rainfall_min"),
+                rainfall_max=None if regional else target_env.get("rainfall_max"),
                 # The Köppen path takes every matching field site (no alphabetical cut);
                 # the distance path keeps the 50 nearest.
                 limit=None if target_features is None else 50,
@@ -2316,7 +2319,7 @@ class GraphDAO:
             )
             similar_sites_result = [
                 s for s in similar_sites_result
-                if (s.get("site_kind", ep.SITE_KIND_FIELD) == ep.SITE_KIND_AGGREGATE) == regional
+                if regional or s.get("site_kind", ep.SITE_KIND_FIELD) != ep.SITE_KIND_AGGREGATE
             ]
         similar_site_names = [s["name"] for s in similar_sites_result]
 
@@ -3889,7 +3892,11 @@ class GraphDAO:
             # compute them once instead of once per extrapolate call.
             t_sites = time.monotonic()
             koppen_sites: list[dict] | None
-            regional_sites: list[dict] = []
+            regional_sites: list[dict] = []  # the climate's aggregate pseudo-sites (presence scan)
+            # Every site of the climate: what the regional tier reads (its rows sit at the
+            # aggregate pseudo-sites and, for aggregate sources, at field-named ones, policy rule 9).
+            regional_scan_sites: list[dict] = []
+            regional_scan_complete = True
             try:
                 # Every matching field site (no alphabetical cut), plus the climate's aggregate
                 # sites for the regional tier; one site scan serves both.
@@ -3901,6 +3908,22 @@ class GraphDAO:
                 koppen_sites = [s for s in found
                                 if s.get("site_kind", ep.SITE_KIND_FIELD) != ep.SITE_KIND_AGGREGATE]
                 regional_sites = [s for s in found if s.get("site_kind") == ep.SITE_KIND_AGGREGATE]
+                regional_scan_sites = found
+                if cond.get("soil_type"):
+                    # The soil analog filter belongs to the field tier: a zone average is not
+                    # soil-specific, so the regional tier reads the climate's sites without it.
+                    try:
+                        regional_scan_sites = await self.get_similar_sites(
+                            climate_class=climate_class, soil_type=None,
+                            rainfall_min=None, rainfall_max=None, limit=None,
+                            target_features=None, vector_version="v1", include_aggregate=True,
+                        )
+                    except Exception as e:  # noqa: BLE001
+                        logger.warning("recommend: regional site lookup failed (%s); aggregate sites only",
+                                       type(e).__name__)
+                        regional_scan_sites = regional_sites
+                        regional_scan_complete = False
+                        degraded = True
             except Exception as e:  # noqa: BLE001
                 logger.warning("recommend: shared site lookup failed (%s); per-crop fallback",
                                type(e).__name__)
@@ -3938,10 +3961,10 @@ class GraphDAO:
             # ``regional_known``: the regional count is known (possibly 0), not merely unavailable:
             # the site lookup answered and, when the climate has aggregate sites, so did the
             # prefilter and (below) the batch. A failed pass leaves the count null.
-            regional_known = koppen_sites is not None
+            regional_known = koppen_sites is not None and regional_scan_complete
             regional_ok: set[str] = set()
-            if regional_sites:
-                regional_pre = await _prefilter(regional_sites, "regional", ep.EVIDENCE_TIER_REGIONAL)
+            if regional_scan_sites:
+                regional_pre = await _prefilter(regional_scan_sites, "regional", ep.EVIDENCE_TIER_REGIONAL)
                 regional_known = regional_known and regional_pre is not None
                 regional_ok = regional_pre or set()
 
@@ -4170,15 +4193,16 @@ class GraphDAO:
                 logger.debug("recommend stage=extrapolate_koppen_batch crops=%d elapsed_s=%.3f",
                              len(batch_crops), time.monotonic() - t_batch)
 
-            # Regional tier: the same batched extrapolation over the aggregate sites (numeric
-            # evidence only); the crop's regional trial count comes from the query, uncut.
+            # Regional tier: the same batched extrapolation over every site of the climate (numeric
+            # evidence only, the rows the policy classes as regional); the crop's regional trial
+            # count comes from the query, uncut.
             regional_batch: dict[str, list[dict]] | None = None
             regional_crops = [c["eppo_code"] for c in crop_entries if c["eppo_code"] in regional_ok]
-            if regional_sites and regional_crops:
+            if regional_scan_sites and regional_crops:
                 t_reg = time.monotonic()
                 try:
                     regional_batch = await self.extrapolate_varieties_batch(
-                        regional_crops, regional_sites, irrigation_regime=irrigation_regime,
+                        regional_crops, regional_scan_sites, irrigation_regime=irrigation_regime,
                         top_n=5, purpose=purpose, tier=ep.EVIDENCE_TIER_REGIONAL,
                     )
                 except Exception as e:  # noqa: BLE001

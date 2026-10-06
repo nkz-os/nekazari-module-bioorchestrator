@@ -443,7 +443,7 @@ def test_evidence_forwards_purpose_and_tier_with_field_sites_by_default(client):
     assert sites.await_args.kwargs["limit"] is None and "include_aggregate" not in sites.await_args.kwargs
 
 
-def test_evidence_regional_tier_uses_the_aggregate_sites_of_the_climate(client):
+def test_evidence_regional_tier_uses_every_site_of_the_climate(client):
     sites = AsyncMock(return_value=[{"name": "f01", "site_kind": "field"},
                                     {"name": "UK national list", "site_kind": "aggregate"}])
     with patch.object(GraphDAO, "get_similar_sites", sites), \
@@ -451,9 +451,12 @@ def test_evidence_regional_tier_uses_the_aggregate_sites_of_the_climate(client):
         r = client.get("/api/graph/agriculture/recommend/evidence",
                        params={"climate_class": "Cfb", "crop": "LYPES", "tier": "regional", "soil_type": "Loam"})
     assert r.status_code == 200
-    assert m.call_args.kwargs["similar_sites"] == ["UK national list"] and m.call_args.kwargs["tier"] == "regional"
+    # aggregate pseudo-sites and field-named ones (aggregate-source rows sit at the latter, policy
+    # rule 9): the row policy lists only the rows classed as regional
+    assert m.call_args.kwargs["similar_sites"] == ["f01", "UK national list"]
+    assert m.call_args.kwargs["tier"] == "regional"
     kw = sites.await_args.kwargs
-    assert kw["include_aggregate"] is True and kw["soil_type"] is None  # aggregates carry no soil
+    assert kw["include_aggregate"] is True and kw["soil_type"] is None  # the soil filter is the field tier's
 
 
 def test_evidence_regional_tier_needs_koppen_similarity(client):

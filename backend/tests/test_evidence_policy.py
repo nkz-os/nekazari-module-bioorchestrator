@@ -226,8 +226,8 @@ def test_derived_yield_fragments():
     assert ep.cypher_excluded_yield("vt") in ep.cypher_row_policy("forage")
 
 
-def test_policy_version_names_the_derived_rule():
-    assert ep.POLICY_VERSION == "2026-10-05.1"
+def test_policy_version_names_the_aggregate_source_rule():
+    assert ep.POLICY_VERSION == "2026-10-06.1"
 
 
 def test_grain_yield_is_grain_family_main_product_only():
@@ -398,6 +398,66 @@ def test_field_evidence_needs_field_scope_and_field_site():
     assert not ep.is_field_evidence("regional", "Cadreita")
     assert not ep.is_field_evidence("site", "Media 14 Località")
     assert not ep.is_field_evidence("national", "BSL Deutschland Cfb")
+
+
+# ── aggregate sources (rule 9) ───────────────────────────────────────────────
+
+@pytest.mark.parametrize("site", ["Valladolid", "Lleida", "Córdoba", "Lugo", "Cadreita", "Media 8 Località"])
+@pytest.mark.parametrize(("source_id", "data_source"), [
+    ("GENVCE", None), ("genvce", None), (" GENVCE ", "genvce"), (None, "GENVCE"), ("X", "Genvce"),
+])
+def test_genvce_row_is_regional_at_any_site(site, source_id, data_source):
+    assert ep.is_aggregate_source(source_id, data_source)
+    assert ep.evidence_tier("site", site, source_id=source_id, data_source=data_source) == "regional"
+    assert not ep.is_field_evidence("site", site, source_id=source_id, data_source=data_source)
+
+
+@pytest.mark.parametrize(("source_id", "data_source"), [
+    ("CREA", None), ("CREA", "crea"), ("NAVARRA-AGRARIA", None), ("BSL", "bsa"), ("LEGACY", "legacy"),
+    ("GENVCE-X", None), (None, None),
+])
+def test_other_sources_are_not_aggregate_sources(source_id, data_source):
+    assert not ep.is_aggregate_source(source_id, data_source)
+
+
+def test_crea_row_at_a_field_site_stays_field():
+    kw = {"source_id": "CREA", "data_source": None}
+    assert ep.evidence_tier("site", "Villafranca Piemonte (TO)", **kw) == "field"
+    assert ep.evidence_tier(None, "Villafranca Piemonte", **kw) == "field"
+    # a source id is only read when given: scope and site alone still classify the row
+    assert ep.evidence_tier("site", "Villafranca Piemonte (TO)") == "field"
+
+
+def test_every_aggregate_source_alias_is_covered_and_documented():
+    assert set(ep.AGGREGATE_SOURCES) == {"GENVCE"}
+    assert all(reason.strip() for reason in ep.AGGREGATE_SOURCES.values())
+    for source in ep.AGGREGATE_SOURCES:
+        aliases = {alias for alias, canon in _SOURCE_ALIASES.items() if canon == source} | {source.lower()}
+        assert aliases <= ep.AGGREGATE_SOURCE_SPELLINGS
+        for alias in aliases:
+            assert canonical_source_id(alias) == source and ep.is_aggregate_source(alias, None)
+    for spelling in ep.AGGREGATE_SOURCE_SPELLINGS:
+        assert spelling == spelling.strip().lower()
+        assert canonical_source_id(spelling) in ep.AGGREGATE_SOURCES
+
+
+def test_aggregate_source_keeps_its_kg_and_is_only_regional():
+    trial = {"source_id": "GENVCE", "cropEppo": "TRZAX", "aggregationScope": "site", "yieldKgHa": 6200.0}
+    assert ep.policy_yield(trial) == 6200.0 and not ep.is_excluded_yield(trial)
+    assert ep.evidence_tier(trial["aggregationScope"], "Valladolid", source_id=trial["source_id"]) == "regional"
+    assert not ep.is_presence_only_evidence(trial, "Valladolid")  # a measured number, not presence
+    # a note-derived kg/ha of this source is excluded and only proves the crop was tested
+    assert ep.is_presence_only_evidence({**trial, "yieldDerivationMethod": "x"}, "Valladolid")
+
+
+def test_aggregate_source_fragments():
+    frag = ep.cypher_aggregate_source("v")
+    assert "v.source_id" in frag and "v.dataSource" in frag and "'genvce'" in frag
+    assert ep.cypher_aggregate_source("v") in ep.cypher_field_evidence("v", "t")
+    assert ep.cypher_aggregate_source("vt") in ep.cypher_row_policy("main")
+    assert ep.cypher_aggregate_source("vt") in ep.cypher_evidence_tier("vt", "ts")
+    with pytest.raises(ValueError):
+        ep.cypher_aggregate_source("v) OR true //")
 
 
 # ── (d) content-dedup key ────────────────────────────────────────────────────

@@ -56,8 +56,9 @@ def _shared_sites():
     with patch.object(GraphDAO, "get_similar_sites",
                       AsyncMock(return_value=[{"name": "site-a", "distance": None}])), \
          patch.object(GraphDAO, "_crops_with_analog_trials",
-                      AsyncMock(side_effect=lambda eppos, names, **kw: set(eppos))):
-        yield
+                      AsyncMock(side_effect=lambda eppos, names, **kw:
+                                set() if kw.get("tier") == "regional" else set(eppos))):
+        yield  # field evidence for every crop; no regional evidence
 
 
 async def test_unknown_purpose_or_tier_is_rejected():
@@ -459,8 +460,13 @@ async def _run_capped(crops, prefilter):
         seen.append(crop)
         return {"ranked_varieties": [_variety()]}
 
+    async def field_only(self_, eppos, names, **kw):
+        if kw.get("tier") == "regional":  # these tests model a climate with no regional evidence
+            return set()
+        return await prefilter(eppos, names, **kw)
+
     p = _patched(extrap, crops)
-    with p[0], p[1], p[2], p[3], patch.object(GraphDAO, "_crops_with_analog_trials", prefilter):
+    with p[0], p[1], p[2], p[3], patch.object(GraphDAO, "_crops_with_analog_trials", field_only):
         out = await dao.recommend_for_conditions(_conds())
     return out, seen
 

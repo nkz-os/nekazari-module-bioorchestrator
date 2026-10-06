@@ -85,6 +85,21 @@ _TRIALS = [
      "yieldDerivationMethod": "bsl_note_empirical_factor"},
     {"source_id": "OTHER", "cropEppo": "ZEAMX", "aggregationScope": "regional", "yieldKgHa": 21000.0,
      "yieldDerivationMethod": "x", "yieldBasis": "dry_matter", "qualityParams": '{"ndf_pct": 40.0}'},
+    # aggregate source (rule 9), at the field-named site "Cadreita" (even index) by source_id, by
+    # dataSource only, by another spelling, and with a derived kg/ha; and CREA at that same site.
+    # The odd rows between them sit at the aggregate site and only keep the parity.
+    {"source_id": "GENVCE", "cropEppo": "TRZAX", "aggregationScope": "site", "yieldKgHa": 6000.0},
+    {"source_id": "CREA", "cropEppo": "TRZAX", "aggregationScope": "site", "yieldKgHa": 6100.0},
+    {"source_id": None, "dataSource": "genvce", "cropEppo": "TRZAX", "aggregationScope": "site",
+     "yieldKgHa": 6200.0},
+    {"source_id": "CREA", "cropEppo": "TRZAX", "aggregationScope": "site", "yieldKgHa": 6300.0},
+    {"source_id": "X", "dataSource": " Genvce ", "cropEppo": "TRZAX", "aggregationScope": "site",
+     "yieldKgHa": 6400.0},
+    {"source_id": "CREA", "cropEppo": "TRZAX", "aggregationScope": "site", "yieldKgHa": 6500.0},
+    {"source_id": "GENVCE", "cropEppo": "TRZAX", "aggregationScope": "site", "yieldKgHa": 6600.0,
+     "yieldDerivationMethod": "x"},
+    {"source_id": "CREA", "cropEppo": "TRZAX", "aggregationScope": "site", "yieldKgHa": 6700.0},
+    {"source_id": "CREA", "cropEppo": "TRZAX", "aggregationScope": "site", "yieldKgHa": 6800.0},
     {},
 ]
 
@@ -98,6 +113,7 @@ def test_purpose_basis_and_eligibility_fragments_match_python(driver):
         MATCH (vt:VarietyTrial)
         RETURN vt.i AS i,
                {ep.cypher_excluded_source('vt')} AS excluded_source,
+               {ep.cypher_aggregate_source('vt')} AS aggregate_source,
                {ep.cypher_derived_yield('vt')} AS derived,
                {ep.cypher_excluded_yield('vt')} AS excluded_yield,
                {ep.cypher_yield_purpose('vt')} AS purpose,
@@ -117,6 +133,7 @@ def test_purpose_basis_and_eligibility_fragments_match_python(driver):
     for row in rows:
         t = _TRIALS[row["i"]]
         assert row["excluded_source"] is ep.is_excluded_source(t.get("source_id"), t.get("dataSource")), t
+        assert row["aggregate_source"] is ep.is_aggregate_source(t.get("source_id"), t.get("dataSource")), t
         assert row["derived"] is ep.is_derived_yield(t), t
         assert row["excluded_yield"] is ep.is_excluded_yield(t), t
         assert row["purpose"] == ep.yield_purpose(t.get("yieldMetric"), t.get("qualityParams")), t
@@ -133,8 +150,10 @@ def test_purpose_basis_and_eligibility_fragments_match_python(driver):
             assert row["dm_yield"] == pytest.approx(expected_dm), t
         assert row["forage_numeric"] is ep.is_forage_numeric_evidence(t), t
         assert row["field_scope"] is ep.is_field_scope(t.get("aggregationScope")), t
-    # The fixtures exercise a derived kg/ha from a source the policy does not exclude.
+    # The fixtures exercise a derived kg/ha from a source the policy does not exclude, and every
+    # spelling of an aggregate source.
     assert any(r["derived"] and not r["excluded_source"] for r in rows)
+    assert sum(r["aggregate_source"] for r in rows) >= 5 and not all(r["aggregate_source"] for r in rows)
     # The fixtures exercise every purpose and basis value.
     assert {r["purpose"] for r in rows} == {"grain", "forage", "fresh", "unknown"}
     assert {r["basis"] for r in rows} == {"dry_matter", "fresh_matter", "unknown"}
@@ -172,7 +191,8 @@ def test_row_policy_columns_match_python(driver, mode):
     for row in rows:
         t = _TRIALS[row["i"]]
         site = sites[row["i"] % 2]
-        assert row["ep_tier"] == ep.evidence_tier(t.get("aggregationScope"), site), t
+        assert row["ep_tier"] == ep.evidence_tier(
+            t.get("aggregationScope"), site, source_id=t.get("source_id"), data_source=t.get("dataSource")), t
         assert row["ep_in_mode"] is ep.in_purpose_mode(
             ep.yield_purpose(t.get("yieldMetric"), t.get("qualityParams")), mode), t
         assert row["ep_other"] is ep.is_other_purpose_evidence(t, mode), t
@@ -196,6 +216,12 @@ def test_row_policy_columns_match_python(driver, mode):
         assert {r["presence"] for r in rows} == {True, False}
     # both tiers, and yields / non-yields / unconverted kg occur among the rows
     assert {r["ep_tier"] for r in rows} == {"field", "regional"}
+    # an aggregate source is regional at a field-named site, another source stays field there
+    by_i = {r["i"]: r for r in rows}
+    assert [by_i[i]["ep_tier"] for i in (20, 22, 24, 26)] == ["regional"] * 4  # GENVCE at "Cadreita"
+    assert [by_i[i]["ep_tier"] for i in (23, 21)] == ["regional", "regional"]  # CREA at the aggregate site
+    assert by_i[28]["ep_tier"] == "field"  # CREA at "Cadreita"
+    assert by_i[26]["ep_excluded"] and not by_i[20]["ep_excluded"]
     assert {r["ep_y"] is None for r in rows} == {True, False}
     assert any(r["ep_unconv"] for r in rows) or mode == "main"
 
@@ -232,6 +258,9 @@ def test_field_evidence_fragment_matches_python(driver):
         CREATE (:VarietyTrial {i:1, aggregationScope:'regional'})-[:TRIAL_AT]->(f)
         CREATE (:VarietyTrial {i:2, aggregationScope:'site'})-[:TRIAL_AT]->(a)
         CREATE (:VarietyTrial {i:3})-[:TRIAL_AT]->(f)
+        CREATE (:VarietyTrial {i:4, aggregationScope:'site', source_id:'GENVCE'})-[:TRIAL_AT]->(f)
+        CREATE (:VarietyTrial {i:5, aggregationScope:'site', source_id:'X', dataSource:'genvce'})-[:TRIAL_AT]->(f)
+        CREATE (:VarietyTrial {i:6, aggregationScope:'site', source_id:'CREA'})-[:TRIAL_AT]->(f)
         """,
     )
     rows = _run(_query(
@@ -239,13 +268,15 @@ def test_field_evidence_fragment_matches_python(driver):
         f"""
         MATCH (v:VarietyTrial)-[:TRIAL_AT]->(t:TrialSite)
         RETURN v.i AS i, v.aggregationScope AS scope, t.name AS site,
+               v.source_id AS source, v.dataSource AS data_source,
                {ep.cypher_field_evidence('v', 't')} AS field
         ORDER BY i
         """,
     ))
-    assert [r["field"] for r in rows] == [True, False, False, True]
+    assert [r["field"] for r in rows] == [True, False, False, True, False, False, True]
     for r in rows:
-        assert r["field"] is ep.is_field_evidence(r["scope"], r["site"])
+        assert r["field"] is ep.is_field_evidence(
+            r["scope"], r["site"], source_id=r["source"], data_source=r["data_source"])
 
 
 _REGULAR = {"cropEppo": "ZEAMX", "varietyNormalized": "CODIWAY", "year": 2019, "yieldKgHa": 12300.0,
@@ -357,18 +388,21 @@ def test_forage_numeric_evidence_counts_all_but_averages_only_convertible(driver
 
 def test_policy_aggregate_counts_duplicate_once_and_takes_no_excluded_kg(driver):
     """Per-variety mean built from the fragments: a re-ingested twin counts once; BSL
-    (every dataSource variant), forage and aggregate-site rows contribute no kg."""
+    (every dataSource variant), forage, aggregate-site and aggregate-source (GENVCE, at a
+    field-named site) rows contribute no kg."""
     _reset(
         driver,
         """
         CREATE (f:TrialSite {name:'Cadreita'}), (agg:TrialSite {name:'BSL Deutschland Cfb'}),
                (crea:TrialSite {name:'Media 14 Località'})
-        CREATE (:VarietyTrial {mergeKey:'g|1', source_id:'GENVCE', aggregationScope:'site',
+        CREATE (:VarietyTrial {mergeKey:'g|1', source_id:'ITACYL', aggregationScope:'site',
                 cropEppo:'TRZAX', varietyNormalized:'V', year:2020, yieldKgHa:6000.0})-[:TRIAL_AT]->(f)
-        CREATE (:VarietyTrial {mergeKey:'g|2', source_id:'GENVCE', aggregationScope:'site',
+        CREATE (:VarietyTrial {mergeKey:'g|2', source_id:'ITACYL', aggregationScope:'site',
                 cropEppo:'TRZAX', varietyNormalized:'V', year:2020, yieldKgHa:6000.0})-[:TRIAL_AT]->(f)
-        CREATE (:VarietyTrial {mergeKey:'g|3', source_id:'GENVCE', aggregationScope:'site',
+        CREATE (:VarietyTrial {mergeKey:'g|3', source_id:'ITACYL', aggregationScope:'site',
                 cropEppo:'TRZAX', varietyNormalized:'V', year:2021, yieldKgHa:8000.0})-[:TRIAL_AT]->(f)
+        CREATE (:VarietyTrial {mergeKey:'g|4', source_id:'GENVCE', aggregationScope:'site',
+                cropEppo:'TRZAX', varietyNormalized:'V', year:2022, yieldKgHa:1000.0})-[:TRIAL_AT]->(f)
         CREATE (:VarietyTrial {mergeKey:'b|1', source_id:'BSL', aggregationScope:'site',
                 cropEppo:'TRZAX', varietyNormalized:'V', year:2021, yieldKgHa:12600.0})-[:TRIAL_AT]->(f)
         CREATE (:VarietyTrial {mergeKey:'b|2', source_id:'BSL', dataSource:'bsa', aggregationScope:'regional',

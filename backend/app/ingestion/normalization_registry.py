@@ -1960,6 +1960,12 @@ def canonical_source_id(raw: str | None) -> str | None:
     return _SOURCE_ALIASES.get(key.lower(), key.upper())
 
 
+def source_spellings(canonical_id: str) -> frozenset[str]:
+    """Every lowercased spelling that resolves to ``canonical_id`` (the id itself and its aliases)."""
+    own = canonical_id.strip().lower()
+    return frozenset({own} | {alias for alias, canon in _SOURCE_ALIASES.items() if canon == canonical_id})
+
+
 def normalize_location(raw_location: str | None) -> dict | None:
     """Resolve a raw trialLocation to its canonical form.
 
