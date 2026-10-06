@@ -35,6 +35,10 @@ Decisions an adapter makes here, each one reported in the warnings it returns:
 * ``productivity_class``: only what the group label itself states (yield stratum, "alto potencial
   humedos", "aridos y semiaridos"); never inferred from a yield. Not part of any key.
 * numbers printed as text ("-2") are numbers; ``None`` groups are dropped.
+* repeated rows: a report may print the same row (same crop group, variety, group label, season, yield
+  and traits) in two of its tables. Counted twice it would weigh double in any mean, so a row identical
+  to one of a table with a lower number in the same document is dropped and that table is recorded on
+  the kept row as ``table.aliases`` (provenance, never a key). Rows whose values differ are never merged.
 """
 from __future__ import annotations
 
@@ -155,6 +159,53 @@ def _table_number(value: Any, where: str) -> str | None:
         if number:
             return number
     raise AdapterError(f"{where}: table_number {value!r} is not a table number")
+
+
+def _table_order(number: str) -> tuple[int, str]:
+    """Natural order of table numbers ("9" < "14" < "14b"); the digits first, then the text."""
+    match = re.match(r"\d+", number)
+    return (int(match.group()) if match else 10**9, number)
+
+
+def _row_content(row: Mapping[str, Any]) -> str:
+    """Everything a row prints except where (its table); equal strings are the same printed row."""
+    content = {key: value for key, value in row.items() if key not in ("table", "doc")}
+    return json.dumps(content, sort_keys=True, ensure_ascii=False, default=str)
+
+
+def drop_repeated_rows(rows: list[dict[str, Any]], log: WarningLog) -> list[dict[str, Any]]:
+    """Drop a row identical (apart from its table) to a row of a lower-numbered table of the same document.
+
+    The kept row is the one of the lowest table number and gets ``table.aliases`` listing the other tables
+    (with their page). Order of the remaining rows is unchanged. Rows without a table number are left alone.
+    """
+    groups: dict[tuple[str, str], list[int]] = {}
+    for index, row in enumerate(rows):
+        number = row["table"]["number"]
+        if number is None:
+            continue
+        key = (json.dumps(row["doc"], sort_keys=True, ensure_ascii=False, default=str), _row_content(row))
+        groups.setdefault(key, []).append(index)
+    drop: set[int] = set()
+    for indexes in groups.values():
+        tables = {rows[i]["table"]["number"] for i in indexes}
+        if len(tables) < 2:
+            continue
+        keep = min(indexes, key=lambda i: (_table_order(rows[i]["table"]["number"]), i))
+        kept_number = rows[keep]["table"]["number"]
+        aliases: dict[str, Any] = {}
+        for i in indexes:
+            table = rows[i]["table"]
+            if table["number"] != kept_number:
+                aliases.setdefault(table["number"], table["page"])
+                drop.add(i)
+                log.add("repeated_table_row_dropped",
+                        "a row identical to a row of a lower-numbered table of the same document was dropped; "
+                        "its table is kept as table.aliases on the kept row", f"table {table['number']}")
+        rows[keep]["table"] = {**rows[keep]["table"], "aliases": ", ".join(
+            f"{number} (page {page})" if page is not None else number
+            for number, page in sorted(aliases.items(), key=lambda item: _table_order(item[0])))}
+    return [row for index, row in enumerate(rows) if index not in drop]
 
 
 def _clean_group(group: Any, name: str, where: str, log: WarningLog) -> dict[str, Any]:
@@ -336,4 +387,5 @@ def load(source_dir: str | Path) -> AdapterResult:
         except (OSError, json.JSONDecodeError) as exc:
             raise AdapterError(f"{path.name}: cannot read: {exc}") from exc
         rows.extend(rows_from_extraction(extraction, path.name, log))
+    rows = drop_repeated_rows(rows, log)
     return AdapterResult(rows=tuple(rows), warnings=log.result(), inputs=fingerprints(root, files))

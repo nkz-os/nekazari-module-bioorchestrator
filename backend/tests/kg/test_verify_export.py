@@ -403,14 +403,11 @@ def test_the_real_build_verifies_and_exports_deterministically(tmp_path):
             try:
                 report = _run(verify.verify(d, sd, real, list(CONTRACTS.values()), real_gates, REGISTRIES))
                 if i == 0:
-                    # Known finding, not a defect of the build: GENVCE prints the same 2023 zone means
-                    # for the same varieties in two tables (page 12 table 14, page 14 table 17), so 7
-                    # units repeat another unit's content and observations. The gate does not stop it
-                    # (it only compares against an existing graph) and nothing is merged silently:
-                    # the owner decides (merge, or keep as the source prints it).
-                    failing = {c.name: c for c in report.checks if not c.ok}
-                    assert set(failing) == {"duplicates"}, report.problems
-                    assert failing["duplicates"].detail["content_duplicate_groups"] == {"GENVCE": 7, "CREA": 0}
+                    # GENVCE prints some 2023 zone means in two tables of one report; the adapter keeps the
+                    # lowest table (alias recorded), so nothing repeats.
+                    assert report.ok, report.problems
+                    assert {c.name: c for c in report.checks}[
+                        "duplicates"].detail["content_duplicate_groups"] == {"GENVCE": 0, "CREA": 0}
                     v = report.sites
                     assert v["GENVCE"].field_sites == 0 and v["GENVCE"].unlabelled_aggregate_units == 1758
                     assert v["ALL"].units_without_site == 0

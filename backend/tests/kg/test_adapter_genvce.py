@@ -478,6 +478,44 @@ def test_every_registered_genvce_site_is_an_aggregate():
 
 
 # ═════════════════════════════════════════════════════════════════════════════
+# the same row printed in two tables of one document
+# ═════════════════════════════════════════════════════════════════════════════
+
+def _row(variety, table, page, yield_kg=1000.0, doc_topic="t"):
+    return {"doc": {"title": "D", "issue": "2023/2024", "year": 2023, "topic": doc_topic},
+            "table": {"number": table, "page": page}, "crop": "Maíz", "variety": variety, "zone": "Z",
+            "season": "2023", "yield_kg_ha": yield_kg}
+
+
+def test_a_row_repeated_in_a_higher_table_is_dropped_and_the_table_kept_as_alias():
+    log = genvce.WarningLog()
+    rows = [_row("A", "17", 14), _row("B", "14", 12), _row("A", "14", 12), _row("C", "17", 14)]
+    kept = genvce.drop_repeated_rows(rows, log)
+    assert [(r["variety"], r["table"]["number"]) for r in kept] == [("B", "14"), ("A", "14"), ("C", "17")]
+    assert kept[1]["table"]["aliases"] == "17 (page 14)"
+    assert "aliases" not in kept[0]["table"]
+    assert log.result()[0].code == "repeated_table_row_dropped" and log.result()[0].count == 1
+
+
+def test_rows_whose_values_differ_or_of_another_document_are_never_merged():
+    log = genvce.WarningLog()
+    rows = [_row("A", "14", 12), _row("A", "17", 14, yield_kg=1001.0), _row("A", "20", 1, doc_topic="other"),
+            _row("A", "9", 1)]
+    kept = genvce.drop_repeated_rows(rows, log)
+    assert sorted(r["table"]["number"] for r in kept) == ["17", "20", "9"]  # only the true repeat (14) went
+
+
+def test_the_lowest_table_number_is_numeric_not_alphabetical_and_the_same_table_is_not_an_alias():
+    log = genvce.WarningLog()
+    rows = [_row("A", "9", 5), _row("A", "14", 12), _row("A", "14", 12)]
+    kept = genvce.drop_repeated_rows(rows, log)
+    assert len(kept) == 1 and kept[0]["table"]["number"] == "9"
+    assert kept[0]["table"]["aliases"] == "14 (page 12)"
+    same_table = genvce.drop_repeated_rows([_row("A", "14", 12), _row("A", "14", 12)], genvce.WarningLog())
+    assert len(same_table) == 2  # repetition inside one table is the engine's business, not an alias
+
+
+# ═════════════════════════════════════════════════════════════════════════════
 # the whole raw data (only where the private repository is available)
 # ═════════════════════════════════════════════════════════════════════════════
 
@@ -487,7 +525,9 @@ RAW_REPO = os.environ.get("NKZ_DATA_SOURCES_DIR", "")
 @pytest.mark.skipif(not RAW_REPO, reason="set NKZ_DATA_SOURCES_DIR to the raw-data repository to run")
 def test_the_whole_extraction_builds_and_matches_the_contracts_expected_counts():
     result = genvce.load(Path(RAW_REPO) / "genvce")
-    assert len(result.rows) == 3862
+    assert len(result.rows) == 3855  # 3862 extracted, 7 repeated rows of a lower table dropped
+    dropped = [w for w in result.warnings if w.code == "repeated_table_row_dropped"]
+    assert [w.count for w in dropped] == [7]
     built = run_contract(CONTRACT, REGISTRIES, result.rows)
     assert (len(built.units), len(built.observations), len(built.sites)) == (
         CONTRACT.expected.units, CONTRACT.expected.observations, CONTRACT.expected.sites)

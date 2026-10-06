@@ -37,6 +37,7 @@ document:
   locator:
     - {label: page, from: table.page}
     - {label: table, from: table.number}
+    - {label: also printed in table, from: table.aliases}
 study:
   type: variety
   group_by: [doc.topic, table.number]
@@ -274,6 +275,6 @@ sites:
   # a table that prints no label: the unit gets this aggregate as its site (raw_site stays empty, keys unchanged)
   unlabelled_site: ES-GENVCE-UNLABELLED
 expected:
-  units: 3862
-  observations: 19813
+  units: 3855
+  observations: 19792
   sites: 45
