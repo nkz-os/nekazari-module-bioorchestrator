@@ -708,7 +708,7 @@ def test_a_field_site_without_published_coordinates_carries_explicit_gaps():
     bundle = run([raw_row(zone="Valladolid")], observations=2, sites=1)
     (site,) = bundle.sites
     assert site.latitude is None and site.longitude is None
-    assert {g.field for g in site.gaps} == {"latitude", "longitude"}
+    assert {g.field for g in site.gaps} == {"latitude", "longitude", "elevation_m", "municipality"}
     assert bundle.report.gaps["site.latitude"] == 1
 
 

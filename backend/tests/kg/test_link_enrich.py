@@ -117,6 +117,31 @@ def test_the_real_bundles_enrich_nothing_but_their_field_sites(genvce_bundle, cr
                for crea_bundle_site in crea_bundle.sites if crea_bundle_site.site_id in crea_report.enriched)
 
 
+def test_the_photoperiod_is_astronomical_from_the_latitude_and_the_rainfall_is_the_chelsa_value():
+    report = _run(enrich.enrich_sites([_field()], reader=_Reader()))
+    e = report.enriched["ES-X"]
+    assert 14 < e.photoperiod_summer_hours < 16  # mid-latitude day length at the summer solstice
+
+
+def test_the_real_field_site_carries_only_cited_properties_and_aggregates_none(genvce_bundle, crea_bundle):
+    field = [s for s in crea_bundle.sites if s.site_kind == "field"]
+    assert [s.site_id for s in field] == ["IT-VILLAFRANCA-PIEMONTE"]
+    site = field[0]
+    assert site.elevation_m == 253.0 and site.municipality == "Villafranca Piemonte"
+    assert {a.split(":")[0] for a in site.attribute_sources} == {"elevation_m", "municipality"}
+    for s in [*genvce_bundle.sites, *crea_bundle.sites]:
+        if s.site_kind != "field":
+            assert s.elevation_m is None and s.municipality is None and not s.attribute_sources
+
+
+def test_a_site_value_without_its_source_or_on_an_aggregate_is_refused():
+    with pytest.raises(ValueError, match="source"):
+        SiteRow(site_id="ES-X", name="n", site_kind="field", country="ES", elevation_m=10.0)
+    with pytest.raises(ValueError, match="never carries"):
+        SiteRow(site_id="ES-X", name="n", site_kind="aggregate", country="ES", elevation_m=10.0,
+                attribute_sources=("elevation_m: x",))
+
+
 def test_a_field_site_without_coordinates_is_left_alone():
     site = SiteRow(site_id="ES-NOCOORD", name="n", site_kind="field", country="ES")
     reader = _Reader()
@@ -237,8 +262,15 @@ def test_an_enrichment_reaches_field_sites_only_and_survives_a_reload(db, crea_b
     row = _run(_q(db, "MATCH (n:TrialSite {siteKey: $k}) RETURN n.climateClass AS c, n.climateClassChelsa AS cc, "
                       "n.climateChelsaCellKey AS ck", k=field_site.site_id))[0]
     assert row["c"] == row["cc"] == "Csa" and row["ck"]
+    extra = _run(_q(db, "MATCH (n:TrialSite {siteKey: $k}) RETURN n.annualRainfallMm AS r, n.annualRainfallMmChelsa AS rc, "
+                        "n.photoperiodSummerHours AS p, n.photoperiodSource AS ps", k=field_site.site_id))[0]
+    assert extra["r"] == extra["rc"] and 14 < extra["p"] < 16 and extra["ps"]
     _run(loader.load(crea_bundle, db, registries=REGISTRIES))
     assert _run(_q(db, "MATCH (n:TrialSite {siteKey: $k}) RETURN n.climateClass AS c", k=field_site.site_id))[0]["c"] == "Csa"
+    kept = _run(_q(db, "MATCH (n:TrialSite {siteKey: $k}) RETURN n.elevationM AS e, n.municipality AS m, "
+                       "n.attributeSources AS a, n.photoperiodSummerHours AS p", k=field_site.site_id))[0]
+    assert kept["e"] == field_site.elevation_m and kept["m"] == field_site.municipality
+    assert list(kept["a"]) == list(field_site.attribute_sources) and kept["p"]  # enrichment survives the reload
 
 
 @needs_docker
@@ -246,7 +278,7 @@ def test_the_write_never_touches_an_aggregate(db, genvce_bundle):
     _run(loader.load(genvce_bundle, db, registries=REGISTRIES))
     aggregate = next(s for s in genvce_bundle.sites if s.site_kind == "aggregate")
     forged = enrich.EnrichReport(
-        enriched={aggregate.site_id: enrich.SiteEnrichment(aggregate.site_id, "k", "Csa", 1.0, 1.0, 1.0, 1.0, "t")},
+        enriched={aggregate.site_id: enrich.SiteEnrichment(aggregate.site_id, "k", "Csa", 1.0, 1.0, 1.0, 1.0, "t", 15.0)},
         counts={}, country_mismatch={})
     with pytest.raises(RuntimeError, match="matched 0 of 1"):
         _run(enrich.apply_enrichment(forged, db))

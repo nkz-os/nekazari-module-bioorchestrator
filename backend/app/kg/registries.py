@@ -269,6 +269,11 @@ class Site(_Model):
     latitude: float | None = Field(default=None, ge=-90, le=90)
     longitude: float | None = Field(default=None, ge=-180, le=180)
     coordinate_source: str | None = None
+    # Site properties the graph's readers use, only for FIELD sites and only with a cited source per value
+    # (``attribute_sources``: attribute name -> where the value comes from). No source, no value.
+    elevation_m: float | None = None
+    municipality: str | None = None
+    attribute_sources: dict[str, str] = Field(default_factory=dict)
     aliases: tuple[str, ...] = ()
     sources: tuple[str, ...] = ()
     status: Literal["reviewed", "assumption"]
@@ -282,6 +287,12 @@ class Site(_Model):
             raise ValueError(f"{self.id}: coordinates need their coordinate_source")
         if self.status == "assumption" and not (self.note or "").strip():
             raise ValueError(f"{self.id}: an assumption needs its note")
+        given = {name for name, value in (("elevation_m", self.elevation_m), ("municipality", self.municipality))
+                 if value is not None}
+        if given and self.site_kind != "field":
+            raise ValueError(f"{self.id}: a {self.site_kind} site never carries {sorted(given)}")
+        if set(self.attribute_sources) != given or any(not s.strip() for s in self.attribute_sources.values()):
+            raise ValueError(f"{self.id}: attribute_sources must name a source for exactly {sorted(given)}")
         return self
 
 

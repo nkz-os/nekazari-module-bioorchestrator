@@ -120,11 +120,27 @@ def _raw_trials(source: str, raw_dir: Path) -> list[dict[str, Any]]:
     return trials
 
 
+def _genvce_rows_before_dedupe(raw_dir: Path) -> list[dict[str, Any]]:
+    from app.kg.adapters import WarningLog, genvce
+
+    rows: list[dict[str, Any]] = []
+    folder = raw_dir / "genvce" / "data" / "extractions"
+    for path in sorted(folder.glob("*.json"), key=lambda p: p.name):
+        if path.name != "batch_stats.json":
+            rows.extend(genvce.rows_from_extraction(json.loads(path.read_text(encoding="utf-8")), path.name,
+                                                    WarningLog()))
+    return rows
+
+
 def assumed_regimes(source: str, raw_dir: Path, result: Any, bundle: Bundle) -> dict[str, str | None]:
     """Unit key -> the regime the extraction assumed for it ('rainfed', 'irrigated' or None)."""
     trials = _raw_trials(source, raw_dir)
-    if len(trials) != len(result.rows):
-        raise SystemExit(f"{source}: {len(trials)} extracted trials but {len(result.rows)} adapter rows")
+    rows = result.rows
+    if source == "GENVCE":
+        # the adapter drops rows repeated in a higher table; pair every extracted trial with its own row first
+        rows = _genvce_rows_before_dedupe(raw_dir)
+    if len(trials) != len(rows):
+        raise SystemExit(f"{source}: {len(trials)} extracted trials but {len(rows)} adapter rows")
     documents = {identity.document_key(d): d for d in bundle.documents}
     by_unit: dict[tuple, str] = {}
     for unit in bundle.units:
@@ -133,17 +149,19 @@ def assumed_regimes(source: str, raw_dir: Path, result: Any, bundle: Bundle) -> 
         by_unit[(doc.title, doc.issue, group, unit.raw_variety, unit.raw_site, unit.raw_season,
                  unit.row_discriminator)] = identity.unit_key(unit)
     found: dict[str, str | None] = {}
-    for row, trial in zip(result.rows, trials, strict=True):
+    repeated = 0
+    for row, trial in zip(rows, trials, strict=True):
         doc = row["doc"]
         key = (doc["title"], doc.get("issue"), row["crop"] if source == "GENVCE" else None, row["variety"],
                row.get("zone") if source == "GENVCE" else row.get("site"), row["season"],
                row["table"]["number"] if source == "GENVCE" else None)
         unit_key = by_unit.get(key)
         if unit_key is None:
-            raise SystemExit(f"{source}: no unit for row {key}")
+            repeated += 1  # a dropped repeat: the kept row of a lower table carries the unit
+            continue
         found[unit_key] = ASSUMED.get(trial.get("irrigation_regime") or "")
-    if len(found) != len(bundle.units):
-        raise SystemExit(f"{source}: {len(found)} rows matched {len(bundle.units)} units")
+    if len(found) != len(bundle.units) or repeated != len(rows) - len(result.rows):
+        raise SystemExit(f"{source}: {len(found)} rows matched {len(bundle.units)} units, {repeated} unmatched")
     return found
 
 

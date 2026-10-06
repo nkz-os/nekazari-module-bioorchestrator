@@ -290,6 +290,8 @@ def _site_properties(site: SiteRow, source_id: str) -> dict[str, Any]:
         "siteKey": identity.site_key(site), "name": site.name, "siteKind": site.site_kind,
         "country": site.country, "latitude": site.latitude, "longitude": site.longitude,
         "coordinateSource": site.coordinate_source, "climateClass": site.climate_class,
+        "elevationM": site.elevation_m, "municipality": site.municipality,
+        "attributeSources": list(site.attribute_sources),
         "sourceIds": sorted({*site.source_ids, source_id}), "gaps": _gap_texts(site.gaps),
     }
 
@@ -469,7 +471,8 @@ UNWIND $rows AS r
 MERGE (n:TrialSite {siteKey: r.siteKey})
 SET n.name = r.name, n.siteKind = r.siteKind, n.country = r.country,
     n.latitude = r.latitude, n.longitude = r.longitude, n.coordinateSource = r.coordinateSource,
-    n.gaps = r.gaps,
+    n.gaps = r.gaps, n.elevationM = r.elevationM, n.municipality = r.municipality,
+    n.attributeSources = r.attributeSources,
     n.climateClass = coalesce(r.climateClass, n.climateClass),
     n.sourceIds = reduce(acc = coalesce(n.sourceIds, []), s IN r.sourceIds |
                          CASE WHEN s IN acc THEN acc ELSE acc + s END)

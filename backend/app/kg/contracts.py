@@ -1096,10 +1096,14 @@ class _Builder:
         if site.site_kind == "field" and site.latitude is None:
             gaps.add("latitude", "the sites registry holds no published coordinates for this site")
             gaps.add("longitude", "the sites registry holds no published coordinates for this site")
+        if site.site_kind == "field":
+            for name in ("elevation_m", "municipality"):
+                gaps.add(name, "the sites registry holds no cited source for this value")
         values: dict[str, Any] = {
             "site_id": site.id, "name": site.name, "site_kind": site.site_kind, "country": site.country,
             "latitude": site.latitude, "longitude": site.longitude, "coordinate_source": site.coordinate_source,
-            "climate_class": None,
+            "climate_class": None, "elevation_m": site.elevation_m, "municipality": site.municipality,
+            "attribute_sources": tuple(f"{name}: {source}" for name, source in sorted(site.attribute_sources.items())),
             "source_ids": tuple(sorted({*site.sources, self.contract.source_id})),
         }
         return SiteRow(**values, gaps=gaps.rows(values))

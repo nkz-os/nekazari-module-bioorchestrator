@@ -142,10 +142,19 @@ class SiteRow(_Row):
     longitude: float | None = Field(default=None, ge=-180, le=180)
     coordinate_source: Text = None
     climate_class: Text = None
+    elevation_m: float | None = None
+    municipality: Text = None
+    attribute_sources: tuple[NonBlank, ...] = ()  # "<attribute>: <source>" for each value above (field sites)
     source_ids: tuple[SourceId, ...] = ()
 
     @model_validator(mode="after")
     def _coordinates_are_paired_sourced_and_only_for_fields(self) -> SiteRow:
+        carried = [n for n in ("elevation_m", "municipality") if getattr(self, n) is not None]
+        if carried and self.site_kind != "field":
+            raise ValueError(f"a {self.site_kind} site never carries {carried}")
+        if len(self.attribute_sources) != len(carried) or any(
+                not any(s.startswith(f"{n}: ") for s in self.attribute_sources) for n in carried):
+            raise ValueError("every site attribute needs its source, and a source its attribute")
         if (self.latitude is None) != (self.longitude is None):
             raise ValueError("latitude and longitude come together")
         if self.latitude is not None:
@@ -369,7 +378,7 @@ STUDY_NON_KEY_FIELDS = ("name", "year", "design", "gaps")
 SITE_KEY_FIELDS = ("site_id",)
 SITE_NON_KEY_FIELDS = (
     "name", "site_kind", "country", "latitude", "longitude", "coordinate_source", "climate_class",
-    "source_ids", "gaps",
+    "elevation_m", "municipality", "attribute_sources", "source_ids", "gaps",
 )
 
 VARIETY_KEY_FIELDS = ("crop_eppo", "name")

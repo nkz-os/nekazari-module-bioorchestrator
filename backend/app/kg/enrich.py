@@ -13,7 +13,10 @@
 
 The values are written under the property names ``dao.py`` reads: ``climateClassChelsa`` and friends
 (read through ``coalesce(ts.climateClassChelsa, ts.climateClass)``), plus ``climateClass`` for the
-queries that read only that. No timestamp is stored: the graph export must be deterministic.
+queries that read only that. Three more properties ``dao.py`` reads directly are derived here, each from a
+source named on the node: ``annualRainfallMm`` / ``annualET0Mm`` (the same CHELSA cell values; ``climateSource``
+names them) and ``photoperiodSummerHours`` (astronomical day length at the summer solstice from the site's
+latitude, ``photoperiodSource``). No timestamp is stored: the graph export must be deterministic.
 """
 from __future__ import annotations
 
@@ -29,12 +32,14 @@ from typing import Any
 
 from app.services.chelsa_climate import SOURCE_LABEL, cell_key
 from app.services.country_lookup import country_at
+from app.services.environment import summer_solstice_photoperiod
 
 from . import identity
 from .model import SiteRow
 
 logger = logging.getLogger(__name__)
 
+PHOTOPERIOD_SOURCE = "astronomical day length at the summer solstice from the site latitude"
 CONCURRENCY = 2
 CELL_TIMEOUT_S = 90.0
 
@@ -53,6 +58,7 @@ class SiteEnrichment:
     annual_et0_mm: float | None
     coldest_month_min_c: float | None
     source: str
+    photoperiod_summer_hours: float
 
 
 @dataclass(frozen=True)
@@ -155,7 +161,8 @@ async def enrich_sites(
                 site_key=identity.site_key(site), cell_key=key, koppen=data["koppen"],
                 annual_temp_c=data.get("annual_temp_c"), annual_rainfall_mm=data["annual_rainfall_mm"],
                 annual_et0_mm=data.get("annual_et0_mm"), coldest_month_min_c=data.get("coldest_month_min_c"),
-                source=data.get("source") or SOURCE_LABEL)
+                source=data.get("source") or SOURCE_LABEL,
+                photoperiod_summer_hours=summer_solstice_photoperiod(site.latitude))
     counts["enriched"] = len(enriched)
     logger.info("kg enrich counts=%s country_mismatch=%d", dict(counts), len(mismatch))
     return EnrichReport(enriched=enriched, counts=dict(counts), country_mismatch=mismatch, failed=tuple(sorted(failed)))
@@ -168,7 +175,9 @@ MATCH (n:TrialSite {siteKey: r.siteKey}) WHERE n.siteKind = 'field'
 SET n.climateClass = r.koppen, n.climateClassChelsa = r.koppen,
     n.annualTempCChelsa = r.annualTempC, n.annualRainfallMmChelsa = r.annualRainfallMm,
     n.annualET0MmChelsa = r.annualET0Mm, n.coldestMonthMinCChelsa = r.coldestMonthMinC,
-    n.climateChelsaCellKey = r.cellKey, n.climateSource = r.source
+    n.climateChelsaCellKey = r.cellKey, n.climateSource = r.source,
+    n.annualRainfallMm = r.annualRainfallMm, n.annualET0Mm = r.annualET0Mm,
+    n.photoperiodSummerHours = r.photoperiodHours, n.photoperiodSource = $photoperiodSource
 RETURN count(n) AS matched
 """
 
@@ -178,14 +187,15 @@ async def apply_enrichment(report: EnrichReport, driver: Any, *, database: str |
     rows = [
         {"siteKey": e.site_key, "koppen": e.koppen, "annualTempC": e.annual_temp_c,
          "annualRainfallMm": e.annual_rainfall_mm, "annualET0Mm": e.annual_et0_mm,
-         "coldestMonthMinC": e.coldest_month_min_c, "cellKey": e.cell_key, "source": e.source}
+         "coldestMonthMinC": e.coldest_month_min_c, "cellKey": e.cell_key, "source": e.source,
+         "photoperiodHours": e.photoperiod_summer_hours}
         for _, e in sorted(report.enriched.items())
     ]
     if not rows:
         return 0
     async with driver.session(database=database) as session:
         async def work(tx: Any) -> int:
-            result = await tx.run(_WRITE, rows=rows)
+            result = await tx.run(_WRITE, rows=rows, photoperiodSource=PHOTOPERIOD_SOURCE)
             record = await result.single()
             await result.consume()
             return int(record["matched"]) if record is not None else 0
