@@ -36,11 +36,16 @@ from app.core.dependencies import (
 )
 from app.graph.dao import GraphDAO
 from app.ingestion.sync import sync_all_agri_crops
+from app.kg.migrations import apply_migrations
 from app.logging_setup import configure_logging
 
 # Module-level readiness state set during lifespan.
 # K8s probes hit /healthz and /readyz every 10-30s — must be fast and never rate-limited.
 _ikerketa_available = False
+
+# Set when the startup schema migration fails. /readyz then answers 503 (the pod takes no
+# traffic and a rolling update keeps the previous pod); liveness is unaffected, so no restart loop.
+_migration_failure: dict | None = None
 
 # Strong refs to long-lived background tasks (prevents GC of run_loop et al.).
 _BG_TASKS: set = set()
@@ -95,41 +100,34 @@ async def _reconcile_catalog() -> int:
         await orion.close()
 
 
-async def _run_cypher_migrations(driver):
-    """Execute pending Cypher migrations on startup (idempotent).
+async def _run_startup_migrations(driver) -> None:
+    """Apply the schema migrations (constraints and indexes only) with the strict runner.
 
-    Reads all .cypher files from cypher_migrations/ in order.
-    Each statement uses IF NOT EXISTS or equivalent — safe to re-run.
+    Never raises. A failure is logged at CRITICAL and recorded in ``_migration_failure`` so that
+    /readyz fails: a half-applied schema must not look healthy. Data migrations (MERGE/SET) are not
+    run here (``include_data=False``); they never ran at startup and are applied by
+    ``scripts/apply_cypher_migrations.py``.
     """
-    from pathlib import Path
-    migrations_dir = Path(__file__).parent.parent / "cypher_migrations"
-    if not migrations_dir.exists():
-        print("[bioorchestrator] No cypher_migrations directory — skipping")
-        return 0
-
-    cypher_files = sorted(migrations_dir.glob("*.cypher"))
-    if not cypher_files:
-        return 0
-
-    executed = 0
-    async with driver.session() as session:
-        for cypher_file in cypher_files:
-            content = cypher_file.read_text()
-            statements = [s.strip() for s in content.split(";") if s.strip() and not s.strip().startswith("//")]
-            for stmt in statements:
-                # Only execute CREATE CONSTRAINT/INDEX statements (idempotent)
-                if not stmt.upper().startswith(("CREATE CONSTRAINT", "CREATE INDEX")):
-                    continue
-                try:
-                    await session.run(stmt)
-                    executed += 1
-                except Exception as exc:  # noqa: BLE001
-                    # Constraint already exists → ok
-                    if "already exists" in str(exc) or "AlreadyExists" in str(exc) or "equivalent" in str(exc):
-                        pass
-                    else:
-                        print(f"[bioorchestrator] WARNING: migration failed: {exc}")
-    return executed
+    global _migration_failure
+    try:
+        report = await apply_migrations(driver, include_data=False)
+    except Exception as exc:  # noqa: BLE001
+        _migration_failure = {
+            "file": getattr(exc, "file", None),
+            "statement_no": getattr(exc, "statement_no", None),
+            "code": getattr(exc, "code", None) or type(exc).__name__,
+        }
+        logger.critical(
+            "schema migration failed, readiness will fail file=%s statement_no=%s code=%s error=%s",
+            _migration_failure["file"], _migration_failure["statement_no"],
+            _migration_failure["code"], str(exc).replace("\n", " ")[:300],
+        )
+        return
+    _migration_failure = None
+    print(
+        f"[bioorchestrator] schema migrations applied: {len(report.applied)} files "
+        f"({report.skipped_data} data statements not run at startup)"
+    )
 
 
 # Climate classes the recommender is run for at startup (the most requested ones).
@@ -215,16 +213,13 @@ async def lifespan(app: FastAPI):
         _ikerketa_available = False
 
     try:
-        await init_driver()
+        driver = await init_driver()
         print("[bioorchestrator] Neo4j connected")
-        # Auto-run Cypher migrations (idempotent, safe to re-run)
-        from app.core.dependencies import get_neo4j_driver
-        driver = await anext(get_neo4j_driver())
-        migrated = await _run_cypher_migrations(driver)
-        if migrated:
-            print(f"[bioorchestrator] {migrated} Cypher constraints/indexes ensured")
     except Exception as exc:  # noqa: BLE001
         print(f"[bioorchestrator] WARNING: Neo4j unavailable on startup: {exc}")
+    else:
+        # Idempotent schema migrations; a failure fails readiness (see _run_startup_migrations).
+        await _run_startup_migrations(driver)
 
     # Seed external capability registrations (best-effort)
     try:
@@ -343,9 +338,14 @@ async def healthz():
 async def readyz():
     """K8s readiness probe — returns 200 when dependencies are available.
 
-    Checks cached IkerKeta import state (set during lifespan).
-    Must be fast (no imports, no I/O) — K8s probes every 10s.
+    Checks cached IkerKeta import state and the startup schema-migration outcome (both set
+    during lifespan). Must be fast (no imports, no I/O) — K8s probes every 10s.
     """
+    if _migration_failure is not None:
+        return JSONResponse(
+            status_code=503,
+            content={"status": "not_ready", "reason": "schema migration failed", **_migration_failure},
+        )
     if _ikerketa_available:
         return {"status": "ready"}
     return JSONResponse(
