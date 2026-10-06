@@ -221,17 +221,17 @@ def test_schema_version_records_file_and_sha256(db, mdir):
 
 
 @needs_docker
-def test_changed_file_updates_record_and_warns(db, mdir, caplog):
+def test_changed_file_updates_record_and_warns(db, mdir, log_records):
     path = write(mdir, "001_a.cypher", "CREATE INDEX a IF NOT EXISTS FOR (n:A) ON (n.k);")
     _run(apply_migrations(db, mdir))
     old_sha = schema_versions(db)["001_a.cypher"]["sha256"]
 
     path.write_text("CREATE INDEX a IF NOT EXISTS FOR (n:A) ON (n.k);\nCREATE INDEX a2 IF NOT EXISTS FOR (n:A) ON (n.j);")
-    with caplog.at_level(logging.WARNING, logger="app.kg.migrations"):
-        _run(apply_migrations(db, mdir))
+    records = log_records("app.kg.migrations", logging.WARNING)
+    _run(apply_migrations(db, mdir))
 
     assert schema_versions(db)["001_a.cypher"]["sha256"] == hashlib.sha256(path.read_bytes()).hexdigest() != old_sha
-    assert any("changed since last applied" in r.getMessage() for r in caplog.records)
+    assert any("changed since last applied" in r.getMessage() for r in records)
     assert {i[0] for i in indexes(db)} >= {"a", "a2"}
 
 

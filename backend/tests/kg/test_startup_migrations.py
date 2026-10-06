@@ -37,7 +37,7 @@ async def test_startup_runs_schema_only_and_readiness_stays_up(main_mod, client,
 
 
 async def test_failed_migration_fails_readiness_logs_critical_and_does_not_raise(
-    main_mod, client, monkeypatch, caplog
+    main_mod, client, monkeypatch, log_records
 ):
     err = MigrationError(
         "002_x.cypher statement 3 failed", file="002_x.cypher", statement_no=3,
@@ -45,10 +45,10 @@ async def test_failed_migration_fails_readiness_logs_critical_and_does_not_raise
     )
     monkeypatch.setattr(main_mod, "apply_migrations", AsyncMock(side_effect=err))
 
-    with caplog.at_level(logging.CRITICAL, logger="app.main"):
-        await main_mod._run_startup_migrations(object())  # must not raise: the app still starts
+    records = log_records("app.main", logging.CRITICAL)
+    await main_mod._run_startup_migrations(object())  # must not raise: the app still starts
 
-    assert any(r.levelno == logging.CRITICAL and "002_x.cypher" in r.getMessage() for r in caplog.records)
+    assert any(r.levelno == logging.CRITICAL and "002_x.cypher" in r.getMessage() for r in records)
     resp = client.get("/readyz")
     assert resp.status_code == 503
     assert resp.json() == {
