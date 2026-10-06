@@ -423,3 +423,13 @@ sites:
     sources: [GENVCE]
     status: assumption
     note: *genvce_group_note
+  - id: ES-GENVCE-UNLABELLED
+    name: GENVCE table without zone label (ES)
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: >-
+      ASSUMPTION: the group a GENVCE table averages is not stated in the extraction (no zone, stratum or
+      group label). Such a mean is kept at country level only so it is reachable by the regional tier; the
+      trials it covers are unknown. An aggregate, no coordinates, never climate-enriched.

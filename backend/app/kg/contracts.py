@@ -364,6 +364,10 @@ class SitesSpec(_Closed):
     # raw site names matching one of these are aggregates (zone, network, average): they must resolve
     # to a registry site that is not a field site, so an aggregate is never disguised as a plot
     aggregate_patterns: tuple[Regex, ...] = ()
+    # Registry id of the aggregate site for a unit whose table prints no site label. It assigns the
+    # unit's site_key only: raw_site stays empty (it is a key input), so no unit_key changes. It must
+    # be a registered non-field site, so an unlabelled mean is never placed on a plot.
+    unlabelled_site: str | None = None
 
 
 class Expected(_Closed):
@@ -562,6 +566,7 @@ class _Plan:
     observations: tuple[_ObsPlan, ...]
     aggregate_patterns: tuple[re.Pattern[str], ...]
     warnings: tuple[str, ...]
+    unlabelled_site: Site | None = None
 
 
 def _resolve_unit(
@@ -704,11 +709,20 @@ def _compile(contract: Contract, registries: Registries) -> _Plan:
         raise ContractError(
             f"contract {source_id} is inconsistent with the registries:\n  - " + "\n  - ".join(problems))
     assert study_entry is not None
+    unlabelled: Site | None = None
+    if contract.sites.unlabelled_site is not None:
+        unlabelled = registries.site(contract.sites.unlabelled_site)
+        if unlabelled is None:
+            raise ContractError(f"contract {source_id}: unlabelled_site {contract.sites.unlabelled_site!r} "
+                                "is not in the sites registry")
+        if unlabelled.site_kind == "field":
+            raise ContractError(f"contract {source_id}: unlabelled_site {unlabelled.id} is a field site; "
+                                "a table without a label is an aggregate, never a plot")
     return _Plan(
         contract=contract, registries=registries, study_type=study_entry.id, yield_variable=yield_variable,
         yield_unit=yield_unit, observations=tuple(observations),
         aggregate_patterns=tuple(re.compile(pattern, re.IGNORECASE) for pattern in contract.sites.aggregate_patterns),
-        warnings=tuple(warnings),
+        unlabelled_site=unlabelled, warnings=tuple(warnings),
     )
 
 
@@ -1056,7 +1070,13 @@ class _Builder:
     def _site(self, raw_site: str | None, gaps: _Gaps) -> str | None:
         """Resolve an OBSERVED place (zone, stratum, location) through the sites registry."""
         if raw_site is None:
-            return None
+            fallback = self.plan.unlabelled_site
+            if fallback is None:
+                return None
+            row = self._site_row(fallback)
+            key = identity.site_key(row)
+            self.sites.setdefault(key, row)
+            return key
         site = self.registries.site(raw_site)
         aggregate = any(pattern.search(raw_site) for pattern in self.plan.aggregate_patterns)
         if site is None:

@@ -32,7 +32,7 @@ REGISTRIES = load_registries()
 CONTRACT = load_contract(CONTRACT_PATH)
 
 # what the fixture files produce
-FIXTURE_ROWS, FIXTURE_UNITS, FIXTURE_OBSERVATIONS, FIXTURE_SITES = 32, 32, 233, 14
+FIXTURE_ROWS, FIXTURE_UNITS, FIXTURE_OBSERVATIONS, FIXTURE_SITES = 32, 32, 233, 15
 
 
 @pytest.fixture(scope="module")
@@ -474,7 +474,7 @@ def test_the_contract_quotes_the_source_for_purpose_metric_basis_and_moisture():
 
 def test_every_registered_genvce_site_is_an_aggregate():
     owned = [s for s in REGISTRIES.sites if s.sources == ("GENVCE",)]
-    assert len(owned) == 44 and {s.site_kind for s in owned} == {"aggregate"}
+    assert len(owned) == 45 and {s.site_kind for s in owned} == {"aggregate"}
 
 
 # ═════════════════════════════════════════════════════════════════════════════

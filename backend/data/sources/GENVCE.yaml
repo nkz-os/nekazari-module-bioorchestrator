@@ -9,7 +9,7 @@
 # What a row is. GENVCE publishes the mean of a GROUP of trials per table: an agroclimatic zone, a
 # yield stratum, a geographic group, or all trials. It prints no trial location (trial_location is
 # null in 3862 of 3862 extracted rows). The unit's site is therefore the OBSERVED group label, kept as
-# an aggregate site with no coordinates (sites.yaml, ES-GENVCE-*); a table with no label has no site.
+# an aggregate site with no coordinates (sites.yaml, ES-GENVCE-*); a table with no label is placed on the aggregate ES-GENVCE-UNLABELLED.
 # The legacy step mapped these means to four reference cities; that is not repeated here.
 #
 # The extraction's own table number is the unit's row_discriminator: the same variety is printed in
@@ -271,7 +271,9 @@ ignore:
 sites:
   # every GENVCE site is an aggregate (zone, stratum, group): none may ever resolve to a field site
   aggregate_patterns: ["^.+$"]
+  # a table that prints no label: the unit gets this aggregate as its site (raw_site stays empty, keys unchanged)
+  unlabelled_site: ES-GENVCE-UNLABELLED
 expected:
   units: 3862
   observations: 19813
-  sites: 44
+  sites: 45
