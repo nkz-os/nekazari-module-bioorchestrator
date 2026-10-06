@@ -29,9 +29,12 @@ from app.kg.contracts import (
 )
 from app.kg.irrigation_cutoff import (
     EPSILON,
+    MAX_HELDOUT_ERROR,
+    MIN_HELDOUT_YEARS,
     STEP_KG_HA,
     calibrate,
     classify_yield,
+    leave_one_year_out,
     quantile,
     separation,
 )
@@ -42,6 +45,7 @@ from app.kg.registries import (
     RegistryError,
     load_registries,
 )
+from scripts import kg_calibrate_irrigation
 from scripts.kg_calibrate_irrigation import labelled_yields, render_thresholds
 
 from .test_contracts import base_contract, raw_row
@@ -461,7 +465,7 @@ def real_bundle(source_id, adapter, rows, expected=None, derive=True):
 def fixture_bundles():
     out = {}
     for source_id, adapter, expected in (
-        ("GENVCE", genvce, {"units": 32, "observations": 233, "sites": 14}),
+        ("GENVCE", genvce, {"units": 32, "observations": 233, "sites": 15}),
         ("CREA", crea, {"units": 16, "observations": 132, "sites": 5}),
     ):
         rows = adapter.load(FIXTURES / source_id.lower()).rows
@@ -513,7 +517,7 @@ def _genvce_with_barley_cutoffs(copy_dir_):
     dest, edit = copy_dir_
     edit(lambda d: d["thresholds"].__setitem__(1, calibrated("HORVX", 4000.0, 7000.0)))
     rows = genvce.load(FIXTURES / "genvce").rows
-    loaded = load_contract(SOURCES / "GENVCE.yaml").model_copy(update={"expected": Expected(units=32, observations=233, sites=14)})
+    loaded = load_contract(SOURCES / "GENVCE.yaml").model_copy(update={"expected": Expected(units=32, observations=233, sites=15)})
     return run_contract(loaded, load_registries(dest), rows)
 
 
@@ -569,3 +573,63 @@ def test_maize_has_no_cutoff_so_no_crea_unit_is_derived_and_every_stated_regime_
     assert sum(1 for u in with_cutoff.units if u.raw_irrigation) == 149
     assert all(u.irrigation_derivation is None and u.irrigation_regime is None
                for u in with_cutoff.units if u.raw_irrigation is None)
+
+
+# ═════════════════════════════════════════════════════════════════════════════
+# the registry write guard: leave-one-year-out
+# ═════════════════════════════════════════════════════════════════════════════
+
+def _separated_rows(years, n=20):
+    """Rainfed around 3000, irrigated around 9000 kg/ha: separable in every year."""
+    return [(year, 3000.0 + 20 * i, "rainfed") for year in years for i in range(n)] + [
+        (year, 9000.0 + 20 * i, "irrigated") for year in years for i in range(n)]
+
+
+def test_cutoffs_that_hold_on_the_left_out_years_pass_the_guard():
+    check = leave_one_year_out("HORVX", _separated_rows(range(2015, 2020)))
+    assert check.n_wrong == 0 and check.years_rainfed == check.years_irrigated == 5
+    assert check.refusal() is None
+
+
+def test_fewer_than_three_held_out_years_per_class_is_refused():
+    check = leave_one_year_out("HORVX", _separated_rows((2018, 2019), n=40))
+    assert check.n_wrong == 0 and check.years_rainfed == 2
+    assert "fewer than 3" in check.refusal()
+
+
+def test_a_class_seen_in_too_few_years_is_refused_even_when_the_other_is_everywhere():
+    rows = _separated_rows(range(2015, 2020)) + [(2020, 3100.0, "rainfed")]
+    rows = [r for r in rows if not (r[2] == "irrigated" and r[0] > 2016)]
+    check = leave_one_year_out("HORVX", rows)
+    assert check.years_irrigated < 3 and "irrigated rows, fewer than 3" in check.refusal()
+
+
+def test_a_held_out_error_above_the_limit_is_refused():
+    rows = _separated_rows(range(2015, 2020))
+    # one year where irrigated crops behave like the rainfed ones (a drought year)
+    rows = [(y, 3100.0 + i, "irrigated") if (y, r) == (2017, "irrigated") else (y, v, r)
+            for i, (y, v, r) in enumerate(rows)]
+    check = leave_one_year_out("HORVX", rows)
+    assert check.error_rate > MAX_HELDOUT_ERROR
+    assert "exceeds 5.0%" in check.refusal()
+
+
+def test_the_limit_is_a_named_constant_and_a_rule_with_nothing_to_judge_refuses():
+    assert MAX_HELDOUT_ERROR == 0.05 and MIN_HELDOUT_YEARS == 3
+    assert "no held-out row" in leave_one_year_out("HORVX", []).refusal()
+
+
+def test_rows_without_a_year_are_never_held_out():
+    check = leave_one_year_out("HORVX", [(None, v, r) for _, v, r in _separated_rows(range(2015, 2020))])
+    assert check.n_judged == 0 and check.n_unjudged == 200
+
+
+@pytest.mark.skipif(not RAW_REPO, reason="set NKZ_DATA_SOURCES_DIR to the raw-data repository to run")
+def test_with_the_current_data_horvx_is_refused_and_the_registry_is_not_written(tmp_path, monkeypatch, capsys):
+    target = tmp_path / "irrigation_thresholds.yaml"
+    shutil.copy(DEFAULT_REGISTRIES_PATH / "irrigation_thresholds.yaml", target)
+    before = target.read_bytes()
+    monkeypatch.setattr(kg_calibrate_irrigation, "THRESHOLDS_FILE", target)
+    code = kg_calibrate_irrigation.main(["--raw-dir", RAW_REPO, "--write-registry"])
+    assert code != 0 and target.read_bytes() == before
+    assert "HORVX" in capsys.readouterr().err

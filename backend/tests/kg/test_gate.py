@@ -629,10 +629,10 @@ def test_the_real_bundles_pass_the_gate_for_production_with_zero_errors(source_i
     assert report.warning_counts["range_checks_skipped"] == report.range_checks.skipped
     assert report.warning_counts["adapter_warning"] == sum(w.count for w in result.warnings)
     assert report.review_queue == ()
+    # the 1758 GENVCE units whose tables print no zone label sit on the unlabelled aggregate (contract
+    # `unlabelled_site`), so no unit is left without a site; their raw_site gap stays on the unit
+    assert "no_observed_site" not in report.warning_counts
+    assert all(u.site_key is not None for u in bundle.units)
     if source_id == "GENVCE":
-        # the units whose tables print no zone label: an explicit gap, never an error
-        assert report.warning_counts["no_observed_site"] == 1758
-        assert finding(report, "no_observed_site").groups == {"GENVCE": 1758}
-    else:
-        assert "no_observed_site" not in report.warning_counts
+        assert sum(1 for u in bundle.units if u.raw_site is None and u.site_key == "ES-GENVCE-UNLABELLED") == 1758
     print(f"\n{source_id} warnings per rule: {json.dumps(report.warning_counts, sort_keys=True)}")

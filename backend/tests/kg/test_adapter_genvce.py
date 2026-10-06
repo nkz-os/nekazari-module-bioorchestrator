@@ -351,9 +351,9 @@ def test_the_site_is_the_observed_group_registered_as_an_aggregate_without_coord
     assert not bundle.report.unresolved_sites
 
 
-def test_a_table_without_a_group_has_no_site_and_says_why(bundle):
+def test_a_table_without_a_group_has_no_observed_site_says_why_and_sits_on_the_unlabelled_aggregate(bundle):
     unlocated = [u for u in bundle.units if u.raw_site is None]
-    assert unlocated and all(u.site_key is None for u in unlocated)
+    assert unlocated and all(u.site_key == "ES-GENVCE-UNLABELLED" for u in unlocated)
     assert all(any(g.field == "raw_site" for g in u.gaps) for u in unlocated)
 
 

@@ -35,6 +35,9 @@ EPSILON = 0.05
 STEP_KG_HA = 100.0
 MIN_LABELLED = 15
 MAX_DECIDED_ERROR = 0.20
+# Guard for writing the registry (leave-one-year-out): the cutoffs must hold on years they were not fitted on.
+MAX_HELDOUT_ERROR = 0.05  # wrong judgements over all held-out labelled rows (an undecided row counts as a row)
+MIN_HELDOUT_YEARS = 3  # held-out years that must be judged, per regime class
 QUANTILE_LEVELS = {"p05": 0.05, "p25": 0.25, "p50": 0.50, "p75": 0.75, "p95": 0.95}
 
 Regime = Literal["rainfed", "irrigated"]
@@ -182,7 +185,80 @@ def calibrate(
         rainfed_judged_irrigated=wrong_rainfed, n_ambiguous=ambiguous)
 
 
+@dataclass(frozen=True)
+class LeaveYearOut:
+    """Out-of-sample check of one crop: each year is judged by cutoffs calibrated on the other years."""
+
+    crop: str
+    years_rainfed: int  # held-out years with at least one judged rainfed row
+    years_irrigated: int
+    n_judged: int  # held-out labelled rows judged by cutoffs fitted without their year
+    n_wrong: int
+    n_ambiguous: int
+    n_unjudged: int  # rows of years whose training set could not be calibrated, or rows with no year
+
+    @property
+    def error_rate(self) -> float | None:
+        return None if not self.n_judged else self.n_wrong / self.n_judged
+
+    def refusal(
+        self, *, max_error: float = MAX_HELDOUT_ERROR, min_years: int = MIN_HELDOUT_YEARS,
+    ) -> str | None:
+        """Why these cutoffs may not be written to the registry, or None when they hold out of sample."""
+        reasons = []
+        for name, years in (("rainfed", self.years_rainfed), ("irrigated", self.years_irrigated)):
+            if years < min_years:
+                reasons.append(f"held-out data covers {years} year(s) of {name} rows, fewer than {min_years}")
+        if self.error_rate is None:
+            reasons.append("no held-out row could be judged")
+        elif self.error_rate > max_error:
+            reasons.append(f"held-out misclassification {self.error_rate:.1%} exceeds {max_error:.1%}")
+        return f"{self.crop}: " + "; ".join(reasons) if reasons else None
+
+
+def leave_one_year_out(
+    crop: str, rows: Iterable[tuple[int | None, float, Regime]], *, epsilon: float = EPSILON, step: float = STEP_KG_HA,
+    min_labelled: int = MIN_LABELLED, max_decided_error: float = MAX_DECIDED_ERROR,
+) -> LeaveYearOut:
+    """Calibrate on all years but one and judge the rows of the left-out year; repeat for every year."""
+    labelled = list(rows)
+    years = sorted({year for year, _, _ in labelled if year is not None})
+    judged = wrong = ambiguous = 0
+    covered: dict[str, set[int]] = {"rainfed": set(), "irrigated": set()}
+    for year in years:
+        train = [(y, r) for yr, y, r in labelled if yr != year]
+        test = [(y, r) for yr, y, r in labelled if yr == year]
+        fit = calibrate(
+            crop, (y for y, r in train if r == "rainfed"), (y for y, r in train if r == "irrigated"),
+            epsilon=epsilon, step=step, min_labelled=min_labelled, max_decided_error=max_decided_error)
+        if not fit.calibrated:
+            continue
+        for value, regime in test:
+            band = classify_yield(value, fit.low_kg_ha, fit.high_kg_ha)  # type: ignore[arg-type]
+            judged += 1
+            covered[regime].add(year)
+            if band is None:
+                ambiguous += 1
+            elif band != regime:
+                wrong += 1
+    return LeaveYearOut(
+        crop=crop, years_rainfed=len(covered["rainfed"]), years_irrigated=len(covered["irrigated"]),
+        n_judged=judged, n_wrong=wrong, n_ambiguous=ambiguous, n_unjudged=len(labelled) - judged)
+
+
 __all__ = [
-    "EPSILON", "MAX_DECIDED_ERROR", "MIN_LABELLED", "STEP_KG_HA", "Calibration", "calibrate", "classify_yield",
-    "quantile", "quantiles", "separation",
+    "EPSILON",
+    "MAX_DECIDED_ERROR",
+    "MAX_HELDOUT_ERROR",
+    "MIN_HELDOUT_YEARS",
+    "MIN_LABELLED",
+    "STEP_KG_HA",
+    "Calibration",
+    "LeaveYearOut",
+    "calibrate",
+    "classify_yield",
+    "leave_one_year_out",
+    "quantile",
+    "quantiles",
+    "separation",
 ]

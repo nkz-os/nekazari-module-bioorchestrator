@@ -8,7 +8,8 @@ with the regime the extraction had assumed for them.
 
 Nothing is written unless asked: ``--report FILE`` writes the markdown report (keep it outside the
 repository), ``--write-registry`` rewrites the thresholds of ``data/registries/irrigation_thresholds.yaml``
-(the file's header is kept; ``owner_approval`` is never filled by this script).
+(the file's header is kept; ``owner_approval`` is never filled by this script) and is refused (exit 2, nothing
+written) for cutoffs that fail the leave-one-year-out guard (``MAX_HELDOUT_ERROR``, ``MIN_HELDOUT_YEARS``).
 
     NKZ_DATA_SOURCES_DIR=<raw repo> python scripts/kg_calibrate_irrigation.py --report /path/outside/repo.md
 """
@@ -34,11 +35,14 @@ from app.kg.contracts import Bundle, load_contract, run_contract
 from app.kg.irrigation_cutoff import (
     EPSILON,
     MAX_DECIDED_ERROR,
+    MAX_HELDOUT_ERROR,
+    MIN_HELDOUT_YEARS,
     MIN_LABELLED,
     STEP_KG_HA,
     Calibration,
     calibrate,
     classify_yield,
+    leave_one_year_out,
 )
 from app.kg.registries import (
     DEFAULT_REGISTRIES_PATH,
@@ -74,6 +78,32 @@ def labelled_yields(bundles: Iterable[Bundle], registries: Registries) -> dict[s
             if regime is not None:
                 out[unit.crop_eppo][regime].append(unit.yield_kg_ha)
                 out[unit.crop_eppo]["sources"].add(bundle.source_id)
+    return out
+
+
+def labelled_rows(bundles: Iterable[Bundle], registries: Registries) -> dict[str, list[tuple[int | None, float, str]]]:
+    """Per crop: (year, yield kg/ha, regime) of the units whose source states the regime."""
+    rainfed, irrigated = registries.vocab("irrigation", "rainfed"), registries.vocab("irrigation", "irrigated")
+    out: dict[str, list[tuple[int | None, float, str]]] = collections.defaultdict(list)
+    for bundle in bundles:
+        for unit in bundle.units:
+            regime = {rainfed: "rainfed", irrigated: "irrigated"}.get(unit.irrigation_regime)
+            if unit.raw_irrigation is not None and unit.yield_kg_ha is not None and regime is not None:
+                out[unit.crop_eppo].append((unit.year, unit.yield_kg_ha, regime))
+    return out
+
+
+def registry_refusals(
+    calibrations: Sequence[Calibration], rows: dict[str, list[tuple[int | None, float, str]]],
+) -> list[str]:
+    """Why the calibrated crops may not be written (leave-one-year-out guard); empty when all hold out of sample."""
+    out = []
+    for c in calibrations:
+        if not c.calibrated:
+            continue
+        why = leave_one_year_out(c.crop, rows.get(c.crop, [])).refusal()  # type: ignore[arg-type]
+        if why:
+            out.append(why)
     return out
 
 
@@ -254,6 +284,14 @@ def main(argv: Sequence[str] | None = None) -> int:
     if args.report:
         Path(args.report).write_text(report, encoding="utf-8")
     if args.write_registry:
+        refusals = registry_refusals(calibrations, labelled_rows((bundle for _, bundle in built.values()), registries))
+        if refusals:
+            print(f"refused to write {THRESHOLDS_FILE.name}: the cutoffs do not hold on years they were not fitted "
+                  f"on (limit {MAX_HELDOUT_ERROR:.0%} held-out error, {MIN_HELDOUT_YEARS}+ held-out years per "
+                  "regime):", file=sys.stderr)
+            for why in refusals:
+                print(f"  - {why}", file=sys.stderr)
+            return 2
         write_registry(render_thresholds(calibrations, commit, {c: set(d["sources"]) for c, d in labelled.items()}))
         print(f"rewrote {THRESHOLDS_FILE.name}")
     return 0
