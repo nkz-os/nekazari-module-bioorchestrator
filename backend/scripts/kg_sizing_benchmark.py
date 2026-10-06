@@ -295,10 +295,13 @@ async def _heap_peaks(driver: Any) -> dict[str, Any]:
         rows = [dict(r) async for r in result]
     peaks = {}
     for row in rows:
-        usage = row["attributes"].get("PeakUsage", {}).get("value", {})
-        if usage:
-            peaks[row["name"].split("name=")[-1]] = {"peak_used_mib": round(usage["used"] / 1048576, 1),
-                                                     "max_mib": round(usage["max"] / 1048576, 1) if usage["max"] > 0 else None}
+        usage = row["attributes"].get("PeakUsage", {}).get("value", {}).get("properties", {})
+        name = next((part.split("=", 1)[1] for part in row["name"].split(",") if part.startswith("name=")
+                     or ":name=" in part), row["name"])
+        name = name.split("name=")[-1]
+        if usage and name.startswith("G1"):  # the heap pools; metaspace and code cache are not heap
+            peaks[name] = {"peak_used_mib": round(usage["used"] / 1048576, 1),
+                           "max_mib": round(usage["max"] / 1048576, 1) if usage["max"] > 0 else None}
     return peaks
 
 
