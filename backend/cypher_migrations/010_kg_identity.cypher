@@ -47,3 +47,8 @@ FOR (vt:VarietyTrial) ON (vt.cropEppo);
 
 CREATE INDEX observation_variable_id IF NOT EXISTS
 FOR (o:Observation) ON (o.variableId);
+
+// Created so far only by a backfill script, not by any migration; same name and schema as the
+// existing one, so a no-op where it is already there and present on a graph built from empty.
+CREATE INDEX variety_trial_source_crop IF NOT EXISTS
+FOR (vt:VarietyTrial) ON (vt.source_id, vt.cropEppo);

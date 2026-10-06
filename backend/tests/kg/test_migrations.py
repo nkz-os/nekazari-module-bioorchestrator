@@ -462,6 +462,7 @@ EXPECTED_PLAIN_INDEXES = {
     "variety_trial_merge_key": ("VarietyTrial", ("mergeKey",)),
     "variety_trial_crop_eppo": ("VarietyTrial", ("cropEppo",)),
     "observation_variable_id": ("Observation", ("variableId",)),
+    "variety_trial_source_crop": ("VarietyTrial", ("source_id", "cropEppo")),
 }
 
 
@@ -546,3 +547,28 @@ def test_enterprise_directory_holds_no_runnable_migration_names():
         "010_kg_identity.cypher",
     ]
 
+
+@needs_docker
+def test_applies_cleanly_over_a_schema_shaped_like_the_current_deployment(db):
+    """Constraints/indexes already present (as listed in the rebuild inventory, same names and
+    schemas) are no-ops, including ``variety_trial_source_crop``, which only a backfill script made."""
+    for stmt in (
+        "CREATE CONSTRAINT species_eppo FOR (s:Species) REQUIRE s.eppoCode IS UNIQUE",
+        "CREATE CONSTRAINT trial_site_sitekey FOR (ts:TrialSite) REQUIRE ts.siteKey IS UNIQUE",
+        "CREATE CONSTRAINT climate_cell_key FOR (c:ClimateCell) REQUIRE c.key IS UNIQUE",
+        "CREATE CONSTRAINT capability_key_unique FOR (c:Capability) REQUIRE (c.entityType, c.attributeName) IS UNIQUE",
+        "CREATE CONSTRAINT entitlement_name_unique FOR (e:Entitlement) REQUIRE e.name IS UNIQUE",
+        "CREATE INDEX capability_entity_type_ix FOR (c:Capability) ON (c.entityType)",
+        "CREATE INDEX capability_entitlement_ix FOR (c:Capability) ON (c.entitlement)",
+        "CREATE INDEX species_scientific_name FOR (s:Species) ON (s.scientificName)",
+        "CREATE INDEX trial_site_name FOR (ts:TrialSite) ON (ts.name)",
+        "CREATE INDEX trial_site_municipality_key FOR (ts:TrialSite) ON (ts.municipalityKey)",
+        "CREATE INDEX variety_trial_yield FOR (vt:VarietyTrial) ON (vt.yieldKgHa)",
+        "CREATE INDEX variety_trial_source_crop FOR (vt:VarietyTrial) ON (vt.source_id, vt.cropEppo)",
+    ):
+        _run(_q(db, stmt))
+
+    _run(apply_migrations(db, include_data=False))
+
+    assert constraints(db) == _expected_constraint_set()
+    assert indexes(db) == _expected_index_set()
