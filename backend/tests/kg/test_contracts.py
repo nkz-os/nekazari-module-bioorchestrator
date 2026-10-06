@@ -650,7 +650,7 @@ def test_a_range_that_exists_but_matches_no_condition_is_a_distinct_skip():
 
 
 def test_the_site_key_field_takes_the_observed_zone_stratum_or_national_label():
-    sites = ["Zona Fria Semiarida", "Estrato 8-10 t/ha", "Nacional"]
+    sites = ["Zona Fria Semiarida", "Estrato 8-10 t/ha", "Total nacional"]
     rows = [raw_row(zone=name, **{"yield": 6000 + i}) for i, name in enumerate(sites)]
     bundle = run(rows, units=3, observations=6)
     assert sorted(u.raw_site for u in bundle.units) == sorted(sites)

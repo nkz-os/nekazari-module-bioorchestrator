@@ -608,14 +608,18 @@ def test_valladolid_and_zamaduenas_are_not_merged_and_the_assumption_is_recorded
         assert "ASSUMPTION" in site.note
 
 
-@pytest.mark.parametrize("raw", [None, "", "Fundulea", "Foggia", "Nacional", "Narnia"])
+@pytest.mark.parametrize("raw", [None, "", "Fundulea", "Foggia", "Narnia"])
 def test_unresolved_or_deliberately_unregistered_sites_are_none(reg, raw):
     assert reg.site(raw) is None
 
 
 def test_aggregates_have_a_site_kind_and_no_coordinates(reg):
     aggregates = [s for s in reg.sites if s.site_kind == "aggregate"]
-    assert {s.id for s in aggregates} == {"IT-CREA-AVG-8", "IT-CREA-AVG-10", "IT-CREA-AVG-13", "IT-CREA-AVG-14"}
+    ids = {s.id for s in aggregates}
+    assert {"IT-CREA-AVG-8", "IT-CREA-AVG-10", "IT-CREA-AVG-13", "IT-CREA-AVG-14"} <= ids
+    # GENVCE prints means of zones, strata and groups, never a trial location: every site it owns is one
+    assert {s.id for s in reg.sites if s.sources == ("GENVCE",)} <= ids
+    assert any(i.startswith("ES-GENVCE-") for i in ids)
     for site in reg.sites:
         assert site.site_kind in {e.id for e in reg.vocab_entries("site_kind")}
         if site.site_kind != "field":
