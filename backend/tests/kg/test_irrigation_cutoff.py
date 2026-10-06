@@ -7,6 +7,7 @@ the source states; the real bundles (only where the private raw-data repository 
 from __future__ import annotations
 
 import copy
+import math
 import shutil
 from pathlib import Path
 
@@ -16,6 +17,14 @@ from pydantic import ValidationError
 
 from app.kg import identity
 from app.kg.contracts import Contract, ContractError, run_contract
+from app.kg.irrigation_cutoff import (
+    EPSILON,
+    STEP_KG_HA,
+    calibrate,
+    classify_yield,
+    quantile,
+    separation,
+)
 from app.kg.model import UnitRow
 from app.kg.registries import (
     DEFAULT_REGISTRIES_PATH,
@@ -23,6 +32,7 @@ from app.kg.registries import (
     RegistryError,
     load_registries,
 )
+from scripts.kg_calibrate_irrigation import labelled_yields, render_thresholds
 
 from .test_contracts import base_contract, raw_row
 
@@ -276,3 +286,140 @@ def test_a_row_cannot_carry_both_a_stated_regime_and_a_derivation():
         UnitRow(**{**stated_nothing, "irrigation_derivation": None})
     with pytest.raises(ValidationError, match="without a yield"):
         UnitRow(source_id="GENVCE", document_key="a" * 64, crop_eppo="HORVX", irrigation_derivation="yield_threshold_v1", irrigation_yield_low_kg_ha=4000.0, irrigation_yield_high_kg_ha=7000.0)
+
+
+# ═════════════════════════════════════════════════════════════════════════════
+# 3. the calibration on the rows whose regime the source states
+# ═════════════════════════════════════════════════════════════════════════════
+
+RAINFED_YIELDS = [3000 + 100 * i for i in range(40)]      # 3000 .. 6900
+IRRIGATED_YIELDS = [6500 + 150 * i for i in range(30)]    # 6500 .. 10850
+
+
+def test_the_rule_gives_the_cutoffs_to_their_bands():
+    assert classify_yield(4000, 4000, 7000) == "rainfed"
+    assert classify_yield(7000, 4000, 7000) == "irrigated"
+    assert classify_yield(4000.5, 4000, 7000) is None and classify_yield(6999.5, 4000, 7000) is None
+
+
+def test_quantiles_are_observed_values_nearest_rank():
+    assert quantile([5, 1, 3, 2, 4], 0.5) == 3 and quantile([5, 1, 3, 2, 4], 0.05) == 1
+    assert quantile([1, 2], 0.95) == 2
+    with pytest.raises(ValueError):
+        quantile([], 0.5)
+
+
+def test_separable_regimes_get_cutoffs_that_misjudge_at_most_epsilon_of_each_class():
+    c = calibrate("HORVX", RAINFED_YIELDS, IRRIGATED_YIELDS)
+    assert c.calibrated and c.reason is None and c.low_kg_ha < c.high_kg_ha
+    assert c.low_kg_ha % STEP_KG_HA == 0 and c.high_kg_ha % STEP_KG_HA == 0
+    assert c.irrigated_judged_rainfed == sum(1 for y in IRRIGATED_YIELDS if y <= c.low_kg_ha)
+    assert c.rainfed_judged_irrigated == sum(1 for y in RAINFED_YIELDS if y >= c.high_kg_ha)
+    assert c.irrigated_judged_rainfed <= EPSILON * len(IRRIGATED_YIELDS)
+    assert c.rainfed_judged_irrigated <= EPSILON * len(RAINFED_YIELDS)
+    assert c.n_wrong == c.irrigated_judged_rainfed + c.rainfed_judged_irrigated
+    assert c.error_rate == c.n_wrong / c.n_labelled
+    assert c.decided_error_rate == c.n_wrong / c.n_decided and c.n_decided == c.n_labelled - c.n_ambiguous
+
+
+def test_the_cutoffs_are_the_loosest_that_keep_the_error_bound_neither_tighter_nor_looser():
+    c = calibrate("HORVX", RAINFED_YIELDS, IRRIGATED_YIELDS)
+    limit_irrigated = math.floor(EPSILON * len(IRRIGATED_YIELDS))
+    limit_rainfed = math.floor(EPSILON * len(RAINFED_YIELDS))
+    # one step more on either side would break the bound
+    assert sum(1 for y in IRRIGATED_YIELDS if y <= c.low_kg_ha + STEP_KG_HA) > limit_irrigated
+    assert sum(1 for y in RAINFED_YIELDS if y >= c.high_kg_ha - STEP_KG_HA) > limit_rainfed
+
+
+def test_calibration_depends_on_the_yields_not_on_their_order():
+    first = calibrate("HORVX", RAINFED_YIELDS, IRRIGATED_YIELDS)
+    second = calibrate("HORVX", RAINFED_YIELDS[::-1], list(reversed(IRRIGATED_YIELDS)))
+    assert first == second
+
+
+@pytest.mark.parametrize(("rainfed", "irrigated", "why"), [
+    (RAINFED_YIELDS, [], "irrigated 0"),
+    ([], IRRIGATED_YIELDS, "rainfed 0"),
+    ([], [], "rainfed 0, irrigated 0"),
+    (RAINFED_YIELDS[:14], IRRIGATED_YIELDS, "rainfed 14"),
+    (RAINFED_YIELDS, IRRIGATED_YIELDS[:14], "irrigated 14"),
+])
+def test_too_few_labelled_rows_in_a_regime_means_no_cutoff_is_invented(rainfed, irrigated, why):
+    c = calibrate("ZEAMX", rainfed, irrigated)
+    assert not c.calibrated and c.low_kg_ha is None and c.high_kg_ha is None
+    assert "no cutoff is invented" in c.reason and why in c.reason
+    assert c.n_wrong is None and c.error_rate is None
+
+
+def test_fifteen_labelled_rows_per_regime_are_enough_and_fourteen_are_not():
+    spread = lambda start, n: [start + 200 * i for i in range(n)]
+    assert calibrate("X", spread(3000, 15), spread(9000, 15)).calibrated
+    assert not calibrate("X", spread(3000, 14), spread(9000, 15)).calibrated
+    assert not calibrate("X", spread(3000, 15), spread(9000, 14)).calibrated
+
+
+def test_regimes_with_the_same_yields_get_no_cutoff_and_the_reason_says_so():
+    same = [3000 + 100 * i for i in range(30)]
+    c = calibrate("BRSNN", same, same)
+    assert not c.calibrated and "do not separate" in c.reason
+    assert c.separation == pytest.approx(0.5, abs=0.02)
+
+
+def test_perfectly_separated_regimes_get_a_cut_in_the_middle_of_the_gap_with_a_one_step_undecided_band():
+    rainfed = [3000.0 + 200 * i for i in range(15)]    # 3000 .. 5800
+    irrigated = [9000.0 + 200 * i for i in range(15)]  # 9000 .. 11800
+    c = calibrate("HORVX", rainfed, irrigated)
+    assert c.calibrated and (c.low_kg_ha, c.high_kg_ha) == (7400.0, 7500.0)
+    assert c.n_wrong == 0 and c.n_ambiguous == 0 and c.error_rate == 0 == c.decided_error_rate
+
+
+def test_a_cutoff_that_decides_few_rows_and_decides_them_badly_is_refused():
+    rainfed = [3000.0] * 19 + [4000.0]
+    irrigated = [2800.0] + [3000.0] * 19
+    c = calibrate("BRSNN", rainfed, irrigated)
+    assert (c.n_rainfed, c.n_irrigated) == (20, 20)
+    assert not c.calibrated and "do not separate" in c.reason
+
+
+def test_separation_is_the_probability_the_irrigated_yield_is_higher():
+    assert separation([1, 2, 3], [4, 5, 6]) == 1.0
+    assert separation([4, 5, 6], [1, 2, 3]) == 0.0
+    assert separation([1, 2], [1, 2]) == pytest.approx(0.5)
+    assert separation([], [1]) is None
+
+
+def test_derived_units_never_feed_a_calibration(barley_registries):
+    """Labelled rows are the ones whose regime the source states; a derived regime is not a label."""
+    bundle = build([silent(3500), silent(8000, variety="B")], barley_registries)
+    assert {u.irrigation_regime for u in bundle.units} == {RAINFED, IRRIGATED}
+    assert not labelled_yields([bundle], barley_registries)
+
+
+def test_labelled_yields_are_the_stated_regimes_per_crop_with_their_sources(barley_registries):
+    bundle = build([raw_row(irrigation="secano", **{"yield": 4100}), raw_row(irrigation="regadío", variety="B", **{"yield": 8200}),
+                    raw_row(irrigation="regadío", variety="C", **{"yield": None}), silent(5000, variety="D")],
+                   barley_registries, observations=7)
+    labelled = labelled_yields([bundle], barley_registries)
+    assert labelled["HORVX"]["rainfed"] == [4100.0] and labelled["HORVX"]["irrigated"] == [8200.0]
+    assert labelled["HORVX"]["sources"] == {"GENVCE"}
+
+
+def test_the_thresholds_the_script_renders_load_back_through_the_registry(copy_dir):
+    dest, _ = copy_dir
+    calibrations = [calibrate("HORVX", RAINFED_YIELDS, IRRIGATED_YIELDS),
+                    calibrate("ZEAMX", [], IRRIGATED_YIELDS), calibrate("TRZAX", [], []),
+                    calibrate("BRSNN", RAINFED_YIELDS, RAINFED_YIELDS)]
+    text = render_thresholds(calibrations, "abc123", {"HORVX": {"GENVCE"}, "ZEAMX": {"CREA"}})
+    file = dest / "irrigation_thresholds.yaml"
+    head = file.read_text(encoding="utf-8").split("\nthresholds:\n", 1)[0]
+    file.write_text(head + "\nthresholds:\n" + text, encoding="utf-8")
+    reg = load_registries(dest)
+    horvx = reg.irrigation_threshold("HORVX")
+    assert (horvx.low_kg_ha, horvx.high_kg_ha) == (calibrations[0].low_kg_ha, calibrations[0].high_kg_ha)
+    assert horvx.status == "assumption" and horvx.owner_approval is None
+    assert horvx.evidence.n_rainfed == 40 and horvx.evidence.n_irrigated == 30
+    assert horvx.evidence.raw_data_commit == "abc123" and horvx.evidence.labelled_sources == ("GENVCE",)
+    assert horvx.evidence.error_rate == pytest.approx(calibrations[0].error_rate, abs=1e-4)
+    for crop in ("ZEAMX", "TRZAX", "BRSNN"):
+        assert reg.irrigation_threshold(crop) is None
+        assert next(t for t in reg.irrigation_thresholds if t.crop == crop).evidence.reason

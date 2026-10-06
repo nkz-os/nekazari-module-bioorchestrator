@@ -21,15 +21,95 @@
 version: 1
 method: yield_threshold_v1
 thresholds:
-  - crop: ZEAMX
-    status: not_calibrated
-    evidence: {method: pending, n_rainfed: 0, n_irrigated: 0, reason: calibration pending}
-  - crop: HORVX
-    status: not_calibrated
-    evidence: {method: pending, n_rainfed: 0, n_irrigated: 0, reason: calibration pending}
-  - crop: TRZAX
-    status: not_calibrated
-    evidence: {method: pending, n_rainfed: 0, n_irrigated: 0, reason: calibration pending}
-  - crop: BRSNN
-    status: not_calibrated
-    evidence: {method: pending, n_rainfed: 0, n_irrigated: 0, reason: calibration pending}
+- crop: ZEAMX
+  status: not_calibrated
+  owner_approval: null
+  evidence:
+    method: per-class tail error, rounded outward
+    epsilon: 0.05
+    labelled_sources:
+    - CREA
+    n_rainfed: 0
+    n_irrigated: 149
+    rainfed_quantiles: {}
+    irrigated_quantiles:
+      p05: 11890.0
+      p25: 13250.0
+      p50: 14420.0
+      p75: 17400.0
+      p95: 19290.0
+    reason: 'fewer than 15 labelled rows with a yield in rainfed (rainfed 0, irrigated 149): nothing to calibrate
+      on, no cutoff is invented'
+    raw_data_commit: 798a73db5436eccf0ac8d4e40c7d66949195566a
+- crop: HORVX
+  status: assumption
+  low_kg_ha: 6400.0
+  high_kg_ha: 7000.0
+  owner_approval: null
+  evidence:
+    method: per-class tail error, rounded outward
+    epsilon: 0.05
+    labelled_sources:
+    - GENVCE
+    n_rainfed: 122
+    n_irrigated: 30
+    rainfed_quantiles:
+      p05: 3312.0
+      p25: 4157.0
+      p50: 4997.0
+      p75: 5779.0
+      p95: 6984.0
+    irrigated_quantiles:
+      p05: 6404.0
+      p25: 6995.0
+      p50: 7460.0
+      p75: 10406.0
+      p95: 11516.0
+    separation: 0.958
+    misclassified_rainfed: 6
+    misclassified_irrigated: 1
+    n_ambiguous: 11
+    error_rate: 0.0461
+    decided_error_rate: 0.0496
+    max_decided_error: 0.2
+    raw_data_commit: 798a73db5436eccf0ac8d4e40c7d66949195566a
+- crop: TRZAX
+  status: not_calibrated
+  owner_approval: null
+  evidence:
+    method: per-class tail error, rounded outward
+    epsilon: 0.05
+    labelled_sources: []
+    n_rainfed: 0
+    n_irrigated: 0
+    rainfed_quantiles: {}
+    irrigated_quantiles: {}
+    reason: 'fewer than 15 labelled rows with a yield in rainfed and irrigated (rainfed 0, irrigated 0): nothing
+      to calibrate on, no cutoff is invented'
+    raw_data_commit: 798a73db5436eccf0ac8d4e40c7d66949195566a
+- crop: BRSNN
+  status: not_calibrated
+  owner_approval: null
+  evidence:
+    method: per-class tail error, rounded outward
+    epsilon: 0.05
+    labelled_sources:
+    - GENVCE
+    n_rainfed: 52
+    n_irrigated: 44
+    rainfed_quantiles:
+      p05: 2887.0
+      p25: 3340.0
+      p50: 4010.0
+      p75: 4234.0
+      p95: 4561.0
+    irrigated_quantiles:
+      p05: 2631.0
+      p25: 2828.0
+      p50: 3328.0
+      p75: 4328.0
+      p95: 4667.0
+    separation: 0.422
+    reason: 'the bands judge 29% of the 7 labelled rows they decide wrongly (more than 20%): the yields do not separate
+      rainfed from irrigated for this crop'
+    raw_data_commit: 798a73db5436eccf0ac8d4e40c7d66949195566a

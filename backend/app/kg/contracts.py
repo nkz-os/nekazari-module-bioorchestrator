@@ -92,6 +92,7 @@ from pydantic import (
 )
 
 from . import identity
+from .irrigation_cutoff import classify_yield
 from .model import (
     STANDARD_MOISTURE_BASIS,
     DocumentRow,
@@ -1109,12 +1110,9 @@ class _Builder:
             "irrigation_yield_low_kg_ha": threshold.low_kg_ha,
             "irrigation_yield_high_kg_ha": threshold.high_kg_ha,
         }
-        if yield_kg_ha <= threshold.low_kg_ha:
-            outcome, regime = "rainfed", self.registries.vocab("irrigation", "rainfed")
-        elif yield_kg_ha >= threshold.high_kg_ha:
-            outcome, regime = "irrigated", self.registries.vocab("irrigation", "irrigated")
-        else:
-            outcome, regime = "ambiguous", None
+        outcome = classify_yield(yield_kg_ha, threshold.low_kg_ha, threshold.high_kg_ha) or "ambiguous"
+        regime = None if outcome == "ambiguous" else self.registries.vocab("irrigation", outcome)
+        if outcome == "ambiguous":
             gaps.add("irrigation_regime",
                      f"irrigation_ambiguous_yield: {yield_kg_ha:g} kg/ha lies between the {eppo} cutoffs "
                      f"{threshold.low_kg_ha:g} and {threshold.high_kg_ha:g} kg/ha")

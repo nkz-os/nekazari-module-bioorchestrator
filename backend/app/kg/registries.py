@@ -378,9 +378,13 @@ class ThresholdEvidence(_Model):
     n_irrigated: int = Field(ge=0)
     rainfed_quantiles: dict[str, float] = {}
     irrigated_quantiles: dict[str, float] = {}
-    misclassified_rainfed: int | None = Field(default=None, ge=0)
-    misclassified_irrigated: int | None = Field(default=None, ge=0)
-    error_rate: float | None = Field(default=None, ge=0, le=1)
+    separation: float | None = Field(default=None, ge=0, le=1)  # P(irrigated yield > rainfed yield), 0.5 = none
+    misclassified_rainfed: int | None = Field(default=None, ge=0)  # rainfed rows the bands judge irrigated
+    misclassified_irrigated: int | None = Field(default=None, ge=0)  # irrigated rows the bands judge rainfed
+    n_ambiguous: int | None = Field(default=None, ge=0)  # labelled rows between the bands (undecided)
+    error_rate: float | None = Field(default=None, ge=0, le=1)  # wrong over all labelled rows
+    decided_error_rate: float | None = Field(default=None, ge=0, le=1)  # wrong over the rows the bands decide
+    max_decided_error: float | None = Field(default=None, gt=0, lt=1)  # the acceptance bound it was held to
     raw_data_commit: str | None = None
     reason: str | None = None  # why a crop has no cutoff
 
