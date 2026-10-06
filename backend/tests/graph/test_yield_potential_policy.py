@@ -138,3 +138,63 @@ def test_variety_trials_every_tier_when_asked_and_labelled(dao):
     assert _run(dao.get_variety_trials(crop="TRZAX", variety="REG ONLY", limit=50)) == []
     with pytest.raises(ValueError):
         _run(dao.get_variety_trials(crop="TRZAX", tier="national"))
+
+
+def test_variety_trials_rows_carry_their_source_id(dao):
+    rows = _run(dao.get_variety_trials(crop="TRZAX", variety="lg aurus", limit=50))
+    assert {r["source_id"] for r in rows} == {"SRC", "BSL"}  # measured trials + the BSL/derived note rows
+
+
+def test_yield_potential_credits_only_the_trials_behind_the_number(dao):
+    res = _run(dao.get_yield_potential(variety="LG AURUS", crop="TRZAX"))
+    assert res["expected_yield_kg_ha"] == 7000.0
+    # the number is the mean of the SRC field trials: the BSL note rows and the AHDB national record
+    # (kept out of the mean by the policy) are not credited
+    assert res["source_ids"] == ["SRC"]
+
+
+def test_yield_potential_without_a_number_credits_no_source(dao):
+    # only a BSL note at a field site / only a national record / no trial at all: nothing is shown
+    for variety in ("NOTE ONLY", "REG ONLY", "NOPE"):
+        res = _run(dao.get_yield_potential(variety=variety, crop="TRZAX"))
+        assert res["expected_yield_kg_ha"] is None and res["source_ids"] == [], variety
+
+
+def test_site_source_ids_come_from_the_trials_at_each_site(dao):
+    got = _run(dao.get_site_source_ids(["A", "B", "UK national list", "NOT A SITE"]))
+    assert got["A"] == ["BSL", "SRC"] and got["B"] == ["SRC"]
+    assert got["UK national list"] == ["AHDB"]
+    assert "NOT A SITE" not in got
+    assert _run(dao.get_site_source_ids([])) == {}
+
+
+def test_trial_sites_summary_lists_the_sources_of_each_site(dao):
+    rows = {r["name"]: r for r in _run(dao.get_trial_sites_summary())}
+    assert rows["A"]["source_ids"] == ["BSL", "SRC"]
+    assert rows["UK national list"]["source_ids"] == ["AHDB"]
+    assert rows["BSL Deutschland Cfb"]["source_ids"] == []  # a site without trials has no source
+
+
+def test_available_crops_list_the_sources_of_each_crop(dao):
+    rows = {r["eppo_code"]: r for r in _run(dao.get_available_crops())}
+    assert rows["TRZAX"]["source_ids"] == ["AHDB", "BSL", "SRC"]
+    assert rows["BIAS"]["source_ids"] == ["SRC"]
+
+
+def test_extrapolate_credits_the_ranked_varieties_not_the_sites_of_other_crops(dao):
+    """Analog sites are chosen by climate: a maize-only site must not bring its source into a wheat ranking."""
+    async def seed():
+        async with dao._driver.session() as s:
+            await s.run("""
+                CREATE (w:TrialSite {name: 'WHEAT SITE', climateClass: 'Zzz'})
+                CREATE (m:TrialSite {name: 'MAIZE SITE', climateClass: 'Zzz'})
+                CREATE (:VarietyTrial {cropEppo: 'WHEATX', variety: 'W1', varietyNormalized: 'W1', year: 2020,
+                        aggregationScope: 'site', source_id: 'GENVCE', yieldKgHa: 6000.0, mergeKey: 'w1'})-[:TRIAL_AT]->(w)
+                CREATE (:VarietyTrial {cropEppo: 'MAIZEX', variety: 'M1', varietyNormalized: 'M1', year: 2020,
+                        aggregationScope: 'site', source_id: 'CREA', yieldKgHa: 14000.0, mergeKey: 'm1'})-[:TRIAL_AT]->(m)
+            """)
+    _run(seed())
+    res = _run(dao.extrapolate_varieties(crop="WHEATX", climate_class="Zzz", top_n=5))
+    assert {"WHEAT SITE", "MAIZE SITE"} <= set(res["similar_sites"])  # the CREA maize site IS an analog site
+    assert [v["variety"] for v in res["ranked_varieties"]] == ["W1"]
+    assert {sid for v in res["ranked_varieties"] for sid in v["source_ids"]} == {"GENVCE"}

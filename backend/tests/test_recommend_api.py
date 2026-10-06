@@ -178,7 +178,7 @@ def test_evidence_passes_pagination(client):
             "/api/graph/agriculture/recommend/evidence",
             params={"climate_class": "Cfb", "crop": "TRZAX", "page": 2, "page_size": 10},
         )
-    assert r.status_code == 200 and r.json() == page
+    assert r.status_code == 200 and r.json() == {**page, "attributions": []}
     assert m.call_args.kwargs["similar_sites"] == ["site-a"]
     assert m.call_args.kwargs["page"] == 2 and m.call_args.kwargs["page_size"] == 10
     assert sim.call_args.kwargs["limit"] is None  # every matching field site

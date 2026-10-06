@@ -7,6 +7,11 @@ from typing import Annotated, Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 
+from app.api.v1.attribution import (
+    attach_attributions,
+    recommendation_source_ids,
+    rows_source_ids,
+)
 from app.api.v1.graph import DriverDep, _require_tenant_id
 from app.graph.dao import GraphDAO
 
@@ -120,7 +125,8 @@ async def recommend_for_conditions(
     conditions["country"] = country
     conditions["crops"] = _parse_crops(crops)
     conditions["top_n"] = top_n
-    return await GraphDAO(driver).recommend_for_conditions(conditions)
+    result = await GraphDAO(driver).recommend_for_conditions(conditions)
+    return attach_attributions(result, recommendation_source_ids(result))
 
 
 @router.get(
@@ -177,7 +183,7 @@ async def recommend_evidence(
         sites = await dao.get_similar_sites(
             climate_class=cond.climate_class, soil_type=cond.soil_type, limit=None
         )
-    return await dao.list_trial_evidence(
+    evidence = await dao.list_trial_evidence(
         crop=crop.strip().upper(),
         similar_sites=[s["name"] for s in sites],
         variety=variety,
@@ -187,6 +193,7 @@ async def recommend_evidence(
         purpose=cond.purpose,
         tier=tier,
     )
+    return attach_attributions(evidence, rows_source_ids(evidence.get("items")))
 
 
 @router.get("/recommend/parcel/{parcel_id:path}", description=_MANAGEMENT_DOC)
@@ -253,4 +260,6 @@ async def recommend_for_parcel(
     for key in _CLIMATE_KEYS:
         conditions[key] = detail.get(key)
     result = await dao.recommend_for_conditions(conditions)
-    return {**result, "parcel_environment": env}
+    return attach_attributions(
+        {**result, "parcel_environment": env}, recommendation_source_ids(result)
+    )

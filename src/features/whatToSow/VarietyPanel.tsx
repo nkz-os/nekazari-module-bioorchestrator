@@ -2,6 +2,9 @@ import React, { useState } from 'react';
 import { useTranslation } from '@nekazari/sdk';
 import { Button, Card, Inline, Stack } from '@nekazari/ui-kit';
 import type { Recommendation } from '../../types/recommend';
+import type { SourceAttributionItem } from '../../types/attribution';
+import { attributionsForRecs } from '../../utils/attribution';
+import SourceAttribution from '../../components/shared/SourceAttribution';
 import AssignVarietyModal, { type VarietyInfo } from '../../components/AssignVarietyModal';
 import { RangeBarValues, useCropName } from './RecommendationCard';
 import { showDiseaseSummary, toVarietyInfo, topVarieties, varietyScaleMax } from './varietyModel';
@@ -10,11 +13,13 @@ import { formatYield, kgUnitKey, recYieldUnit, unitKey } from './viewModel';
 interface VarietyPanelProps {
   rec: Recommendation;
   parcelId: string | null;
+  /** `attributions` of the recommend answer `rec` comes from. */
+  attributions?: SourceAttributionItem[];
   onSelectTool?: (toolId: string) => void;
   onAssigned?: () => void;
 }
 
-export default function VarietyPanel({ rec, parcelId, onSelectTool, onAssigned }: VarietyPanelProps) {
+export default function VarietyPanel({ rec, parcelId, attributions, onSelectTool, onAssigned }: VarietyPanelProps) {
   const { t, i18n } = useTranslation('bioorchestrator');
   const crop = useCropName(rec);
   const varieties = topVarieties(rec);
@@ -85,6 +90,8 @@ export default function VarietyPanel({ rec, parcelId, onSelectTool, onAssigned }
             )}
           </Stack>
         )}
+
+        <SourceAttribution attributions={attributionsForRecs(attributions, [rec])} />
       </Stack>
 
       {assigning && parcelId && (

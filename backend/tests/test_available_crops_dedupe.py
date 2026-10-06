@@ -71,7 +71,8 @@ async def test_name_variants_collapse_and_distinct_varieties_not_summed():
     assert t["variety_count"] == 4 and t["trial_count"] == 14
     assert t["first_year"] == 2000 and t["last_year"] == 2024
     assert set(t) == {"eppo_code", "scientific_name", "variety_count", "trial_count",
-                      "first_year", "last_year"}
+                      "first_year", "last_year", "source_ids"}
+    assert t["source_ids"] == []  # the stubbed row carries no sources
 
 
 async def test_ordered_by_trial_count_desc():

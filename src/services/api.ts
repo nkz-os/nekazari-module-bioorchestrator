@@ -11,6 +11,7 @@
  */
 
 import { useMemo } from 'react';
+import type { SourceAttributionItem } from '../types/attribution';
 
 const API_BASE = (import.meta as any).env?.VITE_API_URL || "https://nkz.robotika.cloud";
 const BASE = `${API_BASE}/api/bioorchestrator`;
@@ -397,6 +398,8 @@ export interface YieldPotentialResponse {
   yield_gap_pct?: number | null;
   limiting_factor?: string;
   stage_ky: Record<string, number>;
+  /** Credit lines of the sources of the variety's trials; absent on an older backend. */
+  attributions?: SourceAttributionItem[];
 }
 
 export async function assignCrop(
@@ -569,6 +572,8 @@ export interface RegenerativeSequenceResult {
   water_balance_detail: WaterBalanceDetail;
   alternatives: CoverCropAlternative[];
   variety_trials: Record<string, unknown>[];
+  /** Credit lines of the sources of the variety ranking; absent on an older backend. */
+  attributions?: SourceAttributionItem[];
   management_distribution: { cover_crop_params: string; variety_trials: string };
   provenance: { cover_crop_source: string; n_fixation_source: string; yield_source: string; climate_source: string };
   carbon_projection?: {

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from '@nekazari/sdk';
 import { Button, Card, EmptyState, Inline, Skeleton, Stack } from '@nekazari/ui-kit';
+import SourceAttribution from '../../components/shared/SourceAttribution';
 import { fetchEvidence, type QueryParams } from '../../services/recommendApi';
 import type { EvidencePage, Similarity } from '../../types/recommend';
 import { EVIDENCE_PAGE_SIZE } from './pageModel';
@@ -132,6 +133,8 @@ export default function EvidenceDialog({ cropName, eppo, conditions, similarity,
                 </Button>
               </div>
             )}
+
+            {!loading && !error && <SourceAttribution attributions={data?.attributions} />}
           </Stack>
         </Card>
       </div>

@@ -1813,6 +1813,7 @@ class GraphDAO:
                    vt.year AS year,
                    vt.confidence AS confidence,
                    vt.mergeKey AS trial_id,
+                   vt.source_id AS source_id,
                    vt.rootstock AS rootstock,
                    vt.trainingSystem AS training_system,
                    vt.plantingYear AS planting_year,
@@ -2500,7 +2501,8 @@ class GraphDAO:
                 OPTIONAL MATCH (mt:ManagementTrial)-[:TRIAL_AT]->(ts)
                 WITH ts,
                      count(DISTINCT vt) AS variety_trial_count,
-                     count(DISTINCT mt) AS mgmt_trial_count
+                     count(DISTINCT mt) AS mgmt_trial_count,
+                     [s IN collect(DISTINCT vt.source_id) WHERE s IS NOT NULL] AS source_ids
                 RETURN ts.name AS name,
                        ts.municipality AS municipality,
                        ts.agroclimaticZone AS agroclimatic_zone,
@@ -2514,12 +2516,15 @@ class GraphDAO:
                        ts.latitude AS latitude,
                        ts.longitude AS longitude,
                        variety_trial_count,
-                       mgmt_trial_count
+                       mgmt_trial_count,
+                       source_ids
                 ORDER BY variety_trial_count DESC
             """)
             sites = []
             async for record in result:
-                sites.append(dict(record))
+                site = dict(record)
+                site["source_ids"] = sorted(site.get("source_ids") or [])
+                sites.append(site)
             return sites
 
     async def list_trial_evidence(
@@ -2616,6 +2621,30 @@ class GraphDAO:
         return {"items": items, "total": total, "page": page, "page_size": page_size,
                 "purpose": purpose, "tier": tier}
 
+    async def get_site_source_ids(self, names: list[str]) -> dict[str, list[str]]:
+        """Sources of the trials at each named TrialSite (``{site name: sorted source ids}``).
+
+        Derived from the trials themselves (``VarietyTrial.source_id`` over ``TRIAL_AT``), not
+        from the site's own ``sourceIds`` property, which can lag behind merges. A site with no
+        trials maps to ``[]``; a name that is not a site is absent.
+        """
+        if not names:
+            return {}
+        async with self._driver.session() as session:
+            result = await session.run(
+                """
+                MATCH (ts:TrialSite) WHERE ts.name IN $names
+                OPTIONAL MATCH (vt:VarietyTrial)-[:TRIAL_AT]->(ts)
+                RETURN ts.name AS name,
+                       [s IN collect(DISTINCT vt.source_id) WHERE s IS NOT NULL] AS source_ids
+                """,
+                names=list(names),
+            )
+            by_name: dict[str, set[str]] = {}
+            async for r in result:  # duplicate-named sites (a known data quirk) are unioned
+                by_name.setdefault(r["name"], set()).update(r["source_ids"])
+            return {name: sorted(ids) for name, ids in by_name.items()}
+
     async def get_available_crops(self) -> list[dict]:
         """Return distinct crops (one per EPPO code) available in VarietyTrial data.
 
@@ -2635,7 +2664,8 @@ class GraphDAO:
                        count(*) AS trial_count,
                        min(vt.year) AS first_year,
                        max(vt.year) AS last_year,
-                       collect(COALESCE(vt.cropScientific, '(unknown)')) AS names
+                       collect(COALESCE(vt.cropScientific, '(unknown)')) AS names,
+                       [s IN collect(DISTINCT vt.source_id) WHERE s IS NOT NULL] AS source_ids
             """, catalog_codes=dict(CATALOG_SIBLING_CODES))
             rows = [dict(record) async for record in result]
 
@@ -2656,6 +2686,7 @@ class GraphDAO:
                 "trial_count": r.get("trial_count") or 0,
                 "first_year": r.get("first_year"),
                 "last_year": r.get("last_year"),
+                "source_ids": sorted(r.get("source_ids") or []),
             }
         return sorted(merged.values(), key=lambda c: c["trial_count"], reverse=True)
 
@@ -4351,6 +4382,12 @@ class GraphDAO:
         yields = [t["yield_kg_ha"] for t in field_trials if t.get("yield_kg_ha") is not None]
         sites = list({n for t in field_trials for n in (t.get("site_names") or [t.get("site_name")]) if n})
         result: dict = {"variety": variety, "crop": crop, "target_environment": {"climate_class": climate_class, "soil_type": soil_type}}
+        # Sources of the trials behind the displayed number only (field tier, policy-eligible yield).
+        # No number, no sources: a row the policy keeps out of the mean is not credited.
+        result["source_ids"] = sorted({
+            t["source_id"] for t in field_trials
+            if t.get("yield_kg_ha") is not None and t.get("source_id")
+        })
         mean_yield: float | None = None
         if yields:
             mean_yield = sum(yields) / len(yields)
@@ -4480,6 +4517,7 @@ class GraphDAO:
             entry = {
                 "crop": crop,
                 "best_variety": best.get("variety", ""),
+                "source_ids": sorted(best.get("source_ids") or []),
                 "agronomics": {
                     "expected_yield_kg_ha": round(yield_val, 1) if yield_val is not None else None,
                     "confidence_interval": best.get("confidence_interval") if best else None,
@@ -4641,6 +4679,7 @@ class GraphDAO:
             entry = {
                 "year": year_idx + 1, "crop": crop,
                 "variety": best.get("variety", ""),
+                "source_ids": sorted(best.get("source_ids") or []),
                 "expected_yield_kg_ha": round(yield_val, 1) if yield_val is not None else None,
                 "carbon_fixed_tco2e": carbon,
                 "net_margin_eur_ha": round(margin, 2) if margin is not None else None,
@@ -4972,6 +5011,8 @@ class GraphDAO:
         target_climate = (ctx.get("target_environment") or {}).get("climate_class")
 
         # ── 1. Get potential yield from variety trials ──
+        # Sources of the trials behind the potential yield; none when the caller supplied it.
+        source_ids: list[str] = []
         if initial_yield_kg_ha is None:
             # Fallback to extrapolate
             extrapolated = await self.extrapolate_varieties(
@@ -4979,6 +5020,7 @@ class GraphDAO:
             )
             best = (extrapolated.get("ranked_varieties") or [{}])[0] if isinstance(extrapolated, dict) else {}
             initial_yield_kg_ha = best.get("mean_yield_kg_ha", 0) or 0
+            source_ids = sorted(best.get("source_ids") or [])
 
         if not initial_yield_kg_ha or initial_yield_kg_ha <= 0:
             return {
@@ -5014,6 +5056,7 @@ class GraphDAO:
                 "parcel_id": parcel_id,
                 "potential_yield_kg_ha": initial_yield_kg_ha,
                 "projected_yield_kg_ha": initial_yield_kg_ha,
+                "source_ids": source_ids,
                 "stress_factor": 1.0,
                 "stage": "pre-emergence",
                 "days_since_planting": days_since_planting,
@@ -5098,6 +5141,7 @@ class GraphDAO:
             "current_stage": current_stage_name,
             "potential_yield_kg_ha": initial_yield_kg_ha,
             "projected_yield_kg_ha": projected_yield,
+            "source_ids": source_ids,
             "cumulative_stress_factor": round(cumulative_stress_factor, 3),
             "yield_loss_pct": round((1 - cumulative_stress_factor) * 100, 1),
             "per_stage": stage_results,

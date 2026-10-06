@@ -4,6 +4,8 @@
  * backend/app/graph/dao.py::recommend_for_conditions / get_parcel_environment.
  */
 
+import type { SourceAttributionItem } from './attribution';
+
 export type Level = 'suitable' | 'marginal' | 'unsuitable' | 'unknown';
 export type WaterLevel = 'low' | 'medium' | 'high' | 'unknown';
 export type FrostLevel = 'none' | 'risk' | 'unknown';
@@ -117,6 +119,8 @@ export interface RecommendOk {
   data_quality: Record<string, number | null>;
   conditions: Record<string, unknown>;
   parcel_environment?: ParcelEnvironment;
+  /** Credit lines of the sources behind the recommendations; absent on an older backend. */
+  attributions?: SourceAttributionItem[];
 }
 
 export interface RecommendNeedsClimate {
@@ -148,4 +152,6 @@ export interface EvidencePage {
   page_size: number;
   purpose: Purpose;
   tier: EvidenceTier;
+  /** Credit lines of the sources of the listed trials; absent on an older backend. */
+  attributions?: SourceAttributionItem[];
 }

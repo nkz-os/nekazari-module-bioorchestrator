@@ -4,6 +4,7 @@ import { Button, Card, EmptyState, Inline, Input, Skeleton, Stack, Tooltip } fro
 import { fetchRecommendConditions, fetchRecommendParcel, type QueryParams } from '../../services/recommendApi';
 import type { ParcelEnvironment, Recommendation, RecommendResponse } from '../../types/recommend';
 import ContributeWizard from '../../components/ContributeWizard';
+import SourceAttribution from '../../components/shared/SourceAttribution';
 import { useExpertMode } from './expertModeContext';
 import { partitionByTier, partitionRecommendations, resolvePageState } from './viewModel';
 import {
@@ -240,6 +241,7 @@ export default function WhatToSowPage({ parcelId, onSelectTool, onAssigned }: Wh
   const { top, more } = useMemo(() => partitionRecommendations(field), [field]);
   const scaleMax = useMemo(() => rangeScaleMax(field), [field]);
   const policyVersion = response?.status === 'ok' ? response.evidence_policy ?? null : null;
+  const attributions = response?.status === 'ok' ? response.attributions : undefined;
   const usedClimate =
     (response?.status === 'ok' && typeof response.conditions.climate_class === 'string'
       ? response.conditions.climate_class : null) ?? environment?.climate_class ?? null;
@@ -338,7 +340,8 @@ export default function WhatToSowPage({ parcelId, onSelectTool, onAssigned }: Wh
                   policyVersion={policyVersion}
                 />
                 {varietyFor === rec.recommendation_id && (
-                  <VarietyPanel rec={rec} parcelId={parcelId} onSelectTool={onSelectTool} onAssigned={onAssigned} />
+                  <VarietyPanel rec={rec} parcelId={parcelId} attributions={attributions}
+                    onSelectTool={onSelectTool} onAssigned={onAssigned} />
                 )}
               </Stack>
             ))}
@@ -359,10 +362,12 @@ export default function WhatToSowPage({ parcelId, onSelectTool, onAssigned }: Wh
             onOpenEvidence={openEvidence}
             onReportValue={setReportFor}
           />
+          <SourceAttribution attributions={attributions} />
         </Stack>
       )}
 
-      <CompareTray selection={compareSelection} parcelId={parcelId} onClear={() => setCompareIds([])} />
+      <CompareTray selection={compareSelection} parcelId={parcelId} attributions={attributions}
+        onClear={() => setCompareIds([])} />
 
       {evidenceFor && <EvidenceFor target={evidenceFor} onClose={() => setEvidenceFor(null)} />}
       {reportFor && <ReportValueDialog rec={reportFor} onClose={() => setReportFor(null)} />}
