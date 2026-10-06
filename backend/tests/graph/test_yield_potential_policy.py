@@ -65,6 +65,8 @@ _TRIALS = [
     _t("TRZAX", "NOTE ONLY", ["A"], 11000.0, source_id="BSL", yieldNoteS1="6"),
     # only a national record
     _t("TRZAX", "REG ONLY", ["UK national list"], 4000.0, source_id="AHDB", aggregationScope="national"),
+    # only a GENVCE row (a zone average, regional evidence) at a field-named site
+    _t("TRZAX", "GENVCE ONLY", ["A"], 9000.0, source_id="GENVCE"),
     # a measured variety of a crop with many higher yields of another variety (top-N bias)
     _t("BIAS", "LOW", ["A"], 1000.0),
     *[_t("BIAS", "OTHER", ["A"], 9000.0 + i, year=2000 + i % 20, key=f"o{i}") for i in range(210)],
@@ -162,7 +164,7 @@ def test_yield_potential_without_a_number_credits_no_source(dao):
 
 def test_site_source_ids_come_from_the_trials_at_each_site(dao):
     got = _run(dao.get_site_source_ids(["A", "B", "UK national list", "NOT A SITE"]))
-    assert got["A"] == ["BSL", "SRC"] and got["B"] == ["SRC"]
+    assert got["A"] == ["BSL", "GENVCE", "SRC"] and got["B"] == ["SRC"]  # the GENVCE zone row is credited too
     assert got["UK national list"] == ["AHDB"]
     assert "NOT A SITE" not in got
     assert _run(dao.get_site_source_ids([])) == {}
@@ -170,14 +172,14 @@ def test_site_source_ids_come_from_the_trials_at_each_site(dao):
 
 def test_trial_sites_summary_lists_the_sources_of_each_site(dao):
     rows = {r["name"]: r for r in _run(dao.get_trial_sites_summary())}
-    assert rows["A"]["source_ids"] == ["BSL", "SRC"]
+    assert rows["A"]["source_ids"] == ["BSL", "GENVCE", "SRC"]
     assert rows["UK national list"]["source_ids"] == ["AHDB"]
     assert rows["BSL Deutschland Cfb"]["source_ids"] == []  # a site without trials has no source
 
 
 def test_available_crops_list_the_sources_of_each_crop(dao):
     rows = {r["eppo_code"]: r for r in _run(dao.get_available_crops())}
-    assert rows["TRZAX"]["source_ids"] == ["AHDB", "BSL", "SRC"]
+    assert rows["TRZAX"]["source_ids"] == ["AHDB", "BSL", "GENVCE", "SRC"]
     assert rows["BIAS"]["source_ids"] == ["SRC"]
 
 
@@ -189,7 +191,7 @@ def test_extrapolate_credits_the_ranked_varieties_not_the_sites_of_other_crops(d
                 CREATE (w:TrialSite {name: 'WHEAT SITE', climateClass: 'Zzz'})
                 CREATE (m:TrialSite {name: 'MAIZE SITE', climateClass: 'Zzz'})
                 CREATE (:VarietyTrial {cropEppo: 'WHEATX', variety: 'W1', varietyNormalized: 'W1', year: 2020,
-                        aggregationScope: 'site', source_id: 'GENVCE', yieldKgHa: 6000.0, mergeKey: 'w1'})-[:TRIAL_AT]->(w)
+                        aggregationScope: 'site', source_id: 'ITACYL', yieldKgHa: 6000.0, mergeKey: 'w1'})-[:TRIAL_AT]->(w)
                 CREATE (:VarietyTrial {cropEppo: 'MAIZEX', variety: 'M1', varietyNormalized: 'M1', year: 2020,
                         aggregationScope: 'site', source_id: 'CREA', yieldKgHa: 14000.0, mergeKey: 'm1'})-[:TRIAL_AT]->(m)
             """)
@@ -197,4 +199,14 @@ def test_extrapolate_credits_the_ranked_varieties_not_the_sites_of_other_crops(d
     res = _run(dao.extrapolate_varieties(crop="WHEATX", climate_class="Zzz", top_n=5))
     assert {"WHEAT SITE", "MAIZE SITE"} <= set(res["similar_sites"])  # the CREA maize site IS an analog site
     assert [v["variety"] for v in res["ranked_varieties"]] == ["W1"]
-    assert {sid for v in res["ranked_varieties"] for sid in v["source_ids"]} == {"GENVCE"}
+    assert {sid for v in res["ranked_varieties"] for sid in v["source_ids"]} == {"ITACYL"}
+
+
+def test_genvce_variety_at_a_field_named_site_has_no_field_yield_potential(dao):
+    """A GENVCE row is regional evidence whatever its site: null with a gap, never 0, never listed as field."""
+    res = _run(dao.get_yield_potential(variety="GENVCE ONLY", crop="TRZAX"))
+    assert res["expected_yield_kg_ha"] is None and res["confidence_interval"] is None
+    assert res["trials_analyzed"] == 0 and res["data_gaps"] == ["no_field_trials"]
+    assert _run(dao.get_variety_trials(crop="TRZAX", variety="GENVCE ONLY", limit=50)) == []
+    rows = _run(dao.get_variety_trials(crop="TRZAX", variety="GENVCE ONLY", tier=None, limit=50))
+    assert [(r["evidence_tier"], r["yield_kg_ha"]) for r in rows] == [("regional", 9000.0)]

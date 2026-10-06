@@ -172,12 +172,11 @@ async def recommend_evidence(
             vector_version="v2",
         )
     elif tier == "regional":
-        # The aggregate sites of the climate (the regional tier of the recommendation).
-        sites = [
-            s for s in await dao.get_similar_sites(
-                climate_class=cond.climate_class, soil_type=None, limit=None, include_aggregate=True,
-            ) if s.get("site_kind") == "aggregate"
-        ]
+        # Every site of the climate, aggregate pseudo-sites and field-named ones (the regional tier
+        # of the recommendation; the row policy keeps only the rows classed as regional).
+        sites = await dao.get_similar_sites(
+            climate_class=cond.climate_class, soil_type=None, limit=None, include_aggregate=True,
+        )
     else:
         # Every matching field site, as the recommendation's Köppen path uses.
         sites = await dao.get_similar_sites(

@@ -296,16 +296,20 @@ def test_backtest_folds_count_a_duplicated_trial_once(dao):
         dao,
         """
         CREATE (a:TrialSite {name:'SiteA', climateClass:'Csa', annualRainfallMm:500})
-        CREATE (t1:VarietyTrial {mergeKey:'g|1', source_id:'GENVCE', aggregationScope:'site',
+        CREATE (t1:VarietyTrial {mergeKey:'g|1', source_id:'ITACYL', aggregationScope:'site',
                 cropEppo:'TRZAX', varietyNormalized:'V1', variety:'V1', year:2020, yieldKgHa:9000.0})
-        CREATE (t2:VarietyTrial {mergeKey:'g|2', source_id:'GENVCE', aggregationScope:'site',
+        CREATE (t2:VarietyTrial {mergeKey:'g|2', source_id:'ITACYL', aggregationScope:'site',
                 cropEppo:'TRZAX', varietyNormalized:'V1', variety:'V1', year:2020, yieldKgHa:9000.0})
-        CREATE (t3:VarietyTrial {mergeKey:'g|3', source_id:'GENVCE', aggregationScope:'site',
+        CREATE (t3:VarietyTrial {mergeKey:'g|3', source_id:'ITACYL', aggregationScope:'site',
                 cropEppo:'TRZAX', varietyNormalized:'V1', variety:'V1', year:2021, yieldKgHa:6000.0})
+        CREATE (t4:VarietyTrial {mergeKey:'g|4', source_id:'GENVCE', aggregationScope:'site',
+                cropEppo:'TRZAX', varietyNormalized:'V1', variety:'V1', year:2022, yieldKgHa:1000.0})
         CREATE (t1)-[:TRIAL_AT]->(a) CREATE (t2)-[:TRIAL_AT]->(a) CREATE (t3)-[:TRIAL_AT]->(a)
+        CREATE (t4)-[:TRIAL_AT]->(a)
         """,
     )
-    assert _fold_obs(dao, "SiteA") == {"V1": 7500.0}  # not (9000+9000+6000)/3
+    # not (9000+9000+6000)/3; the GENVCE row (a zone average, regional evidence) is no ground truth
+    assert _fold_obs(dao, "SiteA") == {"V1": 7500.0}
 
 
 def test_backtest_folds_take_no_kg_from_bsl(dao):

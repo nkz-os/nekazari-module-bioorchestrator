@@ -84,14 +84,29 @@ async def test_koppen_sites_computed_once_and_passed_through():
 
     sites = AsyncMock(return_value=_SITES)
     await _recommend(_conds(soil_type="Loam"), ["TRZAX", "HORVX", "ZEAMX"], extrap, sites)
-    assert sites.await_count == 1
-    kw = sites.await_args.kwargs
+    # the soil analog filter is the field tier's: the regional tier reads the climate's sites
+    # without it, so a soil request costs a second scan; no soil request, one scan for both tiers
+    assert sites.await_count == 2
+    kw = sites.await_args_list[0].kwargs
     # every matching field site (no alphabetical cut) plus the climate's aggregate sites
     assert kw["climate_class"] == "Cfb" and kw["soil_type"] == "Loam" and kw["limit"] is None
     assert kw["include_aggregate"] is True
     assert kw.get("target_features") is None and kw.get("vector_version", "v1") == "v1"
+    kw2 = sites.await_args_list[1].kwargs
+    assert kw2["climate_class"] == "Cfb" and kw2["soil_type"] is None and kw2["limit"] is None
+    assert kw2["include_aggregate"] is True
     assert len(seen) == 3 and all(s["similar_sites_override"] is _SITES or
                                   s["similar_sites_override"] == _SITES for s in seen)
+
+
+async def test_one_site_scan_serves_both_tiers_without_a_soil_request():
+    sites = AsyncMock(return_value=_SITES)
+
+    async def extrap(self_, crop, **kw):
+        return {"ranked_varieties": [_variety()]}
+
+    await _recommend(_conds(), ["TRZAX"], extrap, sites)
+    assert sites.await_count == 1 and sites.await_args.kwargs["soil_type"] is None
 
 
 async def test_v2_sites_computed_once_lazily(hybrid):
@@ -169,6 +184,8 @@ async def test_prefilter_skips_query_without_inputs():
 
 def _prefilter(ok_koppen, ok_v2=None):
     async def fn(self_, eppos, site_names, **kw):
+        if kw.get("tier") == "regional":  # these tests model a climate with no regional evidence
+            return set()
         ok = ok_v2 if (ok_v2 is not None and site_names == ["site-v2"]) else ok_koppen
         return {e for e in eppos if e in ok}
     return fn
@@ -264,7 +281,8 @@ async def _cached_run(conds, crops=("TRZAX",), extrap=_ok_extrap):
     sites = AsyncMock(return_value=_SITES)
     dao, p = _run_with(conds, list(crops), spy, sites)
     pf = patch.object(GraphDAO, "_crops_with_analog_trials",
-                      AsyncMock(side_effect=lambda eppos, names, **kw: set(eppos)))
+                      AsyncMock(side_effect=lambda eppos, names, **kw:
+                                set() if kw.get("tier") == "regional" else set(eppos)))
     with p[0], p[1], p[2], p[3], p[4], pf:
         out = await dao.recommend_for_conditions(conds)
     return out, sites, seen
@@ -295,7 +313,8 @@ async def test_cache_returns_independent_copies():
 async def test_different_conditions_miss(change):
     await _cached_run(_conds())
     _, sites, seen = await _cached_run(_conds(**change))
-    assert sites.await_count == 1 and seen == ["TRZAX"]
+    # a soil request also scans the climate's sites without the soil filter (regional tier)
+    assert sites.await_count == (2 if change.get("soil_type") else 1) and seen == ["TRZAX"]
 
 
 async def test_climate_detail_and_top_level_share_an_entry():
@@ -406,7 +425,8 @@ async def _batched_run(conds, crops, batch, koppen_ok=None, sites=None):
     dao, p = _run_with(conds, list(crops), no_v1, sites or AsyncMock(return_value=_SITES))
     ok = set(crops) if koppen_ok is None else koppen_ok
     pf = patch.object(GraphDAO, "_crops_with_analog_trials",
-                      AsyncMock(side_effect=lambda eppos, names, **kw: ok & set(eppos)))
+                      AsyncMock(side_effect=lambda eppos, names, **kw:
+                                set() if kw.get("tier") == "regional" else ok & set(eppos)))
     pb = patch.object(GraphDAO, "extrapolate_varieties_batch", batch)
     with p[0], p[1], p[2], p[3], p[4], pf, pb:
         return await dao.recommend_for_conditions(conds)
@@ -511,7 +531,8 @@ async def test_small_or_missing_reference_gives_the_gap_and_no_relative_yield():
 # ── final fix wave: process-wide cold-computation guard ─────────────────────
 def _all_pass():
     return patch.object(GraphDAO, "_crops_with_analog_trials",
-                        AsyncMock(side_effect=lambda eppos, names, **kw: set(eppos)))
+                        AsyncMock(side_effect=lambda eppos, names, **kw:
+                                  set() if kw.get("tier") == "regional" else set(eppos)))
 
 
 async def test_identical_concurrent_cold_calls_compute_once():
@@ -626,10 +647,11 @@ async def test_regional_tier_backs_crops_without_numeric_field_evidence():
         assert recs[eppo]["trust"]["level"] == "low" and recs[eppo]["fit"]["relative_yield_pct"] is None
     assert out["recommendations"][0]["evidence"]["tier"] == "field"
     assert out["data_quality"]["crops_with_analog_trials"] == 3
-    # field extrapolation sees the field sites only, regional the aggregate ones
+    # field extrapolation sees the field sites only; regional every site of the climate (aggregate
+    # sources sit at field-named sites, policy rule 9), the row policy keeping the regional rows
+    both = ("site-a", "UK national list")
     assert {(c, t, tuple(n)) for c, t, _, n in seen if t == "regional"} == {
-        ("TRZAX", "regional", ("UK national list",)), ("HORVX", "regional", ("UK national list",)),
-        ("LYPES", "regional", ("UK national list",))}
+        ("TRZAX", "regional", both), ("HORVX", "regional", both), ("LYPES", "regional", both)}
     assert all(n == ["site-a"] for _, t, _, n in seen if t == "field")
 
 
@@ -770,14 +792,23 @@ async def test_regional_only_crops_come_after_field_capable_ones_under_the_cap(m
     assert sorted(r["crop"]["eppo"] for r in out["recommendations"]) == ["FLD1", "FLD2"]
 
 
-async def test_no_aggregate_sites_means_no_regional_pass():
+async def test_regional_pass_runs_without_aggregate_sites_over_the_field_sites():
+    # No aggregate pseudo-site in the climate, but aggregate-source rows (policy rule 9) sit at
+    # field-named sites: the regional pass reads them, and a crop with only such rows is a
+    # regional recommendation.
     seen = []
-    extrap = _by_tier_extrap(field={"TRZAX": [_variety()]}, regional={}, seen=seen)
+    extrap = _by_tier_extrap(field={"TRZAX": [_variety()]}, regional={"PIBSX": [_variety(4800.0, 3)]},
+                             seen=seen)
     sites = AsyncMock(return_value=[_FIELD_SITE])
-    out, _ = await _recommend_tiers(_conds(), ["TRZAX"], extrap, {"TRZAX"}, {"TRZAX"}, sites)
-    assert all(t == "field" for _, t, _, _ in seen)
-    # the climate has no aggregate site: there is nothing regional to count, which is a known 0
-    assert out["recommendations"][0]["evidence"]["regional_trial_count"] == 0
+    out, _ = await _recommend_tiers(_conds(), ["TRZAX", "PIBSX"], extrap, {"TRZAX"},
+                                    {"PIBSX"}, sites)
+    assert {(c, n[0]) for c, t, _, n in seen if t == "regional"} == {("PIBSX", "site-a")}
+    recs = {r["crop"]["eppo"]: r for r in out["recommendations"]}
+    assert recs["PIBSX"]["evidence"]["tier"] == "regional"
+    assert recs["PIBSX"]["yield"]["expected_kg_ha"] == 4800.0 and recs["PIBSX"]["trust"]["level"] == "low"
+    assert {"regional_evidence_only", "regional_not_comparable"} <= set(recs["PIBSX"]["trust"]["data_gaps"])
+    assert recs["TRZAX"]["evidence"]["tier"] == "field" and recs["TRZAX"]["evidence"]["regional_trial_count"] == 0
+    assert [r["crop"]["eppo"] for r in out["recommendations"]] == ["TRZAX", "PIBSX"]  # field first
 
 
 async def test_regional_count_is_zero_when_no_crop_qualifies_and_null_when_the_pass_failed():

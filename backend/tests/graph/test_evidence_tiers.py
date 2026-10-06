@@ -42,6 +42,13 @@ _SITES = (
        {"name": "Poland (national average)", "climateClass": "Dfb"}]
     + [{"name": f"g{i:02d}", "climateClass": "Csa"} for i in range(2, 7)]
 )
+# Csb: an aggregate source (GENVCE, policy rule 9) is linked to the field-named site it was mapped
+# to; a real field site of another source is linked to the other.
+_SITES += [
+    {"name": "Valladolid", "climateClass": "Csb"},
+    {"name": "Villafranca Piemonte", "climateClass": "Csb", "soilType": "Loam"},
+]
+_CSB = ["Valladolid", "Villafranca Piemonte"]
 _SECANO = "http://aims.fao.org/aos/agrovoc/c_6436"
 _REGADIO = "http://aims.fao.org/aos/agrovoc/c_3954"
 
@@ -106,6 +113,14 @@ _TRIALS = [
     _t("CIEAR", "VF1", ["g01"], 20000.0, irrigationRegime=_SECANO, qualityParams=_FORAGE_QP, yieldBasis="dry_matter", year=2016),
     _t("CIEAR", "VF2", ["g02"], 21000.0, irrigationRegime=_REGADIO, qualityParams=_FORAGE_QP, yieldBasis="dry_matter", year=2016),
     _t("CIEAR", "VF3", ["g03"], 22000.0, qualityParams=_FORAGE_QP, yieldBasis="dry_matter", year=2016),
+    # Csb: PIBSX only has GENVCE rows (two, at the field-named site); HELAN only has CREA field
+    # trials; TRZAX has both: CREA at the field site and GENVCE at the field-named one.
+    _t("PIBSX", "G1", ["Valladolid"], 4800.0, source_id="GENVCE"),
+    _t("PIBSX", "G2", ["Valladolid"], 5200.0, source_id="GENVCE"),
+    _t("HELAN", "C1", ["Villafranca Piemonte"], 3000.0, source_id="CREA"),
+    _t("HELAN", "C2", ["Villafranca Piemonte"], 3400.0, source_id="CREA"),
+    _t("TRZAX", "T1", ["Villafranca Piemonte"], 6000.0, source_id="CREA"),
+    _t("TRZAX", "T2", ["Valladolid"], 9000.0, source_id="GENVCE"),
     # CPSAN: eight varieties with one trial each at an aggregate site of another climate.
     *[_t("CPSAN", f"C{i}", ["Poland (national average)"], 40000.0 + i, source_id="NATIONAL")
       for i in range(8)],
@@ -368,8 +383,11 @@ def test_recommend_main_field_before_regional_with_honest_numbers(dao):
     recs = {r["crop"]["eppo"]: r for r in out["recommendations"]}
     assert out["evidence_policy"] == ep.POLICY_VERSION and out["conditions"]["purpose"] == "main"
     # SECCE and BRSNN: BSL only (presence); SETIT: forage only; AVESA: regional scope at a
-    # field-named site, which no production trial does, is outside both site sets.
-    assert set(recs) == {"TRZAX", "ZEAMX", "HORVX", "LYPES", "SECCE", "BRSNN"}
+    # field-named site: regional evidence (rule 6), read by the regional tier like an aggregate source.
+    assert set(recs) == {"TRZAX", "ZEAMX", "HORVX", "LYPES", "AVESA", "SECCE", "BRSNN"}
+    ave = recs["AVESA"]
+    assert ave["evidence"]["tier"] == "regional" and ave["yield"]["expected_kg_ha"] == 4000.0
+    assert ave["evidence"]["sites"] == ["f07"] and ave["trust"]["level"] == "low"
     trz = recs["TRZAX"]
     assert trz["evidence"]["tier"] == "field" and trz["yield"]["expected_kg_ha"] == 7000.0
     assert trz["fit"]["reference"] == {"median_kg_ha": 7000.0, "n_trials": 3, "scope": "analog_sites:Cfb:any"}
@@ -396,7 +414,7 @@ def test_recommend_main_field_before_regional_with_honest_numbers(dao):
         assert pres["evidence"]["sites"] == ["BSL Deutschland Cfb"] and pres["evidence"]["sources"] == ["BSL"]
         assert {"no_measured_yield", "regional_evidence_only"} <= set(pres["trust"]["data_gaps"])
     assert [r["crop"]["eppo"] for r in out["recommendations"]][-2:] == ["SECCE", "BRSNN"]  # after LYPES, more trials first
-    assert out["data_quality"]["crops_with_analog_trials"] == 6
+    assert out["data_quality"]["crops_with_analog_trials"] == 7
 
 
 def test_forage_notice_count_respects_the_irrigation_regime(dao):
@@ -466,3 +484,76 @@ def test_recommend_forage_reference_scope_names_the_purpose(dao):
     assert z["fit"]["reference"] == {"median_kg_ha": 21000.0, "n_trials": 2,
                                      "scope": "analog_sites:Cfb:any:forage"}
     assert z["fit"]["relative_yield_pct"] is None  # two trials: below the minimum reference
+
+
+# ── aggregate source (GENVCE) rows are regional evidence at a field-named site ─────────────────
+_CSB_SITES = [{"name": n, "distance": None} for n in _CSB]
+
+
+def test_genvce_rows_are_regional_never_field_at_their_field_named_site(dao):
+    field = _run(dao.extrapolate_varieties_batch(["PIBSX", "HELAN", "TRZAX"], _CSB_SITES))
+    assert field["PIBSX"] == []  # GENVCE only: no field evidence, no number, no row
+    assert {v["variety"]: v["mean_yield_kg_ha"] for v in field["HELAN"]} == {"C1": 3000.0, "C2": 3400.0}
+    assert {v["variety"]: v["mean_yield_kg_ha"] for v in field["TRZAX"]} == {"T1": 6000.0}  # not T2
+    regional = _run(dao.extrapolate_varieties_batch(["PIBSX", "HELAN", "TRZAX"], _CSB_SITES, tier="regional"))
+    assert regional["HELAN"] == []  # CREA at a field site is field evidence only
+    assert {v["variety"]: v["mean_yield_kg_ha"] for v in regional["PIBSX"]} == {"G1": 4800.0, "G2": 5200.0}
+    assert {v["variety"]: v["mean_yield_kg_ha"] for v in regional["TRZAX"]} == {"T2": 9000.0}
+    assert regional["PIBSX"][0]["trial_sites"] == ["Valladolid"] and regional["PIBSX"][0]["source_ids"] == ["GENVCE"]
+    # the field reference of a crop never contains a GENVCE number
+    assert {_ref(v) for v in field["TRZAX"]} == {(6000.0, 1)}
+
+
+def test_regional_extrapolation_without_override_reads_every_site_of_the_climate(dao):
+    res = _run(dao.extrapolate_varieties("PIBSX", climate_class="Csb", tier="regional", top_n=5))
+    assert res["evidence_tier"] == "regional" and set(res["similar_sites"]) == set(_CSB)
+    assert [v["variety"] for v in res["ranked_varieties"]] == ["G2", "G1"]
+    field = _run(dao.extrapolate_varieties("PIBSX", climate_class="Csb", top_n=5))
+    assert field["ranked_varieties"] == [] and set(field["similar_sites"]) == set(_CSB)
+    # the soil analog filter belongs to the field tier: the regional one ignores it
+    soil = _run(dao.extrapolate_varieties("PIBSX", climate_class="Csb", soil_type="Loam", tier="regional"))
+    assert [v["variety"] for v in soil["ranked_varieties"]] == ["G2", "G1"]
+    assert _run(dao.extrapolate_varieties("PIBSX", climate_class="Csb", soil_type="Loam"))["similar_sites"] == [
+        "Villafranca Piemonte"]
+
+
+def test_genvce_evidence_listing_follows_the_tier(dao):
+    reg = _evidence(dao, "PIBSX", _CSB, tier="regional")
+    assert reg["total"] == 2 and {i["tier"] for i in reg["items"]} == {"regional"}
+    assert {i["source_id"] for i in reg["items"]} == {"GENVCE"}
+    assert sorted(i["yield_kg_ha"] for i in reg["items"]) == [4800.0, 5200.0]
+    assert _evidence(dao, "PIBSX", _CSB)["total"] == 0  # not field evidence
+    assert _evidence(dao, "HELAN", _CSB)["total"] == 2 and _evidence(dao, "HELAN", _CSB, tier="regional")["total"] == 0
+    assert _evidence(dao, "TRZAX", _CSB)["total"] == 1  # the CREA trial only
+
+
+def test_recommend_genvce_only_crop_is_regional_and_a_crea_field_crop_stays_field(dao):
+    out = _recommend(dao, climate_class="Csb")
+    recs = {r["crop"]["eppo"]: r for r in out["recommendations"]}
+    assert set(recs) == {"PIBSX", "HELAN", "TRZAX"}
+    pib = recs["PIBSX"]
+    assert pib["evidence"]["tier"] == "regional" and pib["yield"]["expected_kg_ha"] == 5200.0
+    assert pib["yield"]["n_trials"] == 1 and pib["trust"]["level"] == "low"  # best variety: G2
+    assert pib["fit"]["relative_yield_pct"] is None
+    assert pib["fit"]["reference"] == {"median_kg_ha": None, "n_trials": 0, "scope": "regional"}
+    assert {"regional_evidence_only", "regional_not_comparable"} <= set(pib["trust"]["data_gaps"])
+    assert pib["evidence"]["sources"] == ["GENVCE"] and pib["evidence"]["trial_count"] == 2
+    hel = recs["HELAN"]
+    assert hel["evidence"]["tier"] == "field" and hel["yield"]["expected_kg_ha"] == 3400.0
+    assert "regional_evidence_only" not in hel["trust"]["data_gaps"]
+    assert hel["evidence"]["regional_trial_count"] == 0
+    # a crop with both: the field number wins, the GENVCE trial is only the supplementary count
+    trz = recs["TRZAX"]
+    assert trz["evidence"]["tier"] == "field" and trz["yield"]["expected_kg_ha"] == 6000.0
+    assert trz["evidence"]["regional_trial_count"] == 1 and trz["evidence"]["sources"] == ["CREA"]
+    assert [r["evidence"]["tier"] for r in out["recommendations"]] == ["field", "field", "regional"]
+    assert out["data_quality"]["crops_with_analog_trials"] == 3
+
+
+def test_recommend_genvce_stays_regional_under_a_soil_request(dao):
+    # only Villafranca Piemonte has a soil: the field tier narrows to it, the regional tier does not
+    out = _recommend(dao, climate_class="Csb", soil_type="Loam")
+    recs = {r["crop"]["eppo"]: r for r in out["recommendations"]}
+    assert recs["PIBSX"]["evidence"]["tier"] == "regional" and recs["PIBSX"]["yield"]["expected_kg_ha"] == 5200.0
+    assert recs["HELAN"]["evidence"]["tier"] == "field" and recs["TRZAX"]["evidence"]["tier"] == "field"
+    assert recs["TRZAX"]["evidence"]["regional_trial_count"] == 1
