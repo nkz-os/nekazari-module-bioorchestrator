@@ -399,8 +399,8 @@ def test_documents_and_studies_are_deduplicated_and_provenance_is_kept_per_unit(
 def test_one_document_with_two_different_urls_is_a_conflict():
     contract = base_contract()
     contract["document"]["url"] = {"from": "doc.url"}
-    rows = [raw_row(zone="a", doc={**raw_row()["doc"], "url": "https://example.test/a"}),
-            raw_row(zone="b", doc={**raw_row()["doc"], "url": "https://example.test/b"})]
+    rows = [raw_row(zone="a", doc={**raw_row()["doc"], "url": "doc-a.pdf"}),
+            raw_row(zone="b", doc={**raw_row()["doc"], "url": "doc-b.pdf"})]
     with pytest.raises(ContractDataError, match="document .* more than one"):
         run(rows, contract)
 
