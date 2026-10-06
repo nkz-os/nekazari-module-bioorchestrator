@@ -6,11 +6,12 @@ import { KOPPEN_CODES, SEASONS, MANAGEMENTS, IRRIGATIONS, PURPOSES } from '../fe
 import { CAMPAIGN_TOOL_IDS, LIBRARY_TOOL_IDS } from '../utils/navigation';
 
 
-const NAMESPACES = ['whatToSow', 'home', 'expert', 'app.doors', 'app.hubs', 'app.expertMode', 'app.cards'];
+const NAMESPACES = ['whatToSow', 'home', 'expert', 'app.doors', 'app.hubs', 'app.expertMode', 'app.cards', 'sourceAttribution'];
 
 const SOURCES: Record<string, string> = {
   ...import.meta.glob('../features/whatToSow/**/*.{ts,tsx}', { query: '?raw', import: 'default', eager: true }),
   ...import.meta.glob('../components/Home.tsx', { query: '?raw', import: 'default', eager: true }),
+  ...import.meta.glob('../components/shared/SourceAttribution.tsx', { query: '?raw', import: 'default', eager: true }),
   ...import.meta.glob('../App.tsx', { query: '?raw', import: 'default', eager: true }),
 } as Record<string, string>;
 

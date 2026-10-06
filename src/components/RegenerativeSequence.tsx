@@ -3,6 +3,7 @@ import { useTranslation } from '@nekazari/sdk';
 import { useParcelContext } from "../context/ParcelContext";
 import { Card, Button, Select, Stack } from "@nekazari/ui-kit";
 import ContextEmptyState from "./shared/ContextEmptyState";
+import SourceAttribution from "./shared/SourceAttribution";
 import type { RegenerativeSequenceResult, CropListCrop } from "../services/api";
 
 const CLIMATE_ZONES = ["Csa", "Csb", "BSk", "Cfb", "Dfb", "Dfc", "BSh", "Cfa", "Aw"];
@@ -217,6 +218,7 @@ export default function RegenerativeSequence() {
           <div className="text-nkz-xs text-nkz-text-muted bg-nkz-surface-sunken rounded-nkz-md p-3 max-w-3xl">
             {t("regenerative.provenance")}: {result.provenance.cover_crop_source} | {result.provenance.n_fixation_source} | {result.provenance.yield_source} | {result.provenance.climate_source}
           </div>
+          <SourceAttribution attributions={result.attributions} />
         </Stack>
       )}
     </Stack>

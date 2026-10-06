@@ -3,6 +3,9 @@ import { useTranslation } from '@nekazari/sdk';
 import { Badge, Card, EmptyState, Input, ProgressBar, Skeleton, Stack, Tabs } from '@nekazari/ui-kit';
 import { useBioApi } from '../../services/api';
 import type { Recommendation } from '../../types/recommend';
+import type { SourceAttributionItem } from '../../types/attribution';
+import { attributionsForRecs } from '../../utils/attribution';
+import SourceAttribution from '../../components/shared/SourceAttribution';
 import { useCropName } from './RecommendationCard';
 import { compareRows, grossIncome, levelKey, recsYieldUnit, unitKey, type LevelKind } from './viewModel';
 import {
@@ -322,9 +325,11 @@ function EurosLens({ recs }: { recs: Recommendation[] }) {
 export interface CompareViewProps {
   recs: Recommendation[];
   parcelId: string | null;
+  /** `attributions` of the recommend answer `recs` come from. */
+  attributions?: SourceAttributionItem[];
 }
 
-export default function CompareView({ recs, parcelId }: CompareViewProps) {
+export default function CompareView({ recs, parcelId, attributions }: CompareViewProps) {
   const { t } = useTranslation('bioorchestrator');
   const [tab, setTab] = useState('fit');
   return (
@@ -341,6 +346,7 @@ export default function CompareView({ recs, parcelId }: CompareViewProps) {
         <Tabs.Content value="rotation"><RotationLens recs={recs} parcelId={parcelId} /></Tabs.Content>
         <Tabs.Content value="euros"><EurosLens recs={recs} /></Tabs.Content>
       </Tabs>
+      <SourceAttribution attributions={attributionsForRecs(attributions, recs)} />
     </Card>
   );
 }

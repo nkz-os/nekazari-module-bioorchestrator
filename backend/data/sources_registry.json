@@ -80,6 +80,15 @@
       "fr": "Les essais GENVCE sont men\u00e9s par les communaut\u00e9s autonomes participantes. NKZ extrapole les r\u00e9sultats \u2014 cela ne constitue pas une recommandation officielle de GENVCE ni d'aucune autorit\u00e9 participante.",
       "pt": "Os ensaios GENVCE s\u00e3o realizados pelas comunidades aut\u00f3nomas participantes. A NKZ extrapola os resultados \u2014 isto n\u00e3o constitui uma recomenda\u00e7\u00e3o oficial da GENVCE ou de qualquer autoridade participante."
     },
+    "attribution_text": "Fuente: Datos Abiertos GENVCE. Url: https://genvce.org/mapa-de-resultados/ (Descarga: 01/06/2026.)",
+    "attribution_url": "https://genvce.org/mapa-de-resultados/",
+    "licence_id": "genvce-reuse-notice-ley-37-2007",
+    "licence_url": "https://genvce.org/",
+    "download_date": "2026-06-01",
+    "processing_note": {
+      "en": "Estimates and averages are Nekazari calculations based on these data; they are not data published by the sources.",
+      "es": "Las estimaciones y medias son c\u00e1lculos de Nekazari a partir de estos datos; no son datos publicados por las fuentes."
+    },
     "site_urls": [
       "https://genvce.org"
     ],
@@ -444,6 +453,41 @@
       "fr": "Les essais CREA sont men\u00e9s par le conseil de recherche italien. NKZ extrapole les r\u00e9sultats \u2014 cela ne constitue pas une recommandation officielle du CREA.",
       "it": "Le prove CREA sono condotte dal consiglio di ricerca italiano. NKZ estrapola i risultati ad ambienti simili \u2014 ci\u00f2 non costituisce una raccomandazione ufficiale del CREA.",
       "pt": "Os ensaios CREA s\u00e3o realizados pelo conselho de investiga\u00e7\u00e3o italiano. A NKZ extrapola os resultados \u2014 isto n\u00e3o constitui uma recomenda\u00e7\u00e3o oficial do CREA."
+    },
+    "attribution_text": "Fonte: CREA - Consiglio per la ricerca in agricoltura e l'analisi dell'economia agraria, Centro di ricerca Cerealicoltura e Colture Industriali (sede di Bergamo), \u00abRisultati reti nazionali di confronto varietale mais\u00bb 2021-2025, a cura di G. Mazzinelli. Licenza CC BY 3.0 IT. Dati modificati ed elaborati da Nekazari.",
+    "attribution_url": "https://www.crea.gov.it/web/cerealicoltura-e-colture-industriali/pubblicazioni-istituzionali-e-schede-tecniche",
+    "licence_id": "CC-BY-3.0-IT",
+    "licence_url": "https://creativecommons.org/licenses/by/3.0/it/legalcode",
+    "source_documents": [
+      {
+        "title": "Risultati reti nazionali di confronto varietale mais 2021",
+        "year": 2021,
+        "url": "https://www.crea.gov.it/documents/43052/0/Fascicolo+risultati+Mais+2021.pdf"
+      },
+      {
+        "title": "Risultati reti nazionali di confronto varietale mais 2022",
+        "year": 2022,
+        "url": "https://www.crea.gov.it/documents/43052/0/Fascicolo+risultati+Mais+2022.pdf"
+      },
+      {
+        "title": "Risultati reti nazionali di confronto varietale mais 2023",
+        "year": 2023,
+        "url": "https://www.crea.gov.it/documents/43052/0/Fascicolo+risultati+Mais+2023.pdf"
+      },
+      {
+        "title": "Risultati reti nazionali di confronto varietale mais 2024",
+        "year": 2024,
+        "url": "https://www.crea.gov.it/documents/43052/0/Fascicolo+risultati+Mais+2024.pdf"
+      },
+      {
+        "title": "Risultati reti nazionali di confronto varietale mais 2025",
+        "year": 2025,
+        "url": "https://www.crea.gov.it/documents/43052/0/Fascicolo+risultati+Mais+2025.pdf"
+      }
+    ],
+    "processing_note": {
+      "en": "Estimates and averages are Nekazari calculations based on these data; they are not data published by the sources.",
+      "es": "Las estimaciones y medias son c\u00e1lculos de Nekazari a partir de estos datos; no son datos publicados por las fuentes."
     },
     "site_urls": [
       "https://www.crea.gov.it"

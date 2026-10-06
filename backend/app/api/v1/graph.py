@@ -12,6 +12,8 @@ from nkz_platform_sdk.agronomy import (
 )
 from nkz_platform_sdk.orion import OrionClient
 
+from app.api.v1.attribution import attach_attributions, rows_source_ids
+from app.common.source_registry import all_attributions
 from app.core.dependencies import (
     get_neo4j_driver,
     require_contributor,
@@ -624,7 +626,7 @@ async def agriculture_variety_trials(
         max_rainfall_mm=max_rainfall_mm,
         limit=limit,
     )
-    return {
+    return attach_attributions({
         "trials": trials,
         "total": len(trials),
         "filters_applied": {
@@ -638,7 +640,7 @@ async def agriculture_variety_trials(
                 "rainfall_range_mm": f"{min_rainfall_mm}-{max_rainfall_mm}" if min_rainfall_mm or max_rainfall_mm else None,
             }.items() if v is not None
         },
-    }
+    }, rows_source_ids(trials))
 
 
 @router.get("/agriculture/similar-sites")
@@ -683,7 +685,9 @@ async def agriculture_similar_sites(
         rainfall_max=rainfall_max,
         limit=limit,
     )
-    return {
+    site_sources = await dao.get_site_source_ids([s["name"] for s in sites])
+    sites = [{**s, "source_ids": site_sources.get(s["name"], [])} for s in sites]
+    return attach_attributions({
         "sites": sites,
         "total": len(sites),
         "reference": reference_site or {
@@ -691,7 +695,7 @@ async def agriculture_similar_sites(
             "soil_type": soil_type,
             "rainfall_range_mm": f"{rainfall_min}-{rainfall_max}",
         },
-    }
+    }, (sid for s in sites for sid in s["source_ids"]))
 
 
 @router.get("/agriculture/extrapolate")
@@ -825,7 +829,12 @@ async def agriculture_extrapolate(
     if resolved_env:
         result["resolved_environment"] = resolved_env
 
-    return result
+    # Credit only the sources behind the ranked varieties' numbers. The analog sites are selected by
+    # climate, whatever the crop, so their sources (e.g. a maize-only source for a wheat query) are
+    # not credited here.
+    return attach_attributions(result, (
+        sid for v in result.get("ranked_varieties") or [] for sid in v.get("source_ids") or []
+    ))
 
 
 @router.get("/agriculture/trial-sites")
@@ -835,7 +844,10 @@ async def agriculture_trial_sites(
     """Return all TrialSites with trial count summaries."""
     dao = GraphDAO(driver)
     sites = await dao.get_trial_sites_summary()
-    return {"sites": sites, "total": len(sites)}
+    return attach_attributions(
+        {"sites": sites, "total": len(sites)},
+        (sid for s in sites for sid in s.get("source_ids") or []),
+    )
 
 
 @router.get("/agriculture/crops")
@@ -845,7 +857,10 @@ async def agriculture_crops(
     """Return distinct crops available in VarietyTrial data with counts."""
     dao = GraphDAO(driver)
     crops = await dao.get_available_crops()
-    return {"crops": crops, "total": len(crops)}
+    return attach_attributions(
+        {"crops": crops, "total": len(crops)},
+        (sid for c in crops for sid in c.get("source_ids") or []),
+    )
 
 
 @router.get("/agriculture/graph-stats")
@@ -860,7 +875,8 @@ async def agriculture_graph_stats(
     hygiene/canonicalization mutation and diff.
     """
     dao = GraphDAO(driver)
-    return await dao.graph_quality_stats()
+    stats = await dao.graph_quality_stats()
+    return attach_attributions(stats, stats.get("source_ids") or [])
 
 
 @router.get("/agriculture/backtest-report")
@@ -949,7 +965,10 @@ async def agriculture_regenerative_sequence(
     if "error" in result:
         raise HTTPException(status_code=404, detail=result["error"])
 
-    return result
+    # The protein-crop variety ranking (`variety_trials`) comes from the trial sources.
+    return attach_attributions(result, (
+        sid for v in result.get("variety_trials") or [] for sid in v.get("source_ids") or []
+    ))
 
 
 @router.get("/agriculture/parcel-environment")
@@ -1027,7 +1046,7 @@ async def agriculture_yield_potential(
     )
     if "error" in result:
         raise HTTPException(status_code=404, detail=result["error"])
-    return result
+    return attach_attributions(result, result.get("source_ids") or [])
 
 
 @router.get("/agriculture/water-budget")
@@ -1076,7 +1095,7 @@ async def agriculture_yield_projection(
     )
     if "error" in result:
         raise HTTPException(status_code=404, detail=result["error"])
-    return result
+    return attach_attributions(result, result.get("source_ids") or [])
 
 
 @router.post("/agriculture/wofost-simulation")
@@ -1136,7 +1155,9 @@ async def agriculture_compare_crops(
         seed_price=seed_price, harvest_price=harvest_price, operation_cost=operation_cost,
         tenant_id=_require_tenant_id(request),
     )
-    return result
+    return attach_attributions(result, (
+        sid for entry in result.get("comparisons") or [] for sid in entry.get("source_ids") or []
+    ))
 
 
 @router.get("/agriculture/rotation-plan")
@@ -1161,7 +1182,9 @@ async def agriculture_rotation_plan(
     )
     if "error" in result:
         raise HTTPException(status_code=400, detail=result["error"])
-    return result
+    return attach_attributions(result, (
+        sid for entry in result.get("plan") or [] for sid in entry.get("source_ids") or []
+    ))
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -1300,6 +1323,13 @@ async def agriculture_organic_inputs(
     """Return authorized organic inputs for a crop's pests (FiBL)."""
     dao = GraphDAO(driver)
     return await dao.get_organic_inputs(eppo=crop)
+
+
+@router.get("/agriculture/sources/attributions")
+async def agriculture_source_attributions():
+    """Mandatory attribution of every source that requires one (public, read-only)."""
+    attributions = all_attributions()
+    return {"attributions": attributions, "total": len(attributions)}
 
 
 @router.get("/agriculture/sources")

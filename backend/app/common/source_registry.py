@@ -15,6 +15,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+from collections.abc import Iterable
 from functools import cache
 from pathlib import Path
 from typing import Any
@@ -205,6 +206,86 @@ def get_combined_disclaimer(source_ids: list[str], locale: str = "en") -> str:
             seen.add(t)
             unique.append(t)
     return " ".join(unique)
+
+
+# ── Mandatory attribution (licence compliance) ───────────────────────────────
+
+# Fields of the compact per-response attribution item; the registry holds them as
+# ``attribution_text`` / ``attribution_url`` / ``licence_id`` / ``licence_url``.
+_ATTRIBUTION_KEYS = ("attribution_text", "attribution_url", "licence_id", "licence_url")
+
+# Source ids already reported as lacking an attribution (one warning each, not one per request).
+_WARNED_NO_ATTRIBUTION: set[str] = set()
+
+
+def _warn_once(source_id: str, reason: str) -> None:
+    if source_id in _WARNED_NO_ATTRIBUTION:
+        return
+    _WARNED_NO_ATTRIBUTION.add(source_id)
+    logger.warning("source_attribution_missing source_id=%s reason=%s", source_id, reason)
+
+
+def _compact_attribution(src: SourceInfo) -> dict[str, Any]:
+    item: dict[str, Any] = {
+        "source_id": src["source_id"],
+        "text": src["attribution_text"],
+        "url": src["attribution_url"],
+        "licence_id": src["licence_id"],
+        "licence_url": src["licence_url"],
+    }
+    # The fidelity line (es/en) travels with the credit, so a client that is not the UI shows it too.
+    if src.get("processing_note"):
+        item["processing_note"] = dict(src["processing_note"])
+    return item
+
+
+def _has_attribution(src: SourceInfo) -> bool:
+    return all(src.get(k) for k in _ATTRIBUTION_KEYS)
+
+
+def get_attributions(source_ids: Iterable[str | None]) -> list[dict[str, Any]]:
+    """Mandatory attributions for the sources present in a response.
+
+    Args:
+        source_ids: Source ids found in the response payload (duplicates, ``None`` and
+            empty values are ignored).
+
+    Returns:
+        ``[{source_id, text, url, licence_id, licence_url, processing_note}]``, one item per
+        distinct source that has a structured attribution, sorted by ``source_id``
+        (``processing_note`` is the es/en fidelity line, present when the registry has it). Only the
+        sources actually present are listed. A source that is unknown or has no
+        structured attribution is left out and reported once in the log.
+    """
+    index = _build_index()
+    out: list[dict[str, Any]] = []
+    for sid in sorted({s for s in source_ids if s}):
+        src = index.get(sid)
+        if src is None:
+            _warn_once(sid, "not_in_registry")
+        elif not _has_attribution(src):
+            _warn_once(sid, "no_structured_attribution")
+        else:
+            out.append(_compact_attribution(src))
+    return out
+
+
+def all_attributions() -> list[dict[str, Any]]:
+    """Every registered source that has a structured attribution, for the public listing.
+
+    The item of :func:`get_attributions` plus ``download_date`` and ``source_documents`` where
+    the registry has them.
+    """
+    out: list[dict[str, Any]] = []
+    for src in _load_registry():
+        if not _has_attribution(src):
+            continue
+        item: dict[str, Any] = _compact_attribution(src)
+        for key in ("download_date", "source_documents"):
+            if src.get(key) is not None:
+                item[key] = src[key]
+        out.append(item)
+    return sorted(out, key=lambda i: i["source_id"])
 
 
 # ── Internal helpers ─────────────────────────────────────────────────────────

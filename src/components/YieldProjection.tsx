@@ -6,6 +6,8 @@ import { useBioApi } from '../services/api';
 import { useParcelContext } from '../context/ParcelContext';
 import { usePlanningScenario } from '../context/PlanningScenarioContext';
 import { toCompareRow, type CompareRow } from './yieldProjectionModel';
+import SourceAttribution from './shared/SourceAttribution';
+import type { SourceAttributionItem } from '../types/attribution';
 
 interface VarietyResult {
   variety: string;
@@ -25,6 +27,7 @@ interface ExtrapolateResponse {
   target_environment: Record<string, unknown>;
   trials_analyzed: number;
   similar_sites_count: number;
+  attributions?: SourceAttributionItem[];
 }
 
 interface PerStage {
@@ -50,11 +53,13 @@ interface YieldProjResponse {
   yield_loss_pct: number;
   per_stage: PerStage[];
   methodology: string;
+  attributions?: SourceAttributionItem[];
 }
 
 interface CompareResponse {
   comparisons: CompareRow[];
   target_environment: Record<string, unknown>;
+  attributions?: SourceAttributionItem[];
 }
 
 interface CropOption { eppo_code: string; scientific_name: string; }
@@ -141,6 +146,7 @@ export default function YieldProjection() {
         target_environment: data.target_environment || {},
         trials_analyzed: data.trials_analyzed ?? (data.ranked_varieties?.reduce((s: number, v: any) => s + (v.trial_count || 0), 0) || 0),
         similar_sites_count: (data.similar_sites || []).length,
+        attributions: data.attributions,
       });
     } catch (e: any) {
       setError(e.message || 'Unknown error');
@@ -163,6 +169,7 @@ export default function YieldProjection() {
       setCompareResult({
         comparisons: (data.comparisons || []).map(toCompareRow),
         target_environment: data.target_environment || {},
+        attributions: data.attributions,
       });
     } catch (e: any) {
       setError(e.message || String(e));
@@ -323,6 +330,7 @@ export default function YieldProjection() {
                     </table>
                   </div>
                 )}
+                <SourceAttribution attributions={extrapolateResult.attributions} />
               </Card>
             </>
           )}
@@ -418,6 +426,7 @@ export default function YieldProjection() {
                   </tbody>
                 </table>
               </div>
+              <SourceAttribution attributions={compareResult.attributions} />
             </Card>
           )}
 
@@ -475,6 +484,7 @@ export default function YieldProjection() {
                   </Badge>
                 </Card>
               </div>
+              <SourceAttribution attributions={yieldProj.attributions} />
 
               {/* Stress gauge */}
               <Card padding="md">

@@ -3,6 +3,9 @@ import { Card, Badge, Skeleton } from '@nekazari/ui-kit';
 import { useTranslation } from '@nekazari/sdk';
 import { MapPin, Thermometer, Droplets, Globe } from 'lucide-react';
 import { useBioApi } from '../services/api';
+import type { SourceAttributionItem } from '../types/attribution';
+import { attributionsForSources } from '../utils/attribution';
+import SourceAttribution from './shared/SourceAttribution';
 
 interface TrialSite {
   name: string;
@@ -18,6 +21,8 @@ interface TrialSite {
   longitude: number;
   variety_trial_count: number;
   mgmt_trial_count: number;
+  /** Sources of the trials at the site. */
+  source_ids?: string[];
 }
 
 const CLIMATE_COLORS: Record<string, string> = {
@@ -43,6 +48,7 @@ const ClimateExplorer: React.FC = () => {
   const { t } = useTranslation('bioorchestrator');
   const api = useBioApi();
   const [sites, setSites] = useState<TrialSite[]>([]);
+  const [attributions, setAttributions] = useState<SourceAttributionItem[] | undefined>(undefined);
   const [filtered, setFiltered] = useState<TrialSite[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedClimate, setSelectedClimate] = useState<string>('all');
@@ -54,6 +60,7 @@ const ClimateExplorer: React.FC = () => {
       .then((d: any) => {
         const all = (d?.sites || []) as TrialSite[];
         setSites(all);
+        setAttributions(d?.attributions);
         setFiltered(all);
         const uniqueClimates = [...new Set(all.map(s => s.climate_class).filter(Boolean))].sort();
         setClimates(uniqueClimates);
@@ -235,6 +242,12 @@ const ClimateExplorer: React.FC = () => {
           </div>
         </Card>
       )}
+
+      <SourceAttribution
+        attributions={selectedClimate === 'all'
+          ? attributions
+          : attributionsForSources(attributions, filtered.flatMap((s) => s.source_ids ?? []))}
+      />
     </div>
   );
 };

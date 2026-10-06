@@ -3,6 +3,8 @@ import { Stack, Card, Badge, Button, Skeleton } from '@nekazari/ui-kit';
 import { useTranslation } from '@nekazari/sdk';
 import { X, Search, AlertTriangle } from 'lucide-react';
 import { useBioApi } from '../services/api';
+import type { SourceAttributionItem } from '../types/attribution';
+import SourceAttribution from './shared/SourceAttribution';
 
 interface VarietyInfo {
   name: string;
@@ -44,6 +46,7 @@ export default function InlineVarietyPicker({ parcelId, species, onSelect, onClo
   const [cropOptions, setCropOptions] = useState<CropOption[]>([]);
   const [selectedEppo, setSelectedEppo] = useState<string>('');
   const [results, setResults] = useState<VarietyResult[]>([]);
+  const [attributions, setAttributions] = useState<SourceAttributionItem[] | undefined>(undefined);
   const [loading, setLoading] = useState(true);
   const [searching, setSearching] = useState(false);
   const [error, setError] = useState('');
@@ -98,6 +101,7 @@ export default function InlineVarietyPicker({ parcelId, species, onSelect, onClo
         top_n: '15',
       });
       setResults(data.ranked_varieties || []);
+      setAttributions(data.attributions);
     } catch (e: any) {
       setError(e.message || 'Unknown error');
     } finally {
@@ -254,6 +258,7 @@ export default function InlineVarietyPicker({ parcelId, species, onSelect, onClo
                   </div>
                 </Card>
               ))}
+              <SourceAttribution attributions={attributions} />
             </Stack>
           )}
         </div>

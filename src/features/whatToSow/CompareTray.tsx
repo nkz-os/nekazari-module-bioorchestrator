@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useTranslation } from '@nekazari/sdk';
 import { Button, Card, Inline } from '@nekazari/ui-kit';
 import type { Recommendation } from '../../types/recommend';
+import type { SourceAttributionItem } from '../../types/attribution';
 import CompareView from './CompareView';
 
 export const MIN_COMPARE = 2;
@@ -9,11 +10,13 @@ export const MIN_COMPARE = 2;
 export interface CompareTrayProps {
   selection: Recommendation[];
   parcelId: string | null;
+  /** `attributions` of the recommend answer the selection comes from. */
+  attributions?: SourceAttributionItem[];
   onClear: () => void;
 }
 
 /** Sticky bar with 2–4 checked crops; "Comparar" opens the four-lens view above it. */
-export default function CompareTray({ selection, parcelId, onClear }: CompareTrayProps) {
+export default function CompareTray({ selection, parcelId, attributions, onClear }: CompareTrayProps) {
   const { t } = useTranslation('bioorchestrator');
   const [open, setOpen] = useState(false);
   const enough = selection.length >= MIN_COMPARE;
@@ -24,7 +27,7 @@ export default function CompareTray({ selection, parcelId, onClear }: CompareTra
 
   return (
     <>
-      {open && <CompareView recs={selection} parcelId={parcelId} />}
+      {open && <CompareView recs={selection} parcelId={parcelId} attributions={attributions} />}
       <div className="sticky bottom-0 z-10">
         <Card padding="sm">
           <Inline gap="inline" align="center" wrap>

@@ -687,6 +687,12 @@
   "disclaimer": {
     "text": "Recommendations are based on agronomic models and third-party scientific data. They do not replace professional judgment. Consult your local agricultural technician before making crop decisions."
   },
+  "sourceAttribution": {
+    "title": "Data sources",
+    "source": "Source",
+    "licence": "Licence",
+    "calculations": "Estimates and averages are Nekazari calculations based on these data; they are not data published by the sources."
+  },
   "crops": {
     "ALLPO": "Leek",
     "AVESA": "Oats",

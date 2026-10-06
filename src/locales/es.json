@@ -685,6 +685,12 @@
   "disclaimer": {
     "text": "Las recomendaciones se basan en modelos agronómicos y datos de fuentes científicas. No sustituyen el criterio profesional. Consulte a su técnico agrícola local antes de tomar decisiones de cultivo."
   },
+  "sourceAttribution": {
+    "title": "Fuentes de los datos",
+    "source": "Fuente",
+    "licence": "Licencia",
+    "calculations": "Las estimaciones y medias son cálculos de Nekazari a partir de estos datos; no son datos publicados por las fuentes."
+  },
   "crops": {
     "ALLPO": "Puerro",
     "AVESA": "Avena",

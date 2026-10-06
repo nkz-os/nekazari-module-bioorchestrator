@@ -16,6 +16,8 @@ import {
 } from "../services/api";
 import ParcelHealthChart from "./ParcelHealthChart";
 import { yieldPotentialView } from "./yieldPotentialModel";
+import SourceAttribution from "./shared/SourceAttribution";
+import type { SourceAttributionItem } from "../types/attribution";
 
 interface AssessmentData {
   cwsiValue?: number;
@@ -47,7 +49,10 @@ export default function ParcelHealth() {
   const [error, setError] = useState("");
   const [history, setHistory] = useState<HistoryPoint[]>([]);
   const [alerts, setAlerts] = useState<AlertItem[]>([]);
-  const [yieldProj, setYieldProj] = useState<{ projected_yield_kg_ha: number; potential_yield_kg_ha: number; yield_loss_pct: number } | null>(null);
+  const [yieldProj, setYieldProj] = useState<{
+    projected_yield_kg_ha: number; potential_yield_kg_ha: number; yield_loss_pct: number;
+    attributions?: SourceAttributionItem[];
+  } | null>(null);
 
   useEffect(() => {
     if (!selectedParcel) return;
@@ -251,6 +256,7 @@ export default function ParcelHealth() {
               <DetailGrid columns={2}>
                 <DetailItem label={t("parcelHealth.expected")} value={t("parcelHealth.noYieldData")} />
               </DetailGrid>
+              <SourceAttribution attributions={yp?.attributions} />
             </Card>
           )}
           {yp && yieldView === "gap" && (
@@ -259,6 +265,7 @@ export default function ParcelHealth() {
                 <DetailItem label={t("parcelHealth.yieldGap")} value={`${yp.yield_gap_pct}% (${yp.yield_gap_kg_ha} kg/ha)`} />
                 <DetailItem label={t("parcelHealth.expected")} value={`${yp.expected_yield_kg_ha} kg/ha`} />
               </DetailGrid>
+              <SourceAttribution attributions={yp.attributions} />
             </Card>
           )}
 
@@ -306,6 +313,7 @@ export default function ParcelHealth() {
                   {((yieldProj.projected_yield_kg_ha / yieldProj.potential_yield_kg_ha) * 100).toFixed(0)}% {t("parcelHealth.ofPotential")}
                 </Badge>
               </div>
+              <SourceAttribution attributions={yieldProj.attributions} />
             </Card>
           )}
 
