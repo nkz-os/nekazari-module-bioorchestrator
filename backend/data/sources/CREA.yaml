@@ -1,0 +1,92 @@
+# CREA source contract (reads the raw rows of app.kg.adapters.crea).
+#
+# Raw layer: the extraction files of the five CREA maize booklets "Risultati reti nazionali di confronto
+# varietale mais" 2021-2025 (320 rows), read at the pinned commit of the private raw-data repository.
+# Per year the booklet gives the mean of the late grain hybrids (FAO 500-600-700) over the network's
+# locations ("Media N Località", an aggregate whose location set differs per year) and the trial of one
+# field site. 22 other rows of the same folder are not CREA data and are excluded by the adapter, each
+# one reported: 19 rows of Romanian wheat from a 1993 paper (stored as CREA maize by the legacy graph)
+# and 3 rows of a test placeholder.
+#
+# The legacy graph also held every maize row a second time under the species-registry code ZEAMA. The
+# crop registry resolves that code to ZEAMX, so such rows are the same units (the engine counts the
+# collapse); the current raw data carries no ZEAMA.
+#
+# Yield: the booklets print q/ha at 15.5 % moisture; the extraction wrote kg/ha (q/ha x 100, checked
+# against the booklet text for 320 of 320 rows), which is the unit declared below.
+# Irrigation: the adapter passes the regime only where the booklet supports it for the whole row (see
+# the adapter); the extraction's "irrigato" on every row is not a statement of the booklets of 2021 and
+# 2022, nor of the 2025 network mean.
+source_id: CREA
+raw:
+  repo: nkz-data-sources
+  paths: ["crea/data/extractions/crea_mais_20*.json"]
+  extraction_version: "nkz-data-sources@798a73db5436eccf0ac8d4e40c7d66949195566a; booklet extractions of 2026-06-16"
+adapter: app.kg.adapters.crea
+document:
+  title: {from: doc.title}
+  year: {from: doc.year}
+  file_name: {from: doc.file_name}
+  raw_sha256: {from: doc.raw_sha256}
+  locator:
+    - {label: page, from: table.page}
+    - {label: table, from: table.number}
+study:
+  type: variety
+  group_by: [table.number]
+unit:
+  fields:
+    crop: {from: crop}
+    variety: {from: variety}
+    site: {from: site}
+    season: {from: season}
+    irrigation: {from: irrigation, vocab: irrigation}
+  purpose:
+    default: grain
+    justification: >-
+      Booklet 2024, "1) PROVE GRANELLA" and the table title "Ibridi da granella Fao 500-600-700 Media 13
+      Localita"
+  yield:
+    from: yield_kg_ha
+    unit: kg/ha
+    metric:
+      default: grain
+      justification: >-
+        Booklet 2024: the production column of "Ibridi da granella Fao 500-600-700" reads "Produzione (q/ha al
+        15.5% di umidità)"
+    basis:
+      default: standard_moisture
+      justification: >-
+        Booklets 2021-2025: "Produzione (q/ha al 15.5% di umidità)" and the column head "(q/ha 15.5%)"
+    moisture_pct:
+      default: 15.5
+      justification: >-
+        Booklet 2024: "Produzione (q/ha al 15.5% di umidità)"; the same moisture in all five booklets
+observations:
+  - {from: yield_relative_pct, variable: relative_yield_pct, unit: '%'}
+  - {from: quality_params.umidita_pct, variable: grain_moisture_harvest, unit: '%'}
+  - {from: quality_params.umidita_raccolta_pct, variable: grain_moisture_harvest, unit: '%'}
+  - {from: quality_params.peso_ettolitrico_kg_hl, variable: test_weight, unit: kg/hl}
+  - {from: agronomic_traits.altezza_pianta_cm, variable: plant_height, unit: cm}
+  - {from: agronomic_traits.altezza_spiga_cm, variable: ear_height, unit: cm}
+  - {from: agronomic_traits.piante_allettate_pct, variable: lodging_pct, unit: '%'}
+  - {from: agronomic_traits.piante_spezzate_pct, variable: stalk_breakage_pct, unit: '%'}
+  - {from: agronomic_traits.piante_m2, variable: plant_density, unit: /m2}
+  - {from: agronomic_traits.piante_per_m2, variable: plant_density, unit: /m2}
+ignore:
+  - field: confidence
+    reason: self-assessment of the language model that extracted the row; not an observation of the trial
+  - field: special_status
+    reason: >-
+      variety descriptor printed beside the name ("testimone", a check); no registered variable models the
+      status of a variety entry, so it is not mapped (variety and entry attributes are F2 work)
+  - field: agroclimatic_zone
+    reason: >-
+      the extraction wrote the same label on every row; the booklets state no zone, and the network spans
+      several regions (including Tuscany), so it is not an observation; the observed place is the location
+sites:
+  aggregate_patterns: ["^media \\d+ "]
+expected:
+  units: 320
+  observations: 2597
+  sites: 5

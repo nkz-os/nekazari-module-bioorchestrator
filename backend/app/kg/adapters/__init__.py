@@ -61,10 +61,11 @@ class WarningLog:
     def __init__(self) -> None:
         self._entries: dict[str, list[Any]] = {}
 
-    def add(self, code: str, message: str, where: str | None = None, count: int = 1) -> None:
+    def add(self, code: str, message: str, where: str | None = None, count: int = 1, *, keep_all: bool = False) -> None:
+        """Record an event; ``keep_all`` lists every place (for the few events that must each be seen)."""
         entry = self._entries.setdefault(code, [message, 0, []])
         entry[1] += count
-        if where is not None and len(entry[2]) < self.EXAMPLES:
+        if where is not None and (keep_all or len(entry[2]) < self.EXAMPLES):
             entry[2].append(where)
 
     def result(self) -> tuple[AdapterWarning, ...]:

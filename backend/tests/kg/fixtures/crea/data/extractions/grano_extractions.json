@@ -1,0 +1,25 @@
+{
+ "variety_trials": [
+  {
+   "variety": "Antalis",
+   "year": 2023,
+   "trial_location": "Foggia",
+   "yield_kg_ha": 4870.0,
+   "crop": "Grano duro"
+  },
+  {
+   "variety": "Claudio",
+   "year": 2023,
+   "trial_location": "Foggia",
+   "yield_kg_ha": 5120.0,
+   "crop": "Grano duro"
+  },
+  {
+   "variety": "Svevo",
+   "year": 2023,
+   "trial_location": "Foggia",
+   "yield_kg_ha": 4200.0,
+   "crop": "Grano duro"
+  }
+ ]
+}
