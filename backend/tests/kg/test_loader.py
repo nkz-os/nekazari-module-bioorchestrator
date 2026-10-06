@@ -9,6 +9,8 @@ from __future__ import annotations
 import asyncio
 import hashlib
 import json
+import os
+import re
 import shutil
 from pathlib import Path
 from unittest import mock
@@ -20,10 +22,12 @@ from app.ingestion.genvce_ingester import GenvceIngester
 from app.kg import identity, loader
 from app.kg.adapters import crea, genvce
 from app.kg.contracts import BuildReport, Bundle, load_contract, run_contract
+from app.kg.existing_graph import Neo4jExistingGraph
+from app.kg.gate import run_gate, unit_content_key
 from app.kg.migrations import apply_migrations
 from app.kg.model import UnitRow
 from app.kg.registries import load_registries
-from neo4j import AsyncGraphDatabase
+from neo4j import AsyncGraphDatabase, GraphDatabase
 
 DATA = Path(__file__).resolve().parents[2] / "data" / "sources"
 FIXTURES = Path(__file__).parent / "fixtures"
@@ -278,14 +282,27 @@ needs_docker = pytest.mark.skipif(shutil.which("docker") is None, reason="docker
 
 
 @pytest.fixture(scope="module")
-def driver():
+def container():
     if shutil.which("docker") is None:
         pytest.skip("docker unavailable")
     with Neo4jContainer("neo4j:5.26-community", password="testpassword") as n:
-        d = AsyncGraphDatabase.driver(n.get_connection_url(), auth=(n.username, n.password))
-        _run(apply_migrations(d))
-        yield d
-        _run(d.close())
+        yield n
+
+
+@pytest.fixture(scope="module")
+def driver(container):
+    d = AsyncGraphDatabase.driver(container.get_connection_url(), auth=(container.username, container.password))
+    _run(apply_migrations(d))
+    yield d
+    _run(d.close())
+
+
+@pytest.fixture(scope="module")
+def sync_driver(container):
+    """A synchronous driver on the same server, for the read-only ExistingGraph reader."""
+    d = GraphDatabase.driver(container.get_connection_url(), auth=(container.username, container.password))
+    yield d
+    d.close()
 
 
 async def _q(d, cypher: str, **params) -> list[dict]:
@@ -435,6 +452,80 @@ def test_phenology_stages_get_their_species_name_once(db):
                                                                        ("Triticum aestivum", "Triticum aestivum")}
     assert all(r["stamped"] is None for r in rows if r["n"] == "shared")  # two species: not guessed
     assert _run(loader.stamp_phenology_species_name(db)) == 0
+
+
+@needs_docker
+@pytest.mark.parametrize("page_size", [1000, 5])
+def test_the_graph_reader_returns_the_gates_own_identities_in_pages(db, sync_driver, genvce_bundle, page_size):
+    _run(loader.load(genvce_bundle, db, registries=REGISTRIES))
+    expected = {(identity.unit_key(u), unit_content_key(u)) for u in genvce_bundle.units}
+    reader = Neo4jExistingGraph(sync_driver, page_size=page_size)
+    got = list(reader.unit_identities("GENVCE"))
+    assert len(got) == len(genvce_bundle.units) and set(got) == expected
+    assert [k for k, _ in got] == sorted(k for k, _ in got)  # keyset order
+    assert list(reader.unit_identities("CREA")) == []
+
+
+@needs_docker
+def test_the_gate_flags_a_content_duplicate_against_the_real_graph_and_the_reader_writes_nothing(
+        db, sync_driver, genvce_bundle):
+    _run(loader.load(genvce_bundle, db, registries=REGISTRIES))
+    before = _fingerprint(db)
+    reader = Neo4jExistingGraph(sync_driver)
+    same = run_gate(genvce_bundle, REGISTRIES, "local-test", existing=reader)
+    assert same.content_duplicate_check == "run"
+    assert not any(w.rule == "content_duplicate_in_graph" for w in same.warnings)
+    # the same content printed in another table of the report: another key, the same content key
+    unit = next(u for u in genvce_bundle.units if u.yield_kg_ha is not None)
+    twin = unit.model_copy(update={"row_discriminator": "another-table"})
+    twin_obs = tuple(o.model_copy(update={"unit_key": identity.unit_key(twin)}) for o in genvce_bundle.observations
+                     if o.unit_key == identity.unit_key(unit))
+    probe = genvce_bundle.model_copy(update={"units": (twin,), "observations": twin_obs})
+    report = run_gate(probe, REGISTRIES, "local-test", existing=reader)
+    assert [w.count for w in report.warnings if w.rule == "content_duplicate_in_graph"] == [1]
+    assert _fingerprint(db) == before
+
+
+def test_the_reader_statement_has_no_write_clause():
+    # a READ session is only a routing hint on a single server, so the statement itself must be read-only
+    from app.kg import existing_graph
+
+    assert not re.search(r"\b(CREATE|MERGE|SET|DELETE|REMOVE|DROP|CALL|LOAD)\b", existing_graph._PAGE, re.IGNORECASE)
+
+
+# ═════════════════════════════════════════════════════════════════════════════
+# the real bundles (opt-in: the private raw-data repository)
+# ═════════════════════════════════════════════════════════════════════════════
+
+RAW_REPO = os.environ.get("NKZ_DATA_SOURCES_DIR", "")
+
+
+@needs_docker
+@pytest.mark.skipif(not RAW_REPO, reason="set NKZ_DATA_SOURCES_DIR to the raw-data repository to run")
+def test_the_real_bundles_load_complete_and_a_reload_changes_nothing(db, sync_driver):
+    bundles = {}
+    for source_id, adapter, contract in (("GENVCE", genvce, GENVCE_CONTRACT), ("CREA", crea, CREA_CONTRACT)):
+        bundles[source_id] = run_contract(contract, REGISTRIES, adapter.load(Path(RAW_REPO) / source_id.lower()).rows)
+        _run(loader.load(bundles[source_id], db, registries=REGISTRIES))
+    units = sum(len(b.units) for b in bundles.values())
+    observations = sum(len(b.observations) for b in bundles.values())
+    counts = _counts(db)
+    assert counts["nodes"]["VarietyTrial"] == units == 4182
+    assert counts["nodes"]["Observation"] == observations == 22410
+    assert counts["rels"]["ON_UNIT"] == observations
+    # every yield on a unit is the yield of its crop_yield Observation, and none is lost
+    rows = _run(_q(db, "MATCH (o:Observation {variableId: 'crop_yield'})-[:ON_UNIT]->(u:ObservationUnit) "
+                       "WHERE u.yieldKgHa IS NULL OR u.yieldKgHa <> o.value RETURN count(u) AS bad"))
+    assert rows[0]["bad"] == 0
+    with_yield = sum(1 for b in bundles.values() for u in b.units if u.yield_kg_ha is not None)
+    assert _run(_q(db, "MATCH (u:VarietyTrial) WHERE u.yieldKgHa IS NOT NULL RETURN count(u) AS c"))[0]["c"] == with_yield
+    before = _fingerprint(db)
+    for bundle in bundles.values():
+        again = _run(loader.load(bundle, db, registries=REGISTRIES))
+        assert again.nodes_created == again.relationships_created == 0
+    assert _fingerprint(db) == before
+    reader = Neo4jExistingGraph(sync_driver)
+    assert sum(1 for _ in reader.unit_identities("GENVCE")) == len(bundles["GENVCE"].units)
 
 
 # ═════════════════════════════════════════════════════════════════════════════
