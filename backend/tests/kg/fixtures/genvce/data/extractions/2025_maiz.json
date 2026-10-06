@@ -1,0 +1,81 @@
+{
+ "metadata": {
+  "source": "GENVCE",
+  "issue_number": 0,
+  "issue_period": "2024/2025",
+  "article_title": "GENVCE Maíz — Campaña 2024/2025",
+  "article_author": "GENVCE Consortium",
+  "article_topic": "maiz",
+  "year": 2025,
+  "page_in_issue": null,
+  "extraction_model": "deepseek-chat",
+  "extraction_date": "2026-06-15",
+  "confidence": "high"
+ },
+ "variety_trials": [
+  {
+   "crop": "Maíz",
+   "crop_scientific": "Zea mays",
+   "variety": "7585C",
+   "agroclimatic_zone": "General",
+   "year": 2025,
+   "yield_kg_ha": 17192.0,
+   "yield_relative_pct": 106.0,
+   "quality_params": {
+    "humedad_pct": 17.9,
+    "peso_especifico_kg_hl": 76.2
+   },
+   "disease_scores": {
+    "plantas_rotas_pct": 1.0,
+    "podredumbre_tallo_pct": 3.7,
+    "virus_mrdv_pct": 0.9,
+    "stay_green_0_5": 4
+   },
+   "agronomic_traits": {
+    "densidad_plantas_m2": 8.8,
+    "floracion_femenina_dias": 0,
+    "altura_planta_cm": 266,
+    "altura_insercion_mazorca_cm": 125
+   },
+   "yield_notes": {},
+   "special_status": null,
+   "irrigation_regime": "regadío",
+   "trial_location": null,
+   "page_in_issue": 5,
+   "table_number": 4,
+   "confidence": "high"
+  },
+  {
+   "crop": "Maíz",
+   "crop_scientific": "Zea mays",
+   "variety": "P1441",
+   "agroclimatic_zone": "General",
+   "year": 2025,
+   "yield_kg_ha": 16590.0,
+   "yield_relative_pct": 102.3,
+   "quality_params": {
+    "humedad_pct": 15.8,
+    "peso_especifico_kg_hl": 74.8
+   },
+   "disease_scores": {
+    "plantas_rotas_pct": 0.3,
+    "podredumbre_tallo_pct": 1.3,
+    "virus_mrdv_pct": 0.7,
+    "stay_green_0_5": 4
+   },
+   "agronomic_traits": {
+    "densidad_plantas_m2": 8.6,
+    "floracion_femenina_dias": -3,
+    "altura_planta_cm": 258,
+    "altura_insercion_mazorca_cm": 112
+   },
+   "yield_notes": {},
+   "special_status": null,
+   "irrigation_regime": "regadío",
+   "trial_location": null,
+   "page_in_issue": 5,
+   "table_number": 4,
+   "confidence": "high"
+  }
+ ]
+}

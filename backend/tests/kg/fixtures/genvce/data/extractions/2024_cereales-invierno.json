@@ -1,0 +1,77 @@
+{
+ "metadata": {
+  "source": "GENVCE",
+  "issue_number": 0,
+  "issue_period": "2023/2024",
+  "article_title": "GENVCE Cereales de Invierno (trigo, cebada, avena, centeno, triticale) — Campaña",
+  "article_author": "GENVCE Consortium",
+  "article_topic": "cereales-invierno",
+  "year": 2024,
+  "page_in_issue": null,
+  "extraction_model": "deepseek-chat",
+  "extraction_date": "2026-06-15",
+  "confidence": "high"
+ },
+ "variety_trials": [
+  {
+   "crop": "Cebada de invierno",
+   "crop_scientific": "Hordeum vulgare",
+   "variety": "RGT GIBRALTAR",
+   "agroclimatic_zone": null,
+   "year": 2024,
+   "yield_kg_ha": 7792.0,
+   "yield_relative_pct": 110.7,
+   "quality_params": {
+    "humedad_pct": 10.3,
+    "peso_especifico_kg_hl": 65.4,
+    "peso_mil_granos_g": 38.7,
+    "proteina_pct": 12.0
+   },
+   "disease_scores": {
+    "helmintosporiosis": 2.3
+   },
+   "agronomic_traits": {
+    "fecha_espigado": "23-abr.",
+    "altura_cm": 64,
+    "encamado_pct": 8.0
+   },
+   "yield_notes": {},
+   "special_status": null,
+   "irrigation_regime": "secano",
+   "trial_location": null,
+   "page_in_issue": 7,
+   "table_number": 9,
+   "confidence": "high"
+  },
+  {
+   "crop": "Cebada de invierno",
+   "crop_scientific": "Hordeum vulgare",
+   "variety": "RGT COVADONGA",
+   "agroclimatic_zone": null,
+   "year": 2024,
+   "yield_kg_ha": 7509.0,
+   "yield_relative_pct": 106.7,
+   "quality_params": {
+    "humedad_pct": 10.1,
+    "peso_especifico_kg_hl": 65.2,
+    "peso_mil_granos_g": 41.9,
+    "proteina_pct": 11.8
+   },
+   "disease_scores": {
+    "helmintosporiosis": 3.4
+   },
+   "agronomic_traits": {
+    "fecha_espigado": "25-abr.",
+    "altura_cm": 67,
+    "encamado_pct": 7.7
+   },
+   "yield_notes": {},
+   "special_status": null,
+   "irrigation_regime": "secano",
+   "trial_location": null,
+   "page_in_issue": 7,
+   "table_number": 9,
+   "confidence": "high"
+  }
+ ]
+}

@@ -1,0 +1,36 @@
+{
+ "metadata": {
+  "source": "GENVCE",
+  "issue_number": 0,
+  "issue_period": "2007/2008",
+  "article_title": "GENVCE Informe Anual — Campaña 2007/2008",
+  "article_author": "GENVCE Consortium",
+  "article_topic": "cereales-invierno",
+  "year": 2008,
+  "page_in_issue": null,
+  "extraction_model": "deepseek-chat",
+  "extraction_date": "2026-06-15",
+  "confidence": "medium"
+ },
+ "variety_trials": [
+  {
+   "crop": "Cebada",
+   "crop_scientific": "Hordeum vulgare",
+   "variety": "REGALIA",
+   "agroclimatic_zone": "Regadío",
+   "year": 2008,
+   "yield_kg_ha": 4266.0,
+   "yield_relative_pct": 95.2,
+   "quality_params": null,
+   "disease_scores": null,
+   "agronomic_traits": null,
+   "yield_notes": {},
+   "special_status": null,
+   "irrigation_regime": "regadío",
+   "trial_location": null,
+   "page_in_issue": 13,
+   "table_number": 13,
+   "confidence": "high"
+  }
+ ]
+}

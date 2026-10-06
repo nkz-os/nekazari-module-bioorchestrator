@@ -1,0 +1,272 @@
+# GENVCE source contract (reads the raw rows of app.kg.adapters.genvce).
+#
+# Raw layer: the LLM extraction pass of 2026-06-15 (52 files, one per campaign and crop group), read
+# at the pinned commit of the private raw-data repository. It is the pass the production graph was
+# built from (via its converter and "adequate" steps). The legacy "enriched" pass is NOT read: it is an
+# older extraction (2026-06-01) with no explicit version, and 505 of its 1105 keys shared with this
+# pass have another yield (rebuild inventory, 2.3). Loading it needs its own contract and version.
+#
+# What a row is. GENVCE publishes the mean of a GROUP of trials per table: an agroclimatic zone, a
+# yield stratum, a geographic group, or all trials. It prints no trial location (trial_location is
+# null in 3862 of 3862 extracted rows). The unit's site is therefore the OBSERVED group label, kept as
+# an aggregate site with no coordinates (sites.yaml, ES-GENVCE-*); a table with no label has no site.
+# The legacy step mapped these means to four reference cities; that is not repeated here.
+#
+# The extraction's own table number is the unit's row_discriminator: the same variety is printed in
+# several tables of one report (different groups, periods or cycle panels) and 688 key conflicts
+# appear without it. It is the extraction's number, not always the PDF's (checked: the 2011 maize
+# tables are shifted by one).
+#
+# Adapter decisions (reported as warnings by the adapter, counted in the equivalence report):
+#   irrigation  only what the zone label states; the extraction's regime is an assumption that the
+#               reports do not support (the 15 maize reports never mention irrigation)
+#   zone        yield_notes.zone (the table's own label) wins over the extraction's agroclimatic relabel
+#   disease     bare oidio/roya_parda/helmintosporiosis/rincosporiosis are 0-9 scores in 2005/06-2011/12
+#               (their tables print "Escala visual 0-9"); unresolved elsewhere, so ignored below
+#   season      the report year, or the printed multi-year period (yield_notes.year_range / periodo)
+source_id: GENVCE
+raw:
+  repo: nkz-data-sources
+  paths: ["genvce/data/extractions/*.json"]
+  extraction_version: "nkz-data-sources@798a73db5436eccf0ac8d4e40c7d66949195566a; extraction pass 2026-06-15 (deepseek-chat)"
+adapter: app.kg.adapters.genvce
+document:
+  title: {from: doc.title}
+  issue: {from: doc.issue}
+  year: {from: doc.year}
+  locator:
+    - {label: page, from: table.page}
+    - {label: table, from: table.number}
+study:
+  type: variety
+  group_by: [doc.topic, table.number]
+unit:
+  fields:
+    crop: {from: crop}
+    variety: {from: variety}
+    site: {from: zone}
+    season: {from: season}
+    irrigation: {from: irrigation, vocab: irrigation}
+    production_system: {from: production_system, vocab: production_system}
+    row_discriminator: {from: table.number}
+  factors:
+    # the group label the table prints for the variety panel ("Cebada de ciclo largo", "Maíz ciclo 700"):
+    # two panels of one crop are different results, so the label is part of the unit
+    - {factor: crop_group, from: crop}
+  purpose:
+    by_crop:
+      HORVX: &cereal_purpose
+        default: grain
+        justification: >-
+          Informe GENVCE cereales de invierno 2022/2023, Tabla 17: "Resultados del análisis de varianza de la
+          variable producción de grano en cebada de invierno"
+      TRZAX: *cereal_purpose
+      ZEAMX:
+        default: grain
+        justification: >-
+          Informe GENVCE maíz 2023: "EVALUACIÓN AGRONÓMICA DE LAS NUEVAS VARIEDADES CONVENCIONALES Y
+          TRANSGÉNICAS DE MAÍZ PARA GRANO"
+      BRSNN:
+        default: grain
+        justification: >-
+          Informe GENVCE colza de otoño 2021/2022, section 2.2.1: "Producción de grano"
+  yield:
+    from: yield_kg_ha
+    unit: kg/ha
+    metric:
+      by_crop:
+        HORVX: &cereal_metric
+          default: grain
+          justification: >-
+            Informe GENVCE cereales de invierno 2022/2023, Tabla 46: "producción de grano en trigo blando de
+            ciclo largo" and Tabla 17 "producción de grano en cebada de invierno"
+        TRZAX: *cereal_metric
+        ZEAMX:
+          default: grain
+          justification: >-
+            Informe GENVCE maíz 2025, Tabla 7: "Resultados del análisis de varianza de producción de grano en
+            maíz de ciclo FAO 600 y 700"
+        BRSNN:
+          default: grain
+          justification: >-
+            Informe GENVCE colza de otoño 2021/2022, Tabla 11: "Resultados del análisis de varianza de
+            producción de grano en colza de otoño"
+    basis:
+      default: standard_moisture
+      justification: >-
+        Every GENVCE yield table states its moisture: "kg/ha al 13% de humedad" (cereals, e.g. cereales
+        2022/2023), "kg/ha al 14% de humedad" (maize, e.g. maíz 2023), "kg/ha al 9% de humedad" (rapeseed,
+        e.g. colza 2021/2022); the percentage differs by crop and is given under moisture_pct
+    moisture_pct:
+      by_crop:
+        HORVX: &cereal_moisture
+          default: 13
+          justification: >-
+            Informe GENVCE cereales de invierno 2022/2023, cebada de invierno: "MEDIA 4639 kg/ha al 13% de
+            humedad"; the same footer in every cereal report checked (2005/06 to 2024/25, organic wheat included)
+        TRZAX: *cereal_moisture
+        ZEAMX:
+          default: 14
+          justification: >-
+            Informe GENVCE maíz 2023: "Media del ensayo (kg/ha) 14338 kg/ha al 14% de humedad"; the same
+            footer in every maize report checked (the 2025 report also prints 9% in 22 footers of per-trial tables,
+            while its summary tables, which are the extracted ones, say "kg/ha, 14% de humedad")
+        BRSNN:
+          default: 9
+          justification: >-
+            Informe GENVCE colza de otoño 2021/2022: "Media 3912 kg/ha al 9% de humedad"; the same footer in
+            every rapeseed report checked
+observations:
+  - {from: yield_relative_pct, variable: relative_yield_pct, unit: '%'}
+  - {from: agronomic_traits.altura_cm, variable: plant_height, unit: cm}
+  - {from: agronomic_traits.altura_insercion_mazorca_cm, variable: ear_height, unit: cm}
+  - {from: agronomic_traits.altura_mazorca_cm, variable: ear_height, unit: cm}
+  - {from: agronomic_traits.altura_nudo_mazorca_cm, variable: ear_height, unit: cm}
+  - {from: agronomic_traits.altura_planta_cm, variable: plant_height, unit: cm}
+  - {from: agronomic_traits.capacidad_ahijamiento_espigas_m2, variable: spike_density, unit: /m2}
+  - {from: agronomic_traits.ciclo, variable: cycle_class}
+  - {from: agronomic_traits.ciclo_fao, variable: fao_maturity_class}
+  - {from: agronomic_traits.danos_frio_pct, variable: cold_damage_pct, unit: '%'}
+  - {from: agronomic_traits.densidad_plantas_m2, variable: plant_density, unit: plantas/m2}
+  - {from: agronomic_traits.dias_floracion_femenina_respecto_testigo, variable: silking_days_vs_check, unit: días}
+  - {from: agronomic_traits.duracion_floracion_dias, variable: flowering_duration_days, unit: días}
+  - {from: agronomic_traits.encamado_pct, variable: lodging_pct, unit: '%'}
+  - {from: agronomic_traits.espigado_dias_respecto_hispanic, variable: heading_days_vs_check, unit: días, qualifier: {default: HISPANIC}}
+  - {from: agronomic_traits.espigado_dias_respecto_meseta, variable: heading_days_vs_check, unit: días, qualifier: {default: MESETA}}
+  - {from: agronomic_traits.espigado_dias_respecto_sunrise, variable: heading_days_vs_check, unit: días, qualifier: {default: SUNRISE}}
+  - {from: agronomic_traits.espigas_m2, variable: spike_density, unit: /m2}
+  - {from: agronomic_traits.fecha_encanado, variable: jointing_date}
+  - {from: agronomic_traits.fecha_espigado, variable: heading_date}
+  - {from: agronomic_traits.fecha_fin_floracion, variable: flowering_end_date}
+  - {from: agronomic_traits.fecha_final_floracion, variable: flowering_end_date}
+  - {from: agronomic_traits.fecha_floracion_femenina_dias_respecto_P0937, variable: silking_days_vs_check, unit: días, qualifier: {default: P0937}}
+  - {from: agronomic_traits.fecha_floracion_femenina_dias_respecto_P1921, variable: silking_days_vs_check, unit: días, qualifier: {default: P1921}}
+  - {from: agronomic_traits.fecha_inicio_floracion, variable: flowering_start_date}
+  - {from: agronomic_traits.fecha_madurez, variable: maturity_date}
+  - {from: agronomic_traits.fecha_madurez_fisiologica, variable: physiological_maturity_date}
+  - {from: agronomic_traits.floracion_femenina_dias, variable: silking_days_vs_check, unit: días}
+  - {from: agronomic_traits.floracion_femenina_dias_ref, variable: silking_days_vs_check, unit: días}
+  - {from: agronomic_traits.floracion_femenina_dias_relativos, variable: silking_days_vs_check, unit: días}
+  - {from: agronomic_traits.floracion_femenina_dias_respecto_ELEONORA, variable: silking_days_vs_check, unit: días, qualifier: {default: ELEONORA}}
+  - {from: agronomic_traits.floracion_femenina_dias_respecto_p1921, variable: silking_days_vs_check, unit: días, qualifier: {default: P1921}}
+  - {from: agronomic_traits.floracion_femenina_dias_respecto_testigo, variable: silking_days_vs_check, unit: días}
+  - {from: agronomic_traits.floracion_femenina_dias_vs_check, variable: silking_days_vs_check, unit: días}
+  - {from: agronomic_traits.humedad_pct, variable: grain_moisture_harvest, unit: '%'}
+  - {from: agronomic_traits.madurez_fisiologica_dias_vs_check, variable: physiological_maturity_days_vs_check, unit: días}
+  - {from: agronomic_traits.nacencia, variable: emergence_score}
+  - {from: agronomic_traits.nacencia_0_5, variable: emergence_score}
+  - {from: agronomic_traits.nacencia_escala_0_5, variable: emergence_score}
+  - {from: agronomic_traits.nascencia, variable: emergence_score}
+  - {from: agronomic_traits.nascencia_0_5, variable: emergence_score}
+  - {from: agronomic_traits.nascencia_escala_0_5, variable: emergence_score}
+  - {from: agronomic_traits.plantas_rotas_pct, variable: stalk_breakage_pct, unit: '%'}
+  - {from: agronomic_traits.podredumbres_tallo_pct, variable: stalk_rot_pct, unit: '%'}
+  - {from: "agronomic_traits.stay_ green", variable: stay_green_score}
+  - {from: agronomic_traits.stay_green, variable: stay_green_score}
+  - {from: agronomic_traits.stay_green_0_5, variable: stay_green_score}
+  - {from: agronomic_traits.stay_green_escala_0_5, variable: stay_green_score}
+  - {from: disease_scores.helmintosporiosis_escala_0_9, variable: helminthosporium_score_0_9}
+  - {from: disease_scores.helmintosporiosis_pct, variable: helminthosporium_pct, unit: '%'}
+  - {from: disease_scores.oidio_escala_0_9, variable: powdery_mildew_score_0_9}
+  - {from: disease_scores.oidio_pct, variable: powdery_mildew_pct, unit: '%'}
+  - {from: disease_scores.plantas_rotas_pct, variable: stalk_breakage_pct, unit: '%'}
+  - {from: disease_scores.podredumbre_tallo_pct, variable: stalk_rot_pct, unit: '%'}
+  - {from: disease_scores.podredumbres_tallo_pct, variable: stalk_rot_pct, unit: '%'}
+  - {from: disease_scores.rincoconporiosis_pct, variable: scald_pct, unit: '%'}
+  - {from: disease_scores.rincosporiosis_0_9, variable: scald_score_0_9}
+  - {from: disease_scores.rincosporiosis_escala_0_9, variable: scald_score_0_9}
+  - {from: disease_scores.rincosporiosis_pct, variable: scald_pct, unit: '%'}
+  - {from: disease_scores.roya_amarilla_0_9, variable: yellow_rust_score_0_9}
+  - {from: disease_scores.roya_amarilla_pct, variable: yellow_rust_pct, unit: '%'}
+  - {from: disease_scores.roya_parda_escala_0_9, variable: brown_rust_score_0_9}
+  - {from: disease_scores.roya_parda_pct, variable: brown_rust_pct, unit: '%'}
+  - {from: disease_scores.septoria_pct, variable: septoria_pct, unit: '%'}
+  - {from: disease_scores.stay_green_0_5, variable: stay_green_score}
+  - {from: disease_scores.stay_green_escala_0_5, variable: stay_green_score}
+  - {from: disease_scores.virus_mrdv_pct, variable: mrdv_virus_pct, unit: '%'}
+  - {from: quality_params.ahijamiento_espigas_m2, variable: spike_density, unit: /m2}
+  - {from: quality_params.altura_cm, variable: plant_height, unit: cm}
+  - {from: quality_params.altura_insercion_mazorca_cm, variable: ear_height, unit: cm}
+  - {from: quality_params.altura_nudo_mazorca_cm, variable: ear_height, unit: cm}
+  - {from: quality_params.altura_planta_cm, variable: plant_height, unit: cm}
+  - {from: quality_params.contenido_en_grasa_pct, variable: seed_oil_content, unit: '%'}
+  - {from: quality_params.contenido_grasa_pct, variable: seed_oil_content, unit: '%'}
+  - {from: quality_params.densidad_plantas_m2, variable: plant_density, unit: plantas/m2}
+  - {from: quality_params.diferencia_floracion_femenina_dias, variable: silking_days_vs_check, unit: días}
+  - {from: quality_params.duracion_floracion, variable: flowering_duration_days, unit: días}
+  - {from: quality_params.duracion_floracion_dias, variable: flowering_duration_days, unit: días}
+  - {from: quality_params.encamado_pct, variable: lodging_pct, unit: '%'}
+  - {from: quality_params.fecha_espigado, variable: heading_date}
+  - {from: quality_params.fecha_final_floracion, variable: flowering_end_date}
+  - {from: quality_params.fecha_inicio_floracion, variable: flowering_start_date}
+  - {from: quality_params.fecha_madurez_fisiologica, variable: physiological_maturity_date}
+  - {from: quality_params.floracion_femenina_dias, variable: silking_days_vs_check, unit: días}
+  - {from: quality_params.floracion_femenina_dias_respecto_P0937, variable: silking_days_vs_check, unit: días, qualifier: {default: P0937}}
+  - {from: quality_params.floracion_femenina_dias_respecto_P1921, variable: silking_days_vs_check, unit: días, qualifier: {default: P1921}}
+  - {from: quality_params.floracion_femenina_dias_respecto_testigo, variable: silking_days_vs_check, unit: días}
+  - {from: quality_params.grasa_pct, variable: seed_oil_content, unit: '%'}
+  - {from: quality_params.humedad_grano_pct, variable: grain_moisture_harvest, unit: '%'}
+  - {from: quality_params.humedad_pct, variable: grain_moisture_harvest, unit: '%'}
+  - {from: quality_params.nacencia, variable: emergence_score}
+  - {from: quality_params.nacencia_0_5, variable: emergence_score}
+  - {from: quality_params.nascencia, variable: emergence_score}
+  - {from: quality_params.peso_de_1000_granos_g, variable: thousand_kernel_weight, unit: g}
+  - {from: quality_params.peso_especifico_kg_hl, variable: test_weight, unit: kg/hl}
+  - {from: quality_params.peso_hectolitrico_kg_hl, variable: test_weight, unit: kg/hl}
+  - {from: quality_params.peso_mil_granos_g, variable: thousand_kernel_weight, unit: g}
+  - {from: quality_params.peso_mil_semillas_g, variable: thousand_kernel_weight, unit: g}
+  - {from: quality_params.plantas_enanas_pct, variable: dwarf_plants_pct, unit: '%'}
+  - {from: quality_params.proteina_pct, variable: grain_protein_content, unit: '%'}
+  - {from: quality_params.stay_green, variable: stay_green_score}
+  - {from: yield_notes.numero_de_ensayos, variable: trial_count_in_mean, unit: '1'}
+  - {from: yield_notes.numero_ensayos, variable: trial_count_in_mean, unit: '1'}
+  - {from: yield_notes.numero_ensayos_2016_2017, variable: trial_count_in_mean, unit: '1', qualifier: {default: '2016-2017'}}
+  - {from: yield_notes.numero_ensayos_2022_2024, variable: trial_count_in_mean, unit: '1', qualifier: {default: '2022-2024'}}
+  - {from: yield_notes.numero_ensayos_2023_2024, variable: trial_count_in_mean, unit: '1', qualifier: {default: '2023-2024'}}
+  - {from: yield_notes.numero_ensayos_conjunto, variable: trial_count_in_mean, unit: '1', qualifier: {default: conjunto}}
+ignore:
+  - {field: confidence, reason: "self-assessment of the language model that extracted the row; not an observation of the trial"}
+  - field: special_status
+    reason: >-
+      variety descriptor printed beside the name (check, GM, hybrid type, Clearfield); no registered variable
+      models the status of a variety entry, so it is not mapped (variety and entry attributes are F2 work)
+  - field: disease_scores.helmintosporiosis
+    reason: >-
+      bare key of the 2023/24 report, which prints "Nivel de ataque de enfermedades (% o escala 1-10)" and the
+      unit per table; the extraction did not record which, so the scale is unresolved and nothing is mapped
+  - field: disease_scores.helmintosporiosis_scale
+    reason: >-
+      key of the 2024/25 report, which prints "(% o escala 1-10)" per table; the range is not recorded by the
+      extraction, so the scale is unresolved
+  - field: disease_scores.roya_amarilla
+    reason: >-
+      bare key of the 2019/20 and 2020/21 reports: the first prints yellow rust in "(%)" in the spring wheat
+      table, the second "(0-9)" in the winter wheat table, and the extraction did not record which table a
+      row's value came from, so the scale is unresolved
+  - field: agronomic_traits.capacidad_ahijamiento_plantas_m2
+    reason: >-
+      tillering capacity per plants/m2; the same trait is mapped as ears/m2 (spike_density) elsewhere and
+      nothing states that plants and ears are interchangeable
+  - field: yield_notes.indice_productivo_conjunto_pct
+    reason: yield index of the variety in the multi-year table, copied onto this row by the extraction; it belongs to that table's unit
+  - field: yield_notes.produccion_conjunta_kg_ha
+    reason: yield of the variety in the multi-year table, copied onto this row by the extraction; it belongs to that table's unit
+  - field: yield_notes.indice_tabla9_pct
+    reason: yield index of the variety in another table of the report (Tabla 9), copied by the extraction; it belongs to that table's unit
+  - field: yield_notes.produccion_tabla9_kg_ha
+    reason: yield of the variety in another table of the report (Tabla 9), copied by the extraction; it belongs to that table's unit
+  - field: yield_notes.tercil_superior
+    reason: number of trials in which the variety ranked in the upper tercile (a tercile analysis table); no registered variable models it
+  - field: yield_notes.tercil_mediano
+    reason: number of trials in which the variety ranked in the middle tercile (a tercile analysis table); no registered variable models it
+  - field: yield_notes.tercil_inferior
+    reason: number of trials in which the variety ranked in the lower tercile (a tercile analysis table); no registered variable models it
+  - field: yield_notes.rendimiento_al_9_pct_humedad
+    reason: boolean note that the yield is at 9% moisture; the basis is declared once for the whole source above (rapeseed, 9%)
+sites:
+  # every GENVCE site is an aggregate (zone, stratum, group): none may ever resolve to a field site
+  aggregate_patterns: ["^.+$"]
+expected:
+  units: 3862
+  observations: 19813
+  sites: 44

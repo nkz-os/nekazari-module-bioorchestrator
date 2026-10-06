@@ -1,0 +1,71 @@
+{
+ "metadata": {
+  "source": "GENVCE",
+  "issue_number": 0,
+  "issue_period": "2020/2021",
+  "article_title": "GENVCE Cereales de Invierno (trigo, cebada, avena, centeno, triticale) — Campaña",
+  "article_author": "GENVCE Consortium",
+  "article_topic": "cereales-invierno",
+  "year": 2021,
+  "page_in_issue": null,
+  "extraction_model": "deepseek-chat",
+  "extraction_date": "2026-06-15",
+  "confidence": "high"
+ },
+ "variety_trials": [
+  {
+   "crop": "Trigo blando ecológico de invierno",
+   "crop_scientific": "Triticum aestivum",
+   "variety": "RGT QUIRIKO",
+   "agroclimatic_zone": "Templada",
+   "year": 2021,
+   "yield_kg_ha": 4234.0,
+   "yield_relative_pct": 126.2,
+   "quality_params": {
+    "fecha_espigado": "28-abr",
+    "altura_cm": 73,
+    "peso_mil_granos_g": 35.9,
+    "peso_especifico_kg_hl": 78.9,
+    "proteina_pct": 12.7
+   },
+   "disease_scores": {
+    "roya_amarilla": 1
+   },
+   "agronomic_traits": {},
+   "yield_notes": {},
+   "special_status": null,
+   "irrigation_regime": "secano",
+   "trial_location": null,
+   "page_in_issue": 4,
+   "table_number": 5,
+   "confidence": "high"
+  },
+  {
+   "crop": "Trigo blando ecológico de invierno",
+   "crop_scientific": "Triticum aestivum",
+   "variety": "NUDEL",
+   "agroclimatic_zone": "Templada",
+   "year": 2021,
+   "yield_kg_ha": 4078.0,
+   "yield_relative_pct": 121.6,
+   "quality_params": {
+    "fecha_espigado": "26-abr",
+    "altura_cm": 66,
+    "peso_mil_granos_g": 36.7,
+    "peso_especifico_kg_hl": 78.1,
+    "proteina_pct": 12.7
+   },
+   "disease_scores": {
+    "roya_amarilla": 1
+   },
+   "agronomic_traits": {},
+   "yield_notes": {},
+   "special_status": null,
+   "irrigation_regime": "secano",
+   "trial_location": null,
+   "page_in_issue": 4,
+   "table_number": 5,
+   "confidence": "high"
+  }
+ ]
+}
