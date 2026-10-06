@@ -11,8 +11,10 @@ Behaviour
     identifier or block comment is an error, never silently accepted.
   * Every file is parsed before anything is executed: a malformed file aborts the run with the
     database untouched.
-  * Files run in numeric order (``NNN_name.cypher``, top level of the migrations directory).
-    ``enterprise/`` holds Enterprise-only schema rules and is skipped unless asked for.
+  * Files run in numeric order (``NNN_name.cypher``, top level of the migrations directory only).
+    ``enterprise/`` holds Enterprise-only schema rules (NODE KEY, existence constraints); the
+    runner never reads it. They are applied by hand on an Enterprise instance (see the header of
+    the files there).
   * Statements run in order. "An equivalent schema rule already exists" counts as success (matched
     on the server error *code*, not on message text); any other error stops the run with a
     :class:`MigrationError` that names the file and statement. Schema statements are not
@@ -43,7 +45,6 @@ from neo4j.exceptions import Neo4jError
 logger = logging.getLogger(__name__)
 
 MIGRATIONS_DIR = Path(__file__).resolve().parents[2] / "cypher_migrations"
-ENTERPRISE_SUBDIR = "enterprise"
 
 SCHEMA_VERSION_LABEL = "SchemaVersion"
 SCHEMA_VERSION_CONSTRAINT = (
@@ -55,11 +56,13 @@ MODE_FULL = "full"
 MODE_SCHEMA_ONLY = "schema-only"
 
 # Server codes meaning "this schema rule is already there": success, not failure.
+# Deliberately NOT included: Neo.ClientError.Schema.IndexAlreadyExists. Neo4j returns it when a
+# UNIQUE constraint is requested over a pre-existing plain index ("a constraint cannot be created
+# until the index has been dropped"): the constraint is missing, which is a failure.
 _ALREADY_EXISTS_CODES = frozenset(
     {
         "Neo.ClientError.Schema.EquivalentSchemaRuleAlreadyExists",
         "Neo.ClientError.Schema.ConstraintAlreadyExists",
-        "Neo.ClientError.Schema.IndexAlreadyExists",
     }
 )
 
@@ -183,9 +186,7 @@ class MigrationReport:
         return sum(a.skipped_data for a in self.applied)
 
 
-def discover_migrations(
-    directory: Path | None = None, *, include_enterprise: bool = False
-) -> list[MigrationFile]:
+def discover_migrations(directory: Path | None = None) -> list[MigrationFile]:
     """Parse the migration files in run order. Raises before any DB access on a bad layout."""
     base = Path(directory) if directory is not None else MIGRATIONS_DIR
     if not base.is_dir():
@@ -209,14 +210,9 @@ def discover_migrations(
         seen[prefix] = path.name
         top.append(path)
 
-    paths = [(p.name, p) for p in top]
-    if include_enterprise:
-        ent_dir = base / ENTERPRISE_SUBDIR
-        if ent_dir.is_dir():
-            paths += [(f"{ENTERPRISE_SUBDIR}/{p.name}", p) for p in sorted(ent_dir.glob("*.cypher"))]
-
     parsed: list[MigrationFile] = []
-    for name, path in paths:
+    for path in top:
+        name = path.name
         raw = path.read_bytes()
         try:
             statements = split_statements(raw.decode("utf-8"))
@@ -266,11 +262,10 @@ async def apply_migrations(
     directory: Path | None = None,
     *,
     include_data: bool = True,
-    include_enterprise: bool = False,
     database: str | None = None,
 ) -> MigrationReport:
     """Apply every migration in order; raise :class:`MigrationError` on the first real failure."""
-    files = discover_migrations(directory, include_enterprise=include_enterprise)
+    files = discover_migrations(directory)
     applied: list[AppliedMigration] = []
 
     async with driver.session(database=database) as session:

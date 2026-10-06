@@ -285,6 +285,17 @@ def test_equivalent_rule_already_exists_is_success(db, mdir):
 
 
 @needs_docker
+def test_unique_constraint_over_existing_plain_index_raises(db, mdir):
+    """Neo4j answers IndexAlreadyExists here, and the constraint is NOT created: not a success."""
+    _run(_q(db, "CREATE INDEX pre_idx FOR (n:Species) ON (n.name)"))
+    write(mdir, "001_u.cypher", "CREATE CONSTRAINT species_name IF NOT EXISTS FOR (n:Species) REQUIRE n.name IS UNIQUE;")
+    with pytest.raises(MigrationError) as exc:
+        _run(apply_migrations(db, mdir))
+    assert exc.value.code == "Neo.ClientError.Schema.IndexAlreadyExists"
+    assert "species_name" not in {c[0] for c in constraints(db)}
+
+
+@needs_docker
 def test_same_name_different_schema_raises(db, mdir):
     _run(_q(db, "CREATE CONSTRAINT clash FOR (n:One) REQUIRE n.k IS UNIQUE"))
     write(mdir, "001_clash.cypher", "CREATE CONSTRAINT clash FOR (n:Two) REQUIRE n.k IS UNIQUE;")
@@ -305,7 +316,7 @@ def test_uniqueness_violation_in_existing_data_raises(db, mdir):
 
 
 @needs_docker
-def test_enterprise_directory_is_skipped_by_default(db, mdir):
+def test_enterprise_directory_is_skipped(db, mdir):
     write(mdir, "001_ok.cypher", "CREATE INDEX ok IF NOT EXISTS FOR (n:Ok) ON (n.k);")
     write(mdir, "enterprise/001_nk.cypher", "CREATE CONSTRAINT nk FOR (n:NK) REQUIRE (n.a, n.b) IS NODE KEY;")
 
@@ -314,15 +325,6 @@ def test_enterprise_directory_is_skipped_by_default(db, mdir):
     assert report.files == ("001_ok.cypher",)
     assert "nk" not in {c[0] for c in constraints(db)}
     assert set(schema_versions(db)) == {"001_ok.cypher"}
-
-
-@needs_docker
-def test_enterprise_directory_runs_only_when_asked(db, mdir):
-    write(mdir, "001_ok.cypher", "CREATE INDEX ok IF NOT EXISTS FOR (n:Ok) ON (n.k);")
-    write(mdir, "enterprise/001_nk.cypher", "CREATE CONSTRAINT nk FOR (n:NK) REQUIRE (n.a, n.b) IS NODE KEY;")
-    with pytest.raises(MigrationError) as exc:  # Community cannot: proves the file is attempted
-        _run(apply_migrations(db, mdir, include_enterprise=True))
-    assert exc.value.file == "enterprise/001_nk.cypher"
 
 
 @needs_docker
@@ -381,6 +383,7 @@ def test_missing_directory_is_an_error(tmp_path):
         _run(apply_migrations(None, tmp_path / "nope"))
 
 
-def test_shipped_enterprise_dir_is_not_scanned_as_a_migration():
-    names = [m.name for m in discover_migrations(include_enterprise=False)]
-    assert all("/" not in n for n in names) and names == sorted(names)
+def test_shipped_migrations_are_found_in_order_and_enterprise_is_not_scanned():
+    names = [m.name for m in discover_migrations()]
+    assert names and names == sorted(names)
+    assert all("/" not in n for n in names)
