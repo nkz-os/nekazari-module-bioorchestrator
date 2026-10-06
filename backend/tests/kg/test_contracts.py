@@ -495,3 +495,297 @@ def test_row_problems_are_collected_not_just_the_first():
     with pytest.raises(ContractDataError) as caught:
         run([raw_row(**{"yield": "x"}), raw_row(crop="???"), raw_row(**{"yield": "y"})])
     assert len(caught.value.errors) == 3
+
+
+# ═════════════════════════════════════════════════════════════════════════════
+# 3. Rulings carried forward from review
+# ═════════════════════════════════════════════════════════════════════════════
+
+def moisture_by_crop_contract() -> dict:
+    """The moisture of the standard basis differs by crop and is declared per crop, each justified."""
+    contract = base_contract()
+    contract["unit"]["yield"]["moisture_pct"] = {"by_crop": {
+        "HORVX": {"default": 13, "justification": "synthetic: cereals at 13 %"},
+        "ZEAMX": {"default": 14, "justification": "synthetic: maize at 14 %"},
+        "BRSNN": {"default": 9, "justification": "synthetic: rapeseed at 9 %"},
+    }}
+    return contract
+
+
+def test_yield_moisture_is_declared_per_crop_and_never_collapsed_into_one_constant():
+    rows = [raw_row(crop=crop, zone=f"z-{crop}") for crop in ("HORVX", "ZEAMX", "BRSNN")]
+    bundle = run(rows, moisture_by_crop_contract(), units=3, observations=6)
+    by_crop = {unit.crop_eppo: unit for unit in bundle.units}
+    assert {crop: unit.yield_moisture_pct for crop, unit in by_crop.items()} == {
+        "HORVX": 13.0, "ZEAMX": 14.0, "BRSNN": 9.0}
+    assert all(unit.yield_basis == "standard_moisture" for unit in bundle.units)
+    for obs in (o for o in bundle.observations if o.variable_id == "crop_yield"):
+        unit = next(u for u in bundle.units if identity.unit_key(u) == obs.unit_key)
+        assert obs.moisture_pct == unit.yield_moisture_pct
+
+
+def test_a_crop_the_per_crop_moisture_does_not_cover_is_refused_not_defaulted():
+    with pytest.raises(ContractDataError, match="declares no yield moisture_pct for crop TRZAX"):
+        run([raw_row(crop="TRZAX")], moisture_by_crop_contract())
+
+
+def test_yield_moisture_can_be_read_from_a_raw_field():
+    contract = base_contract()
+    contract["unit"]["yield"]["moisture_pct"] = {"from": "moisture"}
+    bundle = run([raw_row(moisture=15.5)], contract)
+    assert bundle.units[0].yield_moisture_pct == 15.5
+    with pytest.raises(ContractDataError, match="needs it"):
+        run([raw_row(moisture=None)], contract)
+    with pytest.raises(ContractDataError, match="between 0 and 100"):
+        run([raw_row(moisture=155)], contract)
+
+
+def test_a_basis_per_crop_needs_moisture_for_each_standard_moisture_crop():
+    contract = base_contract()
+    contract["unit"]["yield"]["basis"] = {"by_crop": {
+        "HORVX": {"default": "standard_moisture", "justification": JUSTIFIED},
+        "ZEAMX": {"default": "dry_matter", "justification": JUSTIFIED},
+    }}
+    contract["unit"]["yield"]["moisture_pct"] = {"by_crop": {
+        "ZEAMX": {"default": 14, "justification": JUSTIFIED}}}
+    with pytest.raises(ContractError, match=r"crop HORVX\).*needs its moisture_pct"):
+        run_contract(Contract.model_validate(contract), REGISTRIES, [])
+    contract["unit"]["yield"]["moisture_pct"] = {"by_crop": {
+        "HORVX": {"default": 13, "justification": JUSTIFIED}}}
+    bundle = run([raw_row(crop="HORVX", zone="a"), raw_row(crop="ZEAMX", zone="b")], contract, units=2,
+                 observations=4)
+    moisture = {u.crop_eppo: (u.yield_basis, u.yield_moisture_pct) for u in bundle.units}
+    assert moisture == {"HORVX": ("standard_moisture", 13.0), "ZEAMX": ("dry_matter", None)}
+
+
+def test_a_moisture_printed_next_to_a_basis_that_has_none_is_a_contradiction():
+    contract = base_contract()
+    contract["unit"]["yield"]["basis"] = {"from": "basis"}
+    contract["unit"]["yield"]["moisture_pct"] = {"from": "moisture"}
+    ok = run([raw_row(basis="standard_moisture", moisture=14), raw_row(basis="dry_matter", moisture=None, zone="b")],
+             contract, units=2, observations=4)
+    assert {u.yield_basis: u.yield_moisture_pct for u in ok.units} == {"standard_moisture": 14.0, "dry_matter": None}
+    with pytest.raises(ContractDataError, match="contradict"):
+        run([raw_row(basis="dry_matter", moisture=14)], contract)
+    with pytest.raises(ContractDataError, match="not in the yield_basis vocabulary"):
+        run([raw_row(basis="whatever", moisture=14)], contract)
+    with pytest.raises(ContractDataError, match="yield basis: raw field 'basis' is absent"):
+        run([raw_row(basis=None, moisture=14)], contract)
+
+
+def test_every_yield_row_carries_the_declared_purpose_and_it_agrees_with_the_metric():
+    contract = base_contract()
+    contract["unit"]["purpose"] = {"from": "use"}
+    bundle = run([raw_row(use="grano")], contract)
+    assert bundle.units[0].purpose == "grain"
+    assert {o.purpose for o in bundle.observations if o.variable_id == "crop_yield"} == {"grain"}
+    with pytest.raises(ContractDataError, match="gives purpose 'grain' but the unit purpose is 'forage'"):
+        run([raw_row(use="forraje")], contract)
+    with pytest.raises(ContractDataError, match="purpose is missing or not in the purpose vocabulary"):
+        run([raw_row(use="nothing")], contract)
+    with pytest.raises(ContractDataError, match="purpose is missing or not in the purpose vocabulary"):
+        run([raw_row(use=None)], contract)
+
+
+def test_metric_and_purpose_can_differ_by_crop_when_each_is_justified():
+    contract = base_contract()
+    contract["unit"]["purpose"] = {"by_crop": {
+        "HORVX": {"default": "grain", "justification": JUSTIFIED},
+        "BRSNN": {"default": "grain", "justification": JUSTIFIED},
+    }}
+    contract["unit"]["yield"]["metric"] = {"by_crop": {
+        "HORVX": {"default": "grain", "justification": JUSTIFIED},
+        "BRSNN": {"default": "seed", "justification": JUSTIFIED},
+    }}
+    contract["unit"]["yield"]["moisture_pct"] = {"by_crop": {
+        "HORVX": {"default": 13, "justification": JUSTIFIED},
+        "BRSNN": {"default": 9, "justification": JUSTIFIED},
+    }}
+    bundle = run([raw_row(crop="HORVX", zone="a"), raw_row(crop="BRSNN", zone="b")], contract, units=2,
+                 observations=4)
+    assert {u.crop_eppo: (u.yield_metric, u.purpose, u.yield_moisture_pct) for u in bundle.units} == {
+        "HORVX": ("grain", "grain", 13.0), "BRSNN": ("seed", "grain", 9.0)}
+
+
+def test_a_contract_without_yield_makes_units_without_yield_and_needs_no_purpose():
+    contract = base_contract()
+    del contract["unit"]["yield"], contract["unit"]["purpose"]
+    row = raw_row()
+    del row["yield"]
+    bundle = run([row], contract, observations=1)
+    (unit,) = bundle.units
+    assert unit.yield_kg_ha is None and unit.purpose is None
+    assert [o.variable_id for o in bundle.observations] == ["grain_protein_content"]
+    assert not any(g.field == "yield_kg_ha" for g in unit.gaps)
+
+
+def test_skipped_range_checks_are_counted_and_reported_with_their_reason():
+    rows = [
+        raw_row(zone="a"),                              # rainfed barley 6200: range applies, in range
+        raw_row(zone="b", **{"yield": 99999}),          # applies, out of range (an assumption range)
+        raw_row(zone="c", irrigation=None),             # no irrigation: only the unconditional range applies
+    ]
+    bundle = run(rows, units=3, observations=6)
+    checks = bundle.report.range_checks
+    # three yields are evaluated; the three protein values have no range for that crop and variable
+    assert (checks.evaluated, checks.in_range, checks.skipped, checks.not_applicable) == (3, 2, 3, 0)
+    assert checks.skipped_by_reason == {"no_range_for_crop_variable": 3}
+    (finding,) = checks.out_of_range
+    assert (finding.variable_id, finding.value, finding.range_id, finding.range_status) == (
+        "crop_yield", 99999.0, "crop_yield.HORVX.grain.rainfed", "assumption")
+
+
+def test_a_range_that_exists_but_matches_no_condition_is_a_distinct_skip():
+    contract = base_contract()
+    contract["unit"]["purpose"] = {"default": "forage", "justification": JUSTIFIED}
+    contract["unit"]["yield"]["metric"] = {"default": "forage", "justification": JUSTIFIED}
+    contract["unit"]["yield"]["basis"] = {"default": "dry_matter", "justification": JUSTIFIED}
+    del contract["unit"]["yield"]["moisture_pct"]
+    contract["observations"].append({"from": "score", "variable": "emergence_score"})
+    bundle = run([raw_row(crop="ZEAMX", score=2)], contract, observations=3)
+    checks = bundle.report.range_checks
+    # every registry range is conditioned on purpose=grain, so a forage yield matches none of them
+    assert checks.skipped_by_reason == {"no_matching_conditions": 1, "no_range_for_crop_variable": 1}
+    assert (checks.evaluated, checks.skipped, checks.not_applicable) == (0, 2, 1)
+
+
+def test_the_site_key_field_takes_the_observed_zone_stratum_or_national_label():
+    sites = ["Zona Fria Semiarida", "Estrato 8-10 t/ha", "Nacional"]
+    rows = [raw_row(zone=name, **{"yield": 6000 + i}) for i, name in enumerate(sites)]
+    bundle = run(rows, units=3, observations=6)
+    assert sorted(u.raw_site for u in bundle.units) == sorted(sites)
+    assert len({identity.unit_key(u) for u in bundle.units}) == 3
+    assert all(u.site_key is None for u in bundle.units)  # not registered yet: reported, never invented
+    assert bundle.report.unresolved_sites == dict.fromkeys(sorted(sites), 1)
+    assert all(any(g.field == "site_key" for g in u.gaps) for u in bundle.units)
+
+
+def test_a_stratum_field_can_be_the_site_and_a_zone_a_factor_so_nothing_collapses():
+    contract = base_contract()
+    contract["unit"]["fields"]["site"] = {"from": "stratum"}
+    contract["unit"]["factors"] = [{"factor": "zone", "from": "zone"}]
+    rows = [raw_row(stratum="alto", zone="Z1"), raw_row(stratum="alto", zone="Z2", **{"yield": 6300}),
+            raw_row(stratum="bajo", zone="Z1", **{"yield": 5100})]
+    bundle = run(rows, contract, units=3, observations=6)
+    assert sorted((u.raw_site, u.factor_levels[0].level) for u in bundle.units) == [
+        ("alto", "Z1"), ("alto", "Z2"), ("bajo", "Z1")]
+    assert len({identity.unit_key(u) for u in bundle.units}) == 3
+
+
+def test_two_averages_with_the_same_observed_place_are_refused_not_merged():
+    """The failure the carry-forward rules out: distinct averages collapsing into one unit."""
+    with pytest.raises(ContractDataError, match="same unit key"):
+        run([raw_row(**{"yield": 6000}), raw_row(**{"yield": 6100})], units=1, observations=2)
+
+
+def test_the_unit_key_never_depends_on_the_row_index():
+    rows = [raw_row(zone=f"z{i}", **{"yield": 5000 + i}) for i in range(4)]
+    forward = run(rows, units=4, observations=8)
+    backward = run(rows[::-1], units=4, observations=8)
+    assert [identity.unit_key(u) for u in forward.units] == [identity.unit_key(u) for u in backward.units]
+
+
+def test_registered_places_resolve_and_aggregates_are_never_disguised_as_plots():
+    contract = base_contract(source_id="CREA")
+    contract["sites"] = {"aggregate_patterns": [r"^media \d+ "]}
+    contract["unit"]["yield"]["unit"] = "q/ha"
+    contract["unit"]["yield"]["moisture_pct"] = {"default": 15.5, "justification": JUSTIFIED}
+    rows = [raw_row(crop="ZEAMX", zone="Media 8 Località"), raw_row(crop="ZEAMX", zone="Villafranca Piemonte (TO)")]
+    bundle = run(rows, contract, units=2, observations=4, sites=2)
+    by_id = {site.site_id: site for site in bundle.sites}
+    assert by_id["IT-CREA-AVG-8"].site_kind == "aggregate" and by_id["IT-CREA-AVG-8"].latitude is None
+    field_site = next(s for s in bundle.sites if s.site_kind == "field")
+    assert field_site.latitude is not None and field_site.coordinate_source
+    assert {u.raw_site: u.site_key for u in bundle.units} == {
+        "Media 8 Località": "IT-CREA-AVG-8", "Villafranca Piemonte (TO)": field_site.site_id}
+
+    contract["sites"] = {"aggregate_patterns": ["Villafranca"]}
+    with pytest.raises(ContractDataError, match="never disguised as a plot"):
+        run(rows, contract, units=2, observations=4, sites=2)
+
+
+def test_a_field_site_without_published_coordinates_carries_explicit_gaps():
+    bundle = run([raw_row(zone="Valladolid")], observations=2, sites=1)
+    (site,) = bundle.sites
+    assert site.latitude is None and site.longitude is None
+    assert {g.field for g in site.gaps} == {"latitude", "longitude"}
+    assert bundle.report.gaps["site.latitude"] == 1
+
+
+def qualifier_contract() -> dict:
+    contract = base_contract()
+    contract["observations"] = [
+        {"from": "quality.protein", "variable": "grain_protein_content", "unit": "%",
+         "qualifier": {"default": "as_received"}},
+        {"from": "quality.protein_dm", "variable": "grain_protein_content", "unit": "%",
+         "qualifier": {"default": "dry_matter"}},
+    ]
+    return contract
+
+
+def test_the_qualifier_tells_apart_observations_of_one_variable_on_one_unit():
+    row = raw_row(quality={"protein": 11.5, "protein_dm": 13.0})
+    bundle = run([row], qualifier_contract(), observations=3)
+    protein = [o for o in bundle.observations if o.variable_id == "grain_protein_content"]
+    assert sorted((o.qualifier, o.value) for o in protein) == [("as_received", 11.5), ("dry_matter", 13.0)]
+    assert len({identity.obs_key(o) for o in protein}) == 2
+
+
+def test_without_a_qualifier_two_values_of_one_variable_on_one_unit_are_a_conflict():
+    contract = qualifier_contract()
+    for spec in contract["observations"]:
+        del spec["qualifier"]
+    with pytest.raises(ContractDataError, match="same observation key"):
+        run([raw_row(quality={"protein": 11.5, "protein_dm": 13.0})], contract, observations=3)
+
+
+def test_a_qualifier_read_from_a_raw_field_gets_a_gap_when_the_row_lacks_it():
+    contract = base_contract()
+    contract["observations"] = [{"from": "quality.protein", "variable": "grain_protein_content", "unit": "%",
+                                 "qualifier": {"from": "ref"}}]
+    bundle = run([raw_row(ref="check"), raw_row(ref=None, zone="b")], contract, units=2, observations=4)
+    by_qualifier = {o.qualifier: o for o in bundle.observations if o.variable_id == "grain_protein_content"}
+    assert set(by_qualifier) == {"check", None}
+    assert [g.field for g in by_qualifier[None].gaps] == ["qualifier"]
+    assert bundle.report.gaps["observation.qualifier"] == 1
+
+
+def test_stage_and_date_are_part_of_the_observation_identity():
+    contract = base_contract()
+    contract["observations"] = [{"from": "quality.protein", "variable": "grain_protein_content", "unit": "%",
+                                 "stage": {"from": "stage"}, "date": {"from": "when"}}]
+    bundle = run([raw_row(stage="harvest", when="2021-07-01")], contract)
+    obs = next(o for o in bundle.observations if o.variable_id == "grain_protein_content")
+    assert (obs.stage, obs.date.isoformat()) == ("harvest", "2021-07-01")
+    with pytest.raises(ContractDataError, match="ISO date"):
+        run([raw_row(stage="harvest", when="1 July")], contract)
+
+
+def test_factors_rootstock_clone_and_planting_year_make_distinct_units():
+    contract = base_contract()
+    contract["unit"]["fields"].update({"rootstock": {"from": "rootstock"}, "planting_year": {"from": "planted"}})
+    contract["unit"]["factors"] = [{"factor": "n_dose", "from": "n", "unit": "kg/ha"}]
+    rows = [raw_row(rootstock="R1", planted=2015, n=120), raw_row(rootstock="R2", planted=2015, n=120),
+            raw_row(rootstock="R1", planted=2016, n=120), raw_row(rootstock="R1", planted=2015, n=180)]
+    bundle = run(rows, contract, units=4, observations=8)
+    assert len({identity.unit_key(u) for u in bundle.units}) == 4
+    unit = next(u for u in bundle.units if u.rootstock == "R1" and u.planting_year == 2015
+                and u.factor_levels[0].level == 120)
+    assert (unit.factor_levels[0].factor, unit.factor_levels[0].unit) == ("n_dose", "kg/ha")
+
+
+def test_a_season_that_is_not_a_single_year_has_no_year_and_says_so():
+    bundle = run([raw_row(year="2020/21")])
+    (unit,) = bundle.units
+    assert unit.raw_season == "2020/21" and unit.year is None
+    assert any(g.field == "year" for g in unit.gaps)
+    assert bundle.studies[0].year is None and any(g.field == "year" for g in bundle.studies[0].gaps)
+
+
+def test_a_contract_mapping_against_the_registrys_discovery_evidence_is_warned_about():
+    contract = base_contract()
+    contract["observations"] = [{"from": "quality.proteina_pct", "variable": "seed_oil_content", "unit": "%"}]
+    bundle = run([raw_row(quality={"proteina_pct": 11.0})], contract)
+    assert len(bundle.report.warnings) == 1
+    assert "grain_protein_content" in bundle.report.warnings[0] and "seed_oil_content" in bundle.report.warnings[0]
+    assert run([raw_row()]).report.warnings == ()
