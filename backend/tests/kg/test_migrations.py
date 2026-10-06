@@ -11,6 +11,7 @@ import pytest
 from testcontainers.neo4j import Neo4jContainer
 
 from app.kg.migrations import (
+    MIGRATIONS_DIR,
     MigrationError,
     MigrationParseError,
     apply_migrations,
@@ -387,3 +388,160 @@ def test_shipped_migrations_are_found_in_order_and_enterprise_is_not_scanned():
     names = [m.name for m in discover_migrations()]
     assert names and names == sorted(names)
     assert all("/" not in n for n in names)
+
+
+# --------------------------------------------------------------------------- the shipped migrations
+
+# Every constraint is UNIQUENESS: Community has no NODE KEY / existence constraints.
+EXPECTED_CONSTRAINTS = {
+    # 001
+    "resource_uri": ("Resource", ("uri",)),
+    "species_name": ("Species", ("name",)),
+    "species_eppo": ("Species", ("eppoCode",)),
+    "agricrop_uri": ("AgriCrop", ("uri",)),
+    "variety_uri": ("AgriCropVariety", ("uri",)),
+    "stage_species_name": ("PhenologyStage", ("speciesName", "name")),
+    "heat_tolerance_species": ("CropHeatTolerance", ("species",)),
+    "frost_tolerance_species": ("CropFrostTolerance", ("species",)),
+    "cropcoeff_crop": ("CropCoefficient", ("cropCommonName",)),
+    "nutrient_profile_species_stage": ("CropNutrientProfile", ("species", "stage")),
+    "soil_suitability_species": ("CropSoilSuitability", ("species",)),
+    "management_trial_key": ("ManagementTrial", ("mergeKey",)),
+    "harvest_data_key": ("HarvestData", ("mergeKey",)),
+    "article_source_key": ("ArticleSource", ("mergeKey",)),
+    "pest_eppo": ("Pest", ("eppoCode",)),
+    "gdd_model_pest_stage": ("GDDModel", ("pestEppo", "stageName")),
+    "natural_enemy_eppo": ("NaturalEnemy", ("eppoCode",)),
+    "companion_relation_pair": ("CompanionRelation", ("cropA", "cropB")),
+    "host_association_pair": ("HostAssociation", ("pestEppo", "hostEppo")),
+    "active_substance_code": ("ActiveSubstance", ("substanceCode",)),
+    "mrl_substance_crop": ("MRLEntry", ("substanceCode", "cropEppo")),
+    "rotation_constraint_pair": ("RotationConstraint", ("cropA", "cropB")),
+    "module_id": ("Module", ("id",)),  # 006's module_id_unique is the same rule: a no-op
+    # 002
+    "trial_site_sitekey": ("TrialSite", ("siteKey",)),
+    # 006
+    "capability_key_unique": ("Capability", ("entityType", "attributeName")),
+    "entitlement_name_unique": ("Entitlement", ("name",)),
+    # 008
+    "climate_cell_key": ("ClimateCell", ("key",)),
+    # 010
+    "observation_unit_unitkey": ("ObservationUnit", ("unitKey",)),
+    "observation_obskey": ("Observation", ("obsKey",)),
+    "variety_varietykey": ("Variety", ("varietyKey",)),
+    "crop_eppo": ("Crop", ("eppo",)),
+    "variable_variableid": ("Variable", ("variableId",)),
+    "source_sourceid": ("Source", ("sourceId",)),
+    "study_studykey": ("Study", ("studyKey",)),
+    "article_source_documentkey": ("ArticleSource", ("documentKey",)),
+    # runner bootstrap
+    "schema_version_file": ("SchemaVersion", ("file",)),
+}
+
+# Indexes that are not the backing index of a constraint.
+EXPECTED_PLAIN_INDEXES = {
+    # 001 (species_name_lookup is absent on purpose: equivalent to the species_name constraint)
+    "species_scientific_name": ("Species", ("scientificName",)),
+    "trial_site_climate": ("TrialSite", ("climateClass",)),
+    "trial_site_soil": ("TrialSite", ("soilType",)),
+    "trial_site_rainfall": ("TrialSite", ("annualRainfallMm",)),
+    "variety_trial_crop_year": ("VarietyTrial", ("cropEppo", "year")),
+    "variety_trial_yield": ("VarietyTrial", ("yieldKgHa",)),
+    "mgmt_trial_exp_type": ("ManagementTrial", ("experimentType",)),
+    "pest_name": ("Pest", ("prefName",)),
+    "active_substance_name": ("ActiveSubstance", ("commonName",)),
+    "article_source_year": ("ArticleSource", ("year",)),
+    "phenology_stage_species": ("PhenologyStage", ("speciesName",)),
+    "harvest_data_crop": ("HarvestData", ("cropEppo",)),
+    # 002, 006, 009
+    "trial_site_municipality_key": ("TrialSite", ("municipalityKey",)),
+    "capability_entity_type_ix": ("Capability", ("entityType",)),
+    "capability_entitlement_ix": ("Capability", ("entitlement",)),
+    "trial_site_name": ("TrialSite", ("name",)),
+    # 010
+    "variety_trial_merge_key": ("VarietyTrial", ("mergeKey",)),
+    "variety_trial_crop_eppo": ("VarietyTrial", ("cropEppo",)),
+    "observation_variable_id": ("Observation", ("variableId",)),
+}
+
+
+def _expected_constraint_set() -> set[tuple]:
+    return {(n, "UNIQUENESS", (lbl,), props) for n, (lbl, props) in EXPECTED_CONSTRAINTS.items()}
+
+
+def _expected_index_set() -> set[tuple]:
+    backing = {(n, "RANGE", (lbl,), props) for n, (lbl, props) in EXPECTED_CONSTRAINTS.items()}
+    plain = {(n, "RANGE", (lbl,), props) for n, (lbl, props) in EXPECTED_PLAIN_INDEXES.items()}
+    return backing | plain
+
+
+@needs_docker
+def test_all_shipped_migrations_apply_on_empty_community_and_match_expected_schema(db):
+    report = _run(apply_migrations(db))
+
+    assert report.files == tuple(m.name for m in discover_migrations())
+    assert report.files[0] == "001_schema_constraints.cypher" and report.files[-1] == "010_kg_identity.cypher"
+    assert constraints(db) == _expected_constraint_set()
+    assert indexes(db) == _expected_index_set()
+    versions = schema_versions(db)
+    assert set(versions) == set(report.files)
+    for mf in discover_migrations():
+        assert versions[mf.name]["sha256"] == mf.sha256 and versions[mf.name]["mode"] == "full"
+
+
+@needs_docker
+def test_shipped_migrations_rerun_is_a_noop(db):
+    _run(apply_migrations(db))
+    before = (constraints(db), indexes(db), schema_versions(db))
+    entitlements = _run(_q(db, "MATCH (e:Entitlement) RETURN count(e) AS c"))[0]["c"]
+
+    report = _run(apply_migrations(db))
+
+    assert (constraints(db), indexes(db), schema_versions(db)) == before
+    assert not any(a.recorded for a in report.applied)
+    assert _run(_q(db, "MATCH (e:Entitlement) RETURN count(e) AS c"))[0]["c"] == entitlements == 3
+
+
+@needs_docker
+def test_startup_mode_builds_the_same_schema_but_runs_no_data_statements(db):
+    """App startup runs schema only: 006's Entitlement MERGEs and 007's bulk SET never ran there."""
+    report = _run(apply_migrations(db, include_data=False))
+
+    assert constraints(db) == _expected_constraint_set()
+    assert indexes(db) == _expected_index_set()
+    assert _run(_q(db, "MATCH (e:Entitlement) RETURN count(e) AS c"))[0]["c"] == 0
+    modes = {a.file: a.mode for a in report.applied}
+    assert modes["006_capability_registry.cypher"] == "schema-only"
+    assert modes["007_management_regime.cypher"] == "schema-only"
+    assert modes["001_schema_constraints.cypher"] == "full"
+    assert sum(a.skipped_data for a in report.applied) == report.skipped_data > 0
+
+
+def _enterprise_files() -> list[Path]:
+    return sorted((MIGRATIONS_DIR / "enterprise").glob("*.cypher"))
+
+
+@needs_docker
+def test_enterprise_statements_really_are_enterprise_only(db):
+    """Nothing Community can run was parked in enterprise/: every statement there fails on 5.26 Community."""
+    files = _enterprise_files()
+    assert files
+    statements = [s for f in files for s in split_statements(f.read_text(encoding="utf-8"))]
+    assert len(statements) == 14
+    for stmt in statements:
+        with pytest.raises(Exception, match="Enterprise"):
+            _run(_q(db, stmt))
+    assert constraints(db) == set()
+
+
+def test_enterprise_directory_holds_no_runnable_migration_names():
+    """The runner reads only top-level NNN_*.cypher; enterprise/ is a sibling directory it never opens."""
+    assert [m.name for m in discover_migrations()] == [
+        "001_schema_constraints.cypher",
+        "002_trial_site_sitekey.cypher",
+        "006_capability_registry.cypher",
+        "007_management_regime.cypher",
+        "008_climate_cell.cypher",
+        "009_trial_site_name_index.cypher",
+        "010_kg_identity.cypher",
+    ]
