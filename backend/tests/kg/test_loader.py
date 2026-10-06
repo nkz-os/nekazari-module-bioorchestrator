@@ -16,6 +16,7 @@ from pathlib import Path
 from unittest import mock
 
 import pytest
+import yaml
 from testcontainers.neo4j import Neo4jContainer
 
 from app.ingestion.genvce_ingester import GenvceIngester
@@ -26,7 +27,7 @@ from app.kg.existing_graph import Neo4jExistingGraph
 from app.kg.gate import run_gate, unit_content_key
 from app.kg.migrations import apply_migrations
 from app.kg.model import UnitRow
-from app.kg.registries import load_registries
+from app.kg.registries import DEFAULT_REGISTRIES_PATH, load_registries
 from neo4j import AsyncGraphDatabase, GraphDatabase
 
 DATA = Path(__file__).resolve().parents[2] / "data" / "sources"
@@ -188,7 +189,7 @@ def test_the_legacy_properties_equal_the_old_ingesters_output(genvce_bundle, gen
     for obs in genvce_bundle.observations:
         by_unit.setdefault(obs.unit_key, []).append(obs)
     old_rows = _old_properties(genvce_rows)
-    compared = {"yield": 0, "relative": 0, "quality": 0, "disease": 0, "unified": 0, "irrigation": 0, "derived": 0, "year": 0}
+    compared = {"yield": 0, "relative": 0, "quality": 0, "disease": 0, "unified": 0, "irrigation": 0, "year": 0}
     for row, old in zip(genvce_rows, old_rows, strict=True):
         unit = _unit_for(genvce_bundle, row)
         new = loader.unit_properties(unit, by_unit.get(identity.unit_key(unit), ()), REGISTRIES)
@@ -205,9 +206,8 @@ def test_the_legacy_properties_equal_the_old_ingesters_output(genvce_bundle, gen
         if unit.irrigation_derivation is None:
             assert new["irrigationRegime"] == REGISTRIES.vocab("irrigation", old.get("irrigationRegime"))
             compared["irrigation"] += new["irrigationRegime"] is not None
-        else:  # deliberate difference: the yield cutoff fills a regime where the source is silent
+        else:  # deliberate difference: a yield cutoff fills a regime where the source is silent
             assert old.get("irrigationRegime") is None
-            compared["derived"] += 1
         assert new["productionSystem"] == REGISTRIES.vocab("production_system", old.get("productionSystem"))
         for legacy, old_name in (("qualityParams", "qualityParams"), ("diseaseScores", "diseaseScores")):
             old_map = json.loads(old[old_name]) if old.get(old_name) else {}
@@ -262,7 +262,39 @@ def test_the_copy_of_a_unit_comes_from_its_observations_and_clears_what_is_absen
     assert props["dataSource"] == props["source_id"] == "GENVCE"
 
 
-def test_the_derived_irrigation_regime_and_its_thresholds_travel_with_the_unit(genvce_bundle):
+@pytest.fixture(scope="module")
+def cutoff_bundle(genvce_rows, tmp_path_factory) -> Bundle:
+    """The GENVCE fixtures with barley calibrated at a synthetic pair: the real registry has no cutoff."""
+    dest = tmp_path_factory.mktemp("registries") / "registries"
+    shutil.copytree(DEFAULT_REGISTRIES_PATH, dest)
+    file = dest / "irrigation_thresholds.yaml"
+    data = yaml.safe_load(file.read_text(encoding="utf-8"))
+    for entry in data["thresholds"]:
+        if entry["crop"] == "HORVX":
+            entry.update(status="assumption", low_kg_ha=4000.0, high_kg_ha=7000.0)
+            entry["evidence"].pop("reason", None)
+    file.write_text(yaml.safe_dump(data, allow_unicode=True, sort_keys=False), encoding="utf-8")
+    with mock.patch("app.kg.contracts._check_expected"):
+        return run_contract(GENVCE_CONTRACT, load_registries(dest), genvce_rows)
+
+
+def test_the_real_registry_derives_no_regime_for_any_unit(genvce_bundle):
+    assert not any(u.irrigation_derivation for u in genvce_bundle.units)
+    assert all(u.irrigation_regime is None for u in genvce_bundle.units if u.raw_irrigation is None)
+
+
+def test_the_productivity_class_travels_with_the_unit_and_is_not_a_key(genvce_bundle):
+    classed = [u for u in genvce_bundle.units if u.productivity_class is not None]
+    assert classed, "fixture has no stratum: the test would be vacuous"
+    unit = classed[0]
+    props = loader.unit_properties(
+        unit, [o for o in genvce_bundle.observations if o.unit_key == identity.unit_key(unit)], REGISTRIES)
+    assert props["productivityClass"] == unit.productivity_class
+    assert props["unitKey"] == identity.unit_key(unit)
+
+
+def test_the_derived_irrigation_regime_and_its_thresholds_travel_with_the_unit(cutoff_bundle):
+    genvce_bundle = cutoff_bundle
     derived = [u for u in genvce_bundle.units if u.irrigation_derivation is not None]
     assert derived, "fixture has no derived regime: the test would be vacuous"
     unit = derived[0]

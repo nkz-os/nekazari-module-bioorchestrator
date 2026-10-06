@@ -23,6 +23,7 @@ from app.kg.contracts import (
     Contract,
     ContractError,
     Expected,
+    IgnoreSpec,
     load_contract,
     run_contract,
 )
@@ -445,7 +446,12 @@ FIXTURES = Path(__file__).parent / "fixtures"
 def real_bundle(source_id, adapter, rows, expected=None, derive=True):
     loaded = load_contract(SOURCES / f"{source_id}.yaml")
     if not derive:
-        loaded = loaded.model_copy(update={"unit": loaded.unit.model_copy(update={"irrigation_derivation": None})})
+        spec = loaded.unit.irrigation_derivation
+        ignored = (IgnoreSpec(field=spec.not_derivable_when, reason="read only by the derivation")
+                   if spec is not None and spec.not_derivable_when else None)
+        loaded = loaded.model_copy(update={
+            "unit": loaded.unit.model_copy(update={"irrigation_derivation": None}),
+            "ignore": (*loaded.ignore, *([ignored] if ignored else []))})
     if expected is not None:
         loaded = loaded.model_copy(update={"expected": Expected(**expected)})
     return run_contract(loaded, REGISTRIES, rows)
@@ -493,29 +499,65 @@ def test_on_the_fixtures_every_unit_follows_the_rule_and_the_keys_do_not_move(fi
     assert all(u.raw_irrigation is None for u in with_cutoff.units if u.irrigation_derivation)
 
 
-def test_on_the_fixtures_barley_with_a_silent_regime_is_judged_by_the_registry_cutoffs(fixture_bundles):
-    threshold = REGISTRIES.irrigation_threshold("HORVX")
-    assert threshold is not None, "barley is the one crop the stated rows can calibrate"
-    judged = [u for u in fixture_bundles["GENVCE"][0].units if u.irrigation_derivation]
-    assert judged and {u.crop_eppo for u in judged} == {"HORVX"}
+def test_the_real_registry_has_no_cutoff_for_any_crop_so_no_regime_is_derived(fixture_bundles):
+    assert all(t.status == "not_calibrated" and t.low_kg_ha is None for t in REGISTRIES.irrigation_thresholds)
+    assert REGISTRIES.irrigation_threshold("HORVX") is None
+    for with_cutoff, _ in fixture_bundles.values():
+        assert not any(u.irrigation_derivation for u in with_cutoff.units)
+        assert not with_cutoff.report.irrigation_derived or all(
+            k.endswith(":not_derivable") for k in with_cutoff.report.irrigation_derived)
+        assert all(u.irrigation_regime is None for u in with_cutoff.units if u.raw_irrigation is None)
+
+
+def _genvce_with_barley_cutoffs(copy_dir_):
+    dest, edit = copy_dir_
+    edit(lambda d: d["thresholds"].__setitem__(1, calibrated("HORVX", 4000.0, 7000.0)))
+    rows = genvce.load(FIXTURES / "genvce").rows
+    loaded = load_contract(SOURCES / "GENVCE.yaml").model_copy(update={"expected": Expected(units=32, observations=233, sites=14)})
+    return run_contract(loaded, load_registries(dest), rows)
+
+
+def test_a_mixed_regime_or_yield_stratum_group_never_gets_a_regime_even_with_cutoffs(copy_dir):
+    bundle = _genvce_with_barley_cutoffs(copy_dir)
+    blocked = [u for u in bundle.units if u.raw_irrigation is None and u.raw_site and (
+        "regad" in u.raw_site.casefold() and "secano" in u.raw_site.casefold()
+        or u.raw_site.casefold().startswith(("rendimiento", "productividad")))]
+    assert blocked, "fixture has no such group: the test would be vacuous"
+    for unit in blocked:
+        assert unit.irrigation_regime is None and unit.irrigation_derivation is None
+        assert any(g.field == "irrigation_regime" and g.reason.startswith("irrigation_not_derivable") for g in unit.gaps)
+    # the cutoffs do work on the other silent barley units
+    assert any(u.irrigation_derivation for u in bundle.units if u not in blocked)
+    assert not any(u.irrigation_derivation for u in bundle.units if u in blocked)
+    assert any(k.endswith(":not_derivable") for k in bundle.report.irrigation_derived)
+
+
+def test_the_yield_stratum_is_kept_as_its_own_field_and_changes_no_key(fixture_bundles):
+    with_cutoff, without = fixture_bundles["GENVCE"]
+    assert [identity.unit_key(u) for u in with_cutoff.units] == [identity.unit_key(u) for u in without.units]
+    strata = {u.raw_site: u.productivity_class for u in with_cutoff.units if u.productivity_class}
+    assert strata.get("Rendimiento bajo") == "yield_stratum_low"
+    assert strata.get("Secanos áridos y semiáridos fríos") == "rainfed_arid_semiarid"
+    assert all(u.productivity_class is None for u in with_cutoff.units if u.raw_site == "Secanos templados")
 
 
 RAW_REPO = os.environ.get("NKZ_DATA_SOURCES_DIR", "")
 
 
 @pytest.mark.skipif(not RAW_REPO, reason="set NKZ_DATA_SOURCES_DIR to the raw-data repository to run")
-def test_the_whole_raw_data_derives_barley_only_and_changes_no_key():
+def test_the_whole_raw_data_derives_no_regime_and_changes_no_key():
     result = genvce.load(Path(RAW_REPO) / "genvce")
     with_cutoff = real_bundle("GENVCE", genvce, result.rows)
     without = real_bundle("GENVCE", genvce, result.rows, derive=False)
     assert [identity.unit_key(u) for u in with_cutoff.units] == [identity.unit_key(u) for u in without.units]
     derived = with_cutoff.report.irrigation_derived
-    assert set(derived) <= {"HORVX:rainfed", "HORVX:irrigated", "HORVX:ambiguous"}, "no other crop has a cutoff"
+    assert not derived or all(k.endswith(":not_derivable") for k in derived), "no crop has a cutoff"
+    assert not any(u.irrigation_regime for u in with_cutoff.units if u.raw_irrigation is None)
+    assert not any(u.irrigation_derivation for u in with_cutoff.units)
+    assert any(u.productivity_class for u in with_cutoff.units)
     stated = [u for u in with_cutoff.units if u.raw_irrigation is not None]
     assert stated and all(u.irrigation_derivation is None for u in stated)
     assert not any(u.irrigation_regime for u in with_cutoff.units if u.crop_eppo != "HORVX" and not u.raw_irrigation)
-    judged = sum(derived.values())
-    assert judged == sum(1 for u in with_cutoff.units if u.irrigation_derivation)
     print(f"\nGENVCE derived by band: {json.dumps(derived, sort_keys=True)}")
 
 

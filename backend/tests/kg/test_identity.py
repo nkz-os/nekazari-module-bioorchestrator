@@ -299,6 +299,7 @@ NON_KEY_FIELD_VARIANTS = {
     "yield_unit_original": {"yield_unit_original": "q/ha"},
     "derivation_method": {"derivation_method": "mean of replicates"},
     "locator": {"locator": "table 3"},
+    "productivity_class": {"productivity_class": "yield_stratum_high"},
     # the three travel together: a derivation records the cutoffs it used (the unit has a yield here)
     "irrigation_derivation": DERIVED,
     "irrigation_yield_low_kg_ha": DERIVED,

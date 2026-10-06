@@ -184,6 +184,23 @@ def test_irrigation_is_what_the_zone_label_states(zone, stated):
     assert row["irrigation"] == stated
 
 
+@pytest.mark.parametrize(("zone", "blocked", "klass"), [
+    ("Secanos y regadíos templados", "group label mixes rainfed and irrigated", None),
+    ("Rendimiento alto", "group label is a yield stratum", "yield_stratum_high"),
+    ("Rendimiento Medio", "group label is a yield stratum", "yield_stratum_medium"),
+    ("Productividad Baja", "group label is a yield stratum", "yield_stratum_low"),
+    ("Secanos húmedos y de alto potencial fríos", None, "rainfed_humid_high_potential"),
+    ("Secanos áridos y semiáridos fríos y templados", None, "rainfed_arid_semiarid"),
+    ("Secanos templados", None, None),
+    ("Zona Templada", None, None),
+    (None, None, None),
+])
+def test_mixed_and_yield_stratum_groups_are_marked_and_the_class_is_what_the_label_states(zone, blocked, klass):
+    (row,), _ = rows([trial(agroclimatic_zone=zone)])
+    assert row["regime_not_derivable"] == blocked
+    assert row["productivity_class"] == klass
+
+
 def test_an_assumed_regime_is_left_out_and_counted():
     out, warnings = rows([trial(irrigation_regime="secano"), trial(irrigation_regime="regadío"),
                           trial(irrigation_regime=None)])

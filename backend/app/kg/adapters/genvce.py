@@ -29,6 +29,11 @@ Decisions an adapter makes here, each one reported in the warnings it returns:
   applied by campaign, never by the size of a value. Elsewhere the report prints % or a score per
   table and the extraction did not record which: the bare key is passed on unchanged (the contract
   ignores it).
+* ``regime_not_derivable``: why no regime may ever be derived from the yield for the row's group (a label
+  mixing "secano" and "regadio", or a yield stratum "Rendimiento/Productividad alto/medio/bajo": a
+  stratum is defined by the yield, so a yield cutoff on it is circular). The contract names it.
+* ``productivity_class``: only what the group label itself states (yield stratum, "alto potencial
+  humedos", "aridos y semiaridos"); never inferred from a yield. Not part of any key.
 * numbers printed as text ("-2") are numbers; ``None`` groups are dropped.
 """
 from __future__ import annotations
@@ -101,6 +106,41 @@ def _irrigation_stated_by(zone: str | None) -> str | None:
     if rainfed == irrigated:  # neither, or "Secanos y regadios templados"
         return None
     return "secano" if rainfed else "regadío"
+
+
+_STRATUM_LABEL = re.compile(r"^(rendimiento|productividad) (alt|medi|baj)[oa]$")
+_STRATUM_LEVEL = {"alt": "high", "medi": "medium", "baj": "low"}
+
+
+def _productivity_class(zone: str | None) -> str | None:
+    """The productivity class the group label itself states, else None (never read from the yield)."""
+    if zone is None:
+        return None
+    label = _fold(zone)
+    stratum = _STRATUM_LABEL.match(label)
+    if stratum:
+        return f"yield_stratum_{_STRATUM_LEVEL[stratum.group(2)]}"
+    if "secano" in label and "alto potencial" in label:
+        return "rainfed_humid_high_potential"
+    if "secano" in label and re.search(r"semi.?rid", label):
+        return "rainfed_arid_semiarid"
+    return None
+
+
+def _regime_not_derivable(zone: str | None) -> str | None:
+    """Why a group can never get a regime derived from its yield, else None.
+
+    A group of mixed regimes has no single regime; a yield stratum is defined by the yield itself, so a
+    yield cutoff on it would be circular.
+    """
+    if zone is None:
+        return None
+    label = _fold(zone)
+    if "secano" in label and "regad" in label:
+        return "group label mixes rainfed and irrigated"
+    if _STRATUM_LABEL.match(label):
+        return "group label is a yield stratum"
+    return None
 
 
 def _table_number(value: Any, where: str) -> str | None:
@@ -259,6 +299,8 @@ def rows_from_extraction(extraction: Mapping[str, Any], file_name: str, log: War
             "zone": zone,
             "season": year_range or period or str(year),
             "irrigation": irrigation,
+            "regime_not_derivable": _regime_not_derivable(zone),
+            "productivity_class": _productivity_class(zone),
             "production_system": production_system,
             "yield_kg_ha": trial.get("yield_kg_ha"),
             "yield_relative_pct": trial.get("yield_relative_pct"),

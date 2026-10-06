@@ -232,6 +232,9 @@ class UnitRow(_Row):
     yield_unit_original: Text = None
     derivation_method: Text = None
     locator: Text = None  # page / table of the document
+    # Productivity class the source's own group label states (a yield stratum, a potential class). A label of
+    # the source, not a derivation from the yield; never part of a key.
+    productivity_class: Text = None
     # How irrigation_regime was derived where the source states none (a yield cutoff, see
     # irrigation_thresholds.yaml). Set whenever the rule was evaluated, so a derived regime (or an
     # ambiguous yield, regime None) is never mistaken for an observed one; an observed regime has none.
@@ -379,7 +382,7 @@ UNIT_KEY_FIELDS = (
 UNIT_NON_KEY_FIELDS = (
     "study_key", "site_key", "variety_key", "year", "irrigation_regime", "production_system", "purpose",
     "yield_kg_ha", "yield_metric", "yield_basis", "yield_moisture_pct", "yield_value_original",
-    "yield_unit_original", "derivation_method", "locator", "irrigation_derivation",
+    "yield_unit_original", "derivation_method", "locator", "productivity_class", "irrigation_derivation",
     "irrigation_yield_low_kg_ha", "irrigation_yield_high_kg_ha", "gaps",
 )
 

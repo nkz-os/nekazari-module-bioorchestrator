@@ -17,7 +17,9 @@
 # says why. Climate and zone differences are out of scope: one pair per crop.
 #
 # status: assumption = calibrated but not approved; owner_approval stays empty until the owner signs the
-# values off (before the recommendation equivalence of task 11).
+# values off. not_calibrated = no cutoff (and no regime is derived for the crop), with the reason. Even with
+# cutoffs, a group the source defines by yield or by mixed regimes never gets a derived regime (contract
+# `not_derivable_when`).
 version: 1
 method: yield_threshold_v1
 thresholds:
@@ -42,9 +44,7 @@ thresholds:
       on, no cutoff is invented'
     raw_data_commit: 798a73db5436eccf0ac8d4e40c7d66949195566a
 - crop: HORVX
-  status: assumption
-  low_kg_ha: 6400.0
-  high_kg_ha: 7000.0
+  status: not_calibrated
   owner_approval: null
   evidence:
     method: per-class tail error, rounded outward
@@ -72,6 +72,10 @@ thresholds:
     error_rate: 0.0461
     decided_error_rate: 0.0496
     max_decided_error: 0.2
+    reason: 'a cutoff fitted on the rows whose regime the source states does not hold out of sample: validated by
+      leaving each campaign out, it misjudges rainfed rows of good-yield campaigns as irrigated, and most campaigns
+      have no labelled row to check against; yield mostly separates good campaigns from bad ones here, not
+      rainfed from irrigated. The in-sample figures above are kept as evidence only'
     raw_data_commit: 798a73db5436eccf0ac8d4e40c7d66949195566a
 - crop: TRZAX
   status: not_calibrated

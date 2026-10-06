@@ -49,6 +49,7 @@ unit:
     irrigation: {from: irrigation, vocab: irrigation}
     production_system: {from: production_system, vocab: production_system}
     row_discriminator: {from: table.number}
+    productivity_class: {from: productivity_class}
   factors:
     # the group label the table prints for the variety panel ("Cebada de ciclo largo", "Maíz ciclo 700"):
     # two panels of one crop are different results, so the label is part of the unit
@@ -56,7 +57,7 @@ unit:
   # Where the source states no regime, derive one from the unit's yield with the per-crop cutoffs of the
   # irrigation_thresholds.yaml registry (owner decision 2026-10-06). The source always wins; the derived
   # regime goes on the canonical field only, and the unit records the method and the cutoffs it used.
-  irrigation_derivation: {method: yield_threshold_v1}
+  irrigation_derivation: {method: yield_threshold_v1, not_derivable_when: regime_not_derivable}
   purpose:
     by_crop:
       HORVX: &cereal_purpose

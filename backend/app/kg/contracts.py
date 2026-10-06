@@ -285,6 +285,8 @@ class UnitFields(_Closed):
     clone: Ref | None = None
     planting_year: Ref | None = None
     row_discriminator: Ref | None = None
+    # the productivity class the source's own group label states (e.g. a yield stratum); never a key field
+    productivity_class: Ref | None = None
 
 
 class YieldSpec(_Closed):
@@ -312,6 +314,9 @@ class IrrigationDerivationSpec(_Closed):
     """
 
     method: Literal["yield_threshold_v1"]
+    # Raw field the adapter fills with the reason a unit's group can never get a derived regime (a group of
+    # mixed regimes, a group defined by yield itself). Non-empty: no regime is derived, whatever the cutoffs.
+    not_derivable_when: RawPath | None = None
 
 
 class UnitSpec(_Closed):
@@ -399,7 +404,9 @@ class Contract(_Closed):
         fields = self.unit.fields
         add(fields.crop, fields.variety, fields.site, fields.season, fields.irrigation,
             fields.production_system, fields.rootstock, fields.clone, fields.planting_year,
-            fields.row_discriminator, *self.unit.factors)
+            fields.row_discriminator, fields.productivity_class, *self.unit.factors)
+        if self.unit.irrigation_derivation is not None and self.unit.irrigation_derivation.not_derivable_when:
+            paths.add(self.unit.irrigation_derivation.not_derivable_when)
         declared: list[Declared | None] = [self.unit.purpose]
         if self.unit.yield_ is not None:
             add(self.unit.yield_)
@@ -737,6 +744,10 @@ def _get(flat: Mapping[str, Any], path: str) -> Any:
     return value
 
 
+def _optional_text(value: Any, what: str) -> str | None:
+    return None if value is None else _text(value, what)
+
+
 def _text(value: Any, what: str) -> str:
     """A raw value as text, as printed. Numbers print the way identity canonicalises them."""
     if isinstance(value, bool) or not isinstance(value, (str, int, float)):
@@ -923,10 +934,23 @@ class _Builder:
         production_system = self._vocab("production_system", raw_system, "production_system", gaps)
 
         yield_fields, yield_obs_fields, purpose = self._yield(flat, eppo, gaps)
+        productivity_class = None
+        if fields.productivity_class is not None:
+            productivity_class = _optional_text(_get(flat, fields.productivity_class.from_),
+                                                fields.productivity_class.from_)
         irrigation_derivation: dict[str, Any] = {}
-        if self.contract.unit.irrigation_derivation is not None and raw_irrigation is None:
+        derivation = self.contract.unit.irrigation_derivation
+        if derivation is not None and raw_irrigation is None:
             # the source states no regime (a stated one always wins, even an unrecognised one)
-            irrigation, irrigation_derivation = self._derive_irrigation(eppo, yield_fields.get("yield_kg_ha"), gaps)
+            blocked = None
+            if derivation.not_derivable_when is not None:
+                blocked = _optional_text(_get(flat, derivation.not_derivable_when), derivation.not_derivable_when)
+            if blocked is not None:
+                gaps.add("irrigation_regime", f"irrigation_not_derivable: {blocked}")
+                self.irrigation_derived[f"{eppo}:not_derivable"] += 1
+            else:
+                irrigation, irrigation_derivation = self._derive_irrigation(
+                    eppo, yield_fields.get("yield_kg_ha"), gaps)
 
         values: dict[str, Any] = {
             "source_id": source_id, "document_key": document_key_, "crop_eppo": eppo,
@@ -936,7 +960,8 @@ class _Builder:
             "planting_year": planting_year, "row_discriminator": discriminator,
             "study_key": study_key_, "site_key": site_id, "variety_key": variety_key_, "year": year,
             "irrigation_regime": irrigation, "production_system": production_system, "purpose": purpose,
-            "locator": locator, **yield_fields, **irrigation_derivation,
+            "locator": locator, "productivity_class": productivity_class, **yield_fields,
+            **irrigation_derivation,
         }
         try:
             unit = UnitRow(**values, gaps=gaps.rows(values))

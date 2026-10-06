@@ -196,6 +196,7 @@ def unit_properties(unit: UnitRow, observations: Sequence[ObservationRow], regis
         "irrigationRegime": unit.irrigation_regime,
         "productionSystem": unit.production_system,
         "purpose": unit.purpose,
+        "productivityClass": unit.productivity_class,
         "irrigationDerivation": unit.irrigation_derivation,
         "irrigationYieldLowKgHa": unit.irrigation_yield_low_kg_ha,
         "irrigationYieldHighKgHa": unit.irrigation_yield_high_kg_ha,
