@@ -39,7 +39,7 @@ from app.ingestion.normalization_registry import (
     transform_traits_to_unified,
 )
 
-from . import identity
+from . import identity, zone_definitions
 from .contracts import Bundle
 from .model import DocumentRow, ObservationRow, SiteRow, StudyRow, UnitRow, VarietyRow
 from .registries import Registries, load_registries
@@ -418,6 +418,12 @@ def _plan(bundle: Bundle, registries: Registries) -> _Plan:
         if study.study_type not in UNIT_LABELS:
             raise LoadError(f"unit {key}: study type {study.study_type!r} has no unit label in the loader")
         props = unit_properties(unit, obs_by_unit.get(key, ()), registries)
+        # The zone the source's own published climatic definition puts the unit in (None: no definition
+        # covers it, so it stays at the country level). Derived, never part of a key.
+        document = documents[unit.document_key]
+        props["zoneKey"] = zone_definitions.default_zone_definitions().zone_key_for(
+            source_id=unit.source_id, title=document.title, issue=document.issue, crop_eppo=unit.crop_eppo,
+            raw_site=unit.raw_site, table=unit.row_discriminator)
         units_by_label[UNIT_LABELS[study.study_type]].append({"unitKey": key, "props": props})
         rels["unit_crop"].append({"a": key, "b": unit.crop_eppo})
         rels["unit_study"].append({"a": key, "b": unit.study_key})

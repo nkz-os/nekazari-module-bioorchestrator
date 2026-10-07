@@ -28,6 +28,7 @@ from app.kg.gate import run_gate, unit_content_key
 from app.kg.migrations import apply_migrations
 from app.kg.model import UnitRow
 from app.kg.registries import DEFAULT_REGISTRIES_PATH, load_registries
+from app.kg.zone_definitions import default_zone_definitions
 from neo4j import AsyncGraphDatabase, GraphDatabase
 
 DATA = Path(__file__).resolve().parents[2] / "data" / "sources"
@@ -291,6 +292,36 @@ def test_the_productivity_class_travels_with_the_unit_and_is_not_a_key(genvce_bu
         unit, [o for o in genvce_bundle.observations if o.unit_key == identity.unit_key(unit)], REGISTRIES)
     assert props["productivityClass"] == unit.productivity_class
     assert props["unitKey"] == identity.unit_key(unit)
+
+
+def test_the_zone_key_is_the_definition_the_unit_s_document_and_label_select(genvce_bundle):
+    plan = loader._plan(genvce_bundle, REGISTRIES)
+    docs = {identity.document_key(d): d for d in genvce_bundle.documents}
+    units = {identity.unit_key(u): u for u in genvce_bundle.units}
+    zones = default_zone_definitions()
+    keyed = 0
+    for entry in plan.units_by_label["VarietyTrial"]:
+        unit = units[entry["unitKey"]]
+        doc = docs[unit.document_key]
+        expected = zones.zone_key_for(source_id=unit.source_id, title=doc.title, issue=doc.issue,
+                                      crop_eppo=unit.crop_eppo, raw_site=unit.raw_site,
+                                      table=unit.row_discriminator)
+        assert entry["props"]["zoneKey"] == expected
+        keyed += expected is not None
+    assert 0 < keyed < len(units), "fixture must hold both zone-keyed and unkeyed units"
+
+
+def test_the_real_gen_vce_bundle_keys_only_the_units_a_published_definition_covers():
+    raw = os.environ.get("NKZ_DATA_SOURCES_DIR", "")
+    if not raw:
+        pytest.skip("set NKZ_DATA_SOURCES_DIR")
+    bundle = _bundle(GENVCE_CONTRACT, genvce.load(Path(raw) / "genvce").rows)
+    plan = loader._plan(bundle, REGISTRIES)
+    props = [e["props"] for e in plan.units_by_label["VarietyTrial"]]
+    keyed = [p for p in props if p["zoneKey"]]
+    assert keyed, "no unit is zone-keyed"
+    assert not any(p["cropEppo"] in ("ZEAMX", "ZEAMA") for p in keyed)  # maize: no published threshold
+    assert all(p["zoneKey"].startswith("genvce-") for p in keyed)
 
 
 def test_the_derived_irrigation_regime_and_its_thresholds_travel_with_the_unit(cutoff_bundle):
