@@ -174,7 +174,8 @@ def _trust_level(n_trials: int, confidence: str | None) -> str:
 def build_recommendation(*, eppo, scientific_name, conditions, varieties, reference, soil_verdict,
                          water, frost_level, sowing, data_gaps_extra, assumptions,
                          tier: str = ep.EVIDENCE_TIER_FIELD, purpose: str = ep.MODE_MAIN,
-                         regional_trial_count: int | None = None) -> dict | None:
+                         regional_trial_count: int | None = None,
+                         zone_match: dict | None = None) -> dict | None:
     if not varieties:
         return None
     best = varieties[0]
@@ -208,7 +209,11 @@ def build_recommendation(*, eppo, scientific_name, conditions, varieties, refere
         gaps.append("irrigation_regime_unknown")
     if regional:
         gaps.append("regional_evidence_only")
-        if conditions.get("country"):
+        if zone_match is not None and zone_match["status"] == "matched":
+            # GENVCE's own zone definition applied to the parcel's climatology: say it is an approximation.
+            gaps.append("regional_zone_matched")
+            gaps.append("zone_match_climatology_basis")
+        elif conditions.get("country"):
             # The aggregates were matched by the parcel's country, not by a zone of the parcel.
             gaps.append("regional_country_level")
     if presence_only:
@@ -224,7 +229,7 @@ def build_recommendation(*, eppo, scientific_name, conditions, varieties, refere
     sites = sorted({s for v in varieties for s in (v.get("trial_sites") or [])})
     years = sorted({y for v in varieties for y in (v.get("trial_years") or [])})
     sources = sorted({s for v in varieties for s in (v.get("source_ids") or [])})
-    return {
+    rec = {
         "recommendation_id": recommendation_id(conditions, eppo, sowing["sowing_type"]),
         "crop": {"eppo": eppo, "scientific_name": scientific_name, "sowing_type": sowing["sowing_type"]},
         "fit": {"relative_yield_pct": rel, "stability_cv": cv, "reference": reference},
@@ -272,3 +277,6 @@ def build_recommendation(*, eppo, scientific_name, conditions, varieties, refere
                      "unknown_basis_trials": unknown_basis if forage else None},
         "assumptions": assumptions,
     }
+    if regional and zone_match is not None:
+        rec["evidence"]["zone_match"] = zone_match  # only when zone matching was asked (Spanish parcel point)
+    return rec

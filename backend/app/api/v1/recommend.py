@@ -120,9 +120,16 @@ async def recommend_for_conditions(
         None, pattern=_COUNTRY_PATTERN,
         description="ISO 3166 alpha-2; scopes country-specific sowing windows",
     ),
+    lat: float | None = Query(None, ge=-90, le=90, description="parcel point; with `lon` and country ES it "
+                              "places the parcel in GENVCE's climatic zones"),
+    lon: float | None = Query(None, ge=-180, le=180),
 ):
+    if (lat is None) != (lon is None):
+        raise HTTPException(status_code=422, detail="lat and lon come together")
     conditions = cond.as_dict()
     conditions["country"] = country
+    if lat is not None:
+        conditions["lat"], conditions["lon"] = lat, lon
     conditions["crops"] = _parse_crops(crops)
     conditions["top_n"] = top_n
     result = await GraphDAO(driver).recommend_for_conditions(conditions)
@@ -138,6 +145,8 @@ async def recommend_for_conditions(
         "(`regional` lists the aggregate-site trials and needs `similarity=koppen`). "
         "`country` (ISO 3166 alpha-2, optional) must match the recommendation's: it scopes the "
         "regional aggregate sites; without it only climate-matched aggregates are listed. "
+        "`lat`/`lon` (optional, with country ES) must match the recommendation's: the list is the "
+        "parcel's own GENVCE zone when it has numeric trials of the crop, else the country level. "
         "Distinct trials only; each item names its tier."
     ),
 )
@@ -154,11 +163,15 @@ async def recommend_evidence(
         None, pattern=_COUNTRY_PATTERN,
         description="ISO 3166 alpha-2; scopes the aggregate sites of tier=regional",
     ),
+    lat: float | None = Query(None, ge=-90, le=90, description="the recommendation's parcel point (zone match)"),
+    lon: float | None = Query(None, ge=-180, le=180),
 ):
     from app.graph import agroclimatic
     from app.graph.dao import _irrigation_uri
 
     dao = GraphDAO(driver)
+    if (lat is None) != (lon is None):
+        raise HTTPException(status_code=422, detail="lat and lon come together")
     if tier == "regional" and similarity != "koppen":
         raise HTTPException(status_code=422, detail="tier=regional needs similarity=koppen")
     if similarity == "vector_v2_fallback":
@@ -199,6 +212,8 @@ async def recommend_evidence(
         page_size=page_size,
         purpose=cond.purpose,
         tier=tier,
+        zone_ctx=(await dao.resolve_zone_context(country, lat, lon, cond.irrigation_regime)
+                  if tier == "regional" else None),
     )
     return attach_attributions(evidence, rows_source_ids(evidence.get("items")))
 

@@ -147,6 +147,10 @@ describe('evidenceConditions', () => {
     expect('country' in evidenceConditions(es, env(null), 'koppen', 'field')).toBe(false);
     expect('country' in evidenceConditions({ ...echo, country: 'es' }, env(null), 'koppen', 'regional')).toBe(false);
     expect('country' in evidenceConditions({ ...echo, country: null }, env(null), 'koppen', 'regional')).toBe(false);
+    const pt = evidenceConditions({ ...es, lat: 41, lon: -3 }, env(null), 'koppen', 'regional');
+    expect([pt.lat, pt.lon]).toEqual([41, -3]);
+    expect('lat' in evidenceConditions({ ...es, lat: 41 }, env(null), 'koppen', 'regional')).toBe(false);
+    expect('lat' in evidenceConditions({ ...es, lat: 41, lon: -3 }, env(null), 'koppen', 'field')).toBe(false);
   });
   it('drops unknown irrigation values and empty strings', () => {
     const out = evidenceConditions({ climate_class: 'Csa', soil_type: '', irrigation_regime: 'drip' },

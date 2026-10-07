@@ -403,11 +403,16 @@ def test_parcel_without_centroid_sends_no_point(client, centroid):
     assert "lat" not in c and "lon" not in c
 
 
-def test_conditions_route_sends_no_point(client):
+def test_conditions_route_forwards_the_point_only_when_both_are_given(client):
     with patch.object(GraphDAO, "recommend_for_conditions", AsyncMock(return_value=OK)) as m:
         client.get("/api/graph/agriculture/recommend", params={"climate_class": "Cfb", "lat": 1, "lon": 2})
-    c = m.call_args.args[0]
-    assert "lat" not in c and "lon" not in c
+        c = m.call_args.args[0]
+        assert c["lat"] == 1 and c["lon"] == 2
+        client.get("/api/graph/agriculture/recommend", params={"climate_class": "Cfb"})
+        c = m.call_args.args[0]
+        assert "lat" not in c and "lon" not in c
+        r = client.get("/api/graph/agriculture/recommend", params={"climate_class": "Cfb", "lat": 1})
+    assert r.status_code == 422
 
 
 # ── purpose and tier ────────────────────────────────────────────────────────

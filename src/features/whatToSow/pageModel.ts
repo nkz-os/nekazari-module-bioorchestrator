@@ -149,6 +149,10 @@ export function evidenceConditions(
     // The regional aggregates are matched by the parcel's country: the list must use the same one.
     const country = nonEmptyString(src.country);
     if (country && /^[A-Z]{2}$/.test(country)) out.country = country;
+    // ... and, for a Spanish parcel, its point: the list follows the zone the recommendation matched.
+    const lat = finiteNumber(src.lat);
+    const lon = finiteNumber(src.lon);
+    if (lat !== undefined && lon !== undefined) { out.lat = lat; out.lon = lon; }
   }
   const cls = nonEmptyString(src.climate_class);
   if (cls) out.climate_class = cls;
