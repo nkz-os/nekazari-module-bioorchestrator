@@ -964,7 +964,8 @@
       "regional_zone_matched": "Regional evidence from the parcel's GENVCE climatic zone",
       "zone_match_climatology_basis": "Zone estimated from the parcel's 1981-2010 climatology; GENVCE classifies each trial by its campaign weather",
       "regional_country_level": "Regional evidence matched by country, not by zone",
-      "irrigation_regime_unknown": "Some trials do not state their irrigation regime"
+      "irrigation_regime_unknown": "Some trials do not state their irrigation regime",
+      "irrigation_regime_unknown_all": "None of the trials state their irrigation regime; the yield may be for a different regime"
     },
     "evidence": {
       "title": "{{crop}} trials",

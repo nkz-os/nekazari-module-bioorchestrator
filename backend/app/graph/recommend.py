@@ -42,7 +42,9 @@ Evidence policy contract (additions of the evidence-policy change; the rules liv
   by the request's ``country``, not by an agro-climatic zone of the parcel.
 - ``evidence.irrigation_unknown_trials``: with a requested regime, the trials of the listed varieties
   whose source states no regime (kept, never pooled against a stated opposite regime) and the data
-  gap ``irrigation_regime_unknown`` when there is any; null when no regime was requested.
+  gap ``irrigation_regime_unknown`` when there is any; null when no regime was requested. When
+  EVERY listed trial states no regime the gap is ``irrigation_regime_unknown_all`` instead and
+  trust is ``low`` in every tier (the yield is still returned).
 - ``evidence.other_purpose_trials``: main mode ``{"forage": N}`` — distinct forage trials of
   the crop at the same analog field sites, counted and never averaged; ``{}`` otherwise.
 - ``evidence.purpose``: the purpose the answer was computed for.
@@ -205,7 +207,12 @@ def build_recommendation(*, eppo, scientific_name, conditions, varieties, refere
     # pooled against a stated opposite one); say how many, so the answer is not read as stated.
     regime_unknown = (sum(int(v.get("irrigation_unknown_trial_count") or 0) for v in varieties)
                       if conditions.get("irrigation_regime") else None)
-    if regime_unknown:
+    # Every trial behind the item states no regime: the answer may be for the other regime.
+    all_regime_unknown = bool(regime_unknown) and regime_unknown >= sum(
+        int(v.get("trial_count") or 0) for v in varieties)
+    if all_regime_unknown:
+        gaps.append("irrigation_regime_unknown_all")
+    elif regime_unknown:
         gaps.append("irrigation_regime_unknown")
     if regional:
         gaps.append("regional_evidence_only")
@@ -253,7 +260,8 @@ def build_recommendation(*, eppo, scientific_name, conditions, varieties, refere
                    "typical_sowing_doy": sowing.get("typical_sowing_doy"),
                    "typical_maturity_doy": sowing.get("typical_maturity_doy"),
                    "typical_rainfed_fallback": sowing.get("typical_rainfed_fallback")},
-        "trust": {"level": "low" if regional else _trust_level(n_trials, best.get("confidence")),
+        "trust": {"level": ("low" if regional or all_regime_unknown
+                            else _trust_level(n_trials, best.get("confidence"))),
                   "data_gaps": gaps},
         "varieties": [
             {"variety": v.get("variety"), "variety_uri": v.get("variety_uri"),

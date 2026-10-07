@@ -431,6 +431,20 @@ def test_unknown_irrigation_trials_are_reported_under_a_requested_regime():
     assert "irrigation_regime_unknown" not in none["trust"]["data_gaps"]
 
 
+def test_all_unknown_regime_trials_gap_and_low_trust_in_every_tier():
+    rec = _build_regime({"irrigation_regime": "secano"}, unknown=5)   # 5 of 5 trials
+    gaps = rec["trust"]["data_gaps"]
+    assert "irrigation_regime_unknown_all" in gaps
+    assert "irrigation_regime_unknown" not in gaps
+    assert rec["trust"]["level"] == "low"
+    assert rec["yield"]["expected_kg_ha"] == 5000.0   # yield is not withheld
+    partial = _build_regime({"irrigation_regime": "secano"}, unknown=4)
+    assert "irrigation_regime_unknown" in partial["trust"]["data_gaps"]
+    assert "irrigation_regime_unknown_all" not in partial["trust"]["data_gaps"]
+    assert partial["trust"]["level"] != "low"
+    assert "irrigation_regime_unknown_all" not in _build_regime({}, unknown=5)["trust"]["data_gaps"]
+
+
 def test_no_requested_regime_reports_no_irrigation_label():
     rec = _build_regime({}, unknown=3)
     assert rec["evidence"]["irrigation_unknown_trials"] is None
