@@ -1,0 +1,37 @@
+# KG build environment
+
+Builds the knowledge graph from the registries, the source contracts and the raw-data repository into a
+scratch Neo4j, then verifies it and writes a deterministic export. It never touches the graph the backend serves.
+
+## Usage
+
+    export NKZ_DATA_SOURCES_DIR=<raw-data repository checkout>
+    export NEO4J_PASSWORD=<password of the scratch instance>
+    NEO4J_PASSWORD=$NEO4J_PASSWORD docker compose -f kg-build/docker-compose.yml up -d
+
+    # dry run (default): adapt, map, gate, count diffs. No write of any kind.
+    python -m app.kg build --sources GENVCE,CREA --profile production
+
+    # build: needs --execute and a scratch label; first run needs an empty target
+    python -m app.kg build --target bolt://localhost:7687 --target-label local-1 --execute
+
+    # re-run on the same graph (idempotent: same export_hash)
+    python -m app.kg build --target bolt://localhost:7687 --target-label local-1 --execute --allow-existing
+
+`--chelsa-online` fetches missing CHELSA cells (needs network); the default uses the cache file
+(`kg-build/cache/chelsa-cells.json`) and leaves a field site without climate as a reported gap.
+Credentials: `NEO4J_USER` (default `neo4j`), `NEO4J_PASSWORD`. Manifests: `kg-build/out/<build-id>/` (gitignored).
+
+## Safety rules (a write needs all of them)
+
+- `--execute`; the default is a dry run.
+- `--target-label` of the form `local|test|ci|scratch|build[-suffix]`. Production-like labels are rejected.
+- Target host is loopback or listed in `NKZ_KG_ALLOWED_TARGET_HOSTS` (comma separated, empty by default).
+- Target is not the `NEO4J_URI` the environment's backend is configured for.
+- Target empty (or `--allow-existing`), and never a graph holding `VarietyTrial` nodes without `unitKey` (the
+  legacy graph): that refuses even with `--allow-existing`.
+- The quality gate passed for every source (`production` profile also needs `publishable`). A refused gate writes nothing, not even the schema.
+- Clean git worktrees (module and raw-data repository) unless `--allow-dirty`; the manifest records both SHAs,
+  the registries hash, the requirements hash and `NKZ_KG_NEO4J_IMAGE_DIGEST`.
+
+Exit codes: 0 ok / dry run, 1 gate refused or a stage failed, 2 safety refusal or usage.
