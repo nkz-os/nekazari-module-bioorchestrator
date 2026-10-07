@@ -88,6 +88,9 @@ export interface Recommendation {
     other_purpose_trials: { forage?: number };
     /** Forage mode: best variety's forage trials with a kg value but no known basis (no number from them). */
     unknown_basis_trials: number | null;
+    /** Regional recs of a Spanish parcel: the GENVCE zone match; `zone_id` is the opaque id the evidence route takes. */
+    zone_match?: { status: 'matched' | 'country_level' | 'unavailable'; zone_id: string | null; basis: string;
+      caveat: string; reason: string | null; matched_zones: { definition_id: string; zone_label: string; citation: string }[] };
   };
   assumptions: { id: string; value: unknown; citation: string }[];
 }

@@ -138,6 +138,7 @@ export function evidenceConditions(
   environment: ParcelEnvironment | null | undefined,
   similarity: Similarity,
   tier: EvidenceTier = 'field',
+  zoneId?: string | null,
 ): QueryParams {
   const src = echo ?? {};
   const out: QueryParams = {};
@@ -149,10 +150,8 @@ export function evidenceConditions(
     // The regional aggregates are matched by the parcel's country: the list must use the same one.
     const country = nonEmptyString(src.country);
     if (country && /^[A-Z]{2}$/.test(country)) out.country = country;
-    // ... and, for a Spanish parcel, its point: the list follows the zone the recommendation matched.
-    const lat = finiteNumber(src.lat);
-    const lon = finiteNumber(src.lon);
-    if (lat !== undefined && lon !== undefined) { out.lat = lat; out.lon = lon; }
+    // ... and the opaque zone id the recommendation matched (never a coordinate).
+    if (zoneId && /^-?\d{1,2}(\.\d)?_\d{1,4}$/.test(zoneId)) out.zone = zoneId;
   }
   const cls = nonEmptyString(src.climate_class);
   if (cls) out.climate_class = cls;

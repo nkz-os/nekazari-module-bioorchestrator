@@ -262,7 +262,7 @@ export default function WhatToSowPage({ parcelId, onSelectTool, onAssigned }: Wh
     const echo = response?.status === 'ok' ? response.conditions : null;
     // Regional trials exist only for the Köppen class's aggregate sites.
     const similarity = rec.evidence.tier === 'regional' ? 'koppen' : rec.trust.similarity;
-    setEvidenceFor({ rec, conditions: evidenceConditions(echo, environment, similarity, rec.evidence.tier) });
+    setEvidenceFor({ rec, conditions: evidenceConditions(echo, environment, similarity, rec.evidence.tier, rec.evidence.zone_match?.zone_id) });
   };
 
   const compareFull = compareIds.length >= MAX_COMPARE;
