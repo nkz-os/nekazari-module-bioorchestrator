@@ -245,7 +245,7 @@ def test_build_recommendation_shape():
     assert rec["varieties"][0]["disease_summary"] == {"resistant": 1, "total": 1}
     assert rec["evidence"] == {"trial_count": 12, "sources": ["SRC1"], "sites": ["site-a", "site-b"],
                                "years": [2015, 2020], "tier": "field", "purpose": "main",
-                               "regional_trial_count": None, "other_purpose_trials": {"forage": 0},
+                               "regional_trial_count": None, "irrigation_unknown_trials": None, "other_purpose_trials": {"forage": 0},
                                "unknown_basis_trials": None}
     assert rec["trust"]["level"] == "high"
     assert rec["season"]["source"] == "crop_season_slot"
