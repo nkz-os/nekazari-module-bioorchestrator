@@ -5,12 +5,14 @@ the parcel point is synthetic."""
 from __future__ import annotations
 
 import asyncio
+import json
 import shutil
 
 import pytest
 from testcontainers.neo4j import Neo4jContainer
 
 from app.graph import dao as dao_mod
+from app.graph import zone_match
 from app.graph.dao import GraphDAO
 from app.kg.zone_definitions import ZONE_MATCH_BASIS, zone_key
 from app.services.chelsa_climate import cell_key
@@ -133,16 +135,29 @@ def test_without_a_point_or_outside_spain_zone_matching_is_not_asked(dao):
     assert rec["yield"]["expected_kg_ha"] == 9000.0  # no zone filter: the best variety of all three units
 
 
+def test_the_zone_id_carries_the_classification_and_no_coordinate(dao):
+    zm = _recommend(dao, COLD_PARCEL)["HORVX"]["evidence"]["zone_match"]
+    assert zm["zone_id"] == "9.0_450"
+    ctx = zone_match.context_from_zone_id(zm["zone_id"], None)
+    direct = _run(dao.resolve_zone_context("ES", *COLD_PARCEL, None))
+    assert ctx.allow == direct.allow and ctx.deny == direct.deny
+    for text in (json.dumps(zm), zm["zone_id"]):
+        assert str(COLD_PARCEL[0]) not in text and str(abs(COLD_PARCEL[1])) not in text
+    assert zone_match.context_from_zone_id("41.0,-3.0", None) is None
+
+
 def test_the_evidence_list_follows_the_same_pool_rule(dao):
-    async def ctx(point):
-        return await dao.resolve_zone_context("ES", point[0], point[1], None)
+    def ctx(point):
+        # what the route does: the recommendation's opaque zone id, never the point
+        zm = _recommend(dao, point)["HORVX"]["evidence"].get("zone_match") or {}
+        return zone_match.context_from_zone_id(zm["zone_id"], None) if zm.get("zone_id") else None
 
     sites = [s["name"] for s in _SITES]
 
     def listing(crop, point):
         return _run(dao.list_trial_evidence(
             crop=crop, similar_sites=sites, variety=None, irrigation_uri=None, page=1, page_size=50,
-            purpose="main", tier="regional", zone_ctx=_run(ctx(point))))
+            purpose="main", tier="regional", zone_ctx=ctx(point)))
     cold = listing("HORVX", COLD_PARCEL)
     assert [i["variety"] for i in cold["items"]] == ["A"] and cold["zone_pool"] == "matched"
     fall = listing("TRZAX", COLD_PARCEL)

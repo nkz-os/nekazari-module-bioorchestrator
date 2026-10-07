@@ -403,16 +403,28 @@ def test_parcel_without_centroid_sends_no_point(client, centroid):
     assert "lat" not in c and "lon" not in c
 
 
-def test_conditions_route_forwards_the_point_only_when_both_are_given(client):
+def test_conditions_route_sends_no_point(client):
     with patch.object(GraphDAO, "recommend_for_conditions", AsyncMock(return_value=OK)) as m:
         client.get("/api/graph/agriculture/recommend", params={"climate_class": "Cfb", "lat": 1, "lon": 2})
-        c = m.call_args.args[0]
-        assert c["lat"] == 1 and c["lon"] == 2
-        client.get("/api/graph/agriculture/recommend", params={"climate_class": "Cfb"})
-        c = m.call_args.args[0]
-        assert "lat" not in c and "lon" not in c
-        r = client.get("/api/graph/agriculture/recommend", params={"climate_class": "Cfb", "lat": 1})
-    assert r.status_code == 422
+    c = m.call_args.args[0]
+    assert "lat" not in c and "lon" not in c
+
+
+def test_evidence_takes_an_opaque_zone_id_not_a_point(client):
+    with patch.object(GraphDAO, "list_trial_evidence", AsyncMock(return_value={"items": []})) as m, \
+            patch.object(GraphDAO, "get_similar_sites", AsyncMock(return_value=[])):
+        base = {"climate_class": "Cfb", "crop": "HORVX", "tier": "regional", "country": "ES"}
+        r = client.get("/api/graph/agriculture/recommend/evidence", params={**base, "zone": "10.5_520"})
+        assert r.status_code == 200
+        ctx = m.call_args.kwargs["zone_ctx"]
+        assert ctx.ready and ctx.april_tas_c == 10.5 and ctx.annual_rainfall_mm == 520
+        for bad in ("41.0,-3.0", "x", "10.5_520_1"):
+            assert client.get("/api/graph/agriculture/recommend/evidence",
+                              params={**base, "zone": bad}).status_code == 422
+        client.get("/api/graph/agriculture/recommend/evidence", params={**base, "country": "IT", "zone": "10.5_520"})
+        assert m.call_args.kwargs["zone_ctx"] is None
+        client.get("/api/graph/agriculture/recommend/evidence", params={**base, "lat": 41, "lon": -3})
+        assert m.call_args.kwargs["zone_ctx"] is None  # a point is not an input of the route
 
 
 # ── purpose and tier ────────────────────────────────────────────────────────
