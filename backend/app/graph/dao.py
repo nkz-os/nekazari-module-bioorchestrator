@@ -1855,6 +1855,7 @@ class GraphDAO:
         target_features: dict[str, float | None] | None = None,
         vector_version: str = "v1",
         include_aggregate: bool = False,
+        country: str | None = None,
     ) -> list[dict]:
         """Find TrialSites agro-climatically similar to a target (C.1).
 
@@ -1863,7 +1864,10 @@ class GraphDAO:
         registry, "average of N locations") is not a place, so it never enters a field analog
         set. ``include_aggregate`` also returns the aggregate sites of the same climate class
         (they carry no soil or rainfall, so those filters do not apply to them) for the
-        regional evidence tier. ``limit`` caps the field sites only (``None`` = no cap, the
+        regional evidence tier: an aggregate that declares a country (``TrialSite.country``, e.g. a
+        national trial network's zone means, which have no coordinates and so no climate) is in scope
+        for a target of that ISO country and only for it; an aggregate without a country keeps the
+        climate-class match. ``country`` is ignored for field sites. ``limit`` caps the field sites only (``None`` = no cap, the
         Köppen path's contract: every matching field site, ordered by name).
 
         ``vector_version`` "v1" uses rainfall/et0/frost/elevation; "v2" uses the
@@ -1942,6 +1946,8 @@ class GraphDAO:
             MATCH (ts:TrialSite)
             WHERE ts.name IS NOT NULL
             RETURN ts.name AS name,
+                   ts.siteKind AS declared_kind,
+                   ts.country AS country,
                    ts.municipality AS municipality,
                    ts.agroclimaticZone AS agroclimatic_zone,
                    ts.latitude AS latitude,
@@ -1963,7 +1969,15 @@ class GraphDAO:
             result = await session.run(query)
             rows = [dict(r) async for r in result]
         for r in rows:
-            r["site_kind"] = ep.site_kind(r["name"])
+            r["site_kind"] = ep.site_kind(r["name"], r.pop("declared_kind"))
+        target_country = (country or "").strip().upper() or None
+
+        def aggregate_in_scope(r: dict) -> bool:
+            """Regional tier: the aggregate's own country when it has one, else its climate class."""
+            site_country = (r.get("country") or "").strip().upper()
+            if site_country and target_country:
+                return site_country == target_country
+            return not climate_class or r["climate_class"] == climate_class
 
         # ── Distance path (C.1): rank by agro-climatic distance ─────────────
         if target_vec is not None:
@@ -1992,7 +2006,11 @@ class GraphDAO:
             for r, vec in zip(rows, vectors):
                 if r["site_kind"] == ep.SITE_KIND_AGGREGATE and not include_aggregate:
                     continue
-                if vec is not None:
+                if r["site_kind"] == ep.SITE_KIND_AGGREGATE and r.get("country") and target_country:
+                    if not aggregate_in_scope(r):
+                        continue
+                    d = agroclimatic.KOPPEN_FALLBACK_DISTANCE  # a country is no vector: ranked after real analogs
+                elif vec is not None:
                     d = agroclimatic.distance(
                         target_vec, vec, bounds, weights=weights, features=features,
                     )
@@ -2013,7 +2031,10 @@ class GraphDAO:
             is_aggregate = r["site_kind"] == ep.SITE_KIND_AGGREGATE
             if is_aggregate and not include_aggregate:
                 continue
-            if climate_class and r["climate_class"] != climate_class:
+            if is_aggregate:
+                if not aggregate_in_scope(r):
+                    continue
+            elif climate_class and r["climate_class"] != climate_class:
                 continue
             if not is_aggregate:  # aggregate sites carry no soil or rainfall to filter on
                 if soil_type and (not r["soil_type"] or soil_type not in r["soil_type"]):
@@ -2190,8 +2211,12 @@ class GraphDAO:
         similar_sites_override: list[dict] | None = None,
         purpose: str = ep.MODE_MAIN,
         tier: str = ep.EVIDENCE_TIER_FIELD,
+        country: str | None = None,
     ) -> dict:
         """Extrapolate best varieties for a target environment.
+
+        ``country`` (ISO 3166 alpha-2) scopes the aggregate sites of the regional tier (see
+        ``get_similar_sites``); it has no effect on the field tier.
 
         ``similar_sites_override``: precomputed ``get_similar_sites`` output (same
         shape) used instead of the internal lookup, so a caller evaluating many
@@ -2316,6 +2341,7 @@ class GraphDAO:
                 target_features=target_features,
                 vector_version=vector_version,
                 include_aggregate=regional,
+                country=country,
             )
             similar_sites_result = [
                 s for s in similar_sites_result
@@ -3904,6 +3930,7 @@ class GraphDAO:
                     climate_class=climate_class, soil_type=cond.get("soil_type"),
                     rainfall_min=None, rainfall_max=None, limit=None,
                     target_features=None, vector_version="v1", include_aggregate=True,
+                    country=cond.get("country"),
                 )
                 koppen_sites = [s for s in found
                                 if s.get("site_kind", ep.SITE_KIND_FIELD) != ep.SITE_KIND_AGGREGATE]

@@ -466,7 +466,12 @@ def is_field_scope(aggregation_scope: str | None) -> bool:
     return aggregation_scope is None or _norm(aggregation_scope) == FIELD_SCOPE
 
 
-def is_aggregate_site(name: str | None) -> bool:
+def is_aggregate_site(name: str | None, site_kind: str | None = None) -> bool:
+    """A site is an aggregate when it is declared one (``TrialSite.siteKind``, written by the build) or its
+    name says so (graphs built before the property existed). The property only ever ADDS aggregates:
+    a name that reads as an aggregate stays one whatever the property says."""
+    if _norm(site_kind) == SITE_KIND_AGGREGATE:
+        return True
     low = _norm(name)
     if not low:
         return True
@@ -475,15 +480,16 @@ def is_aggregate_site(name: str | None) -> bool:
             or any(p in low for p in EXTRA_AGGREGATE_SITE_PATTERNS))
 
 
-def site_kind(name: str | None) -> str:
-    return SITE_KIND_AGGREGATE if is_aggregate_site(name) else SITE_KIND_FIELD
+def site_kind(name: str | None, declared_kind: str | None = None) -> str:
+    return SITE_KIND_AGGREGATE if is_aggregate_site(name, declared_kind) else SITE_KIND_FIELD
 
 
-def is_field_evidence(aggregation_scope: str | None, site_name: str | None, *,
+def is_field_evidence(aggregation_scope: str | None, site_name: str | None,
+                      site_kind: str | None = None, *,
                       source_id: str | None = None, data_source: str | None = None) -> bool:
-    """Rule 4 (scope and site) and rule 9 (the trial's source; omit it and the row is judged on
-    scope and site alone)."""
-    return (is_field_scope(aggregation_scope) and not is_aggregate_site(site_name)
+    """Rule 4 (scope and site, a declared site kind first) and rule 9 (the trial's source; omit it
+    and the row is judged on scope and site alone)."""
+    return (is_field_scope(aggregation_scope) and not is_aggregate_site(site_name, site_kind)
             and not is_aggregate_source(source_id, data_source))
 
 
@@ -493,11 +499,12 @@ def check_tier(tier: str) -> str:
     return tier
 
 
-def evidence_tier(aggregation_scope: str | None, site_name: str | None, *,
+def evidence_tier(aggregation_scope: str | None, site_name: str | None,
+                  site_kind: str | None = None, *,
                   source_id: str | None = None, data_source: str | None = None) -> str:
     """``field`` or ``regional`` for one (trial, site) row (rule 6)."""
     return (EVIDENCE_TIER_FIELD
-            if is_field_evidence(aggregation_scope, site_name,
+            if is_field_evidence(aggregation_scope, site_name, site_kind,
                                  source_id=source_id, data_source=data_source)
             else EVIDENCE_TIER_REGIONAL)
 
@@ -782,16 +789,18 @@ def cypher_field_scope(vt: str = "vt") -> str:
     return f"(coalesce(toLower(trim({vt}.aggregationScope)), {_cypher_str(FIELD_SCOPE)}) = {_cypher_str(FIELD_SCOPE)})"
 
 
-def _cypher_aggregate_site_over(name: str) -> str:
+def _cypher_aggregate_site_over(name: str, kind: str | None = None) -> str:
     """The aggregate-site test over an already lowercased, trimmed name expression: the name is
-    referenced once per site-name list and once per pattern, so callers pass a variable."""
-    return (f"({name} = '' OR {name} IN {_cypher_list(AGGREGATE_SITE_NAMES)} "
+    referenced once per site-name list and once per pattern, so callers pass a variable.
+    ``kind`` is the likewise normalised ``siteKind`` expression (declared aggregates, see ``is_aggregate_site``)."""
+    declared = f"{kind} = {_cypher_str(SITE_KIND_AGGREGATE)} OR " if kind else ""
+    return (f"({declared}{name} = '' OR {name} IN {_cypher_list(AGGREGATE_SITE_NAMES)} "
             f"OR any(ep_pat IN {_cypher_list(AGGREGATE_SITE_PATTERNS)} WHERE {name} CONTAINS ep_pat))")
 
 
 def cypher_aggregate_site(ts: str = "ts") -> str:
     ts = _alias(ts)
-    return _cypher_aggregate_site_over(_cypher_norm(f"{ts}.name"))
+    return _cypher_aggregate_site_over(_cypher_norm(f"{ts}.name"), _cypher_norm(f"{ts}.siteKind"))
 
 
 def cypher_field_evidence(vt: str = "vt", ts: str = "ts") -> str:
@@ -812,8 +821,9 @@ def cypher_content_key(vt: str = "vt") -> str:
     )
 
 
-def _cypher_evidence_tier_over(vt: str, site_name: str) -> str:
-    return (f"(CASE WHEN ({cypher_field_scope(vt)} AND NOT {_cypher_aggregate_site_over(site_name)} "
+def _cypher_evidence_tier_over(vt: str, site_name: str, site_kind: str | None = None) -> str:
+    return (f"(CASE WHEN ({cypher_field_scope(vt)} "
+            f"AND NOT {_cypher_aggregate_site_over(site_name, site_kind)} "
             f"AND NOT {cypher_aggregate_source(vt)}) "
             f"THEN {_cypher_str(EVIDENCE_TIER_FIELD)} ELSE {_cypher_str(EVIDENCE_TIER_REGIONAL)} END)")
 
@@ -821,7 +831,7 @@ def _cypher_evidence_tier_over(vt: str, site_name: str) -> str:
 def cypher_evidence_tier(vt: str = "vt", ts: str = "ts") -> str:
     """String expression: 'field' | 'regional' for the (trial, site) row."""
     vt, ts = _alias(vt), _alias(ts)
-    return _cypher_evidence_tier_over(vt, _cypher_norm(f"{ts}.name"))
+    return _cypher_evidence_tier_over(vt, _cypher_norm(f"{ts}.name"), _cypher_norm(f"{ts}.siteKind"))
 
 
 # ── irrigation regime (rule 8) ───────────────────────────────────────────────
@@ -933,11 +943,12 @@ def cypher_presence_prefilter(vt: str = "vt") -> str:
 
 
 def is_presence_only_evidence(trial: Mapping[str, Any], site_name: str | None,
-                              mode: str = MODE_MAIN) -> bool:
+                              mode: str = MODE_MAIN, site_kind: str | None = None) -> bool:
     """Python twin of the presence gate over one (trial, site) row (graph property names)."""
     return (
         presence_only_applies(mode)
-        and evidence_tier(trial.get("aggregationScope"), site_name, source_id=trial.get("source_id"),
+        and evidence_tier(trial.get("aggregationScope"), site_name, site_kind,
+                          source_id=trial.get("source_id"),
                           data_source=trial.get("dataSource")) == EVIDENCE_TIER_REGIONAL
         and is_excluded_yield(trial)
         and in_purpose_mode(yield_purpose(trial.get("yieldMetric"), trial.get("qualityParams")), mode)
@@ -987,10 +998,10 @@ def cypher_row_policy(mode: str = MODE_MAIN, vt: str = "vt", ts: str = "ts",
     return (
         f"WITH {vt}, {ts}{carried}, toLower(coalesce({vt}.qualityParams, '')) AS ep_text, "
         f"{_cypher_norm(f'{vt}.yieldMetric')} AS ep_metric, "
-        f"{_cypher_norm(f'{ts}.name')} AS ep_site_lc, "
+        f"{_cypher_norm(f'{ts}.name')} AS ep_site_lc, {_cypher_norm(f'{ts}.siteKind')} AS ep_site_kind, "
         f"{cypher_excluded_yield(vt)} AS ep_excluded\n"
         f"WITH {vt}, {ts}{carried}, ep_excluded, "
-        f"{_cypher_evidence_tier_over(vt, 'ep_site_lc')} AS ep_tier, "
+        f"{_cypher_evidence_tier_over(vt, 'ep_site_lc', 'ep_site_kind')} AS ep_tier, "
         f"{cypher_purpose_mode_gate(purpose, mode)} AS ep_in_mode\n"
         f"WITH {vt}, {ts}{carried}, ep_tier, ep_in_mode, ep_excluded, {other} AS ep_other, "
         f"CASE WHEN ep_in_mode AND {candidate} THEN {yield_expr} END AS ep_y\n"
