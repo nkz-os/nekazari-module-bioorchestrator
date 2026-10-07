@@ -1,5 +1,10 @@
 # BioOrchestrator — Ingestion Schema
 
+> **Legacy path.** Sources handled by the gated build ([KG_PIPELINE.md](./KG_PIPELINE.md): currently GENVCE and
+> CREA) are loaded by `python -m app.kg build`, not by the ingesters below. The ingesters and
+> `validate_ingest_bundle.py` are deprecated (kept until readers move to Observations); new sources follow
+> the onboarding steps in KG_PIPELINE.md section 3.
+
 Canonical contract for **scraper output** (`nkz-*-scraper`) and **ingester input**
 (`nkz-module-bioorchestrator/backend/app/ingestion/`).
 

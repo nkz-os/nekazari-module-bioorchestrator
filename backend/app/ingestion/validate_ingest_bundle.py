@@ -1,4 +1,6 @@
-"""Pre-ingestion validation gate for JSON-LD trial bundles.
+"""DEPRECATED: superseded by ``app.kg.gate`` (docs/KG_PIPELINE.md); kept until F2.
+
+Pre-ingestion validation gate for JSON-LD trial bundles.
 
 A pure, DB-free validator: takes a JSON-LD bundle (scraper output or a review
 candidate) and produces a structured pass/fail report — per-node issues plus a
