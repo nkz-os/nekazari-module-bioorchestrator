@@ -69,7 +69,7 @@ previous one did not leave:
 ```
 python -m app.kg mark-target      --target <bolt URI> --target-label build-copy --execute   # 1 empty target -> marker
 python backend/scripts/neo4j_restore_from_export.py --archive <backup>.tar --uri <bolt URI> \
-       --confirm-empty-target                                                           # 2 restore the copy
+       --confirm-empty-target --allow-build-marker                                      # 2 restore the copy
 python -m app.kg migrate-restored --target <bolt URI> --target-label build-copy [--execute]   # 3 schema
 python -m app.kg replace-sources  --sources GENVCE,CREA --target <bolt URI> --target-label build-copy [--execute]  # 4
 python -m app.kg build --sources GENVCE,CREA --target <bolt URI> --target-label build-copy --execute --allow-existing  # 5
@@ -78,8 +78,9 @@ python -m app.kg export --target <bolt URI> --out build.tar                     
 
 1. `mark-target` writes the marker only on a completely empty target (no node, constraint or index); it is
    idempotent for the same label and refuses anything else. The marker is what later allows legacy trials in the
-   target, so it cannot be added after the data is there. The restore script accepts a target that holds only
-   this marker and leaves it out of its verification.
+   target, so it cannot be added after the data is there. The restore script refuses a marked target unless
+   `--allow-build-marker` is given (build copies only; the production restore of step 6 must not use it, and the
+   script prints the marker count and fails if one is present without the flag).
 2. The restore needs an empty database; run it against the marked target.
 3. `migrate-restored` applies the migrations **schema only** (constraints and indexes; the data statements are
    skipped, so the legacy trials are not rewritten). A pre-flight reads every UNIQUE constraint the migrations

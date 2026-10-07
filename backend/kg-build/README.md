@@ -30,7 +30,7 @@ Credentials: `NEO4J_USER` (default `neo4j`), `NEO4J_PASSWORD`. Manifests: `kg-bu
 - Target is not the `NEO4J_URI` the environment's backend is configured for.
 - Target empty (or `--allow-existing`). A graph holding `VarietyTrial` nodes without `unitKey` (the legacy
   graph) is refused even with `--allow-existing`, unless it carries the scratch marker below (restored copy:
-  `mark-target`, restore, `migrate-restored`, `replace-sources`, `build`; see `docs/KG_PIPELINE.md` section 2.1).
+  `mark-target`, restore with `--allow-build-marker` (build copies only, never for the production restore), `migrate-restored`, `replace-sources`, `build`; see `docs/KG_PIPELINE.md` section 2.1).
 - Environment marker: a build on an empty target writes one `(:KgBuildTarget {label, created_by_build})`
   node. A NON-EMPTY target is written only if it carries that marker, `created_by_build` is true, and its
   label is a scratch label equal to `--target-label`. No marker (any production graph, whatever its schema),

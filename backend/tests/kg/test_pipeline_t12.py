@@ -51,11 +51,11 @@ def _drop_all(d) -> None:
         _q(d, f"DROP INDEX `{row['name']}` IF EXISTS")
 
 
-def _restore(archive: Path, url: str, workdir: Path) -> subprocess.CompletedProcess:
+def _restore(archive: Path, url: str, workdir: Path, *, marker: bool = False) -> subprocess.CompletedProcess:
     workdir.mkdir(exist_ok=True)
     return subprocess.run(
         [sys.executable, "-I", str(RESTORE), "--archive", str(archive), "--uri", url, "--workdir", str(workdir),
-         "--confirm-empty-target"],
+         "--confirm-empty-target", *(["--allow-build-marker"] if marker else [])],
         env={"NEO4J_PASSWORD": PASSWORD, "PATH": os.environ.get("PATH", "")},
         capture_output=True, text=True, check=False, cwd=str(workdir))
 
@@ -109,7 +109,10 @@ def test_the_whole_order_ends_in_a_marker_free_graph_with_legacy_sources_intact(
     # ── the copy: empty target -> marker -> restore -> migrate -> replace -> build ───────────────────
     _drop_all(d)
     assert cli.main(["mark-target", "--target", url, "--target-label", label, "--execute"], env=env) == cli.EXIT_OK
-    done = _restore(archive, url, tmp_path / "w1")
+    refused = _restore(archive, url, tmp_path / "w0")  # production mode: a marked target is not empty
+    assert refused.returncode != 0 and "NOT empty" in (refused.stderr + refused.stdout)
+    assert _q(d, "MATCH (n) WHERE NOT n:KgBuildTarget RETURN count(n) AS c") == [{"c": 0}]
+    done = _restore(archive, url, tmp_path / "w1", marker=True)
     assert done.returncode == 0, done.stderr[-800:]  # the restore script accepts the marker-only target
     assert _q(d, "MATCH (m:KgBuildTarget) RETURN count(m) AS c") == [{"c": 1}]
     assert sum(v for k, v in _counts(d).items() if k != "KgBuildTarget") == prod_nodes
@@ -159,6 +162,7 @@ def test_the_whole_order_ends_in_a_marker_free_graph_with_legacy_sources_intact(
     again = _restore(exported, n2.get_connection_url(), tmp_path / "w2")
     assert again.returncode == 0, again.stderr[-800:]
     assert _q(d2, "MATCH (m:KgBuildTarget) RETURN count(m) AS c") == [{"c": 0}]
+    assert "KgBuildTarget markers on the target: 0" in again.stderr + again.stdout
     assert _counts(d2) == {k: v for k, v in final.items() if k != "KgBuildTarget"}
     assert _q(d2, "MATCH (v:VarietyTrial {source_id: 'NAVARRA-AGRARIA'}) RETURN count(v) AS c") == [{"c": navarra}]
     # a graph restored from the export cannot be built into, replaced or migrated

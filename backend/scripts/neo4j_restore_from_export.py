@@ -7,9 +7,12 @@ access: no APOC, no server-side import directory.
 
 Safety
   * Refuses to run unless the target has no nodes, no constraints and no
-    user-defined indexes, and only with --confirm-empty-target. The one exception is
-    a KgBuildTarget marker node (python -m app.kg mark-target): it is neither counted
-    nor fingerprinted, so a build copy can be marked before it is restored.
+    user-defined indexes, and only with --confirm-empty-target. A KgBuildTarget
+    marker node (python -m app.kg mark-target) counts as non-empty and is refused,
+    unless --allow-build-marker is given (build copies only; a production restore
+    must never use it). The marker is then neither counted nor fingerprinted.
+  * Prints the KgBuildTarget count at the end; exits non-zero if a marker is
+    present without --allow-build-marker.
   * Never deletes anything it did not create; a failed run leaves a partial
     graph in the (previously empty) target: wipe the target and retry.
   * The password is read from NEO4J_PASSWORD and is never printed.
@@ -205,6 +208,8 @@ def main():
     ap.add_argument("--workdir", default=".", help="scratch dir for the extracted members (default: cwd)")
     ap.add_argument("--confirm-empty-target", action="store_true",
                     help="required: acknowledge that the target is a fresh, empty database")
+    ap.add_argument("--allow-build-marker", action="store_true",
+                    help="build copies only: tolerate a KgBuildTarget marker on the target (never for production)")
     args = ap.parse_args()
 
     if not args.confirm_empty_target:
@@ -231,7 +236,8 @@ def main():
         try:
             with driver.session(database=args.database) as session:
                 # a KgBuildTarget marker (written by "python -m app.kg mark-target") is the only node a target may hold
-                nodes = session.run("MATCH (n) WHERE NOT n:KgBuildTarget RETURN count(n) AS c").single()["c"]
+                marker_filter = "WHERE NOT n:KgBuildTarget " if args.allow_build_marker else ""
+                nodes = session.run(f"MATCH (n) {marker_filter}RETURN count(n) AS c").single()["c"]
                 constraints = session.run("SHOW CONSTRAINTS YIELD name RETURN count(name) AS c").single()["c"]
                 indexes = session.run(
                     "SHOW INDEXES YIELD type WHERE type <> 'LOOKUP' RETURN count(*) AS c"
@@ -300,6 +306,7 @@ def main():
                 n_constraints = session.run("SHOW CONSTRAINTS YIELD name RETURN count(name) AS c").single()["c"]
                 n_indexes = session.run("SHOW INDEXES YIELD name RETURN count(name) AS c").single()["c"]
                 got = fingerprint_and_counts(session)
+                markers = session.run("MATCH (n:KgBuildTarget) RETURN count(n) AS c").single()["c"]
         finally:
             for p in paths:
                 if os.path.exists(p):
@@ -333,6 +340,9 @@ def main():
         for p in problems:
             log(f"MISMATCH {p}")
         raise SystemExit("restore: VERIFICATION FAILED")
+    log(f"KgBuildTarget markers on the target: {markers}")
+    if markers and not args.allow_build_marker:
+        raise SystemExit("restore: a KgBuildTarget marker is present without --allow-build-marker")
     log("verification OK: counts, schema object counts and content fingerprint match the archive manifest")
 
 
