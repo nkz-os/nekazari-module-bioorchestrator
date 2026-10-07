@@ -41,3 +41,11 @@ Credentials: `NEO4J_USER` (default `neo4j`), `NEO4J_PASSWORD`. Manifests: `kg-bu
   the registries hash, the requirements hash and `NKZ_KG_NEO4J_IMAGE_DIGEST`.
 
 Exit codes: 0 ok / dry run, 1 gate refused or a stage failed, 2 safety refusal or usage.
+
+## Equivalence against a deployed instance (opt-in)
+
+`tests/kg/test_equivalence_prod.py` rebuilds the graph from the real bundles in a scratch container, runs this
+repository's DAO on it for a fixed set of synthetic parcels (`tests/kg/equivalence_harness.py`), reads the same
+calls from a deployed instance through its public GET API, and requires every difference of a recommendation to
+have a cause the rebuild is meant to produce. It needs Docker, `NKZ_DATA_SOURCES_DIR` and `NKZ_KG_PROD_API_BASE`
+(no default), and runs only with `-m prod_readonly`. The collector refuses any Cypher that writes.
