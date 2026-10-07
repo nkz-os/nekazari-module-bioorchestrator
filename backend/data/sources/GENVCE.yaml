@@ -1,8 +1,12 @@
 # GENVCE source contract (reads the raw rows of app.kg.adapters.genvce).
 #
-# Raw layer: the LLM extraction pass of 2026-06-15 (52 files, one per campaign and crop group), read
-# at the pinned commit of the private raw-data repository. It is the pass the production graph was
-# built from (via its converter and "adequate" steps). The legacy "enriched" pass is NOT read: it is an
+# Raw layer: the LLM extraction pass of 2026-06-15 (one file per campaign and crop group), read at the
+# pinned commit of the private raw-data repository. It is the pass the production graph was built from
+# (via its converter and "adequate" steps). Four files were corrected after a PDF cross-check: the maize
+# reports of 2017 and 2019 and the organic soft wheat reports of 2020 and 2021 had been filed as winter
+# cereals (they are now 2017_maiz, 2019_maiz, 2020_trigo-ecologico, 2021_trigo-ecologico), and the four
+# conventional winter-cereal reports they displaced (2016/17, 2018/19, 2019/20, 2020/21: barley and soft
+# wheat only) were extracted again, line-verified against the PDF, as the 20xx_cereales-invierno files. The legacy "enriched" pass is NOT read: it is an
 # older extraction (2026-06-01) with no explicit version, and 505 of its 1105 keys shared with this
 # pass have another yield (rebuild inventory, 2.3). Loading it needs its own contract and version.
 #
@@ -24,11 +28,12 @@
 #   disease     bare oidio/roya_parda/helmintosporiosis/rincosporiosis are 0-9 scores in 2005/06-2011/12
 #               (their tables print "Escala visual 0-9"); unresolved elsewhere, so ignored below
 #   season      the report year, or the printed multi-year period (yield_notes.year_range / periodo)
+#   system      "ecológico" when the crop label says so OR the document is an organic report (topic trigo-ecologico)
 source_id: GENVCE
 raw:
   repo: nkz-data-sources
   paths: ["genvce/data/extractions/*.json"]
-  extraction_version: "nkz-data-sources@798a73db5436eccf0ac8d4e40c7d66949195566a; extraction pass 2026-06-15 (deepseek-chat)"
+  extraction_version: "nkz-data-sources@49eef255c6b97a480112aa0e71bc3c7ca2892c74; extraction pass 2026-06-15 (deepseek-chat); winter cereals 2016/17, 2018/19, 2019/20, 2020/21 re-extracted 2026-10-07 (manual, line-verified)"
 adapter: app.kg.adapters.genvce
 document:
   title: {from: doc.title}
@@ -38,6 +43,7 @@ document:
     - {label: page, from: table.page}
     - {label: table, from: table.number}
     - {label: also printed in table, from: table.aliases}
+    - {label: also on pages, from: table.also_pages}
 study:
   type: variety
   group_by: [doc.topic, table.number]
@@ -133,6 +139,7 @@ observations:
   - {from: agronomic_traits.ciclo, variable: cycle_class}
   - {from: agronomic_traits.ciclo_fao, variable: fao_maturity_class}
   - {from: agronomic_traits.danos_frio_pct, variable: cold_damage_pct, unit: '%'}
+  - {from: agronomic_traits.densidad_espigas_m2, variable: spike_density, unit: /m2}
   - {from: agronomic_traits.densidad_plantas_m2, variable: plant_density, unit: plantas/m2}
   - {from: agronomic_traits.dias_floracion_femenina_respecto_testigo, variable: silking_days_vs_check, unit: días}
   - {from: agronomic_traits.duracion_floracion_dias, variable: flowering_duration_days, unit: días}
@@ -171,6 +178,7 @@ observations:
   - {from: agronomic_traits.stay_green, variable: stay_green_score}
   - {from: agronomic_traits.stay_green_0_5, variable: stay_green_score}
   - {from: agronomic_traits.stay_green_escala_0_5, variable: stay_green_score}
+  - {from: disease_scores.helmintosporiosis_0_9, variable: helminthosporium_score_0_9}
   - {from: disease_scores.helmintosporiosis_escala_0_9, variable: helminthosporium_score_0_9}
   - {from: disease_scores.helmintosporiosis_pct, variable: helminthosporium_pct, unit: '%'}
   - {from: disease_scores.oidio_escala_0_9, variable: powdery_mildew_score_0_9}
@@ -184,6 +192,7 @@ observations:
   - {from: disease_scores.rincosporiosis_pct, variable: scald_pct, unit: '%'}
   - {from: disease_scores.roya_amarilla_0_9, variable: yellow_rust_score_0_9}
   - {from: disease_scores.roya_amarilla_pct, variable: yellow_rust_pct, unit: '%'}
+  - {from: disease_scores.roya_parda_0_9, variable: brown_rust_score_0_9}
   - {from: disease_scores.roya_parda_escala_0_9, variable: brown_rust_score_0_9}
   - {from: disease_scores.roya_parda_pct, variable: brown_rust_pct, unit: '%'}
   - {from: disease_scores.septoria_pct, variable: septoria_pct, unit: '%'}
@@ -224,6 +233,7 @@ observations:
   - {from: quality_params.plantas_enanas_pct, variable: dwarf_plants_pct, unit: '%'}
   - {from: quality_params.proteina_pct, variable: grain_protein_content, unit: '%'}
   - {from: quality_params.stay_green, variable: stay_green_score}
+  - {from: yield_notes.num_ensayos, variable: trial_count_in_mean, unit: '1'}
   - {from: yield_notes.numero_de_ensayos, variable: trial_count_in_mean, unit: '1'}
   - {from: yield_notes.numero_ensayos, variable: trial_count_in_mean, unit: '1'}
   - {from: yield_notes.numero_ensayos_2016_2017, variable: trial_count_in_mean, unit: '1', qualifier: {default: '2016-2017'}}
@@ -269,12 +279,28 @@ ignore:
     reason: number of trials in which the variety ranked in the lower tercile (a tercile analysis table); no registered variable models it
   - field: yield_notes.rendimiento_al_9_pct_humedad
     reason: boolean note that the yield is at 9% moisture; the basis is declared once for the whole source above (rapeseed, 9%)
+  - field: disease_scores.septoria_0_9
+    reason: >-
+      septoria visual score (the 2020/21 report prints "(0-9)" in the column header); the registry has only the
+      affected-share variable septoria_pct and a score is not a share, so it is not mapped until a score variable is registered
+  - field: quality_params.fuerza_harinera_w
+    reason: alveograph strength W of the flour (2016/17 quality table); no registered variable models flour quality, so it is not mapped
+  - field: quality_params.relacion_pl
+    reason: alveograph tenacity/extensibility ratio P/L (2016/17 quality table); no registered variable models flour quality, so it is not mapped
+  - field: quality_params.indice_caida_s
+    reason: Hagberg falling number in seconds (2016/17 quality table); no registered variable models flour quality, so it is not mapped
+  - field: yield_notes.separacion_medias
+    reason: letters of the mean-separation test printed beside the yield; they compare the means of one table, so no registered variable models them
+  - field: yield_notes.red
+    reason: network the variety comes from ("preGENVCE"), an attribute of the entry; variety and entry attributes are F2 work
+  - field: yield_notes.caption_zone_printed
+    reason: zone text of a caption that sits in the whole-campaign section of the report; the unit is placed on the section's group (General) and the printed text is kept only as extraction provenance
 sites:
   # every GENVCE site is an aggregate (zone, stratum, group): none may ever resolve to a field site
   aggregate_patterns: ["^.+$"]
   # a table that prints no label: the unit gets this aggregate as its site (raw_site stays empty, keys unchanged)
   unlabelled_site: ES-GENVCE-UNLABELLED
 expected:
-  units: 3855
-  observations: 19792
-  sites: 45
+  units: 5013
+  observations: 25347
+  sites: 46

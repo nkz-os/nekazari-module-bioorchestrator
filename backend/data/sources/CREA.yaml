@@ -21,7 +21,7 @@ source_id: CREA
 raw:
   repo: nkz-data-sources
   paths: ["crea/data/extractions/crea_mais_20*.json"]
-  extraction_version: "nkz-data-sources@798a73db5436eccf0ac8d4e40c7d66949195566a; booklet extractions of 2026-06-16"
+  extraction_version: "nkz-data-sources@49eef255c6b97a480112aa0e71bc3c7ca2892c74; booklet extractions of 2026-06-16"
 adapter: app.kg.adapters.crea
 document:
   title: {from: doc.title}

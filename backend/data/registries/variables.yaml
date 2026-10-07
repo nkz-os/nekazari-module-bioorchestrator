@@ -115,7 +115,7 @@ variables:
     scale: ratio
     unit: /m2
     direction: neutral
-    raw_keys: {GENVCE: [espigas_m2, capacidad_ahijamiento_espigas_m2, ahijamiento_espigas_m2]}
+    raw_keys: {GENVCE: [espigas_m2, capacidad_ahijamiento_espigas_m2, ahijamiento_espigas_m2, densidad_espigas_m2]}
   # ── lodging, breakage and damage ──
   - id: lodging_pct
     trait: lodged plants
@@ -303,11 +303,11 @@ variables:
     unit: null
     domain: [0, 9]
     direction: lower_better
-    raw_keys: {}
+    raw_keys: {GENVCE: [roya_parda_0_9]}
     notes: >-
       The reports of 2005/06 to 2011/12 print brown rust as a 0-9 score, but the extraction stores it
       under the bare key roya_parda (no scale). The GENVCE adapter renames it to roya_parda_escala_0_9
-      from that report-level evidence, so this variable has no raw key of the extraction.
+      from that report-level evidence; the 2018/19 report's extraction names the scale itself (roya_parda_0_9).
   - id: yellow_rust_pct
     trait: yellow rust (roya amarilla), affected share
     method: null
@@ -337,7 +337,7 @@ variables:
     unit: null
     domain: [0, 9]
     direction: lower_better
-    raw_keys: {GENVCE: [helmintosporiosis_escala_0_9]}
+    raw_keys: {GENVCE: [helmintosporiosis_escala_0_9, helmintosporiosis_0_9]}
   - id: scald_pct
     trait: scald (rincosporiosis), affected share
     method: null
@@ -378,6 +378,7 @@ variables:
     direction: neutral
     raw_keys:
       GENVCE:
+        - num_ensayos
         - numero_de_ensayos
         - numero_ensayos
         - numero_ensayos_2016_2017

@@ -267,7 +267,7 @@ def test_a_twin_with_a_different_value_is_not_merged_but_refused():
 def test_the_contract_states_its_raw_layer_and_the_pinned_commit():
     assert CONTRACT.adapter == "app.kg.adapters.crea"
     assert CONTRACT.raw.repo == "nkz-data-sources" and "crea_mais_20" in CONTRACT.raw.paths[0]
-    assert "@798a73db5436eccf0ac8d4e40c7d66949195566a" in CONTRACT.raw.extraction_version
+    assert "@49eef255c6b97a480112aa0e71bc3c7ca2892c74" in CONTRACT.raw.extraction_version
 
 
 def test_the_contract_quotes_the_booklet_for_purpose_metric_basis_and_moisture():

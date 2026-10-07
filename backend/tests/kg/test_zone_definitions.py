@@ -179,3 +179,26 @@ def test_duplicate_campaign_of_a_family_is_refused(tmp_path):
 
 def test_fold_is_exact_after_nfc_case_and_whitespace():
     assert fold("  Zona   FRÍA ") == "zona fría"
+
+
+def test_the_2016_17_report_zones_cereals_with_the_labels_it_prints(zones):
+    d = zones.by_id("genvce-winter-cereals-2016-17")
+    assert d.classify("rainfall", 600.0) == "subhumid"  # rainfall classes: PDF page 3 of the report
+    title = "GENVCE Cereales de Invierno (trigo, cebada, avena, centeno, triticale) — Campaña 2016/2017"
+    assert _key(zones, title, "2016/2017", "TRZAX", "Zonas frías") == zone_key(d.id, "Zonas frías")
+    assert _key(zones, title, "2016/2017", "HORVX", "General") is None
+
+
+def test_combined_cold_and_temperate_labels_are_zoned_in_either_order(zones):
+    for label in ("Zonas frías y templadas", "Zonas templadas y frías"):
+        assert _key(zones, CEREAL_TITLE, "2019/2020", "TRZAX", label) is not None
+        assert _key(zones, CEREAL_TITLE, "2019/2020", "TRZAX", label.lower()) is not None
+
+
+def test_organic_wheat_reports_get_no_cereal_zone_definition(zones):
+    # the organic reports print the same temperature and rainfall classes (section 2.1.3), but their extracted zone
+    # labels have not been checked line by line against the printed ones, so the cereal definitions do not apply
+    for issue, title in (("2019/2020", "GENVCE Trigo Ecológico — Campaña 2019/2020"),
+                         ("2020/2021", "GENVCE Trigo Ecológico — Campaña 2020/2021")):
+        assert zones.definition_for("GENVCE", title, issue) is None
+        assert _key(zones, title, issue, "TRZAX", "Zona Fría") is None

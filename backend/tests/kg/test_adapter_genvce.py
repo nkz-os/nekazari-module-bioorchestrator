@@ -459,7 +459,7 @@ def test_every_crop_label_of_the_extraction_resolves_in_the_crops_registry(label
 def test_the_contract_states_its_raw_layer_and_the_pinned_commit():
     assert CONTRACT.adapter == "app.kg.adapters.genvce"
     assert CONTRACT.raw.repo == "nkz-data-sources" and "extractions" in CONTRACT.raw.paths[0]
-    assert "@798a73db5436eccf0ac8d4e40c7d66949195566a" in CONTRACT.raw.extraction_version
+    assert "@49eef255c6b97a480112aa0e71bc3c7ca2892c74" in CONTRACT.raw.extraction_version
 
 
 def test_the_contract_quotes_the_source_for_purpose_metric_basis_and_moisture():
@@ -474,7 +474,54 @@ def test_the_contract_quotes_the_source_for_purpose_metric_basis_and_moisture():
 
 def test_every_registered_genvce_site_is_an_aggregate():
     owned = [s for s in REGISTRIES.sites if s.sources == ("GENVCE",)]
-    assert len(owned) == 45 and {s.site_kind for s in owned} == {"aggregate"}
+    assert len(owned) == 46 and {s.site_kind for s in owned} == {"aggregate"}
+
+
+# ═════════════════════════════════════════════════════════════════════════════
+# organic reports, multi-year tables and tables over several pages (re-extracted reports)
+# ═════════════════════════════════════════════════════════════════════════════
+
+def test_every_unit_of_an_organic_report_is_organic_whatever_its_crop_label_says():
+    organic, _ = rows([trial(crop="Trigo blando", crop_scientific="Triticum aestivum")], topic="trigo-ecologico")
+    plain, _ = rows([trial(crop="Trigo blando", crop_scientific="Triticum aestivum")])
+    labelled, _ = rows([trial(crop="Trigo blando ecológico de invierno", crop_scientific="Triticum aestivum")])
+    assert organic[0]["production_system"] == "ecológico"
+    assert plain[0]["production_system"] is None  # a conventional report with the same label stays unmarked
+    assert labelled[0]["production_system"] == "ecológico"  # the label alone still states it
+
+
+def test_a_multi_year_row_may_have_no_single_year_only_when_it_prints_its_period():
+    (row,), _ = rows([trial(year=None, yield_notes={"periodo": "2015-2017"})])
+    assert row["season"] == "2015-2017"
+    with pytest.raises(AdapterError, match="not a whole year"):
+        rows([trial(year=None)])
+
+
+def test_the_other_pages_of_a_table_are_provenance_on_the_table():
+    out, _ = rows([trial(page_in_issue=23, source_pages=[23, 24]), trial(page_in_issue=7, source_pages=[7]), trial()])
+    assert [r["table"].get("also_pages") for r in out] == ["24", None, None]
+    with pytest.raises(AdapterError, match="source_pages"):
+        rows([trial(source_pages="23-24")])
+
+
+@pytest.mark.parametrize(("key", "variable"), [
+    ("agronomic_traits.densidad_espigas_m2", "spike_density"),
+    ("disease_scores.helmintosporiosis_0_9", "helminthosporium_score_0_9"),
+    ("disease_scores.roya_parda_0_9", "brown_rust_score_0_9"),
+    ("yield_notes.num_ensayos", "trial_count_in_mean"),
+])
+def test_new_raw_keys_map_only_where_the_meaning_is_identical(key, variable):
+    assert {o.from_: o.variable for o in CONTRACT.observations}[key] == variable
+
+
+@pytest.mark.parametrize("key", [
+    "disease_scores.septoria_0_9", "quality_params.fuerza_harinera_w", "quality_params.relacion_pl",
+    "quality_params.indice_caida_s", "yield_notes.separacion_medias", "yield_notes.red",
+    "yield_notes.caption_zone_printed",
+])
+def test_raw_keys_without_a_registered_variable_are_ignored_with_a_reason(key):
+    ignored = {i.field: i.reason for i in CONTRACT.ignore}
+    assert len(ignored[key]) > 20
 
 
 # ═════════════════════════════════════════════════════════════════════════════
@@ -525,7 +572,7 @@ RAW_REPO = os.environ.get("NKZ_DATA_SOURCES_DIR", "")
 @pytest.mark.skipif(not RAW_REPO, reason="set NKZ_DATA_SOURCES_DIR to the raw-data repository to run")
 def test_the_whole_extraction_builds_and_matches_the_contracts_expected_counts():
     result = genvce.load(Path(RAW_REPO) / "genvce")
-    assert len(result.rows) == 3855  # 3862 extracted, 7 repeated rows of a lower table dropped
+    assert len(result.rows) == 5013  # 5020 extracted, 7 repeated rows of a lower table dropped
     dropped = [w for w in result.warnings if w.code == "repeated_table_row_dropped"]
     assert [w.count for w in dropped] == [7]
     built = run_contract(CONTRACT, REGISTRIES, result.rows)

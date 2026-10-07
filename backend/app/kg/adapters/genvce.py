@@ -23,7 +23,9 @@ Decisions an adapter makes here, each one reported in the warnings it returns:
   como secano") and the 15 maize reports never mention irrigation at all, so a regime that no label
   states is left out (and counted), never passed on as observed.
 * ``season``: the report's year, or the multi-year period when the table prints one
-  (``yield_notes.year_range`` / ``periodo``).
+  (``yield_notes.year_range`` / ``periodo``; such a row may have a null ``year``).
+* ``production_system``: ``ecológico`` when the crop label says so, or when the DOCUMENT is an organic report
+  (``metadata.article_topic`` ``trigo-ecologico``): one report, one system for every unit in it.
 * disease scales: a bare ``oidio``, ``roya_parda``, ... is a 0-9 visual score in the reports of
   2005/06 to 2011/12, whose disease tables print "(Escala visual 0-9)" in every column; the rule is
   applied by campaign, never by the size of a value. Elsewhere the report prints % or a score per
@@ -58,10 +60,13 @@ EXTRACTIONS_GLOB = "data/extractions/*.json"
 _ROW_KEYS = frozenset({
     "crop", "crop_scientific", "variety", "agroclimatic_zone", "year", "yield_kg_ha", "yield_relative_pct",
     "quality_params", "disease_scores", "agronomic_traits", "yield_notes", "special_status",
-    "irrigation_regime", "trial_location", "page_in_issue", "table_number", "confidence",
+    "irrigation_regime", "trial_location", "page_in_issue", "table_number", "confidence", "source_pages",
 })
 _GROUPS = ("quality_params", "disease_scores", "agronomic_traits")
 _METADATA_KEYS = ("article_title", "issue_period", "year", "article_topic")
+# Report families (metadata.article_topic) that are one production system as a whole: every unit of such a
+# document has that system, whatever its crop label says (the 2019/20 organic wheat table is labelled "Trigo blando").
+_ORGANIC_TOPICS = frozenset({"trigo-ecologico"})
 
 # The extraction names the crop twice: the printed group label ("Cebada de ciclo largo") and the
 # species. The label is the crop; the species is only checked against it.
@@ -150,6 +155,17 @@ def _regime_not_derivable(zone: str | None) -> str | None:
     if _STRATUM_LABEL.match(label):
         return "group label is a yield stratum"
     return None
+
+
+def _also_pages(source_pages: Any, page: Any, where: str) -> str | None:
+    """The other pages of a table printed over several pages (``source_pages``), as text; provenance only."""
+    if source_pages is None:
+        return None
+    if (not isinstance(source_pages, list) or not source_pages
+            or any(isinstance(p, bool) or not isinstance(p, int) for p in source_pages)):
+        raise AdapterError(f"{where}: source_pages {source_pages!r} is not a list of page numbers")
+    others = [p for p in source_pages if p != page]
+    return ", ".join(str(p) for p in others) or None
 
 
 def _table_number(value: Any, where: str) -> str | None:
@@ -338,18 +354,25 @@ def rows_from_extraction(extraction: Mapping[str, Any], file_name: str, log: War
                         "irrigation_regime contradicts the zone label; the label is used", where)
         irrigation = stated
 
-        production_system = "ecológico" if "ecológico" in _fold(label) else None
+        organic_document = _fold(str(metadata["article_topic"])) in _ORGANIC_TOPICS
+        production_system = "ecológico" if organic_document or "ecológico" in _fold(label) else None
         year = trial.get("year")
-        if isinstance(year, bool) or not isinstance(year, int):
+        # a multi-year table may carry no single year: its season is the printed period
+        if not (year is None and (year_range or period)) and (isinstance(year, bool) or not isinstance(year, int)):
             raise AdapterError(f"{where}: year {year!r} is not a whole year")
 
         groups = {name: _clean_group(trial.get(name), name, where, log) for name in _GROUPS}
         groups["disease_scores"] = _rename_bare_disease_keys(groups["disease_scores"], campaign, where, log)
         groups = {name: _guard_named_scales(group, name, where, log) for name, group in groups.items()}
 
+        table: dict[str, Any] = {"number": _table_number(trial.get("table_number"), where),
+                                 "page": trial.get("page_in_issue")}
+        also = _also_pages(trial.get("source_pages"), table["page"], where)
+        if also:
+            table["also_pages"] = also
         row: dict[str, Any] = {
             "doc": dict(document),
-            "table": {"number": _table_number(trial.get("table_number"), where), "page": trial.get("page_in_issue")},
+            "table": table,
             "crop": label,
             "variety": _text(trial.get("variety")),
             "zone": zone,

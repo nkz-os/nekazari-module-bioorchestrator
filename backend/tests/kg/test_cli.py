@@ -394,7 +394,7 @@ def test_the_cli_refuses_a_foreign_host_without_connecting(fixture_mode, tmp_pat
 def test_real_dry_run_gates_both_sources_and_writes_nothing(tmp_path):
     result = _run(_cfg(tmp_path), {})
     assert result.status == "dry-run", result.summary
-    assert result.summary["counts"]["GENVCE"]["units"] == 3855 and result.summary["counts"]["CREA"]["units"] == 320
+    assert result.summary["counts"]["GENVCE"]["units"] == 5013 and result.summary["counts"]["CREA"]["units"] == 320
 
 
 @needs_docker

@@ -432,6 +432,13 @@ sites:
     sources: [GENVCE]
     status: assumption
     note: *genvce_group_note
+  - id: ES-GENVCE-ZONAS-TEMPLADAS-Y-FRIAS
+    name: Zonas templadas y frías
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_group_note
   - id: ES-GENVCE-UNLABELLED
     name: GENVCE table without zone label (ES)
     site_kind: aggregate

@@ -9,6 +9,7 @@
 # the build writes a review queue, and a person decides. No fuzzy matching, no automatic fusion.
 # Lookup: exact match after Unicode NFC, case-folding and whitespace collapsing.
 # Seeded 2026-10-05 from the GENVCE and CREA raw extractions (GENVCE 2006-2025, CREA 2021-2025).
+# 2026-10-07: 82 candidates added for the varieties of the winter-cereal reports of 2016/17, 2018/19, 2019/20 and 2020/21 (one per raw name, no aliases).
 version: 1
 varieties:
   - {id: 'BRSNN:addition', crop: BRSNN, name: ADDITION, status: candidate, sources: [GENVCE]}
@@ -194,6 +195,7 @@ varieties:
   - {id: 'BRSNN:trust-cl', crop: BRSNN, name: TRUST CL, status: candidate, sources: [GENVCE]}
   - {id: 'BRSNN:umberto-kws', crop: BRSNN, name: UMBERTO KWS, status: candidate, sources: [GENVCE]}
   - {id: 'BRSNN:vestal-cl', crop: BRSNN, name: VESTAL CL, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:adriana', crop: HORVX, name: ADRIANA, status: candidate, sources: [GENVCE]}
   - {id: 'HORVX:agueda', crop: HORVX, name: AGUEDA, status: candidate, sources: [GENVCE]}
   - {id: 'HORVX:amidala', crop: HORVX, name: AMIDALA, status: candidate, sources: [GENVCE]}
   - {id: 'HORVX:anaconda', crop: HORVX, name: ANACONDA, status: candidate, sources: [GENVCE]}
@@ -204,6 +206,7 @@ varieties:
   - {id: 'HORVX:aruva', crop: HORVX, name: ARUVA, status: candidate, sources: [GENVCE]}
   - {id: 'HORVX:auriga', crop: HORVX, name: AURIGA, status: candidate, sources: [GENVCE]}
   - {id: 'HORVX:austen-pg', crop: HORVX, name: AUSTEN pG, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:avalon', crop: HORVX, name: AVALON, status: candidate, sources: [GENVCE]}
   - {id: 'HORVX:avus', crop: HORVX, name: AVUS, status: candidate, sources: [GENVCE]}
   - {id: 'HORVX:azara', crop: HORVX, name: AZARA, status: candidate, sources: [GENVCE]}
   - {id: 'HORVX:azurel', crop: HORVX, name: AZUREL, status: candidate, sources: [GENVCE]}
@@ -213,9 +216,11 @@ varieties:
   - {id: 'HORVX:beatrix', crop: HORVX, name: BEATRIX, status: candidate, sources: [GENVCE]}
   - {id: 'HORVX:belgrano', crop: HORVX, name: BELGRANO, status: candidate, sources: [GENVCE]}
   - {id: 'HORVX:belgravia', crop: HORVX, name: BELGRAVIA, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:bidasoa', crop: HORVX, name: BIDASOA, status: candidate, sources: [GENVCE]}
   - {id: 'HORVX:boost', crop: HORVX, name: BOOST, status: candidate, sources: [GENVCE]}
   - {id: 'HORVX:boreale', crop: HORVX, name: BOREALE, status: candidate, sources: [GENVCE]}
   - {id: 'HORVX:braemar', crop: HORVX, name: BRAEMAR, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:bulle', crop: HORVX, name: BULLE, status: candidate, sources: [GENVCE]}
   - {id: 'HORVX:carat', crop: HORVX, name: CARAT, status: candidate, sources: [GENVCE]}
   - {id: 'HORVX:cartel', crop: HORVX, name: CARTEL, status: candidate, sources: [GENVCE]}
   - {id: 'HORVX:christopher', crop: HORVX, name: CHRISTOPHER, status: candidate, sources: [GENVCE]}
@@ -242,12 +247,15 @@ varieties:
   - {id: 'HORVX:estrella', crop: HORVX, name: ESTRELLA, status: candidate, sources: [GENVCE]}
   - {id: 'HORVX:etincel', crop: HORVX, name: ETINCEL, status: candidate, sources: [GENVCE]}
   - {id: 'HORVX:explorer', crop: HORVX, name: EXPLORER, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:fabiola', crop: HORVX, name: FABIOLA, status: candidate, sources: [GENVCE]}
   - {id: 'HORVX:fairing', crop: HORVX, name: FAIRING, status: candidate, sources: [GENVCE]}
   - {id: 'HORVX:fandaga', crop: HORVX, name: FANDAGA, status: candidate, sources: [GENVCE]}
   - {id: 'HORVX:farandole', crop: HORVX, name: FARANDOLE, status: candidate, sources: [GENVCE]}
   - {id: 'HORVX:fatima', crop: HORVX, name: FATIMA, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:flair', crop: HORVX, name: FLAIR, status: candidate, sources: [GENVCE]}
   - {id: 'HORVX:flanelle', crop: HORVX, name: FLANELLE, status: candidate, sources: [GENVCE]}
   - {id: 'HORVX:florence', crop: HORVX, name: FLORENCE, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:focus', crop: HORVX, name: FOCUS, status: candidate, sources: [GENVCE]}
   - {id: 'HORVX:forcada', crop: HORVX, name: FORCADA, status: candidate, sources: [GENVCE]}
   - {id: 'HORVX:gala', crop: HORVX, name: GALA, status: candidate, sources: [GENVCE]}
   - {id: 'HORVX:garner', crop: HORVX, name: GARNER, status: candidate, sources: [GENVCE]}
@@ -260,6 +268,7 @@ varieties:
   - {id: 'HORVX:hispanic', crop: HORVX, name: HISPANIC, status: assumption, aliases: [HISPANIC (T)], evidence: 'table annotation markers only: (T) check, (R) reference, * footnote; every annotated raw row carries special_status testigo/referencia/transgenico', sources: [GENVCE]}
   - {id: 'HORVX:ibaiona', crop: HORVX, name: IBAIONA, status: candidate, sources: [GENVCE]}
   - {id: 'HORVX:icaria', crop: HORVX, name: ICARIA, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:idra-pandora', crop: HORVX, name: IDRA (PANDORA), status: candidate, sources: [GENVCE]}
   - {id: 'HORVX:isocel', crop: HORVX, name: ISOCEL, status: candidate, sources: [GENVCE]}
   - {id: 'HORVX:jb-maltasia', crop: HORVX, name: JB MALTASIA, status: candidate, sources: [GENVCE]}
   - {id: 'HORVX:jennifer', crop: HORVX, name: JENNIFER, status: candidate, sources: [GENVCE]}
@@ -273,6 +282,7 @@ varieties:
   - {id: 'HORVX:kiwi', crop: HORVX, name: KIWI, status: candidate, sources: [GENVCE]}
   - {id: 'HORVX:klarinette', crop: HORVX, name: KLARINETTE, status: candidate, sources: [GENVCE]}
   - {id: 'HORVX:kws-chrissie', crop: HORVX, name: KWS CHRISSIE, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:kws-fantex', crop: HORVX, name: KWS FANTEX, status: candidate, sources: [GENVCE]}
   - {id: 'HORVX:kws-glacier', crop: HORVX, name: KWS GLACIER, status: candidate, sources: [GENVCE]}
   - {id: 'HORVX:kws-mattis', crop: HORVX, name: KWS MATTIS, status: candidate, sources: [GENVCE]}
   - {id: 'HORVX:kws-ovnis', crop: HORVX, name: KWS OVNIS, status: candidate, sources: [GENVCE]}
@@ -283,20 +293,27 @@ varieties:
   - {id: 'HORVX:lavanda', crop: HORVX, name: LAVANDA, status: candidate, sources: [GENVCE]}
   - {id: 'HORVX:lavinia', crop: HORVX, name: LAVINIA, status: candidate, sources: [GENVCE]}
   - {id: 'HORVX:lazuli', crop: HORVX, name: LAZULI, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:leandra', crop: HORVX, name: LEANDRA, status: candidate, sources: [GENVCE]}
   - {id: 'HORVX:lexy', crop: HORVX, name: LEXY, status: candidate, sources: [GENVCE]}
   - {id: 'HORVX:lg-aitana', crop: HORVX, name: LG AITANA, status: candidate, sources: [GENVCE]}
   - {id: 'HORVX:lg-allegro', crop: HORVX, name: LG ALLEGRO, status: candidate, sources: [GENVCE]}
   - {id: 'HORVX:lg-amparo', crop: HORVX, name: LG AMPARO, status: candidate, sources: [GENVCE]}
   - {id: 'HORVX:lg-andante', crop: HORVX, name: LG ANDANTE, status: candidate, sources: [GENVCE]}
   - {id: 'HORVX:lg-austral', crop: HORVX, name: LG AUSTRAL, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:lg-australia', crop: HORVX, name: LG AUSTRALIA, status: candidate, sources: [GENVCE]}
   - {id: 'HORVX:lg-belcanto', crop: HORVX, name: LG BELCANTO, status: candidate, sources: [GENVCE]}
   - {id: 'HORVX:lg-carolina', crop: HORVX, name: LG CAROLINA, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:lg-casting', crop: HORVX, name: LG CASTING, status: candidate, sources: [GENVCE]}
   - {id: 'HORVX:lg-centella', crop: HORVX, name: LG CENTELLA, status: candidate, sources: [GENVCE]}
   - {id: 'HORVX:lg-flamenco', crop: HORVX, name: LG FLAMENCO, status: candidate, sources: [GENVCE]}
   - {id: 'HORVX:lg-flamenco-pg', crop: HORVX, name: LG FLAMENCO pG, status: candidate, sources: [GENVCE]}
   - {id: 'HORVX:lg-hipatia', crop: HORVX, name: LG HIPATIA, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:lg-minerva', crop: HORVX, name: LG MINERVA, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:lg-nabuco', crop: HORVX, name: LG NABUCO, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:lg-rosella', crop: HORVX, name: LG ROSELLA, status: candidate, sources: [GENVCE]}
   - {id: 'HORVX:loyola', crop: HORVX, name: LOYOLA, status: candidate, sources: [GENVCE]}
   - {id: 'HORVX:lukhas', crop: HORVX, name: LUKHAS, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:luminosa', crop: HORVX, name: LUMINOSA, status: candidate, sources: [GENVCE]}
   - {id: 'HORVX:magallon', crop: HORVX, name: MAGALLON, status: candidate, sources: [GENVCE]}
   - {id: 'HORVX:magenta', crop: HORVX, name: MAGENTA, status: candidate, sources: [GENVCE]}
   - {id: 'HORVX:magnitude', crop: HORVX, name: MAGNITUDE, status: candidate, sources: [GENVCE]}
@@ -327,13 +344,16 @@ varieties:
   - {id: 'HORVX:orkide', crop: HORVX, name: ORKIDE, status: candidate, sources: [GENVCE]}
   - {id: 'HORVX:orofil', crop: HORVX, name: OROFIL, status: candidate, sources: [GENVCE]}
   - {id: 'HORVX:ortilus', crop: HORVX, name: ORTILUS, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:overture', crop: HORVX, name: OVERTURE, status: candidate, sources: [GENVCE]}
   - {id: 'HORVX:panaka', crop: HORVX, name: PANAKA, status: candidate, sources: [GENVCE]}
   - {id: 'HORVX:pandora', crop: HORVX, name: PANDORA, status: candidate, sources: [GENVCE]}
   - {id: 'HORVX:pariglia', crop: HORVX, name: PARIGLIA, status: candidate, sources: [GENVCE]}
   - {id: 'HORVX:parma', crop: HORVX, name: PARMA, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:pathfinder', crop: HORVX, name: PATHFINDER, status: candidate, sources: [GENVCE]}
   - {id: 'HORVX:pewter', crop: HORVX, name: PEWTER, status: assumption, aliases: [PEWTER (R), PEWTER (T)], evidence: 'table annotation markers only: (T) check, (R) reference, * footnote; every annotated raw row carries special_status testigo/referencia/transgenico', sources: [GENVCE]}
   - {id: 'HORVX:pinocchio', crop: HORVX, name: PINOCCHIO, status: candidate, sources: [GENVCE]}
   - {id: 'HORVX:pirene', crop: HORVX, name: PIRENE, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:pixel', crop: HORVX, name: PIXEL, status: candidate, sources: [GENVCE]}
   - {id: 'HORVX:ponente', crop: HORVX, name: PONENTE, status: candidate, sources: [GENVCE]}
   - {id: 'HORVX:propino', crop: HORVX, name: PROPINO, status: candidate, sources: [GENVCE]}
   - {id: 'HORVX:protide', crop: HORVX, name: PROTIDE, status: candidate, sources: [GENVCE]}
@@ -341,7 +361,9 @@ varieties:
   - {id: 'HORVX:quench', crop: HORVX, name: QUENCH, status: candidate, sources: [GENVCE]}
   - {id: 'HORVX:raquel', crop: HORVX, name: RAQUEL, status: candidate, sources: [GENVCE]}
   - {id: 'HORVX:regalia', crop: HORVX, name: REGALIA, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:revanche', crop: HORVX, name: REVANCHE, status: candidate, sources: [GENVCE]}
   - {id: 'HORVX:rgt-alcantara', crop: HORVX, name: RGT ALCANTARA, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:rgt-asteroid', crop: HORVX, name: RGT ASTEROID, status: candidate, sources: [GENVCE]}
   - {id: 'HORVX:rgt-atocha', crop: HORVX, name: RGT ATOCHA, status: candidate, sources: [GENVCE]}
   - {id: 'HORVX:rgt-campera', crop: HORVX, name: RGT CAMPERA, status: candidate, sources: [GENVCE]}
   - {id: 'HORVX:rgt-covadonga', crop: HORVX, name: RGT COVADONGA, status: candidate, sources: [GENVCE]}
@@ -354,6 +376,7 @@ varieties:
   - {id: 'HORVX:rgt-gibraltar', crop: HORVX, name: RGT GIBRALTAR, status: candidate, sources: [GENVCE]}
   - {id: 'HORVX:rgt-luzia', crop: HORVX, name: RGT LUZIA, status: candidate, sources: [GENVCE]}
   - {id: 'HORVX:rgt-medinaceli', crop: HORVX, name: RGT MEDINACELI, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:rgt-orbiter', crop: HORVX, name: RGT ORBITER, status: candidate, sources: [GENVCE]}
   - {id: 'HORVX:rgt-orijino', crop: HORVX, name: RGT ORIJINO, status: candidate, sources: [GENVCE]}
   - {id: 'HORVX:rgt-planet', crop: HORVX, name: RGT PLANET, status: candidate, sources: [GENVCE]}
   - {id: 'HORVX:rgt-samarkanda', crop: HORVX, name: RGT SAMARKANDA, status: candidate, sources: [GENVCE]}
@@ -362,10 +385,12 @@ varieties:
   - {id: 'HORVX:rgt-skylab', crop: HORVX, name: RGT SKYLAB, status: candidate, sources: [GENVCE]}
   - {id: 'HORVX:rgt-slida', crop: HORVX, name: RGT SLIDA, status: candidate, sources: [GENVCE]}
   - {id: 'HORVX:rgt-verona', crop: HORVX, name: RGT VERONA, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:rgt-zancara', crop: HORVX, name: RGT ZANCARA, status: candidate, sources: [GENVCE]}
   - {id: 'HORVX:rocio', crop: HORVX, name: ROCIO, status: candidate, sources: [GENVCE]}
   - {id: 'HORVX:rocio-809e', crop: HORVX, name: ROCÍO, status: assumption, aliases: [ROCÍO (NSL03-6838), NSL03-6838], evidence: same raw string pairs the breeder code with the denomination (breeder-code co-occurrence), sources: [GENVCE]}
   - {id: 'HORVX:ronny', crop: HORVX, name: RONNY, status: candidate, sources: [GENVCE]}
   - {id: 'HORVX:rubiales', crop: HORVX, name: RUBIALES, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:rubiana', crop: HORVX, name: RUBIANA, status: candidate, sources: [GENVCE]}
   - {id: 'HORVX:saber-pg', crop: HORVX, name: SABER pG, status: candidate, sources: [GENVCE]}
   - {id: 'HORVX:salamandre', crop: HORVX, name: SALAMANDRE, status: candidate, sources: [GENVCE]}
   - {id: 'HORVX:sanette', crop: HORVX, name: SANETTE, status: candidate, sources: [GENVCE]}
@@ -377,6 +402,7 @@ varieties:
   - {id: 'HORVX:shakira', crop: HORVX, name: SHAKIRA, status: candidate, sources: [GENVCE]}
   - {id: 'HORVX:shetty', crop: HORVX, name: SHETTY, status: candidate, sources: [GENVCE]}
   - {id: 'HORVX:shuffle', crop: HORVX, name: SHUFFLE, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:sienna', crop: HORVX, name: SIENNA, status: candidate, sources: [GENVCE]}
   - {id: 'HORVX:signora', crop: HORVX, name: SIGNORA, status: candidate, sources: [GENVCE]}
   - {id: 'HORVX:skyway', crop: HORVX, name: SKYWAY, status: candidate, sources: [GENVCE]}
   - {id: 'HORVX:spazio', crop: HORVX, name: SPAZIO, status: candidate, sources: [GENVCE]}
@@ -390,6 +416,7 @@ varieties:
   - {id: 'HORVX:sw-catriona', crop: HORVX, name: SW CATRIONA, status: candidate, sources: [GENVCE]}
   - {id: 'HORVX:sw-maaren', crop: HORVX, name: SW MAAREN, status: candidate, sources: [GENVCE]}
   - {id: 'HORVX:sy-amity', crop: HORVX, name: SY AMITY, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:sy-cristallin', crop: HORVX, name: SY CRISTALLIN, status: candidate, sources: [GENVCE]}
   - {id: 'HORVX:sy-signet', crop: HORVX, name: SY SIGNET, status: candidate, sources: [GENVCE]}
   - {id: 'HORVX:sy-solar', crop: HORVX, name: SY SOLAR, status: candidate, sources: [GENVCE]}
   - {id: 'HORVX:sy-stanza', crop: HORVX, name: SY STANZA, status: candidate, sources: [GENVCE]}
@@ -411,11 +438,13 @@ varieties:
   - {id: 'TRZAX:advisor', crop: TRZAX, name: ADVISOR, status: candidate, sources: [GENVCE]}
   - {id: 'TRZAX:aerobic', crop: TRZAX, name: AEROBIC, status: candidate, sources: [GENVCE]}
   - {id: 'TRZAX:alagir', crop: TRZAX, name: ALAGIR, status: candidate, sources: [GENVCE]}
+  - {id: 'TRZAX:ambrogio', crop: TRZAX, name: AMBROGIO, status: candidate, sources: [GENVCE]}
   - {id: 'TRZAX:arayo', crop: TRZAX, name: ARAYO, status: candidate, sources: [GENVCE]}
   - {id: 'TRZAX:artur-nick', crop: TRZAX, name: ARTUR NICK, status: candidate, sources: [GENVCE]}
   - {id: 'TRZAX:avelino', crop: TRZAX, name: AVELINO, status: candidate, sources: [GENVCE]}
   - {id: 'TRZAX:aviso', crop: TRZAX, name: AVISO, status: candidate, sources: [GENVCE]}
   - {id: 'TRZAX:basilio', crop: TRZAX, name: BASILIO, status: candidate, sources: [GENVCE]}
+  - {id: 'TRZAX:basmati', crop: TRZAX, name: BASMATI, status: candidate, sources: [GENVCE]}
   - {id: 'TRZAX:bologna', crop: TRZAX, name: BOLOGNA, status: candidate, sources: [GENVCE]}
   - {id: 'TRZAX:bonifacio', crop: TRZAX, name: BONIFACIO, status: candidate, sources: [GENVCE]}
   - {id: 'TRZAX:botticelli', crop: TRZAX, name: BOTTICELLI, status: candidate, sources: [GENVCE]}
@@ -426,58 +455,112 @@ varieties:
   - {id: 'TRZAX:chambo', crop: TRZAX, name: CHAMBO, status: candidate, sources: [GENVCE]}
   - {id: 'TRZAX:complice', crop: TRZAX, name: COMPLICE, status: candidate, sources: [GENVCE]}
   - {id: 'TRZAX:conil', crop: TRZAX, name: CONIL, status: candidate, sources: [GENVCE]}
+  - {id: 'TRZAX:cosmic', crop: TRZAX, name: COSMIC, status: candidate, sources: [GENVCE]}
   - {id: 'TRZAX:denicius', crop: TRZAX, name: DENICIUS, status: candidate, sources: [GENVCE]}
+  - {id: 'TRZAX:eletta', crop: TRZAX, name: ELETTA, status: candidate, sources: [GENVCE]}
+  - {id: 'TRZAX:esperado', crop: TRZAX, name: ESPERADO, status: candidate, sources: [GENVCE]}
+  - {id: 'TRZAX:falado', crop: TRZAX, name: FALADO, status: candidate, sources: [GENVCE]}
+  - {id: 'TRZAX:fantomas', crop: TRZAX, name: FANTOMAS, status: candidate, sources: [GENVCE]}
   - {id: 'TRZAX:filon', crop: TRZAX, name: FILON, status: candidate, sources: [GENVCE]}
+  - {id: 'TRZAX:flish', crop: TRZAX, name: FLISH, status: candidate, sources: [GENVCE]}
   - {id: 'TRZAX:florence-aurora', crop: TRZAX, name: FLORENCE AURORA, status: candidate, sources: [GENVCE]}
+  - {id: 'TRZAX:gabrio', crop: TRZAX, name: GABRIO, status: candidate, sources: [GENVCE]}
   - {id: 'TRZAX:galera', crop: TRZAX, name: GALERA, status: candidate, sources: [GENVCE]}
   - {id: 'TRZAX:ganduja', crop: TRZAX, name: GANDUJA, status: candidate, sources: [GENVCE]}
   - {id: 'TRZAX:gavrik', crop: TRZAX, name: GAVRIK, status: candidate, sources: [GENVCE]}
   - {id: 'TRZAX:gazeo', crop: TRZAX, name: GAZEO, status: candidate, sources: [GENVCE]}
+  - {id: 'TRZAX:gazul', crop: TRZAX, name: GAZUL, status: candidate, sources: [GENVCE]}
   - {id: 'TRZAX:grimm', crop: TRZAX, name: GRIMM, status: candidate, sources: [GENVCE]}
   - {id: 'TRZAX:illico', crop: TRZAX, name: ILLICO, status: candidate, sources: [GENVCE]}
+  - {id: 'TRZAX:klima', crop: TRZAX, name: KLIMA, status: candidate, sources: [GENVCE]}
   - {id: 'TRZAX:kws-extreme', crop: TRZAX, name: KWS EXTREME, status: candidate, sources: [GENVCE]}
   - {id: 'TRZAX:kws-lazuli', crop: TRZAX, name: KWS LAZULI, status: candidate, sources: [GENVCE]}
+  - {id: 'TRZAX:lagasca', crop: TRZAX, name: LAGASCA, status: candidate, sources: [GENVCE]}
+  - {id: 'TRZAX:lancillotto', crop: TRZAX, name: LANCILLOTTO, status: candidate, sources: [GENVCE]}
   - {id: 'TRZAX:lavandou', crop: TRZAX, name: LAVANDOU, status: candidate, sources: [GENVCE]}
   - {id: 'TRZAX:lg-acorazado', crop: TRZAX, name: LG ACORAZADO, status: candidate, sources: [GENVCE]}
+  - {id: 'TRZAX:lg-aficion', crop: TRZAX, name: LG AFICION, status: candidate, sources: [GENVCE]}
+  - {id: 'TRZAX:lg-albufera', crop: TRZAX, name: LG ALBUFERA, status: candidate, sources: [GENVCE]}
+  - {id: 'TRZAX:lg-ancia', crop: TRZAX, name: LG ANCIA, status: candidate, sources: [GENVCE]}
   - {id: 'TRZAX:lg-antique', crop: TRZAX, name: LG ANTIQUE, status: candidate, sources: [GENVCE]}
+  - {id: 'TRZAX:lg-arroba', crop: TRZAX, name: LG ARROBA, status: candidate, sources: [GENVCE]}
   - {id: 'TRZAX:lg-asterion', crop: TRZAX, name: LG ASTERIÓN, status: candidate, sources: [GENVCE]}
+  - {id: 'TRZAX:lg-aute', crop: TRZAX, name: LG AUTE, status: candidate, sources: [GENVCE]}
   - {id: 'TRZAX:lg-becquer', crop: TRZAX, name: LG BECQUER, status: candidate, sources: [GENVCE]}
   - {id: 'TRZAX:lg-filosofo', crop: TRZAX, name: LG FILOSOFO, status: candidate, sources: [GENVCE]}
   - {id: 'TRZAX:lg-fortunato', crop: TRZAX, name: LG FORTUNATO, status: candidate, sources: [GENVCE]}
+  - {id: 'TRZAX:lg-huracan', crop: TRZAX, name: LG HURACAN, status: candidate, sources: [GENVCE]}
+  - {id: 'TRZAX:lg-mauro', crop: TRZAX, name: LG MAURO, status: candidate, sources: [GENVCE]}
+  - {id: 'TRZAX:lg-mercurius', crop: TRZAX, name: LG MERCURIUS, status: candidate, sources: [GENVCE]}
+  - {id: 'TRZAX:lg-monje', crop: TRZAX, name: LG MONJE, status: candidate, sources: [GENVCE]}
   - {id: 'TRZAX:lg-quorum', crop: TRZAX, name: LG QUORUM, status: candidate, sources: [GENVCE]}
+  - {id: 'TRZAX:lg-reventon', crop: TRZAX, name: LG REVENTÓN, status: candidate, sources: [GENVCE]}
   - {id: 'TRZAX:lg-rosendo', crop: TRZAX, name: LG ROSENDO, status: candidate, sources: [GENVCE]}
+  - {id: 'TRZAX:lg-rufo', crop: TRZAX, name: LG RUFO, status: candidate, sources: [GENVCE]}
+  - {id: 'TRZAX:lg-trafalgar', crop: TRZAX, name: LG TRAFALGAR, status: candidate, sources: [GENVCE]}
+  - {id: 'TRZAX:lg-turner', crop: TRZAX, name: LG TURNER, status: candidate, sources: [GENVCE]}
+  - {id: 'TRZAX:lucilla', crop: TRZAX, name: LUCILLA, status: candidate, sources: [GENVCE]}
+  - {id: 'TRZAX:macareno', crop: TRZAX, name: MACARENO, status: candidate, sources: [GENVCE]}
   - {id: 'TRZAX:marcopolo', crop: TRZAX, name: MARCOPOLO, status: candidate, sources: [GENVCE]}
+  - {id: 'TRZAX:maupassant', crop: TRZAX, name: MAUPASSANT, status: candidate, sources: [GENVCE]}
   - {id: 'TRZAX:metropolis', crop: TRZAX, name: METROPOLIS, status: candidate, sources: [GENVCE]}
+  - {id: 'TRZAX:montecristo-cs', crop: TRZAX, name: MONTECRISTO CS, status: candidate, sources: [GENVCE]}
+  - {id: 'TRZAX:montemayor', crop: TRZAX, name: MONTEMAYOR, status: candidate, sources: [GENVCE]}
   - {id: 'TRZAX:mufasa', crop: TRZAX, name: MUFASA, status: assumption, aliases: [MUFASA (FD14WW060), FD14WW060], evidence: same raw string pairs the breeder code with the denomination (breeder-code co-occurrence), sources: [GENVCE]}
   - {id: 'TRZAX:nemo', crop: TRZAX, name: NEMO, status: candidate, sources: [GENVCE]}
   - {id: 'TRZAX:nogal', crop: TRZAX, name: NOGAL, status: assumption, aliases: [NOGAL (T)], evidence: 'table annotation markers only: (T) check, (R) reference, * footnote; every annotated raw row carries special_status testigo/referencia/transgenico', sources: [GENVCE]}
   - {id: 'TRZAX:nudel', crop: TRZAX, name: NUDEL, status: candidate, sources: [GENVCE]}
   - {id: 'TRZAX:obiwan', crop: TRZAX, name: OBIWAN, status: candidate, sources: [GENVCE]}
+  - {id: 'TRZAX:orloge', crop: TRZAX, name: ORLOGE, status: candidate, sources: [GENVCE]}
+  - {id: 'TRZAX:ovalie-cs', crop: TRZAX, name: OVALIE CS, status: candidate, sources: [GENVCE]}
   - {id: 'TRZAX:ovalo', crop: TRZAX, name: OVALO, status: candidate, sources: [GENVCE]}
   - {id: 'TRZAX:paledor', crop: TRZAX, name: PALEDOR, status: assumption, aliases: [PALEDOR (T)], evidence: 'table annotation markers only: (T) check, (R) reference, * footnote; every annotated raw row carries special_status testigo/referencia/transgenico', sources: [GENVCE]}
   - {id: 'TRZAX:pibrac', crop: TRZAX, name: PIBRAC, status: candidate, sources: [GENVCE]}
   - {id: 'TRZAX:porticcio', crop: TRZAX, name: PORTICCIO, status: candidate, sources: [GENVCE]}
   - {id: 'TRZAX:prestance', crop: TRZAX, name: PRESTANCE, status: candidate, sources: [GENVCE]}
   - {id: 'TRZAX:rebelde', crop: TRZAX, name: REBELDE, status: candidate, sources: [GENVCE]}
+  - {id: 'TRZAX:rgt-algoritmo', crop: TRZAX, name: RGT ALGORITMO, status: candidate, sources: [GENVCE]}
+  - {id: 'TRZAX:rgt-almagro-33', crop: TRZAX, name: RGT ALMAGRO 33, status: candidate, sources: [GENVCE]}
   - {id: 'TRZAX:rgt-altavista', crop: TRZAX, name: RGT ALTAVISTA, status: candidate, sources: [GENVCE]}
   - {id: 'TRZAX:rgt-borsalino', crop: TRZAX, name: RGT BORSALINO, status: candidate, sources: [GENVCE]}
   - {id: 'TRZAX:rgt-campurriano', crop: TRZAX, name: RGT CAMPURRIANO, status: candidate, sources: [GENVCE]}
   - {id: 'TRZAX:rgt-cesario', crop: TRZAX, name: RGT CESARIO, status: candidate, sources: [GENVCE]}
+  - {id: 'TRZAX:rgt-chiclanero', crop: TRZAX, name: RGT CHICLANERO, status: candidate, sources: [GENVCE]}
   - {id: 'TRZAX:rgt-distingo', crop: TRZAX, name: RGT DISTINGO, status: candidate, sources: [GENVCE]}
+  - {id: 'TRZAX:rgt-enebro', crop: TRZAX, name: RGT ENEBRO, status: candidate, sources: [GENVCE]}
   - {id: 'TRZAX:rgt-mikelino', crop: TRZAX, name: RGT MIKELINO, status: candidate, sources: [GENVCE]}
+  - {id: 'TRZAX:rgt-mimateo', crop: TRZAX, name: RGT MIMATEO, status: candidate, sources: [GENVCE]}
   - {id: 'TRZAX:rgt-miolo', crop: TRZAX, name: RGT MIOLO, status: candidate, sources: [GENVCE]}
   - {id: 'TRZAX:rgt-montecarlo', crop: TRZAX, name: RGT MONTECARLO, status: candidate, sources: [GENVCE]}
+  - {id: 'TRZAX:rgt-montenegro', crop: TRZAX, name: RGT MONTENEGRO, status: candidate, sources: [GENVCE]}
   - {id: 'TRZAX:rgt-montreal', crop: TRZAX, name: RGT MONTREAL, status: candidate, sources: [GENVCE]}
+  - {id: 'TRZAX:rgt-paisano', crop: TRZAX, name: RGT PAISANO, status: candidate, sources: [GENVCE]}
+  - {id: 'TRZAX:rgt-panigale', crop: TRZAX, name: RGT PANIGALE, status: candidate, sources: [GENVCE]}
+  - {id: 'TRZAX:rgt-paraiso', crop: TRZAX, name: RGT PARAISO, status: candidate, sources: [GENVCE]}
+  - {id: 'TRZAX:rgt-poblado', crop: TRZAX, name: RGT POBLADO, status: candidate, sources: [GENVCE]}
   - {id: 'TRZAX:rgt-quiriko', crop: TRZAX, name: RGT QUIRIKO, status: candidate, sources: [GENVCE]}
   - {id: 'TRZAX:rgt-sacramento', crop: TRZAX, name: RGT SACRAMENTO, status: candidate, sources: [GENVCE]}
+  - {id: 'TRZAX:rgt-solferino', crop: TRZAX, name: RGT SOLFERINO, status: candidate, sources: [GENVCE]}
+  - {id: 'TRZAX:rgt-styvar', crop: TRZAX, name: RGT STYVAR, status: candidate, sources: [GENVCE]}
   - {id: 'TRZAX:rgt-tocayo', crop: TRZAX, name: RGT TOCAYO, status: candidate, sources: [GENVCE]}
   - {id: 'TRZAX:rgt-vecino', crop: TRZAX, name: RGT VECINO, status: candidate, sources: [GENVCE]}
+  - {id: 'TRZAX:santaella', crop: TRZAX, name: SANTAELLA, status: candidate, sources: [GENVCE]}
   - {id: 'TRZAX:soissons', crop: TRZAX, name: SOISSONS, status: assumption, aliases: [SOISSONS (T)], evidence: 'table annotation markers only: (T) check, (R) reference, * footnote; every annotated raw row carries special_status testigo/referencia/transgenico', sources: [GENVCE]}
   - {id: 'TRZAX:soledad', crop: TRZAX, name: SOLEDAD, status: candidate, sources: [GENVCE]}
+  - {id: 'TRZAX:solehio', crop: TRZAX, name: SOLEHIO, status: candidate, sources: [GENVCE]}
+  - {id: 'TRZAX:solindo-cs', crop: TRZAX, name: SOLINDO CS, status: candidate, sources: [GENVCE]}
   - {id: 'TRZAX:sollario', crop: TRZAX, name: SOLLARIO, status: candidate, sources: [GENVCE]}
+  - {id: 'TRZAX:sy-cicerone', crop: TRZAX, name: SY CICERONE, status: candidate, sources: [GENVCE]}
+  - {id: 'TRZAX:sy-liam', crop: TRZAX, name: SY LIAM, status: candidate, sources: [GENVCE]}
+  - {id: 'TRZAX:sy-passion', crop: TRZAX, name: SY PASSION, status: candidate, sources: [GENVCE]}
+  - {id: 'TRZAX:sy-rocinante', crop: TRZAX, name: SY ROCINANTE, status: candidate, sources: [GENVCE]}
+  - {id: 'TRZAX:taquet', crop: TRZAX, name: TAQUET, status: candidate, sources: [GENVCE]}
+  - {id: 'TRZAX:tenor', crop: TRZAX, name: TENOR, status: candidate, sources: [GENVCE]}
+  - {id: 'TRZAX:toskani', crop: TRZAX, name: TOSKANI, status: candidate, sources: [GENVCE]}
   - {id: 'TRZAX:tujena', crop: TRZAX, name: TUJENA, status: candidate, sources: [GENVCE]}
   - {id: 'TRZAX:valbona', crop: TRZAX, name: VALBONA, status: candidate, sources: [GENVCE]}
   - {id: 'TRZAX:viriato', crop: TRZAX, name: VIRIATO, status: candidate, sources: [GENVCE]}
+  - {id: 'TRZAX:viridis', crop: TRZAX, name: VIRIDIS, status: candidate, sources: [GENVCE]}
   - {id: 'ZEAMX:47m', crop: ZEAMX, name: 47M, status: candidate, sources: [GENVCE]}
   - {id: 'ZEAMX:529d', crop: ZEAMX, name: 529D, status: candidate, sources: [GENVCE]}
   - {id: 'ZEAMX:52p', crop: ZEAMX, name: 52P, status: candidate, sources: [GENVCE]}
