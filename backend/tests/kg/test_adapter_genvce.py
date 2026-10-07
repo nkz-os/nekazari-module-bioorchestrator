@@ -532,3 +532,20 @@ def test_the_whole_extraction_builds_and_matches_the_contracts_expected_counts()
     assert (len(built.units), len(built.observations), len(built.sites)) == (
         CONTRACT.expected.units, CONTRACT.expected.observations, CONTRACT.expected.sites)
     assert not built.report.unresolved_sites and not built.report.unresolved_vocab
+
+
+# raw_irrigation is a unit-key field derived from raw_site by this rule: a change must fail loudly.
+_FROZEN_IRRIGATION = {
+    "Conjunto Frías y Templadas": None, "Regadíos fríos": "regadío", "Regadíos fríos y templados": "regadío",
+    "Regadíos templados": "regadío", "Secanos húmedos y de alto potencial fríos": "secano",
+    "Secanos húmedos y de alto potencial fríos y templados": "secano",
+    "Secanos áridos y semiáridos fríos": "secano", "Templada": None, "Templada y Fría": None,
+    "Zona Cálida": None, "Zona Cálida Semiárida": None, "Zona Fría": None, "Zona Fría Semiárida": None,
+    "Zona Templada": None, "Zonas cálidas": None, "Zonas frías": None, "Zonas templadas": None,
+    "Secanos y regadíos templados": None, "REGADÍOS  Templados": "regadío", "Rendimiento alto": None, None: None,
+}
+
+
+def test_irrigation_rule_is_frozen():
+    assert {label: genvce._irrigation_stated_by(label) for label in _FROZEN_IRRIGATION} == _FROZEN_IRRIGATION
+    assert "raw_irrigation" in identity.UNIT_KEY_FIELDS

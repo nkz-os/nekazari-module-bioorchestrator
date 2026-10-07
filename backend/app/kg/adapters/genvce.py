@@ -102,7 +102,12 @@ def _text(value: Any) -> str | None:
 
 
 def _irrigation_stated_by(zone: str | None) -> str | None:
-    """The regime the observed zone or stratum label itself states, else None."""
+    """The regime the observed zone or stratum label itself states, else None.
+
+    FROZEN: ``raw_irrigation`` (derived here from ``raw_site``) is a unit-key field
+    (``identity.UNIT_KEY_FIELDS``), so any change to this rule changes unit keys. Changing it needs
+    a key-migration decision; ``test_irrigation_rule_is_frozen`` pins its output.
+    """
     if zone is None:
         return None
     label = _fold(zone)
