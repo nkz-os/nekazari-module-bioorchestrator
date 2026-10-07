@@ -72,8 +72,10 @@ Rules (owner decisions 2026-10-04, rule 9 2026-10-06):
    stored value or a requested one as ``secano``, ``regadio`` or none, and every comparison of
    regimes (the request filters, the reference median, the water-regime weight, the evidence
    page, the presence scan) goes through it (``cypher_irrigation_match``), so a literal counts
-   exactly like its URI. A trial without a regime, or with an unrecognised value, never matches a
-   requested regime.
+   exactly like its URI. A requested regime excludes every trial whose SOURCE states the
+   opposite regime (never pooled, never down-weighted); a trial whose source states none (null or
+   blank) stays and is reported as ``unknown`` (``irrigation_status``); an unrecognised non-blank
+   value cannot be classified and never matches.
 
 9. **Aggregate sources.** The rows of a source in ``AGGREGATE_SOURCES`` (GENVCE: zone and national
    averages, no trial location published) are ``regional`` evidence whatever site they are linked
@@ -466,7 +468,12 @@ def is_field_scope(aggregation_scope: str | None) -> bool:
     return aggregation_scope is None or _norm(aggregation_scope) == FIELD_SCOPE
 
 
-def is_aggregate_site(name: str | None) -> bool:
+def is_aggregate_site(name: str | None, site_kind: str | None = None) -> bool:
+    """A site is an aggregate when it is declared one (``TrialSite.siteKind``, written by the build) or its
+    name says so (graphs built before the property existed). The property only ever ADDS aggregates:
+    a name that reads as an aggregate stays one whatever the property says."""
+    if _norm(site_kind) == SITE_KIND_AGGREGATE:
+        return True
     low = _norm(name)
     if not low:
         return True
@@ -475,15 +482,16 @@ def is_aggregate_site(name: str | None) -> bool:
             or any(p in low for p in EXTRA_AGGREGATE_SITE_PATTERNS))
 
 
-def site_kind(name: str | None) -> str:
-    return SITE_KIND_AGGREGATE if is_aggregate_site(name) else SITE_KIND_FIELD
+def site_kind(name: str | None, declared_kind: str | None = None) -> str:
+    return SITE_KIND_AGGREGATE if is_aggregate_site(name, declared_kind) else SITE_KIND_FIELD
 
 
-def is_field_evidence(aggregation_scope: str | None, site_name: str | None, *,
+def is_field_evidence(aggregation_scope: str | None, site_name: str | None,
+                      site_kind: str | None = None, *,
                       source_id: str | None = None, data_source: str | None = None) -> bool:
-    """Rule 4 (scope and site) and rule 9 (the trial's source; omit it and the row is judged on
-    scope and site alone)."""
-    return (is_field_scope(aggregation_scope) and not is_aggregate_site(site_name)
+    """Rule 4 (scope and site, a declared site kind first) and rule 9 (the trial's source; omit it
+    and the row is judged on scope and site alone)."""
+    return (is_field_scope(aggregation_scope) and not is_aggregate_site(site_name, site_kind)
             and not is_aggregate_source(source_id, data_source))
 
 
@@ -493,11 +501,12 @@ def check_tier(tier: str) -> str:
     return tier
 
 
-def evidence_tier(aggregation_scope: str | None, site_name: str | None, *,
+def evidence_tier(aggregation_scope: str | None, site_name: str | None,
+                  site_kind: str | None = None, *,
                   source_id: str | None = None, data_source: str | None = None) -> str:
     """``field`` or ``regional`` for one (trial, site) row (rule 6)."""
     return (EVIDENCE_TIER_FIELD
-            if is_field_evidence(aggregation_scope, site_name,
+            if is_field_evidence(aggregation_scope, site_name, site_kind,
                                  source_id=source_id, data_source=data_source)
             else EVIDENCE_TIER_REGIONAL)
 
@@ -523,6 +532,10 @@ IRRIGATION_REQUEST_ALIASES: Mapping[str, str] = {
 }
 
 
+IRRIGATION_STATUS_STATED = "stated"
+IRRIGATION_STATUS_UNKNOWN = "unknown"
+
+
 def irrigation_regime(value: Any) -> str | None:
     """``secano`` | ``regadio`` for a stored or requested regime value (URI or literal,
     case-insensitive, trimmed); None for no value or an unrecognised one."""
@@ -541,12 +554,29 @@ def irrigation_uri(request: str | None) -> str | None:
 
 
 def irrigation_matches(value: Any, target: Any) -> bool:
-    """A trial's regime ``value`` satisfies the requested ``target``. No target: always. A target
-    that names no regime matches nothing; neither does a missing or unrecognised value."""
+    """A trial's regime ``value`` is compatible with the requested ``target``. No target: always.
+    A target that names no regime matches nothing. A blank or missing value (the source states
+    none) stays: its regime is unknown, not contradictory. A stated value matches only the same
+    regime; an unrecognised non-blank value matches nothing."""
     if target is None:
         return True
     regime = irrigation_regime(target)
-    return regime is not None and irrigation_regime(value) == regime
+    if regime is None:
+        return False
+    if _norm(value) == "":
+        return True
+    return irrigation_regime(value) == regime
+
+
+def irrigation_status(value: Any, target: Any) -> str | None:
+    """Label of a trial against the requested regime: ``None`` when no regime is requested,
+    ``stated`` (the source states the requested regime), ``unknown`` (the source states none) or
+    ``contradicts`` (never returned by a query that filters with ``irrigation_matches``)."""
+    if irrigation_regime(target) is None:
+        return None
+    if _norm(value) == "":
+        return IRRIGATION_STATUS_UNKNOWN
+    return IRRIGATION_STATUS_STATED if irrigation_regime(value) == irrigation_regime(target) else "contradicts"
 
 
 def policy_yield(trial: Mapping[str, Any], mode: str = MODE_MAIN) -> float | None:
@@ -782,16 +812,18 @@ def cypher_field_scope(vt: str = "vt") -> str:
     return f"(coalesce(toLower(trim({vt}.aggregationScope)), {_cypher_str(FIELD_SCOPE)}) = {_cypher_str(FIELD_SCOPE)})"
 
 
-def _cypher_aggregate_site_over(name: str) -> str:
+def _cypher_aggregate_site_over(name: str, kind: str | None = None) -> str:
     """The aggregate-site test over an already lowercased, trimmed name expression: the name is
-    referenced once per site-name list and once per pattern, so callers pass a variable."""
-    return (f"({name} = '' OR {name} IN {_cypher_list(AGGREGATE_SITE_NAMES)} "
+    referenced once per site-name list and once per pattern, so callers pass a variable.
+    ``kind`` is the likewise normalised ``siteKind`` expression (declared aggregates, see ``is_aggregate_site``)."""
+    declared = f"{kind} = {_cypher_str(SITE_KIND_AGGREGATE)} OR " if kind else ""
+    return (f"({declared}{name} = '' OR {name} IN {_cypher_list(AGGREGATE_SITE_NAMES)} "
             f"OR any(ep_pat IN {_cypher_list(AGGREGATE_SITE_PATTERNS)} WHERE {name} CONTAINS ep_pat))")
 
 
 def cypher_aggregate_site(ts: str = "ts") -> str:
     ts = _alias(ts)
-    return _cypher_aggregate_site_over(_cypher_norm(f"{ts}.name"))
+    return _cypher_aggregate_site_over(_cypher_norm(f"{ts}.name"), _cypher_norm(f"{ts}.siteKind"))
 
 
 def cypher_field_evidence(vt: str = "vt", ts: str = "ts") -> str:
@@ -812,8 +844,9 @@ def cypher_content_key(vt: str = "vt") -> str:
     )
 
 
-def _cypher_evidence_tier_over(vt: str, site_name: str) -> str:
-    return (f"(CASE WHEN ({cypher_field_scope(vt)} AND NOT {_cypher_aggregate_site_over(site_name)} "
+def _cypher_evidence_tier_over(vt: str, site_name: str, site_kind: str | None = None) -> str:
+    return (f"(CASE WHEN ({cypher_field_scope(vt)} "
+            f"AND NOT {_cypher_aggregate_site_over(site_name, site_kind)} "
             f"AND NOT {cypher_aggregate_source(vt)}) "
             f"THEN {_cypher_str(EVIDENCE_TIER_FIELD)} ELSE {_cypher_str(EVIDENCE_TIER_REGIONAL)} END)")
 
@@ -821,7 +854,7 @@ def _cypher_evidence_tier_over(vt: str, site_name: str) -> str:
 def cypher_evidence_tier(vt: str = "vt", ts: str = "ts") -> str:
     """String expression: 'field' | 'regional' for the (trial, site) row."""
     vt, ts = _alias(vt), _alias(ts)
-    return _cypher_evidence_tier_over(vt, _cypher_norm(f"{ts}.name"))
+    return _cypher_evidence_tier_over(vt, _cypher_norm(f"{ts}.name"), _cypher_norm(f"{ts}.siteKind"))
 
 
 # ── irrigation regime (rule 8) ───────────────────────────────────────────────
@@ -834,17 +867,13 @@ def cypher_irrigation_regime(expr: str) -> str:
 
 
 def cypher_irrigation_match(expr: str, target: str = "$irrigation_uri") -> str:
-    """Boolean (never null): no regime requested (``target`` null), or ``expr`` names the same
-    regime as ``target`` (a URI or a literal, whichever the trial and the request use)."""
+    """Boolean (never null): no regime requested (``target`` null), or the target names a regime
+    and ``expr`` is blank/missing (the source states none: unknown, kept) or names that same regime
+    (a URI or a literal, whichever the trial and the request use). A stated opposite regime, or an
+    unrecognised non-blank value, is false."""
     same = f"{cypher_irrigation_regime(expr)} = {cypher_irrigation_regime(target)}"
-    return f"({target} IS NULL OR coalesce({same}, false))"
-
-
-def cypher_irrigation_any(regimes_expr: str, target: str = "$irrigation_uri") -> str:
-    """Boolean (never null): no regime requested, or some value of the list ``regimes_expr``
-    names the requested regime."""
-    same = f"{cypher_irrigation_regime('ep_reg')} = {cypher_irrigation_regime(target)}"
-    return (f"({target} IS NULL OR any(ep_reg IN {regimes_expr} WHERE coalesce({same}, false)))")
+    return (f"({target} IS NULL OR ({cypher_irrigation_regime(target)} IS NOT NULL "
+            f"AND ({_cypher_norm(expr)} = '' OR coalesce({same}, false))))")
 
 
 # ── numeric candidates and tier gates ────────────────────────────────────────
@@ -933,11 +962,12 @@ def cypher_presence_prefilter(vt: str = "vt") -> str:
 
 
 def is_presence_only_evidence(trial: Mapping[str, Any], site_name: str | None,
-                              mode: str = MODE_MAIN) -> bool:
+                              mode: str = MODE_MAIN, site_kind: str | None = None) -> bool:
     """Python twin of the presence gate over one (trial, site) row (graph property names)."""
     return (
         presence_only_applies(mode)
-        and evidence_tier(trial.get("aggregationScope"), site_name, source_id=trial.get("source_id"),
+        and evidence_tier(trial.get("aggregationScope"), site_name, site_kind,
+                          source_id=trial.get("source_id"),
                           data_source=trial.get("dataSource")) == EVIDENCE_TIER_REGIONAL
         and is_excluded_yield(trial)
         and in_purpose_mode(yield_purpose(trial.get("yieldMetric"), trial.get("qualityParams")), mode)
@@ -987,10 +1017,10 @@ def cypher_row_policy(mode: str = MODE_MAIN, vt: str = "vt", ts: str = "ts",
     return (
         f"WITH {vt}, {ts}{carried}, toLower(coalesce({vt}.qualityParams, '')) AS ep_text, "
         f"{_cypher_norm(f'{vt}.yieldMetric')} AS ep_metric, "
-        f"{_cypher_norm(f'{ts}.name')} AS ep_site_lc, "
+        f"{_cypher_norm(f'{ts}.name')} AS ep_site_lc, {_cypher_norm(f'{ts}.siteKind')} AS ep_site_kind, "
         f"{cypher_excluded_yield(vt)} AS ep_excluded\n"
         f"WITH {vt}, {ts}{carried}, ep_excluded, "
-        f"{_cypher_evidence_tier_over(vt, 'ep_site_lc')} AS ep_tier, "
+        f"{_cypher_evidence_tier_over(vt, 'ep_site_lc', 'ep_site_kind')} AS ep_tier, "
         f"{cypher_purpose_mode_gate(purpose, mode)} AS ep_in_mode\n"
         f"WITH {vt}, {ts}{carried}, ep_tier, ep_in_mode, ep_excluded, {other} AS ep_other, "
         f"CASE WHEN ep_in_mode AND {candidate} THEN {yield_expr} END AS ep_y\n"

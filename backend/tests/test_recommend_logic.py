@@ -245,7 +245,7 @@ def test_build_recommendation_shape():
     assert rec["varieties"][0]["disease_summary"] == {"resistant": 1, "total": 1}
     assert rec["evidence"] == {"trial_count": 12, "sources": ["SRC1"], "sites": ["site-a", "site-b"],
                                "years": [2015, 2020], "tier": "field", "purpose": "main",
-                               "regional_trial_count": None, "other_purpose_trials": {"forage": 0},
+                               "regional_trial_count": None, "irrigation_unknown_trials": None, "other_purpose_trials": {"forage": 0},
                                "unknown_basis_trials": None}
     assert rec["trust"]["level"] == "high"
     assert rec["season"]["source"] == "crop_season_slot"
@@ -409,3 +409,64 @@ def test_presence_only_ranks_after_regional_recs_with_a_number_and_after_field_r
     for rec, eppo in ((field, "A"), (measured, "B"), (presence, "C")):
         rec["crop"]["eppo"] = eppo
     assert [x["crop"]["eppo"] for x in r.rank_recommendations([presence, measured, field])] == ["A", "B", "C"]
+
+
+def _build_regime(conditions, unknown):
+    v = {"variety": "V1", "mean_yield_kg_ha": 5000.0, "numeric_yield_count": 5, "trial_count": 5,
+         "irrigation_unknown_trial_count": unknown}
+    sowing = r.sowing_info("TRZAX", "Cfb", [], lat=PARIS[0], lon=PARIS[1])
+    return r.build_recommendation(
+        eppo="TRZAX", scientific_name="T", conditions=conditions, varieties=[v],
+        reference={"median_kg_ha": 5000.0, "n_trials": 40, "scope": "crop"},
+        soil_verdict={"verdict": "unknown", "reason": ""}, water=None, frost_level="unknown",
+        sowing=sowing, data_gaps_extra=[], assumptions=[])
+
+
+def test_unknown_irrigation_trials_are_reported_under_a_requested_regime():
+    rec = _build_regime({"irrigation_regime": "secano"}, unknown=3)
+    assert rec["evidence"]["irrigation_unknown_trials"] == 3
+    assert "irrigation_regime_unknown" in rec["trust"]["data_gaps"]
+    none = _build_regime({"irrigation_regime": "secano"}, unknown=0)
+    assert none["evidence"]["irrigation_unknown_trials"] == 0
+    assert "irrigation_regime_unknown" not in none["trust"]["data_gaps"]
+
+
+def test_all_unknown_regime_trials_gap_and_low_trust_in_every_tier():
+    rec = _build_regime({"irrigation_regime": "secano"}, unknown=5)   # 5 of 5 trials
+    gaps = rec["trust"]["data_gaps"]
+    assert "irrigation_regime_unknown_all" in gaps
+    assert "irrigation_regime_unknown" not in gaps
+    assert rec["trust"]["level"] == "low"
+    assert rec["yield"]["expected_kg_ha"] == 5000.0   # yield is not withheld
+    partial = _build_regime({"irrigation_regime": "secano"}, unknown=4)
+    assert "irrigation_regime_unknown" in partial["trust"]["data_gaps"]
+    assert "irrigation_regime_unknown_all" not in partial["trust"]["data_gaps"]
+    assert partial["trust"]["level"] != "low"
+    assert "irrigation_regime_unknown_all" not in _build_regime({}, unknown=5)["trust"]["data_gaps"]
+
+
+def test_no_requested_regime_reports_no_irrigation_label():
+    rec = _build_regime({}, unknown=3)
+    assert rec["evidence"]["irrigation_unknown_trials"] is None
+    assert "irrigation_regime_unknown" not in rec["trust"]["data_gaps"]
+
+
+def _build_regional(conditions, country_sites=None):
+    v = {"variety": "V1", "mean_yield_kg_ha": 5000.0, "numeric_yield_count": 12, "trial_count": 12,
+         "trial_sites": ["S1"]}
+    sowing = r.sowing_info("TRZAX", "Cfb", [], lat=PARIS[0], lon=PARIS[1])
+    return r.build_recommendation(
+        eppo="TRZAX", scientific_name="T", conditions=conditions, varieties=[v],
+        reference={"median_kg_ha": None, "n_trials": 0, "scope": "regional"},
+        soil_verdict={"verdict": "unknown", "reason": ""}, water=None, frost_level="unknown",
+        sowing=sowing, data_gaps_extra=[], assumptions=[], tier="regional",
+        country_matched_sites=country_sites)
+
+
+def test_regional_answer_is_country_level_only_when_a_site_was_admitted_by_country():
+    gaps = _build_regional({"country": "ES"}, frozenset({"S1"}))["trust"]["data_gaps"]
+    assert "regional_evidence_only" in gaps and "regional_country_level" in gaps
+    # a country on the request alone, or a country-admitted site that is not behind the answer
+    assert "regional_country_level" not in _build_regional({"country": "ES"})["trust"]["data_gaps"]
+    assert "regional_country_level" not in _build_regional(
+        {"country": "ES"}, frozenset({"S9"}))["trust"]["data_gaps"]

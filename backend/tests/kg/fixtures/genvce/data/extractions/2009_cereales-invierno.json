@@ -1,0 +1,40 @@
+{
+ "metadata": {
+  "source": "GENVCE",
+  "issue_number": 0,
+  "issue_period": "2008/2009",
+  "article_title": "GENVCE Informe Anual — Campaña 2008/2009",
+  "article_author": "GENVCE Consortium",
+  "article_topic": "cereales-invierno",
+  "year": 2009,
+  "page_in_issue": null,
+  "extraction_model": "deepseek-chat",
+  "extraction_date": "2026-06-15",
+  "confidence": "high"
+ },
+ "variety_trials": [
+  {
+   "crop": "Cebada de ciclo largo",
+   "crop_scientific": "Hordeum vulgare",
+   "variety": "ANAKIN",
+   "agroclimatic_zone": "Zona Fría Semiárida",
+   "year": 2009,
+   "yield_kg_ha": 5175.0,
+   "yield_relative_pct": 110.9,
+   "quality_params": null,
+   "disease_scores": null,
+   "agronomic_traits": null,
+   "yield_notes": {
+    "tercil_superior": 27,
+    "tercil_mediano": 20,
+    "tercil_inferior": 3
+   },
+   "special_status": null,
+   "irrigation_regime": "secano",
+   "trial_location": null,
+   "page_in_issue": 13,
+   "table_number": 11,
+   "confidence": "high"
+  }
+ ]
+}

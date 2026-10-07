@@ -36,7 +36,9 @@ Multi-domain biodiversity ETL pipeline for regenerative agriculture intelligence
 
 Scrapers (`nkz-*-scraper`) produce JSON-LD; ingesters in `backend/app/ingestion/` merge into Neo4j.
 
-**Canonical schema:** [INGESTION_SCHEMA.md](./INGESTION_SCHEMA.md) — node types, required fields, yield honesty rules, perennial extensions, checklist for new sources.
+**Canonical schema:** [INGESTION_SCHEMA.md](./INGESTION_SCHEMA.md) — node types, required fields, yield honesty rules, perennial extensions, checklist for the legacy ingesters.
+
+**Graph build:** [KG_PIPELINE.md](./KG_PIPELINE.md) — gated, reproducible build (adapter, contract, gate, loader, verify, export), CLI safety model, onboarding a new source and evidence semantics.
 
 ## Deployment
 

@@ -336,6 +336,10 @@ kubectl exec -n nekazari deploy/bioorchestrator-backend -- \
 
 ### Ingest variety trials
 
+GENVCE and CREA are built with the gated pipeline (dry run by default, scratch target only):
+see [docs/KG_PIPELINE.md](docs/KG_PIPELINE.md). The `BaseIngester` flow below is deprecated for them
+and remains for the other sources.
+
 Each source has a `BaseIngester` subclass under `app/ingestion/` that maps its
 JSON-LD `@graph` to canonical nodes (dry-run by default):
 

@@ -13,6 +13,7 @@ from app.api.v1.attribution import (
     rows_source_ids,
 )
 from app.api.v1.graph import DriverDep, _require_tenant_id
+from app.graph import zone_match
 from app.graph.dao import GraphDAO
 
 router = APIRouter()
@@ -121,6 +122,7 @@ async def recommend_for_conditions(
         description="ISO 3166 alpha-2; scopes country-specific sowing windows",
     ),
 ):
+    # No parcel point travels in this query string (access logs): without a parcel the answer is country level.
     conditions = cond.as_dict()
     conditions["country"] = country
     conditions["crops"] = _parse_crops(crops)
@@ -136,6 +138,10 @@ async def recommend_for_conditions(
         "`trust.similarity`: `vector_v2_fallback` needs all four numeric climate inputs. "
         "`purpose` must match the request; `tier` the recommendation's `evidence.tier` "
         "(`regional` lists the aggregate-site trials and needs `similarity=koppen`). "
+        "`country` (ISO 3166 alpha-2, optional) must match the recommendation's: it scopes the "
+        "regional aggregate sites; without it only climate-matched aggregates are listed. "
+        "`zone` (optional, with country ES) is the recommendation's `evidence.zone_match.zone_id`: the list is "
+        "the parcel's own GENVCE zone when it has numeric trials of the crop, else the country level. "
         "Distinct trials only; each item names its tier."
     ),
 )
@@ -148,6 +154,14 @@ async def recommend_evidence(
     page_size: int = Query(20, ge=1, le=50),
     similarity: Similarity = "koppen",
     tier: Tier = "field",
+    country: str | None = Query(
+        None, pattern=_COUNTRY_PATTERN,
+        description="ISO 3166 alpha-2; scopes the aggregate sites of tier=regional",
+    ),
+    zone: str | None = Query(
+        None, pattern=zone_match.ZONE_ID_PATTERN, max_length=4000,
+        description="opaque zone id of the recommendation's `evidence.zone_match.zone_id` (no coordinates)",
+    ),
 ):
     from app.graph import agroclimatic
     from app.graph.dao import _irrigation_uri
@@ -173,9 +187,11 @@ async def recommend_evidence(
         )
     elif tier == "regional":
         # Every site of the climate, aggregate pseudo-sites and field-named ones (the regional tier
-        # of the recommendation; the row policy keeps only the rows classed as regional).
+        # of the recommendation; the row policy keeps only the rows classed as regional). The
+        # parcel's country, when given, scopes the aggregate sites.
         sites = await dao.get_similar_sites(
             climate_class=cond.climate_class, soil_type=None, limit=None, include_aggregate=True,
+            country=country,
         )
     else:
         # Every matching field site, as the recommendation's Köppen path uses.
@@ -191,6 +207,8 @@ async def recommend_evidence(
         page_size=page_size,
         purpose=cond.purpose,
         tier=tier,
+        zone_ctx=(zone_match.context_from_zone_id(zone, cond.irrigation_regime)
+                  if tier == "regional" and zone and zone_match.is_zone_country(country) else None),
     )
     return attach_attributions(evidence, rows_source_ids(evidence.get("items")))
 

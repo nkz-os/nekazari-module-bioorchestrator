@@ -1,0 +1,48 @@
+{
+ "metadata": {
+  "source": "GENVCE",
+  "issue_number": 0,
+  "issue_period": "2017/2018",
+  "article_title": "GENVCE Oleaginosas (girasol, colza) — Campaña 2017/2018",
+  "article_author": "GENVCE Consortium",
+  "article_topic": "oleaginosas",
+  "year": 2018,
+  "page_in_issue": null,
+  "extraction_model": "deepseek-chat",
+  "extraction_date": "2026-06-15",
+  "confidence": "high"
+ },
+ "variety_trials": [
+  {
+   "crop": "Colza de otoño",
+   "crop_scientific": "Brassica napus",
+   "variety": "UMBERTO KWS",
+   "agroclimatic_zone": null,
+   "year": 2018,
+   "yield_kg_ha": 5569.0,
+   "yield_relative_pct": 111.0,
+   "quality_params": {
+    "humedad_grano_pct": 6.0,
+    "peso_especifico_kg_hl": 66.6,
+    "contenido_grasa_pct": 43.6
+   },
+   "disease_scores": {},
+   "agronomic_traits": {
+    "nacencia_0_5": 5,
+    "fecha_inicio_floracion": "16 de abril",
+    "fecha_final_floracion": "12 de mayo",
+    "duracion_floracion_dias": 26,
+    "altura_cm": 179
+   },
+   "yield_notes": {
+    "rendimiento_al_9_pct_humedad": true
+   },
+   "special_status": "Híbrido restaurado",
+   "irrigation_regime": "secano",
+   "trial_location": null,
+   "page_in_issue": 5,
+   "table_number": 5,
+   "confidence": "high"
+  }
+ ]
+}

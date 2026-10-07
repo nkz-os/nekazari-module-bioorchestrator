@@ -1,0 +1,368 @@
+# GENVCE climatic zone definitions, as the reports themselves publish them (T11c).
+#
+# Purpose: match the GENVCE zone means to a parcel by the report's OWN climatic definition of its zones,
+# applied to the parcel's climate (CHELSA v2.1 1981-2010 climatology: April mean air temperature and annual
+# precipitation of the parcel's 30 arc-second cell). GENVCE classifies a trial by the weather of its campaign;
+# a parcel is classified here by its climatology: the answer states that (zone_match_basis) and never hides it.
+#
+# What is NOT here, on purpose (those units fall back to the country-level tier, labelled):
+#   * winter cereals 2005/06-2010/11: the zone also needs a realised yield (> 3500 kg/ha) and an April limit of
+#     12 C: circular with the result, not a climate definition.
+#   * maize (every campaign) and rapeseed 2017/18 onwards: the reports name warm/temperate/cold zones but print no
+#     threshold in the text.
+#   * sunflower: no unit in the graph.
+#
+# Each definition is one report (campaign) with its citation (PDF page of section 2.1.3 "Zonas de experimentacion"
+# and of Table 3, which lists the zones the tables of that report use). Thresholds are copied from that text.
+# `axes` are the classes a label must state for a unit to be zone-matched; a label that states less stays at the
+# country level. A label entry constrains every class its text states (checked at load, see zone_definitions.py);
+# `except_tables` removes tables whose label contradicts the printed table title.
+version: 1
+source_id: GENVCE
+document_families:
+  - {family: winter_cereals, title_prefixes: ["GENVCE Informe Anual", "GENVCE Cereales de Invierno"]}
+  - {family: oilseeds, title_prefixes: ["GENVCE Oleaginosas"]}
+
+thresholds:
+  # April mean temperature, degrees C (cereals: 11 / 13)
+  temp_11_13: &temp_11_13
+    - {class: cold, max: 11, max_inclusive: false}
+    - {class: temperate, min: 11, min_inclusive: true, max: 13, max_inclusive: true}
+    - {class: warm, min: 13, min_inclusive: false}
+  # annual precipitation, mm (cereals: 500 / 700; exactly 700 is in neither printed class: unclassified)
+  rain_500_700: &rain_500_700
+    - {class: semiarid, max: 500, max_inclusive: true}
+    - {class: subhumid, min: 500, min_inclusive: false, max: 700, max_inclusive: false}
+    - {class: humid, min: 700, min_inclusive: false}
+  # rapeseed 2010-2017: April < 12 cold, above temperate (exactly 12 unclassified); rain <= 600 arid/semiarid, > 600 humid
+  temp_12: &temp_12
+    - {class: cold, max: 12, max_inclusive: false}
+    - {class: temperate, min: 12, min_inclusive: false}
+  rain_600: &rain_600
+    - {class: arid_semiarid, max: 600, max_inclusive: true}
+    - {class: humid, min: 600, min_inclusive: false}
+
+label_sets:
+  # zone labels as the graph holds them (verbatim, folded for case/accents) and the classes each one states
+  cereal_t_and_r: &cereal_t_and_r
+    - {label: "Zona Fría Semiárida", temperature: [cold], rainfall: [semiarid]}
+    - {label: "Zona Cálida Semiárida", temperature: [warm], rainfall: [semiarid]}
+  cereal_t: &cereal_t
+    - {label: "Zona Fría", temperature: [cold]}
+    - {label: "Zona Templada", temperature: [temperate]}
+    - {label: "Zona Cálida", temperature: [warm]}
+    - {label: "Zonas frías", temperature: [cold]}
+    - {label: "Zonas templadas", temperature: [temperate]}
+    - {label: "Zonas cálidas", temperature: [warm]}
+    - {label: "Templada", temperature: [temperate]}
+    - {label: "Templada y Fría", temperature: [temperate, cold]}
+    - {label: "Conjunto Frías y Templadas", temperature: [cold, temperate]}
+    - {label: "Zonas frías y templadas", temperature: [cold, temperate]}
+    - {label: "Zonas templadas y frías", temperature: [temperate, cold]}
+    - {label: "Zona Fría Semiárida", temperature: [cold], rainfall: [semiarid]}
+    - {label: "Zona Cálida Semiárida", temperature: [warm], rainfall: [semiarid]}
+  colza: &colza_labels
+    - {label: "Secanos áridos y semiáridos fríos", regime: secano, temperature: [cold], rainfall: [arid_semiarid]}
+    - {label: "Secanos húmedos y de alto potencial fríos", regime: secano, temperature: [cold], rainfall: [humid]}
+    - {label: "Secanos húmedos y de alto potencial fríos y templados", regime: secano, temperature: [cold, temperate], rainfall: [humid]}
+    - {label: "Regadíos fríos", regime: regadio, temperature: [cold], waives: [rainfall]}
+    - {label: "Regadíos templados", regime: regadio, temperature: [temperate], waives: [rainfall]}
+    - {label: "Regadíos fríos y templados", regime: regadio, temperature: [cold, temperate], waives: [rainfall]}
+
+definitions:
+  - id: genvce-winter-cereals-2011-12
+    family: winter_cereals
+    campaigns: ["2011/2012"]
+    crops: [HORVX, TRZAX]
+    required_axes: [temperature, rainfall]
+    temperature: *temp_11_13
+    rainfall: *rain_500_700
+    labels: *cereal_t_and_r
+    citation:
+      document: "GENVCE report, winter cereals, campaign 2011-2012"
+      section: "2.1.3 Zonas de experimentación"
+      pdf_page: 4
+      table: "Table 3, PDF page 5"
+      axes_basis: "Table 3 splits the cold zone by rainfall"
+  - id: genvce-winter-cereals-2012-13
+    family: winter_cereals
+    campaigns: ["2012/2013"]
+    crops: [HORVX, TRZAX]
+    required_axes: [temperature, rainfall]
+    temperature: *temp_11_13
+    rainfall: *rain_500_700
+    labels: *cereal_t_and_r
+    except_tables:  # table 20 of this report is the preGENVCE network, labelled cold-semiarid by the extraction
+      - {label: "Zona Fría Semiárida", tables: ["20"]}
+    citation:
+      document: "GENVCE report, winter cereals, campaign 2012-2013"
+      section: "2.1.3 Zonas de experimentación"
+      pdf_page: 3
+      table: "Table 3, PDF page 3"
+      axes_basis: "Table 3 splits the cold zone by rainfall"
+  - id: genvce-winter-cereals-2013-14
+    family: winter_cereals
+    campaigns: ["2013/2014"]
+    crops: [HORVX, TRZAX]
+    required_axes: [temperature]
+    temperature: *temp_11_13
+    rainfall: *rain_500_700
+    labels: *cereal_t
+    citation:
+      document: "GENVCE report, winter cereals, campaign 2013-2014"
+      section: "2.1.3 Zonas de experimentación"
+      pdf_page: 3
+      table: "Table 3, PDF page 3"
+      axes_basis: "Table 3 lists the zones by temperature only (cold/temperate/warm per species); rainfall classes are defined in 2.1.3 but are not the table columns"
+  - id: genvce-winter-cereals-2014-15
+    family: winter_cereals
+    campaigns: ["2014/2015"]
+    crops: [HORVX, TRZAX]
+    required_axes: [temperature]
+    temperature: *temp_11_13
+    rainfall: *rain_500_700
+    labels: *cereal_t
+    citation:
+      document: "GENVCE report, winter cereals, campaign 2014-2015"
+      section: "2.1.3 Zonas de experimentación"
+      pdf_page: 3
+      table: "Table 3, PDF page 4"
+      axes_basis: "Table 3 lists the zones by temperature only (cold/temperate/warm per species); rainfall classes are defined in 2.1.3 but are not the table columns"
+  - id: genvce-winter-cereals-2015-16
+    family: winter_cereals
+    campaigns: ["2015/2016"]
+    crops: [HORVX, TRZAX]
+    required_axes: [temperature]
+    temperature: *temp_11_13
+    rainfall: *rain_500_700
+    labels: *cereal_t
+    citation:
+      document: "GENVCE report, winter cereals, campaign 2015-2016"
+      section: "2.1.3 Zonas de experimentación"
+      pdf_page: 3
+      table: "Table 3, PDF page 4"
+      axes_basis: "Table 3 lists the zones by temperature only (cold/temperate/warm per species); rainfall classes are defined in 2.1.3 but are not the table columns"
+  - id: genvce-winter-cereals-2016-17
+    family: winter_cereals
+    campaigns: ["2016/2017"]
+    crops: [HORVX, TRZAX]
+    required_axes: [temperature]
+    temperature: *temp_11_13
+    rainfall: *rain_500_700
+    labels: *cereal_t
+    citation:
+      document: "GENVCE report, winter cereals, campaign 2016-2017"
+      section: "2.1.3 Zonas de experimentación"
+      pdf_page: 2
+      table: "Table 3, PDF page 3"
+      axes_basis: "temperature classes on PDF page 2, rainfall classes on PDF page 3; Table 3 lists the zones by temperature only (cold/temperate/warm per species)"
+  - id: genvce-winter-cereals-2017-18
+    family: winter_cereals
+    campaigns: ["2017/2018"]
+    crops: [HORVX, TRZAX]
+    required_axes: [temperature]
+    temperature: *temp_11_13
+    rainfall: *rain_500_700
+    labels: *cereal_t
+    citation:
+      document: "GENVCE report, winter cereals, campaign 2017-2018"
+      section: "2.1.3 Zonas de experimentación"
+      pdf_page: 3
+      table: "Table 3, PDF page 3"
+      axes_basis: "Table 3 lists the zones by temperature only (cold/temperate/warm per species); rainfall classes are defined in 2.1.3 but are not the table columns"
+  - id: genvce-winter-cereals-2018-19
+    family: winter_cereals
+    campaigns: ["2018/2019"]
+    crops: [HORVX, TRZAX]
+    required_axes: [temperature]
+    temperature: *temp_11_13
+    rainfall: *rain_500_700
+    labels: *cereal_t
+    citation:
+      document: "GENVCE report, winter cereals, campaign 2018-2019"
+      section: "2.1.3 Zonas de experimentación"
+      pdf_page: 3
+      table: "Table 3, PDF page 4"
+      axes_basis: "Table 3 lists the zones by temperature only (cold/temperate/warm per species); rainfall classes are defined in 2.1.3 but are not the table columns"
+  - id: genvce-winter-cereals-2019-20
+    family: winter_cereals
+    campaigns: ["2019/2020"]
+    crops: [HORVX, TRZAX]
+    required_axes: [temperature]
+    temperature: *temp_11_13
+    rainfall: *rain_500_700
+    labels: *cereal_t
+    citation:
+      document: "GENVCE report, winter cereals, campaign 2019-2020"
+      section: "2.1.3 Zonas de experimentación"
+      pdf_page: 3
+      table: "Table 3, PDF page 4"
+      axes_basis: "Table 3 lists the zones by temperature only (cold/temperate/warm per species); rainfall classes are defined in 2.1.3 but are not the table columns"
+  - id: genvce-winter-cereals-2020-21
+    family: winter_cereals
+    campaigns: ["2020/2021"]
+    crops: [HORVX, TRZAX]
+    required_axes: [temperature]
+    temperature: *temp_11_13
+    rainfall: *rain_500_700
+    labels: *cereal_t
+    citation:
+      document: "GENVCE report, winter cereals, campaign 2020-2021"
+      section: "2.1.3 Zonas de experimentación"
+      pdf_page: 3
+      table: "Table 3, PDF page 4"
+      axes_basis: "Table 3 lists the zones by temperature only (cold/temperate/warm per species); rainfall classes are defined in 2.1.3 but are not the table columns"
+  - id: genvce-winter-cereals-2021-22
+    family: winter_cereals
+    campaigns: ["2021/2022"]
+    crops: [HORVX, TRZAX]
+    required_axes: [temperature]
+    temperature: *temp_11_13
+    rainfall: *rain_500_700
+    labels: *cereal_t
+    citation:
+      document: "GENVCE report, winter cereals, campaign 2021-2022"
+      section: "2.1.3 Zonas de experimentación"
+      pdf_page: 3
+      table: "Table 3, PDF page 4"
+      axes_basis: "Table 3 lists the zones by temperature only (cold/temperate/warm per species); rainfall classes are defined in 2.1.3 but are not the table columns"
+  - id: genvce-winter-cereals-2022-23
+    family: winter_cereals
+    campaigns: ["2022/2023"]
+    crops: [HORVX, TRZAX]
+    required_axes: [temperature]
+    temperature: *temp_11_13
+    rainfall: *rain_500_700
+    labels: *cereal_t
+    citation:
+      document: "GENVCE report, winter cereals, campaign 2022-2023"
+      section: "2.1.3 Zonas de experimentación"
+      pdf_page: 3
+      table: "Table 3, PDF page 4"
+      axes_basis: "Table 3 lists the zones by temperature only (cold/temperate/warm per species); rainfall classes are defined in 2.1.3 but are not the table columns"
+  - id: genvce-winter-cereals-2023-24
+    family: winter_cereals
+    campaigns: ["2023/2024"]
+    crops: [HORVX, TRZAX]
+    required_axes: [temperature]
+    temperature: *temp_11_13
+    rainfall: *rain_500_700
+    labels: *cereal_t
+    citation:
+      document: "GENVCE report, winter cereals, campaign 2023-2024"
+      section: "2.1.3 Zonas de experimentación"
+      pdf_page: 3
+      table: "Table 3, PDF page 4"
+      axes_basis: "Table 3 lists the zones by temperature only (cold/temperate/warm per species); rainfall classes are defined in 2.1.3 but are not the table columns"
+  - id: genvce-winter-cereals-2024-25
+    family: winter_cereals
+    campaigns: ["2024/2025"]
+    crops: [HORVX, TRZAX]
+    required_axes: [temperature]
+    temperature: *temp_11_13
+    rainfall: *rain_500_700
+    labels: *cereal_t
+    citation:
+      document: "GENVCE report, winter cereals, campaign 2024-2025"
+      section: "2.1.3 Zonas de experimentación"
+      pdf_page: 3
+      table: "Table 3, PDF page 4"
+      axes_basis: "Table 3 lists the zones by temperature only (cold/temperate/warm per species); rainfall classes are defined in 2.1.3 but are not the table columns"
+  - id: genvce-rapeseed-2010-11
+    family: oilseeds
+    campaigns: ["2010/2011"]
+    crops: [BRSNN]
+    required_axes: [temperature, rainfall]
+    temperature: *temp_12
+    rainfall: *rain_600
+    labels: *colza_labels
+    citation:
+      document: "GENVCE report, winter rapeseed, campaign 2010-2011"
+      section: "2.1.3 Zonas de experimentación"
+      pdf_page: 2
+      table: "Table 3, PDF page 3"
+      axes_basis: "zones are rainfed arid/semiarid (<= 600 mm), rainfed humid/high potential (> 600 mm) and irrigated, each split cold (April < 12 C) and temperate"
+  - id: genvce-rapeseed-2011-12
+    family: oilseeds
+    campaigns: ["2011/2012"]
+    crops: [BRSNN]
+    required_axes: [temperature, rainfall]
+    temperature: *temp_12
+    rainfall: *rain_600
+    labels: *colza_labels
+    citation:
+      document: "GENVCE report, winter rapeseed, campaign 2011-2012"
+      section: "2.1.3 Zonas de experimentación"
+      pdf_page: 2
+      table: "Table 3, PDF page 3"
+      axes_basis: "zones are rainfed arid/semiarid (<= 600 mm), rainfed humid/high potential (> 600 mm) and irrigated, each split cold (April < 12 C) and temperate"
+  - id: genvce-rapeseed-2012-13
+    family: oilseeds
+    campaigns: ["2012/2013"]
+    crops: [BRSNN]
+    required_axes: [temperature, rainfall]
+    temperature: *temp_12
+    rainfall: *rain_600
+    labels: *colza_labels
+    citation:
+      document: "GENVCE report, winter rapeseed, campaign 2012-2013"
+      section: "2.1.3 Zonas de experimentación"
+      pdf_page: 2
+      table: "Table 3, PDF page 3"
+      axes_basis: "zones are rainfed arid/semiarid (<= 600 mm), rainfed humid/high potential (> 600 mm) and irrigated, each split cold (April < 12 C) and temperate"
+  - id: genvce-rapeseed-2013-14
+    family: oilseeds
+    campaigns: ["2013/2014"]
+    crops: [BRSNN]
+    required_axes: [temperature, rainfall]
+    temperature: *temp_12
+    rainfall: *rain_600
+    labels: *colza_labels
+    citation:
+      document: "GENVCE report, winter rapeseed, campaign 2013-2014"
+      section: "2.1.3 Zonas de experimentación"
+      pdf_page: 2
+      table: "Table 3, PDF page 2"
+      axes_basis: "zones are rainfed arid/semiarid (<= 600 mm), rainfed humid/high potential (> 600 mm) and irrigated, each split cold (April < 12 C) and temperate"
+  - id: genvce-rapeseed-2014-15
+    family: oilseeds
+    campaigns: ["2014/2015"]
+    crops: [BRSNN]
+    required_axes: [temperature, rainfall]
+    temperature: *temp_12
+    rainfall: *rain_600
+    labels: *colza_labels
+    citation:
+      document: "GENVCE report, winter rapeseed, campaign 2014-2015"
+      section: "2.1.3 Zonas de experimentación"
+      pdf_page: 2
+      table: "Table 3, PDF page 2"
+      axes_basis: "zones are rainfed arid/semiarid (<= 600 mm), rainfed humid/high potential (> 600 mm) and irrigated, each split cold (April < 12 C) and temperate"
+  - id: genvce-rapeseed-2015-16
+    family: oilseeds
+    campaigns: ["2015/2016"]
+    crops: [BRSNN]
+    required_axes: [temperature, rainfall]
+    temperature: *temp_12
+    rainfall: *rain_600
+    labels: *colza_labels
+    citation:
+      document: "GENVCE report, winter rapeseed, campaign 2015-2016"
+      section: "2.1.3 Zonas de experimentación"
+      pdf_page: 3
+      table: "Table 3, PDF page 4"
+      axes_basis: "zones are rainfed arid/semiarid (<= 600 mm), rainfed humid/high potential (> 600 mm) and irrigated, each split cold (April < 12 C) and temperate"
+  - id: genvce-rapeseed-2016-17
+    family: oilseeds
+    campaigns: ["2016/2017"]
+    crops: [BRSNN]
+    required_axes: [temperature, rainfall]
+    temperature: *temp_12
+    rainfall: *rain_600
+    labels: *colza_labels
+    citation:
+      document: "GENVCE report, winter rapeseed, campaign 2016-2017"
+      section: "2.1.3 Zonas de experimentación"
+      pdf_page: 3
+      table: "Table 3, PDF page 3"
+      axes_basis: "zones are rainfed arid/semiarid (<= 600 mm), rainfed humid/high potential (> 600 mm) and irrigated, each split cold (April < 12 C) and temperate"

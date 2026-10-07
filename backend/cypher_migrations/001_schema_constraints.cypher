@@ -15,8 +15,13 @@
 //  3. All URIs use canonical forms (AGROVOC, EPPO, QUDT, etc.).
 //  4. MERGE keys are composite (natural keys) for idempotent ingestion.
 //
-// Run:  cat 001_schema_constraints.cypher | cypher-shell -u neo4j -p $PASS
-// Or via Python driver in BioOrchestrator startup.
+// Edition note: this file is the Neo4j COMMUNITY schema. NODE KEY and property-existence
+// constraints are Enterprise-only (they fail on Community). Where this file once declared a
+// NODE KEY it now declares the same properties as UNIQUE; the "property must exist" half is
+// enforced in code (loader and quality gate), not by the database. The original NODE KEY
+// statements live in enterprise/001_node_keys.cypher, which the runner never reads.
+//
+// Run:  python scripts/apply_cypher_migrations.py   (or the app startup runner, schema only)
 // ═══════════════════════════════════════════════════════════════════════════
 
 // ── Global uniqueness constraints ─────────────────────────────────────────
@@ -43,52 +48,52 @@ FOR (v:AgriCropVariety) REQUIRE v.uri IS UNIQUE;
 
 // PhenologyStage
 CREATE CONSTRAINT stage_species_name IF NOT EXISTS
-FOR (st:PhenologyStage) REQUIRE (st.speciesName, st.name) IS NODE KEY;
+FOR (st:PhenologyStage) REQUIRE (st.speciesName, st.name) IS UNIQUE;
 
 // PhenologyParams (NO constraint — multiple params per species+stage exist
 // with different cultivars/management. Dedup via MERGE on composite key.)
 
 // CropHeatTolerance
 CREATE CONSTRAINT heat_tolerance_species IF NOT EXISTS
-FOR (ht:CropHeatTolerance) REQUIRE (ht.species) IS NODE KEY;
+FOR (ht:CropHeatTolerance) REQUIRE ht.species IS UNIQUE;
 
 // CropFrostTolerance
 CREATE CONSTRAINT frost_tolerance_species IF NOT EXISTS
-FOR (ft:CropFrostTolerance) REQUIRE (ft.species) IS NODE KEY;
+FOR (ft:CropFrostTolerance) REQUIRE ft.species IS UNIQUE;
 
 // CropCoefficient (FAO-56)
 CREATE CONSTRAINT cropcoeff_crop IF NOT EXISTS
-FOR (cc:CropCoefficient) REQUIRE (cc.cropCommonName) IS NODE KEY;
+FOR (cc:CropCoefficient) REQUIRE cc.cropCommonName IS UNIQUE;
 
-// CropNutrientProfile (per species + stage)
+// CropNutrientProfile (per species + stage + element). One node per element (nitrogen,
+// phosphorus, potassium), so (species, stage) alone is not a key. The constraint keeps its
+// original name.
 CREATE CONSTRAINT nutrient_profile_species_stage IF NOT EXISTS
-FOR (np:CropNutrientProfile) REQUIRE (np.species, np.stage) IS NODE KEY;
+FOR (np:CropNutrientProfile) REQUIRE (np.species, np.stage, np.element) IS UNIQUE;
 
 // CropSoilSuitability
 CREATE CONSTRAINT soil_suitability_species IF NOT EXISTS
-FOR (ss:CropSoilSuitability) REQUIRE (ss.species) IS NODE KEY;
+FOR (ss:CropSoilSuitability) REQUIRE ss.species IS UNIQUE;
 
 // ── Navarra Agraria / Trial types ────────────────────────────────────────
 
-// TrialSite (geolocated experimental station)
-CREATE CONSTRAINT trial_site_name_municipality IF NOT EXISTS
-FOR (ts:TrialSite) REQUIRE (ts.name, ts.municipality) IS NODE KEY;
+// TrialSite identity: UNIQUE(siteKey) in 002 (it replaced the old (name, municipality) NODE KEY).
 
-// VarietyTrial (one row = one variety × site × year × regime)
-CREATE CONSTRAINT variety_trial_key IF NOT EXISTS
-FOR (vt:VarietyTrial) REQUIRE (vt.mergeKey) IS NODE KEY;
+// VarietyTrial (one row = one variety × site × year × regime): mergeKey is indexed in 010, not
+// constrained. Legacy rows carry three mergeKey generations; uniqueness is code-enforced
+// (deterministic keys, verified after every build).
 
 // ManagementTrial (fertilization, irrigation, pest control experiment)
 CREATE CONSTRAINT management_trial_key IF NOT EXISTS
-FOR (mt:ManagementTrial) REQUIRE (mt.mergeKey) IS NODE KEY;
+FOR (mt:ManagementTrial) REQUIRE mt.mergeKey IS UNIQUE;
 
 // HarvestData (campaign-level summary)
 CREATE CONSTRAINT harvest_data_key IF NOT EXISTS
-FOR (hd:HarvestData) REQUIRE (hd.mergeKey) IS NODE KEY;
+FOR (hd:HarvestData) REQUIRE hd.mergeKey IS UNIQUE;
 
 // ArticleSource (bibliographic provenance)
 CREATE CONSTRAINT article_source_key IF NOT EXISTS
-FOR (as:ArticleSource) REQUIRE (as.mergeKey) IS NODE KEY;
+FOR (as:ArticleSource) REQUIRE as.mergeKey IS UNIQUE;
 
 // ── Pest & Biocontrol (from IkerKeta EPPO/CABI/USPEST) ───────────────────
 
@@ -98,7 +103,7 @@ FOR (p:Pest) REQUIRE p.eppoCode IS UNIQUE;
 
 // GDDModel (degree-day model for pest lifecycle stage)
 CREATE CONSTRAINT gdd_model_pest_stage IF NOT EXISTS
-FOR (g:GDDModel) REQUIRE (g.pestEppo, g.stageName) IS NODE KEY;
+FOR (g:GDDModel) REQUIRE (g.pestEppo, g.stageName) IS UNIQUE;
 
 // NaturalEnemy (biological control agent from CABI)
 CREATE CONSTRAINT natural_enemy_eppo IF NOT EXISTS
@@ -108,11 +113,11 @@ FOR (ne:NaturalEnemy) REQUIRE ne.eppoCode IS UNIQUE;
 
 // CompanionRelation (crop↔crop companion planting)
 CREATE CONSTRAINT companion_relation_pair IF NOT EXISTS
-FOR (cr:CompanionRelation) REQUIRE (cr.cropA, cr.cropB) IS NODE KEY;
+FOR (cr:CompanionRelation) REQUIRE (cr.cropA, cr.cropB) IS UNIQUE;
 
 // HostAssociation (pest→host plant from EPPO)
 CREATE CONSTRAINT host_association_pair IF NOT EXISTS
-FOR (ha:HostAssociation) REQUIRE (ha.pestEppo, ha.hostEppo) IS NODE KEY;
+FOR (ha:HostAssociation) REQUIRE (ha.pestEppo, ha.hostEppo) IS UNIQUE;
 
 // ── Regulatory (from IkerKeta DG SANTE / FiBL) ──────────────────────────
 
@@ -122,13 +127,13 @@ FOR (asub:ActiveSubstance) REQUIRE asub.substanceCode IS UNIQUE;
 
 // MRLEntry (Maximum Residue Limit per crop)
 CREATE CONSTRAINT mrl_substance_crop IF NOT EXISTS
-FOR (mrl:MRLEntry) REQUIRE (mrl.substanceCode, mrl.cropEppo) IS NODE KEY;
+FOR (mrl:MRLEntry) REQUIRE (mrl.substanceCode, mrl.cropEppo) IS UNIQUE;
 
 // ── Rotation rules (from IkerKeta AgroPortal / expert knowledge) ────────
 
 // RotationConstraint
 CREATE CONSTRAINT rotation_constraint_pair IF NOT EXISTS
-FOR (rc:RotationConstraint) REQUIRE (rc.cropA, rc.cropB) IS NODE KEY;
+FOR (rc:RotationConstraint) REQUIRE (rc.cropA, rc.cropB) IS UNIQUE;
 
 // ── Capability Registry (module metadata) ────────────────────────────────
 
@@ -136,9 +141,7 @@ FOR (rc:RotationConstraint) REQUIRE (rc.cropA, rc.cropB) IS NODE KEY;
 CREATE CONSTRAINT module_id IF NOT EXISTS
 FOR (m:Module) REQUIRE m.id IS UNIQUE;
 
-// Capability
-CREATE CONSTRAINT capability_entity_attr IF NOT EXISTS
-FOR (c:Capability) REQUIRE (c.entityType, c.attributeName) IS NODE KEY;
+// Capability: UNIQUE (entityType, attributeName) is capability_key_unique in 006.
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Indices (for query performance)

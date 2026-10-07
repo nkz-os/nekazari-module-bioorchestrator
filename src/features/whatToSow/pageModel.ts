@@ -127,24 +127,36 @@ const nonEmptyString = (v: unknown): string | undefined =>
 const finiteNumber = (v: unknown): number | undefined =>
   typeof v === 'number' && Number.isFinite(v) ? v : undefined;
 
+/** Zone id: `<definition id>:<temperature class>:<rainfall class>` segments, comma separated (classes, never values). */
+const ZONE_SEGMENT = '[a-z0-9][a-z0-9-]{0,63}:(?:[a-z_]{1,24}|-):(?:[a-z_]{1,24}|-)';
+const ZONE_ID_RE = new RegExp(`^${ZONE_SEGMENT}(?:,${ZONE_SEGMENT}){0,63}$`);
+
 /**
  * Evidence conditions matching the recommendation: the resolved class, soil type and irrigation
  * echoed by the API, plus (for v2 similarity) the numeric climate inputs — taken from the parcel's
  * climate_detail, falling back to the echoed numbers on the conditions route. `purpose` is the
- * echoed one; `tier` is sent only for regional recommendations (the evidence endpoint defaults to field).
+ * echoed one; `tier` (and the echoed ISO `country`) is sent only for regional recommendations (the evidence endpoint defaults to field).
  */
 export function evidenceConditions(
   echo: Record<string, unknown> | null | undefined,
   environment: ParcelEnvironment | null | undefined,
   similarity: Similarity,
   tier: EvidenceTier = 'field',
+  zoneId?: string | null,
 ): QueryParams {
   const src = echo ?? {};
   const out: QueryParams = {};
   // The trials listed must be those of the answer: same purpose (forage yields are not grain yields)
   // and, for a regional recommendation, the aggregate-site tier.
   if (src.purpose === 'main' || src.purpose === 'forage') out.purpose = src.purpose;
-  if (tier === 'regional') out.tier = tier;
+  if (tier === 'regional') {
+    out.tier = tier;
+    // The regional aggregates are matched by the parcel's country: the list must use the same one.
+    const country = nonEmptyString(src.country);
+    if (country && /^[A-Z]{2}$/.test(country)) out.country = country;
+    // ... and the opaque zone id the recommendation matched (never a coordinate).
+    if (zoneId && ZONE_ID_RE.test(zoneId)) out.zone = zoneId;
+  }
   const cls = nonEmptyString(src.climate_class);
   if (cls) out.climate_class = cls;
   const soil = nonEmptyString(src.soil_type);

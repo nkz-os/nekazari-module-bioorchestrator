@@ -1,4 +1,6 @@
-"""CREA → canonical node transformation (BaseIngester subclass).
+"""DEPRECATED: CREA is built by ``python -m app.kg build`` (docs/KG_PIPELINE.md); kept until F2.
+
+CREA → canonical node transformation (BaseIngester subclass).
 
 Reads the CREA JSON-LD file and transforms it into canonical node
 dicts with mergeKeys and registry enrichment.

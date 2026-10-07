@@ -1,0 +1,41 @@
+# Controlled vocabularies. `id` is the canonical token; `value` is the form persisted in the graph
+# (defaults to `id`; irrigation regimes persist as AGROVOC URIs). `aliases` are the literals found
+# in the raw data or accepted from requests. Lookups are exact after NFC, case-folding and
+# whitespace collapsing.
+#
+# AGROVOC URIs checked against agrovoc.fao.org on 2026-10-05: c_3954 = "irrigation",
+# c_6436 = "rainfed farming". They are the same URIs `app.graph.evidence_policy` reads.
+# `purpose` on a yield_metric is the purpose the evidence policy derives from that metric.
+version: 1
+vocabularies:
+  irrigation:
+    - {id: rainfed, value: "http://aims.fao.org/aos/agrovoc/c_6436", label: {en: rainfed, es: secano}, aliases: [secano, rainfed, secano/rainfed]}
+    - {id: irrigated, value: "http://aims.fao.org/aos/agrovoc/c_3954", label: {en: irrigated, es: regadío}, aliases: [regadío, regadio, irrigated, irrigado, irrigato]}
+  production_system:
+    - {id: conventional, label: {en: conventional, es: convencional}, aliases: [convencional]}
+    - {id: organic, label: {en: organic, es: ecológico}, aliases: [ecológico, ecológica, ecologico, organic]}
+  purpose:
+    - {id: grain, label: {en: grain, es: grano}, aliases: [grano, granella]}
+    - {id: forage, label: {en: forage, es: forraje}, aliases: [forraje]}
+    - {id: fresh, label: {en: fresh produce, es: producto fresco}, aliases: []}
+  yield_metric:
+    - {id: grain, purpose: grain, label: {en: grain yield, es: rendimiento en grano}, aliases: [grano, granella]}
+    - {id: seed, purpose: grain, label: {en: seed yield, es: rendimiento en semilla}, aliases: [semilla]}
+    - {id: forage, purpose: forage, label: {en: forage yield, es: rendimiento en forraje}, aliases: [forraje]}
+    - {id: silage, purpose: forage, label: {en: silage yield, es: rendimiento en ensilado}, aliases: [ensilado]}
+    - {id: fresh_produce, purpose: fresh, label: {en: fresh produce yield, es: rendimiento en producto fresco}, aliases: []}
+  yield_basis:
+    - {id: standard_moisture, label: {en: at the standard moisture stated by the source, es: a la humedad estándar indicada por la fuente}, aliases: [humedad estándar, standard moisture]}
+    - {id: dry_matter, label: {en: dry matter, es: materia seca}, aliases: [materia seca, s.s., dry matter]}
+    - {id: fresh_matter, label: {en: fresh matter, es: materia fresca}, aliases: [materia fresca, materia verde, fresh matter]}
+    - {id: unknown, label: {en: unknown, es: desconocida}, aliases: [desconocida]}
+  site_kind:
+    - {id: field, label: {en: field site, es: parcela de ensayo}, aliases: []}
+    - {id: aggregate, label: {en: "aggregate (average of locations, zone or network)", es: agregado}, aliases: []}
+    - {id: region, label: {en: region (regional statistic), es: región}, aliases: []}
+  study_type:
+    - {id: variety, label: {en: variety trial, es: ensayo de variedades}, aliases: []}
+    - {id: management, label: {en: management trial, es: ensayo de manejo}, aliases: []}
+    - {id: long_term, label: {en: long-term experiment, es: ensayo de larga duración}, aliases: []}
+    - {id: reference, label: {en: reference knowledge, es: conocimiento de referencia}, aliases: []}
+    - {id: regional_stat, label: {en: regional statistic, es: estadística regional}, aliases: []}

@@ -1,0 +1,451 @@
+# Site registry: canonical sites with aliases, kind, country and published coordinates. `id` is the
+# stable site key units link to. Coordinates are as published or a municipality-level geocode, never
+# a farm coordinate; they stay null when no registry has them. Aggregates and regions carry none.
+#
+# Scope: the sites of the licensed sources (GENVCE, CREA). Sites of other sources are added with their
+# contract. GENVCE prints no trial location: its rows are means of a zone, a yield stratum, a
+# geographic group or all trials, so every GENVCE site here is an aggregate (ES-GENVCE-*, no
+# coordinates). The four reference cities below (Valladolid, Lleida, Cordoba, Lugo) are what the
+# legacy adequacy step assigned to those means; no contract uses them any more. NOT registered, on purpose:
+#   - Fundulea (Romania): the 19 rows stored under CREA are Romanian wheat from an unlicensed paper,
+#     not CREA data, and are out of scope.
+#   - Foggia: its three rows come from a placeholder test file, not from a trial report.
+#
+# status: reviewed = confirmed by a person; assumption = recorded with the reason in `note`.
+version: 1
+sites:
+  - id: ES-VALLADOLID
+    name: Valladolid
+    site_kind: field
+    country: ES
+    sources: []
+    status: assumption
+    note: >-
+      ASSUMPTION: kept as a field site only because the legacy graph links GENVCE trials to it. The GENVCE
+      raw rows carry NO trial location; they are means of zones, strata and groups, and the legacy
+      adequacy step assigned this reference city to them. No contract uses this site any more: the GENVCE
+      contract puts the observed zone or stratum label in the unit's site, registered as an aggregate
+      (ES-GENVCE-*). Valladolid (GENVCE) and Zamadueñas (ITACyL farm) are NOT merged: nothing in the
+      licensed data says they are the same place.
+  - id: ES-LLEIDA
+    name: Lleida
+    site_kind: field
+    country: ES
+    sources: []
+    status: assumption
+    note: "ASSUMPTION: a reference city the legacy adequacy step assigned to GENVCE zone means; no contract uses it (see ES-VALLADOLID)."
+  - id: ES-CORDOBA
+    name: Córdoba
+    site_kind: field
+    country: ES
+    latitude: 37.88
+    longitude: -4.77
+    coordinate_source: municipality-level entry of trial_site_geo_registry.json
+    sources: []
+    status: assumption
+    note: "ASSUMPTION: a reference city the legacy adequacy step assigned to GENVCE zone means; no contract uses it (see ES-VALLADOLID)."
+  - id: ES-LUGO
+    name: Lugo
+    site_kind: field
+    country: ES
+    sources: []
+    status: assumption
+    note: "ASSUMPTION: a reference city the legacy adequacy step assigned to GENVCE zone means; no contract uses it (see ES-VALLADOLID)."
+  - id: ES-ZAMADUENAS
+    name: Zamadueñas
+    site_kind: field
+    country: ES
+    aliases: [Zamadueñas (Valladolid)]
+    sources: []
+    status: assumption
+    note: >-
+      ASSUMPTION: a separate site, not an alias of Valladolid (see ES-VALLADOLID). No licensed source
+      references it. No coordinates are registered because trial_site_geo_registry.json holds two
+      entries for it about 45 km apart, which cannot both be right.
+  - id: IT-VILLAFRANCA-PIEMONTE
+    name: Villafranca Piemonte (TO)
+    site_kind: field
+    country: IT
+    aliases: [Villafranca Piemonte]
+    latitude: 44.78824
+    longitude: 7.50788
+    coordinate_source: municipality geocode in trial_site_geo_registry.json
+    elevation_m: 253.0
+    municipality: Villafranca Piemonte
+    attribute_sources:
+      elevation_m: >-
+        trial_site_geo_registry.json, entry "villafranca piemonte (to)" (elevationM 253.0, geoSource "open-meteo
+        geocoding: Villafranca Piemonte, IT")
+      municipality: >-
+        trial_site_geo_registry.json, entry "villafranca piemonte (to)" (resolvedName "Villafranca Piemonte",
+        geoSource "open-meteo geocoding: Villafranca Piemonte, IT")
+    sources: [CREA]
+    status: assumption
+    note: Named as published in the CREA booklets (Piedmont trial of the national maize network).
+  - id: IT-CREA-AVG-8
+    name: Media 8 Località
+    site_kind: aggregate
+    country: IT
+    sources: [CREA]
+    status: assumption
+    note: Average over the 8 locations of that year's CREA network; the location set differs per year.
+  - id: IT-CREA-AVG-10
+    name: Media 10 Località
+    site_kind: aggregate
+    country: IT
+    sources: [CREA]
+    status: assumption
+    note: Average over the 10 locations of that year's CREA network; the location set differs per year.
+  - id: IT-CREA-AVG-13
+    name: Media 13 Località
+    site_kind: aggregate
+    country: IT
+    sources: [CREA]
+    status: assumption
+    note: Average over the 13 locations of that year's CREA network; the location set differs per year.
+  - id: IT-CREA-AVG-14
+    name: Media 14 Località
+    site_kind: aggregate
+    country: IT
+    sources: [CREA]
+    status: assumption
+    note: Average over the 14 locations of that year's CREA network; the location set differs per year.
+
+  # ── GENVCE zones, strata and groups (aggregates, never coordinates) ───────────────────────────
+  # A GENVCE report prints the mean of a GROUP of trials (an agroclimatic zone, a yield stratum, a
+  # geographic group, or all trials): no trial location is printed. Each label below is one such
+  # group, exactly as the extraction wrote it; a label that differs only in case or spacing is the
+  # same entry (lookups fold them), any other difference is a different entry: no label is merged
+  # with another by similarity. The composition of a group differs per report and year.
+  - id: ES-GENVCE-CENTRO
+    name: Centro
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: &genvce_geo_note >-
+      ASSUMPTION: a geographic group of trials as the GENVCE maize tables print it ("zona Norte / Centro /
+      Sur"); the trials it covers differ per report (for example Ebro valley and Catalonia in one report,
+      Aragon, Castilla y Leon and Navarra in another). An aggregate, no coordinates.
+  - id: ES-GENVCE-CONJUNTO-FRIAS-Y-TEMPLADAS
+    name: Conjunto Frías y Templadas
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: &genvce_group_note >-
+      ASSUMPTION: this label names a group of trials whose mean a GENVCE table prints (zone, yield stratum,
+      geographic group or all trials); it is not a place. It is registered as an aggregate with no
+      coordinates, as the extraction wrote it. Where the extraction relabelled the group printed in the
+      report, the printed group is lost and this is its relabel.
+  - id: ES-GENVCE-CONJUNTO-FRIAS-TEMPLADAS-Y-CALIDAS
+    name: 'Conjunto Frías, Templadas y Cálidas'
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_group_note
+  - id: ES-GENVCE-CONJUNTO-NACIONAL
+    name: Conjunto Nacional
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_group_note
+  - id: ES-GENVCE-GENERAL
+    name: General
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_group_note
+  - id: ES-GENVCE-GLOBAL
+    name: Global
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_group_note
+  - id: ES-GENVCE-GLOBAL-2010-2012
+    name: 'Global (2010-2012)'
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_group_note
+  - id: ES-GENVCE-GLOBAL-2011-2012
+    name: 'Global (2011-2012)'
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_group_note
+  - id: ES-GENVCE-NACIONAL
+    name: Nacional
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_group_note
+  - id: ES-GENVCE-NORTE
+    name: Norte
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_geo_note
+  - id: ES-GENVCE-PRODUCTIVIDAD-ALTA
+    name: Productividad Alta
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_group_note
+  - id: ES-GENVCE-PRODUCTIVIDAD-BAJA
+    name: Productividad Baja
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_group_note
+  - id: ES-GENVCE-PRODUCTIVIDAD-MEDIA
+    name: Productividad Media
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_group_note
+  - id: ES-GENVCE-REGADIO
+    name: Regadío
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_group_note
+  - id: ES-GENVCE-REGADIOS
+    name: Regadíos
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_group_note
+  - id: ES-GENVCE-REGADIOS-FRIOS
+    name: Regadíos fríos
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_group_note
+  - id: ES-GENVCE-REGADIOS-FRIOS-Y-TEMPLADOS
+    name: Regadíos fríos y templados
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_group_note
+  - id: ES-GENVCE-REGADIOS-TEMPLADOS
+    name: Regadíos templados
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_group_note
+  - id: ES-GENVCE-RENDIMIENTO-ALTO
+    name: Rendimiento Alto
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_group_note
+  - id: ES-GENVCE-RENDIMIENTO-BAJO
+    name: Rendimiento bajo
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_group_note
+  - id: ES-GENVCE-RENDIMIENTO-MEDIO
+    name: Rendimiento medio
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_group_note
+  - id: ES-GENVCE-SECANO
+    name: Secano
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_group_note
+  - id: ES-GENVCE-SECANOS-HUMEDOS-Y-DE-ALTO-POTENCIAL-FRIOS
+    name: Secanos húmedos y de alto potencial fríos
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_group_note
+  - id: ES-GENVCE-SECANOS-HUMEDOS-Y-DE-ALTO-POTENCIAL-FRIOS-Y-TEMPLADOS
+    name: Secanos húmedos y de alto potencial fríos y templados
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_group_note
+  - id: ES-GENVCE-SECANOS-TEMPLADOS
+    name: Secanos templados
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_group_note
+  - id: ES-GENVCE-SECANOS-Y-REGADIOS-TEMPLADOS
+    name: Secanos y regadíos templados
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_group_note
+  - id: ES-GENVCE-SECANOS-ARIDOS-Y-SEMIARIDOS-FRIOS
+    name: Secanos áridos y semiáridos fríos
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_group_note
+  - id: ES-GENVCE-SECANOS-ARIDOS-Y-SEMIARIDOS-FRIOS-Y-TEMPLADOS
+    name: Secanos áridos y semiáridos fríos y templados
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_group_note
+  - id: ES-GENVCE-SUR
+    name: Sur
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_geo_note
+  - id: ES-GENVCE-TEMPLADA
+    name: Templada
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_group_note
+  - id: ES-GENVCE-TEMPLADA-Y-FRIA
+    name: Templada y Fría
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_group_note
+  - id: ES-GENVCE-ZONA-CALIDA
+    name: Zona Cálida
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_group_note
+  - id: ES-GENVCE-ZONA-CALIDA-SEMIARIDA
+    name: Zona Cálida Semiárida
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_group_note
+  - id: ES-GENVCE-ZONA-FRIA
+    name: Zona Fría
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_group_note
+  - id: ES-GENVCE-ZONA-FRIA-SEMIARIDA
+    name: Zona Fría Semiárida
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_group_note
+  - id: ES-GENVCE-ZONA-FRIA-SEMIARIDA-Y-ZONA-TEMPLADA
+    name: Zona Fría Semiárida y Zona Templada
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_group_note
+  - id: ES-GENVCE-ZONA-FRIA-Y-TEMPLADA-PREGENVCE
+    name: 'Zona Fría y Templada (preGENVCE)'
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_group_note
+  - id: ES-GENVCE-ZONA-HUMEDA-ATLANTICA
+    name: Zona Húmeda Atlántica
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_group_note
+  - id: ES-GENVCE-ZONA-SUBHUMEDA-INTERIOR
+    name: Zona Subhúmeda Interior
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_group_note
+  - id: ES-GENVCE-ZONA-TEMPLADA
+    name: Zona Templada
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_group_note
+  - id: ES-GENVCE-ZONAS-CALIDAS
+    name: Zonas cálidas
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_group_note
+  - id: ES-GENVCE-ZONAS-FRIAS
+    name: Zonas frías
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_group_note
+  - id: ES-GENVCE-ZONAS-FRIAS-Y-TEMPLADAS
+    name: Zonas frías y templadas
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_group_note
+  - id: ES-GENVCE-ZONAS-TEMPLADAS
+    name: Zonas templadas
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_group_note
+  - id: ES-GENVCE-ZONAS-TEMPLADAS-Y-FRIAS
+    name: Zonas templadas y frías
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_group_note
+  - id: ES-GENVCE-UNLABELLED
+    name: GENVCE table without zone label (ES)
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: >-
+      ASSUMPTION: the group a GENVCE table averages is not stated in the extraction (no zone, stratum or
+      group label). Such a mean is kept at country level only so it is reachable by the regional tier; the
+      trials it covers are unknown. An aggregate, no coordinates, never climate-enriched.

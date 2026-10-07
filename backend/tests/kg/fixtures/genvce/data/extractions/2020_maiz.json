@@ -1,0 +1,82 @@
+{
+ "metadata": {
+  "source": "GENVCE",
+  "issue_number": 0,
+  "issue_period": "2019/2020",
+  "article_title": "GENVCE Maíz — Campaña 2019/2020",
+  "article_author": "GENVCE Consortium",
+  "article_topic": "maiz",
+  "year": 2020,
+  "page_in_issue": null,
+  "extraction_model": "deepseek-chat",
+  "extraction_date": "2026-06-15",
+  "confidence": "high"
+ },
+ "variety_trials": [
+  {
+   "crop": "Maíz",
+   "crop_scientific": "Zea mays",
+   "variety": "LG30685",
+   "agroclimatic_zone": "Zona Subhúmeda Interior",
+   "year": 2020,
+   "yield_kg_ha": 17079.0,
+   "yield_relative_pct": 106.9,
+   "quality_params": {},
+   "disease_scores": {},
+   "agronomic_traits": {},
+   "yield_notes": {
+    "year_range": "2019-2020",
+    "zone": "Norte"
+   },
+   "special_status": null,
+   "irrigation_regime": "secano",
+   "trial_location": null,
+   "page_in_issue": 14,
+   "table_number": 14,
+   "confidence": "high"
+  },
+  {
+   "crop": "Maíz",
+   "crop_scientific": "Zea mays",
+   "variety": "SY GLADIUS",
+   "agroclimatic_zone": "Zona Subhúmeda Interior",
+   "year": 2020,
+   "yield_kg_ha": 16959.0,
+   "yield_relative_pct": 106.1,
+   "quality_params": {},
+   "disease_scores": {},
+   "agronomic_traits": {},
+   "yield_notes": {
+    "year_range": "2019-2020",
+    "zone": "Norte"
+   },
+   "special_status": null,
+   "irrigation_regime": "secano",
+   "trial_location": null,
+   "page_in_issue": 14,
+   "table_number": 14,
+   "confidence": "high"
+  },
+  {
+   "crop": "Maíz",
+   "crop_scientific": "Zea mays",
+   "variety": "ZAPOTEK",
+   "agroclimatic_zone": null,
+   "year": 2020,
+   "yield_kg_ha": 16858.0,
+   "yield_relative_pct": 101.9,
+   "quality_params": {},
+   "disease_scores": {},
+   "agronomic_traits": {},
+   "yield_notes": {
+    "numero_ensayos": 10
+   },
+   "special_status": null,
+   "irrigation_regime": "secano",
+   "trial_location": null,
+   "page_in_issue": 6,
+   "table_number": 4,
+   "confidence": "high"
+  }
+ ]
+}

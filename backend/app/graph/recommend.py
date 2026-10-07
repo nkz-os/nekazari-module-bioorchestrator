@@ -28,7 +28,8 @@ Evidence policy contract (additions of the evidence-policy change; the rules liv
   It ranks after the regional recommendations that have a number.
 - Reference of ``fit.relative_yield_pct`` (field recommendations): the median kg/ha of the crop's
   distinct, policy-eligible trials at the SAME analog field sites that back the recommendation
-  and in the same irrigation regime (a trial with no regime never counts for a requested one);
+  and in the same irrigation regime (a trial whose source states the opposite regime never counts; one
+  whose source states none stays and is reported as unknown, see ``evidence.irrigation_unknown_trials``);
   ``fit.reference.n_trials`` is how many trials it rests on and ``fit.reference.scope`` names the
   set: ``analog_sites:<climate>:<regime>`` (e.g. ``analog_sites:Csa:secano``; climate = the Köppen
   class, ``vector_v2`` when the vector-similarity fallback supplied the sites, ``any`` without a
@@ -37,6 +38,14 @@ Evidence policy contract (additions of the evidence-policy change; the rules liv
   Regional recommendations keep a null relative yield and scope ``regional``.
 - ``evidence.regional_trial_count``: distinct numeric regional trials of a ``field`` crop at
   the climate's aggregate sites (supplementary; in no number). null when not computed.
+- ``regional_country_level`` (data gap): a regional recommendation backed by an aggregate site that
+  was admitted by the request's ``country`` (the site carries its own country), not by an
+  agro-climatic zone of the parcel. Sites without a country are matched by climate: no such gap.
+- ``evidence.irrigation_unknown_trials``: with a requested regime, the trials of the listed varieties
+  whose source states no regime (kept, never pooled against a stated opposite regime) and the data
+  gap ``irrigation_regime_unknown`` when there is any; null when no regime was requested. When
+  EVERY listed trial states no regime the gap is ``irrigation_regime_unknown_all`` instead and
+  trust is ``low`` in every tier (the yield is still returned).
 - ``evidence.other_purpose_trials``: main mode ``{"forage": N}`` — distinct forage trials of
   the crop at the same analog field sites, counted and never averaged; ``{}`` otherwise.
 - ``evidence.purpose``: the purpose the answer was computed for.
@@ -168,7 +177,9 @@ def _trust_level(n_trials: int, confidence: str | None) -> str:
 def build_recommendation(*, eppo, scientific_name, conditions, varieties, reference, soil_verdict,
                          water, frost_level, sowing, data_gaps_extra, assumptions,
                          tier: str = ep.EVIDENCE_TIER_FIELD, purpose: str = ep.MODE_MAIN,
-                         regional_trial_count: int | None = None) -> dict | None:
+                         regional_trial_count: int | None = None,
+                         zone_match: dict | None = None,
+                         country_matched_sites: frozenset[str] | None = None) -> dict | None:
     if not varieties:
         return None
     best = varieties[0]
@@ -194,8 +205,28 @@ def build_recommendation(*, eppo, scientific_name, conditions, varieties, refere
                                       int(reference.get("n_trials") or 0))
     cv, cv_gap = stability_cv(expected, best.get("stddev_yield_kg_ha"), n_numeric)
     gaps = [g for g in (rel_gap, cv_gap) if g] + list(data_gaps_extra)
+    # Trials whose source states no irrigation regime stay under a requested regime (never
+    # pooled against a stated opposite one); say how many, so the answer is not read as stated.
+    regime_unknown = (sum(int(v.get("irrigation_unknown_trial_count") or 0) for v in varieties)
+                      if conditions.get("irrigation_regime") else None)
+    # Every trial behind the item states no regime: the answer may be for the other regime.
+    all_regime_unknown = bool(regime_unknown) and regime_unknown >= sum(
+        int(v.get("trial_count") or 0) for v in varieties)
+    if all_regime_unknown:
+        gaps.append("irrigation_regime_unknown_all")
+    elif regime_unknown:
+        gaps.append("irrigation_regime_unknown")
     if regional:
         gaps.append("regional_evidence_only")
+        if zone_match is not None and zone_match["status"] == "matched":
+            # GENVCE's own zone definition applied to the parcel's climatology: say it is an approximation.
+            gaps.append("regional_zone_matched")
+            gaps.append("zone_match_climatology_basis")
+        elif country_matched_sites and country_matched_sites.intersection(
+                s for v in varieties for s in (v.get("trial_sites") or [])):
+            # An aggregate site behind the answer was admitted by the parcel's country (the site's
+            # own country), not by a zone of the parcel or by climate.
+            gaps.append("regional_country_level")
     if presence_only:
         gaps.append("no_measured_yield")
     if forage and expected is None and unknown_basis:
@@ -209,7 +240,7 @@ def build_recommendation(*, eppo, scientific_name, conditions, varieties, refere
     sites = sorted({s for v in varieties for s in (v.get("trial_sites") or [])})
     years = sorted({y for v in varieties for y in (v.get("trial_years") or [])})
     sources = sorted({s for v in varieties for s in (v.get("source_ids") or [])})
-    return {
+    rec = {
         "recommendation_id": recommendation_id(conditions, eppo, sowing["sowing_type"]),
         "crop": {"eppo": eppo, "scientific_name": scientific_name, "sowing_type": sowing["sowing_type"]},
         "fit": {"relative_yield_pct": rel, "stability_cv": cv, "reference": reference},
@@ -233,7 +264,8 @@ def build_recommendation(*, eppo, scientific_name, conditions, varieties, refere
                    "typical_sowing_doy": sowing.get("typical_sowing_doy"),
                    "typical_maturity_doy": sowing.get("typical_maturity_doy"),
                    "typical_rainfed_fallback": sowing.get("typical_rainfed_fallback")},
-        "trust": {"level": "low" if regional else _trust_level(n_trials, best.get("confidence")),
+        "trust": {"level": ("low" if regional or all_regime_unknown
+                            else _trust_level(n_trials, best.get("confidence"))),
                   "data_gaps": gaps},
         "varieties": [
             {"variety": v.get("variety"), "variety_uri": v.get("variety_uri"),
@@ -250,9 +282,13 @@ def build_recommendation(*, eppo, scientific_name, conditions, varieties, refere
                      "years": [years[0], years[-1]] if years else None,
                      "tier": tier, "purpose": purpose,
                      "regional_trial_count": regional_trial_count,
+                     "irrigation_unknown_trials": regime_unknown,
                      "other_purpose_trials": (
                          {"forage": int(best.get("crop_other_purpose_trials") or 0)}
                          if purpose == ep.MODE_MAIN and not regional else {}),
                      "unknown_basis_trials": unknown_basis if forage else None},
         "assumptions": assumptions,
     }
+    if regional and zone_match is not None:
+        rec["evidence"]["zone_match"] = zone_match  # only when zone matching was asked (Spanish parcel point)
+    return rec

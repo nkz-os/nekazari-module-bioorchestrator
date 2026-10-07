@@ -1,0 +1,83 @@
+{
+ "metadata": {
+  "source": "GENVCE",
+  "issue_number": 0,
+  "issue_period": "2013/2014",
+  "article_title": "GENVCE Cereales de Invierno (trigo, cebada, avena, centeno, triticale) — Campaña",
+  "article_author": "GENVCE Consortium",
+  "article_topic": "cereales-invierno",
+  "year": 2014,
+  "page_in_issue": null,
+  "extraction_model": "deepseek-chat",
+  "extraction_date": "2026-06-15",
+  "confidence": "high"
+ },
+ "variety_trials": [
+  {
+   "crop": "Cebada",
+   "crop_scientific": "Hordeum vulgare",
+   "variety": "BASTILLE",
+   "agroclimatic_zone": "Zona Fría",
+   "year": 2014,
+   "yield_kg_ha": 4782.0,
+   "yield_relative_pct": 95.6,
+   "quality_params": {
+    "peso_especifico_kg_hl": 66.5,
+    "peso_mil_granos_g": 47.7
+   },
+   "disease_scores": {
+    "oidio_pct": 25,
+    "helmintosporiosis_pct": 3,
+    "rincosporiosis_escala": 3
+   },
+   "agronomic_traits": {
+    "altura_cm": 64,
+    "encamado_pct": 38,
+    "fecha_espigado": "2-may",
+    "fecha_madurez": "13-jun",
+    "capacidad_ahijamiento_espigas_m2": 515,
+    "ciclo": "largo"
+   },
+   "yield_notes": {},
+   "special_status": null,
+   "irrigation_regime": "secano",
+   "trial_location": null,
+   "page_in_issue": 8,
+   "table_number": 10,
+   "confidence": "high"
+  },
+  {
+   "crop": "Cebada",
+   "crop_scientific": "Hordeum vulgare",
+   "variety": "CARAT",
+   "agroclimatic_zone": "Zona Fría",
+   "year": 2014,
+   "yield_kg_ha": 4869.0,
+   "yield_relative_pct": 97.3,
+   "quality_params": {
+    "peso_especifico_kg_hl": 66.9,
+    "peso_mil_granos_g": 50.8
+   },
+   "disease_scores": {
+    "oidio_pct": 15,
+    "helmintosporiosis_pct": 2,
+    "rincosporiosis_escala": 4
+   },
+   "agronomic_traits": {
+    "altura_cm": 67,
+    "encamado_pct": 2,
+    "fecha_espigado": "29-abr",
+    "fecha_madurez": "13-jun",
+    "capacidad_ahijamiento_espigas_m2": 640,
+    "ciclo": "largo"
+   },
+   "yield_notes": {},
+   "special_status": "testigo",
+   "irrigation_regime": "secano",
+   "trial_location": null,
+   "page_in_issue": 8,
+   "table_number": 10,
+   "confidence": "high"
+  }
+ ]
+}

@@ -13,6 +13,7 @@ In production (K8s):
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import json as _json
 import logging
 import os
@@ -23,6 +24,7 @@ from datetime import datetime, timezone
 from fastapi import Depends, FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, StreamingResponse
+from neo4j.exceptions import DriverError, Neo4jError
 from nkz_platform_sdk.orion import OrionClient
 from nkz_platform_sdk.subscriptions import SubscriptionRegistrar
 
@@ -36,11 +38,28 @@ from app.core.dependencies import (
 )
 from app.graph.dao import GraphDAO
 from app.ingestion.sync import sync_all_agri_crops
+from app.kg.migrations import MigrationError, apply_migrations
 from app.logging_setup import configure_logging
 
 # Module-level readiness state set during lifespan.
 # K8s probes hit /healthz and /readyz every 10-30s — must be fast and never rate-limited.
 _ikerketa_available = False
+
+# Set only by a deterministic schema failure of the startup migration (the data or the schema
+# contradicts a constraint). /readyz then answers 503 (a rolling update keeps the previous pod);
+# liveness is unaffected. Cleared as soon as a retry succeeds. Transient or connectivity errors
+# never set it.
+_migration_failure: dict | None = None
+_migration_task: asyncio.Task | None = None
+
+# Retry pacing after a failed startup attempt: capped exponential backoff for transient errors,
+# a slow fixed period once a schema failure is latched (so readiness recovers after the data is fixed).
+_MIGRATION_TRANSIENT_BACKOFF_START_S = 2.0
+_MIGRATION_TRANSIENT_BACKOFF_CAP_S = 60.0
+_MIGRATION_SCHEMA_RETRY_S = 300.0
+# Cap on one attempt, so a server that accepts the connection but never answers cannot hold
+# startup past the liveness probe; a timeout is transient and goes to the retry task.
+_MIGRATION_ATTEMPT_TIMEOUT_S = 45.0
 
 # Strong refs to long-lived background tasks (prevents GC of run_loop et al.).
 _BG_TASKS: set = set()
@@ -95,41 +114,96 @@ async def _reconcile_catalog() -> int:
         await orion.close()
 
 
-async def _run_cypher_migrations(driver):
-    """Execute pending Cypher migrations on startup (idempotent).
+def _is_deterministic_migration_failure(exc: BaseException) -> bool:
+    """True when retrying cannot help without a data or file fix.
 
-    Reads all .cypher files from cypher_migrations/ in order.
-    Each statement uses IF NOT EXISTS or equivalent — safe to re-run.
+    That is a ``MigrationError`` (bad statement, constraint over duplicate data, plain index in the
+    way, malformed file) unless the server code says it was transient. Everything else
+    (``ServiceUnavailable``, ``SessionExpired``, connection errors, anything unexpected) is treated
+    as transient: it is retried and never fails readiness.
     """
-    from pathlib import Path
-    migrations_dir = Path(__file__).parent.parent / "cypher_migrations"
-    if not migrations_dir.exists():
-        print("[bioorchestrator] No cypher_migrations directory — skipping")
-        return 0
+    if not isinstance(exc, MigrationError):
+        return False
+    return not (exc.code or "").startswith("Neo.TransientError.")
 
-    cypher_files = sorted(migrations_dir.glob("*.cypher"))
-    if not cypher_files:
-        return 0
 
-    executed = 0
-    async with driver.session() as session:
-        for cypher_file in cypher_files:
-            content = cypher_file.read_text()
-            statements = [s.strip() for s in content.split(";") if s.strip() and not s.strip().startswith("//")]
-            for stmt in statements:
-                # Only execute CREATE CONSTRAINT/INDEX statements (idempotent)
-                if not stmt.upper().startswith(("CREATE CONSTRAINT", "CREATE INDEX")):
-                    continue
-                try:
-                    await session.run(stmt)
-                    executed += 1
-                except Exception as exc:  # noqa: BLE001
-                    # Constraint already exists → ok
-                    if "already exists" in str(exc) or "AlreadyExists" in str(exc) or "equivalent" in str(exc):
-                        pass
-                    else:
-                        print(f"[bioorchestrator] WARNING: migration failed: {exc}")
-    return executed
+async def _attempt_startup_migrations(driver) -> bool:
+    """One attempt with the strict runner (schema statements only). True on success; never raises.
+
+    Success clears ``_migration_failure``. A deterministic failure latches it (CRITICAL log). A
+    transient failure logs a WARNING and leaves readiness as it was. Data migrations (MERGE/SET)
+    are not run here (``include_data=False``); they never ran at startup and are applied by
+    ``scripts/apply_cypher_migrations.py``.
+    """
+    global _migration_failure
+    try:
+        report = await asyncio.wait_for(apply_migrations(driver, include_data=False),
+                                        timeout=_MIGRATION_ATTEMPT_TIMEOUT_S)
+    except asyncio.CancelledError:
+        raise
+    except Exception as exc:
+        if _is_deterministic_migration_failure(exc):
+            _migration_failure = {
+                "file": getattr(exc, "file", None),
+                "statement_no": getattr(exc, "statement_no", None),
+                "code": getattr(exc, "code", None) or type(exc).__name__,
+            }
+            logger.critical(
+                "schema migration failed, readiness will fail until it succeeds "
+                "file=%s statement_no=%s code=%s error=%s",
+                _migration_failure["file"], _migration_failure["statement_no"],
+                _migration_failure["code"], str(exc).replace("\n", " ")[:300],
+            )
+        else:
+            logger.warning(
+                "schema migration attempt failed transiently, will retry (readiness unchanged) "
+                "error_type=%s error=%s",
+                type(exc).__name__, str(exc).replace("\n", " ")[:300],
+                exc_info=not isinstance(exc, (DriverError, Neo4jError, OSError)),
+            )
+        return False
+    _migration_failure = None
+    print(
+        f"[bioorchestrator] schema migrations applied: {len(report.applied)} files "
+        f"({report.skipped_data} data statements not run at startup)"
+    )
+    return True
+
+
+async def _retry_startup_migrations(driver) -> None:
+    """Retry until one attempt succeeds: capped backoff for transient errors, slow after a latch."""
+    delay = _MIGRATION_TRANSIENT_BACKOFF_START_S
+    while True:
+        await asyncio.sleep(_MIGRATION_SCHEMA_RETRY_S if _migration_failure is not None else delay)
+        if await _attempt_startup_migrations(driver):
+            return
+        delay = (
+            _MIGRATION_TRANSIENT_BACKOFF_START_S
+            if _migration_failure is not None
+            else min(delay * 2, _MIGRATION_TRANSIENT_BACKOFF_CAP_S)
+        )
+
+
+async def _run_startup_migrations(driver) -> None:
+    """First attempt inline (so a schema failure is known before the pod can become Ready and a
+    rolling update keeps the previous pod), then a background retry task if it did not succeed."""
+    global _migration_task
+    if await _attempt_startup_migrations(driver):
+        return
+    task = asyncio.create_task(_retry_startup_migrations(driver))
+    _BG_TASKS.add(task)
+    task.add_done_callback(_BG_TASKS.discard)
+    _migration_task = task
+
+
+async def _stop_startup_migration_retry() -> None:
+    """Cancel the retry task (shutdown, before the driver is closed)."""
+    global _migration_task
+    task, _migration_task = _migration_task, None
+    if task is not None and not task.done():
+        task.cancel()
+        with contextlib.suppress(asyncio.CancelledError):
+            await task
 
 
 # Climate classes the recommender is run for at startup (the most requested ones).
@@ -215,16 +289,13 @@ async def lifespan(app: FastAPI):
         _ikerketa_available = False
 
     try:
-        await init_driver()
+        driver = await init_driver()
         print("[bioorchestrator] Neo4j connected")
-        # Auto-run Cypher migrations (idempotent, safe to re-run)
-        from app.core.dependencies import get_neo4j_driver
-        driver = await anext(get_neo4j_driver())
-        migrated = await _run_cypher_migrations(driver)
-        if migrated:
-            print(f"[bioorchestrator] {migrated} Cypher constraints/indexes ensured")
     except Exception as exc:  # noqa: BLE001
         print(f"[bioorchestrator] WARNING: Neo4j unavailable on startup: {exc}")
+    else:
+        # Idempotent schema migrations: a schema failure fails readiness, a transient one only retries.
+        await _run_startup_migrations(driver)
 
     # Seed external capability registrations (best-effort)
     try:
@@ -242,6 +313,7 @@ async def lifespan(app: FastAPI):
 
     yield
 
+    await _stop_startup_migration_retry()
     await close_driver()
     print("[bioorchestrator] Neo4j connection closed")
 
@@ -343,9 +415,14 @@ async def healthz():
 async def readyz():
     """K8s readiness probe — returns 200 when dependencies are available.
 
-    Checks cached IkerKeta import state (set during lifespan).
-    Must be fast (no imports, no I/O) — K8s probes every 10s.
+    Checks cached IkerKeta import state and the startup schema-migration outcome (both set
+    during lifespan). Must be fast (no imports, no I/O) — K8s probes every 10s.
     """
+    if _migration_failure is not None:
+        return JSONResponse(
+            status_code=503,
+            content={"status": "not_ready", "reason": "schema migration failed", **_migration_failure},
+        )
     if _ikerketa_available:
         return {"status": "ready"}
     return JSONResponse(

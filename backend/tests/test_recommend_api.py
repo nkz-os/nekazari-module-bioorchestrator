@@ -7,6 +7,7 @@ from fastapi.testclient import TestClient
 from app.auth import SKIP_AUTH_PREFIXES
 from app.auth_policy import requires_identity
 from app.core.dependencies import get_neo4j_driver
+from app.graph import zone_match
 from app.graph.dao import GraphDAO
 from app.main import app
 
@@ -410,6 +411,28 @@ def test_conditions_route_sends_no_point(client):
     assert "lat" not in c and "lon" not in c
 
 
+def test_evidence_takes_an_opaque_zone_id_not_a_point(client):
+    with patch.object(GraphDAO, "list_trial_evidence", AsyncMock(return_value={"items": []})) as m, \
+            patch.object(GraphDAO, "get_similar_sites", AsyncMock(return_value=[])):
+        base = {"climate_class": "Cfb", "crop": "HORVX", "tier": "regional", "country": "ES"}
+        zone = zone_match.zone_id(zone_match.context_from_values(10.5, 520, None))
+        r = client.get("/api/graph/agriculture/recommend/evidence", params={**base, "zone": zone})
+        assert r.status_code == 200
+        ctx = m.call_args.kwargs["zone_ctx"]
+        direct = zone_match.context_from_values(10.5, 520, None)
+        assert ctx.ready and ctx.allow == direct.allow and ctx.deny == direct.deny
+        for bad in ("41.0,-3.0", "x", "10.5_520", "10.5_520_1"):
+            assert client.get("/api/graph/agriculture/recommend/evidence",
+                              params={**base, "zone": bad}).status_code == 422
+        client.get("/api/graph/agriculture/recommend/evidence",
+                   params={**base, "zone": zone + ",no-such-definition:cold:humid"})
+        assert m.call_args.kwargs["zone_ctx"] is None  # an id of other zone definitions is not used
+        client.get("/api/graph/agriculture/recommend/evidence", params={**base, "country": "IT", "zone": zone})
+        assert m.call_args.kwargs["zone_ctx"] is None
+        client.get("/api/graph/agriculture/recommend/evidence", params={**base, "lat": 41, "lon": -3})
+        assert m.call_args.kwargs["zone_ctx"] is None  # a point is not an input of the route
+
+
 # ── purpose and tier ────────────────────────────────────────────────────────
 def test_purpose_defaults_to_main_and_is_forwarded_on_conditions(client):
     with patch.object(GraphDAO, "recommend_for_conditions", AsyncMock(return_value=OK)) as m:
@@ -464,3 +487,33 @@ def test_evidence_regional_tier_needs_koppen_similarity(client):
     assert r.status_code == 422 and sites.await_count == 0
     assert client.get("/api/graph/agriculture/recommend/evidence",
                       params={"climate_class": "Cfb", "crop": "TRZAX", "tier": "national"}).status_code == 422
+
+
+def _regional_evidence(client, **params):
+    sites = AsyncMock(return_value=[{"name": "ES zone", "site_kind": "aggregate"}])
+    with patch.object(GraphDAO, "get_similar_sites", sites), \
+         patch.object(GraphDAO, "list_trial_evidence", AsyncMock(return_value=_EV_PAGE)):
+        r = client.get("/api/graph/agriculture/recommend/evidence",
+                       params={"climate_class": "Cfb", "crop": "TRZAX", "tier": "regional", **params})
+    return r, sites
+
+
+def test_evidence_regional_country_is_passed_to_the_site_lookup(client):
+    r, sites = _regional_evidence(client, country="ES")
+    assert r.status_code == 200 and sites.await_args.kwargs["country"] == "ES"
+
+
+def test_evidence_without_country_keeps_the_climate_only_lookup(client):
+    r, sites = _regional_evidence(client)
+    assert r.status_code == 200 and sites.await_args.kwargs["country"] is None
+
+
+@pytest.mark.parametrize("bad", ["es", "ESP", "E", "1A"])
+def test_evidence_country_must_be_iso_alpha2(client, bad):
+    r, sites = _regional_evidence(client, country=bad)
+    assert r.status_code == 422 and sites.await_count == 0
+
+
+def test_evidence_field_tier_ignores_country(client):
+    r, sites, _ = _evidence_call(client, country="ES")
+    assert r.status_code == 200 and "country" not in sites.await_args.kwargs

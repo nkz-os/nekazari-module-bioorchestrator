@@ -1,0 +1,24 @@
+# Unit registry. `code` is the project's stable unit code (the one variables, ranges and the graph
+# use); `ucum` is the matching UCUM spelling (hectare is `har` in UCUM), informational and written
+# by hand, not machine-validated. `factor` converts one unit to the base unit of its dimension
+# (a decimal string, so conversions are exact): value_in_base = value * factor.
+#
+# `aliases` are other spellings of the same unit. `source_units` maps the unit strings each source
+# prints (checked against the source PDFs) to a code. A basis qualifier printed with the unit
+# ("kg/ha al 14% de humedad", "q/ha al 15.5% di umidita") is NOT part of the unit: the source
+# contract carries it as the yield basis.
+version: 1
+units:
+  - {code: kg/ha, ucum: kg/har, name: kilogram per hectare, dimension: mass_per_area, factor: "1", aliases: [kg ha-1]}
+  - {code: t/ha, ucum: t/har, name: tonne per hectare, dimension: mass_per_area, factor: "1000", aliases: [t ha-1]}
+  - {code: dt/ha, ucum: dt/har, name: decitonne (quintal) per hectare, dimension: mass_per_area, factor: "100", aliases: [q/ha, dt ha-1]}
+  - {code: "%", ucum: "%", name: percent, dimension: percent, factor: "1"}
+  - {code: kg/hL, ucum: kg/hL, name: kilogram per hectolitre, dimension: mass_per_volume, factor: "1", aliases: [kg/hl]}
+  - {code: g, ucum: g, name: gram, dimension: mass, factor: "1"}
+  - {code: cm, ucum: cm, name: centimetre, dimension: length, factor: "1"}
+  - {code: d, ucum: d, name: day, dimension: time, factor: "1", aliases: [días, dias, days]}
+  - {code: /m2, ucum: /m2, name: per square metre, dimension: count_per_area, factor: "1", aliases: [plantas/m2, m-2]}
+  - {code: "1", ucum: "1", name: count (dimensionless), dimension: count, factor: "1", aliases: [count]}
+source_units:
+  GENVCE: {kg/ha: kg/ha, "%": "%", cm: cm, g: g, kg/hL: kg/hL, kg/hl: kg/hL, días: d, plantas/m2: /m2}
+  CREA: {q/ha: dt/ha, "%": "%", cm: cm, kg/hl: kg/hL}

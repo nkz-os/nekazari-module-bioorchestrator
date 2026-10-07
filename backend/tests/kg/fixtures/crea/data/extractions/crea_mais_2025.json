@@ -1,0 +1,89 @@
+{
+ "year": 2025,
+ "section_key": "mais",
+ "crop": "Mais",
+ "eppo": "ZEAMX",
+ "variety_trials": [
+  {
+   "crop": "Mais",
+   "crop_scientific": "Zea mays",
+   "variety": "BRIOSO",
+   "agroclimatic_zone": "Pianura Padana",
+   "year": 2025,
+   "yield_kg_ha": 14600.0,
+   "yield_relative_pct": 104.0,
+   "quality_params": {
+    "umidita_pct": 20.7,
+    "peso_ettolitrico_kg_hl": 71.0
+   },
+   "disease_scores": null,
+   "agronomic_traits": {
+    "piante_spezzate_pct": 2,
+    "piante_allettate_pct": 3,
+    "altezza_pianta_cm": 263,
+    "altezza_spiga_cm": 127
+   },
+   "yield_notes": null,
+   "special_status": null,
+   "irrigation_regime": "irrigato",
+   "trial_location": "Media 14 Località",
+   "page_in_issue": 7,
+   "table_number": 1,
+   "confidence": "high"
+  },
+  {
+   "crop": "Mais",
+   "crop_scientific": "Zea mays",
+   "variety": "P0937",
+   "agroclimatic_zone": "Pianura Padana",
+   "year": 2025,
+   "yield_kg_ha": 14740.0,
+   "yield_relative_pct": 102.0,
+   "quality_params": {
+    "umidita_pct": 19.8,
+    "peso_ettolitrico_kg_hl": 72.4
+   },
+   "disease_scores": null,
+   "agronomic_traits": {
+    "piante_spezzate_pct": 1,
+    "piante_allettate_pct": 1,
+    "altezza_pianta_cm": 243,
+    "altezza_spiga_cm": 108
+   },
+   "yield_notes": null,
+   "special_status": null,
+   "irrigation_regime": "irrigato",
+   "trial_location": "Media 14 Località",
+   "page_in_issue": 7,
+   "table_number": 1,
+   "confidence": "high"
+  },
+  {
+   "crop": "Mais",
+   "crop_scientific": "Zea mays",
+   "variety": "P1096",
+   "agroclimatic_zone": "Pianura Padana",
+   "year": 2025,
+   "yield_kg_ha": 19710.0,
+   "yield_relative_pct": null,
+   "quality_params": {
+    "umidita_pct": 20.4,
+    "peso_ettolitrico_kg_hl": 70
+   },
+   "disease_scores": null,
+   "agronomic_traits": {
+    "piante_spezzate_pct": 0,
+    "piante_allettate_pct": 0,
+    "altezza_pianta_cm": 331,
+    "altezza_spiga_cm": 154
+   },
+   "yield_notes": null,
+   "special_status": null,
+   "irrigation_regime": "irrigato",
+   "trial_location": "Villafranca Piemonte (TO)",
+   "page_in_issue": 12,
+   "table_number": 2,
+   "confidence": "high"
+  }
+ ]
+}

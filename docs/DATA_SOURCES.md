@@ -105,6 +105,10 @@ Trial counts below are **exact**, from the production graph on 2026-07-18
 
 ### Pipeline per source
 
+> GENVCE and CREA no longer use this flow: they are built by the gated pipeline in [KG_PIPELINE.md](./KG_PIPELINE.md)
+> (GENVCE rows are zone/national averages, i.e. regional evidence; CREA rows are maize). The counts in the table
+> above predate it.
+
 ```
 PDF/HTML download → PyMuPDF text extraction → LLM structured extraction
 → Pydantic validation → JSON-LD (NGSI-LD refTrialSite/refArticleSource)

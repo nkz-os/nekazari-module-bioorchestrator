@@ -109,7 +109,7 @@ _TRIALS = [
     _t("CIEAR", "V4", ["g06"], 10000.0),
     _t("CIEAR", "V5", ["g06"], 99999.0, source_id="BSL"),
     # CIEAR forage trials at Csa field sites, one per regime and one without a regime: the forage
-    # notice counts only the requested regime (a trial with no regime never matches one).
+    # notice counts the requested regime plus the trial whose source states none (unknown, kept).
     _t("CIEAR", "VF1", ["g01"], 20000.0, irrigationRegime=_SECANO, qualityParams=_FORAGE_QP, yieldBasis="dry_matter", year=2016),
     _t("CIEAR", "VF2", ["g02"], 21000.0, irrigationRegime=_REGADIO, qualityParams=_FORAGE_QP, yieldBasis="dry_matter", year=2016),
     _t("CIEAR", "VF3", ["g03"], 22000.0, qualityParams=_FORAGE_QP, yieldBasis="dry_matter", year=2016),
@@ -334,8 +334,8 @@ def test_reference_is_split_by_irrigation_regime(dao):
         assert len({_ref(v) for v in rows}) == 1  # crop level: every row carries the same reference
         return _ref(rows[0])
 
-    assert ref("secano") == (3000.0, 5)       # 1000 2000 3000 4000 (twin once) 9000
-    assert ref("regadío") == (5500.0, 2)      # 5000 6000
+    assert ref("secano") == (3500.0, 6)       # 1000 2000 3000 4000 (twin once) 9000 + 10000 (no regime stated)
+    assert ref("regadío") == (6000.0, 3)      # 5000 6000 + 10000 (no regime stated)
     assert ref(None) == (4500.0, 8)           # every regime, and the one without a regime; no BSL
     # per-crop extrapolation returns the same rows as the batch
     rows = _run(dao.extrapolate_varieties_batch(["CIEAR"], _CSA, irrigation_regime="secano"))["CIEAR"]
@@ -423,20 +423,21 @@ def test_forage_notice_count_respects_the_irrigation_regime(dao):
         return recs["CIEAR"]["evidence"]["other_purpose_trials"]
 
     assert notice() == {"forage": 3}
-    assert notice(irrigation_regime="secano") == {"forage": 1}   # not the regadio nor the regime-less one
-    assert notice(irrigation_regime="regadío") == {"forage": 1}
+    assert notice(irrigation_regime="secano") == {"forage": 2}   # secano + the regime-less one, not the regadio
+    assert notice(irrigation_regime="regadío") == {"forage": 2}  # regadio + the regime-less one, not the secano
     # ... and "see as forage" lists exactly what the notice promised
     page = _run(dao.list_trial_evidence(crop="CIEAR", similar_sites=[f"g0{i}" for i in range(1, 7)],
                                         variety=None, irrigation_uri=_SECANO, purpose="forage",
                                         page=1, page_size=50))
-    assert page["total"] == 1
+    assert page["total"] == 2
 
 
 def test_recommend_has_no_presence_recs_in_forage_mode_or_with_an_irrigation_filter(dao):
     forage = {r["crop"]["eppo"] for r in _recommend(dao, purpose="forage")["recommendations"]}
     assert not forage & {"SECCE", "BRSNN"}
     secano = {r["crop"]["eppo"] for r in _recommend(dao, irrigation_regime="secano")["recommendations"]}
-    assert not secano & {"SECCE", "BRSNN"}  # BSL carries no irrigation regime: it cannot match one
+    # BSL states no irrigation regime: unknown, kept under a requested regime (presence only, no kg/ha)
+    assert secano >= {"SECCE", "BRSNN"}
 
 
 def test_recommend_forage_mode(dao):
@@ -463,14 +464,14 @@ def test_recommend_reference_per_climate_and_regime_and_the_small_reference_gap(
         return recs["CIEAR"]
 
     sec = cie(irrigation_regime="secano")
-    assert sec["fit"]["reference"] == {"median_kg_ha": 3000.0, "n_trials": 5, "scope": "analog_sites:Csa:secano"}
+    assert sec["fit"]["reference"] == {"median_kg_ha": 3500.0, "n_trials": 6, "scope": "analog_sites:Csa:secano"}
     exp = sec["yield"]["expected_kg_ha"]
-    assert sec["fit"]["relative_yield_pct"] == round((exp / 3000.0 - 1) * 100, 1)
-    assert "reference_too_small" not in sec["trust"]["data_gaps"]  # five trials: the floor itself counts
+    assert sec["fit"]["relative_yield_pct"] == round((exp / 3500.0 - 1) * 100, 1)
+    assert "reference_too_small" not in sec["trust"]["data_gaps"]  # six trials: above the floor
 
     reg = cie(irrigation_regime="regadío")
-    assert reg["fit"]["reference"] == {"median_kg_ha": 5500.0, "n_trials": 2, "scope": "analog_sites:Csa:regadio"}
-    assert reg["fit"]["relative_yield_pct"] is None  # two trials: below the minimum reference
+    assert reg["fit"]["reference"] == {"median_kg_ha": 6000.0, "n_trials": 3, "scope": "analog_sites:Csa:regadio"}
+    assert reg["fit"]["relative_yield_pct"] is None  # three trials: below the minimum reference
     assert "reference_too_small" in reg["trust"]["data_gaps"]
 
     anyr = cie()

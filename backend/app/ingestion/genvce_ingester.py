@@ -1,4 +1,6 @@
-"""GENVCE → canonical node transformation (BaseIngester subclass).
+"""DEPRECATED: GENVCE is built by ``python -m app.kg build`` (docs/KG_PIPELINE.md); kept until F2.
+
+GENVCE → canonical node transformation (BaseIngester subclass).
 
 Reads the GENVCE JSON-LD file and transforms it into canonical node dicts
 with mergeKeys for idempotent ingestion and registry enrichment.
