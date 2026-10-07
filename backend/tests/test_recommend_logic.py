@@ -451,17 +451,22 @@ def test_no_requested_regime_reports_no_irrigation_label():
     assert "irrigation_regime_unknown" not in rec["trust"]["data_gaps"]
 
 
-def _build_regional(conditions):
-    v = {"variety": "V1", "mean_yield_kg_ha": 5000.0, "numeric_yield_count": 12, "trial_count": 12}
+def _build_regional(conditions, country_sites=None):
+    v = {"variety": "V1", "mean_yield_kg_ha": 5000.0, "numeric_yield_count": 12, "trial_count": 12,
+         "trial_sites": ["S1"]}
     sowing = r.sowing_info("TRZAX", "Cfb", [], lat=PARIS[0], lon=PARIS[1])
     return r.build_recommendation(
         eppo="TRZAX", scientific_name="T", conditions=conditions, varieties=[v],
         reference={"median_kg_ha": None, "n_trials": 0, "scope": "regional"},
         soil_verdict={"verdict": "unknown", "reason": ""}, water=None, frost_level="unknown",
-        sowing=sowing, data_gaps_extra=[], assumptions=[], tier="regional")
+        sowing=sowing, data_gaps_extra=[], assumptions=[], tier="regional",
+        country_matched_sites=country_sites)
 
 
-def test_regional_answer_matched_by_country_is_labelled_country_level():
-    gaps = _build_regional({"country": "ES"})["trust"]["data_gaps"]
+def test_regional_answer_is_country_level_only_when_a_site_was_admitted_by_country():
+    gaps = _build_regional({"country": "ES"}, frozenset({"S1"}))["trust"]["data_gaps"]
     assert "regional_evidence_only" in gaps and "regional_country_level" in gaps
-    assert "regional_country_level" not in _build_regional({})["trust"]["data_gaps"]
+    # a country on the request alone, or a country-admitted site that is not behind the answer
+    assert "regional_country_level" not in _build_regional({"country": "ES"})["trust"]["data_gaps"]
+    assert "regional_country_level" not in _build_regional(
+        {"country": "ES"}, frozenset({"S9"}))["trust"]["data_gaps"]

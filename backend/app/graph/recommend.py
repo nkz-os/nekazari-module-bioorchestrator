@@ -38,8 +38,9 @@ Evidence policy contract (additions of the evidence-policy change; the rules liv
   Regional recommendations keep a null relative yield and scope ``regional``.
 - ``evidence.regional_trial_count``: distinct numeric regional trials of a ``field`` crop at
   the climate's aggregate sites (supplementary; in no number). null when not computed.
-- ``regional_country_level`` (data gap): a regional recommendation whose aggregate sites were matched
-  by the request's ``country``, not by an agro-climatic zone of the parcel.
+- ``regional_country_level`` (data gap): a regional recommendation backed by an aggregate site that
+  was admitted by the request's ``country`` (the site carries its own country), not by an
+  agro-climatic zone of the parcel. Sites without a country are matched by climate: no such gap.
 - ``evidence.irrigation_unknown_trials``: with a requested regime, the trials of the listed varieties
   whose source states no regime (kept, never pooled against a stated opposite regime) and the data
   gap ``irrigation_regime_unknown`` when there is any; null when no regime was requested. When
@@ -177,7 +178,8 @@ def build_recommendation(*, eppo, scientific_name, conditions, varieties, refere
                          water, frost_level, sowing, data_gaps_extra, assumptions,
                          tier: str = ep.EVIDENCE_TIER_FIELD, purpose: str = ep.MODE_MAIN,
                          regional_trial_count: int | None = None,
-                         zone_match: dict | None = None) -> dict | None:
+                         zone_match: dict | None = None,
+                         country_matched_sites: frozenset[str] | None = None) -> dict | None:
     if not varieties:
         return None
     best = varieties[0]
@@ -220,8 +222,10 @@ def build_recommendation(*, eppo, scientific_name, conditions, varieties, refere
             # GENVCE's own zone definition applied to the parcel's climatology: say it is an approximation.
             gaps.append("regional_zone_matched")
             gaps.append("zone_match_climatology_basis")
-        elif conditions.get("country"):
-            # The aggregates were matched by the parcel's country, not by a zone of the parcel.
+        elif country_matched_sites and country_matched_sites.intersection(
+                s for v in varieties for s in (v.get("trial_sites") or [])):
+            # An aggregate site behind the answer was admitted by the parcel's country (the site's
+            # own country), not by a zone of the parcel or by climate.
             gaps.append("regional_country_level")
     if presence_only:
         gaps.append("no_measured_yield")

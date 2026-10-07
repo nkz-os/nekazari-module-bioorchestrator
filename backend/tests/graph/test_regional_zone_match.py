@@ -38,6 +38,8 @@ _SITES = [
     {"name": "Zona Fría", "siteKey": "ES-Z1", "siteKind": "aggregate", "country": "ES"},
     {"name": "Zona Cálida", "siteKey": "ES-Z2", "siteKind": "aggregate", "country": "ES"},
     {"name": "General", "siteKey": "ES-G", "siteKind": "aggregate", "country": "ES"},
+    # no country property (the legacy production shape): admitted by its climate class
+    {"name": "Sin Pais", "siteKey": "XX-N", "siteKind": "aggregate", "climateClass": "Csb"},
 ]
 # crop, variety, kg, site, zoneKey
 _TRIALS = [
@@ -46,6 +48,7 @@ _TRIALS = [
     ("HORVX", "C", 7000.0, "General", None),
     ("TRZAX", "D", 4000.0, "General", None),
     ("TRZAX", "E", 8000.0, "Zona Cálida", zone_key(DEF, "Zona Cálida")),
+    ("ZEAMX", "F", 11000.0, "Sin Pais", None),
 ]
 
 
@@ -119,6 +122,14 @@ def test_a_crop_without_zone_matched_evidence_falls_back_to_the_country_level_wi
     assert zm["status"] == "country_level" and zm["matched_zones"] == [] and zm["basis"] == ZONE_MATCH_BASIS
     gaps = rec["trust"]["data_gaps"]
     assert "regional_country_level" in gaps and "regional_zone_matched" not in gaps
+
+
+def test_sites_without_a_country_are_matched_by_climate_and_get_no_country_gap(dao):
+    rec = _recommend(dao, COLD_PARCEL, crops=("ZEAMX",))["ZEAMX"]
+    assert rec["yield"]["expected_kg_ha"] == 11000.0
+    assert "regional_country_level" not in rec["trust"]["data_gaps"]
+    # the same request does get the gap where the evidence sits at a country-admitted site
+    assert "regional_country_level" in _recommend(dao, COLD_PARCEL)["TRZAX"]["trust"]["data_gaps"]
 
 
 def test_no_parcel_climate_means_country_level_and_says_why(dao):

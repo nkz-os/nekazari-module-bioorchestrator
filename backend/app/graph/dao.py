@@ -2003,7 +2003,10 @@ class GraphDAO:
             """Regional tier: the aggregate's own country when it has one, else its climate class."""
             site_country = (r.get("country") or "").strip().upper()
             if site_country and target_country:
-                return site_country == target_country
+                if site_country == target_country:
+                    r["matched_by"] = "country"  # the gap ``regional_country_level`` reads this
+                    return True
+                return False
             return not climate_class or r["climate_class"] == climate_class
 
         # ── Distance path (C.1): rank by agro-climatic distance ─────────────
@@ -4070,6 +4073,10 @@ class GraphDAO:
                          None if koppen_sites is None else len(koppen_sites),
                          time.monotonic() - t_sites)
 
+            # Aggregate sites admitted by the request's country (their own country property).
+            country_matched_sites = frozenset(
+                s["name"] for s in regional_scan_sites if s.get("matched_by") == "country")
+
             all_eppos = [c["eppo_code"] for c in crop_entries]
 
             async def _prefilter(sites: list[dict] | None, stage: str,
@@ -4286,6 +4293,7 @@ class GraphDAO:
                             regional_trial_count=regional_n if tier == ep.EVIDENCE_TIER_FIELD
                             and regional_known else None,
                             zone_match=zone_block,
+                            country_matched_sites=country_matched_sites,
                         )
                         if rec is None:
                             return None
