@@ -53,6 +53,10 @@ ID_WIDTH = 10
 UNRECORDED_CREATED_UTC = "1970-01-01T00:00:00+00:00"
 # label -> properties that carry the wall clock; they are not content and would break determinism
 VOLATILE_PROPERTIES: dict[str, frozenset[str]] = {"SchemaVersion": frozenset({"appliedAt"})}
+# Environment marker written by the build CLI; it describes the scratch target, not the graph content, so it is
+# never exported (a restored graph must not inherit the permission to be re-built into).
+MARKER_LABEL = "KgBuildTarget"
+_NOT_MARKER = f"NOT n:{MARKER_LABEL}"
 MEMBERS = ("manifest.json", "schema.json", "nodes.jsonl.gz", "rels.jsonl.gz")
 
 
@@ -254,19 +258,19 @@ async def export_graph(
             record = await (await session.run(cypher)).single()
             return int(record["c"])
 
-        before = (await count("MATCH (n) RETURN count(n) AS c"), await count("MATCH ()-[r]->() RETURN count(r) AS c"))
+        before = (await count(f"MATCH (n) WHERE {_NOT_MARKER} RETURN count(n) AS c"), await count("MATCH ()-[r]->() RETURN count(r) AS c"))
         if before[0] == 0:
             raise ExportError("the database is empty; refusing to export")
         tx = await session.begin_transaction()
         try:
             node_records = [dict(r) async for r in await tx.run(
-                "MATCH (n) RETURN elementId(n) AS id, labels(n) AS l, properties(n) AS p")]
+                f"MATCH (n) WHERE {_NOT_MARKER} RETURN elementId(n) AS id, labels(n) AS l, properties(n) AS p")]
             rel_records = [dict(r) async for r in await tx.run(
                 "MATCH (a)-[r]->(b) RETURN elementId(r) AS id, type(r) AS t, elementId(a) AS s, "
                 "elementId(b) AS e, properties(r) AS p")]
         finally:
             await tx.close()
-        after = (await count("MATCH (n) RETURN count(n) AS c"), await count("MATCH ()-[r]->() RETURN count(r) AS c"))
+        after = (await count(f"MATCH (n) WHERE {_NOT_MARKER} RETURN count(n) AS c"), await count("MATCH ()-[r]->() RETURN count(r) AS c"))
         schema = await _read_schema(session)
     if before != after or (len(node_records), len(rel_records)) != before:
         raise ExportError(f"the graph changed during the export (before={before}, after={after}, "

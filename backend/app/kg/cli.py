@@ -23,6 +23,10 @@ Safety (the production graph is untouchable from here in F1). A write needs ALL 
 * a target that is not the backend's own configured graph (``NEO4J_URI`` of the environment);
 * a target that is empty (or ``--allow-existing``) and does not look like the legacy graph (any ``VarietyTrial``
   without a ``unitKey`` refuses the run, with or without ``--allow-existing``);
+* an explicit environment marker: the build writes a singleton ``(:KgBuildTarget {label, created_by_build})`` on an
+  empty target, and a NON-EMPTY target is written only if it carries that marker with a scratch label equal to
+  ``--target-label``. A graph without the marker (any production graph, whatever its schema) or with another label
+  is refused, even with ``--allow-existing``. The marker is not part of the export, so a restored graph has none;
 * a gate that passed: a refused gate never writes, not even the schema.
 
 Credentials come from ``NEO4J_USER`` (default ``neo4j``) and ``NEO4J_PASSWORD``; never from arguments or logs.
@@ -75,6 +79,7 @@ SOURCES: dict[str, tuple[str, Callable[[Path], Any]]] = {
 SCRATCH_LABEL = re.compile(r"^(local|test|ci|scratch|build)(-[a-z0-9][a-z0-9._-]{0,40})?$")
 ALLOWED_HOSTS_ENV = "NKZ_KG_ALLOWED_TARGET_HOSTS"
 LOOPBACK = {"localhost", "127.0.0.1", "::1"}
+MARKER_LABEL = export_mod.MARKER_LABEL
 
 EXIT_OK, EXIT_FAILED, EXIT_REFUSED = 0, 1, 2
 
@@ -236,17 +241,48 @@ async def _scalar(driver: Any, database: str | None, cypher: str) -> int:
         return int(record["c"])
 
 
+async def _read_marker(driver: Any, database: str | None) -> dict[str, Any] | None:
+    """The environment marker, ``None`` if absent; more than one marker is refused (it is a singleton)."""
+    async with driver.session(database=database, default_access_mode=READ_ACCESS) as session:
+        result = await session.run(f"MATCH (m:{MARKER_LABEL}) RETURN m.label AS label, "
+                                   "m.created_by_build AS created_by_build")
+        rows = [r.data() for r in await result.fetch(10)]
+    if len(rows) > 1:
+        raise WriteRefused(f"target holds {len(rows)} {MARKER_LABEL} markers (must be exactly one): refusing")
+    return rows[0] if rows else None
+
+
 async def _guard_target_contents(driver: Any, cfg: BuildConfig) -> dict[str, int]:
-    """A legacy-looking graph is refused always; a non-empty one unless ``--allow-existing``."""
+    """Refuse a legacy-looking graph always; a non-empty one unless it carries this tool's scratch marker."""
     legacy = await _scalar(driver, cfg.database,
                            "MATCH (n:VarietyTrial) WHERE n.unitKey IS NULL RETURN count(n) AS c")
     if legacy:
         raise WriteRefused(f"target holds {legacy} legacy VarietyTrial node(s) without unitKey: "
                            "it looks like the production graph, refusing")
-    nodes = await _scalar(driver, cfg.database, "MATCH (n) WHERE NOT n:SchemaVersion RETURN count(n) AS c")
-    if nodes and not cfg.allow_existing:
-        raise WriteRefused(f"target is not empty ({nodes} nodes); pass --allow-existing to re-run on a build graph")
+    nodes = await _scalar(driver, cfg.database,
+                          f"MATCH (n) WHERE NOT n:SchemaVersion AND NOT n:{MARKER_LABEL} RETURN count(n) AS c")
+    marker = await _read_marker(driver, cfg.database)
+    if marker is not None and marker["label"] != cfg.target_label:
+        # also on an empty target: the marker names the environment, a different label is a different environment
+        raise WriteRefused(f"target is marked {marker['label']!r}, not {cfg.target_label!r}: refusing")
+    if nodes:
+        if not cfg.allow_existing:
+            raise WriteRefused(f"target is not empty ({nodes} nodes); pass --allow-existing to re-run on a build graph")
+        if marker is None:
+            raise WriteRefused(f"target is not empty and has no {MARKER_LABEL} marker: it was not created by this "
+                               "tool, refusing even with --allow-existing")
+        if marker["created_by_build"] is not True or not SCRATCH_LABEL.match(str(marker["label"])):
+            raise WriteRefused(f"target marker {marker['label']!r} is not a scratch build marker: refusing")
     return {"nodes_before": nodes}
+
+
+async def _write_marker(driver: Any, cfg: BuildConfig) -> None:
+    """Singleton marker, written before the first data/schema write on an empty target (idempotent)."""
+    async with driver.session(database=cfg.database) as session:
+        await (await session.run(
+            f"MERGE (m:{MARKER_LABEL} {{id: 'singleton'}}) "
+            "ON CREATE SET m.label = $label, m.created_by_build = true, m.created_at = datetime()",
+            label=cfg.target_label)).consume()
 
 
 async def _require_current_schema(driver: Any, database: str | None) -> None:
@@ -347,6 +383,7 @@ async def _run(cfg: BuildConfig, env: Mapping[str, str], climate_reader: Any) ->
     try:
         before = await _guard_target_contents(driver, cfg)
         if before["nodes_before"] == 0:
+            await _write_marker(driver, cfg)
             migrations = await apply_migrations(driver, database=cfg.database)
             schema = {"migrations": [m.__dict__ for m in migrations.applied]}
         else:

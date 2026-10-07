@@ -30,6 +30,12 @@ Credentials: `NEO4J_USER` (default `neo4j`), `NEO4J_PASSWORD`. Manifests: `kg-bu
 - Target is not the `NEO4J_URI` the environment's backend is configured for.
 - Target empty (or `--allow-existing`), and never a graph holding `VarietyTrial` nodes without `unitKey` (the
   legacy graph): that refuses even with `--allow-existing`.
+- Environment marker: a build on an empty target writes one `(:KgBuildTarget {label, created_by_build})`
+  node. A NON-EMPTY target is written only if it carries that marker, `created_by_build` is true, and its
+  label is a scratch label equal to `--target-label`. No marker (any production graph, whatever its schema),
+  another label, or more than one marker: refused, even with `--allow-existing`. The marker is not exported,
+  so a graph restored from an export has none and cannot be re-built into. The legacy-signature rule above
+  stays as a second line of defence.
 - The quality gate passed for every source (`production` profile also needs `publishable`). A refused gate writes nothing, not even the schema.
 - Clean git worktrees (module and raw-data repository) unless `--allow-dirty`; the manifest records both SHAs,
   the registries hash, the requirements hash and `NKZ_KG_NEO4J_IMAGE_DIGEST`.

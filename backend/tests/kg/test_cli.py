@@ -274,6 +274,100 @@ def test_a_legacy_looking_target_is_refused_even_with_allow_existing(fixture_mod
     assert _nodes(d) == 1  # untouched: not even the schema was created
 
 
+def _marked_build(n, d, env, tmp_path, label="local-m"):
+    cfg = _cfg(tmp_path, target=n.get_connection_url(), target_label=label, execute=True)
+    assert _run(cfg, env).status == "ok"
+    return cfg
+
+
+def _rerun(n, env, tmp_path, label="local-m", **kw):
+    return _run(_cfg(tmp_path, target=n.get_connection_url(), target_label=label, execute=True,
+                     allow_existing=True, **kw), env)
+
+
+@needs_docker
+def test_a_build_writes_the_environment_marker_and_the_export_leaves_it_out(fixture_mode, empty, tmp_path):
+    n, d, env = empty
+    first = _run(_cfg(tmp_path, target=n.get_connection_url(), target_label="local-m", execute=True), env)
+    assert first.status == "ok"
+    assert _q(d, "MATCH (m:KgBuildTarget) RETURN m.label AS label, m.created_by_build AS by") == [
+        {"label": "local-m", "by": True}]
+    export = json.loads((first.out / "09-export.json").read_text())
+    assert "KgBuildTarget" not in export["nodes_by_label"]
+    assert export["nodes"] == _nodes(d) - 1  # everything but the marker
+
+
+@needs_docker
+def test_a_non_empty_graph_without_the_marker_is_refused_even_with_allow_existing(fixture_mode, empty, tmp_path):
+    n, d, env = empty
+    _marked_build(n, d, env, tmp_path)
+    _q(d, "MATCH (m:KgBuildTarget) DELETE m")  # what a rebuilt production graph looks like: unitKey, no marker
+    before = _nodes(d)
+    for allow in (False, True):
+        with pytest.raises(cli.WriteRefused):
+            _run(_cfg(tmp_path, target=n.get_connection_url(), target_label="local-m", execute=True,
+                      allow_existing=allow), env)
+    assert _nodes(d) == before  # untouched
+
+
+@needs_docker
+@pytest.mark.parametrize("marker_label", ["production", "prod-green", "green", "Local-1", "localised"])
+def test_a_marker_with_a_non_scratch_label_is_refused(fixture_mode, empty, tmp_path, marker_label):
+    n, d, env = empty
+    _marked_build(n, d, env, tmp_path)
+    _q(d, f"MATCH (m:KgBuildTarget) SET m.label = '{marker_label}'")
+    before = _nodes(d)
+    with pytest.raises(cli.WriteRefused, match="marked"):  # differs from --target-label, whichever way
+        _rerun(n, env, tmp_path)
+    # even when the operator passes the very same (non-scratch) label the static label rule refuses first
+    with pytest.raises(cli.WriteRefused, match="scratch"):
+        _rerun(n, env, tmp_path, label=marker_label)
+    assert _nodes(d) == before
+
+
+@needs_docker
+def test_a_scratch_marker_with_another_label_is_refused(fixture_mode, empty, tmp_path):
+    n, d, env = empty
+    _marked_build(n, d, env, tmp_path, label="local-a")
+    before = _nodes(d)
+    with pytest.raises(cli.WriteRefused, match="marked 'local-a'"):
+        _rerun(n, env, tmp_path, label="local-b")
+    assert _nodes(d) == before
+
+
+@needs_docker
+def test_a_marker_not_created_by_the_build_is_refused(fixture_mode, empty, tmp_path):
+    n, d, env = empty
+    _marked_build(n, d, env, tmp_path)
+    _q(d, "MATCH (m:KgBuildTarget) SET m.created_by_build = false")
+    with pytest.raises(cli.WriteRefused, match="not a scratch build marker"):
+        _rerun(n, env, tmp_path)
+    _q(d, "MATCH (m:KgBuildTarget) REMOVE m.created_by_build")
+    with pytest.raises(cli.WriteRefused, match="not a scratch build marker"):
+        _rerun(n, env, tmp_path)
+
+
+@needs_docker
+def test_an_empty_target_with_a_foreign_marker_and_duplicate_markers_are_refused(fixture_mode, empty, tmp_path):
+    n, d, env = empty
+    _q(d, "CREATE (:KgBuildTarget {id: 'singleton', label: 'local-a', created_by_build: true})")
+    with pytest.raises(cli.WriteRefused, match="marked 'local-a'"):
+        _run(_cfg(tmp_path, target=n.get_connection_url(), target_label="local-b", execute=True), env)
+    _q(d, "CREATE (:KgBuildTarget {id: 'other', label: 'local-a', created_by_build: true})")
+    with pytest.raises(cli.WriteRefused, match="2 KgBuildTarget markers"):
+        _run(_cfg(tmp_path, target=n.get_connection_url(), target_label="local-a", execute=True), env)
+    assert _nodes(d) == 2  # no schema, no data
+
+
+@needs_docker
+def test_a_hand_made_non_empty_graph_is_refused_even_with_allow_existing(fixture_mode, empty, tmp_path):
+    n, d, env = empty
+    _q(d, "CREATE (:Species {name: 'x'})")
+    with pytest.raises(cli.WriteRefused, match="no KgBuildTarget marker"):
+        _rerun(n, env, tmp_path)
+    assert _nodes(d) == 1
+
+
 @needs_docker
 def test_the_cli_refuses_a_foreign_host_without_connecting(fixture_mode, tmp_path, capsys):
     code = cli.main(["build", "--raw-dir", str(tmp_path), "--out", str(tmp_path / "o"), "--allow-dirty",
