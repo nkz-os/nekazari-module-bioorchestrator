@@ -28,7 +28,8 @@ Evidence policy contract (additions of the evidence-policy change; the rules liv
   It ranks after the regional recommendations that have a number.
 - Reference of ``fit.relative_yield_pct`` (field recommendations): the median kg/ha of the crop's
   distinct, policy-eligible trials at the SAME analog field sites that back the recommendation
-  and in the same irrigation regime (a trial with no regime never counts for a requested one);
+  and in the same irrigation regime (a trial whose source states the opposite regime never counts; one
+  whose source states none stays and is reported as unknown, see ``evidence.irrigation_unknown_trials``);
   ``fit.reference.n_trials`` is how many trials it rests on and ``fit.reference.scope`` names the
   set: ``analog_sites:<climate>:<regime>`` (e.g. ``analog_sites:Csa:secano``; climate = the Köppen
   class, ``vector_v2`` when the vector-similarity fallback supplied the sites, ``any`` without a
@@ -37,6 +38,9 @@ Evidence policy contract (additions of the evidence-policy change; the rules liv
   Regional recommendations keep a null relative yield and scope ``regional``.
 - ``evidence.regional_trial_count``: distinct numeric regional trials of a ``field`` crop at
   the climate's aggregate sites (supplementary; in no number). null when not computed.
+- ``evidence.irrigation_unknown_trials``: with a requested regime, the trials of the listed varieties
+  whose source states no regime (kept, never pooled against a stated opposite regime) and the data
+  gap ``irrigation_regime_unknown`` when there is any; null when no regime was requested.
 - ``evidence.other_purpose_trials``: main mode ``{"forage": N}`` — distinct forage trials of
   the crop at the same analog field sites, counted and never averaged; ``{}`` otherwise.
 - ``evidence.purpose``: the purpose the answer was computed for.
@@ -194,6 +198,12 @@ def build_recommendation(*, eppo, scientific_name, conditions, varieties, refere
                                       int(reference.get("n_trials") or 0))
     cv, cv_gap = stability_cv(expected, best.get("stddev_yield_kg_ha"), n_numeric)
     gaps = [g for g in (rel_gap, cv_gap) if g] + list(data_gaps_extra)
+    # Trials whose source states no irrigation regime stay under a requested regime (never
+    # pooled against a stated opposite one); say how many, so the answer is not read as stated.
+    regime_unknown = (sum(int(v.get("irrigation_unknown_trial_count") or 0) for v in varieties)
+                      if conditions.get("irrigation_regime") else None)
+    if regime_unknown:
+        gaps.append("irrigation_regime_unknown")
     if regional:
         gaps.append("regional_evidence_only")
     if presence_only:
@@ -250,6 +260,7 @@ def build_recommendation(*, eppo, scientific_name, conditions, varieties, refere
                      "years": [years[0], years[-1]] if years else None,
                      "tier": tier, "purpose": purpose,
                      "regional_trial_count": regional_trial_count,
+                     "irrigation_unknown_trials": regime_unknown,
                      "other_purpose_trials": (
                          {"forage": int(best.get("crop_other_purpose_trials") or 0)}
                          if purpose == ep.MODE_MAIN and not regional else {}),

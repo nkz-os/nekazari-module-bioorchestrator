@@ -409,3 +409,29 @@ def test_presence_only_ranks_after_regional_recs_with_a_number_and_after_field_r
     for rec, eppo in ((field, "A"), (measured, "B"), (presence, "C")):
         rec["crop"]["eppo"] = eppo
     assert [x["crop"]["eppo"] for x in r.rank_recommendations([presence, measured, field])] == ["A", "B", "C"]
+
+
+def _build_regime(conditions, unknown):
+    v = {"variety": "V1", "mean_yield_kg_ha": 5000.0, "numeric_yield_count": 5, "trial_count": 5,
+         "irrigation_unknown_trial_count": unknown}
+    sowing = r.sowing_info("TRZAX", "Cfb", [], lat=PARIS[0], lon=PARIS[1])
+    return r.build_recommendation(
+        eppo="TRZAX", scientific_name="T", conditions=conditions, varieties=[v],
+        reference={"median_kg_ha": 5000.0, "n_trials": 40, "scope": "crop"},
+        soil_verdict={"verdict": "unknown", "reason": ""}, water=None, frost_level="unknown",
+        sowing=sowing, data_gaps_extra=[], assumptions=[])
+
+
+def test_unknown_irrigation_trials_are_reported_under_a_requested_regime():
+    rec = _build_regime({"irrigation_regime": "secano"}, unknown=3)
+    assert rec["evidence"]["irrigation_unknown_trials"] == 3
+    assert "irrigation_regime_unknown" in rec["trust"]["data_gaps"]
+    none = _build_regime({"irrigation_regime": "secano"}, unknown=0)
+    assert none["evidence"]["irrigation_unknown_trials"] == 0
+    assert "irrigation_regime_unknown" not in none["trust"]["data_gaps"]
+
+
+def test_no_requested_regime_reports_no_irrigation_label():
+    rec = _build_regime({}, unknown=3)
+    assert rec["evidence"]["irrigation_unknown_trials"] is None
+    assert "irrigation_regime_unknown" not in rec["trust"]["data_gaps"]

@@ -958,7 +958,8 @@
       "no_measured_yield": "Sin rendimiento medido",
       "regional_evidence_only": "Solo evidencia regional/nacional, sin ensayos de parcela",
       "regional_not_comparable": "No comparable con la media local",
-      "forage_basis_unknown": "Forraje sin base de materia seca o fresca conocida"
+      "forage_basis_unknown": "Forraje sin base de materia seca o fresca conocida",
+      "irrigation_regime_unknown": "Algunos ensayos no indican su régimen de riego"
     },
     "evidence": {
       "title": "Ensayos de {{crop}}",

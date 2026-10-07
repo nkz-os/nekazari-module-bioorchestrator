@@ -95,16 +95,6 @@ class _Cond:
         self.frost_margin_c = None
 
 
-async def _evidence_with_country(dao: Any, climate: str, country: str, crop: str) -> dict[str, Any]:
-    """What ``recommend_evidence`` (regional tier) returns once it knows the parcel's country."""
-    sites = [s for s in await dao.get_similar_sites(
-        climate_class=climate, soil_type=None, limit=None, include_aggregate=True, country=country)
-        if s.get("site_kind") == "aggregate"]
-    return await dao.list_trial_evidence(
-        crop=crop, similar_sites=[s["name"] for s in sites], variety=None, irrigation_uri=None,
-        page=1, page_size=50, purpose="main", tier="regional")
-
-
 async def collect(driver: Any, *, progress=None) -> dict[str, Any]:
     from app.api.v1 import recommend as rec_api
     from app.graph import dao as dao_mod
@@ -145,8 +135,11 @@ async def collect(driver: Any, *, progress=None) -> dict[str, Any]:
             for tier in ("field", "regional"):
                 await call(f"evidence|{pk}|{crop}|{tier}", rec_api.recommend_evidence(
                     driver=ro, cond=_Cond(climate, None, "main"), crop=crop, variety=None, page=1,
-                    page_size=50, similarity="koppen", tier=tier))
-            await call(f"evidence-country|{pk}|{crop}|regional", _evidence_with_country(dao, climate, country, crop))
+                    page_size=50, similarity="koppen", tier=tier, country=None))
+            # the endpoint with the parcel's country (the regional list of the recommendation)
+            await call(f"evidence-country|{pk}|{crop}|regional", rec_api.recommend_evidence(
+                driver=ro, cond=_Cond(climate, None, "main"), crop=crop, variety=None, page=1,
+                page_size=50, similarity="koppen", tier="regional", country=country))
     return out
 
 
