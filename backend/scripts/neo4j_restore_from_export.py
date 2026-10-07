@@ -7,7 +7,9 @@ access: no APOC, no server-side import directory.
 
 Safety
   * Refuses to run unless the target has no nodes, no constraints and no
-    user-defined indexes, and only with --confirm-empty-target.
+    user-defined indexes, and only with --confirm-empty-target. The one exception is
+    a KgBuildTarget marker node (python -m app.kg mark-target): it is neither counted
+    nor fingerprinted, so a build copy can be marked before it is restored.
   * Never deletes anything it did not create; a failed run leaves a partial
     graph in the (previously empty) target: wipe the target and retry.
   * The password is read from NEO4J_PASSWORD and is never printed.
