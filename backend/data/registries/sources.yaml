@@ -56,10 +56,8 @@ sources:
       - the source is cited in the literal form above, with the download date
       - personal-data protection (LOPDGDD, RGPD); no re-identification
       processing_note:
-        en: Trial values were extracted from the published GENVCE reports. Expected yields, medians and extrapolations are Nekazari
-          calculations based on GENVCE data; they are not data published by GENVCE.
-        es: Los valores de los ensayos se extrajeron de los informes publicados por GENVCE. Los rendimientos esperados, las
-          medianas y las extrapolaciones son cálculos de Nekazari a partir de datos de GENVCE; no son datos publicados por GENVCE.
+        en: Estimates and averages are Nekazari calculations based on these data; they are not data published by the sources.
+        es: Las estimaciones y medias son cálculos de Nekazari a partir de estos datos; no son datos publicados por las fuentes.
       notes: Reuse notice under Ley 18/2015 amending Ley 37/2007, for commercial or non-commercial use. The date in the notice
         is its own example; the citation below carries the real download date of the Nekazari data (reports downloaded 2026-06-01,
         from the file write times of the downloader). The notice covers the open data on the GENVCE website (results map); data
@@ -218,12 +216,8 @@ sources:
       - the web address of the original page is given where possible
       - changes made to the data are indicated
       processing_note:
-        en: Trial values were extracted from the published CREA PDF reports and processed by Nekazari (normalised, aggregated,
-          extrapolated). Expected yields, medians and extrapolations are Nekazari calculations; they are not data published
-          by CREA.
-        es: Los valores de los ensayos se extrajeron de los informes PDF publicados por CREA y fueron procesados por Nekazari
-          (normalizados, agregados, extrapolados). Los rendimientos esperados, las medianas y las extrapolaciones son cálculos
-          de Nekazari; no son datos publicados por CREA.
+        en: Estimates and averages are Nekazari calculations based on these data; they are not data published by the sources.
+        es: Las estimaciones y medias son cálculos de Nekazari a partir de estos datos; no son datos publicados por las fuentes.
       notes: 'Terms page: https://www.crea.gov.it/note-legali. Scope: the five ''Fascicolo risultati Mais'' PDFs 2021-2025 (checked:
         none carries a copyright or licence note of its own). The Romanian wheat rows once stored under CREA come from an unrelated
         paper, are not CREA data and are out of scope.'
