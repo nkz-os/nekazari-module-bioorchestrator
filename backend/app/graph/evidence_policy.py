@@ -72,8 +72,10 @@ Rules (owner decisions 2026-10-04, rule 9 2026-10-06):
    stored value or a requested one as ``secano``, ``regadio`` or none, and every comparison of
    regimes (the request filters, the reference median, the water-regime weight, the evidence
    page, the presence scan) goes through it (``cypher_irrigation_match``), so a literal counts
-   exactly like its URI. A trial without a regime, or with an unrecognised value, never matches a
-   requested regime.
+   exactly like its URI. A requested regime excludes every trial whose SOURCE states the
+   opposite regime (never pooled, never down-weighted); a trial whose source states none (null or
+   blank) stays and is reported as ``unknown`` (``irrigation_status``); an unrecognised non-blank
+   value cannot be classified and never matches.
 
 9. **Aggregate sources.** The rows of a source in ``AGGREGATE_SOURCES`` (GENVCE: zone and national
    averages, no trial location published) are ``regional`` evidence whatever site they are linked
@@ -530,6 +532,10 @@ IRRIGATION_REQUEST_ALIASES: Mapping[str, str] = {
 }
 
 
+IRRIGATION_STATUS_STATED = "stated"
+IRRIGATION_STATUS_UNKNOWN = "unknown"
+
+
 def irrigation_regime(value: Any) -> str | None:
     """``secano`` | ``regadio`` for a stored or requested regime value (URI or literal,
     case-insensitive, trimmed); None for no value or an unrecognised one."""
@@ -548,12 +554,29 @@ def irrigation_uri(request: str | None) -> str | None:
 
 
 def irrigation_matches(value: Any, target: Any) -> bool:
-    """A trial's regime ``value`` satisfies the requested ``target``. No target: always. A target
-    that names no regime matches nothing; neither does a missing or unrecognised value."""
+    """A trial's regime ``value`` is compatible with the requested ``target``. No target: always.
+    A target that names no regime matches nothing. A blank or missing value (the source states
+    none) stays: its regime is unknown, not contradictory. A stated value matches only the same
+    regime; an unrecognised non-blank value matches nothing."""
     if target is None:
         return True
     regime = irrigation_regime(target)
-    return regime is not None and irrigation_regime(value) == regime
+    if regime is None:
+        return False
+    if _norm(value) == "":
+        return True
+    return irrigation_regime(value) == regime
+
+
+def irrigation_status(value: Any, target: Any) -> str | None:
+    """Label of a trial against the requested regime: ``None`` when no regime is requested,
+    ``stated`` (the source states the requested regime), ``unknown`` (the source states none) or
+    ``contradicts`` (never returned by a query that filters with ``irrigation_matches``)."""
+    if irrigation_regime(target) is None:
+        return None
+    if _norm(value) == "":
+        return IRRIGATION_STATUS_UNKNOWN
+    return IRRIGATION_STATUS_STATED if irrigation_regime(value) == irrigation_regime(target) else "contradicts"
 
 
 def policy_yield(trial: Mapping[str, Any], mode: str = MODE_MAIN) -> float | None:
@@ -844,17 +867,13 @@ def cypher_irrigation_regime(expr: str) -> str:
 
 
 def cypher_irrigation_match(expr: str, target: str = "$irrigation_uri") -> str:
-    """Boolean (never null): no regime requested (``target`` null), or ``expr`` names the same
-    regime as ``target`` (a URI or a literal, whichever the trial and the request use)."""
+    """Boolean (never null): no regime requested (``target`` null), or the target names a regime
+    and ``expr`` is blank/missing (the source states none: unknown, kept) or names that same regime
+    (a URI or a literal, whichever the trial and the request use). A stated opposite regime, or an
+    unrecognised non-blank value, is false."""
     same = f"{cypher_irrigation_regime(expr)} = {cypher_irrigation_regime(target)}"
-    return f"({target} IS NULL OR coalesce({same}, false))"
-
-
-def cypher_irrigation_any(regimes_expr: str, target: str = "$irrigation_uri") -> str:
-    """Boolean (never null): no regime requested, or some value of the list ``regimes_expr``
-    names the requested regime."""
-    same = f"{cypher_irrigation_regime('ep_reg')} = {cypher_irrigation_regime(target)}"
-    return (f"({target} IS NULL OR any(ep_reg IN {regimes_expr} WHERE coalesce({same}, false)))")
+    return (f"({target} IS NULL OR ({cypher_irrigation_regime(target)} IS NOT NULL "
+            f"AND ({_cypher_norm(expr)} = '' OR coalesce({same}, false))))")
 
 
 # ── numeric candidates and tier gates ────────────────────────────────────────

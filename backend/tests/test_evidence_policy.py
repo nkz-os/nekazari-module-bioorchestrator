@@ -745,8 +745,12 @@ def test_irrigation_match_counts_a_literal_like_its_uri():
     assert not ep.irrigation_matches(_IRRIGATED_URI, _RAINFED_URI)
     # no regime requested: everything matches, including a trial with no regime
     assert ep.irrigation_matches(None, None) and ep.irrigation_matches("secano", None)
-    # a regime requested: a trial without one, or with an unrecognised one, never matches
-    assert not ep.irrigation_matches(None, _RAINFED_URI) and not ep.irrigation_matches("", _RAINFED_URI)
+    # a regime requested: a trial whose source states none (null/blank) stays, as unknown
+    assert ep.irrigation_matches(None, _RAINFED_URI) and ep.irrigation_matches("  ", _RAINFED_URI)
+    assert ep.irrigation_matches("", _IRRIGATED_URI)
+    # a stated opposite regime never matches; an unrecognised non-blank value cannot be classified
+    assert not ep.irrigation_matches(_IRRIGATED_URI, _RAINFED_URI)
+    assert not ep.irrigation_matches("regadío", "secano")
     assert not ep.irrigation_matches("rainfed", _RAINFED_URI)
     assert not ep.irrigation_matches(_RAINFED_URI, "uri:unknown")
 
@@ -755,6 +759,14 @@ def test_irrigation_fragments_embed_every_spelling_and_the_target():
     frag = ep.cypher_irrigation_match("vt.irrigationRegime")
     for spelling in ("secano", "regadío", "regadio", _RAINFED_URI, _IRRIGATED_URI):
         assert f"'{spelling}'" in frag
-    assert frag.startswith("($irrigation_uri IS NULL OR coalesce(")
+    assert frag.startswith("($irrigation_uri IS NULL OR (")
     assert "$target_regime IS NULL" in ep.cypher_irrigation_match("g_regime", "$target_regime")
-    assert "any(ep_reg IN irrigation_regimes WHERE" in ep.cypher_irrigation_any("irrigation_regimes")
+
+
+def test_irrigation_status_labels_stated_unknown_and_contradiction():
+    assert ep.irrigation_status("secano", _RAINFED_URI) == "stated"
+    assert ep.irrigation_status(None, _RAINFED_URI) == "unknown"
+    assert ep.irrigation_status("", "regadío") == "unknown"
+    assert ep.irrigation_status(_IRRIGATED_URI, _RAINFED_URI) == "contradicts"
+    assert ep.irrigation_status("secano", None) is None
+    assert ep.irrigation_status(None, None) is None

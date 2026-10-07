@@ -484,8 +484,7 @@ def test_irrigation_fragments_match_python(driver):
             MATCH (v:VarietyTrial)
             RETURN v.i AS i, v.regime AS regime,
                    {ep.cypher_irrigation_regime('v.regime')} AS regime_class,
-                   {ep.cypher_irrigation_match('v.regime')} AS matches,
-                   {ep.cypher_irrigation_any('[v.regime, null]')} AS any_matches
+                   {ep.cypher_irrigation_match('v.regime')} AS matches
             ORDER BY i
             """,
             irrigation_uri=target,
@@ -494,4 +493,3 @@ def test_irrigation_fragments_match_python(driver):
         for r in rows:
             assert r["regime_class"] == ep.irrigation_regime(r["regime"]), r["regime"]
             assert r["matches"] is ep.irrigation_matches(r["regime"], target), (r["regime"], target)
-            assert r["any_matches"] is ep.irrigation_matches(r["regime"], target), (r["regime"], target)

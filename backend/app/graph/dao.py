@@ -120,10 +120,13 @@ _EXTRAPOLATE_BODY_TEMPLATE = """
                      collect(DISTINCT vt.confidence) AS g_confidence,
                      collect(DISTINCT vt.source_id) AS g_sources,
                      max(CASE WHEN vt.yieldDerivationMethod IS NOT NULL THEN 1 ELSE 0 END) AS g_derived
-                // Per-observation weight = nearest analog site (C.1) x recency (C.4) x
-                // water-regime match (C.4). $site_weights are 1.0 on the legacy
-                // path; with no target year/regime the extra factors are 1.0 too,
-                // so the weighted mean collapses to a flat average.
+                // A requested regime never pools a trial whose source states the opposite one
+                // (no down-weighting): such a trial is dropped here. A trial whose source states
+                // no regime stays and is counted as unknown (``regime_unknown_count``).
+                WHERE @IRRIGATION_WEIGHT@
+                // Per-observation weight = nearest analog site (C.1) x recency (C.4).
+                // $site_weights are 1.0 on the legacy path, so the weighted mean collapses
+                // to a flat average there.
                 WITH crop, other_n, ref_median, ref_n,
                      variety, g_y, g_unconv, g_year, g_regime, g_system, g_sites, g_disease,
                      g_traits, g_confidence, g_sources, g_derived,
@@ -137,12 +140,12 @@ _EXTRAPOLATE_BODY_TEMPLATE = """
                      * (CASE WHEN g_year IS NOT NULL AND (toFloat($now_year) - toFloat(g_year)) > 0
                              THEN 0.5 ^ ((toFloat($now_year) - toFloat(g_year)) / $half_life)
                              ELSE 1.0 END)
-                     * (CASE WHEN @IRRIGATION_WEIGHT@ OR g_regime IS NULL
-                             THEN 1.0 ELSE $regime_penalty END) AS w
+                     AS w
                 WITH crop, other_n, ref_median, ref_n, variety,
                      collect(DISTINCT g_year) AS years,
                      collect(g_sites) AS site_lists,
                      collect(DISTINCT g_regime) AS irrigation_regimes,
+                     sum(CASE WHEN g_regime IS NULL THEN 1 ELSE 0 END) AS regime_unknown_count,
                      collect(DISTINCT g_system) AS production_systems,
                      collect(g_disease) AS disease_lists,
                      collect(g_traits) AS trait_lists,
@@ -159,14 +162,13 @@ _EXTRAPOLATE_BODY_TEMPLATE = """
                      sum(g_derived) AS derived_count,
                      sum(CASE WHEN g_y IS NULL AND g_unconv = 1 THEN 1 ELSE 0 END) AS unconverted_count
                 WHERE trial_count >= 1
-                  AND @IRRIGATION_VARIETY@
                   AND ($production_system IS NULL OR $production_system IN production_systems)
                 WITH crop, other_n, ref_median, ref_n, variety,
                      CASE WHEN wtot > 0 THEN wsum / wtot ELSE mean_yield_flat END AS mean_yield,
                      min_yield, max_yield, stddev_yield,
                      numeric_yield_count, trial_count, derived_count, unconverted_count, years,
                      reduce(acc = [], sl IN site_lists | acc + [x IN sl WHERE NOT x IN acc]) AS sites,
-                     irrigation_regimes, production_systems,
+                     irrigation_regimes, regime_unknown_count, production_systems,
                      reduce(acc = [], l IN disease_lists | acc + [x IN l WHERE NOT x IN acc]) AS disease_scores_list,
                      reduce(acc = [], l IN trait_lists | acc + [x IN l WHERE NOT x IN acc]) AS agronomic_traits_list,
                      reduce(acc = [], l IN confidence_lists | acc + [x IN l WHERE NOT x IN acc]) AS confidence_levels,
@@ -184,6 +186,7 @@ _EXTRAPOLATE_BODY_TEMPLATE = """
                               numeric_yield_count: numeric_yield_count, trial_count: trial_count,
                               derived_count: derived_count, unconverted_count: unconverted_count,
                               years: years, sites: sites, irrigation_regimes: irrigation_regimes,
+                              regime_unknown_count: regime_unknown_count,
                               production_systems: production_systems,
                               disease_scores_list: disease_scores_list,
                               agronomic_traits_list: agronomic_traits_list,
@@ -203,6 +206,7 @@ _EXTRAPOLATE_BODY_TEMPLATE = """
                        r.years AS years,
                        r.sites AS sites,
                        r.irrigation_regimes AS irrigation_regimes,
+                       r.regime_unknown_count AS regime_unknown_count,
                        r.production_systems AS production_systems,
                        r.disease_scores_list AS disease_scores_list,
                        r.agronomic_traits_list AS agronomic_traits_list,
@@ -216,7 +220,6 @@ _EXTRAPOLATE_BODY_CYPHER = (
     _EXTRAPOLATE_BODY_TEMPLATE
     .replace("@IRRIGATION_REFERENCE@", ep.cypher_irrigation_match("x.regime"))
     .replace("@IRRIGATION_WEIGHT@", ep.cypher_irrigation_match("g_regime", "$target_regime"))
-    .replace("@IRRIGATION_VARIETY@", ep.cypher_irrigation_any("irrigation_regimes"))
 )
 
 # One entry of the per-crop ``hits`` list built from the policy-classified rows.
@@ -2393,7 +2396,6 @@ class GraphDAO:
                 now_year=datetime.now(tz=timezone.utc).date().year,
                 half_life=recency_half_life,
                 target_regime=irrigation_uri,
-                regime_penalty=0.4,
             )
 
             ranked = []
@@ -2511,7 +2513,6 @@ class GraphDAO:
                 now_year=datetime.now(tz=timezone.utc).date().year,
                 half_life=recency_half_life,
                 target_regime=irrigation_uri,
-                regime_penalty=0.4,
             )
             async for record in result:
                 rows += 1
@@ -2646,7 +2647,11 @@ class GraphDAO:
             )
             items = []
             async for rec in items_res:
-                items.append({**{k: _s(v) for k, v in dict(rec).items()}, "tier": tier, "basis": basis})
+                item = {k: _s(v) for k, v in dict(rec).items()}
+                items.append({**item, "tier": tier, "basis": basis,
+                              # None: no regime requested; stated | unknown otherwise
+                              "irrigation_status": ep.irrigation_status(
+                                  item.get("irrigation_regime"), irrigation_uri)})
         return {"items": items, "total": total, "page": page, "page_size": page_size,
                 "purpose": purpose, "tier": tier}
 
@@ -5792,6 +5797,9 @@ def _ranked_variety(record: Any, crop: str) -> dict:
         "trial_years": sorted(record["years"]),
         "trial_sites": sorted(record["sites"]),
         "irrigation_regimes": sorted(record["irrigation_regimes"], key=_stable_key),
+        # distinct trials whose source states no irrigation regime (kept under a requested
+        # regime, never counted as matching it)
+        "irrigation_unknown_trial_count": int(record.get("regime_unknown_count") or 0),
         "production_systems": sorted(record["production_systems"], key=_stable_key),
         "disease_scores": merged_diseases,
         "agronomic_traits": merged_traits,

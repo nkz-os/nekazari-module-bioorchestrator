@@ -149,8 +149,9 @@ def test_maize_regains_frost_and_soil_verdicts_in_recommend(dao):
 
 # ── irrigation literals ──────────────────────────────────────────────────────
 
-_SECANO_VARIETIES = {"L1", "U1", "U2", "PU", "PL"}   # a regime-less trial (N1) never matches
-_REGADIO_VARIETIES = {"L2", "U3", "PU", "PL"}
+# a regime-less trial (N1: the source states none) stays under either request, as unknown
+_SECANO_VARIETIES = {"L1", "U1", "U2", "PU", "PL", "N1"}
+_REGADIO_VARIETIES = {"L2", "U3", "PU", "PL", "N1"}
 
 
 def _batch(dao, crops, regime):
@@ -183,17 +184,17 @@ def test_reference_counts_literal_and_uri_trials_of_the_regime(dao):
         assert len({(v["crop_reference_median_kg_ha"], v["crop_reference_n"]) for v in rows}) == 1
         return rows[0]["crop_reference_median_kg_ha"], rows[0]["crop_reference_n"]
 
-    assert ref("secano") == (4000.0, 5)    # 4000 (literal) 4000 4000 5000 6000
-    assert ref("regadío") == (8000.0, 4)   # 8000 (literal) 8000 8000 9000
+    assert ref("secano") == (4500.0, 6)    # 4000 (literal) 4000 4000 5000 6000 + 7000 (no regime stated)
+    assert ref("regadío") == (8000.0, 5)   # 8000 (literal) 8000 8000 9000 + 7000 (no regime stated)
     assert ref(None) == (6500.0, 10)       # both regimes and the trial without one
 
 
 def test_water_regime_weight_is_the_same_for_a_literal_and_its_uri(dao):
     v = _by_variety(_batch(dao, ["HORVX"], "secano")["HORVX"])
-    # one matching trial (4000) and one of the other regime (8000, weight 0.4): the weighted mean
-    # is (4000 + 0.4 * 8000) / 1.4, whichever way the two regimes are spelled
-    expected = round((4000 + 0.4 * 8000) / 1.4, 1)
-    assert v["PU"]["mean_yield_kg_ha"] == v["PL"]["mean_yield_kg_ha"] == pytest.approx(expected, abs=0.1)
+    # one matching trial (4000) and one whose source states the other regime (8000): the latter is
+    # never pooled, whichever way the two regimes are spelled
+    assert v["PU"]["mean_yield_kg_ha"] == v["PL"]["mean_yield_kg_ha"] == 4000.0
+    assert v["PU"]["trial_count"] == v["PL"]["trial_count"] == 1
 
 
 def test_prefilter_counts_a_crop_whose_only_trial_is_a_literal(dao):
@@ -210,8 +211,8 @@ def test_evidence_page_lists_literal_and_uri_trials(dao):
                                             irrigation_uri=uri, page=1, page_size=50))
         return page["total"], {i["irrigation_regime"] for i in page["items"]}
 
-    assert total(_SECANO) == (5, {"secano", _SECANO})
-    assert total(_REGADIO) == (4, {"regadío", _REGADIO})
+    assert total(_SECANO) == (6, {"secano", _SECANO, None})
+    assert total(_REGADIO) == (5, {"regadío", _REGADIO, None})
     assert total(None)[0] == 10
 
 
@@ -226,8 +227,8 @@ def test_variety_trials_endpoint_filter_finds_both_spellings(dao):
         rows = _run(dao.get_variety_trials(crop="HORVX", irrigation_regime=regime, limit=50))
         return len(rows), {r["irrigation_regime"] for r in rows}
 
-    assert n("secano") == (5, {"secano", _SECANO})
-    assert n("regadío") == (4, {"regadío", _REGADIO})
+    assert n("secano") == (6, {"secano", _SECANO, None})
+    assert n("regadío") == (5, {"regadío", _REGADIO, None})
     assert n(None)[0] == 10
 
 
@@ -238,7 +239,7 @@ def test_recommend_with_a_regime_includes_a_crop_with_only_a_literal_trial(dao):
     recs = {r["crop"]["eppo"]: r for r in out["recommendations"]}
     assert {"HORVX", "LITONLY"} <= set(recs)
     assert recs["HORVX"]["fit"]["reference"]["scope"] == "analog_sites:Csa:secano"
-    assert recs["HORVX"]["fit"]["reference"]["n_trials"] == 5
+    assert recs["HORVX"]["fit"]["reference"]["n_trials"] == 6
     assert recs["HORVX"]["fit"]["relative_yield_pct"] is not None  # five trials: the floor itself counts
     dao_mod._RECOMMEND_CACHE.clear()
     out = _run(dao.recommend_for_conditions({**cond, "irrigation_regime": "regadío"}))
