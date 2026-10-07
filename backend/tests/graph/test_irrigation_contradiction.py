@@ -27,6 +27,7 @@ _TRIALS = [
     ("V-IRRIGATED", 12000.0, _IRRIGATED),
     ("V-UNKNOWN", 8000.0, None),
     ("V-LITERAL", 5000.0, "secano"),
+    ("V-BLANK", 7000.0, "  "),   # a blank string states no regime either
 ]
 
 
@@ -66,18 +67,19 @@ def _varieties(dao, regime):
 
 def test_rainfed_request_drops_stated_irrigated_and_keeps_unknown(dao):
     got = _varieties(dao, "secano")
-    assert set(got) == {"V-RAINFED", "V-LITERAL", "V-UNKNOWN"}
+    assert set(got) == {"V-RAINFED", "V-LITERAL", "V-UNKNOWN", "V-BLANK"}
     assert got["V-UNKNOWN"]["irrigation_unknown_trial_count"] == 1
+    assert got["V-BLANK"]["irrigation_unknown_trial_count"] == 1  # blank counts as unknown, like the filter
     assert got["V-RAINFED"]["irrigation_unknown_trial_count"] == 0
 
 
 def test_irrigated_request_drops_stated_rainfed_literal_included(dao):
     got = _varieties(dao, "regadío")
-    assert set(got) == {"V-IRRIGATED", "V-UNKNOWN"}
+    assert set(got) == {"V-IRRIGATED", "V-UNKNOWN", "V-BLANK"}
 
 
 def test_no_request_pools_everything(dao):
-    assert set(_varieties(dao, None)) == {"V-RAINFED", "V-IRRIGATED", "V-UNKNOWN", "V-LITERAL"}
+    assert set(_varieties(dao, None)) == {"V-RAINFED", "V-IRRIGATED", "V-UNKNOWN", "V-LITERAL", "V-BLANK"}
 
 
 def test_contradicting_trial_is_not_down_weighted_into_the_mean(dao):

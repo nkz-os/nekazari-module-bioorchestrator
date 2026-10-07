@@ -81,6 +81,16 @@ def dao():
                                              mergeKey: r.crop + r.variety, zoneKey: r.zk})
                     CREATE (vt)-[:TRIAL_AT]->(ts)""",
                     rows=[{"crop": c, "variety": v, "kg": k, "site": s_, "zk": z} for c, v, k, s_, z in _TRIALS])
+                # units the answer never reads: an excluded source (BSL) and a forage record in main mode
+                await s.run(
+                    """MATCH (ts:TrialSite {name: 'Zona Cálida'})
+                    CREATE (:VarietyTrial {cropEppo: 'BSLCR', varietyNormalized: 'X', yieldKgHa: 5000.0, year: 2024,
+                                           aggregationScope: 'site', source_id: 'BSL', mergeKey: 'bsl',
+                                           zoneKey: $zk})-[:TRIAL_AT]->(ts)
+                    CREATE (:VarietyTrial {cropEppo: 'FORCR', varietyNormalized: 'Y', yieldKgHa: 5000.0, year: 2024,
+                                           aggregationScope: 'site', source_id: 'GENVCE', mergeKey: 'forage',
+                                           qualityParams: '{"ndf_pct": 40}', yieldBasis: 'dry_matter', zoneKey: $zk})-[:TRIAL_AT]->(ts)""",
+                    zk=zone_key(DEF, "Zona Cálida"))
                 for ll, april, rain in ((COLD_PARCEL, 9.0, 450.0), (WARM_PARCEL, 14.5, 400.0)):
                     await s.run("CREATE (c:ClimateCell) SET c = $c", c=_cell(ll, april, rain))
         _run(seed())
@@ -132,6 +142,17 @@ def test_sites_without_a_country_are_matched_by_climate_and_get_no_country_gap(d
     assert "regional_country_level" not in rec["trust"]["data_gaps"]
     # the same request does get the gap where the evidence sits at a country-admitted site
     assert "regional_country_level" in _recommend(dao, COLD_PARCEL)["TRZAX"]["trust"]["data_gaps"]
+
+
+def test_zone_keys_follow_the_row_policy_and_purpose_gate_of_the_answer(dao):
+    ctx = _run(dao.resolve_zone_context("ES", *WARM_PARCEL, None))
+    names = [s["name"] for s in _SITES]
+    keys = _run(dao.regional_zone_keys(["HORVX", "BSLCR", "FORCR"], names, ctx))
+    assert keys.get("HORVX") == [zone_key(DEF, "Zona Cálida")]
+    assert "BSLCR" not in keys     # excluded source: never named as a matched zone
+    assert "FORCR" not in keys     # forage record under the main purpose
+    forage = _run(dao.regional_zone_keys(["FORCR", "HORVX"], names, ctx, purpose="forage"))
+    assert "FORCR" in forage and "HORVX" not in forage
 
 
 def test_no_parcel_climate_means_country_level_and_says_why(dao):

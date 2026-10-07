@@ -145,7 +145,7 @@ _EXTRAPOLATE_BODY_TEMPLATE = """
                      collect(DISTINCT g_year) AS years,
                      collect(g_sites) AS site_lists,
                      collect(DISTINCT g_regime) AS irrigation_regimes,
-                     sum(CASE WHEN g_regime IS NULL THEN 1 ELSE 0 END) AS regime_unknown_count,
+                     sum(CASE WHEN @REGIME_BLANK@ THEN 1 ELSE 0 END) AS regime_unknown_count,
                      collect(DISTINCT g_system) AS production_systems,
                      collect(g_disease) AS disease_lists,
                      collect(g_traits) AS trait_lists,
@@ -219,6 +219,7 @@ _EXTRAPOLATE_BODY_TEMPLATE = """
 _EXTRAPOLATE_BODY_CYPHER = (
     _EXTRAPOLATE_BODY_TEMPLATE
     .replace("@IRRIGATION_REFERENCE@", ep.cypher_irrigation_match("x.regime"))
+    .replace("@REGIME_BLANK@", "toLower(trim(coalesce(g_regime, ''))) = ''")
     .replace("@IRRIGATION_WEIGHT@", ep.cypher_irrigation_match("g_regime", "$target_regime"))
 )
 
@@ -2141,11 +2142,13 @@ class GraphDAO:
 
     async def regional_zone_keys(
         self, crops: list[str], site_names: list[str], zone_ctx: Any, irrigation_uri: str | None = None,
+        purpose: str = ep.MODE_MAIN,
     ) -> dict[str, list[str]]:
         """Zone keys of the numeric trials of the parcel's own zone (``matched`` pool), per crop.
 
         What the answer names as the matched zone: the units that carry a kg/ha value in the parcel's zone,
-        in the requested irrigation regime.
+        in the requested irrigation regime, under the same row policy and regional tier gate of the
+        ``purpose`` as the evidence that feeds the answer (a unit the policy excludes is never named).
         """
         if not crops or not site_names or zone_ctx is None or not zone_ctx.ready:
             return {}
@@ -2155,10 +2158,14 @@ class GraphDAO:
                 MATCH (ts:TrialSite)
                 WHERE ts.name IN $site_names
                 MATCH (vt:VarietyTrial)-[:TRIAL_AT]->(ts)
-                WHERE vt.yieldKgHa IS NOT NULL
+                WHERE (vt.yieldKgHa IS NOT NULL OR vt.yieldNoteS1 IS NOT NULL)
                   AND {RANKING_ELIGIBLE_PREDICATE}
-                  AND {ep.cypher_irrigation_match("vt.irrigationRegime")}
                   AND {_ZONE_POOL_PREDICATE}
+                  {ep.cypher_tier_prefilter(ep.EVIDENCE_TIER_REGIONAL)}
+                """
+                + ep.cypher_row_policy(purpose)
+                + ep.cypher_tier_gate(ep.EVIDENCE_TIER_REGIONAL)
+                + f"""  AND {ep.cypher_irrigation_match("vt.irrigationRegime")}
                 RETURN vt.cropEppo AS eppo, vt.cropScientific AS sci, collect(DISTINCT vt.zoneKey) AS keys
                 """,
                 site_names=list(site_names),
@@ -4388,7 +4395,8 @@ class GraphDAO:
                         matched_crops = [c for c in regional_crops
                                          if regional_pool.get(c) == zone_match.POOL_MATCHED]
                         zone_keys = await self.regional_zone_keys(
-                            matched_crops, [s["name"] for s in regional_scan_sites], zone_ctx, irrigation_uri)
+                            matched_crops, [s["name"] for s in regional_scan_sites], zone_ctx, irrigation_uri,
+                            purpose=purpose)
                     else:
                         regional_batch = await self.extrapolate_varieties_batch(
                             regional_crops, regional_scan_sites, irrigation_regime=irrigation_regime,
