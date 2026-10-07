@@ -464,3 +464,33 @@ def test_evidence_regional_tier_needs_koppen_similarity(client):
     assert r.status_code == 422 and sites.await_count == 0
     assert client.get("/api/graph/agriculture/recommend/evidence",
                       params={"climate_class": "Cfb", "crop": "TRZAX", "tier": "national"}).status_code == 422
+
+
+def _regional_evidence(client, **params):
+    sites = AsyncMock(return_value=[{"name": "ES zone", "site_kind": "aggregate"}])
+    with patch.object(GraphDAO, "get_similar_sites", sites), \
+         patch.object(GraphDAO, "list_trial_evidence", AsyncMock(return_value=_EV_PAGE)):
+        r = client.get("/api/graph/agriculture/recommend/evidence",
+                       params={"climate_class": "Cfb", "crop": "TRZAX", "tier": "regional", **params})
+    return r, sites
+
+
+def test_evidence_regional_country_is_passed_to_the_site_lookup(client):
+    r, sites = _regional_evidence(client, country="ES")
+    assert r.status_code == 200 and sites.await_args.kwargs["country"] == "ES"
+
+
+def test_evidence_without_country_keeps_the_climate_only_lookup(client):
+    r, sites = _regional_evidence(client)
+    assert r.status_code == 200 and sites.await_args.kwargs["country"] is None
+
+
+@pytest.mark.parametrize("bad", ["es", "ESP", "E", "1A"])
+def test_evidence_country_must_be_iso_alpha2(client, bad):
+    r, sites = _regional_evidence(client, country=bad)
+    assert r.status_code == 422 and sites.await_count == 0
+
+
+def test_evidence_field_tier_ignores_country(client):
+    r, sites, _ = _evidence_call(client, country="ES")
+    assert r.status_code == 200 and "country" not in sites.await_args.kwargs

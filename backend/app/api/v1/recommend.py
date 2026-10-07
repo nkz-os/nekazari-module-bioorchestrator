@@ -136,6 +136,8 @@ async def recommend_for_conditions(
         "`trust.similarity`: `vector_v2_fallback` needs all four numeric climate inputs. "
         "`purpose` must match the request; `tier` the recommendation's `evidence.tier` "
         "(`regional` lists the aggregate-site trials and needs `similarity=koppen`). "
+        "`country` (ISO 3166 alpha-2, optional) must match the recommendation's: it scopes the "
+        "regional aggregate sites; without it only climate-matched aggregates are listed. "
         "Distinct trials only; each item names its tier."
     ),
 )
@@ -148,6 +150,10 @@ async def recommend_evidence(
     page_size: int = Query(20, ge=1, le=50),
     similarity: Similarity = "koppen",
     tier: Tier = "field",
+    country: str | None = Query(
+        None, pattern=_COUNTRY_PATTERN,
+        description="ISO 3166 alpha-2; scopes the aggregate sites of tier=regional",
+    ),
 ):
     from app.graph import agroclimatic
     from app.graph.dao import _irrigation_uri
@@ -173,9 +179,11 @@ async def recommend_evidence(
         )
     elif tier == "regional":
         # Every site of the climate, aggregate pseudo-sites and field-named ones (the regional tier
-        # of the recommendation; the row policy keeps only the rows classed as regional).
+        # of the recommendation; the row policy keeps only the rows classed as regional). The
+        # parcel's country, when given, scopes the aggregate sites.
         sites = await dao.get_similar_sites(
             climate_class=cond.climate_class, soil_type=None, limit=None, include_aggregate=True,
+            country=country,
         )
     else:
         # Every matching field site, as the recommendation's Köppen path uses.

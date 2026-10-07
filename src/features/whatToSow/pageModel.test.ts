@@ -141,6 +141,13 @@ describe('evidenceConditions', () => {
     expect('tier' in evidenceConditions(echo, env(null), 'koppen', 'field')).toBe(false);
     expect('tier' in evidenceConditions(echo, env(null), 'koppen')).toBe(false);
   });
+  it('sends the echoed country only for regional recommendations, and only a valid ISO code', () => {
+    const es = { ...echo, country: 'ES' };
+    expect(evidenceConditions(es, env(null), 'koppen', 'regional').country).toBe('ES');
+    expect('country' in evidenceConditions(es, env(null), 'koppen', 'field')).toBe(false);
+    expect('country' in evidenceConditions({ ...echo, country: 'es' }, env(null), 'koppen', 'regional')).toBe(false);
+    expect('country' in evidenceConditions({ ...echo, country: null }, env(null), 'koppen', 'regional')).toBe(false);
+  });
   it('drops unknown irrigation values and empty strings', () => {
     const out = evidenceConditions({ climate_class: 'Csa', soil_type: '', irrigation_regime: 'drip' },
       undefined, 'koppen');
