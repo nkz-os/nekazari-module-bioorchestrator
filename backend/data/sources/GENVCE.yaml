@@ -33,7 +33,7 @@ source_id: GENVCE
 raw:
   repo: nkz-data-sources
   paths: ["genvce/data/extractions/*.json"]
-  extraction_version: "nkz-data-sources@49eef255c6b97a480112aa0e71bc3c7ca2892c74; extraction pass 2026-06-15 (deepseek-chat); winter cereals 2016/17, 2018/19, 2019/20, 2020/21 re-extracted 2026-10-07 (manual, line-verified)"
+  extraction_version: "nkz-data-sources@4c8e2762d48877b58f40b379bd5bb598d4f7c291; extraction pass 2026-06-15 (deepseek-chat); winter cereals 2016/17, 2018/19, 2019/20, 2020/21 re-extracted 2026-10-07 (manual, line-verified)"
 adapter: app.kg.adapters.genvce
 document:
   title: {from: doc.title}
