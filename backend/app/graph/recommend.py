@@ -38,6 +38,8 @@ Evidence policy contract (additions of the evidence-policy change; the rules liv
   Regional recommendations keep a null relative yield and scope ``regional``.
 - ``evidence.regional_trial_count``: distinct numeric regional trials of a ``field`` crop at
   the climate's aggregate sites (supplementary; in no number). null when not computed.
+- ``regional_country_level`` (data gap): a regional recommendation whose aggregate sites were matched
+  by the request's ``country``, not by an agro-climatic zone of the parcel.
 - ``evidence.irrigation_unknown_trials``: with a requested regime, the trials of the listed varieties
   whose source states no regime (kept, never pooled against a stated opposite regime) and the data
   gap ``irrigation_regime_unknown`` when there is any; null when no regime was requested.
@@ -206,6 +208,9 @@ def build_recommendation(*, eppo, scientific_name, conditions, varieties, refere
         gaps.append("irrigation_regime_unknown")
     if regional:
         gaps.append("regional_evidence_only")
+        if conditions.get("country"):
+            # The aggregates were matched by the parcel's country, not by a zone of the parcel.
+            gaps.append("regional_country_level")
     if presence_only:
         gaps.append("no_measured_yield")
     if forage and expected is None and unknown_basis:

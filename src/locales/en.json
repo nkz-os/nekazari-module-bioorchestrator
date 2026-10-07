@@ -961,6 +961,7 @@
       "regional_evidence_only": "Regional/national evidence only, no field trials",
       "regional_not_comparable": "Not comparable with the local average",
       "forage_basis_unknown": "Forage with no known dry or fresh matter basis",
+      "regional_country_level": "Regional evidence matched by country, not by zone",
       "irrigation_regime_unknown": "Some trials do not state their irrigation regime"
     },
     "evidence": {

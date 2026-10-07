@@ -959,6 +959,7 @@
       "regional_evidence_only": "Solo evidencia regional/nacional, sin ensayos de parcela",
       "regional_not_comparable": "No comparable con la media local",
       "forage_basis_unknown": "Forraje sin base de materia seca o fresca conocida",
+      "regional_country_level": "Evidencia regional asignada por país, no por zona",
       "irrigation_regime_unknown": "Algunos ensayos no indican su régimen de riego"
     },
     "evidence": {

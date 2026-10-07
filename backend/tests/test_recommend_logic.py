@@ -435,3 +435,19 @@ def test_no_requested_regime_reports_no_irrigation_label():
     rec = _build_regime({}, unknown=3)
     assert rec["evidence"]["irrigation_unknown_trials"] is None
     assert "irrigation_regime_unknown" not in rec["trust"]["data_gaps"]
+
+
+def _build_regional(conditions):
+    v = {"variety": "V1", "mean_yield_kg_ha": 5000.0, "numeric_yield_count": 12, "trial_count": 12}
+    sowing = r.sowing_info("TRZAX", "Cfb", [], lat=PARIS[0], lon=PARIS[1])
+    return r.build_recommendation(
+        eppo="TRZAX", scientific_name="T", conditions=conditions, varieties=[v],
+        reference={"median_kg_ha": None, "n_trials": 0, "scope": "regional"},
+        soil_verdict={"verdict": "unknown", "reason": ""}, water=None, frost_level="unknown",
+        sowing=sowing, data_gaps_extra=[], assumptions=[], tier="regional")
+
+
+def test_regional_answer_matched_by_country_is_labelled_country_level():
+    gaps = _build_regional({"country": "ES"})["trust"]["data_gaps"]
+    assert "regional_evidence_only" in gaps and "regional_country_level" in gaps
+    assert "regional_country_level" not in _build_regional({})["trust"]["data_gaps"]
