@@ -58,6 +58,7 @@ from . import export as export_mod
 from . import gate as gate_mod
 from . import link as link_mod
 from . import loader
+from . import replace as replace_mod
 from . import verify as verify_mod
 from .adapters import AdapterError, crea, genvce
 from .contracts import Bundle, Contract, ContractError, load_contract, run_contract
@@ -513,6 +514,41 @@ async def _mark_target(cfg: TargetConfig, env: Mapping[str, str]) -> dict[str, A
         await driver.close()
 
 
+def _known_sources(sources: Sequence[str]) -> tuple[str, ...]:
+    unknown = [s for s in sources if s not in SOURCES]
+    if unknown or not sources:
+        raise BuildFailed(f"unknown or empty source list {list(sources)}; known: {sorted(SOURCES)}")
+    return tuple(sources)
+
+
+async def _replace_sources(cfg: TargetConfig, sources: Sequence[str], extra_site_keys: Sequence[str],
+                           env: Mapping[str, str]) -> dict[str, Any]:
+    """Dry run (default): the plan. ``--execute``: marker-guarded batched removal of the sources' trials."""
+    sources = _known_sources(sources)
+    if cfg.execute:
+        authorize_write(cfg, env)
+    elif cfg.target is None:
+        raise WriteRefused("replace-sources needs --target")
+    else:
+        authorize_host(cfg.target, env)
+    user, password = _auth(env)
+    driver = AsyncGraphDatabase.driver(cfg.target, auth=(user, password))
+    try:
+        if cfg.execute:
+            await _require_marked_target(driver, cfg, why="replace-sources deletes data")
+            before, result = await replace_mod.execute(driver, sources, database=cfg.database,
+                                                       extra_site_keys=extra_site_keys)
+            report = {"mode": "execute", "target_label": cfg.target_label, "plan": before.to_dict(),
+                      "deleted": result.to_dict()}
+        else:
+            planned = await replace_mod.plan(driver, sources, database=cfg.database, extra_site_keys=extra_site_keys)
+            report = {"mode": "dry-run", "writes": 0, "plan": planned.to_dict()}
+    finally:
+        await driver.close()
+    _write_manifest(cfg.out_dir / datetime.now(UTC).strftime("replace-%Y%m%dT%H%M%SZ"), "replace-sources", report)
+    return report
+
+
 async def _export_only(target: str, label: str | None, out_path: Path, env: Mapping[str, str]) -> export_mod.ExportResult:
     authorize_host(target, env)  # a read of the live graph is refused too: it is a build-instance tool
     user, password = _auth(env)
@@ -549,6 +585,15 @@ def _parser() -> argparse.ArgumentParser:
     m.add_argument("--target", required=True)
     m.add_argument("--target-label", required=True, help="scratch label")
     m.add_argument("--execute", action="store_true", help="write the marker (default: report only)")
+    r = sub.add_parser("replace-sources", help="remove the trials of whole sources (and the sites, documents and "
+                                               "studies only they support) from a marked restored copy")
+    r.add_argument("--sources", required=True, help="comma separated source ids, e.g. GENVCE,CREA")
+    r.add_argument("--target", required=True)
+    r.add_argument("--target-label", help="scratch label (required with --execute)")
+    r.add_argument("--execute", action="store_true", help="delete (default: dry run printing the plan)")
+    r.add_argument("--extra-site-keys", default="", help="comma separated siteKeys of additional EMPTY sites to "
+                                                         "delete (kept if any trial points at them)")
+    r.add_argument("--out", default=str(DEFAULT_OUT), help="manifest directory (gitignored)")
     e = sub.add_parser("export", help="export a build graph to a deterministic archive (read-only)")
     e.add_argument("--target", required=True)
     e.add_argument("--out", required=True, help="archive path")
@@ -569,6 +614,14 @@ def main(argv: Sequence[str] | None = None, *, env: Mapping[str, str] | None = N
                 TargetConfig(target=args.target, target_label=args.target_label, execute=args.execute), environment))
             print(json.dumps(report, sort_keys=True, indent=2, default=str))
             return EXIT_OK
+        if args.command == "replace-sources":
+            report = asyncio.run(_replace_sources(
+                TargetConfig(target=args.target, target_label=args.target_label, execute=args.execute,
+                             out_dir=Path(args.out)),
+                [x.strip() for x in args.sources.split(",") if x.strip()],
+                [x.strip() for x in args.extra_site_keys.split(",") if x.strip()], environment))
+            print(json.dumps(report, sort_keys=True, indent=2, default=str, ensure_ascii=False))
+            return EXIT_OK
         if not args.raw_dir:
             raise BuildFailed("--raw-dir or NKZ_DATA_SOURCES_DIR is required")
         cfg = BuildConfig(
@@ -580,7 +633,7 @@ def main(argv: Sequence[str] | None = None, *, env: Mapping[str, str] | None = N
     except WriteRefused as exc:
         print(f"REFUSED: {exc}", file=sys.stderr)
         return EXIT_REFUSED
-    except (BuildFailed, AdapterError, ContractError, RegistryError, MigrationError, loader.LoadError) as exc:
+    except (BuildFailed, replace_mod.ReplaceError, AdapterError, ContractError, RegistryError, MigrationError, loader.LoadError) as exc:
         print(f"FAILED: {type(exc).__name__}: {exc}", file=sys.stderr)
         return EXIT_FAILED
     print(json.dumps({"build_id": result.build_id, "status": result.status, "manifests": str(result.out),

@@ -166,7 +166,9 @@ def fingerprint_and_counts(session):
     """Same canonical form and multiset hash the exporter used."""
     node_hash, by_label, by_type = {}, {}, {}
     node_acc = rel_acc = n_nodes = n_rels = 0
-    for rec in session.run("MATCH (n) RETURN elementId(n) AS id, labels(n) AS l, properties(n) AS p"):
+    for rec in session.run(
+        "MATCH (n) WHERE NOT n:KgBuildTarget RETURN elementId(n) AS id, labels(n) AS l, properties(n) AS p"
+    ):
         props = {k: enc(v) for k, v in rec["p"].items()}
         digest = hashlib.sha256(canon({"l": sorted(rec["l"]), "p": props})).digest()
         node_hash[rec["id"]] = digest.hex()
@@ -226,7 +228,8 @@ def main():
         temp_constraint = False
         try:
             with driver.session(database=args.database) as session:
-                nodes = session.run("MATCH (n) RETURN count(n) AS c").single()["c"]
+                # a KgBuildTarget marker (written by "python -m app.kg mark-target") is the only node a target may hold
+                nodes = session.run("MATCH (n) WHERE NOT n:KgBuildTarget RETURN count(n) AS c").single()["c"]
                 constraints = session.run("SHOW CONSTRAINTS YIELD name RETURN count(name) AS c").single()["c"]
                 indexes = session.run(
                     "SHOW INDEXES YIELD type WHERE type <> 'LOOKUP' RETURN count(*) AS c"
