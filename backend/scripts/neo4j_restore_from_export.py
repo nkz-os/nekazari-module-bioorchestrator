@@ -7,7 +7,12 @@ access: no APOC, no server-side import directory.
 
 Safety
   * Refuses to run unless the target has no nodes, no constraints and no
-    user-defined indexes, and only with --confirm-empty-target.
+    user-defined indexes, and only with --confirm-empty-target. A KgBuildTarget
+    marker node (python -m app.kg mark-target) counts as non-empty and is refused,
+    unless --allow-build-marker is given (build copies only; a production restore
+    must never use it). The marker is then neither counted nor fingerprinted.
+  * Prints the KgBuildTarget count at the end; exits non-zero if a marker is
+    present without --allow-build-marker.
   * Never deletes anything it did not create; a failed run leaves a partial
     graph in the (previously empty) target: wipe the target and retry.
   * The password is read from NEO4J_PASSWORD and is never printed.
@@ -166,7 +171,9 @@ def fingerprint_and_counts(session):
     """Same canonical form and multiset hash the exporter used."""
     node_hash, by_label, by_type = {}, {}, {}
     node_acc = rel_acc = n_nodes = n_rels = 0
-    for rec in session.run("MATCH (n) RETURN elementId(n) AS id, labels(n) AS l, properties(n) AS p"):
+    for rec in session.run(
+        "MATCH (n) WHERE NOT n:KgBuildTarget RETURN elementId(n) AS id, labels(n) AS l, properties(n) AS p"
+    ):
         props = {k: enc(v) for k, v in rec["p"].items()}
         digest = hashlib.sha256(canon({"l": sorted(rec["l"]), "p": props})).digest()
         node_hash[rec["id"]] = digest.hex()
@@ -201,6 +208,8 @@ def main():
     ap.add_argument("--workdir", default=".", help="scratch dir for the extracted members (default: cwd)")
     ap.add_argument("--confirm-empty-target", action="store_true",
                     help="required: acknowledge that the target is a fresh, empty database")
+    ap.add_argument("--allow-build-marker", action="store_true",
+                    help="build copies only: tolerate a KgBuildTarget marker on the target (never for production)")
     args = ap.parse_args()
 
     if not args.confirm_empty_target:
@@ -226,7 +235,9 @@ def main():
         temp_constraint = False
         try:
             with driver.session(database=args.database) as session:
-                nodes = session.run("MATCH (n) RETURN count(n) AS c").single()["c"]
+                # a KgBuildTarget marker (written by "python -m app.kg mark-target") is the only node a target may hold
+                marker_filter = "WHERE NOT n:KgBuildTarget " if args.allow_build_marker else ""
+                nodes = session.run(f"MATCH (n) {marker_filter}RETURN count(n) AS c").single()["c"]
                 constraints = session.run("SHOW CONSTRAINTS YIELD name RETURN count(name) AS c").single()["c"]
                 indexes = session.run(
                     "SHOW INDEXES YIELD type WHERE type <> 'LOOKUP' RETURN count(*) AS c"
@@ -295,6 +306,7 @@ def main():
                 n_constraints = session.run("SHOW CONSTRAINTS YIELD name RETURN count(name) AS c").single()["c"]
                 n_indexes = session.run("SHOW INDEXES YIELD name RETURN count(name) AS c").single()["c"]
                 got = fingerprint_and_counts(session)
+                markers = session.run("MATCH (n:KgBuildTarget) RETURN count(n) AS c").single()["c"]
         finally:
             for p in paths:
                 if os.path.exists(p):
@@ -328,6 +340,9 @@ def main():
         for p in problems:
             log(f"MISMATCH {p}")
         raise SystemExit("restore: VERIFICATION FAILED")
+    log(f"KgBuildTarget markers on the target: {markers}")
+    if markers and not args.allow_build_marker:
+        raise SystemExit("restore: a KgBuildTarget marker is present without --allow-build-marker")
     log("verification OK: counts, schema object counts and content fingerprint match the archive manifest")
 
 

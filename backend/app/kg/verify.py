@@ -54,6 +54,10 @@ NATURAL_KEYS: dict[str, str] = {
 }
 
 
+# Labels a restored copy of the served graph shares with the legacy ingesters (whose nodes may lack the F1 key).
+LEGACY_SHARED_LABELS = frozenset({"ArticleSource", "TrialSite"})
+
+
 @dataclass(frozen=True)
 class Thresholds:
     """What a build may leave dangling. Declared, not inferred; the default is zero everywhere."""
@@ -195,11 +199,17 @@ async def _check_duplicates(
 ) -> Check:
     problems: list[str] = []
     key_groups: dict[str, int] = {}
+    sources = [b.source_id for b in bundles]
     for label, key in NATURAL_KEYS.items():
+        # A restored copy of the served graph holds legacy ArticleSource / TrialSite nodes of other sources, some
+        # without the F1 key: a missing key is a defect only on the nodes of the sources this build wrote.
+        scope = (f"WHERE n.`{key}` IS NOT NULL OR n.source_id IN $sources "
+                 "OR any(x IN coalesce(n.sourceIds, []) WHERE x IN $sources) ") \
+            if label in LEGACY_SHARED_LABELS else ""
         rows = await _rows(
             driver, database,
-            f"MATCH (n:`{label}`) WITH n.`{key}` AS k, count(*) AS c WHERE c > 1 OR k IS NULL "
-            "RETURN count(*) AS groups, coalesce(sum(c), 0) AS nodes")
+            f"MATCH (n:`{label}`) {scope}WITH n.`{key}` AS k, count(*) AS c WHERE c > 1 OR k IS NULL "
+            "RETURN count(*) AS groups, coalesce(sum(c), 0) AS nodes", sources=sources)
         groups = int(rows[0]["groups"])
         key_groups[label] = groups
         if groups:

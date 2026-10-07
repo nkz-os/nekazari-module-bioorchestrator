@@ -55,10 +55,52 @@ The default is a **dry run**: adapt, map, gate and count, with no write of any k
 | `--target-label` of the form `local\|test\|ci\|scratch\|build[-suffix]` | naming a target is a deliberate act; production-like labels are rejected |
 | target host is loopback or listed in `NKZ_KG_ALLOWED_TARGET_HOSTS` (empty by default) | no host is allowed implicitly |
 | target is not the `NEO4J_URI` of the environment's backend | the served graph is untouchable |
-| target empty, or `--allow-existing`; never a graph with `VarietyTrial` nodes lacking `unitKey` | the legacy schema is recognised and refused even with `--allow-existing` |
+| target empty, or `--allow-existing`; a graph with `VarietyTrial` nodes lacking `unitKey` (the legacy schema) is refused even with `--allow-existing`, unless it carries the scratch marker below | the legacy schema is recognised as the served graph; only a marked restored copy may hold it |
 | environment marker | a build on an empty target writes one `(:KgBuildTarget {label, created_by_build})`; a non-empty target is written only if it carries that marker with the same scratch label. No marker, another label or several markers: refused. The marker is excluded from the export, so a graph restored from an export cannot be built into |
 | gate passed for every source (`production` profile also needs `publishable`) | a refused gate writes nothing, not even the schema |
 | clean git worktrees (module and raw-data repository) unless `--allow-dirty` | reproducibility; the dirty state is recorded |
+
+### 2.1 Building on a restored copy of the served graph
+
+To replace only some sources and keep every other (legacy sources, reference knowledge), build on a **restored
+copy** of the served graph, never on the served graph. The order is fixed, and each step refuses what the
+previous one did not leave:
+
+```
+python -m app.kg mark-target      --target <bolt URI> --target-label build-copy --execute   # 1 empty target -> marker
+python backend/scripts/neo4j_restore_from_export.py --archive <backup>.tar --uri <bolt URI> \
+       --confirm-empty-target --allow-build-marker                                      # 2 restore the copy
+python -m app.kg migrate-restored --target <bolt URI> --target-label build-copy [--execute]   # 3 schema
+python -m app.kg replace-sources  --sources GENVCE,CREA --target <bolt URI> --target-label build-copy [--execute]  # 4
+python -m app.kg build --sources GENVCE,CREA --target <bolt URI> --target-label build-copy --execute --allow-existing  # 5
+python -m app.kg export --target <bolt URI> --out build.tar                              # 6 marker is left out
+```
+
+1. `mark-target` writes the marker only on a completely empty target (no node, constraint or index); it is
+   idempotent for the same label and refuses anything else. The marker is what later allows legacy trials in the
+   target, so it cannot be added after the data is there. The restore script refuses a marked target unless
+   `--allow-build-marker` is given (build copies only; the production restore of step 6 must not use it, and the
+   script prints the marker count and fails if one is present without the flag).
+2. The restore needs an empty database; run it against the marked target.
+3. `migrate-restored` applies the migrations **schema only** (constraints and indexes; the data statements are
+   skipped, so the legacy trials are not rewritten). A pre-flight reads every UNIQUE constraint the migrations
+   would create and the copy does not have, and fails, writing nothing, if its keys are duplicated (it prints
+   up to ten offending keys and the number of groups) or if a plain index on the same properties blocks it
+   (nothing is dropped). The default is that pre-flight alone.
+4. `replace-sources` removes the named sources and nothing else: their trials (legacy `VarietyTrial` and F1
+   `ObservationUnit`, matched by `source_id` / `dataSource` spellings) with their `Observation` nodes, and the
+   studies, article sources and sites that are left with no trial of any other source. Sites tagged with the source
+   (`source_id` / `sourceIds`) are removed only when no trial points at them; `--extra-site-keys` names more
+   empty sites. The default is a dry run printing counts per source, label and crop and the explicit list of sites
+   to delete and to keep. Batches of at most 500 trials per transaction; a second run deletes nothing; label
+   counts outside the removal set are checked after the run.
+5. `build` as usual; the schema must be exactly the current one (step 3 leaves it so).
+6. Restore the exported archive into the instance that will serve (never adopt the build instance, which holds
+   the marker), and check `MATCH (m:KgBuildTarget) RETURN count(m)` is 0 there. A graph without the marker is
+   refused by `replace-sources`, `migrate-restored` and `build`.
+
+`replace-sources`, `migrate-restored` and `mark-target` follow the same rules as `build`: scratch label, loopback
+or allow-listed host, not the backend's own `NEO4J_URI`, `--execute`.
 
 Credentials come from `NEO4J_USER` / `NEO4J_PASSWORD` only. `--chelsa-online` fetches missing CHELSA cells;
 by default only the local cache is used and a field site without climate is a reported gap.
