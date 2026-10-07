@@ -1969,7 +1969,7 @@ class GraphDAO:
             result = await session.run(query)
             rows = [dict(r) async for r in result]
         for r in rows:
-            r["site_kind"] = ep.site_kind(r["name"], r.pop("declared_kind"))
+            r["site_kind"] = ep.site_kind(r["name"], r.pop("declared_kind", None))
         target_country = (country or "").strip().upper() or None
 
         def aggregate_in_scope(r: dict) -> bool:
