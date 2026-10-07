@@ -135,11 +135,11 @@ async def collect(driver: Any, *, progress=None) -> dict[str, Any]:
             for tier in ("field", "regional"):
                 await call(f"evidence|{pk}|{crop}|{tier}", rec_api.recommend_evidence(
                     driver=ro, cond=_Cond(climate, None, "main"), crop=crop, variety=None, page=1,
-                    page_size=50, similarity="koppen", tier=tier, country=None))
+                    page_size=50, similarity="koppen", tier=tier, country=None, zone=None))
             # the endpoint with the parcel's country (the regional list of the recommendation)
             await call(f"evidence-country|{pk}|{crop}|regional", rec_api.recommend_evidence(
                 driver=ro, cond=_Cond(climate, None, "main"), crop=crop, variety=None, page=1,
-                page_size=50, similarity="koppen", tier="regional", country=country))
+                page_size=50, similarity="koppen", tier="regional", country=country, zone=None))
     return out
 
 
