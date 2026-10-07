@@ -26,7 +26,15 @@ from app.kg import replace as replace_mod
 from app.kg.migrations import MIGRATIONS_DIR, apply_migrations
 from neo4j import AsyncGraphDatabase
 from tests.kg.seed_restored import seed
-from tests.kg.test_cli import PASSWORD, RAW_REPO, _Cell, _loop, _q, graph, needs_docker  # noqa: F401
+from tests.kg.test_cli import (  # noqa: F401
+    PASSWORD,
+    RAW_REPO,
+    _Cell,
+    _loop,
+    _q,
+    graph,
+    needs_docker,
+)
 from tests.kg.test_mixed_graph import _patch_fixture_slice
 
 RESTORE = Path(__file__).resolve().parents[2] / "scripts" / "neo4j_restore_from_export.py"

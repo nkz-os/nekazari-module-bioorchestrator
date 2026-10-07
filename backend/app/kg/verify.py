@@ -203,8 +203,8 @@ async def _check_duplicates(
     for label, key in NATURAL_KEYS.items():
         # A restored copy of the served graph holds legacy ArticleSource / TrialSite nodes of other sources, some
         # without the F1 key: a missing key is a defect only on the nodes of the sources this build wrote.
-        scope = ("WHERE n.`{key}` IS NOT NULL OR n.source_id IN $sources "
-                 "OR any(x IN coalesce(n.sourceIds, []) WHERE x IN $sources) ").format(key=key) \
+        scope = (f"WHERE n.`{key}` IS NOT NULL OR n.source_id IN $sources "
+                 "OR any(x IN coalesce(n.sourceIds, []) WHERE x IN $sources) ") \
             if label in LEGACY_SHARED_LABELS else ""
         rows = await _rows(
             driver, database,
