@@ -59,6 +59,7 @@ from . import gate as gate_mod
 from . import link as link_mod
 from . import loader
 from . import replace as replace_mod
+from . import restored as restored_mod
 from . import verify as verify_mod
 from .adapters import AdapterError, crea, genvce
 from .contracts import Bundle, Contract, ContractError, load_contract, run_contract
@@ -549,6 +550,37 @@ async def _replace_sources(cfg: TargetConfig, sources: Sequence[str], extra_site
     return report
 
 
+async def _migrate_restored(cfg: TargetConfig, env: Mapping[str, str]) -> tuple[dict[str, Any], int]:
+    """Dry run: the preflight report. ``--execute``: preflight, then schema-only migrations on the marked copy."""
+    if cfg.execute:
+        authorize_write(cfg, env)
+    elif cfg.target is None:
+        raise WriteRefused("migrate-restored needs --target")
+    else:
+        authorize_host(cfg.target, env)
+    user, password = _auth(env)
+    driver = AsyncGraphDatabase.driver(cfg.target, auth=(user, password))
+    try:
+        if cfg.execute:
+            await _require_marked_target(driver, cfg, why="migrate-restored writes the schema")
+        try:
+            if cfg.execute:
+                checked, applied = await restored_mod.migrate(driver, database=cfg.database)
+                report = {"mode": "execute", "target_label": cfg.target_label, "preflight": checked.to_dict(),
+                          "migrations": [m.__dict__ for m in applied.applied], "data_statements_skipped":
+                          applied.skipped_data}
+            else:
+                checked = await restored_mod.preflight(driver, database=cfg.database)
+                report = {"mode": "dry-run", "writes": 0, "preflight": checked.to_dict()}
+        except restored_mod.PreflightFailed as exc:
+            report = {"mode": "refused-preflight", "writes": 0,
+                      "preflight": {"clean": False, "violations": [v.to_dict() for v in exc.violations]}}
+            return report, EXIT_FAILED
+    finally:
+        await driver.close()
+    return report, EXIT_OK if report["preflight"]["clean"] else EXIT_FAILED
+
+
 async def _export_only(target: str, label: str | None, out_path: Path, env: Mapping[str, str]) -> export_mod.ExportResult:
     authorize_host(target, env)  # a read of the live graph is refused too: it is a build-instance tool
     user, password = _auth(env)
@@ -585,6 +617,11 @@ def _parser() -> argparse.ArgumentParser:
     m.add_argument("--target", required=True)
     m.add_argument("--target-label", required=True, help="scratch label")
     m.add_argument("--execute", action="store_true", help="write the marker (default: report only)")
+    mr = sub.add_parser("migrate-restored", help="apply the schema migrations to a marked, NON-empty restored copy "
+                                                 "after a duplicate preflight (schema only, never data)")
+    mr.add_argument("--target", required=True)
+    mr.add_argument("--target-label", help="scratch label (required with --execute)")
+    mr.add_argument("--execute", action="store_true", help="apply (default: dry run printing the preflight)")
     r = sub.add_parser("replace-sources", help="remove the trials of whole sources (and the sites, documents and "
                                                "studies only they support) from a marked restored copy")
     r.add_argument("--sources", required=True, help="comma separated source ids, e.g. GENVCE,CREA")
@@ -614,6 +651,11 @@ def main(argv: Sequence[str] | None = None, *, env: Mapping[str, str] | None = N
                 TargetConfig(target=args.target, target_label=args.target_label, execute=args.execute), environment))
             print(json.dumps(report, sort_keys=True, indent=2, default=str))
             return EXIT_OK
+        if args.command == "migrate-restored":
+            report, code = asyncio.run(_migrate_restored(
+                TargetConfig(target=args.target, target_label=args.target_label, execute=args.execute), environment))
+            print(json.dumps(report, sort_keys=True, indent=2, default=str, ensure_ascii=False))
+            return code
         if args.command == "replace-sources":
             report = asyncio.run(_replace_sources(
                 TargetConfig(target=args.target, target_label=args.target_label, execute=args.execute,
