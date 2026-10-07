@@ -159,7 +159,7 @@ async def recommend_evidence(
         description="ISO 3166 alpha-2; scopes the aggregate sites of tier=regional",
     ),
     zone: str | None = Query(
-        None, pattern=zone_match.ZONE_ID_PATTERN,
+        None, pattern=zone_match.ZONE_ID_PATTERN, max_length=4000,
         description="opaque zone id of the recommendation's `evidence.zone_match.zone_id` (no coordinates)",
     ),
 ):

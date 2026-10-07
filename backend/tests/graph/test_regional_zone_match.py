@@ -6,12 +6,14 @@ from __future__ import annotations
 
 import asyncio
 import json
+import re
 import shutil
 
 import pytest
 from testcontainers.neo4j import Neo4jContainer
 
 from app.graph import dao as dao_mod
+from app.graph import evidence_policy as ep
 from app.graph import zone_match
 from app.graph.dao import GraphDAO
 from app.kg.zone_definitions import ZONE_MATCH_BASIS, zone_key
@@ -148,13 +150,32 @@ def test_without_a_point_or_outside_spain_zone_matching_is_not_asked(dao):
 
 def test_the_zone_id_carries_the_classification_and_no_coordinate(dao):
     zm = _recommend(dao, COLD_PARCEL)["HORVX"]["evidence"]["zone_match"]
-    assert zm["zone_id"] == "9.0_450"
     ctx = zone_match.context_from_zone_id(zm["zone_id"], None)
     direct = _run(dao.resolve_zone_context("ES", *COLD_PARCEL, None))
     assert ctx.allow == direct.allow and ctx.deny == direct.deny
     for text in (json.dumps(zm), zm["zone_id"]):
         assert str(COLD_PARCEL[0]) not in text and str(abs(COLD_PARCEL[1])) not in text
     assert zone_match.context_from_zone_id("41.0,-3.0", None) is None
+
+
+def test_the_zone_id_holds_threshold_classes_never_climate_values():
+    ctx = zone_match.context_from_values(9.0, 450.0, None)
+    zid = zone_match.zone_id(ctx)
+    assert not re.search(r"\d+\.\d|(?<![a-z0-9-])\d", zid.replace(DEF, ""))  # no number besides the definition id
+    # a different parcel in the same classes has the same id; one in another class does not
+    assert zone_match.zone_id(zone_match.context_from_values(9.3, 470.0, None)) == zid
+    assert zone_match.zone_id(zone_match.context_from_values(14.5, 400.0, None)) != zid
+    back = zone_match.context_from_zone_id(zid, None)
+    assert back.allow == ctx.allow and back.deny == ctx.deny
+    assert zone_match.context_from_zone_id("9.0_450", None) is None  # the former value-carrying id
+
+
+def test_zone_matching_reads_the_regime_with_the_shared_normaliser():
+    # request spellings only the evidence filter's normaliser handles (the old private parser did not)
+    for spelling, regime in (("rainfed", "secano"), ("Irrigated", "regadio"), ("regadío", "regadio")):
+        assert zone_match.normalise_regime(spelling) == regime == ep.irrigation_regime(ep.irrigation_uri(spelling))
+        assert zone_match.context_from_values(9.0, 450.0, spelling).zones.regime == regime
+    assert zone_match.normalise_regime("whatever") is None
 
 
 def test_the_evidence_list_follows_the_same_pool_rule(dao):

@@ -255,14 +255,19 @@ class ZoneDefinitions(_Frozen):
     def classify_parcel(self, *, april_tas_c: float | None, annual_rain_mm: float | None,
                         regime: str | None) -> ParcelZones:
         """Allow/deny/undecided zone keys of a parcel with this climate (``regime``: secano | regadio | None)."""
+        values = {"temperature": april_tas_c, "rainfall": annual_rain_mm}
+        classes = {d.id: {axis: d.classify(axis, values[axis]) for axis in AXES} for d in self.definitions}
+        return self.classify_classes(classes, regime)
+
+    def classify_classes(self, classes: Mapping[str, Mapping[str, str | None]], regime: str | None) -> ParcelZones:
+        """Same as :meth:`classify_parcel` from the parcel's threshold classes per definition (no climate values)."""
         allow: set[str] = set()
         deny: set[str] = set()
         undecided: set[str] = set()
-        classes: dict[str, dict[str, str | None]] = {}
-        values = {"temperature": april_tas_c, "rainfall": annual_rain_mm}
+        kept: dict[str, dict[str, str | None]] = {}
         for d in self.definitions:
-            parcel = {axis: d.classify(axis, values[axis]) for axis in AXES}
-            classes[d.id] = parcel
+            parcel = {axis: classes.get(d.id, {}).get(axis) for axis in AXES}
+            kept[d.id] = parcel
             for entry in d.labels:
                 key = zone_key(d.id, entry.label)
                 verdicts: list[bool | None] = []
@@ -277,7 +282,7 @@ class ZoneDefinitions(_Frozen):
                     undecided.add(key)
                 else:
                     allow.add(key)
-        return ParcelZones(frozenset(allow), frozenset(deny), frozenset(undecided), classes, regime)
+        return ParcelZones(frozenset(allow), frozenset(deny), frozenset(undecided), kept, regime)
 
     def describe_keys(self, keys: Iterable[str]) -> list[dict[str, Any]]:
         """Definition id, citation and zone label of each key (response transparency), sorted."""

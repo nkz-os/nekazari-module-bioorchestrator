@@ -7,6 +7,7 @@ from fastapi.testclient import TestClient
 from app.auth import SKIP_AUTH_PREFIXES
 from app.auth_policy import requires_identity
 from app.core.dependencies import get_neo4j_driver
+from app.graph import zone_match
 from app.graph.dao import GraphDAO
 from app.main import app
 
@@ -414,14 +415,19 @@ def test_evidence_takes_an_opaque_zone_id_not_a_point(client):
     with patch.object(GraphDAO, "list_trial_evidence", AsyncMock(return_value={"items": []})) as m, \
             patch.object(GraphDAO, "get_similar_sites", AsyncMock(return_value=[])):
         base = {"climate_class": "Cfb", "crop": "HORVX", "tier": "regional", "country": "ES"}
-        r = client.get("/api/graph/agriculture/recommend/evidence", params={**base, "zone": "10.5_520"})
+        zone = zone_match.zone_id(zone_match.context_from_values(10.5, 520, None))
+        r = client.get("/api/graph/agriculture/recommend/evidence", params={**base, "zone": zone})
         assert r.status_code == 200
         ctx = m.call_args.kwargs["zone_ctx"]
-        assert ctx.ready and ctx.april_tas_c == 10.5 and ctx.annual_rainfall_mm == 520
-        for bad in ("41.0,-3.0", "x", "10.5_520_1"):
+        direct = zone_match.context_from_values(10.5, 520, None)
+        assert ctx.ready and ctx.allow == direct.allow and ctx.deny == direct.deny
+        for bad in ("41.0,-3.0", "x", "10.5_520", "10.5_520_1"):
             assert client.get("/api/graph/agriculture/recommend/evidence",
                               params={**base, "zone": bad}).status_code == 422
-        client.get("/api/graph/agriculture/recommend/evidence", params={**base, "country": "IT", "zone": "10.5_520"})
+        client.get("/api/graph/agriculture/recommend/evidence",
+                   params={**base, "zone": zone + ",no-such-definition:cold:humid"})
+        assert m.call_args.kwargs["zone_ctx"] is None  # an id of other zone definitions is not used
+        client.get("/api/graph/agriculture/recommend/evidence", params={**base, "country": "IT", "zone": zone})
         assert m.call_args.kwargs["zone_ctx"] is None
         client.get("/api/graph/agriculture/recommend/evidence", params={**base, "lat": 41, "lon": -3})
         assert m.call_args.kwargs["zone_ctx"] is None  # a point is not an input of the route

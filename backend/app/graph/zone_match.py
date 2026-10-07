@@ -12,6 +12,7 @@ import re
 from dataclasses import dataclass
 from typing import Any
 
+from app.graph import evidence_policy as ep
 from app.kg.zone_definitions import (
     ZONE_MATCH_BASIS,
     ZONE_MATCH_CAVEAT,
@@ -20,9 +21,11 @@ from app.kg.zone_definitions import (
     default_zone_definitions,
 )
 
-# Opaque zone id of a recommendation: the parcel's April mean temperature (0.1 degC) and annual
-# precipitation (mm) as the zone classification used them, never a coordinate.
-ZONE_ID_PATTERN = r"^-?\d{1,2}(\.\d)?_\d{1,4}$"
+# Opaque zone id of a recommendation: the parcel's threshold CLASSES per zone definition
+# (``<definition id>:<temperature class>:<rainfall class>``, ``-`` = not classifiable, comma separated),
+# never a climate value or a coordinate: it narrows the parcel to a class, not to a cell.
+_ZONE_ID_SEGMENT = r"[a-z0-9][a-z0-9-]{0,63}:(?:[a-z_]{1,24}|-):(?:[a-z_]{1,24}|-)"
+ZONE_ID_PATTERN = rf"^{_ZONE_ID_SEGMENT}(?:,{_ZONE_ID_SEGMENT}){{0,63}}$"
 POOL_MATCHED = "matched"
 POOL_FALLBACK = "fallback"
 ZONE_COUNTRY = "ES"  # GENVCE is the Spanish network: its zone definitions apply to Spanish parcels only
@@ -54,12 +57,8 @@ def applies(country: str | None, lat: Any, lon: Any) -> bool:
 
 
 def normalise_regime(irrigation_regime: str | None) -> str | None:
-    text = (irrigation_regime or "").strip().casefold()
-    if text.startswith("secano"):
-        return "secano"
-    if text.startswith("regad"):
-        return "regadio"
-    return None
+    """The shared irrigation normaliser (``secano`` | ``regadio``): the same one the evidence filter uses."""
+    return ep.irrigation_regime(ep.irrigation_uri(irrigation_regime)) or ep.irrigation_regime(irrigation_regime)
 
 
 def is_zone_country(country: str | None) -> bool:
@@ -67,9 +66,10 @@ def is_zone_country(country: str | None) -> bool:
 
 
 def zone_id(ctx: ZoneContext) -> str | None:
-    if not ctx.ready or ctx.april_tas_c is None or ctx.annual_rainfall_mm is None:
+    if not ctx.ready or ctx.zones is None:
         return None
-    return f"{ctx.april_tas_c:.1f}_{ctx.annual_rainfall_mm:.0f}"
+    return ",".join(f"{definition}:{cls.get('temperature') or '-'}:{cls.get('rainfall') or '-'}"
+                    for definition, cls in sorted(ctx.zones.classes.items()))
 
 
 def context_from_values(april: float, rain: float, irrigation_regime: str | None, cell_key: str | None = None,
@@ -82,15 +82,32 @@ def context_from_values(april: float, rain: float, irrigation_regime: str | None
                        april, rain)
 
 
-def context_from_zone_id(zone: str, irrigation_regime: str | None) -> ZoneContext | None:
-    """The context a recommendation's zone id stands for (None: not a valid id)."""
+def context_from_zone_id(zone: str, irrigation_regime: str | None,
+                         definitions: ZoneDefinitions | None = None) -> ZoneContext | None:
+    """The context a recommendation's zone id stands for (None: not a valid id, or one of other definitions)."""
     if not re.match(ZONE_ID_PATTERN, zone or ""):
         return None
-    april_text, _, rain_text = zone.partition("_")
-    april, rain = float(april_text), float(rain_text)
-    if not (-30.0 <= april <= 40.0 and 0 <= rain <= 5000):
-        return None
-    return context_from_values(april, rain, irrigation_regime)
+    defs = definitions or default_zone_definitions()
+    classes: dict[str, dict[str, str | None]] = {}
+    for segment in zone.split(","):
+        definition_id, temperature, rainfall = segment.split(":")
+        try:
+            definition = defs.by_id(definition_id)
+        except KeyError:
+            return None
+        parcel: dict[str, str | None] = {}
+        for axis, cls in (("temperature", temperature), ("rainfall", rainfall)):
+            known = {i.class_ for i in getattr(definition, axis)}
+            if cls != "-" and cls not in known:
+                return None
+            parcel[axis] = None if cls == "-" else cls
+        if definition_id in classes:
+            return None
+        classes[definition_id] = parcel
+    if set(classes) != {d.id for d in defs.definitions}:
+        return None  # an id of another registry version: not this server's zones
+    zones = defs.classify_classes(classes, normalise_regime(irrigation_regime))
+    return ZoneContext(True, None, tuple(sorted(zones.allow)), tuple(sorted(zones.deny)), zones)
 
 
 def build_context(cell: dict | None, irrigation_regime: str | None, cell_key: str | None = None,

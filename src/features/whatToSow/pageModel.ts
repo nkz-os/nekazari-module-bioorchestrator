@@ -127,6 +127,10 @@ const nonEmptyString = (v: unknown): string | undefined =>
 const finiteNumber = (v: unknown): number | undefined =>
   typeof v === 'number' && Number.isFinite(v) ? v : undefined;
 
+/** Zone id: `<definition id>:<temperature class>:<rainfall class>` segments, comma separated (classes, never values). */
+const ZONE_SEGMENT = '[a-z0-9][a-z0-9-]{0,63}:(?:[a-z_]{1,24}|-):(?:[a-z_]{1,24}|-)';
+const ZONE_ID_RE = new RegExp(`^${ZONE_SEGMENT}(?:,${ZONE_SEGMENT}){0,63}$`);
+
 /**
  * Evidence conditions matching the recommendation: the resolved class, soil type and irrigation
  * echoed by the API, plus (for v2 similarity) the numeric climate inputs — taken from the parcel's
@@ -151,7 +155,7 @@ export function evidenceConditions(
     const country = nonEmptyString(src.country);
     if (country && /^[A-Z]{2}$/.test(country)) out.country = country;
     // ... and the opaque zone id the recommendation matched (never a coordinate).
-    if (zoneId && /^-?\d{1,2}(\.\d)?_\d{1,4}$/.test(zoneId)) out.zone = zoneId;
+    if (zoneId && ZONE_ID_RE.test(zoneId)) out.zone = zoneId;
   }
   const cls = nonEmptyString(src.climate_class);
   if (cls) out.climate_class = cls;
