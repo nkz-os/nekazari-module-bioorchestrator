@@ -54,6 +54,18 @@ def test_registries_hash_is_stable_and_changes_with_content(copy_dir):
     assert load_registries(dest).registries_hash != first
 
 
+def test_the_zone_definitions_are_part_of_the_hash_and_are_validated(copy_dir):
+    dest, _ = copy_dir
+    assert "genvce_zone_definitions.yaml" in REGISTRY_FILES
+    first = load_registries(dest).registries_hash
+    path = dest / "genvce_zone_definitions.yaml"
+    path.write_text(path.read_text(encoding="utf-8") + "\n# edited\n", encoding="utf-8")
+    assert load_registries(dest).registries_hash != first
+    path.write_text("version: 1\n", encoding="utf-8")
+    with pytest.raises(RegistryError):
+        load_registries(dest)
+
+
 def test_missing_file_is_an_error(copy_dir):
     dest, _ = copy_dir
     (dest / "crops.yaml").unlink()

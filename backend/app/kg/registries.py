@@ -31,6 +31,8 @@ from pydantic import (
     model_validator,
 )
 
+from .zone_definitions import ZoneDefinitionError, load_zone_definitions
+
 DEFAULT_REGISTRIES_PATH = Path(__file__).resolve().parents[2] / "data" / "registries"
 
 # File name per registry, in the fixed order used for the registries hash.
@@ -44,6 +46,7 @@ REGISTRY_FILES: tuple[str, ...] = (
     "ranges.yaml",
     "varieties.yaml",
     "irrigation_thresholds.yaml",
+    "genvce_zone_definitions.yaml",
 )
 
 # Id of the one derivation method of the irrigation regime from a yield (``irrigation_thresholds.yaml``).
@@ -814,6 +817,11 @@ def registries_hash(path: Path) -> str:
 def load_registries(path: str | Path | None = None) -> Registries:
     """Load and validate every registry file under ``path`` (default: the repo data directory)."""
     base = Path(path) if path is not None else DEFAULT_REGISTRIES_PATH
+    # Part of the registries hash (provenance); validated here, read by app.kg.zone_definitions.
+    try:
+        load_zone_definitions(base / "genvce_zone_definitions.yaml")
+    except ZoneDefinitionError as exc:
+        raise RegistryError(str(exc)) from exc
     return Registries(
         crops=_parse(CropsFile, base / "crops.yaml"),
         units=_parse(UnitsFile, base / "units.yaml"),
