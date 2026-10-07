@@ -73,6 +73,15 @@ def test_an_allow_listed_remote_host_is_accepted(tmp_path):
                         {"NKZ_KG_ALLOWED_TARGET_HOSTS": "Build-Box.example.org, other"})
 
 
+def test_export_gets_the_same_host_guard_as_build(tmp_path, capsys):
+    args = ["export", "--out", str(tmp_path / "a.tar")]
+    for target, env in (("bolt://graph.example.org:7687", {}),                           # remote, not allow-listed
+                        ("bolt://localhost:7687", {"NEO4J_URI": "bolt://localhost:7687"})):  # the backend's graph
+        assert cli.main(args + ["--target", target], env={"NEO4J_PASSWORD": "x", **env}) == cli.EXIT_REFUSED
+    assert "REFUSED" in capsys.readouterr().err
+    assert not (tmp_path / "a.tar").exists()
+
+
 def test_main_exit_codes_for_safety_refusals(tmp_path, capsys):
     base = ["build", "--raw-dir", str(tmp_path), "--out", str(tmp_path / "o"), "--allow-dirty"]
     for extra in (["--execute"], ["--execute", "--target", "bolt://localhost:7687"],

@@ -243,6 +243,22 @@ async def _read_schema(session: Any) -> dict[str, Any]:
     return {"constraints": constraints, "indexes": indexes}
 
 
+READ_PAGE_SIZE = 5000
+
+
+async def _read_pages(session: Any, cypher: str, page: int | None = None) -> list[dict]:
+    """Keyset-paged read (``id`` ascending, ``$last`` / ``$page``): one bounded transaction per page, never the graph in one."""
+    page = page or READ_PAGE_SIZE
+    records: list[dict] = []
+    last = ""
+    while True:
+        rows = [dict(r) async for r in await session.run(cypher, last=last, page=page)]
+        records.extend(rows)
+        if len(rows) < page:
+            return records
+        last = rows[-1]["id"]
+
+
 async def export_graph(
     driver: Any,
     out_path: str | os.PathLike[str],
@@ -261,15 +277,14 @@ async def export_graph(
         before = (await count(f"MATCH (n) WHERE {_NOT_MARKER} RETURN count(n) AS c"), await count("MATCH ()-[r]->() RETURN count(r) AS c"))
         if before[0] == 0:
             raise ExportError("the database is empty; refusing to export")
-        tx = await session.begin_transaction()
-        try:
-            node_records = [dict(r) async for r in await tx.run(
-                f"MATCH (n) WHERE {_NOT_MARKER} RETURN elementId(n) AS id, labels(n) AS l, properties(n) AS p")]
-            rel_records = [dict(r) async for r in await tx.run(
-                "MATCH (a)-[r]->(b) RETURN elementId(r) AS id, type(r) AS t, elementId(a) AS s, "
-                "elementId(b) AS e, properties(r) AS p")]
-        finally:
-            await tx.close()
+        node_records = await _read_pages(
+            session, f"MATCH (n) WHERE {_NOT_MARKER} AND elementId(n) > $last "
+            "WITH n ORDER BY elementId(n) LIMIT $page "
+            "RETURN elementId(n) AS id, labels(n) AS l, properties(n) AS p")
+        rel_records = await _read_pages(
+            session, "MATCH (a)-[r]->(b) WHERE elementId(r) > $last "
+            "WITH a, r, b ORDER BY elementId(r) LIMIT $page "
+            "RETURN elementId(r) AS id, type(r) AS t, elementId(a) AS s, elementId(b) AS e, properties(r) AS p")
         after = (await count(f"MATCH (n) WHERE {_NOT_MARKER} RETURN count(n) AS c"), await count("MATCH ()-[r]->() RETURN count(r) AS c"))
         schema = await _read_schema(session)
     if before != after or (len(node_records), len(rel_records)) != before:

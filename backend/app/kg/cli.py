@@ -145,7 +145,12 @@ def authorize_write(cfg: BuildConfig, env: Mapping[str, str]) -> None:
     if not SCRATCH_LABEL.match(label):
         raise WriteRefused(f"target label {label!r} is not a scratch label (local|test|ci|scratch|build[-suffix]); "
                            "production-like targets cannot be written by this tool")
-    host, port = _host_port(cfg.target)
+    authorize_host(cfg.target, env)
+
+
+def authorize_host(target: str, env: Mapping[str, str]) -> None:
+    """Host rules shared by build and export: loopback or listed in the allowlist, never the backend's own graph."""
+    host, port = _host_port(target)
     allowed = {h.strip().lower() for h in env.get(ALLOWED_HOSTS_ENV, "").split(",") if h.strip()}
     if host not in LOOPBACK and host not in allowed:
         raise WriteRefused(f"target host is neither loopback nor listed in {ALLOWED_HOSTS_ENV}")
@@ -445,6 +450,7 @@ def run_build(cfg: BuildConfig, *, env: Mapping[str, str] | None = None, climate
 
 
 async def _export_only(target: str, label: str | None, out_path: Path, env: Mapping[str, str]) -> export_mod.ExportResult:
+    authorize_host(target, env)  # a read of the live graph is refused too: it is a build-instance tool
     user, password = _auth(env)
     driver = AsyncGraphDatabase.driver(target, auth=(user, password))
     try:
@@ -508,4 +514,4 @@ def main(argv: Sequence[str] | None = None, *, env: Mapping[str, str] | None = N
     return result.exit_code
 
 
-__all__ = ["BuildConfig", "BuildFailed", "BuildResult", "WriteRefused", "authorize_write", "main", "run_build"]
+__all__ = ["BuildConfig", "BuildFailed", "BuildResult", "WriteRefused", "authorize_host", "authorize_write", "main", "run_build"]

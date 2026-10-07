@@ -345,6 +345,16 @@ def test_two_builds_from_the_same_inputs_give_the_same_export_hash_and_bytes(bun
 
 
 @needs_docker
+def test_a_paged_read_gives_the_same_archive_as_one_big_page(built, tmp_path, monkeypatch):
+    _, d, _ = built
+    whole = _run(export.export_graph(d, tmp_path / "whole.tar"))
+    monkeypatch.setattr(export, "READ_PAGE_SIZE", 7)
+    paged = _run(export.export_graph(d, tmp_path / "paged.tar"))
+    assert paged.export_hash == whole.export_hash and paged.nodes == whole.nodes > 7
+    assert (tmp_path / "paged.tar").read_bytes() == (tmp_path / "whole.tar").read_bytes()
+
+
+@needs_docker
 def test_a_changed_graph_changes_the_export_hash(built, tmp_path):
     _, d, _ = built
     first = _run(export.export_graph(d, tmp_path / "a.tar"))
