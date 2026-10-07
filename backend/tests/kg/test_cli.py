@@ -413,3 +413,104 @@ def test_real_build_then_rerun_gives_the_same_export_hash(empty, tmp_path):
     assert second.summary["export_hash"] == first.summary["export_hash"]
     verify = json.loads((first.out / "08-verify.json").read_text())
     assert verify["ok"] and verify["checks"]["duplicates"]["detail"]["content_duplicate_groups"] == {"GENVCE": 0, "CREA": 0}
+
+
+# ═════════════════════════════════════════════════════════════════════════════
+# T12 option b: a marked target may hold legacy trials (mark-target -> restore -> build)
+# ═════════════════════════════════════════════════════════════════════════════
+
+def _drop_schema(d) -> None:
+    for row in _q(d, "SHOW CONSTRAINTS YIELD name RETURN name"):
+        _q(d, f"DROP CONSTRAINT `{row['name']}` IF EXISTS")
+    for row in _q(d, "SHOW INDEXES YIELD name, type WHERE type <> 'LOOKUP' RETURN name"):
+        _q(d, f"DROP INDEX `{row['name']}` IF EXISTS")
+
+
+@pytest.fixture
+def blank(empty):
+    """A truly blank database: no node, constraint or index (what a restore target must be)."""
+    n, d, env = empty
+    _drop_schema(d)
+    return n, d, env
+
+
+def _guard(d, tmp_path, label="local-r", allow=True):
+    cfg = _cfg(tmp_path, target="bolt://localhost:7687", target_label=label, execute=True, allow_existing=allow)
+    return _loop.run_until_complete(cli._guard_target_contents(d, cfg))
+
+
+def _mark(n, env, label="local-r", execute=True):
+    args = ["mark-target", "--target", n.get_connection_url(), "--target-label", label]
+    return cli.main(args + (["--execute"] if execute else []), env=env)
+
+
+@needs_docker
+def test_mark_target_writes_the_marker_only_on_an_empty_target(blank, capsys):
+    n, d, env = blank
+    assert _mark(n, env, execute=False) == cli.EXIT_OK
+    assert _nodes(d) == 0  # dry run
+    assert _mark(n, env) == cli.EXIT_OK
+    assert _q(d, "MATCH (m:KgBuildTarget) RETURN m.label AS label, m.created_by_build AS by") == [
+        {"label": "local-r", "by": True}]
+    assert _mark(n, env) == cli.EXIT_OK  # idempotent
+    assert _nodes(d) == 1
+    assert _mark(n, env, label="local-other") == cli.EXIT_REFUSED  # a different label never re-marks
+    assert _q(d, "MATCH (m:KgBuildTarget) RETURN m.label AS label") == [{"label": "local-r"}]
+
+
+@needs_docker
+@pytest.mark.parametrize("seed", ["CREATE (:Species {name: 'x'})",
+                                  "CREATE CONSTRAINT some_rule IF NOT EXISTS FOR (s:Species) REQUIRE s.name IS UNIQUE",
+                                  "CREATE INDEX some_ix IF NOT EXISTS FOR (s:Species) ON (s.name)"])
+def test_mark_target_refuses_a_target_that_is_not_empty(blank, seed):
+    n, d, env = blank
+    _q(d, seed)
+    try:
+        assert _mark(n, env) == cli.EXIT_REFUSED
+        assert _q(d, "MATCH (m:KgBuildTarget) RETURN count(m) AS c") == [{"c": 0}]
+    finally:
+        _q(d, "DROP CONSTRAINT some_rule IF EXISTS")
+        _q(d, "DROP INDEX some_ix IF EXISTS")
+
+
+def test_mark_target_needs_a_scratch_label_and_an_allowed_host(capsys):
+    env = {"NEO4J_PASSWORD": "x"}
+    assert cli.main(["mark-target", "--target", "bolt://localhost:7687", "--target-label", "production",
+                     "--execute"], env=env) == cli.EXIT_REFUSED
+    assert cli.main(["mark-target", "--target", "bolt://graph.example.org:7687", "--target-label", "local-r",
+                     "--execute"], env=env) == cli.EXIT_REFUSED
+
+
+@needs_docker
+def test_legacy_trials_are_allowed_only_on_a_target_marked_before_they_arrived(blank, tmp_path):
+    n, d, env = blank
+    assert _mark(n, env) == cli.EXIT_OK
+    _q(d, "CREATE (:VarietyTrial {mergeKey: 'legacy'}), (:Species {name: 'x'})")  # the restored copy
+    assert _guard(d, tmp_path) == {"nodes_before": 2}
+    with pytest.raises(cli.WriteRefused, match="not empty"):  # still needs the explicit flag
+        _guard(d, tmp_path, allow=False)
+    with pytest.raises(cli.WriteRefused, match="no scratch KgBuildTarget marker for 'local-x'"):  # another label
+        _guard(d, tmp_path, label="local-x")
+
+
+@needs_docker
+def test_legacy_trials_without_the_marker_stay_refused_even_with_the_flag(empty, tmp_path):
+    _n, d, _env = empty
+    _q(d, "CREATE (:VarietyTrial {mergeKey: 'legacy'})")
+    with pytest.raises(cli.WriteRefused, match="legacy VarietyTrial"):
+        _guard(d, tmp_path)
+    _q(d, "CREATE (:KgBuildTarget {id: 'a', label: 'local-r', created_by_build: true}), "
+          "(:KgBuildTarget {id: 'b', label: 'local-r', created_by_build: true})")
+    with pytest.raises(cli.WriteRefused, match="2 KgBuildTarget markers"):
+        _guard(d, tmp_path)
+
+
+@needs_docker
+@pytest.mark.parametrize("props", ["label: 'production', created_by_build: true",
+                                   "label: 'local-r', created_by_build: false",
+                                   "label: 'local-r'"])
+def test_legacy_trials_with_a_foreign_or_hand_made_marker_are_refused(empty, tmp_path, props):
+    _n, d, _env = empty
+    _q(d, f"CREATE (:VarietyTrial {{mergeKey: 'legacy'}}), (:KgBuildTarget {{id: 'singleton', {props}}})")
+    with pytest.raises(cli.WriteRefused):
+        _guard(d, tmp_path)

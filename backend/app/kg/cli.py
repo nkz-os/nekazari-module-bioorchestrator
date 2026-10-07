@@ -21,8 +21,10 @@ Safety (the production graph is untouchable from here in F1). A write needs ALL 
 * a target host that is loopback, or listed in ``NKZ_KG_ALLOWED_TARGET_HOSTS`` (comma separated; nothing is
   allowed by default, no host is named in this repository);
 * a target that is not the backend's own configured graph (``NEO4J_URI`` of the environment);
-* a target that is empty (or ``--allow-existing``) and does not look like the legacy graph (any ``VarietyTrial``
-  without a ``unitKey`` refuses the run, with or without ``--allow-existing``);
+* a target that is empty (or ``--allow-existing``). A target holding legacy ``VarietyTrial`` nodes (no ``unitKey``)
+  is refused, with or without ``--allow-existing``, unless it carries this tool's scratch marker with the same
+  label (the restored-copy flow: ``mark-target`` on the empty target, restore the copy, ``migrate-restored``,
+  ``replace-sources``, ``build``);
 * an explicit environment marker: the build writes a singleton ``(:KgBuildTarget {label, created_by_build})`` on an
   empty target, and a NON-EMPTY target is written only if it carries that marker with a scratch label equal to
   ``--target-label``. A graph without the marker (any production graph, whatever its schema) or with another label
@@ -109,6 +111,17 @@ class BuildConfig:
     database: str | None = None
 
 
+@dataclass(frozen=True)
+class TargetConfig:
+    """What the target-only commands (``mark-target``, ``replace-sources``, ``migrate-restored``) need."""
+
+    target: str | None = None
+    target_label: str | None = None
+    execute: bool = False
+    database: str | None = None
+    out_dir: Path = DEFAULT_OUT
+
+
 @dataclass
 class BuildResult:
     build_id: str
@@ -132,7 +145,7 @@ def _host_port(uri: str) -> tuple[str, int]:
     return parts.hostname.lower(), parts.port or 7687
 
 
-def authorize_write(cfg: BuildConfig, env: Mapping[str, str]) -> None:
+def authorize_write(cfg: BuildConfig | TargetConfig, env: Mapping[str, str]) -> None:
     """Raise :class:`WriteRefused` unless every static safety rule allows writing to ``cfg.target``.
 
     The checks that need the database (empty / legacy-looking target) run later, in :func:`_guard_target_contents`.
@@ -257,16 +270,37 @@ async def _read_marker(driver: Any, database: str | None) -> dict[str, Any] | No
     return rows[0] if rows else None
 
 
+def _check_scratch_marker(marker: Mapping[str, Any] | None, cfg: BuildConfig | TargetConfig, *, why: str) -> None:
+    """Refuse unless ``marker`` is this tool's scratch marker carrying ``cfg.target_label``."""
+    if marker is None:
+        raise WriteRefused(f"target has no {MARKER_LABEL} marker: it was not created by this tool, refusing "
+                           f"({why})")
+    if marker["label"] != cfg.target_label:
+        raise WriteRefused(f"target is marked {marker['label']!r}, not {cfg.target_label!r}: refusing")
+    if marker["created_by_build"] is not True or not SCRATCH_LABEL.match(str(marker["label"])):
+        raise WriteRefused(f"target marker {marker['label']!r} is not a scratch build marker: refusing")
+
+
+async def _require_marked_target(driver: Any, cfg: BuildConfig | TargetConfig, *, why: str) -> None:
+    _check_scratch_marker(await _read_marker(driver, cfg.database), cfg, why=why)
+
+
 async def _guard_target_contents(driver: Any, cfg: BuildConfig) -> dict[str, int]:
-    """Refuse a legacy-looking graph always; a non-empty one unless it carries this tool's scratch marker."""
+    """Refuse a legacy-looking graph unless marked, and a non-empty one unless it carries the scratch marker."""
     legacy = await _scalar(driver, cfg.database,
                            "MATCH (n:VarietyTrial) WHERE n.unitKey IS NULL RETURN count(n) AS c")
-    if legacy:
-        raise WriteRefused(f"target holds {legacy} legacy VarietyTrial node(s) without unitKey: "
-                           "it looks like the production graph, refusing")
     nodes = await _scalar(driver, cfg.database,
                           f"MATCH (n) WHERE NOT n:SchemaVersion AND NOT n:{MARKER_LABEL} RETURN count(n) AS c")
     marker = await _read_marker(driver, cfg.database)
+    if legacy:
+        # Option b (build on a restored copy of the served graph) always has legacy trials. They are allowed only
+        # on a target this tool marked while it was still empty; an unmarked one looks like the production graph.
+        scratch_marker = (marker is not None and marker["label"] == cfg.target_label
+                          and marker["created_by_build"] is True and bool(SCRATCH_LABEL.match(str(marker["label"]))))
+        if not scratch_marker:
+            raise WriteRefused(f"target holds {legacy} legacy VarietyTrial node(s) without unitKey and no scratch "
+                               f"{MARKER_LABEL} marker for {cfg.target_label!r}: it looks like the production "
+                               "graph, refusing")
     if marker is not None and marker["label"] != cfg.target_label:
         # also on an empty target: the marker names the environment, a different label is a different environment
         raise WriteRefused(f"target is marked {marker['label']!r}, not {cfg.target_label!r}: refusing")
@@ -276,12 +310,11 @@ async def _guard_target_contents(driver: Any, cfg: BuildConfig) -> dict[str, int
         if marker is None:
             raise WriteRefused(f"target is not empty and has no {MARKER_LABEL} marker: it was not created by this "
                                "tool, refusing even with --allow-existing")
-        if marker["created_by_build"] is not True or not SCRATCH_LABEL.match(str(marker["label"])):
-            raise WriteRefused(f"target marker {marker['label']!r} is not a scratch build marker: refusing")
+        _check_scratch_marker(marker, cfg, why="non-empty target")
     return {"nodes_before": nodes}
 
 
-async def _write_marker(driver: Any, cfg: BuildConfig) -> None:
+async def _write_marker(driver: Any, cfg: BuildConfig | TargetConfig) -> None:
     """Singleton marker, written before the first data/schema write on an empty target (idempotent)."""
     async with driver.session(database=cfg.database) as session:
         await (await session.run(
@@ -297,7 +330,8 @@ async def _require_current_schema(driver: Any, database: str | None) -> None:
     expected = {m.name: m.sha256 for m in discover_migrations()}
     if recorded != expected:
         stale = sorted(k for k in expected.keys() | recorded.keys() if expected.get(k) != recorded.get(k))
-        raise WriteRefused(f"existing graph was built with a different schema ({stale[:5]}): rebuild it from empty")
+        raise WriteRefused(f"existing graph was built with a different schema ({stale[:5]}): rebuild it from empty "
+                           "(a restored copy: run migrate-restored first)")
 
 
 def _build_id(cfg: BuildConfig, state: Mapping[str, Any], registries_hash: str) -> str:
@@ -449,6 +483,36 @@ def run_build(cfg: BuildConfig, *, env: Mapping[str, str] | None = None, climate
     return asyncio.run(_run(cfg, os.environ if env is None else env, climate_reader))
 
 
+async def _mark_target(cfg: TargetConfig, env: Mapping[str, str]) -> dict[str, Any]:
+    """Write the scratch marker on a completely EMPTY target (no node, constraint or index): step one of option b.
+
+    The marker is what later allows legacy trials in the target (a restored copy), so it may only be created
+    while the target is provably nothing else: nothing can be marked after the fact. Idempotent when the target
+    holds only the same marker.
+    """
+    authorize_write(cfg, env)
+    user, password = _auth(env)
+    driver = AsyncGraphDatabase.driver(cfg.target, auth=(user, password))
+    try:
+        nodes = await _scalar(driver, cfg.database, f"MATCH (n) WHERE NOT n:{MARKER_LABEL} RETURN count(n) AS c")
+        schema = await _scalar(driver, cfg.database, "SHOW CONSTRAINTS YIELD name RETURN count(name) AS c") + \
+            await _scalar(driver, cfg.database, "SHOW INDEXES YIELD type WHERE type <> 'LOOKUP' RETURN count(*) AS c")
+        marker = await _read_marker(driver, cfg.database)
+        if marker is not None:
+            _check_scratch_marker(marker, cfg, why="existing marker")
+        if nodes or schema:
+            raise WriteRefused(f"target is not empty ({nodes} nodes, {schema} schema rules): a marker can only be "
+                               "created on an empty target")
+        if not cfg.execute:
+            return {"mode": "dry-run", "target_label": cfg.target_label, "marker_present": marker is not None,
+                    "writes": 0}
+        await _write_marker(driver, cfg)  # type: ignore[arg-type]
+        return {"mode": "execute", "target_label": cfg.target_label, "marker_present": True,
+                "created": marker is None}
+    finally:
+        await driver.close()
+
+
 async def _export_only(target: str, label: str | None, out_path: Path, env: Mapping[str, str]) -> export_mod.ExportResult:
     authorize_host(target, env)  # a read of the live graph is refused too: it is a build-instance tool
     user, password = _auth(env)
@@ -480,6 +544,11 @@ def _parser() -> argparse.ArgumentParser:
     b.add_argument("--climate-cache", default=str(DEFAULT_CACHE), help="CHELSA cell cache (JSON)")
     b.add_argument("--chelsa-online", action="store_true", help="fetch missing CHELSA cells (default: cache only)")
     b.add_argument("--batch-size", type=int, default=loader.DEFAULT_BATCH_SIZE)
+    m = sub.add_parser("mark-target", help="write the scratch marker on an EMPTY target (first step of a restored "
+                                           "copy: mark, restore, migrate-restored, replace-sources, build)")
+    m.add_argument("--target", required=True)
+    m.add_argument("--target-label", required=True, help="scratch label")
+    m.add_argument("--execute", action="store_true", help="write the marker (default: report only)")
     e = sub.add_parser("export", help="export a build graph to a deterministic archive (read-only)")
     e.add_argument("--target", required=True)
     e.add_argument("--out", required=True, help="archive path")
@@ -494,6 +563,11 @@ def main(argv: Sequence[str] | None = None, *, env: Mapping[str, str] | None = N
         if args.command == "export":
             result = asyncio.run(_export_only(args.target, None, Path(args.out), environment))
             print(json.dumps(result.to_dict(), sort_keys=True, indent=2, default=str))
+            return EXIT_OK
+        if args.command == "mark-target":
+            report = asyncio.run(_mark_target(
+                TargetConfig(target=args.target, target_label=args.target_label, execute=args.execute), environment))
+            print(json.dumps(report, sort_keys=True, indent=2, default=str))
             return EXIT_OK
         if not args.raw_dir:
             raise BuildFailed("--raw-dir or NKZ_DATA_SOURCES_DIR is required")
@@ -514,4 +588,4 @@ def main(argv: Sequence[str] | None = None, *, env: Mapping[str, str] | None = N
     return result.exit_code
 
 
-__all__ = ["BuildConfig", "BuildFailed", "BuildResult", "WriteRefused", "authorize_host", "authorize_write", "main", "run_build"]
+__all__ = ["BuildConfig", "BuildFailed", "BuildResult", "TargetConfig", "WriteRefused", "authorize_host", "authorize_write", "main", "run_build"]
