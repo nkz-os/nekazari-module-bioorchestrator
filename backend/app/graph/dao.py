@@ -409,16 +409,19 @@ def _irrigation_uri(regime: str | None) -> str | None:
 
 
 # Canonical order of the phenological stages (FAO-56: initial, development, mid-season, late-season).
-# A phenology lookup that names no stage and gives no GDD returns the parameters of the FIRST stage in
-# this order that has any; a stage outside it (species-specific, e.g. pit_hardening) follows, by name.
-# Ties among parameters of one stage resolve by cultivar, management and climate zone, so the choice
-# never depends on the physical order of the rows.
+# A phenology lookup that names no stage and gives no GDD returns the parameters of
+# PHENOLOGY_DEFAULT_STAGE (FAO-56 reference stage: Kc_mid characterises the crop, Ky peaks at
+# flowering), then the first stage in this order that has any; a stage outside it (species-specific,
+# e.g. pit_hardening) follows, by name. Ties among parameters of one stage resolve by cultivar,
+# management and climate zone, so the choice never depends on the physical order of the rows.
 PHENOLOGY_STAGE_ORDER: tuple[str, ...] = ("initial", "development", "mid-season", "late-season")
+PHENOLOGY_DEFAULT_STAGE = "mid-season"
 
 
 def _phenology_stage_rank_cypher(stage_var: str = "st") -> str:
-    """Cypher integer expression ranking ``stage_var.name`` by ``PHENOLOGY_STAGE_ORDER`` (others last)."""
-    whens = " ".join(f"WHEN '{n}' THEN {i}" for i, n in enumerate(PHENOLOGY_STAGE_ORDER))
+    """Cypher rank of ``stage_var.name``: ``PHENOLOGY_DEFAULT_STAGE``, then ``PHENOLOGY_STAGE_ORDER`` (others last)."""
+    order = (PHENOLOGY_DEFAULT_STAGE, *(n for n in PHENOLOGY_STAGE_ORDER if n != PHENOLOGY_DEFAULT_STAGE))
+    whens = " ".join(f"WHEN '{n}' THEN {i}" for i, n in enumerate(order))
     return f"CASE toLower(trim(coalesce({stage_var}.name, ''))) {whens} ELSE {len(PHENOLOGY_STAGE_ORDER)} END"
 
 
@@ -893,9 +896,9 @@ class GraphDAO:
           4. Species-only: any stage default
 
         Deterministic default: with no stage and no GDD the result is the best-scoring
-        parameter row of the first stage in ``PHENOLOGY_STAGE_ORDER`` (FAO-56: initial,
-        development, mid-season, late-season; species-specific stages follow, by name); the
-        same order resolves a ``stage`` that matches several stages. Remaining ties resolve by
+        parameter row of ``PHENOLOGY_DEFAULT_STAGE`` (mid-season), then of the first stage in
+        ``PHENOLOGY_STAGE_ORDER`` that has one (species-specific stages follow, by name); the
+        same ranking resolves a ``stage`` that matches several stages. Remaining ties resolve by
         cultivar, management and climate zone, never by the physical order of the rows.
 
         When GDD (Growing Degree Days) is provided and stage is not explicitly

@@ -1,6 +1,6 @@
-"""``get_phenology_params`` with no stage is deterministic: the first stage of the canonical order
-(initial, development, mid-season, late-season, then others by name), whatever the physical order of
-the tied rows. Real Neo4j."""
+"""``get_phenology_params`` with no stage is deterministic: the FAO-56 reference stage (mid-season),
+else the first stage of the canonical order (initial, development, late-season, then others by name),
+whatever the physical order of the tied rows. Real Neo4j."""
 from __future__ import annotations
 
 import asyncio
@@ -10,7 +10,7 @@ import shutil
 import pytest
 from testcontainers.neo4j import Neo4jContainer
 
-from app.graph.dao import PHENOLOGY_STAGE_ORDER, GraphDAO
+from app.graph.dao import PHENOLOGY_DEFAULT_STAGE, PHENOLOGY_STAGE_ORDER, GraphDAO
 from neo4j import AsyncGraphDatabase
 
 pytestmark = [
@@ -38,12 +38,12 @@ async def _seed_species(driver, name: str, stage_order: list[str], extra_param: 
                     {cultivar: '__generic__', management: '__standard__', climateZone: '__any__',
                      isDefault: true, kc: $kc})""",
                 n=name, st=st, kc=_KC[st])
-        if extra_param:  # a second default row in the 'initial' stage (tied score)
+        if extra_param:  # a second default row in the 'mid-season' stage (tied score)
             await s.run(
-                """MATCH (:Species {name: $n})-[:HAS_STAGE]->(stage:PhenologyStage {name: 'initial'})
+                """MATCH (:Species {name: $n})-[:HAS_STAGE]->(stage:PhenologyStage {name: 'mid-season'})
                 CREATE (stage)-[:HAS_PARAMETER]->(:PhenologyParams
                     {cultivar: 'Aaa', management: '__standard__', climateZone: '__any__',
-                     isDefault: true, kc: 0.31})""", n=name)
+                     isDefault: true, kc: 1.16})""", n=name)
 
 
 @pytest.fixture(scope="module")
@@ -57,21 +57,27 @@ def dao():
             for i, perm in enumerate(itertools.islice(itertools.permutations(_STAGES), 0, 120, 7)):
                 await _seed_species(driver, f"crop{i:02d}", list(perm))
             await _seed_species(driver, "tied", list(reversed(_STAGES)), extra_param=True)
+            await _seed_species(driver, "nomid", ["stem_elongation", "late-season", "development", "initial"])
         _run(seed())
         d.n_species = len(list(itertools.islice(itertools.permutations(_STAGES), 0, 120, 7)))
         yield d
         _run(driver.close())
 
 
-def test_canonical_order_starts_with_initial():
-    assert PHENOLOGY_STAGE_ORDER[0] == "initial"
+def test_default_stage_is_fao56_mid_season():
+    assert PHENOLOGY_DEFAULT_STAGE == "mid-season" and PHENOLOGY_STAGE_ORDER[0] == "initial"
 
 
-def test_no_stage_returns_the_first_canonical_stage_whatever_the_row_order(dao):
+def test_no_stage_returns_mid_season_whatever_the_row_order(dao):
     assert dao.n_species >= 10
     for i in range(dao.n_species):
         got = _run(dao.get_phenology_params(species=f"crop{i:02d}"))
-        assert got["stage"] == "initial" and got["kc"] == 0.3, i
+        assert got["stage"] == "mid-season" and got["kc"] == 1.15, i
+
+
+def test_no_mid_season_falls_back_to_canonical_order(dao):
+    got = _run(dao.get_phenology_params(species="nomid"))
+    assert got["stage"] == "initial" and got["kc"] == 0.3
 
 
 def test_repeated_calls_agree(dao):
@@ -81,11 +87,11 @@ def test_repeated_calls_agree(dao):
 
 def test_tied_rows_of_one_stage_resolve_by_name_not_by_storage_order(dao):
     got = _run(dao.get_phenology_params(species="tied"))
-    assert got["stage"] == "initial" and got["cultivar"] == "Aaa"  # '' < ... : cultivar name ascending
+    assert got["stage"] == "mid-season" and got["cultivar"] == "Aaa"  # '' < ... : cultivar name ascending
 
 
 def test_ambiguous_stage_name_resolves_by_canonical_order(dao):
-    # 'season' matches 'mid-season' and 'late-season': the earlier one in the canonical order wins
+    # 'season' matches 'mid-season' and 'late-season': the default stage wins
     for i in range(dao.n_species):
         assert _run(dao.get_phenology_params(species=f"crop{i:02d}", stage="season"))["stage"] == "mid-season"
 
