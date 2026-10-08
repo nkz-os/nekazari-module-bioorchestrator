@@ -628,13 +628,23 @@ def _parser() -> argparse.ArgumentParser:
     r.add_argument("--target", required=True)
     r.add_argument("--target-label", help="scratch label (required with --execute)")
     r.add_argument("--execute", action="store_true", help="delete (default: dry run printing the plan)")
-    r.add_argument("--extra-site-keys", default="", help="comma separated siteKeys of additional EMPTY sites to "
-                                                         "delete (kept if any trial points at them)")
+    r.add_argument("--extra-site-key", action="append", default=[], metavar="SITEKEY",
+                   help="siteKey of an additional EMPTY site to delete (kept if any trial points at it); "
+                        "repeatable, taken whole, so keys with commas work")
+    r.add_argument("--extra-site-keys", default="", help="comma separated siteKeys (legacy form: cannot carry a "
+                                                         "key that contains a comma; use --extra-site-key)")
     r.add_argument("--out", default=str(DEFAULT_OUT), help="manifest directory (gitignored)")
     e = sub.add_parser("export", help="export a build graph to a deterministic archive (read-only)")
     e.add_argument("--target", required=True)
     e.add_argument("--out", required=True, help="archive path")
     return p
+
+
+def _extra_site_keys(args: argparse.Namespace) -> list[str]:
+    """Whole keys from ``--extra-site-key`` plus the legacy comma form, de-duplicated in order."""
+    keys = [k.strip() for k in args.extra_site_key if k.strip()]
+    keys += [k.strip() for k in args.extra_site_keys.split(",") if k.strip()]
+    return list(dict.fromkeys(keys))
 
 
 def main(argv: Sequence[str] | None = None, *, env: Mapping[str, str] | None = None, climate_reader: Any = None) -> int:
@@ -661,7 +671,7 @@ def main(argv: Sequence[str] | None = None, *, env: Mapping[str, str] | None = N
                 TargetConfig(target=args.target, target_label=args.target_label, execute=args.execute,
                              out_dir=Path(args.out)),
                 [x.strip() for x in args.sources.split(",") if x.strip()],
-                [x.strip() for x in args.extra_site_keys.split(",") if x.strip()], environment))
+                _extra_site_keys(args), environment))
             print(json.dumps(report, sort_keys=True, indent=2, default=str, ensure_ascii=False))
             return EXIT_OK
         if not args.raw_dir:

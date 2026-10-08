@@ -156,6 +156,11 @@ DENORMALIZED_COPIES: dict[str, tuple[tuple[str, ...], Callable[[ObservationRow],
 }
 
 
+def _is_multi_season(unit: Any) -> bool:
+    """The unit's season is a period of several years (no single year), e.g. "2019-2021"."""
+    return unit.raw_season is not None and unit.year is None
+
+
 def _factor_levels(unit: UnitRow) -> list[str]:
     """One canonical JSON text per factor level, in canonical order (the order the source lists is not data)."""
     return sorted(identity.canonical_json({"t": [level.factor, level.level, level.unit]})
@@ -201,6 +206,10 @@ def unit_properties(unit: UnitRow, observations: Sequence[ObservationRow], regis
         "productionSystem": unit.production_system,
         "purpose": unit.purpose,
         "productivityClass": unit.productivity_class,
+        # A mean over several seasons (GENVCE multi-year tables) averages yearly results the graph already holds:
+        # it is not an independent trial, so it is kept as provenance but never ranked or pooled (M-6).
+        "rankingEligible": False if _is_multi_season(unit) else None,
+        "rankingExclusion": "multi_year_mean" if _is_multi_season(unit) else None,
         "irrigationDerivation": unit.irrigation_derivation,
         "irrigationYieldLowKgHa": unit.irrigation_yield_low_kg_ha,
         "irrigationYieldHighKgHa": unit.irrigation_yield_high_kg_ha,

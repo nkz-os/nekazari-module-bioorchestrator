@@ -449,3 +449,321 @@ sites:
       ASSUMPTION: the group a GENVCE table averages is not stated in the extraction (no zone, stratum or
       group label). Such a mean is kept at country level only so it is reachable by the regional tier; the
       trials it covers are unknown. An aggregate, no coordinates, never climate-enriched.
+  - id: ES-GENVCE-ZONA-NORTE
+    name: zona Norte
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: &genvce_durum_network_note >-
+      ASSUMPTION: a group of trials of one of the two GENVCE durum-wheat networks ("zona Norte", "zona Sur"),
+      optionally split by the agroclimatic or yield-stratum label its table prints ("<network> / <label>"). Not a
+      place: an aggregate with no coordinates, as the report prints it.
+  - id: ES-GENVCE-ZONA-NORTE-PRODUCCION-ALTA
+    name: zona Norte / producción alta
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_durum_network_note
+  - id: ES-GENVCE-ZONA-NORTE-PRODUCCION-BAJA
+    name: zona Norte / producción baja
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_durum_network_note
+  - id: ES-GENVCE-ZONA-NORTE-REGADIOS-FRIOS-Y-TEMPLADOS
+    name: zona Norte / regadíos fríos y templados
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_durum_network_note
+  - id: ES-GENVCE-ZONA-NORTE-RENDIMIENTO-ALTO
+    name: zona Norte / Rendimiento alto
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_durum_network_note
+  - id: ES-GENVCE-ZONA-NORTE-RENDIMIENTO-BAJO
+    name: zona Norte / Rendimiento bajo
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_durum_network_note
+  - id: ES-GENVCE-ZONA-NORTE-RENDIMIENTO-MEDIO
+    name: zona Norte / Rendimiento medio
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_durum_network_note
+  - id: ES-GENVCE-ZONA-NORTE-SECANOS-HUMEDOS-Y-DE-ALTO-POTENCIAL-FRIOS
+    name: zona Norte / secanos húmedos y de alto potencial fríos
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_durum_network_note
+  - id: ES-GENVCE-ZONA-NORTE-SECANOS-HUMEDOS-Y-DE-ALTO-POTENCIAL-FRIOS-Y-TEMPLADOS
+    name: zona Norte / secanos húmedos y de alto potencial fríos y templados
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_durum_network_note
+  - id: ES-GENVCE-ZONA-NORTE-SECANOS-HUMEDOS-Y-DE-ALTO-POTENCIAL-Y-REGADIOS-FRIOS
+    name: zona Norte / secanos húmedos y de alto potencial y regadíos fríos
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_durum_network_note
+  - id: ES-GENVCE-ZONA-NORTE-SECANOS-HUMEDOS-Y-DE-ALTO-POTENCIAL-Y-REGADIOS-FRIOS-Y-TEMPLADOS
+    name: zona Norte / secanos húmedos y de alto potencial y regadíos fríos y templados
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_durum_network_note
+  - id: ES-GENVCE-ZONA-NORTE-SECANOS-TEMPLADOS
+    name: zona Norte / secanos templados
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_durum_network_note
+  - id: ES-GENVCE-ZONA-NORTE-SECANOS-Y-REGADIOS-TEMPLADOS
+    name: zona Norte / secanos y regadíos templados
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_durum_network_note
+  - id: ES-GENVCE-ZONA-NORTE-SECANOS-ARIDOS-Y-SEMIARIDOS-FRIOS
+    name: zona Norte / secanos áridos y semiáridos fríos
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_durum_network_note
+  - id: ES-GENVCE-ZONA-NORTE-SECANOS-ARIDOS-Y-SEMIARIDOS-FRIOS-Y-TEMPLADOS
+    name: zona Norte / secanos áridos y semiáridos fríos y templados
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_durum_network_note
+  - id: ES-GENVCE-ZONA-NORTE-ZONAS-FRIAS
+    name: zona Norte / zonas frías
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_durum_network_note
+  - id: ES-GENVCE-ZONA-NORTE-ZONAS-TEMPLADAS
+    name: zona Norte / zonas templadas
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_durum_network_note
+  - id: ES-GENVCE-ZONA-SUR
+    name: zona Sur
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_durum_network_note
+  - id: ES-GENVCE-ZONA-SUR-RENDIMIENTO-ALTO
+    name: zona Sur / Rendimiento alto
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_durum_network_note
+  - id: ES-GENVCE-ZONA-SUR-RENDIMIENTO-BAJO
+    name: zona Sur / Rendimiento bajo
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_durum_network_note
+  - id: ES-GENVCE-ZONA-SUR-RENDIMIENTO-MEDIO
+    name: zona Sur / Rendimiento medio
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_durum_network_note
+  - id: ES-GENVCE-ZONA-SUR-SECANOS-HUMEDOS-Y-DE-ALTO-POTENCIAL
+    name: zona Sur / secanos húmedos y de alto potencial
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_durum_network_note
+  - id: ES-GENVCE-ZONA-SUR-SECANOS-HUMEDOS-Y-DE-ALTO-POTENCIAL-FRIOS-Y-TEMPLADOS
+    name: zona Sur / secanos húmedos y de alto potencial fríos y templados
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_durum_network_note
+  - id: ES-GENVCE-ZONA-SUR-SECANOS-HUMEDOS-Y-DE-ALTO-POTENCIAL-TEMPLADOS
+    name: zona Sur / secanos húmedos y de alto potencial templados
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_durum_network_note
+  - id: ES-GENVCE-ZONA-SUR-SECANOS-ARIDOS-Y-SEMIARIDOS
+    name: zona Sur / secanos áridos y semiáridos
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_durum_network_note
+  - id: ES-GENVCE-ZONA-SUR-SECANOS-ARIDOS-Y-SEMIARIDOS-TEMPLADOS
+    name: zona Sur / secanos áridos y semiáridos templados
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_durum_network_note
+  - id: ES-GENVCE-REGADIOS-Y-ZONAS-TEMPLADAS-SUBHUMEDAS
+    name: regadíos y zonas templadas subhúmedas
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_group_note
+  - id: ES-GENVCE-SECANOS-HUMEDOS-Y-DE-ALTO-POTENCIAL
+    name: secanos húmedos y de alto potencial
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_group_note
+  - id: ES-GENVCE-SECANOS-HUMEDOS-Y-DE-ALTO-POTENCIAL-TEMPLADOS
+    name: secanos húmedos y de alto potencial templados
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_group_note
+  - id: ES-GENVCE-SECANOS-HUMEDOS-Y-DE-ALTO-POTENCIAL-Y-REGADIOS-FRIOS-Y-TEMPLADOS
+    name: secanos húmedos y de alto potencial y regadíos fríos y templados
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_group_note
+  - id: ES-GENVCE-SECANOS-ARIDOS
+    name: secanos áridos
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_group_note
+  - id: ES-GENVCE-SECANOS-ARIDOS-Y-SEMIARIDOS
+    name: secanos áridos y semiáridos
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_group_note
+  - id: ES-GENVCE-SECANOS-ARIDOS-Y-SEMIARIDOS-TEMPLADOS
+    name: secanos áridos y semiáridos templados
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_group_note
+  - id: ES-GENVCE-ZONAS-CALIDAS-Y-TEMPLADAS
+    name: zonas cálidas y templadas
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_group_note
+  - id: ES-GENVCE-ZONAS-DE-REGADIO
+    name: zonas de regadío
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_group_note
+  - id: ES-GENVCE-ZONAS-FRIAS-HUMEDAS-Y-SUBHUMEDAS
+    name: zonas frías húmedas y subhúmedas
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_group_note
+  - id: ES-GENVCE-ZONAS-FRIAS-SEMIARIDAS
+    name: zonas frías semiáridas
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_group_note
+  - id: ES-GENVCE-ZONAS-FRIAS-SUBHUMEDAS
+    name: ZONAS FRÍAS SUBHÚMEDAS
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_group_note
+  - id: ES-GENVCE-ZONAS-FRIAS-Y-SEMIARIDAS
+    name: zonas frías y semiáridas
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_group_note
+  - id: ES-GENVCE-ZONAS-FRIAS-Y-SUBHUMEDAS
+    name: zonas frías y subhúmedas
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_group_note
+  - id: ES-GENVCE-ZONAS-SUBHUMEDAS-CALIDAS
+    name: zonas subhúmedas cálidas
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_group_note
+  - id: ES-GENVCE-ZONAS-TEMPLADAS-Y-CALIDAS
+    name: zonas templadas y cálidas
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_group_note
+  - id: ES-GENVCE-ZONAS-TEMPLADAS-CALIDAS
+    name: zonas templadas-cálidas
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_group_note
+  - id: ES-GENVCE-ZONAS-TEMPLADAS-FRIAS
+    name: zonas templadas-frías
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_group_note
+  - id: ES-GENVCE-ZONAS-ARIDAS-TEMPLADAS
+    name: zonas áridas templadas
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_group_note

@@ -84,9 +84,9 @@ def test_unknown_field_is_rejected(copy_dir):
 
 def test_crops_cover_the_raw_data_codes(reg):
     codes = {c.eppo for c in reg.crops}
-    assert {"ZEAMX", "HORVX", "TRZAX", "BRSNN"} <= codes
+    assert {"ZEAMX", "HORVX", "TRZAX", "BRSNN", "TRZDU", "TTLSS", "AVESA", "SECCE"} <= codes
     seen = {c.eppo for c in reg.crops if c.seen_in}
-    assert seen == {"ZEAMX", "HORVX", "TRZAX", "BRSNN"}
+    assert seen == {"ZEAMX", "HORVX", "TRZAX", "BRSNN", "TRZDU", "TTLSS", "AVESA", "SECCE"}
 
 
 @pytest.mark.parametrize(
@@ -835,8 +835,8 @@ def test_reviewed_range_needs_reviewer_and_evidence(copy_dir):
 
 # ── varieties ────────────────────────────────────────────────────────────────
 
-def test_varieties_cover_the_four_crops_with_unique_ids(reg):
-    assert {v.crop for v in reg.varieties} == {"ZEAMX", "HORVX", "TRZAX", "BRSNN"}
+def test_varieties_cover_the_crops_with_unique_ids(reg):
+    assert {v.crop for v in reg.varieties} == {"ZEAMX", "HORVX", "TRZAX", "BRSNN", "TRZDU", "TTLSS", "AVESA", "SECCE"}
     assert len({v.id for v in reg.varieties}) == len(reg.varieties) > 700
     for variety in reg.varieties:
         assert reg.crop(variety.crop).eppo == variety.crop
