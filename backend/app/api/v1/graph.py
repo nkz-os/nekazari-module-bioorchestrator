@@ -20,6 +20,7 @@ from app.core.dependencies import (
     require_platform_admin,
 )
 from app.graph.dao import GraphDAO
+from app.services.sim_errors import SimulationError
 from app.species_registry import get_species_info, resolve_species
 from neo4j import AsyncDriver
 
@@ -1118,42 +1119,46 @@ async def agriculture_yield_projection(
     return attach_attributions(result, result.get("source_ids") or [])
 
 
-@router.post("/agriculture/wofost-simulation")
-async def agriculture_wofost_simulation(
+@router.post("/agriculture/crop-simulation")
+async def agriculture_crop_simulation(
     driver: DriverDep,
     request: Request,
     parcel_id: str = Query(..., description="AgriParcel URN"),
     crop_slug: str | None = Query(
         default=None,
-        description="Canonical crop slug (e.g. 'wheat', 'maize'). Auto-detected if omitted.",
+        description="Canonical crop slug (e.g. 'wheat', 'maize'). Taken from the parcel if omitted.",
     ),
     sowing_date: str | None = Query(
         default=None,
-        description="Sowing date (YYYY-MM-DD). Auto-detected from field-operations if omitted.",
+        description="Sowing date (YYYY-MM-DD, not in the future). Taken from the latest sowing operation if omitted.",
     ),
+    irrigation: str = Query(
+        default="rainfed",
+        description="'rainfed' or 'full' (irrigated to field capacity): the scenario of the headline yield.",
+    ),
+    engine: str = Query(default="aquacrop", description="Simulation engine."),
 ):
-    """Run WOFOST/PCSE mechanistic simulation for a parcel.
+    """Simulate the parcel's crop season (yield, water stress, daily canopy).
 
-    Fetches all inputs automatically:
-      - Weather from timeseries-reader (backed by weather-worker Open-Meteo)
-      - Soil hydraulic properties per horizon from the Soil module summary
-      - Sowing date from field-operations AgriParcelOperation(sowing)
-      - Crop parameters from Neo4j graph (PhenologyParams) with PCSE defaults
-
-    Falls back to FAO-33 simplified simulation if PCSE is not installed.
-    Returns daily LAI, biomass, and yield projection.
+    Inputs come from real data only: soil from the Soil module, daily parcel
+    weather (plus the weather archive for earlier days), crop and sowing from
+    the parcel and its operations. A season still in progress is projected to
+    harvest with a climatological ensemble (P10/P50/P90). Input problems answer
+    422 and upstream outages 503, both as ``{"detail": {"code", "message"}}``.
     """
     tenant_id = _require_tenant_id(request)
     dao = GraphDAO(driver)
-    result = await dao.run_wofost_simulation(
-        parcel_id=parcel_id,
-        tenant_id=tenant_id,
-        crop_slug=crop_slug,
-        sowing_date_str=sowing_date,
-    )
-    if "error" in result:
-        raise HTTPException(status_code=404, detail=result["error"])
-    return result
+    try:
+        return await dao.run_crop_simulation(
+            parcel_id=parcel_id,
+            tenant_id=tenant_id,
+            crop_slug=crop_slug,
+            sowing_date_str=sowing_date,
+            irrigation=irrigation,
+            engine=engine,
+        )
+    except SimulationError as e:
+        raise HTTPException(status_code=e.status_code, detail=e.detail()) from e
 
 
 @router.get("/agriculture/compare-crops")
