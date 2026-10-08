@@ -163,3 +163,11 @@ def test_a_trial_of_another_source_that_vanishes_is_reported_as_an_error(restore
                         "MATCH (w:VarietyTrial {{source_id: 'LEGACY'}}) DETACH DELETE w WITH n"))
     with pytest.raises(replace_mod.ReplaceError, match="other sources changed"):
         _loop.run_until_complete(replace_mod.execute(d, ["CREA"]))
+
+
+def test_extra_site_key_is_taken_whole_so_keys_with_commas_work():
+    args = cli._parser().parse_args([
+        "replace-sources", "--sources", "GENVCE", "--target", "bolt://127.0.0.1:7687",
+        "--extra-site-key", "almeria#36.79,-2.7", "--extra-site-key", "empty-ifapa",
+        "--extra-site-keys", "nav-1,empty-ifapa"])
+    assert cli._extra_site_keys(args) == ["almeria#36.79,-2.7", "empty-ifapa", "nav-1"]
