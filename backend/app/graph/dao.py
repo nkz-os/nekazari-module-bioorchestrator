@@ -5188,9 +5188,14 @@ class GraphDAO:
         try:
             orion = OrionClient(tenant_id)
             try:
-                weather_entities = await orion.query_entities(type="WeatherObserved", limit=1)
+                weather_entities = await orion.query_entities(type="WeatherObserved", limit=10)
             finally:
                 await orion.close()
+            # Closed-day series entities ("...-daily") carry no current conditions.
+            weather_entities = [
+                e for e in (weather_entities or [])
+                if not str(e.get("id", "")).endswith("-daily")
+            ]
             if not weather_entities:
                 logger.info("No WeatherObserved entities found for tenant %s", tenant_id)
                 return None
@@ -5505,15 +5510,23 @@ class GraphDAO:
           1. Crop type from parcel's assigned AgriCrop (Orion-LD)
           2. Sowing date from field-operations AgriParcelOperation(sowing)
           3. Weather from timeseries-reader (backed by weather-worker)
-          4. Soil texture from Soil module → Saxton-Rawls pedotransfer
+          4. Soil layers (FC/WP/Ksat per horizon) from the Soil module summary
           5. Crop parameters from Neo4j PhenologyParams + PCSE defaults
         """
-        from datetime import date, datetime, timedelta, timezone
+        from datetime import date, datetime, timezone
 
         import httpx
 
-        from app.services.pedotransfer import texture_to_hydraulic_props
+        from app.services.sim_inputs import (
+            SimInputError,
+            hydraulic_props_from_layers,
+            resolve_sowing_date,
+            soil_layers_from_summary,
+        )
+        from app.services.soil_client import SoilSummaryError, get_parcel_soil_summary
         from app.services.wofost_service import run_wofost_simulation
+
+        today = datetime.now(tz=timezone.utc).date()
 
         # ── 1. Resolve crop type ──
         orion = OrionClient(tenant_id)
@@ -5529,45 +5542,35 @@ class GraphDAO:
         finally:
             await orion.close()
 
-        # ── 2. Resolve sowing date ──
-        if not sowing_date_str:
+        # ── 2. Resolve sowing date (real operations only; no substitute date) ──
+        if sowing_date_str:
             try:
-                orion2 = OrionClient(tenant_id)
+                sowing_date = date.fromisoformat(sowing_date_str[:10])
+            except ValueError:
+                return {"error": f"Invalid sowing date: {sowing_date_str}"}
+        else:
+            orion2 = OrionClient(tenant_id)
+            try:
                 ops = await orion2.query_entities(
                     type="AgriParcelOperation",
                     q=f'hasAgriParcel=="{parcel_id}"|refAgriParcel=="{parcel_id}"',
-                    limit=20,
+                    limit=200,
                 )
+            except Exception as e:  # noqa: BLE001
+                logger.warning("Failed to query sowing operations for %s: %s", parcel_id, e)
+                return {"error": "Could not read sowing operations"}
+            finally:
                 await orion2.close()
-
-                if ops and isinstance(ops, list):
-                    for op in ops:
-                        op_type = _extract_prop_value(op.get("operationType")) or ""
-                        if op_type.lower() == "sowing":
-                            start_date = _extract_prop_value(op.get("plannedStartAt")) or _extract_prop_value(op.get("startedAt")) or ""
-                            if start_date:
-                                sowing_date_str = start_date[:10]
-                                break
-            except Exception:  # noqa: BLE001,S110
-                pass
-
-            if not sowing_date_str:
-                # Fallback: use crop season start from parcel
-                season_start = _extract_prop_value(parcel.get("cropSeasonStart")) or ""
-                if season_start:
-                    sowing_date_str = season_start[:10]
-
-        if not sowing_date_str:
-            return {"error": "No sowing date available — provide manually or assign a crop with sowing operation"}
-
-        try:
-            sowing_date = date.fromisoformat(sowing_date_str)
-        except ValueError:
-            return {"error": f"Invalid sowing date: {sowing_date_str}"}
+            try:
+                sowing_date = resolve_sowing_date(ops if isinstance(ops, list) else [], today)
+            except SimInputError as e:
+                return {"error": f"No sowing date available — provide one manually or record a sowing operation ({e})"}
 
         # ── 3. Fetch weather data from timeseries-reader ──
-        today = datetime.now(tz=timezone.utc).date()
+        # Depends on the per-parcel daily weather endpoint of the core services;
+        # without real data the simulation is refused (nothing is synthesized).
         weather_data = []
+        weather_error = None
         try:
             async with httpx.AsyncClient(timeout=30) as client:
                 resp = await client.get(
@@ -5579,32 +5582,21 @@ class GraphDAO:
                     raw = resp.json()
                     if isinstance(raw, list):
                         weather_data = raw
+                else:
+                    weather_error = f"HTTP {resp.status_code}"
         except Exception as e:  # noqa: BLE001
-            logger.warning("Failed to fetch weather: %s — using defaults", e)
-
+            weather_error = "request failed"
+            logger.warning("Failed to fetch weather for %s: %s", parcel_id, e)
         if not weather_data:
-            # Build synthetic weather from defaults (20°C, 3.5mm ET0/day, 200W/m²)
-            days = (today - sowing_date).days + 180  # project 6 months forward
-            for i in range(days):
-                d = sowing_date + timedelta(days=i)
-                weather_data.append({
-                    "date": d.isoformat(),
-                    "tmin": 12, "tmax": 24, "precip": 2.0,
-                    "radiation_w_m2": 250, "wind_speed_ms": 2.0,
-                    "vapour_pressure_kpa": 1.5, "eto": 3.5,
-                })
+            return {"error": f"No weather data available for the parcel from {sowing_date.isoformat()} to {today.isoformat()}"
+                             + (f" ({weather_error})" if weather_error else "")}
 
-        # ── 4. Fetch soil and compute pedotransfer ──
-        from app.services.soil_client import get_parcel_soil_properties
-        soil_actual = await get_parcel_soil_properties(parcel_id, tenant_id)
-
-        sand_pct = 40.0
-        clay_pct = 25.0
-        if soil_actual.get("data_available"):
-            sand_pct = float(soil_actual.get("sand_pct", 40))
-            clay_pct = float(soil_actual.get("clay_pct", 25))
-
-        soil_props = texture_to_hydraulic_props(sand_pct, clay_pct)
+        # ── 4. Soil layers from the Soil module (no texture defaults) ──
+        try:
+            soil_layers = soil_layers_from_summary(await get_parcel_soil_summary(parcel_id, tenant_id))
+            soil_props = hydraulic_props_from_layers(soil_layers)
+        except (SoilSummaryError, SimInputError) as e:
+            return {"error": f"Soil data unavailable or incomplete: {e}"}
 
         # ── 5. Fetch crop parameters from graph ──
         graph_params = {}
@@ -5629,7 +5621,7 @@ class GraphDAO:
         result["parcel_id"] = parcel_id
         result["crop_slug"] = crop_slug
         result["sowing_date"] = sowing_date.isoformat()
-        result["soil_inputs"] = {"sand_pct": sand_pct, "clay_pct": clay_pct}
+        result["soil_inputs"] = {"layers": soil_layers}
         result["soil_hydraulic"] = soil_props
         result["weather_days_fetched"] = len(weather_data)
         return result

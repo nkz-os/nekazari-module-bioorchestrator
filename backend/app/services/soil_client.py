@@ -96,6 +96,35 @@ async def get_parcel_soil_properties(parcel_id: str, tenant_id: str = "") -> dic
     return result
 
 
+class SoilSummaryError(RuntimeError):
+    """The Soil module summary could not be fetched."""
+
+
+async def get_parcel_soil_summary(parcel_id: str, tenant_id: str = "") -> dict[str, Any]:
+    """Fetch the raw Soil module summary (all horizons) for a parcel.
+
+    GET /v1/soil/parcel/{id}/summary. Raises SoilSummaryError on 404, non-200
+    or transport failure; failures are never cached and never defaulted.
+    """
+    headers = soil_module_headers(tenant_id) if tenant_id else {}
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            resp = await client.get(
+                f"{SOIL_API_URL}/v1/soil/parcel/{parcel_id}/summary",
+                headers=headers,
+            )
+    except httpx.HTTPError as e:
+        raise SoilSummaryError(f"soil module unreachable: {e}") from e
+    if resp.status_code == 404:
+        raise SoilSummaryError(f"no soil data for parcel {parcel_id}")
+    if resp.status_code != 200:
+        raise SoilSummaryError(f"soil module returned HTTP {resp.status_code}")
+    data = resp.json()
+    if not isinstance(data, dict):
+        raise SoilSummaryError("soil module returned a non-object summary")
+    return data
+
+
 # ── Soil-suitability gate (C.5) ──────────────────────────────────────────────
 # Compares a crop's STANDARD tolerance (EcoCrop / CropSoilSuitability) against
 # a parcel's REAL soil (read live from the Soil module) and returns a graded

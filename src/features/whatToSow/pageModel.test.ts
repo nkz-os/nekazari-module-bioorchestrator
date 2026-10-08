@@ -5,7 +5,7 @@ import type { ParcelEnvironment, Recommendation } from '../../types/recommend';
 import {
   DEFAULT_FILTERS, KOPPEN_CODES, MAX_COMPARE, conditionsQuery, evidenceConditions,
   formatAssumptionValue, knownText, parcelQuery, parseFrostMargin, rangeScaleMax,
-  seasonKey, toggleCompare, isFewTrials, frostMarginStatus, irrigationOptions, pickIrrigation, PURPOSES,
+  seasonKey, toggleCompare, frostMarginStatus, irrigationOptions, pickIrrigation, PURPOSES,
   describeReferenceScope, type ScopeTranslate,
   DEFAULT_PURPOSE, carriesEvidencePolicy, effectiveFilters, nextPolicyAware,
 } from './pageModel';
@@ -179,10 +179,6 @@ describe('small formatters', () => {
     expect(knownText('')).toBeNull();
     expect(knownText('unknown')).toBeNull();
     expect(knownText('loam')).toBe('loam');
-  });
-  it('isFewTrials below 3, as the backend low_trial_count note', () => {
-    expect(isFewTrials(2)).toBe(true);
-    expect(isFewTrials(3)).toBe(false);
   });
   it('formatAssumptionValue renders scalars and objects', () => {
     expect(formatAssumptionValue(0.8)).toBe('0.8');

@@ -1136,7 +1136,7 @@ async def agriculture_wofost_simulation(
 
     Fetches all inputs automatically:
       - Weather from timeseries-reader (backed by weather-worker Open-Meteo)
-      - Soil hydraulic properties via pedotransfer (Saxton-Rawls) from AgriSoil texture
+      - Soil hydraulic properties per horizon from the Soil module summary
       - Sowing date from field-operations AgriParcelOperation(sowing)
       - Crop parameters from Neo4j graph (PhenologyParams) with PCSE defaults
 
