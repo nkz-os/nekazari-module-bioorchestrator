@@ -7,6 +7,7 @@ import { isFewTrials, seasonKey } from './pageModel';
 import { typicalSowingMonth } from './compareModel';
 import ExpertDetails from './ExpertDetails';
 import ForageNotice from './ForageNotice';
+import EvidenceNotes from './EvidenceNotes';
 
 /** Crop common name, scientific name as fallback. */
 export function useCropName(rec: Recommendation): string {
@@ -132,6 +133,9 @@ export default function RecommendationCard({
         {rec.trust.similarity === 'vector_v2_fallback' && (
           <p className="text-nkz-sm text-nkz-info">{t('whatToSow.card.similarityV2')}</p>
         )}
+
+        {/* the card already marks few trials next to the count */}
+        <EvidenceNotes rec={rec} skip={['low_trial_count']} />
 
         <ForageNotice rec={rec} onViewForage={onViewForage} />
 

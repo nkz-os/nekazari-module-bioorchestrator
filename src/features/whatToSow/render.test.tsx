@@ -84,3 +84,34 @@ describe('what-to-sow components render the evidence states (es)', () => {
     expect(html).toContain('registros regionales/nacionales');
   });
 });
+
+describe('evidence notes (es)', () => {
+  const regional = (gaps: string[], zm?: Recommendation['evidence']['zone_match']) => {
+    const r = base('TRZAX');
+    r.evidence = { ...r.evidence, tier: 'regional', other_purpose_trials: {}, zone_match: zm };
+    r.trust.data_gaps = gaps;
+    return renderToStaticMarkup(<RegionalList recs={[r]} expert={false} policyVersion="v" noFieldEvidence={false} onOpenEvidence={noop} onReportValue={noop} />);
+  };
+  it('regional row names the matched GENVCE zone with its climatology caveat, without expert mode', () => {
+    const html = regional(['regional_evidence_only', 'regional_zone_matched', 'zone_match_climatology_basis', 'low_trial_count'], {
+      status: 'matched', zone_id: 'z', basis: 'b', caveat: 'c', reason: null,
+      matched_zones: [{ definition_id: 'd', zone_label: 'Zona cálida semiárida', citation: 'x' }],
+    });
+    expect(html).toContain('Zona de GENVCE de la parcela: Zona cálida semiárida');
+    expect(html).toContain('Zona estimada con la climatología 1981-2010');
+    expect(html).toContain('Pocos ensayos');
+  });
+  it('country level, unknown regime and excluded organic trials are shown', () => {
+    const html = regional(['regional_country_level', 'irrigation_regime_unknown_all', 'organic_units_excluded']);
+    expect(html).toContain('asignada por país, no por zona');
+    expect(html).toContain('Ningún ensayo indica su régimen de riego');
+    expect(html).toContain('ensayos ecológicos');
+  });
+  it('the card shows the notes except few trials, which it marks next to the count', () => {
+    const r = base('TRZAX');
+    r.trust.data_gaps = ['irrigation_regime_unknown_all', 'low_trial_count'];
+    const html = card(r);
+    expect(html).toContain('Ningún ensayo indica su régimen de riego');
+    expect(html).not.toContain('Pocos ensayos');
+  });
+});
