@@ -19,7 +19,7 @@ export const ALL_TOOLS: ToolCardDef[] = [
   { id: 'parcelStatus', icon: Heart, hub: 'campaign' },
   { id: 'yieldProjection', icon: TrendingUp, hub: 'campaign' },
   { id: 'waterBudget', icon: Droplets, hub: 'campaign' },
-  { id: 'wofostSimulation', icon: Microscope, hub: 'campaign' },
+  { id: 'cropSimulation', icon: Microscope, hub: 'campaign' },
   { id: 'simulateScenario', icon: Activity, hub: 'campaign' },
 ];
 

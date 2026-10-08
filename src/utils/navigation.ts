@@ -12,7 +12,7 @@ export const CAMPAIGN_TOOL_IDS = [
   'parcelStatus',
   'yieldProjection',
   'waterBudget',
-  'wofostSimulation',
+  'cropSimulation',
   'simulateScenario',
 ] as const;
 
