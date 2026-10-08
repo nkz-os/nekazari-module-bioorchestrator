@@ -37,6 +37,7 @@ import math
 import os
 import statistics
 import warnings
+from collections.abc import Awaitable, Callable
 from concurrent.futures import ProcessPoolExecutor
 from dataclasses import dataclass
 from datetime import date, timedelta
@@ -507,7 +508,7 @@ def _combine(members: list[dict], observed_last: date, irrigation: str, status: 
 
 async def simulate(
     observed: list[DailyWeather],
-    analogs: dict[int, list[DailyWeather]],
+    analogs: dict[int, list[DailyWeather]] | Callable[[], Awaitable[dict[int, list[DailyWeather]]]],
     soil: list[SoilLayer],
     crop: str,
     planting_date: date,
@@ -524,7 +525,9 @@ async def simulate(
     irrigated run); ``potential_yield_t_ha`` is always the irrigated run and
     ``water_gap_pct`` always compares rainfed with it (median-based for the
     ensemble). Percentiles are P10/P50/P90 by linear interpolation.
-    Members run in the process pool.
+    Members run in the process pool. ``analogs`` may be an async callable, awaited
+    only when the ensemble is actually needed (so a fully observed season never
+    loads climatology).
     """
     _validate_crop_irrigation(crop, irrigation)
     loop = asyncio.get_running_loop()
@@ -534,7 +537,11 @@ async def simulate(
         single = await loop.run_in_executor(
             pool, run_aquacrop_with_potential, observed, soil, crop, planting_date, sim_start)
     except WeatherEndsBeforeHarvestError:
-        if not analogs or last >= planting_date + timedelta(days=364):
+        if last >= planting_date + timedelta(days=364):
+            raise
+        if callable(analogs):
+            analogs = await analogs()
+        if not analogs:
             raise
     else:
         return _combine([single], last, irrigation, "complete")

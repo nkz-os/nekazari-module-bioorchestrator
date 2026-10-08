@@ -454,3 +454,23 @@ async def test_no_analogs_and_short_weather_raises_weather_ends(tunis):
             await eng.simulate(obs, {}, layers, "Wheat", date(1979, 10, 1))
     finally:
         eng._shutdown_pool()
+
+
+@pytest.mark.asyncio
+async def test_analogs_loader_awaited_only_when_needed(tunis):
+    _, weather, layers = tunis
+    calls = []
+
+    async def loader():
+        calls.append(1)
+        return {}
+
+    try:
+        await eng.simulate(weather, loader, layers, "Wheat", date(1979, 10, 1))
+        assert calls == []
+        obs = [w for w in weather if w.day <= date(1980, 2, 1)]
+        with pytest.raises(eng.WeatherEndsBeforeHarvestError):
+            await eng.simulate(obs, loader, layers, "Wheat", date(1979, 10, 1))
+        assert calls == [1]
+    finally:
+        eng._shutdown_pool()
