@@ -10,13 +10,17 @@ Design rules
   curve number (61) and readily evaporable water (9 mm) are AquaCrop's own
   ``custom`` defaults: ASSUMPTION: library defaults until the owner fixes a
   texture-based criterion; they differ from AquaCrop's named-texture presets.
-* The simulation starts on the planting day and covers at most one year, so
-  exactly one season is simulated.
+* The simulation covers at most one year after planting, so exactly one season
+  is simulated. By default it starts on the planting day with the soil at field
+  capacity. With ``sim_start`` before planting (at least ``MIN_SPINUP_DAYS``
+  earlier) AquaCrop runs the fallow period first (``off_season=True``) from field
+  capacity at ``sim_start``, so the planting-day soil water comes from real
+  weather. The response always declares which one was used (``initial_water``).
 
 ``run_aquacrop`` output keys
 ----------------------------
 engine, engine_version, crop, planting_date (ISO), harvest_date (ISO),
-irrigation ("rainfed"|"full"), yield_t_ha (dry yield, AquaCrop column
+initial_water ({method: "spinup"|"assumed_fc", spinup_days, start}), irrigation ("rainfed"|"full"), yield_t_ha (dry yield, AquaCrop column
 "Dry yield (tonne/ha)"), biomass_t_ha (last daily ``biomass`` g/m2 / 100),
 seasonal_irrigation_mm (column
 "Seasonal irrigation (mm)"), warnings (list[str]) and ``daily``: list of
@@ -43,6 +47,7 @@ _MIN_ET0 = 0.1  # AquaCrop divides by ET0; its own file reader clips to 0.1
 _COMPARTMENT_M = 0.1
 _PENETRABILITY_PCT = 100  # no root-restricting layer information is available
 _IRRIGATION_MODES = ("rainfed", "full")
+MIN_SPINUP_DAYS = 30  # shorter fallow histories do not say anything about soil water
 # AquaCrop crop_params entries that are templates, not crops
 _NON_CROPS = {"Default", "custom"}
 
@@ -53,6 +58,10 @@ class EngineInputError(ValueError):
 
 class UnsupportedCropError(EngineInputError):
     """Crop is not an AquaCrop built-in."""
+
+
+class WeatherEndsBeforeHarvestError(EngineInputError):
+    """The weather series stops before the crop reaches harvest."""
 
 
 @dataclass(frozen=True)
@@ -186,8 +195,14 @@ def run_aquacrop(
     crop: str,
     planting_date: date,
     irrigation: str = "rainfed",
+    sim_start: date | None = None,
 ) -> dict:
-    """Simulate one season. See module docstring for the output keys."""
+    """Simulate one season. See module docstring for the output keys.
+
+    ``sim_start`` (optional, <= planting date, >= first weather day) requests a
+    spin-up. Fewer than ``MIN_SPINUP_DAYS`` of history falls back to field
+    capacity on the planting day, with a warning.
+    """
     clean, warns = _validate_weather(weather)
     _validate_soil(soil)
     _validate_crop_irrigation(crop, irrigation)
@@ -199,6 +214,27 @@ def run_aquacrop(
     last = clean[-1].day
     if planting_date > last:
         raise EngineInputError(f"planting_date {planting_date} is after the last weather day {last}")
+    start = planting_date
+    if sim_start is not None:
+        if not isinstance(sim_start, date):
+            raise EngineInputError(f"sim_start is not a date: {sim_start!r}")
+        if sim_start > planting_date:
+            raise EngineInputError(f"sim_start {sim_start} is after planting_date {planting_date}")
+        if sim_start < clean[0].day:
+            raise EngineInputError(
+                f"sim_start {sim_start} is before the first weather day {clean[0].day}")
+        if (planting_date - sim_start).days >= MIN_SPINUP_DAYS:
+            start = sim_start
+        else:
+            warns.append(
+                f"spin-up shorter than {MIN_SPINUP_DAYS} days: initial soil water assumed at "
+                "field capacity on the planting day")
+    spinup_days = (planting_date - start).days
+    initial_water = {
+        "method": "spinup" if spinup_days else "assumed_fc",
+        "spinup_days": spinup_days,
+        "start": start.isoformat(),
+    }
 
     import pandas as pd
     from aquacrop import AquaCropModel, Crop, InitialWaterContent, IrrigationManagement
@@ -218,26 +254,27 @@ def run_aquacrop(
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
         model = AquaCropModel(
-            planting_date.strftime("%Y/%m/%d"), sim_end.strftime("%Y/%m/%d"), df,
+            start.strftime("%Y/%m/%d"), sim_end.strftime("%Y/%m/%d"), df,
             _build_soil(soil), Crop(crop, planting_date=planting_date.strftime("%m/%d")),
-            InitialWaterContent(value=["FC"]), irrigation_management=irr)
+            InitialWaterContent(value=["FC"]), irrigation_management=irr,
+            off_season=spinup_days > 0)
         model.run_model(till_termination=True)
         stats = model.get_simulation_results()
         if stats is False or len(stats) == 0:
-            raise EngineInputError(
+            raise WeatherEndsBeforeHarvestError(
                 f"weather ends before harvest (last weather day {last}, planting {planting_date})")
         growth = model.get_crop_growth()
         flux = model.get_water_flux()
 
     row = stats.iloc[0]
-    return _assemble(row, growth, flux, planting_date, crop, irrigation, warns)
+    return _assemble(row, growth, flux, start, planting_date, crop, irrigation, warns, initial_water)
 
 
-def _assemble(row, growth, flux, planting_date, crop, irrigation, warns) -> dict:
+def _assemble(row, growth, flux, start, planting_date, crop, irrigation, warns, initial_water) -> dict:
     import pandas as pd
 
     # Rows after termination are zero padding; real season days have dap > 0.
-    # Row position i is simulation day i (simulation starts on planting day).
+    # Row position i is simulation day i (``start``: planting day or spin-up start).
     daily = []
     for i in range(len(growth)):
         g = growth.iloc[i]
@@ -248,7 +285,7 @@ def _assemble(row, growth, flux, planting_date, crop, irrigation, warns) -> dict
         if bio_ns > 0:
             stress = min(1.0, max(0.0, 1.0 - bio / bio_ns))
         daily.append({
-            "day": (planting_date + timedelta(days=i)).isoformat(),
+            "day": (start + timedelta(days=i)).isoformat(),
             "canopy_cover": float(g["canopy_cover"]),
             "biomass": bio,  # g/m2
             "biomass_ns": bio_ns,  # g/m2, no-stress counterpart
@@ -262,6 +299,7 @@ def _assemble(row, growth, flux, planting_date, crop, irrigation, warns) -> dict
         "crop": crop,
         "planting_date": planting_date.isoformat(),
         "harvest_date": harvest.isoformat(),
+        "initial_water": initial_water,
         "irrigation": irrigation,
         "yield_t_ha": float(row["Dry yield (tonne/ha)"]),
         "biomass_t_ha": daily[-1]["biomass"] / 100.0 if daily else None,  # g/m2 -> t/ha

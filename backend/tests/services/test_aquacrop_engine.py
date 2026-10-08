@@ -304,3 +304,41 @@ def test_soil_derives_rew_and_cn_from_layers():
     from app.services.engines.aquacrop_engine import _build_soil
     s = _build_soil([SoilLayer(1.2, 0.1, 0.25, 0.45, 300.0)])
     assert s.adj_rew == 0 and s.calc_cn == 1
+
+
+# --------------------------------------------------------------- spin-up
+def test_spinup_start_after_planting_is_error():
+    with pytest.raises(EngineInputError, match="sim_start"):
+        _run(sim_start=date(2020, 1, 2))
+
+
+def test_spinup_start_before_first_weather_day_is_error():
+    with pytest.raises(EngineInputError, match="sim_start"):
+        _run(sim_start=date(2019, 12, 1))
+
+
+def test_short_spinup_is_assumed_fc(tunis):
+    _, weather, layers = tunis
+    res = run_aquacrop(weather, layers, "Wheat", date(1979, 10, 1), sim_start=date(1979, 9, 10))
+    assert res["initial_water"] == {"method": "assumed_fc", "spinup_days": 0, "start": "1979-10-01"}
+    assert any("spin-up" in w for w in res["warnings"])
+
+
+def test_spinup_reports_initial_water_and_runs(tunis):
+    _, weather, layers = tunis
+    start = date(1979, 10, 1) - timedelta(days=eng.MIN_SPINUP_DAYS)
+    assert weather[0].day <= start
+    res = run_aquacrop(weather, layers, "Wheat", date(1979, 10, 1), sim_start=start)
+    assert res["initial_water"] == {
+        "method": "spinup", "spinup_days": eng.MIN_SPINUP_DAYS, "start": start.isoformat()}
+    assert res["daily"][0]["day"] == "1979-10-01"
+    assert res["harvest_date"] > res["planting_date"]
+    assert res["yield_t_ha"] > 0
+
+
+def test_no_sim_start_reports_assumed_fc_without_warning(tunis):
+    _, weather, layers = tunis
+    res = run_aquacrop(weather, layers, "Wheat", date(1979, 10, 1))
+    assert res["initial_water"]["method"] == "assumed_fc"
+    assert res["initial_water"]["spinup_days"] == 0
+    assert not any("spin-up" in w for w in res["warnings"])
