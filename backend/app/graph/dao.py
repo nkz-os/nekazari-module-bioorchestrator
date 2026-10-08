@@ -5188,9 +5188,15 @@ class GraphDAO:
         try:
             orion = OrionClient(tenant_id)
             try:
-                weather_entities = await orion.query_entities(type="WeatherObserved", limit=1)
+                weather_entities = await orion.query_entities(type="WeatherObserved", limit=5)
             finally:
                 await orion.close()
+            # Prefer a running station: skip closed-day series entities
+            # (dailySummary true) whose et0 is a daily total (#1043).
+            def _is_daily(e):
+                node = e.get("dailySummary")
+                return isinstance(node, dict) and node.get("value") is True
+            weather_entities = [e for e in weather_entities if not _is_daily(e)]
             if not weather_entities:
                 logger.info("No WeatherObserved entities found for tenant %s", tenant_id)
                 return None
