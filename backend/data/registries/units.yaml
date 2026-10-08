@@ -22,7 +22,7 @@ units:
   - {code: s, ucum: s, name: second (falling number), dimension: duration_s, factor: "1", aliases: [segundos]}
   - {code: mg/kg, ucum: mg/kg, name: milligram per kilogram (ppm by mass), dimension: mass_fraction, factor: "1", aliases: [ppm]}
   # Units fixed by a test method, for values the reports print without a unit (variables.yaml says which).
-  - {code: 10-4 J, ucum: "10-4.J", name: alveograph deformation energy W (1e-4 joule), dimension: alveograph_energy, factor: "1"}
+  - {code: 10-4 J, ucum: "10*-4.J", name: alveograph deformation energy W (1e-4 joule), dimension: alveograph_energy, factor: "1"}
   - {code: mmH2O, ucum: "mm[H2O]", name: millimetre of water (alveograph tenacity P), dimension: pressure_head, factor: "1"}
   - {code: mm, ucum: mm, name: millimetre, dimension: length, factor: "0.1"}
   - {code: mL, ucum: mL, name: millilitre (sedimentation volume), dimension: volume, factor: "1"}
