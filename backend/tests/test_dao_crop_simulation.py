@@ -115,8 +115,8 @@ class _Net:
                 while s <= e:
                     v = net.tunis.get(s)
                     cols["time"].append(s.isoformat())
-                    for i, k in enumerate(list(cols)[1:]):
-                        cols[k].append(None if v is None else v[i])
+                    for i, col in enumerate(list(cols)[1:]):
+                        cols[col].append(None if v is None else v[i])
                     s += timedelta(days=1)
                 resp.json.return_value = {"daily": cols}
             return resp
