@@ -342,3 +342,114 @@ def test_no_sim_start_reports_assumed_fc_without_warning(tunis):
     assert res["initial_water"]["method"] == "assumed_fc"
     assert res["initial_water"]["spinup_days"] == 0
     assert not any("spin-up" in w for w in res["warnings"])
+
+
+# -------------------------------------------------------------- ensemble
+def _by_year(weather):
+    out: dict[int, list[DailyWeather]] = {}
+    for w in weather:
+        out.setdefault(w.day.year, []).append(w)
+    return out
+
+
+def test_analog_date_maps_years_and_feb29():
+    assert eng.analog_date(date(1979, 10, 1), 1979, 1985) == date(1985, 10, 1)
+    assert eng.analog_date(date(1980, 3, 1), 1979, 1985) == date(1986, 3, 1)
+    # campaign Feb 29 (leap) -> analog non-leap: Feb 28 duplicated
+    assert eng.analog_date(date(1980, 2, 29), 1979, 1985) == date(1986, 2, 28)
+    # analog leap year: campaign has no Feb 29, so the analog Feb 29 is never used
+    assert eng.analog_date(date(1979, 2, 28), 1979, 1980) == date(1980, 2, 28)
+    assert eng.analog_date(date(1979, 3, 1), 1979, 1980) == date(1980, 3, 1)
+
+
+def test_project_weather_is_continuous_and_reaches_season_end():
+    _, weather, _ = _tunis_weather()
+    obs = [w for w in weather if w.day <= date(1980, 1, 15)]
+    analog = [w for w in weather if date(1984, 1, 1) <= w.day <= date(1986, 12, 31)]
+    out = eng.project_weather(obs, analog, date(1979, 10, 1), 1984)
+    assert out[: len(obs)] == obs
+    assert out[-1].day == date(1979, 10, 1) + timedelta(days=364)
+    days = [w.day for w in out]
+    assert all(b - a == timedelta(days=1) for a, b in zip(days, days[1:]))
+    nxt = out[len(obs)]
+    src = next(w for w in analog if w.day == date(1985, 1, 16))
+    assert (nxt.day, nxt.precip_mm, nxt.et0_mm) == (date(1980, 1, 16), src.precip_mm, src.et0_mm)
+
+
+def test_project_weather_missing_analog_day_is_error():
+    _, weather, _ = _tunis_weather()
+    obs = [w for w in weather if w.day <= date(1980, 1, 15)]
+    analog = [w for w in weather if date(1984, 1, 1) <= w.day <= date(1984, 6, 30)]
+    with pytest.raises(EngineInputError, match="analog year 1984"):
+        eng.project_weather(obs, analog, date(1979, 10, 1), 1984)
+
+
+def _tunis_weather():
+    df = _tunis()
+    return df, _weather_from_df(df), _sandyloam_layers()
+
+
+@pytest.mark.asyncio
+async def test_ensemble_in_season_and_complete(tunis):
+    _, weather, layers = tunis
+    planting = date(1979, 10, 1)
+    by_year = _by_year(weather)
+    analogs = {y: by_year[y] + by_year[y + 1] for y in range(1980, 1985)}
+    start = planting - timedelta(days=60)
+    try:
+        # observed stops mid-season -> ensemble
+        obs = [w for w in weather if w.day <= date(1980, 2, 1)]
+        res = await eng.simulate(obs, analogs, layers, "Wheat", planting, "rainfed", start)
+        assert res["status"] == "in_season"
+        y, p = res["yield_t_ha"], res["potential_yield_t_ha"]
+        assert y["p10"] <= y["p50"] <= y["p90"]
+        assert p["p10"] <= p["p50"] <= p["p90"]
+        assert res["ensemble"] == {"n_years": 5, "method": "climatological_ensemble",
+                                   "years": [1980, 1981, 1982, 1983, 1984]}
+        assert res["last_weather_day"] == "1980-02-01"
+        assert res["initial_water"]["method"] == "spinup"
+        assert res["harvest_date"] > "1980-02-01"
+        assert res["engine"] == "AquaCrop-OSPy"
+        assert res["capabilities"] == {"water_limited": True, "potential": True, "nitrogen": False}
+        flags = [d["projected"] for d in res["daily"]]
+        assert flags[0] is False and flags[-1] is True
+        assert flags == sorted(flags)  # observed rows first
+        assert res["daily"][0]["day"] == "1979-10-01"
+        # full irrigation: headline yield is the irrigated one
+        full = await eng.simulate(obs, analogs, layers, "Wheat", planting, "full", start)
+        assert full["yield_t_ha"] == full["potential_yield_t_ha"]
+        assert full["water_gap_pct"] == pytest.approx(res["water_gap_pct"])
+        # observed reaches harvest -> single run, no ensemble
+        done = await eng.simulate(weather, analogs, layers, "Wheat", planting, "rainfed", start)
+        assert done["status"] == "complete"
+        assert done["ensemble"] is None
+        assert isinstance(done["yield_t_ha"], float)
+        direct = run_aquacrop(weather, layers, "Wheat", planting, sim_start=start)
+        assert done["yield_t_ha"] == pytest.approx(direct["yield_t_ha"])
+        assert all(d["projected"] is False for d in done["daily"])
+    finally:
+        eng._shutdown_pool()
+
+
+@pytest.mark.asyncio
+async def test_ensemble_needs_enough_analog_years(tunis):
+    _, weather, layers = tunis
+    by_year = _by_year(weather)
+    obs = [w for w in weather if w.day <= date(1980, 2, 1)]
+    try:
+        with pytest.raises(EngineInputError, match="analog years"):
+            await eng.simulate(obs, {1980: by_year[1980] + by_year[1981]}, layers, "Wheat",
+                               date(1979, 10, 1))
+    finally:
+        eng._shutdown_pool()
+
+
+@pytest.mark.asyncio
+async def test_no_analogs_and_short_weather_raises_weather_ends(tunis):
+    _, weather, layers = tunis
+    obs = [w for w in weather if w.day <= date(1980, 2, 1)]
+    try:
+        with pytest.raises(eng.WeatherEndsBeforeHarvestError):
+            await eng.simulate(obs, {}, layers, "Wheat", date(1979, 10, 1))
+    finally:
+        eng._shutdown_pool()

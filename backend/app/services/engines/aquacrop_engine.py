@@ -35,12 +35,16 @@ from __future__ import annotations
 import asyncio
 import math
 import os
+import statistics
 import warnings
 from concurrent.futures import ProcessPoolExecutor
 from dataclasses import dataclass
 from datetime import date, timedelta
 from importlib.metadata import version as _pkg_version
 from multiprocessing import get_context
+from typing import Any
+
+import numpy as np
 
 ENGINE_NAME = "AquaCrop-OSPy"
 _MIN_ET0 = 0.1  # AquaCrop divides by ET0; its own file reader clips to 0.1
@@ -314,14 +318,15 @@ def run_aquacrop_with_potential(
     soil: list[SoilLayer],
     crop: str,
     planting_date: date,
+    sim_start: date | None = None,
 ) -> dict:
     """Rainfed run plus a full-irrigation run (SMT=100) as yield potential.
 
     AquaCrop's own "Yield potential" column is NOT water-unlimited, hence the
     second simulation. ``water_gap_pct`` = 100 * (1 - water_limited/potential).
     """
-    wl = run_aquacrop(weather, soil, crop, planting_date, "rainfed")
-    pot = run_aquacrop(weather, soil, crop, planting_date, "full")
+    wl = run_aquacrop(weather, soil, crop, planting_date, "rainfed", sim_start)
+    pot = run_aquacrop(weather, soil, crop, planting_date, "full", sim_start)
     p = pot["yield_t_ha"]
     gap = 100.0 * (1.0 - wl["yield_t_ha"] / p) if p > 0 else None
     return {"water_limited": wl, "potential": pot, "water_gap_pct": gap}
@@ -365,3 +370,185 @@ async def run_aquacrop_async(
     loop = asyncio.get_running_loop()
     return await loop.run_in_executor(
         _get_pool(), run_aquacrop, weather, soil, crop, planting_date, irrigation)
+
+
+# -------------------------------------------------------------- ensemble
+# Capabilities of this engine; a future engine (e.g. WOFOST 8.1) returns the
+# same response shape and declares its own flags.
+CAPABILITIES = {"water_limited": True, "potential": True, "nitrogen": False}
+# ASSUMPTION: three members is the smallest set for which P10/P50/P90 are three
+# different members; below it the spread is not an estimate of anything.
+MIN_ENSEMBLE_MEMBERS = 3
+_DAILY_FIELDS = ("canopy_cover", "biomass", "root_zone_water_mm", "water_stress")
+
+
+def analog_date(campaign_day: date, planting_year: int, analog_year: int) -> date:
+    """Calendar-equivalent day of ``campaign_day`` in the analog season.
+
+    The analog season starts on the planting date in ``analog_year``; a campaign
+    day in the following calendar year maps to the following analog year. Feb 29
+    of a campaign has no counterpart in a non-leap analog year and takes Feb 28
+    (duplicated); a leap-year Feb 29 of the analog is skipped when the campaign
+    has none.
+    """
+    year = analog_year + (campaign_day.year - planting_year)
+    try:
+        return campaign_day.replace(year=year)
+    except ValueError:  # Feb 29 -> non-leap year
+        return date(year, 2, 28)
+
+
+def project_weather(
+    observed: list[DailyWeather],
+    analog: list[DailyWeather],
+    planting_date: date,
+    analog_year: int,
+) -> list[DailyWeather]:
+    """Observed weather, then ``analog`` weather re-dated to the campaign.
+
+    Covers up to ``planting_date + 364 d``. Raises EngineInputError naming the
+    first analog day that is missing.
+    """
+    if not observed:
+        raise EngineInputError("observed weather is empty")
+    by_day = {w.day: w for w in analog}
+    end = planting_date + timedelta(days=364)
+    out = list(observed)
+    d = observed[-1].day + timedelta(days=1)
+    while d <= end:
+        src_day = analog_date(d, planting_date.year, analog_year)
+        src = by_day.get(src_day)
+        if src is None:
+            raise EngineInputError(f"analog year {analog_year} has no weather for {src_day}")
+        out.append(DailyWeather(d, src.tmin_c, src.tmax_c, src.precip_mm, src.et0_mm))
+        d += timedelta(days=1)
+    return out
+
+
+def _pct(values: list[float]) -> dict:
+    """P10/P50/P90 by linear interpolation between order statistics (numpy default)."""
+    p10, p50, p90 = np.percentile(values, [10, 50, 90])
+    return {"p10": float(p10), "p50": float(p50), "p90": float(p90)}
+
+
+def _median_daily(members: list[dict], last_observed: date) -> list[dict]:
+    """Observed days (identical in every member) then the per-day median.
+
+    From the day after ``last_observed`` each field is the median over the
+    members that still have that day (a member stops at its harvest); None
+    values are ignored. Rows are flagged ``projected``.
+    """
+    rows = [{**r, "projected": False} for r in members[0]["daily"]
+            if date.fromisoformat(r["day"]) <= last_observed]
+    by_day: dict[str, list[dict]] = {}
+    for m in members:
+        for r in m["daily"]:
+            if date.fromisoformat(r["day"]) > last_observed:
+                by_day.setdefault(r["day"], []).append(r)
+    for day in sorted(by_day):
+        row: dict[str, Any] = {"day": day}
+        for f in _DAILY_FIELDS:
+            vals = [r[f] for r in by_day[day] if r[f] is not None]
+            row[f] = float(statistics.median(vals)) if vals else None
+        row["projected"] = True
+        rows.append(row)
+    return rows
+
+
+def _combine(members: list[dict], observed_last: date, irrigation: str, status: str) -> dict:
+    """Fold per-member (water-limited, potential) runs into the response body."""
+    pick = "potential" if irrigation == "full" else "water_limited"
+    n = len(members)
+    wl = [m["water_limited"] for m in members]
+    pot = [m["potential"] for m in members]
+    chosen = [m[pick] for m in members]
+    if status == "complete":
+        main = chosen[0]
+        yield_v: Any = main["yield_t_ha"]
+        pot_v: Any = pot[0]["yield_t_ha"]
+        harvest = main["harvest_date"]
+        biomass = main["biomass_t_ha"]
+        daily = [{**r, "projected": False} for r in main["daily"]]
+        ens = None
+        wl_ref, pot_ref = wl[0]["yield_t_ha"], pot[0]["yield_t_ha"]
+    else:
+        yield_v = _pct([c["yield_t_ha"] for c in chosen])
+        pot_v = _pct([p["yield_t_ha"] for p in pot])
+        harvest = date.fromordinal(statistics.median_low(
+            [date.fromisoformat(c["harvest_date"]).toordinal() for c in chosen])).isoformat()
+        bio = [c["biomass_t_ha"] for c in chosen if c["biomass_t_ha"] is not None]
+        biomass = float(statistics.median(bio)) if bio else None
+        daily = _median_daily(chosen, observed_last)
+        ens = {"n_years": n, "method": "climatological_ensemble"}
+        wl_ref = statistics.median([w["yield_t_ha"] for w in wl])
+        pot_ref = statistics.median([p["yield_t_ha"] for p in pot])
+    gap = 100.0 * (1.0 - wl_ref / pot_ref) if pot_ref > 0 else None
+    warns: list[str] = []
+    for m in members[:1]:  # observed-part warnings are identical in every member
+        warns.extend(m["water_limited"]["warnings"])
+    return {
+        "engine": ENGINE_NAME,
+        "engine_version": _version(),
+        "capabilities": dict(CAPABILITIES),
+        "irrigation": irrigation,
+        "status": status,
+        "initial_water": members[0]["water_limited"]["initial_water"],
+        "yield_t_ha": yield_v,
+        "potential_yield_t_ha": pot_v,
+        "water_gap_pct": gap,
+        "harvest_date": harvest,
+        "ensemble": ens,
+        "biomass_t_ha": biomass,
+        "last_weather_day": observed_last.isoformat(),
+        "daily": daily,
+        "warnings": warns,
+    }
+
+
+async def simulate(
+    observed: list[DailyWeather],
+    analogs: dict[int, list[DailyWeather]],
+    soil: list[SoilLayer],
+    crop: str,
+    planting_date: date,
+    irrigation: str = "rainfed",
+    sim_start: date | None = None,
+) -> dict:
+    """Run the season: single run if ``observed`` reaches harvest, else ensemble.
+
+    ``analogs`` maps analog year -> that year's daily weather (archive). With
+    observed weather ending before harvest, one member per analog year is run
+    (water-limited and potential), observed weather up to the last observed
+    day followed by the analog year's weather mapped onto the campaign dates.
+    ``yield_t_ha`` follows ``irrigation`` (rainfed: water-limited run, full:
+    irrigated run); ``potential_yield_t_ha`` is always the irrigated run and
+    ``water_gap_pct`` always compares rainfed with it (median-based for the
+    ensemble). Percentiles are P10/P50/P90 by linear interpolation.
+    Members run in the process pool.
+    """
+    _validate_crop_irrigation(crop, irrigation)
+    loop = asyncio.get_running_loop()
+    pool = _get_pool()
+    last = observed[-1].day if observed else None
+    try:
+        single = await loop.run_in_executor(
+            pool, run_aquacrop_with_potential, observed, soil, crop, planting_date, sim_start)
+    except WeatherEndsBeforeHarvestError:
+        if not analogs or last >= planting_date + timedelta(days=364):
+            raise
+    else:
+        return _combine([single], last, irrigation, "complete")
+    if len(analogs) < MIN_ENSEMBLE_MEMBERS:
+        raise EngineInputError(
+            f"climatological ensemble needs >= {MIN_ENSEMBLE_MEMBERS} analog years, got {len(analogs)}")
+    years = sorted(analogs)
+    futs = [
+        loop.run_in_executor(
+            pool, run_aquacrop_with_potential,
+            project_weather(observed, analogs[y], planting_date, y), soil, crop, planting_date, sim_start)
+        for y in years
+    ]
+    members = list(await asyncio.gather(*futs))
+    out = _combine(members, last, irrigation, "in_season")
+    out["ensemble"]["years"] = years
+    return out
