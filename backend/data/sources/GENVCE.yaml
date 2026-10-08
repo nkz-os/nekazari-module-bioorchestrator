@@ -33,7 +33,7 @@ source_id: GENVCE
 raw:
   repo: nkz-data-sources
   paths: ["genvce/data/extractions/*.json"]
-  extraction_version: "nkz-data-sources@faa76d5; extraction pass 2026-06-15 (deepseek-chat); winter cereals 2016/17, 2018/19, 2019/20, 2020/21 re-extracted 2026-10-07 (manual, line-verified); durum wheat, triticale, oats, rye and the missing barley/soft-wheat tables of 2005/06-2024/25 added 2026-10-08 (manual, line-verified)"
+  extraction_version: "nkz-data-sources@6a05bd6e5b4d9307af0448d397156696df8de4a6; extraction pass 2026-06-15 (deepseek-chat); winter cereals 2016/17, 2018/19, 2019/20, 2020/21 re-extracted 2026-10-07 (manual, line-verified); durum wheat, triticale, oats, rye and the missing barley/soft-wheat tables of 2005/06-2024/25 added 2026-10-08 (manual, line-verified)"
 adapter: app.kg.adapters.genvce
 document:
   title: {from: doc.title}
@@ -406,6 +406,6 @@ sites:
   # a table that prints no label: the unit gets this aggregate as its site (raw_site stays empty, keys unchanged)
   unlabelled_site: ES-GENVCE-UNLABELLED
 expected:
-  units: 12889
-  observations: 60251
+  units: 12888
+  observations: 60244
   sites: 91
