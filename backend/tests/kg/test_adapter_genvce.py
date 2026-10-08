@@ -112,8 +112,10 @@ def test_an_unknown_extraction_field_is_refused_not_dropped():
 def test_a_crop_label_that_contradicts_its_species_is_refused():
     with pytest.raises(AdapterError, match="species"):
         rows([trial(crop="Cebada", crop_scientific="Zea mays")])
+    with pytest.raises(AdapterError, match="species"):
+        rows([trial(crop="Trigo duro", crop_scientific="Triticum aestivum")])  # durum is its own species
     with pytest.raises(AdapterError, match="not one the adapter knows"):
-        rows([trial(crop="Avena", crop_scientific="Avena sativa")])
+        rows([trial(crop="Girasol", crop_scientific="Helianthus annuus")])
 
 
 def test_a_file_that_is_not_an_extraction_is_refused():
@@ -459,14 +461,14 @@ def test_every_crop_label_of_the_extraction_resolves_in_the_crops_registry(label
 def test_the_contract_states_its_raw_layer_and_the_pinned_commit():
     assert CONTRACT.adapter == "app.kg.adapters.genvce"
     assert CONTRACT.raw.repo == "nkz-data-sources" and "extractions" in CONTRACT.raw.paths[0]
-    assert "@4c8e2762d48877b58f40b379bd5bb598d4f7c291" in CONTRACT.raw.extraction_version
+    assert "@6a05bd6e5b4d9307af0448d397156696df8de4a6" in CONTRACT.raw.extraction_version
 
 
 def test_the_contract_quotes_the_source_for_purpose_metric_basis_and_moisture():
     unit = CONTRACT.unit
-    assert set(unit.purpose.by_crop) == {"HORVX", "TRZAX", "ZEAMX", "BRSNN"}
+    assert set(unit.purpose.by_crop) == {"HORVX", "TRZAX", "TRZDU", "TTLSS", "AVESA", "SECCE", "ZEAMX", "BRSNN"}
     assert {c: f.default for c, f in unit.yield_.moisture_pct.by_crop.items()} == {
-        "HORVX": 13, "TRZAX": 13, "ZEAMX": 14, "BRSNN": 9}
+        "HORVX": 13, "TRZAX": 13, "TRZDU": 13, "TTLSS": 13, "AVESA": 13, "SECCE": 13, "ZEAMX": 14, "BRSNN": 9}
     for fixed in (*unit.yield_.moisture_pct.by_crop.values(), *unit.yield_.metric.by_crop.values(),
                   *unit.purpose.by_crop.values()):
         assert "Informe GENVCE" in fixed.justification
@@ -474,7 +476,7 @@ def test_the_contract_quotes_the_source_for_purpose_metric_basis_and_moisture():
 
 def test_every_registered_genvce_site_is_an_aggregate():
     owned = [s for s in REGISTRIES.sites if s.sources == ("GENVCE",)]
-    assert len(owned) == 46 and {s.site_kind for s in owned} == {"aggregate"}
+    assert len(owned) == 91 and {s.site_kind for s in owned} == {"aggregate"}
 
 
 # ═════════════════════════════════════════════════════════════════════════════
@@ -515,7 +517,7 @@ def test_new_raw_keys_map_only_where_the_meaning_is_identical(key, variable):
 
 
 @pytest.mark.parametrize("key", [
-    "disease_scores.septoria_0_9", "quality_params.fuerza_harinera_w", "quality_params.relacion_pl",
+    "quality_params.fuerza_harinera_w", "quality_params.relacion_pl",
     "quality_params.indice_caida_s", "yield_notes.separacion_medias", "yield_notes.red",
     "yield_notes.caption_zone_printed",
 ])
@@ -572,7 +574,7 @@ RAW_REPO = os.environ.get("NKZ_DATA_SOURCES_DIR", "")
 @pytest.mark.skipif(not RAW_REPO, reason="set NKZ_DATA_SOURCES_DIR to the raw-data repository to run")
 def test_the_whole_extraction_builds_and_matches_the_contracts_expected_counts():
     result = genvce.load(Path(RAW_REPO) / "genvce")
-    assert len(result.rows) == 5013  # 5020 extracted, 7 repeated rows of a lower table dropped
+    assert len(result.rows) == 12888  # 12895 extracted, 7 repeated rows of a lower table dropped
     dropped = [w for w in result.warnings if w.code == "repeated_table_row_dropped"]
     assert [w.count for w in dropped] == [7]
     built = run_contract(CONTRACT, REGISTRIES, result.rows)

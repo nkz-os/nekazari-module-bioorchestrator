@@ -7,7 +7,7 @@
 # ALL ranges are `assumption`: generic agronomic envelopes, deliberately wide, NOT derived from the
 # trial data and NOT reviewed by an agronomist. The gate only warns on them; only a `reviewed` range
 # (with a named reviewer) may produce an error. `observed` is what the GENVCE and CREA raw
-# extractions hold today (2026-10-05), shown to the reviewer; it never feeds the bounds. Values are
+# extractions hold today (2026-10-05; durum, triticale, oats and rye 2026-10-08), shown to the reviewer; it never feeds the bounds. Values are
 # yields as published, at the moisture basis of the source (cereals 13%, maize 14% or 15.5%, rapeseed 9%).
 #
 # Data caution for the reviewer: GENVCE maize rows labelled "secano" (rainfed) hold 14,025-19,451
@@ -92,6 +92,50 @@ ranges:
     reviewer: null
     note: pending agronomist review
     observed: {min: 2111, max: 7315, n: 227}
+  - id: crop_yield.TRZDU.grain
+    crop: TRZDU
+    variable: crop_yield
+    conditions: {purpose: grain}
+    min: 500
+    max: 12000
+    unit: kg/ha
+    status: assumption
+    reviewer: null
+    note: pending agronomist review
+    observed: {min: 1527, max: 10263, n: 2823}
+  - id: crop_yield.TTLSS.grain
+    crop: TTLSS
+    variable: crop_yield
+    conditions: {purpose: grain}
+    min: 500
+    max: 14000
+    unit: kg/ha
+    status: assumption
+    reviewer: null
+    note: pending agronomist review
+    observed: {min: 2164, max: 8623, n: 708}
+  - id: crop_yield.AVESA.grain
+    crop: AVESA
+    variable: crop_yield
+    conditions: {purpose: grain}
+    min: 300
+    max: 10000
+    unit: kg/ha
+    status: assumption
+    reviewer: null
+    note: pending agronomist review
+    observed: {min: 1368, max: 8447, n: 557}
+  - id: crop_yield.SECCE.grain
+    crop: SECCE
+    variable: crop_yield
+    conditions: {purpose: grain}
+    min: 300
+    max: 12000
+    unit: kg/ha
+    status: assumption
+    reviewer: null
+    note: pending agronomist review
+    observed: {min: 2177, max: 6266, n: 177}
   - id: crop_yield.BRSNN.grain
     crop: BRSNN
     variable: crop_yield

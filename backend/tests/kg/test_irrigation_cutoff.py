@@ -136,7 +136,7 @@ def test_a_malformed_entry_is_refused(copy_dir, entry, message):
 
 def test_an_unknown_crop_or_a_duplicate_is_refused(copy_dir):
     dest, edit = copy_dir
-    edit(lambda d: d["thresholds"].append(calibrated("TRZDU")))
+    edit(lambda d: d["thresholds"].append(calibrated("TRZAW")))  # deliberately unregistered
     with pytest.raises(RegistryError, match="not a canonical EPPO code"):
         load_registries(dest)
     edit(lambda d: (d["thresholds"].pop(), d["thresholds"].append(calibrated("HORVX"))))
