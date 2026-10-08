@@ -205,7 +205,7 @@ def _direct_reference(df, layers, irrigation):
     from aquacrop import (AquaCropModel, Crop, InitialWaterContent,
                           IrrigationManagement, Soil)
 
-    s = Soil("custom", dz=[0.1] * 12)
+    s = Soil("custom", dz=[0.1] * 12, adj_rew=0, calc_cn=1)
     for l in layers:
         s.add_layer(l.thickness_m, l.wp, l.fc, l.sat, l.ksat_mm_day, 100)
     irr = (IrrigationManagement(irrigation_method=0) if irrigation == "rainfed"
@@ -293,3 +293,9 @@ def test_last_daily_day_is_day_before_harvest(tunis):
     res = run_aquacrop(weather, layers, "Wheat", date(1979, 10, 1))
     last = date.fromisoformat(res["daily"][-1]["day"])
     assert last == date.fromisoformat(res["harvest_date"]) - timedelta(days=1)
+
+
+def test_soil_derives_rew_and_cn_from_layers():
+    from app.services.engines.aquacrop_engine import _build_soil
+    s = _build_soil([SoilLayer(1.2, 0.1, 0.25, 0.45, 300.0)])
+    assert s.adj_rew == 0 and s.calc_cn == 1

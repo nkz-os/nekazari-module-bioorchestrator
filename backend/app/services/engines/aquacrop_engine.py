@@ -167,7 +167,10 @@ def _compartments(soil: list[SoilLayer]) -> list[float]:
 def _build_soil(soil: list[SoilLayer]):
     from aquacrop import Soil
 
-    s = Soil("custom", dz=_compartments(soil))
+    # REW and curve number come from our top layer with AquaCrop's own rules
+    # (adj_rew=0: REW from FC/dry water content; calc_cn=1: CN from Ksat), not
+    # from the package's fixed custom-soil defaults (cn=61, rew=9).
+    s = Soil("custom", dz=_compartments(soil), adj_rew=0, calc_cn=1)
     for l in soil:
         s.add_layer(l.thickness_m, l.wp, l.fc, l.sat, l.ksat_mm_day, _PENETRABILITY_PCT)
     return s
