@@ -1,6 +1,7 @@
 """Tests for the AquaCrop-OSPy wrapper (app.services.engines.aquacrop_engine)."""
 from __future__ import annotations
 
+import itertools
 import warnings
 from dataclasses import replace
 from datetime import date, timedelta
@@ -370,7 +371,7 @@ def test_project_weather_is_continuous_and_reaches_season_end():
     assert out[: len(obs)] == obs
     assert out[-1].day == date(1979, 10, 1) + timedelta(days=364)
     days = [w.day for w in out]
-    assert all(b - a == timedelta(days=1) for a, b in zip(days, days[1:]))
+    assert all(b - a == timedelta(days=1) for a, b in itertools.pairwise(days))
     nxt = out[len(obs)]
     src = next(w for w in analog if w.day == date(1985, 1, 16))
     assert (nxt.day, nxt.precip_mm, nxt.et0_mm) == (date(1980, 1, 16), src.precip_mm, src.et0_mm)
