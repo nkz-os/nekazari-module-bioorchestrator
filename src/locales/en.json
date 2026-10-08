@@ -912,6 +912,7 @@
       "observedRange": "observed range {{low}}–{{high}} {{unit}}",
       "observedRangeLabel": "observed range",
       "trust": "Based on {{n_trials}} trials at {{n_sites}} sites",
+      "zoneMatched": "Parcel's GENVCE zone: {{zone}}",
       "few": " (few)",
       "similarityV2": "Sites chosen by climate similarity",
       "compare": "Compare",
@@ -965,7 +966,8 @@
       "zone_match_climatology_basis": "Zone estimated from the parcel's 1981-2010 climatology; GENVCE classifies each trial by its campaign weather",
       "regional_country_level": "Regional evidence matched by country, not by zone",
       "irrigation_regime_unknown": "Some trials do not state their irrigation regime",
-      "irrigation_regime_unknown_all": "None of the trials state their irrigation regime; the yield may be for a different regime"
+      "irrigation_regime_unknown_all": "None of the trials state their irrigation regime; the yield may be for a different regime",
+      "organic_units_excluded": "Organic trials were left out; the figure is for conventional production"
     },
     "evidence": {
       "title": "{{crop}} trials",

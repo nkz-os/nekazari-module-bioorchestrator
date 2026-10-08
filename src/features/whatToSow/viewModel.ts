@@ -278,3 +278,37 @@ export function resolvePageState(
   if (response.status === 'needs_climate') return 'needs_climate';
   return response.recommendations.length === 0 ? 'empty' : 'ok';
 }
+
+/** Gap ids that qualify what an answer is based on; shown without expert mode. */
+const EVIDENCE_NOTE_GAPS = [
+  'regional_zone_matched', 'zone_match_climatology_basis', 'regional_country_level',
+  'irrigation_regime_unknown_all', 'organic_units_excluded', 'low_trial_count',
+] as const;
+
+export interface EvidenceNote {
+  /** Gap id: its text is `whatToSow.gap.<id>`. */
+  id: string;
+  intent: 'info' | 'warning';
+}
+
+/**
+ * Notes a recommendation must carry next to its figure: the matched GENVCE zone and its climatology
+ * caveat, a country-level (not zone) match, a regime no trial states, organic trials left out and
+ * few trials. Only what the backend reports; nothing is inferred. `skip` drops ids the caller shows itself.
+ */
+export function evidenceNotes(rec: Recommendation, skip: readonly string[] = []): EvidenceNote[] {
+  const gaps = rec.trust.data_gaps;
+  return EVIDENCE_NOTE_GAPS
+    .filter((id) => gaps.includes(id) && !skip.includes(id))
+    .map((id) => ({
+      id,
+      intent: id === 'regional_zone_matched' || id === 'zone_match_climatology_basis' ? 'info' : 'warning',
+    }));
+}
+
+/** Labels of the GENVCE zone(s) a regional recommendation matched (empty when none). */
+export function matchedZoneLabels(rec: Recommendation): string[] {
+  const zm = rec.evidence.zone_match;
+  if (!zm || zm.status !== 'matched') return [];
+  return zm.matched_zones.map((z) => z.zone_label).filter((l) => typeof l === 'string' && l.length > 0);
+}

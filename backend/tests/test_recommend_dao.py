@@ -55,6 +55,7 @@ def _shared_sites():
     from unittest.mock import patch
     with patch.object(GraphDAO, "get_similar_sites",
                       AsyncMock(return_value=[{"name": "site-a", "distance": None}])), \
+         patch.object(GraphDAO, "organic_units_excluded", AsyncMock(return_value={})), \
          patch.object(GraphDAO, "_crops_with_analog_trials",
                       AsyncMock(side_effect=lambda eppos, names, **kw:
                                 set() if kw.get("tier") == "regional" else set(eppos))):
@@ -153,13 +154,21 @@ async def test_crop_without_varieties_is_omitted():
                                    "crops_with_analog_trials": 2}
 
 
-async def test_organic_scales_yields_and_records_assumption():
-    out = await _run(_conds(management="organic"), {"TRZAX": [_variety(5000.0)]})
+async def test_organic_request_applies_no_yield_factor_and_asks_for_organic_units():
+    seen = {}
+    dao, _ = _dao()
+
+    async def extrap(self_, crop, **kw):
+        seen.update(kw)
+        return {"ranked_varieties": [_variety(5000.0)]}
+
+    p = _patched(extrap, ["TRZAX"])
+    with p[0], p[1], p[2], p[3]:
+        out = await dao.recommend_for_conditions(_conds(management="organic"))
     rec = out["recommendations"][0]
-    assert rec["yield"]["expected_kg_ha"] == pytest.approx(4000.0)
-    assert rec["yield"]["interval"] == [pytest.approx(3200.0), pytest.approx(5600.0)]
-    assert rec["assumptions"][0]["id"] == "organic_yield_factor"
-    assert rec["fit"]["relative_yield_pct"] == pytest.approx(0.0)
+    assert seen["management"] == "organic"  # the evidence is organic units only (rule 10)
+    assert rec["yield"]["expected_kg_ha"] == pytest.approx(5000.0)  # unscaled
+    assert "organic_yield_factor" not in {a["id"] for a in rec["assumptions"]}
 
 
 async def test_no_climate_marks_unknown_and_gap():
@@ -610,13 +619,13 @@ def test_analog_reference_from_rows():
     assert dao_mod._analog_reference([{}], "s")["n_trials"] == 0
 
 
-async def test_recommend_relative_yield_uses_the_rows_reference_and_organic_scales_it():
+async def test_recommend_relative_yield_uses_the_rows_reference_unscaled_for_organic():
     out = await _run(_conds(), {"TRZAX": [_variety(5500.0, ref=5000.0, ref_n=40)]})
     rec = out["recommendations"][0]
     assert rec["fit"]["relative_yield_pct"] == 10.0
     assert rec["fit"]["reference"] == {"median_kg_ha": 5000.0, "n_trials": 40, "scope": "analog_sites:Cfb:any"}
     org = (await _run(_conds(management="organic"), {"TRZAX": [_variety(5000.0, ref=5000.0)]}))["recommendations"][0]
-    assert org["fit"]["reference"]["median_kg_ha"] == pytest.approx(4000.0)  # same factor as the yield
+    assert org["fit"]["reference"]["median_kg_ha"] == pytest.approx(5000.0)  # organic units only: no factor
     assert org["fit"]["relative_yield_pct"] == 0.0
 
 

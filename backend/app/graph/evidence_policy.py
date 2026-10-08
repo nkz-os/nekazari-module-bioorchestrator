@@ -85,6 +85,14 @@ Rules (owner decisions 2026-10-04, rule 9 2026-10-06):
    never sees them. A reader of the regional tier scans every site of the climate, not only the
    aggregate pseudo-sites, because these rows sit at field-named ones.
 
+10. **Production system.** Organic and conventional units are never pooled. A request that names
+   no production system, or a conventional one, excludes every unit whose production system is
+   organic (``ecológico``, ``organic``, ...); a request for organic reads ONLY organic units (a
+   unit that states no system is not organic). The test is ``production_matches`` /
+   ``cypher_production_match``, applied in every path that reads trials (field and regional
+   tiers, recommendation, evidence page, variety trials, extrapolation, yield potential, presence
+   and prefilter scans). No yield factor stands in for the missing organic data.
+
 Explicit properties written by ingestion (``yieldBasis`` today; ``siteKind`` and a
 grain/forage ``yieldMetric`` vocabulary later) are read first, here; callers do not change.
 
@@ -107,7 +115,7 @@ from app.ingestion.normalization_registry import source_spellings
 from app.ingestion.trial_site_geo import AGGREGATE_PATTERNS, is_aggregate_site_name
 
 # Bump when a rule changes, so backtest baselines name the policy they were measured under.
-POLICY_VERSION = "2026-10-06.1"
+POLICY_VERSION = "2026-10-08.1"
 
 # ── (a) source policy ────────────────────────────────────────────────────────
 # Lowercased ``source_id`` / ``dataSource`` values whose kg/ha are not measurements.
@@ -579,6 +587,32 @@ def irrigation_status(value: Any, target: Any) -> str | None:
     return IRRIGATION_STATUS_STATED if irrigation_regime(value) == irrigation_regime(target) else "contradicts"
 
 
+# ── production system (rule 10) ──────────────────────────────────────────────
+PRODUCTION_ORGANIC = "organic"
+PRODUCTION_CONVENTIONAL = "conventional"
+# Lowercased spellings of an organic unit (vocabulary id and aliases of ``production_system``).
+ORGANIC_SPELLINGS: tuple[str, ...] = (
+    "organic", "ecológico", "ecológica", "ecologico", "ecologica",
+)
+
+
+def is_organic(value: Any) -> bool:
+    """A stored production-system value names organic production (any spelling, case-insensitive)."""
+    return _norm(value) in ORGANIC_SPELLINGS
+
+
+def production_class(request: Any) -> str:
+    """``organic`` for an organic request (``organic`` or a spelling of it), else ``conventional``
+    (no value, ``any``, ``conventional`` or an unrecognised one: organic units are never pooled)."""
+    return PRODUCTION_ORGANIC if is_organic(request) else PRODUCTION_CONVENTIONAL
+
+
+def production_matches(value: Any, request: Any) -> bool:
+    """A unit's production system ``value`` is admitted by the request: an organic request keeps
+    only organic units; any other request keeps every unit that is not organic."""
+    return is_organic(value) == (production_class(request) == PRODUCTION_ORGANIC)
+
+
 def policy_yield(trial: Mapping[str, Any], mode: str = MODE_MAIN) -> float | None:
     """The kg/ha a trial contributes to a numeric aggregate of ``mode``, or None.
 
@@ -874,6 +908,14 @@ def cypher_irrigation_match(expr: str, target: str = "$irrigation_uri") -> str:
     same = f"{cypher_irrigation_regime(expr)} = {cypher_irrigation_regime(target)}"
     return (f"({target} IS NULL OR ({cypher_irrigation_regime(target)} IS NOT NULL "
             f"AND ({_cypher_norm(expr)} = '' OR coalesce({same}, false))))")
+
+
+def cypher_production_match(expr: str, target: str = "$production_class") -> str:
+    """Boolean (never null): ``expr`` (a stored production-system value) is admitted by the
+    request class ``target`` (``'organic'`` | ``'conventional'``, never null): organic only for an
+    organic request, every non-organic unit otherwise (``production_matches``)."""
+    organic = f"{_cypher_norm(expr)} IN {_cypher_list(ORGANIC_SPELLINGS)}"
+    return f"(({organic}) = ({target} = {_cypher_str(PRODUCTION_ORGANIC)}))"
 
 
 # ── numeric candidates and tier gates ────────────────────────────────────────

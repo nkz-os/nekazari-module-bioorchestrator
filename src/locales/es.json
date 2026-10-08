@@ -910,6 +910,7 @@
       "observedRange": "rango observado {{low}}–{{high}} {{unit}}",
       "observedRangeLabel": "rango observado",
       "trust": "Basado en {{n_trials}} ensayos en {{n_sites}} sitios",
+      "zoneMatched": "Zona de GENVCE de la parcela: {{zone}}",
       "few": " (pocos)",
       "similarityV2": "Sitios elegidos por parecido climático",
       "compare": "Comparar",
@@ -963,7 +964,8 @@
       "zone_match_climatology_basis": "Zona estimada con la climatología 1981-2010 de la parcela; GENVCE clasifica cada ensayo por el tiempo de su campaña",
       "regional_country_level": "Evidencia regional asignada por país, no por zona",
       "irrigation_regime_unknown": "Algunos ensayos no indican su régimen de riego",
-      "irrigation_regime_unknown_all": "Ningún ensayo indica su régimen de riego; el rendimiento puede corresponder a otro régimen"
+      "irrigation_regime_unknown_all": "Ningún ensayo indica su régimen de riego; el rendimiento puede corresponder a otro régimen",
+      "organic_units_excluded": "Se han excluido los ensayos ecológicos; la cifra corresponde a producción convencional"
     },
     "evidence": {
       "title": "Ensayos de {{crop}}",

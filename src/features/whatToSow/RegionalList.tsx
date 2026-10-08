@@ -5,6 +5,7 @@ import type { Recommendation } from '../../types/recommend';
 import { LevelDots } from './MoreList';
 import { useCropName } from './RecommendationCard';
 import ExpertDetails from './ExpertDetails';
+import EvidenceNotes from './EvidenceNotes';
 import { formatYield, recYieldUnit, unitKey, yieldStatus } from './viewModel';
 
 interface RegionalListProps {
@@ -42,6 +43,7 @@ function RegionalRow({ rec, expert, policyVersion, onOpenEvidence, onReportValue
           </span>
           <LevelDots rec={rec} />
         </div>
+        <EvidenceNotes rec={rec} />
         {expert && (
           <ExpertDetails rec={rec} policyVersion={policyVersion} onOpenEvidence={onOpenEvidence} onReportValue={onReportValue} />
         )}

@@ -187,6 +187,17 @@ local. A site with a country is never matched by climate; a site without one is 
   mixed regimes never get a regime. `kg_calibrate_irrigation.py --write-registry` refuses cutoffs that
   fail the leave-one-year-out guard.
 
+### 4.4b Production system (organic vs conventional)
+
+Organic and conventional units are never pooled, in any tier or endpoint. The request carries the system
+as `management` (`organic` | `conventional` | `any`, default `any`).
+
+- `any`, `conventional` or no value: every unit whose production system is organic is **excluded**; a unit
+  that states no system stays (it is not organic). A recommendation that leaves organic units out carries the
+  data gap `organic_units_excluded`.
+- `organic`: **only** organic units are read. A unit that states no system is not organic. No yield factor
+  stands in for missing organic data; a crop with no organic units has no recommendation.
+
 ### 4.5 Productivity class and confidence
 
 Tables split by yield stratum (high/medium/low productivity) store the stratum in its own non-key field

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Annotated
+from typing import Annotated, Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from nkz_platform_sdk.agronomy import (
@@ -134,7 +134,9 @@ async def phenology_params(
     stage: str | None = Query(
         default=None,
         description="Phenological stage (e.g. 'vegetative', 'pit_hardening', 'veraison'). "
-                    "If omitted, returns the default parameter set for the species.",
+                    "If omitted (and no gdd), returns the default parameter set of the species' "
+                    "mid-season stage (FAO-56 reference), else of the first stage in the order "
+                    "initial, development, late-season; the choice never depends on storage order.",
     ),
     cultivar: str | None = Query(
         default=None,
@@ -602,6 +604,11 @@ async def agriculture_variety_trials(
         description="Maximum annual rainfall (mm)",
     ),
     limit: int = Query(default=50, le=200, description="Max results"),
+    management: Literal["any", "conventional", "organic"] = Query(
+        default="any",
+        description="Production system: organic trials are never pooled with conventional ones. "
+                    "'organic' lists only organic trials; 'any' and 'conventional' leave them out.",
+    ),
 ):
     """Ranked variety trial results with environmental context.
 
@@ -625,6 +632,7 @@ async def agriculture_variety_trials(
         min_rainfall_mm=min_rainfall_mm,
         max_rainfall_mm=max_rainfall_mm,
         limit=limit,
+        management=management,
     )
     return attach_attributions({
         "trials": trials,
@@ -636,6 +644,7 @@ async def agriculture_variety_trials(
                 "soil_type": soil_type,
                 "soil_texture": soil_texture,
                 "irrigation_regime": irrigation_regime,
+                "management": management if management == "organic" else None,
                 "min_yield_kg_ha": min_yield_kg_ha,
                 "rainfall_range_mm": f"{min_rainfall_mm}-{max_rainfall_mm}" if min_rainfall_mm or max_rainfall_mm else None,
             }.items() if v is not None
@@ -751,6 +760,11 @@ async def agriculture_extrapolate(
             "adjusts variety scores for drought, heat, and frost stress."
         ),
     ),
+    management: Literal["any", "conventional", "organic"] = Query(
+        default="any",
+        description="Production system: organic trials are never pooled with conventional ones. "
+                    "'organic' ranks only organic trials; 'any' and 'conventional' leave them out.",
+    ),
     request: Request = None,
 ):
     """Extrapolate best crop varieties for a target environment.
@@ -820,6 +834,7 @@ async def agriculture_extrapolate(
         filter_soil_suitability=filter_soil_suitability,
         parcel_id=parcel_id,
         tenant_id=tenant_id,
+        management=management,
     )
 
     if "error" in result:
@@ -1032,6 +1047,10 @@ async def agriculture_yield_potential(
     climate_class: str | None = Query(default=None, description="Köppen climate class"),
     soil_type: str | None = Query(default=None, description="WRB soil type"),
     parcel_id: str | None = Query(default=None, description="Optional parcel URN for yield gap"),
+    management: Literal["any", "conventional", "organic"] = Query(
+        default="any",
+        description="Production system: organic trials are never pooled with conventional ones.",
+    ),
 ):
     """Compute expected yield and yield gap for a variety."""
     tenant_id = _require_tenant_id(request) if parcel_id else _get_tenant_id(request)
@@ -1043,6 +1062,7 @@ async def agriculture_yield_potential(
         soil_type=soil_type,
         parcel_id=parcel_id,
         tenant_id=tenant_id,
+        management=management,
     )
     if "error" in result:
         raise HTTPException(status_code=404, detail=result["error"])
