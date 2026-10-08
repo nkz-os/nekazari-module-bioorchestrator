@@ -227,7 +227,7 @@ def test_derived_yield_fragments():
 
 
 def test_policy_version_names_the_aggregate_source_rule():
-    assert ep.POLICY_VERSION == "2026-10-06.1"
+    assert ep.POLICY_VERSION == "2026-10-08.1"
 
 
 def test_grain_yield_is_grain_family_main_product_only():
@@ -770,3 +770,37 @@ def test_irrigation_status_labels_stated_unknown_and_contradiction():
     assert ep.irrigation_status(_IRRIGATED_URI, _RAINFED_URI) == "contradicts"
     assert ep.irrigation_status("secano", None) is None
     assert ep.irrigation_status(None, None) is None
+
+
+# ── production system (rule 10) ──────────────────────────────────────────────
+
+@pytest.mark.parametrize("value", ["organic", "Organic", " ecológico ", "ECOLOGICO", "ecológica", "ecologica"])
+def test_organic_spellings(value):
+    assert ep.is_organic(value)
+
+
+@pytest.mark.parametrize("value", [None, "", "conventional", "convencional", "integrated", 3])
+def test_non_organic_values(value):
+    assert not ep.is_organic(value)
+
+
+@pytest.mark.parametrize("request_value,expected", [
+    (None, "conventional"), ("any", "conventional"), ("conventional", "conventional"),
+    ("integrated", "conventional"), ("organic", "organic"), ("Ecológico", "organic"),
+])
+def test_production_class(request_value, expected):
+    assert ep.production_class(request_value) == expected
+
+
+def test_production_matches_never_pools():
+    for value in (None, "", "conventional", "integrated"):
+        assert ep.production_matches(value, None) and ep.production_matches(value, "conventional")
+        assert not ep.production_matches(value, "organic")  # a unit that states no system is not organic
+    for value in ("organic", "ecológico"):
+        assert not ep.production_matches(value, None) and not ep.production_matches(value, "any")
+        assert ep.production_matches(value, "organic")
+
+
+def test_cypher_production_match_is_parameterised_and_literal_free_of_request():
+    frag = ep.cypher_production_match("vt.productionSystem")
+    assert "$production_class" in frag and "'ecológico'" in frag

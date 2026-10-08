@@ -162,7 +162,6 @@ _EXTRAPOLATE_BODY_TEMPLATE = """
                      sum(g_derived) AS derived_count,
                      sum(CASE WHEN g_y IS NULL AND g_unconv = 1 THEN 1 ELSE 0 END) AS unconverted_count
                 WHERE trial_count >= 1
-                  AND ($production_system IS NULL OR $production_system IN production_systems)
                 WITH crop, other_n, ref_median, ref_n, variety,
                      CASE WHEN wtot > 0 THEN wsum / wtot ELSE mean_yield_flat END AS mean_yield,
                      min_yield, max_yield, stddev_yield,
@@ -230,6 +229,10 @@ _HIT_MAP_CYPHER = (
 )
 
 
+# Organic and conventional units are never pooled (policy rule 10); param ``$production_class``.
+_PRODUCTION_PREDICATE = ep.cypher_production_match("vt.productionSystem")
+
+
 _EXCLUDED_SITES_PREDICATE = """($excluded_sites IS NULL OR NOT EXISTS {
                       MATCH (vt)-[:TRIAL_AT]->(x:TrialSite)
                       WHERE toLower(x.name) IN $excluded_sites
@@ -269,6 +272,7 @@ def _extrapolate_single_query(mode: str, tier: str, zone: bool = False) -> str:
                   AND coalesce(vt.rankingEligible, true) = true
                   AND {_CROP_MATCH_PREDICATE}
                   AND {_EXCLUDED_SITES_PREDICATE}
+                  AND {_PRODUCTION_PREDICATE}
                   {_zone_term(zone)}
                   {ep.cypher_tier_prefilter(tier)}
                 """
@@ -289,6 +293,7 @@ def _extrapolate_batch_query(mode: str, tier: str, zone: bool = False) -> str:
                   AND (vt.yieldKgHa IS NOT NULL OR vt.yieldNoteS1 IS NOT NULL)
                   AND coalesce(vt.rankingEligible, true) = true
                   AND {_EXCLUDED_SITES_PREDICATE}
+                  AND {_PRODUCTION_PREDICATE}
                   {_zone_term(zone)}
                   {ep.cypher_tier_prefilter(tier)}
                 // Same crop predicate as extrapolate_varieties, evaluated once per
@@ -416,7 +421,6 @@ def _agroclimatic_mode() -> str:
 
 
 _CLIMATE_KEYS = ("annual_rainfall_mm", "annual_et0_mm", "coldest_month_min_c", "annual_temp_c")
-_ORGANIC_YIELD_FACTOR = 0.8
 
 
 def _numeric_trials(v: dict) -> int:
@@ -464,13 +468,6 @@ def _forage_basis_unknown_only(rows: list[dict], purpose: str) -> bool:
     return (purpose == ep.MODE_FORAGE and not _has_numeric_mean(rows)
             and any(int(v.get("unknown_basis_trial_count") or 0) for v in rows))
 
-
-def _scale_variety(v: dict, factor: float) -> dict:
-    out = dict(v)
-    for k in ("mean_yield_kg_ha", "min_yield_kg_ha", "max_yield_kg_ha", "stddev_yield_kg_ha"):
-        if out.get(k) is not None:
-            out[k] = out[k] * factor
-    return out
 
 # Log an invalid AGROCLIMATIC_VECTOR once per process, not per request.
 _INVALID_VECTOR_LOGGED = False
@@ -1729,6 +1726,7 @@ class GraphDAO:
         limit: int = 50,
         variety: str | None = None,
         tier: str | None = ep.EVIDENCE_TIER_FIELD,
+        management: str | None = None,
     ) -> list[dict]:
         """Ranked variety trial results with environmental filters.
 
@@ -1739,7 +1737,8 @@ class GraphDAO:
         The numbers follow the evidence policy (``app.graph.evidence_policy``), the same one the
         recommender uses: ``yield_kg_ha`` is the policy yield of the main purpose (null for a BSL
         or note-derived kg/ha, and for forage, which this listing leaves out), content-identical
-        trials are one row (``site_names`` lists every site of the observation), and only
+        trials are one row (``site_names`` lists every site of the observation), organic units
+        are listed only for ``management="organic"`` (and then only they are; rule 10), and only
         ``tier`` rows are listed: ``field`` (default) never mixes in national or regional
         records; ``None`` lists every tier (``evidence_tier`` tells them apart). A trial with a
         note and no number stays listed, with a null yield.
@@ -1753,8 +1752,9 @@ class GraphDAO:
         where_clauses = [
             "(vt.yieldKgHa IS NOT NULL OR vt.yieldNoteS1 IS NOT NULL)",
             RANKING_ELIGIBLE_PREDICATE,
+            _PRODUCTION_PREDICATE,
         ]
-        params: dict[str, Any] = {"limit": limit}
+        params: dict[str, Any] = {"limit": limit, "production_class": ep.production_class(management)}
 
         if crop:
             where_clauses.append("(vt.cropEppo = $crop OR vt.cropScientific CONTAINS $crop OR toLower(vt.variety) CONTAINS toLower($crop))")
@@ -2090,6 +2090,7 @@ class GraphDAO:
         tier: str = ep.EVIDENCE_TIER_FIELD,
         zone_pool: str | None = None,
         zone_ctx: Any = None,
+        management: str | None = None,
     ) -> set[str]:
         """EPPO codes for which ``extrapolate_varieties`` would return >= 1 variety.
 
@@ -2120,6 +2121,7 @@ class GraphDAO:
                 WHERE (vt.yieldKgHa IS NOT NULL OR vt.yieldNoteS1 IS NOT NULL)
                   AND {RANKING_ELIGIBLE_PREDICATE}
                   AND {ep.cypher_irrigation_match("vt.irrigationRegime")}
+                  AND {_PRODUCTION_PREDICATE}
                   AND ($excluded_sites IS NULL OR NOT EXISTS {{
                       MATCH (vt)-[:TRIAL_AT]->(x:TrialSite)
                       WHERE toLower(x.name) IN $excluded_sites
@@ -2132,6 +2134,7 @@ class GraphDAO:
                 """,
                 site_names=list(site_names),
                 irrigation_uri=irrigation_uri,
+                production_class=ep.production_class(management),
                 excluded_sites=excluded_lower,
                 **_zone_params(zone_pool, zone_ctx),
             )
@@ -2142,7 +2145,7 @@ class GraphDAO:
 
     async def regional_zone_keys(
         self, crops: list[str], site_names: list[str], zone_ctx: Any, irrigation_uri: str | None = None,
-        purpose: str = ep.MODE_MAIN,
+        purpose: str = ep.MODE_MAIN, management: str | None = None,
     ) -> dict[str, list[str]]:
         """Zone keys of the numeric trials of the parcel's own zone (``matched`` pool), per crop.
 
@@ -2161,6 +2164,7 @@ class GraphDAO:
                 WHERE (vt.yieldKgHa IS NOT NULL OR vt.yieldNoteS1 IS NOT NULL)
                   AND {RANKING_ELIGIBLE_PREDICATE}
                   AND {_ZONE_POOL_PREDICATE}
+                  AND {_PRODUCTION_PREDICATE}
                   {ep.cypher_tier_prefilter(ep.EVIDENCE_TIER_REGIONAL)}
                 """
                 + ep.cypher_row_policy(purpose)
@@ -2170,6 +2174,7 @@ class GraphDAO:
                 """,
                 site_names=list(site_names),
                 irrigation_uri=irrigation_uri,
+                production_class=ep.production_class(management),
                 **_zone_params(zone_match.POOL_MATCHED, zone_ctx),
             )
             rows = [dict(r) async for r in result]
@@ -2207,6 +2212,7 @@ class GraphDAO:
         site_names: list[str],
         irrigation_uri: str | None = None,
         purpose: str = ep.MODE_MAIN,
+        management: str | None = None,
     ) -> dict[str, dict]:
         """Crops whose evidence at the aggregate ``site_names`` is presence only (policy rule 7).
 
@@ -2230,6 +2236,7 @@ class GraphDAO:
                 WHERE (vt.yieldKgHa IS NOT NULL OR vt.yieldNoteS1 IS NOT NULL)
                   AND {RANKING_ELIGIBLE_PREDICATE}
                   AND {ep.cypher_irrigation_match("vt.irrigationRegime")}
+                  AND {_PRODUCTION_PREDICATE}
                   AND any(c IN $crops WHERE vt.cropEppo = c OR vt.cropScientific CONTAINS c
                           OR toLower(vt.cropScientific) = toLower(c))
                   {ep.cypher_presence_prefilter()}
@@ -2244,6 +2251,7 @@ class GraphDAO:
                 site_names=list(site_names),
                 crops=list(crops),
                 irrigation_uri=irrigation_uri,
+                production_class=ep.production_class(management),
             )
             labels = [dict(r) async for r in result]
         out: dict[str, dict] = {}
@@ -2259,6 +2267,54 @@ class GraphDAO:
             }
         logger.debug("presence labels=%d crops=%d elapsed_s=%.3f", len(labels), len(out),
                      time.monotonic() - t0)
+        return out
+
+    async def organic_units_excluded(
+        self,
+        crops: list[str],
+        site_names: list[str],
+        irrigation_uri: str | None = None,
+        purpose: str = ep.MODE_MAIN,
+    ) -> dict[str, int]:
+        """Organic units a non-organic request leaves out (policy rule 10), per crop.
+
+        Distinct (content key) organic units that carry a policy number of the ``purpose`` at
+        ``site_names`` in the requested irrigation regime, under the same eligibility as the
+        evidence the answer reads. Crops without such units are absent. Informational: it feeds the
+        ``organic_units_excluded`` gap and never changes a number.
+        """
+        purpose = ep.check_mode(purpose)
+        if not crops or not site_names:
+            return {}
+        async with self._driver.session() as session:
+            result = await session.run(
+                f"""
+                MATCH (ts:TrialSite)
+                WHERE ts.name IN $site_names
+                MATCH (vt:VarietyTrial)-[:TRIAL_AT]->(ts)
+                WHERE vt.yieldKgHa IS NOT NULL
+                  AND {RANKING_ELIGIBLE_PREDICATE}
+                  AND {ep.cypher_irrigation_match("vt.irrigationRegime")}
+                  AND NOT {ep.cypher_production_match("vt.productionSystem", "'conventional'")}
+                  AND any(c IN $crops WHERE vt.cropEppo = c OR vt.cropScientific CONTAINS c
+                          OR toLower(vt.cropScientific) = toLower(c))
+                  {ep.cypher_tier_prefilter(ep.EVIDENCE_TIER_REGIONAL)}
+                {ep.cypher_row_policy(purpose)}
+                WHERE ep_in_mode AND ep_y IS NOT NULL
+                WITH DISTINCT vt
+                WITH vt.cropEppo AS eppo, vt.cropScientific AS sci, {ep.cypher_content_key("vt")} AS ck
+                RETURN eppo, sci, count(DISTINCT ck) AS n
+                """,
+                site_names=list(site_names),
+                crops=list(crops),
+                irrigation_uri=irrigation_uri,
+            )
+            labels = [dict(r) async for r in result]
+        out: dict[str, int] = {}
+        for crop in dict.fromkeys(crops):
+            n = sum(int(r["n"]) for r in labels if _crop_matches_label(crop, r["eppo"], r["sci"]))
+            if n:
+                out[crop] = n
         return out
 
     async def _soil_gate(self, crop: str, parcel_id: str | None, tenant_id: str) -> dict:
@@ -2308,8 +2364,12 @@ class GraphDAO:
         purpose: str = ep.MODE_MAIN,
         tier: str = ep.EVIDENCE_TIER_FIELD,
         country: str | None = None,
+        management: str | None = None,
     ) -> dict:
         """Extrapolate best varieties for a target environment.
+
+        ``management`` (``organic`` | ``conventional`` | ``any``/None): organic and conventional
+        units are never pooled (policy rule 10); None and ``any`` read the non-organic units.
 
         ``country`` (ISO 3166 alpha-2) scopes the aggregate sites of the regional tier (see
         ``get_similar_sites``); it has no effect on the field tier.
@@ -2356,6 +2416,7 @@ class GraphDAO:
         """
         purpose = ep.check_mode(purpose)
         tier = ep.check_tier(tier)
+        production_class = ep.production_class(management)
         # ── Step 1: resolve target environment ──────────────────────────
         target_env: dict[str, Any] = {
             "crop": crop,
@@ -2482,7 +2543,7 @@ class GraphDAO:
                 site_names=similar_site_names,
                 crop=crop,
                 irrigation_uri=irrigation_uri,
-                production_system=None,  # Placeholder: future use when data exists
+                production_class=production_class,
                 top_n=top_n,
                 excluded_sites=excluded_lower,
                 site_weights=site_weights,
@@ -2561,6 +2622,7 @@ class GraphDAO:
         tier: str = ep.EVIDENCE_TIER_FIELD,
         zone_pool: str | None = None,
         zone_ctx: Any = None,
+        management: str | None = None,
     ) -> dict[str, list[dict]]:
         """``ranked_varieties`` of ``extrapolate_varieties`` for many crops in one query.
 
@@ -2578,6 +2640,7 @@ class GraphDAO:
         """
         purpose = ep.check_mode(purpose)
         tier = ep.check_tier(tier)
+        production_class = ep.production_class(management)
         if not isinstance(similar_sites, list):
             raise TypeError("similar_sites must be a list of site dicts")
         crops = list(dict.fromkeys(crops))
@@ -2605,7 +2668,7 @@ class GraphDAO:
                 site_names=site_names,
                 crops=crops,
                 irrigation_uri=irrigation_uri,
-                production_system=None,  # mirrors extrapolate_varieties
+                production_class=production_class,
                 top_n=top_n,
                 excluded_sites=excluded_lower,
                 site_weights=site_weights,
@@ -2668,6 +2731,7 @@ class GraphDAO:
         purpose: str = ep.MODE_MAIN,
         tier: str = ep.EVIDENCE_TIER_FIELD,
         zone_ctx: Any = None,
+        management: str | None = None,
     ) -> dict:
         """Paginated trials behind a recommendation (count query first, then page).
 
@@ -2692,6 +2756,7 @@ class GraphDAO:
             AND {_CROP_MATCH_PREDICATE}
             AND ($variety IS NULL OR vt.varietyNormalized = $variety)
             AND {ep.cypher_irrigation_match("vt.irrigationRegime")}
+            AND {_PRODUCTION_PREDICATE}
         """
         gate = ep.cypher_numeric_tier_gate(tier).rstrip()
         params: dict[str, Any] = {
@@ -2699,6 +2764,7 @@ class GraphDAO:
             "sites": similar_sites,
             "variety": variety,
             "irrigation_uri": irrigation_uri,
+            "production_class": ep.production_class(management),
         }
         basis = ep.yield_basis(purpose)
         ck = ep.cypher_content_key("vt")
@@ -2908,7 +2974,6 @@ class GraphDAO:
             Complete sequence plan dict matching RegenerativeSequence schema.
         """
         from app.services.cover_crops import (
-            ORGANIC_YIELD_FACTOR,
             PROTEIN_CROPS,
             estimate_dates,
             estimate_n_fixation,
@@ -2964,15 +3029,12 @@ class GraphDAO:
             climate_class=climate_class,
             soil_type=soil_type,
             top_n=5,
+            management=management,
         )
 
         best_variety = None
         if variety_ranking.get("ranked_varieties"):
             best_variety = variety_ranking["ranked_varieties"][0]
-            if management == "organic" and best_variety:
-                best_variety["organic_yield_estimate_kg_ha"] = round(
-                    best_variety["mean_yield_kg_ha"] * ORGANIC_YIELD_FACTOR
-                )
 
         # ── Build primary recommendation ──────────────────────────────
         primary_cover = candidate_cover_crops[0] if candidate_cover_crops else None
@@ -3036,12 +3098,10 @@ class GraphDAO:
 
         # ── Management warnings ───────────────────────────────────────
         organic_warning = None
-        if management == "organic" and best_variety:
+        if management == "organic" and not best_variety:
             organic_warning = (
-                "Protein variety ranking uses conventional trial data (no organic trials available). "
-                f"Expected organic yield ~{ORGANIC_YIELD_FACTOR*100:.0f}% of conventional "
-                f"({round(best_yield * ORGANIC_YIELD_FACTOR) if best_yield else '?'} kg/ha). "
-                "Source: Seufert et al. 2012, Ponisio et al. 2015."
+                "No organic trials are available for this protein crop; organic and conventional "
+                "trials are never pooled, so no variety yield is shown."
             )
 
         # ── Build response ────────────────────────────────────────────
@@ -3933,9 +3993,10 @@ class GraphDAO:
         cache key through ``agro_cond``). A ``climate_detail`` dict with
         the same keys is also accepted; explicit top-level keys win.
 
-        Only ``management="organic"`` changes the computation (yields and the
-        reference median scaled by ``_ORGANIC_YIELD_FACTOR`` = 0.8, recorded in
-        ``assumptions``); ``any`` and ``conventional`` use the trial data as-is.
+        Organic and conventional units are never pooled (policy rule 10):
+        ``management="organic"`` reads ONLY organic units (no yield factor); ``any``,
+        ``conventional`` and no value leave organic units out, and a crop with such units
+        carries the ``organic_units_excluded`` data gap.
 
         ``evidence.trial_count`` of each recommendation is the number of trials
         summed over ALL returned varieties (including non-numeric ones), while
@@ -3973,7 +4034,9 @@ class GraphDAO:
         management = cond.get("management") or "any"
         season = cond.get("season") or "all"
         top_n = int(cond.get("top_n") or 10)
-        organic = management == "organic"
+        # Organic and conventional units are never pooled (rule 10): an organic request reads only
+        # organic units; any other request leaves them out and says so.
+        organic = ep.production_class(management) == ep.PRODUCTION_ORGANIC
         soil_ph, soil_texture = cond.get("soil_ph"), cond.get("soil_texture")
         parcel_soil = {
             "ph": soil_ph, "texture": soil_texture,
@@ -4097,6 +4160,7 @@ class GraphDAO:
                     ok = await self._crops_with_analog_trials(
                         all_eppos, [s["name"] for s in sites], irrigation_uri=irrigation_uri,
                         purpose=purpose, tier=tier, zone_pool=pool, zone_ctx=zone_ctx,
+                        management=management,
                     )
                 except Exception as e:  # noqa: BLE001
                     logger.warning("recommend: %s prefilter failed (%s); evaluating all crops",
@@ -4166,7 +4230,8 @@ class GraphDAO:
             async def _extrapolate(eppo: str, **extra: Any) -> dict:
                 return await self.extrapolate_varieties(
                     crop=eppo, climate_class=climate_class, soil_type=cond.get("soil_type"),
-                    irrigation_regime=irrigation_regime, top_n=5, purpose=purpose, **extra,
+                    irrigation_regime=irrigation_regime, top_n=5, purpose=purpose,
+                    management=management, **extra,
                 )
 
             async def _eval_one(entry: dict) -> dict | None:
@@ -4270,17 +4335,14 @@ class GraphDAO:
                             frost_level = "risk" if cold - margin <= frost_tol else "none"
                         if not parcel_soil["data_available"]:
                             gaps.append("soil_unavailable")
+                        if organic_excluded.get(eppo):
+                            gaps.append("organic_units_excluded")
                         if not any(v.get("source_ids") for v in varieties):
                             gaps.append("sources_unavailable")
 
+                        # Organic request: the evidence is organic units only, so no yield factor
+                        # stands in for them (rule 10).
                         assumptions: list[dict] = []
-                        if organic:
-                            varieties = [_scale_variety(v, _ORGANIC_YIELD_FACTOR) for v in varieties]
-                            if reference.get("median_kg_ha") is not None:
-                                reference = {**reference,
-                                             "median_kg_ha": reference["median_kg_ha"] * _ORGANIC_YIELD_FACTOR}
-                            assumptions.append({"id": "organic_yield_factor", "value": _ORGANIC_YIELD_FACTOR,
-                                                "citation": "Seufert et al. 2012; Ponisio et al. 2015"})
                         assumptions.append({
                             "id": "frost_margin_c", "value": margin,
                             "citation": "ASSUMPTION: conservative default, not a published standard; editable",
@@ -4332,7 +4394,7 @@ class GraphDAO:
                     try:
                         presence = await self.regional_presence_trials(
                             presence_candidates, [s["name"] for s in regional_sites],
-                            irrigation_uri=irrigation_uri, purpose=purpose,
+                            irrigation_uri=irrigation_uri, purpose=purpose, management=management,
                         )
                     except Exception as e:  # noqa: BLE001
                         logger.warning("recommend: presence evidence failed (%s); skipped",
@@ -4365,7 +4427,7 @@ class GraphDAO:
                 try:
                     koppen_batch = await self.extrapolate_varieties_batch(
                         batch_crops, koppen_sites, irrigation_regime=irrigation_regime, top_n=5,
-                        purpose=purpose,
+                        purpose=purpose, management=management,
                     )
                 except Exception as e:  # noqa: BLE001
                     logger.warning("recommend: batched extrapolation failed (%s); per-crop fallback",
@@ -4390,17 +4452,18 @@ class GraphDAO:
                                 regional_batch.update(await self.extrapolate_varieties_batch(
                                     pool_crops, regional_scan_sites, irrigation_regime=irrigation_regime,
                                     top_n=5, purpose=purpose, tier=ep.EVIDENCE_TIER_REGIONAL,
-                                    zone_pool=pool, zone_ctx=zone_ctx,
+                                    zone_pool=pool, zone_ctx=zone_ctx, management=management,
                                 ))
                         matched_crops = [c for c in regional_crops
                                          if regional_pool.get(c) == zone_match.POOL_MATCHED]
                         zone_keys = await self.regional_zone_keys(
                             matched_crops, [s["name"] for s in regional_scan_sites], zone_ctx, irrigation_uri,
-                            purpose=purpose)
+                            purpose=purpose, management=management)
                     else:
                         regional_batch = await self.extrapolate_varieties_batch(
                             regional_crops, regional_scan_sites, irrigation_regime=irrigation_regime,
                             top_n=5, purpose=purpose, tier=ep.EVIDENCE_TIER_REGIONAL,
+                            management=management,
                         )
                 except Exception as e:  # noqa: BLE001
                     logger.warning("recommend: regional tier failed (%s); field evidence only",
@@ -4409,6 +4472,20 @@ class GraphDAO:
                     regional_known = False
                 logger.debug("recommend stage=extrapolate_regional crops=%d elapsed_s=%.3f",
                              len(regional_crops), time.monotonic() - t_reg)
+
+            # Organic units a non-organic request leaves out: one scan over the evaluated crops.
+            organic_excluded: dict[str, int] = {}
+            if not organic:
+                scan_names = list(dict.fromkeys(
+                    s["name"] for s in (koppen_sites or []) + regional_scan_sites))
+                try:
+                    organic_excluded = await self.organic_units_excluded(
+                        [c["eppo_code"] for c in crop_entries], scan_names,
+                        irrigation_uri=irrigation_uri, purpose=purpose)
+                except Exception as e:  # noqa: BLE001
+                    logger.warning("recommend: organic exclusion count failed (%s); gap omitted",
+                                   type(e).__name__)
+                    degraded = True
 
             t_eval = time.monotonic()
             results = await asyncio.gather(*(_eval_one(c) for c in crop_entries))
@@ -4581,8 +4658,11 @@ class GraphDAO:
             await orion.close()
         return {"status": "cleared", "parcel_id": parcel_id}
 
-    async def get_yield_potential(self, variety: str, crop: str, climate_class: str | None = None, soil_type: str | None = None, parcel_id: str | None = None, tenant_id: str = "") -> dict:
+    async def get_yield_potential(self, variety: str, crop: str, climate_class: str | None = None, soil_type: str | None = None, parcel_id: str | None = None, tenant_id: str = "", management: str | None = None) -> dict:
         """Compute expected yield and yield gap for a variety.
+
+        ``management`` (organic | conventional | any): organic and conventional trials are never
+        pooled (policy rule 10); None and ``any`` read the non-organic trials.
 
         The number is the mean of the variety's FIELD trials of the main purpose under the evidence
         policy (``app.graph.evidence_policy``): no BSL or note-derived kg/ha, no forage, no national
@@ -4597,7 +4677,7 @@ class GraphDAO:
         # the numbers must not use.
         variety_trials = await self.get_variety_trials(
             crop=crop, variety=variety, climate_class=climate_class, soil_type=soil_type,
-            limit=200, tier=None,
+            limit=200, tier=None, management=management,
         )
         field_trials = [t for t in variety_trials if t.get("evidence_tier", ep.EVIDENCE_TIER_FIELD) == ep.EVIDENCE_TIER_FIELD]
         yields = [t["yield_kg_ha"] for t in field_trials if t.get("yield_kg_ha") is not None]

@@ -81,6 +81,7 @@ class Backtester:
               AND coalesce(v.rankingEligible, true) = true
               AND {evidence_policy.cypher_grain_yield("v")}
               AND {evidence_policy.cypher_field_evidence("v", "t")}
+              AND {evidence_policy.cypher_production_match("v.productionSystem", "'conventional'")}
               AND coalesce(t.climateClassChelsa, t.climateClass) IS NOT NULL
               AND v.cropEppo IS NOT NULL
               AND v.varietyNormalized IS NOT NULL

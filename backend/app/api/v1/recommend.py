@@ -35,8 +35,8 @@ Purpose = Literal["main", "forage"]
 Tier = Literal["field", "regional"]
 
 _MANAGEMENT_DOC = (
-    "management: only `organic` changes the computation (yields scaled by a 0.8 factor, "
-    "recorded in `assumptions`); `any` and `conventional` use the trial data as-is. "
+    "management: organic and conventional trials are never pooled. `organic` reads only organic "
+    "trials; `any` and `conventional` leave organic trials out (gap `organic_units_excluded`). "
     "purpose: `main` (default) ranks each crop's main harvested product (grain, fruit, kernel, "
     "tuber) and leaves forage records out; `forage` ranks forage records only, in kg dry matter/ha."
 )
@@ -203,6 +203,7 @@ async def recommend_evidence(
         similar_sites=[s["name"] for s in sites],
         variety=variety,
         irrigation_uri=_irrigation_uri(cond.irrigation_regime),
+        management=cond.management,
         page=page,
         page_size=page_size,
         purpose=cond.purpose,
