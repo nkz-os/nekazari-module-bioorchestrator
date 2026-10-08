@@ -9,6 +9,7 @@
 # the build writes a review queue, and a person decides. No fuzzy matching, no automatic fusion.
 # Lookup: exact match after Unicode NFC, case-folding and whitespace collapsing.
 # Seeded 2026-10-05 from the GENVCE and CREA raw extractions (GENVCE 2006-2025, CREA 2021-2025).
+# 2026-10-08: printed typos FLAIT and LG AUSTRALIA resolved as aliases of FLAIR and LG AUSTRAL (evidence per entry).
 # 2026-10-07: 82 candidates added for the varieties of the winter-cereal reports of 2016/17, 2018/19, 2019/20 and 2020/21 (one per raw name, no aliases).
 version: 1
 varieties:
@@ -252,7 +253,7 @@ varieties:
   - {id: 'HORVX:fandaga', crop: HORVX, name: FANDAGA, status: candidate, sources: [GENVCE]}
   - {id: 'HORVX:farandole', crop: HORVX, name: FARANDOLE, status: candidate, sources: [GENVCE]}
   - {id: 'HORVX:fatima', crop: HORVX, name: FATIMA, status: candidate, sources: [GENVCE]}
-  - {id: 'HORVX:flair', crop: HORVX, name: FLAIR, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:flair', crop: HORVX, name: FLAIR, status: assumption, aliases: [FLAIT], evidence: 'printed typo: the 2018/19 report prints FLAIT once (spring barley, warm zones table) while its variety list and every other table print FLAIR', sources: [GENVCE]}
   - {id: 'HORVX:flanelle', crop: HORVX, name: FLANELLE, status: candidate, sources: [GENVCE]}
   - {id: 'HORVX:florence', crop: HORVX, name: FLORENCE, status: candidate, sources: [GENVCE]}
   - {id: 'HORVX:focus', crop: HORVX, name: FOCUS, status: candidate, sources: [GENVCE]}
@@ -299,8 +300,7 @@ varieties:
   - {id: 'HORVX:lg-allegro', crop: HORVX, name: LG ALLEGRO, status: candidate, sources: [GENVCE]}
   - {id: 'HORVX:lg-amparo', crop: HORVX, name: LG AMPARO, status: candidate, sources: [GENVCE]}
   - {id: 'HORVX:lg-andante', crop: HORVX, name: LG ANDANTE, status: candidate, sources: [GENVCE]}
-  - {id: 'HORVX:lg-austral', crop: HORVX, name: LG AUSTRAL, status: candidate, sources: [GENVCE]}
-  - {id: 'HORVX:lg-australia', crop: HORVX, name: LG AUSTRALIA, status: candidate, sources: [GENVCE]}
+  - {id: 'HORVX:lg-austral', crop: HORVX, name: LG AUSTRAL, status: assumption, aliases: [LG AUSTRALIA], evidence: 'printed typo: the 2016/17 report prints LG AUSTRALIA once (long-cycle barley, temperate zones table) while its variety list and every other table print LG AUSTRAL', sources: [GENVCE]}
   - {id: 'HORVX:lg-belcanto', crop: HORVX, name: LG BELCANTO, status: candidate, sources: [GENVCE]}
   - {id: 'HORVX:lg-carolina', crop: HORVX, name: LG CAROLINA, status: candidate, sources: [GENVCE]}
   - {id: 'HORVX:lg-casting', crop: HORVX, name: LG CASTING, status: candidate, sources: [GENVCE]}
