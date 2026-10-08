@@ -245,7 +245,8 @@ variables:
     unit: d
     direction: neutral
     raw_keys: {GENVCE: [espigado_dias_respecto_hispanic, espigado_dias_respecto_meseta, espigado_dias_respecto_sunrise,
-                        espigado_dias_respecto_trujillo, espigado_dias_respecto_vitron, paniculacion_dias_respecto_prevision]}
+                        espigado_dias_respecto_trujillo, espigado_dias_respecto_vitron, paniculacion_dias_respecto_prevision,
+                        espigado_dias_respecto_galeon, espigado_dias_respecto_soissons]}
     notes: The check variety is in the raw key suffix; the Observation must carry it as the reference.
   - id: silking_days_vs_check
     trait: female flowering (silking) offset relative to a check variety
@@ -274,7 +275,7 @@ variables:
     scale: ratio
     unit: d
     direction: neutral
-    raw_keys: {GENVCE: [madurez_fisiologica_dias_vs_check]}
+    raw_keys: {GENVCE: [madurez_fisiologica_dias_vs_check, madurez_dias_respecto_soissons]}
   # ── diseases ──
   - id: powdery_mildew_pct
     trait: powdery mildew (oidio), affected share
@@ -290,7 +291,7 @@ variables:
     unit: null
     domain: [0, 9]
     direction: lower_better
-    raw_keys: {GENVCE: [oidio_escala_0_9]}
+    raw_keys: {GENVCE: [oidio_escala_0_9, oidio_0_9]}
     notes: Seven of the 66 raw values under this key exceed 9, outside the printed scale (extraction defects to be gated).
   - id: brown_rust_pct
     trait: brown rust (roya parda), affected share

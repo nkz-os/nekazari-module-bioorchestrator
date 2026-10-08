@@ -33,7 +33,7 @@ source_id: GENVCE
 raw:
   repo: nkz-data-sources
   paths: ["genvce/data/extractions/*.json"]
-  extraction_version: "nkz-data-sources@4c8e2762d48877b58f40b379bd5bb598d4f7c291; extraction pass 2026-06-15 (deepseek-chat); winter cereals 2016/17, 2018/19, 2019/20, 2020/21 re-extracted 2026-10-07 (manual, line-verified)"
+  extraction_version: "nkz-data-sources@faa76d5; extraction pass 2026-06-15 (deepseek-chat); winter cereals 2016/17, 2018/19, 2019/20, 2020/21 re-extracted 2026-10-07 (manual, line-verified); durum wheat, triticale, oats, rye and the missing barley/soft-wheat tables of 2005/06-2024/25 added 2026-10-08 (manual, line-verified)"
 adapter: app.kg.adapters.genvce
 document:
   title: {from: doc.title}
@@ -199,6 +199,10 @@ observations:
   - {from: agronomic_traits.espigado_dias_respecto_hispanic, variable: heading_days_vs_check, unit: días, qualifier: {default: HISPANIC}}
   - {from: agronomic_traits.espigado_dias_respecto_meseta, variable: heading_days_vs_check, unit: días, qualifier: {default: MESETA}}
   - {from: agronomic_traits.espigado_dias_respecto_sunrise, variable: heading_days_vs_check, unit: días, qualifier: {default: SUNRISE}}
+  - {from: agronomic_traits.espigado_dias_respecto_galeon, variable: heading_days_vs_check, unit: días, qualifier: {default: GALEON}}
+  - {from: agronomic_traits.espigado_dias_respecto_soissons, variable: heading_days_vs_check, unit: días, qualifier: {default: SOISSONS}}
+  # 2007/08 and 2008/09 soft wheat (Tablas 50 and 49): "Fecha de espigado y madurez fisiológica"
+  - {from: agronomic_traits.madurez_dias_respecto_soissons, variable: physiological_maturity_days_vs_check, unit: días, qualifier: {default: SOISSONS}}
   - {from: agronomic_traits.espigado_dias_respecto_trujillo, variable: heading_days_vs_check, unit: días, qualifier: {default: TRUJILLO}}
   - {from: agronomic_traits.espigado_dias_respecto_vitron, variable: heading_days_vs_check, unit: días, qualifier: {default: VITRON}}
   # oats: panicle emergence is the inflorescence-emergence stage that heading denotes in the other cereals
@@ -240,6 +244,7 @@ observations:
   - {from: disease_scores.helmintosporiosis_escala_0_9, variable: helminthosporium_score_0_9}
   - {from: disease_scores.helmintosporiosis_pct, variable: helminthosporium_pct, unit: '%'}
   - {from: disease_scores.oidio_escala_0_9, variable: powdery_mildew_score_0_9}
+  - {from: disease_scores.oidio_0_9, variable: powdery_mildew_score_0_9}
   - {from: disease_scores.oidio_pct, variable: powdery_mildew_pct, unit: '%'}
   - {from: disease_scores.plantas_rotas_pct, variable: stalk_breakage_pct, unit: '%'}
   - {from: disease_scores.podredumbre_tallo_pct, variable: stalk_rot_pct, unit: '%'}
@@ -383,6 +388,16 @@ ignore:
     reason: a composite quality index relative to the checks of one table; no registered variable models it (F2)
   - field: quality_params.indice_global_calidad
     reason: a composite quality index of the report; no registered variable models it (F2)
+  - field: agronomic_traits.madurez_dias_respecto_galeon
+    reason: >-
+      maturity offset against GALEON; the 2007/08 and 2008/09 captions say physiological maturity but the 2005/06
+      one (Tabla 68) says only "fecha de maduración", so the stage is not stated for every row and nothing is mapped
+  - field: agronomic_traits.encanado_dias_respecto_galeon
+    reason: jointing offset against a check (2005/06); no registered variable models a jointing offset
+  - field: quality_params.extensibilidad_l
+    reason: alveograph extensibility L of the flour; no registered variable models flour quality, so it is not mapped
+  - field: quality_params.tenacidad_p
+    reason: alveograph tenacity P of the flour; no registered variable models flour quality, so it is not mapped
   - field: yield_notes.caption_zone_printed
     reason: zone text of a caption that sits in the whole-campaign section of the report; the unit is placed on the section's group (General) and the printed text is kept only as extraction provenance
 sites:
@@ -391,6 +406,6 @@ sites:
   # a table that prints no label: the unit gets this aggregate as its site (raw_site stays empty, keys unchanged)
   unlabelled_site: ES-GENVCE-UNLABELLED
 expected:
-  units: 9315
-  observations: 45928
-  sites: 46
+  units: 12889
+  observations: 60251
+  sites: 91
