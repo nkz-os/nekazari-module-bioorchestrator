@@ -52,7 +52,8 @@ export const DEFAULT_FILTERS: Filters = {
 
 export const TOP_N_REQUEST = 15;
 export const MAX_COMPARE = 4;
-export const FEW_TRIALS = 5;
+// Same threshold as the backend `low_trial_count` evidence note.
+export const FEW_TRIALS = 3;
 export const EVIDENCE_PAGE_SIZE = 20;
 
 const FROST_MIN = 0;

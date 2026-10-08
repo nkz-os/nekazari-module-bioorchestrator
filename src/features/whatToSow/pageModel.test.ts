@@ -180,9 +180,9 @@ describe('small formatters', () => {
     expect(knownText('unknown')).toBeNull();
     expect(knownText('loam')).toBe('loam');
   });
-  it('isFewTrials below 5', () => {
-    expect(isFewTrials(4)).toBe(true);
-    expect(isFewTrials(5)).toBe(false);
+  it('isFewTrials below 3, as the backend low_trial_count note', () => {
+    expect(isFewTrials(2)).toBe(true);
+    expect(isFewTrials(3)).toBe(false);
   });
   it('formatAssumptionValue renders scalars and objects', () => {
     expect(formatAssumptionValue(0.8)).toBe('0.8');
