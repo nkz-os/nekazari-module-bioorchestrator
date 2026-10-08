@@ -58,6 +58,10 @@
       "dadis": {
         "title": "DAD-IS Explorer",
         "subtitle": "FAO breed discovery — livestock biodiversity."
+      },
+      "cropSimulation": {
+        "title": "Simulation de culture",
+        "subtitle": "Couvert végétal et stress hydrique quotidiens, et rendement avec son incertitude, pour la parcelle sélectionnée."
       }
     },
     "backToDashboard": "← Back to dashboard",
@@ -335,5 +339,75 @@
     "noParcels": "No parcels available",
     "error": "Failed to load parcels",
     "loading": "Loading parcels..."
+  },
+  "cropSimulation": {
+    "title": "Simulation de culture",
+    "subtitle": "Couvert végétal et stress hydrique quotidiens, et rendement avec son incertitude, pour la parcelle sélectionnée.",
+    "intro": "Simule la campagne avec le sol, la météo et la date de semis déterminés à partir de votre parcelle.",
+    "selectParcel": "Sélectionnez une parcelle à simuler",
+    "cropSlug": "Culture",
+    "cropPlaceholder": "p. ex. wheat",
+    "cropHint": "Détectée automatiquement à partir de la culture de la parcelle si laissée vide.",
+    "sowingDate": "Date de semis",
+    "irrigation": "Irrigation",
+    "irrigationRainfed": "Pluvial",
+    "irrigationFull": "Irrigation complète",
+    "engine": "Moteur",
+    "run": "Lancer la simulation",
+    "running": "Exécution...",
+    "crop": "Culture",
+    "status": {
+      "complete": "Campagne terminée",
+      "in_season": "Campagne en cours"
+    },
+    "yield": "Rendement",
+    "potentialYield": "Rendement potentiel",
+    "waterGap": "Écart hydrique",
+    "harvestDate": "Date de récolte",
+    "harvestMedian": "Date de récolte médiane",
+    "ensembleBasis": "Basé sur {{n}} campagnes passées ({{years}}).",
+    "initialWater": {
+      "spinup": "Eau du sol au départ : préchauffage de {{days}} jours depuis le {{start}}.",
+      "assumed_fc": "Eau du sol au départ : supposée à la capacité au champ (aucun préchauffage disponible)."
+    },
+    "dailyOutput": "Sortie quotidienne",
+    "chartLabel": "Couvert végétal et stress hydrique",
+    "daysSinceSowing": "Jours depuis le semis",
+    "canopyCover": "Couvert végétal",
+    "waterStress": "Stress hydrique",
+    "projectedNote": "Les lignes en pointillés sont projetées avec la météo de campagnes passées.",
+    "inputs": {
+      "weather": "Météo",
+      "soil": "Couches de sol",
+      "sowing": "Semis"
+    },
+    "soil": {
+      "depth": "Profondeur",
+      "wp": "PFP",
+      "fc": "CC",
+      "sat": "SAT",
+      "ksat": "Ksat (mm/j)"
+    },
+    "weatherSource": {
+      "archive": "Archive",
+      "parcel_daily": "Données de la parcelle"
+    },
+    "sowingSource": {
+      "request": "demande",
+      "field_operations": "opérations culturales"
+    },
+    "warnings": "Remarques",
+    "errors": {
+      "unsupported_crop": "Cette culture ne peut pas encore être simulée.",
+      "weather_gaps": "La météo comporte des lacunes ; la simulation n'a pas été lancée.",
+      "soil_incomplete": "Les données de sol de la parcelle sont incomplètes.",
+      "soil_unavailable": "Les données de sol sont temporairement indisponibles. Réessayez plus tard.",
+      "weather_unavailable": "Les données météo sont temporairement indisponibles. Réessayez plus tard.",
+      "archive_not_configured": "L'archive météo n'est pas configurée sur ce serveur.",
+      "archive_unavailable": "L'archive météo est temporairement indisponible. Réessayez plus tard.",
+      "sowing_date_future": "La date de semis ne peut pas être dans le futur.",
+      "parcel_not_found": "Parcelle introuvable.",
+      "generic": "La simulation n'a pas pu être menée à terme."
+    }
   }
 }

@@ -58,6 +58,10 @@
       "dadis": {
         "title": "DAD-IS Explorer",
         "subtitle": "FAO breed discovery — livestock biodiversity."
+      },
+      "cropSimulation": {
+        "title": "Laborantzaren simulazioa",
+        "subtitle": "Hautatutako partzelarako goiko estaldura eta ur-estres egunkariak, eta etekina bere ziurgabetasunarekin."
       }
     },
     "backToDashboard": "← Back to dashboard",
@@ -335,5 +339,75 @@
     "noParcels": "No parcels available",
     "error": "Failed to load parcels",
     "loading": "Loading parcels..."
+  },
+  "cropSimulation": {
+    "title": "Laborantzaren simulazioa",
+    "subtitle": "Hautatutako partzelarako goiko estaldura eta ur-estres egunkariak, eta etekina bere ziurgabetasunarekin.",
+    "intro": "Denboraldia simulatzen du zure partzelatik ebatzitako lurzoru, eguraldi eta ereite-dataren bidez.",
+    "selectParcel": "Hautatu partzela bat simulatzeko",
+    "cropSlug": "Laborantza",
+    "cropPlaceholder": "adib. wheat",
+    "cropHint": "Hutsik utziz gero, partzelako laborantzatik automatikoki detektatzen da.",
+    "sowingDate": "Ereite-data",
+    "irrigation": "Ureztatzea",
+    "irrigationRainfed": "Euri-laborantza",
+    "irrigationFull": "Ureztatze osoa",
+    "engine": "Motorra",
+    "run": "Exekutatu simulazioa",
+    "running": "Exekutatzen...",
+    "crop": "Laborantza",
+    "status": {
+      "complete": "Denboraldi osoa",
+      "in_season": "Denboraldia abian"
+    },
+    "yield": "Etekina",
+    "potentialYield": "Etekin potentziala",
+    "waterGap": "Ur-hutsunea",
+    "harvestDate": "Uzta-data",
+    "harvestMedian": "Uzta-data mediana",
+    "ensembleBasis": "Lehenagoko {{n}} denboralditan oinarrituta ({{years}}).",
+    "initialWater": {
+      "spinup": "Lurzoruko ura hasieran: {{days}} eguneko berotzea {{start}} egunetik.",
+      "assumed_fc": "Lurzoruko ura hasieran: landa-ahalmenean suposatua (berotzerik ez dago)."
+    },
+    "dailyOutput": "Eguneko irteera",
+    "chartLabel": "Goiko estaldura eta ur-estresa",
+    "daysSinceSowing": "Ereitetik igarotako egunak",
+    "canopyCover": "Goiko estaldura",
+    "waterStress": "Ur-estresa",
+    "projectedNote": "Marra etenak aurreko denboraldietako eguraldiarekin proiektatuta daude.",
+    "inputs": {
+      "weather": "Eguraldia",
+      "soil": "Lurzoru-geruzak",
+      "sowing": "Ereitea"
+    },
+    "soil": {
+      "depth": "Sakonera",
+      "wp": "LMP",
+      "fc": "LA",
+      "sat": "ASE",
+      "ksat": "Ksat (mm/d)"
+    },
+    "weatherSource": {
+      "archive": "Artxiboa",
+      "parcel_daily": "Partzelaren datuak"
+    },
+    "sowingSource": {
+      "request": "eskaera",
+      "field_operations": "landa-eragiketak"
+    },
+    "warnings": "Oharrak",
+    "errors": {
+      "unsupported_crop": "Laborantza hau ezin da oraindik simulatu.",
+      "weather_gaps": "Eguraldiak hutsuneak ditu; simulazioa ez da exekutatu.",
+      "soil_incomplete": "Partzelaren lurzoru-datuak osatu gabe daude.",
+      "soil_unavailable": "Lurzoru-datuak ez daude eskuragarri une honetan. Saiatu berriro geroago.",
+      "weather_unavailable": "Eguraldi-datuak ez daude eskuragarri une honetan. Saiatu berriro geroago.",
+      "archive_not_configured": "Eguraldi-artxiboa ez dago konfiguratuta zerbitzari honetan.",
+      "archive_unavailable": "Eguraldi-artxiboa ez dago eskuragarri une honetan. Saiatu berriro geroago.",
+      "sowing_date_future": "Ereite-data ezin da etorkizunekoa izan.",
+      "parcel_not_found": "Ez da partzela aurkitu.",
+      "generic": "Ezin izan da simulazioa osatu."
+    }
   }
 }

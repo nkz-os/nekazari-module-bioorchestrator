@@ -68,10 +68,6 @@
         "title": "DAD-IS Explorer",
         "subtitle": "FAO breed discovery — livestock biodiversity."
       },
-      "wofostSimulation": {
-        "title": "WOFOST Simulation",
-        "subtitle": "Mechanistic daily LAI and biomass curve for the selected parcel."
-      },
       "simulateScenario": {
         "title": "Simulate alternative",
         "subtitle": "What if you had planted a different crop? Compare yield, fertilizer, and rotation with real parcel data."
@@ -96,6 +92,10 @@
       "speciesExplorer": {
         "title": "Species Explorer",
         "subtitle": "Browse 45+ species with full phenology, thermal tolerance, soil requirements and NPK profiles."
+      },
+      "cropSimulation": {
+        "title": "Crop simulation",
+        "subtitle": "Daily canopy and water stress, and yield with its uncertainty, for the selected parcel."
       }
     },
     "backToDashboard": "← Back to dashboard",
@@ -127,35 +127,6 @@
     "campaignBlocked": "Campaign tools unavailable in exploration mode",
     "campaignBlockedDetail": "Turn off exploration mode in the parcel bar to view the real in-season campaign.",
     "campaignCardsBlocked": "Campaign tools are paused while exploration mode is active."
-  },
-  "wofostSimulation": {
-    "title": "WOFOST Simulation",
-    "subtitle": "PCSE mechanistic model — daily LAI and biomass for this parcel.",
-    "intro": "Runs WOFOST with weather, soil, and sowing date resolved from your parcel context.",
-    "checkReady": "Check availability",
-    "selectParcel": "Select a parcel to run WOFOST",
-    "deployPendingTitle": "WOFOST endpoint deploying",
-    "deployPendingBody": "The simulation API is being rolled out. Try again after the backend deploy completes.",
-    "phase2Note": "Endpoint is live — full simulation UI ships in the next phase.",
-    "cropSlug": "Crop slug",
-    "sowingDate": "Sowing date",
-    "run": "Run Simulation",
-    "running": "Running...",
-    "crop": "Crop",
-    "simulatedYield": "Simulated Yield",
-    "totalBiomass": "Total Biomass",
-    "maxLai": "Max LAI",
-    "daysSimulated": "Days Simulated",
-    "sand": "Sand",
-    "clay": "Clay",
-    "awc": "AWC",
-    "kSat": "K Sat",
-    "thetaFc": "θ FC",
-    "thetaWp": "θ WP",
-    "weatherDays": "Weather days fetched",
-    "dailyOutput": "Daily Output",
-    "daysSinceSowing": "Days since sowing",
-    "biomass": "Biomass"
   },
   "varietyFinder": {
     "selectParcel": "Select parcel",
@@ -1120,6 +1091,76 @@
       "noFieldEvidence": "There are no field trials at sites with a similar climate: only regional or national records.",
       "trials_one": "{{count}} trial",
       "trials_other": "{{count}} trials"
+    }
+  },
+  "cropSimulation": {
+    "title": "Crop simulation",
+    "subtitle": "Daily canopy and water stress, and yield with its uncertainty, for the selected parcel.",
+    "intro": "Simulates the season with soil, weather and sowing date resolved from your parcel.",
+    "selectParcel": "Select a parcel to simulate",
+    "cropSlug": "Crop",
+    "cropPlaceholder": "e.g. wheat",
+    "cropHint": "Detected automatically from the parcel crop if left empty.",
+    "sowingDate": "Sowing date",
+    "irrigation": "Irrigation",
+    "irrigationRainfed": "Rainfed",
+    "irrigationFull": "Full irrigation",
+    "engine": "Engine",
+    "run": "Run simulation",
+    "running": "Running...",
+    "crop": "Crop",
+    "status": {
+      "complete": "Complete season",
+      "in_season": "Season in progress"
+    },
+    "yield": "Yield",
+    "potentialYield": "Potential yield",
+    "waterGap": "Water gap",
+    "harvestDate": "Harvest date",
+    "harvestMedian": "Median harvest date",
+    "ensembleBasis": "Based on {{n}} past seasons ({{years}}).",
+    "initialWater": {
+      "spinup": "Soil water at start: spin-up of {{days}} days from {{start}}.",
+      "assumed_fc": "Soil water at start: assumed at field capacity (no spin-up available)."
+    },
+    "dailyOutput": "Daily output",
+    "chartLabel": "Canopy cover and water stress",
+    "daysSinceSowing": "Days since sowing",
+    "canopyCover": "Canopy cover",
+    "waterStress": "Water stress",
+    "projectedNote": "Dashed lines are projected with past-season weather.",
+    "inputs": {
+      "weather": "Weather",
+      "soil": "Soil layers",
+      "sowing": "Sowing"
+    },
+    "soil": {
+      "depth": "Depth",
+      "wp": "WP",
+      "fc": "FC",
+      "sat": "SAT",
+      "ksat": "Ksat (mm/d)"
+    },
+    "weatherSource": {
+      "archive": "Archive",
+      "parcel_daily": "Parcel data"
+    },
+    "sowingSource": {
+      "request": "request",
+      "field_operations": "field operations"
+    },
+    "warnings": "Notes",
+    "errors": {
+      "unsupported_crop": "This crop cannot be simulated yet.",
+      "weather_gaps": "Weather has gaps; the simulation was not run.",
+      "soil_incomplete": "The parcel soil data is incomplete.",
+      "soil_unavailable": "Soil data is temporarily unavailable. Try again later.",
+      "weather_unavailable": "Weather data is temporarily unavailable. Try again later.",
+      "archive_not_configured": "The weather archive is not configured on this server.",
+      "archive_unavailable": "The weather archive is temporarily unavailable. Try again later.",
+      "sowing_date_future": "The sowing date cannot be in the future.",
+      "parcel_not_found": "The parcel was not found.",
+      "generic": "The simulation could not be completed."
     }
   }
 }

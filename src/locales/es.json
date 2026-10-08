@@ -68,10 +68,6 @@
         "title": "Explorador DAD-IS",
         "subtitle": "Descubrimiento de razas FAO — biodiversidad ganadera."
       },
-      "wofostSimulation": {
-        "title": "Simulación WOFOST",
-        "subtitle": "Curva diaria de LAI y biomasa mecanicista para la parcela seleccionada."
-      },
       "simulateScenario": {
         "title": "Simular alternativa",
         "subtitle": "¿Y si hubieras plantado otro cultivo? Compara rendimiento, fertilizante y rotación con datos reales de la parcela."
@@ -96,6 +92,10 @@
       "speciesExplorer": {
         "title": "Explorador de Especies",
         "subtitle": "Explora más de 45 especies con fenología, tolerancia térmica, requisitos de suelo y perfiles NPK completos."
+      },
+      "cropSimulation": {
+        "title": "Simulación de cultivo",
+        "subtitle": "Cobertura de copa y estrés hídrico diarios, y rendimiento con su incertidumbre, para la parcela seleccionada."
       }
     },
     "backToDashboard": "← Volver al panel",
@@ -127,35 +127,6 @@
     "campaignBlocked": "Herramientas de campaña no disponibles en modo exploración",
     "campaignBlockedDetail": "Desactiva el modo exploración en la barra de parcela para ver la campaña real en curso.",
     "campaignCardsBlocked": "Herramientas de campaña en pausa mientras el modo exploración está activo."
-  },
-  "wofostSimulation": {
-    "title": "Simulación WOFOST",
-    "subtitle": "Modelo mecanicista PCSE — LAI y biomasa diaria para esta parcela.",
-    "intro": "Ejecuta WOFOST con tiempo, suelo y fecha de siembra resueltos desde el contexto de la parcela.",
-    "checkReady": "Comprobar disponibilidad",
-    "selectParcel": "Selecciona una parcela para ejecutar WOFOST",
-    "deployPendingTitle": "Endpoint WOFOST en despliegue",
-    "deployPendingBody": "La API de simulación se está desplegando. Vuelve a intentarlo cuando termine el backend.",
-    "phase2Note": "El endpoint está activo — la UI completa llegará en la siguiente fase.",
-    "cropSlug": "Cultivo (slug)",
-    "sowingDate": "Fecha de siembra",
-    "run": "Ejecutar Simulación",
-    "running": "Ejecutando...",
-    "crop": "Cultivo",
-    "simulatedYield": "Rendimiento simulado",
-    "totalBiomass": "Biomasa total",
-    "maxLai": "LAI máx.",
-    "daysSimulated": "Días simulados",
-    "sand": "Arena",
-    "clay": "Arcilla",
-    "awc": "AWC",
-    "kSat": "K Sat",
-    "thetaFc": "θ CC",
-    "thetaWp": "θ PMP",
-    "weatherDays": "Días meteorológicos obtenidos",
-    "dailyOutput": "Salida diaria",
-    "daysSinceSowing": "Días desde siembra",
-    "biomass": "Biomasa"
   },
   "varietyFinder": {
     "selectParcel": "Seleccionar parcela",
@@ -1118,6 +1089,76 @@
       "noFieldEvidence": "No hay ensayos de parcela en sitios con clima parecido: solo hay registros regionales o nacionales.",
       "trials_one": "{{count}} ensayo",
       "trials_other": "{{count}} ensayos"
+    }
+  },
+  "cropSimulation": {
+    "title": "Simulación de cultivo",
+    "subtitle": "Cobertura de copa y estrés hídrico diarios, y rendimiento con su incertidumbre, para la parcela seleccionada.",
+    "intro": "Simula la campaña con el suelo, el tiempo y la fecha de siembra resueltos desde tu parcela.",
+    "selectParcel": "Selecciona una parcela para simular",
+    "cropSlug": "Cultivo",
+    "cropPlaceholder": "p. ej. wheat",
+    "cropHint": "Si se deja vacío, se detecta automáticamente del cultivo de la parcela.",
+    "sowingDate": "Fecha de siembra",
+    "irrigation": "Riego",
+    "irrigationRainfed": "Secano",
+    "irrigationFull": "Riego completo",
+    "engine": "Motor",
+    "run": "Ejecutar simulación",
+    "running": "Ejecutando...",
+    "crop": "Cultivo",
+    "status": {
+      "complete": "Campaña completa",
+      "in_season": "Campaña en curso"
+    },
+    "yield": "Rendimiento",
+    "potentialYield": "Rendimiento potencial",
+    "waterGap": "Brecha hídrica",
+    "harvestDate": "Fecha de cosecha",
+    "harvestMedian": "Fecha de cosecha mediana",
+    "ensembleBasis": "Basado en {{n}} campañas pasadas ({{years}}).",
+    "initialWater": {
+      "spinup": "Agua del suelo al inicio: precalentamiento de {{days}} días desde {{start}}.",
+      "assumed_fc": "Agua del suelo al inicio: supuesta a capacidad de campo (sin precalentamiento disponible)."
+    },
+    "dailyOutput": "Salida diaria",
+    "chartLabel": "Cobertura de copa y estrés hídrico",
+    "daysSinceSowing": "Días desde la siembra",
+    "canopyCover": "Cobertura de copa",
+    "waterStress": "Estrés hídrico",
+    "projectedNote": "Las líneas discontinuas se proyectan con el tiempo de campañas pasadas.",
+    "inputs": {
+      "weather": "Tiempo",
+      "soil": "Capas de suelo",
+      "sowing": "Siembra"
+    },
+    "soil": {
+      "depth": "Profundidad",
+      "wp": "PMP",
+      "fc": "CC",
+      "sat": "SAT",
+      "ksat": "Ksat (mm/d)"
+    },
+    "weatherSource": {
+      "archive": "Archivo",
+      "parcel_daily": "Datos de la parcela"
+    },
+    "sowingSource": {
+      "request": "solicitud",
+      "field_operations": "operaciones de campo"
+    },
+    "warnings": "Notas",
+    "errors": {
+      "unsupported_crop": "Este cultivo aún no se puede simular.",
+      "weather_gaps": "El tiempo tiene huecos; no se ejecutó la simulación.",
+      "soil_incomplete": "Los datos de suelo de la parcela están incompletos.",
+      "soil_unavailable": "Los datos de suelo no están disponibles temporalmente. Inténtalo más tarde.",
+      "weather_unavailable": "Los datos de tiempo no están disponibles temporalmente. Inténtalo más tarde.",
+      "archive_not_configured": "El archivo meteorológico no está configurado en este servidor.",
+      "archive_unavailable": "El archivo meteorológico no está disponible temporalmente. Inténtalo más tarde.",
+      "sowing_date_future": "La fecha de siembra no puede ser futura.",
+      "parcel_not_found": "No se encontró la parcela.",
+      "generic": "No se pudo completar la simulación."
     }
   }
 }

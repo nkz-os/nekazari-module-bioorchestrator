@@ -58,6 +58,10 @@
       "dadis": {
         "title": "DAD-IS Explorer",
         "subtitle": "FAO breed discovery — livestock biodiversity."
+      },
+      "cropSimulation": {
+        "title": "Simulació de cultiu",
+        "subtitle": "Cobertura de capçada i estrès hídric diaris, i rendiment amb la seva incertesa, per a la parcel·la seleccionada."
       }
     },
     "backToDashboard": "← Back to dashboard",
@@ -335,5 +339,75 @@
     "noParcels": "No parcels available",
     "error": "Failed to load parcels",
     "loading": "Loading parcels..."
+  },
+  "cropSimulation": {
+    "title": "Simulació de cultiu",
+    "subtitle": "Cobertura de capçada i estrès hídric diaris, i rendiment amb la seva incertesa, per a la parcel·la seleccionada.",
+    "intro": "Simula la campanya amb el sòl, el temps i la data de sembra resolts des de la teva parcel·la.",
+    "selectParcel": "Selecciona una parcel·la per simular",
+    "cropSlug": "Cultiu",
+    "cropPlaceholder": "p. ex. wheat",
+    "cropHint": "Si es deixa buit, es detecta automàticament del cultiu de la parcel·la.",
+    "sowingDate": "Data de sembra",
+    "irrigation": "Reg",
+    "irrigationRainfed": "Secà",
+    "irrigationFull": "Reg complet",
+    "engine": "Motor",
+    "run": "Executa la simulació",
+    "running": "Executant...",
+    "crop": "Cultiu",
+    "status": {
+      "complete": "Campanya completa",
+      "in_season": "Campanya en curs"
+    },
+    "yield": "Rendiment",
+    "potentialYield": "Rendiment potencial",
+    "waterGap": "Bretxa hídrica",
+    "harvestDate": "Data de collita",
+    "harvestMedian": "Data de collita mitjana",
+    "ensembleBasis": "Basat en {{n}} campanyes passades ({{years}}).",
+    "initialWater": {
+      "spinup": "Aigua del sòl a l'inici: preescalfament de {{days}} dies des de {{start}}.",
+      "assumed_fc": "Aigua del sòl a l'inici: suposada a capacitat de camp (sense preescalfament disponible)."
+    },
+    "dailyOutput": "Sortida diària",
+    "chartLabel": "Cobertura de capçada i estrès hídric",
+    "daysSinceSowing": "Dies des de la sembra",
+    "canopyCover": "Cobertura de capçada",
+    "waterStress": "Estrès hídric",
+    "projectedNote": "Les línies discontínues es projecten amb el temps de campanyes passades.",
+    "inputs": {
+      "weather": "Temps",
+      "soil": "Capes de sòl",
+      "sowing": "Sembra"
+    },
+    "soil": {
+      "depth": "Profunditat",
+      "wp": "PMP",
+      "fc": "CC",
+      "sat": "SAT",
+      "ksat": "Ksat (mm/d)"
+    },
+    "weatherSource": {
+      "archive": "Arxiu",
+      "parcel_daily": "Dades de la parcel·la"
+    },
+    "sowingSource": {
+      "request": "sol·licitud",
+      "field_operations": "operacions de camp"
+    },
+    "warnings": "Notes",
+    "errors": {
+      "unsupported_crop": "Aquest cultiu encara no es pot simular.",
+      "weather_gaps": "El temps té buits; no s'ha executat la simulació.",
+      "soil_incomplete": "Les dades de sòl de la parcel·la són incompletes.",
+      "soil_unavailable": "Les dades de sòl no estan disponibles temporalment. Torna-ho a provar més tard.",
+      "weather_unavailable": "Les dades de temps no estan disponibles temporalment. Torna-ho a provar més tard.",
+      "archive_not_configured": "L'arxiu meteorològic no està configurat en aquest servidor.",
+      "archive_unavailable": "L'arxiu meteorològic no està disponible temporalment. Torna-ho a provar més tard.",
+      "sowing_date_future": "La data de sembra no pot ser futura.",
+      "parcel_not_found": "No s'ha trobat la parcel·la.",
+      "generic": "No s'ha pogut completar la simulació."
+    }
   }
 }
