@@ -216,6 +216,12 @@ def _et0_warning(raised: list[date]) -> list[str]:
     return [msg]
 
 
+# The parcel series is lapse-rate corrected to the parcel altitude; the archive
+# is the grid-cell value. Mixing them is declared, never silent.
+ARCHIVE_ALTITUDE_WARNING = (
+    "archive weather is the grid-cell value, not corrected to the parcel altitude")
+
+
 def _segments(tags: list[tuple[date, str]]) -> list[dict[str, Any]]:
     segs: list[dict[str, Any]] = []
     for d, src in tags:
@@ -277,7 +283,10 @@ async def assemble_observed(
         weather=[values[d][0] for d in days],
         sim_start=first,
         segments=_segments([(d, values[d][1]) for d in days]),
-        warnings=_et0_warning(raised),
+        warnings=[
+            *_et0_warning(raised),
+            *([ARCHIVE_ALTITUDE_WARNING] if any(v[1] == "archive" for v in values.values()) else []),
+        ],
     )
 
 
@@ -328,4 +337,5 @@ async def assemble_analogs(
         used = [d for y in out for d in (analog_date(c, planting.year, y) for c in campaign)]
         raised = sorted(set(used) & fetched.et0_raised)
         warns.extend(_et0_warning(raised))
+        warns.append(f"analog years: {ARCHIVE_ALTITUDE_WARNING}")
     return out, warns

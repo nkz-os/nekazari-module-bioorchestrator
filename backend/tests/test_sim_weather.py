@@ -103,6 +103,7 @@ def test_parcel_series_covering_everything_needs_no_archive():
     assert res.sim_start == res.weather[0].day
     assert [s["source"] for s in res.segments] == ["parcel_daily"]
     assert all("archive.test" not in c[0] for c in net.calls)
+    assert sw.ARCHIVE_ALTITUDE_WARNING not in res.warnings
     # service-to-service identity headers
     assert net.calls[0][2]["X-Tenant-ID"] == TENANT and "X-User-ID" in net.calls[0][2]
     # 380 days in two requests of <= 400 days
@@ -132,6 +133,7 @@ def test_leading_days_come_from_archive_and_are_tagged():
     assert "et0_fao_evapotranspiration" in arch[1]["daily"]
     # archive value mapping
     assert res.weather[0].tmin_c == 2.0 and res.weather[0].et0_mm == 1.2
+    assert sw.ARCHIVE_ALTITUDE_WARNING in res.warnings
 
 
 def test_leading_days_without_archive_configured_is_503(monkeypatch):
@@ -332,3 +334,4 @@ def test_invalid_day_is_not_usable_and_becomes_gap():
             nulls={date(2026, 3, 4)}))), pytest.raises(SimulationError) as ei:
         _run(sw.assemble_observed(PARCEL, TENANT, LAT, LON, planting, today))
     assert ei.value.code == "weather_gaps"
+
