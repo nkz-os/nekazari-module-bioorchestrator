@@ -294,6 +294,16 @@ def test_the_productivity_class_travels_with_the_unit_and_is_not_a_key(genvce_bu
     assert props["unitKey"] == identity.unit_key(unit)
 
 
+def test_a_multi_year_mean_is_kept_but_never_ranked(genvce_bundle):
+    multi = [u for u in genvce_bundle.units if u.raw_season is not None and u.year is None]
+    single = [u for u in genvce_bundle.units if u.year is not None]
+    assert multi and single, "fixture lacks a multi-year or a single-year unit: the test would be vacuous"
+    for unit, eligible, reason in ((multi[0], False, "multi_year_mean"), (single[0], None, None)):
+        props = loader.unit_properties(
+            unit, [o for o in genvce_bundle.observations if o.unit_key == identity.unit_key(unit)], REGISTRIES)
+        assert props["rankingEligible"] is eligible and props["rankingExclusion"] == reason
+
+
 def test_the_zone_key_is_the_definition_the_unit_s_document_and_label_select(genvce_bundle):
     plan = loader._plan(genvce_bundle, REGISTRIES)
     docs = {identity.document_key(d): d for d in genvce_bundle.documents}
