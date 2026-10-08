@@ -16,6 +16,8 @@ Design rules
   earlier) AquaCrop runs the fallow period first (``off_season=True``) from field
   capacity at ``sim_start``, so the planting-day soil water comes from real
   weather. The response always declares which one was used (``initial_water``).
+  The spin-up never reaches back to last year's planting anniversary (AquaCrop
+  would plant there), so the longest spin-up is 364 days.
 
 ``run_aquacrop`` output keys
 ----------------------------
@@ -240,6 +242,15 @@ def run_aquacrop(
             warns.append(
                 f"spin-up shorter than {MIN_SPINUP_DAYS} days: initial soil water assumed at "
                 "field capacity on the planting day")
+    if start < planting_date:
+        # AquaCrop plants on the first "mm/dd" on or after the simulation start, so a
+        # start on (or before) last year's planting anniversary would plant a year early.
+        try:
+            prev = planting_date.replace(year=planting_date.year - 1)
+        except ValueError:  # Feb 29
+            prev = date(planting_date.year - 1, 2, 28)
+        if start <= prev:
+            start = prev + timedelta(days=1)
     spinup_days = (planting_date - start).days
     initial_water = {
         "method": "spinup" if spinup_days else "assumed_fc",
@@ -269,7 +280,16 @@ def run_aquacrop(
             _build_soil(soil), Crop(crop, planting_date=planting_date.strftime("%m/%d")),
             InitialWaterContent(value=["FC"]), irrigation_management=irr,
             off_season=spinup_days > 0)
-        model.run_model(till_termination=True)
+        try:
+            model.run_model(till_termination=True)
+        except AssertionError as e:
+            # GDD crops: AquaCrop asserts (instead of returning no result) when the
+            # weather up to the end of the run has too few degree days to mature.
+            if "not enough growing degree days" not in str(e):
+                raise
+            raise WeatherEndsBeforeHarvestError(
+                f"weather ends before harvest: {e} (last weather day {last}, "
+                f"planting {planting_date})") from e
         stats = model.get_simulation_results()
         if stats is False or len(stats) == 0:
             raise WeatherEndsBeforeHarvestError(

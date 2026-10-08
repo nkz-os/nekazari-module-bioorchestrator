@@ -474,3 +474,21 @@ async def test_analogs_loader_awaited_only_when_needed(tunis):
         assert calls == [1]
     finally:
         eng._shutdown_pool()
+
+
+def test_gdd_crop_with_too_few_degree_days_is_weather_ends_before_harvest(tunis):
+    _, weather, layers = tunis
+    obs = [w for w in weather if w.day <= date(1980, 2, 1)]
+    with pytest.raises(eng.WeatherEndsBeforeHarvestError, match="degree days"):
+        run_aquacrop(obs, layers, "WheatGDD", date(1979, 10, 1))
+
+
+def test_spinup_never_starts_on_previous_planting_anniversary(tunis):
+    # AquaCrop plants on the first mm/dd >= start: starting exactly one year
+    # earlier would plant a year too early.
+    _, weather, layers = tunis
+    planting = date(1990, 10, 1)
+    res = run_aquacrop(weather, layers, "Wheat", planting, sim_start=planting - timedelta(days=365))
+    assert res["initial_water"] == {"method": "spinup", "spinup_days": 364, "start": "1989-10-02"}
+    assert res["harvest_date"] > res["planting_date"] == "1990-10-01"
+    assert res["daily"][0]["day"] == "1990-10-01"
