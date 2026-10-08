@@ -52,7 +52,6 @@ export const DEFAULT_FILTERS: Filters = {
 
 export const TOP_N_REQUEST = 15;
 export const MAX_COMPARE = 4;
-export const FEW_TRIALS = 5;
 export const EVIDENCE_PAGE_SIZE = 20;
 
 const FROST_MIN = 0;
@@ -188,10 +187,6 @@ export function knownText(v: string | null | undefined): string | null {
   if (v == null) return null;
   const s = v.trim();
   return s === '' || s === 'unknown' ? null : s;
-}
-
-export function isFewTrials(n: number): boolean {
-  return n < FEW_TRIALS;
 }
 
 export function formatAssumptionValue(v: unknown): string | null {

@@ -3,7 +3,7 @@ import { useTranslation } from '@nekazari/sdk';
 import { Badge, Button, Card, Checkbox, Inline, Stack } from '@nekazari/ui-kit';
 import type { Interval, Recommendation } from '../../types/recommend';
 import { formatYield, levelKey, rangeBar, recYieldUnit, soilWarning, unitKey, yieldStatus } from './viewModel';
-import { isFewTrials, seasonKey } from './pageModel';
+import { seasonKey } from './pageModel';
 import { typicalSowingMonth } from './compareModel';
 import ExpertDetails from './ExpertDetails';
 import ForageNotice from './ForageNotice';
@@ -127,7 +127,7 @@ export default function RecommendationCard({
         ) : (
           <p className="text-nkz-sm text-nkz-text-muted">
             {t('whatToSow.card.trust', { n_trials: rec.yield.n_trials, n_sites: rec.yield.n_sites })}
-            {isFewTrials(rec.yield.n_trials) && t('whatToSow.card.few')}
+            {rec.trust.data_gaps.includes('low_trial_count') && t('whatToSow.card.few')}
           </p>
         )}
         {rec.trust.similarity === 'vector_v2_fallback' && (
