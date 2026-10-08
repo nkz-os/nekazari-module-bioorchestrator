@@ -511,14 +511,17 @@ def test_the_other_pages_of_a_table_are_provenance_on_the_table():
     ("disease_scores.helmintosporiosis_0_9", "helminthosporium_score_0_9"),
     ("disease_scores.roya_parda_0_9", "brown_rust_score_0_9"),
     ("yield_notes.num_ensayos", "trial_count_in_mean"),
+    ("quality_params.fuerza_harinera_w", "alveograph_w"),
+    ("quality_params.relacion_pl", "alveograph_pl"),
+    ("quality_params.indice_caida_s", "falling_number"),
+    ("quality_params.vitrosidad_pct", "vitreousness_pct"),
 ])
 def test_new_raw_keys_map_only_where_the_meaning_is_identical(key, variable):
     assert {o.from_: o.variable for o in CONTRACT.observations}[key] == variable
 
 
 @pytest.mark.parametrize("key", [
-    "quality_params.fuerza_harinera_w", "quality_params.relacion_pl",
-    "quality_params.indice_caida_s", "yield_notes.separacion_medias", "yield_notes.red",
+    "quality_params.indice_global_calidad", "yield_notes.separacion_medias", "yield_notes.red",
     "yield_notes.caption_zone_printed",
 ])
 def test_raw_keys_without_a_registered_variable_are_ignored_with_a_reason(key):
