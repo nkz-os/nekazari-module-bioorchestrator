@@ -584,7 +584,7 @@ def test_the_real_bundles_load_complete_and_a_reload_changes_nothing(db, sync_dr
     observations = sum(len(b.observations) for b in bundles.values())
     counts = _counts(db)
     assert counts["nodes"]["VarietyTrial"] == units == 13208
-    assert counts["nodes"]["Observation"] == observations == 62841
+    assert counts["nodes"]["Observation"] == observations == 65606
     assert counts["rels"]["ON_UNIT"] == observations
     # every yield on a unit is the yield of its crop_yield Observation, and none is lost
     rows = _run(_q(db, "MATCH (o:Observation {variableId: 'crop_yield'})-[:ON_UNIT]->(u:ObservationUnit) "

@@ -61,6 +61,18 @@ label_sets:
     - {label: "Zonas templadas y frías", temperature: [temperate, cold]}
     - {label: "Zona Fría Semiárida", temperature: [cold], rainfall: [semiarid]}
     - {label: "Zona Cálida Semiárida", temperature: [warm], rainfall: [semiarid]}
+    # labels of the durum, triticale, oat and rye tables (and the barley/soft-wheat tables added 2026-10-08)
+    - {label: "Zonas templadas y cálidas", temperature: [temperate, warm]}
+    - {label: "Zonas cálidas y templadas", temperature: [warm, temperate]}
+    - {label: "Zonas templadas-cálidas", temperature: [temperate, warm]}
+    - {label: "Zonas templadas-frías", temperature: [temperate, cold]}
+    - {label: "Zonas frías semiáridas", temperature: [cold], rainfall: [semiarid]}
+    - {label: "Zonas frías subhúmedas", temperature: [cold], rainfall: [subhumid]}
+    - {label: "Zonas frías húmedas y subhúmedas", temperature: [cold], rainfall: [humid, subhumid]}
+    - {label: "Zonas subhúmedas cálidas", temperature: [warm], rainfall: [subhumid]}
+    # NOT listed, on purpose (they stay at country level): "zonas frías y semiáridas" / "zonas frías y
+    # subhúmedas" (the "y" may join two zones or qualify one), "zonas áridas templadas" ("áridas" is not one of
+    # the report's rainfall classes), "zonas de regadío" (no temperature class).
   colza: &colza_labels
     - {label: "Secanos áridos y semiáridos fríos", regime: secano, temperature: [cold], rainfall: [arid_semiarid]}
     - {label: "Secanos húmedos y de alto potencial fríos", regime: secano, temperature: [cold], rainfall: [humid]}
@@ -73,7 +85,7 @@ definitions:
   - id: genvce-winter-cereals-2011-12
     family: winter_cereals
     campaigns: ["2011/2012"]
-    crops: [HORVX, TRZAX]
+    crops: [HORVX, TRZAX, TRZDU, TTLSS, AVESA, SECCE]  # 2.1.3: "en función de la especie (cebada, trigo blando, trigo duro, centeno, avena y triticale)"
     required_axes: [temperature, rainfall]
     temperature: *temp_11_13
     rainfall: *rain_500_700
@@ -87,7 +99,7 @@ definitions:
   - id: genvce-winter-cereals-2012-13
     family: winter_cereals
     campaigns: ["2012/2013"]
-    crops: [HORVX, TRZAX]
+    crops: [HORVX, TRZAX, TRZDU, TTLSS, AVESA]  # 2.1.3: "en función de la especie (cebada, trigo blando, trigo duro, avena y triticale)"; rye not named
     required_axes: [temperature, rainfall]
     temperature: *temp_11_13
     rainfall: *rain_500_700
@@ -103,7 +115,7 @@ definitions:
   - id: genvce-winter-cereals-2013-14
     family: winter_cereals
     campaigns: ["2013/2014"]
-    crops: [HORVX, TRZAX]
+    crops: [HORVX, TRZAX, TRZDU, TTLSS, AVESA]  # 2.1.3: "en función de la especie (cebada, trigo blando, trigo duro, avena y triticale)"; rye not named
     required_axes: [temperature]
     temperature: *temp_11_13
     rainfall: *rain_500_700
@@ -117,7 +129,7 @@ definitions:
   - id: genvce-winter-cereals-2014-15
     family: winter_cereals
     campaigns: ["2014/2015"]
-    crops: [HORVX, TRZAX]
+    crops: [HORVX, TRZAX, TRZDU, TTLSS, AVESA]  # 2.1.3: "en función de la especie (cebada, trigo blando, trigo duro, avena y triticale)"; rye not named
     required_axes: [temperature]
     temperature: *temp_11_13
     rainfall: *rain_500_700
@@ -131,7 +143,7 @@ definitions:
   - id: genvce-winter-cereals-2015-16
     family: winter_cereals
     campaigns: ["2015/2016"]
-    crops: [HORVX, TRZAX]
+    crops: [HORVX, TRZAX, TRZDU, TTLSS, AVESA, SECCE]  # 2.1.3: "en función de la especie (cebada, trigo blando, trigo duro, avena, triticale y centeno)"
     required_axes: [temperature]
     temperature: *temp_11_13
     rainfall: *rain_500_700
@@ -145,7 +157,7 @@ definitions:
   - id: genvce-winter-cereals-2016-17
     family: winter_cereals
     campaigns: ["2016/2017"]
-    crops: [HORVX, TRZAX]
+    crops: [HORVX, TRZAX, TRZDU, TTLSS, AVESA, SECCE]  # 2.1.3: "en función de la especie (cebada, trigo blando, trigo duro, avena, triticale y centeno)"
     required_axes: [temperature]
     temperature: *temp_11_13
     rainfall: *rain_500_700
@@ -159,7 +171,7 @@ definitions:
   - id: genvce-winter-cereals-2017-18
     family: winter_cereals
     campaigns: ["2017/2018"]
-    crops: [HORVX, TRZAX]
+    crops: [HORVX, TRZAX, TRZDU, TTLSS, AVESA, SECCE]  # 2.1.3: "en función de la especie (cebada, trigo blando, trigo duro, avena, triticale y centeno)"
     required_axes: [temperature]
     temperature: *temp_11_13
     rainfall: *rain_500_700
@@ -173,7 +185,7 @@ definitions:
   - id: genvce-winter-cereals-2018-19
     family: winter_cereals
     campaigns: ["2018/2019"]
-    crops: [HORVX, TRZAX]
+    crops: [HORVX, TRZAX, TRZDU, TTLSS, AVESA, SECCE]  # 2.1.3: "en función de la especie (cebada, trigo blando, trigo duro, avena, triticale y centeno)"
     required_axes: [temperature]
     temperature: *temp_11_13
     rainfall: *rain_500_700
@@ -187,7 +199,7 @@ definitions:
   - id: genvce-winter-cereals-2019-20
     family: winter_cereals
     campaigns: ["2019/2020"]
-    crops: [HORVX, TRZAX]
+    crops: [HORVX, TRZAX, TRZDU, TTLSS, AVESA, SECCE]  # 2.1.3: "en función de la especie (cebada, trigo blando, trigo duro, avena, triticale y centeno)"
     required_axes: [temperature]
     temperature: *temp_11_13
     rainfall: *rain_500_700
@@ -201,7 +213,7 @@ definitions:
   - id: genvce-winter-cereals-2020-21
     family: winter_cereals
     campaigns: ["2020/2021"]
-    crops: [HORVX, TRZAX]
+    crops: [HORVX, TRZAX, TRZDU, TTLSS, AVESA, SECCE]  # 2.1.3: "en función de la especie (cebada, trigo blando, trigo duro, avena, triticale y centeno)"
     required_axes: [temperature]
     temperature: *temp_11_13
     rainfall: *rain_500_700
@@ -215,7 +227,7 @@ definitions:
   - id: genvce-winter-cereals-2021-22
     family: winter_cereals
     campaigns: ["2021/2022"]
-    crops: [HORVX, TRZAX]
+    crops: [HORVX, TRZAX, TRZDU, TTLSS, AVESA, SECCE]  # 2.1.3: "en función de la especie (cebada, trigo blando, trigo duro, avena, triticale y centeno)"
     required_axes: [temperature]
     temperature: *temp_11_13
     rainfall: *rain_500_700
@@ -229,7 +241,7 @@ definitions:
   - id: genvce-winter-cereals-2022-23
     family: winter_cereals
     campaigns: ["2022/2023"]
-    crops: [HORVX, TRZAX]
+    crops: [HORVX, TRZAX, TRZDU, TTLSS, AVESA, SECCE]  # 2.1.3: "en función de la especie (cebada, trigo blando, trigo duro, avena, triticale y centeno)"
     required_axes: [temperature]
     temperature: *temp_11_13
     rainfall: *rain_500_700
@@ -243,7 +255,7 @@ definitions:
   - id: genvce-winter-cereals-2023-24
     family: winter_cereals
     campaigns: ["2023/2024"]
-    crops: [HORVX, TRZAX]
+    crops: [HORVX, TRZAX, TRZDU, TTLSS, AVESA, SECCE]  # 2.1.3: "en función de la especie (cebada, trigo blando, trigo duro, avena, triticale y centeno)"
     required_axes: [temperature]
     temperature: *temp_11_13
     rainfall: *rain_500_700
@@ -257,7 +269,7 @@ definitions:
   - id: genvce-winter-cereals-2024-25
     family: winter_cereals
     campaigns: ["2024/2025"]
-    crops: [HORVX, TRZAX]
+    crops: [HORVX, TRZAX, TRZDU, TTLSS, AVESA, SECCE]  # 2.1.3: "en función de la especie (cebada, trigo blando, trigo duro, avena, triticale y centeno)"
     required_axes: [temperature]
     temperature: *temp_11_13
     rainfall: *rain_500_700

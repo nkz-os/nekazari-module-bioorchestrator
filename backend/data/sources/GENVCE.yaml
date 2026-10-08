@@ -301,6 +301,18 @@ observations:
   - {from: quality_params.peso_mil_semillas_g, variable: thousand_kernel_weight, unit: g}
   - {from: quality_params.plantas_enanas_pct, variable: dwarf_plants_pct, unit: '%'}
   - {from: quality_params.proteina_pct, variable: grain_protein_content, unit: '%'}
+  - {from: quality_params.vitrosidad_pct, variable: vitreousness_pct, unit: '%'}
+  # gluten index, Minolta index, P/L: dimensionless; SDS, W, P, L: printed without a unit, the unit is the test method's
+  - {from: quality_params.gluten_index, variable: gluten_index, unit: '1'}
+  - {from: quality_params.color_amarillo, variable: semolina_yellow_index, unit: '1'}
+  - {from: quality_params.betacarotenos, variable: beta_carotene_content, unit: ppm}
+  - {from: quality_params.sds, variable: sds_sedimentation, unit: mL}
+  - {from: quality_params.indice_caida, variable: falling_number, unit: s}
+  - {from: quality_params.indice_caida_s, variable: falling_number, unit: s}
+  - {from: quality_params.fuerza_harinera_w, variable: alveograph_w, unit: 10-4 J}
+  - {from: quality_params.tenacidad_p, variable: alveograph_p, unit: mmH2O}
+  - {from: quality_params.extensibilidad_l, variable: alveograph_l, unit: mm}
+  - {from: quality_params.relacion_pl, variable: alveograph_pl, unit: '1'}
   - {from: quality_params.stay_green, variable: stay_green_score}
   - {from: yield_notes.num_ensayos, variable: trial_count_in_mean, unit: '1'}
   - {from: yield_notes.numero_de_ensayos, variable: trial_count_in_mean, unit: '1'}
@@ -348,12 +360,6 @@ ignore:
     reason: number of trials in which the variety ranked in the lower tercile (a tercile analysis table); no registered variable models it
   - field: yield_notes.rendimiento_al_9_pct_humedad
     reason: boolean note that the yield is at 9% moisture; the basis is declared once for the whole source above (rapeseed, 9%)
-  - field: quality_params.fuerza_harinera_w
-    reason: alveograph strength W of the flour (2016/17 quality table); no registered variable models flour quality, so it is not mapped
-  - field: quality_params.relacion_pl
-    reason: alveograph tenacity/extensibility ratio P/L (2016/17 quality table); no registered variable models flour quality, so it is not mapped
-  - field: quality_params.indice_caida_s
-    reason: Hagberg falling number in seconds (2016/17 quality table); no registered variable models flour quality, so it is not mapped
   - field: yield_notes.separacion_medias
     reason: letters of the mean-separation test printed beside the yield; they compare the means of one table, so no registered variable models them
   - field: yield_notes.red
@@ -372,18 +378,6 @@ ignore:
       percentage, so the key cannot say which one a value is
   - field: disease_scores.roya_de_la_avena
     reason: bare key outside the campaigns whose scale is resolved; the scale is printed per table
-  - field: quality_params.betacarotenos
-    reason: durum grain quality (beta-carotene); no registered variable models grain quality, so it is not mapped (F2)
-  - field: quality_params.color_amarillo
-    reason: durum semolina yellow colour index; no registered variable models grain quality, so it is not mapped (F2)
-  - field: quality_params.gluten_index
-    reason: durum gluten index; no registered variable models grain quality, so it is not mapped (F2)
-  - field: quality_params.indice_caida
-    reason: Hagberg falling number; no registered variable models grain quality, so it is not mapped (F2)
-  - field: quality_params.sds
-    reason: SDS sedimentation volume; no registered variable models grain quality, so it is not mapped (F2)
-  - field: quality_params.vitrosidad_pct
-    reason: durum vitreousness; no registered variable models grain quality, so it is not mapped (F2)
   - field: quality_params.indice_calidad_respecto_testigos
     reason: a composite quality index relative to the checks of one table; no registered variable models it (F2)
   - field: quality_params.indice_global_calidad
@@ -394,10 +388,6 @@ ignore:
       one (Tabla 68) says only "fecha de maduración", so the stage is not stated for every row and nothing is mapped
   - field: agronomic_traits.encanado_dias_respecto_galeon
     reason: jointing offset against a check (2005/06); no registered variable models a jointing offset
-  - field: quality_params.extensibilidad_l
-    reason: alveograph extensibility L of the flour; no registered variable models flour quality, so it is not mapped
-  - field: quality_params.tenacidad_p
-    reason: alveograph tenacity P of the flour; no registered variable models flour quality, so it is not mapped
   - field: yield_notes.caption_zone_printed
     reason: zone text of a caption that sits in the whole-campaign section of the report; the unit is placed on the section's group (General) and the printed text is kept only as extraction provenance
 sites:
@@ -407,5 +397,5 @@ sites:
   unlabelled_site: ES-GENVCE-UNLABELLED
 expected:
   units: 12888
-  observations: 60244
+  observations: 63009
   sites: 91
