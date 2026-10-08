@@ -134,7 +134,9 @@ async def phenology_params(
     stage: str | None = Query(
         default=None,
         description="Phenological stage (e.g. 'vegetative', 'pit_hardening', 'veraison'). "
-                    "If omitted, returns the default parameter set for the species.",
+                    "If omitted (and no gdd), returns the default parameter set of the species' "
+                    "first stage in the canonical order (initial, development, mid-season, "
+                    "late-season); the choice never depends on storage order.",
     ),
     cultivar: str | None = Query(
         default=None,

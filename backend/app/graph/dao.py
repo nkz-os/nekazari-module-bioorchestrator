@@ -408,6 +408,20 @@ def _irrigation_uri(regime: str | None) -> str | None:
     return ep.irrigation_uri(regime)
 
 
+# Canonical order of the phenological stages (FAO-56: initial, development, mid-season, late-season).
+# A phenology lookup that names no stage and gives no GDD returns the parameters of the FIRST stage in
+# this order that has any; a stage outside it (species-specific, e.g. pit_hardening) follows, by name.
+# Ties among parameters of one stage resolve by cultivar, management and climate zone, so the choice
+# never depends on the physical order of the rows.
+PHENOLOGY_STAGE_ORDER: tuple[str, ...] = ("initial", "development", "mid-season", "late-season")
+
+
+def _phenology_stage_rank_cypher(stage_var: str = "st") -> str:
+    """Cypher integer expression ranking ``stage_var.name`` by ``PHENOLOGY_STAGE_ORDER`` (others last)."""
+    whens = " ".join(f"WHEN '{n}' THEN {i}" for i, n in enumerate(PHENOLOGY_STAGE_ORDER))
+    return f"CASE toLower(trim(coalesce({stage_var}.name, ''))) {whens} ELSE {len(PHENOLOGY_STAGE_ORDER)} END"
+
+
 def _agroclimatic_mode() -> str:
     """Read the AGROCLIMATIC_VECTOR kill switch; invalid values fail safe to v1."""
     global _INVALID_VECTOR_LOGGED
@@ -878,6 +892,12 @@ class GraphDAO:
           3. Generic: species + stage (no cultivar, no management)
           4. Species-only: any stage default
 
+        Deterministic default: with no stage and no GDD the result is the best-scoring
+        parameter row of the first stage in ``PHENOLOGY_STAGE_ORDER`` (FAO-56: initial,
+        development, mid-season, late-season; species-specific stages follow, by name); the
+        same order resolves a ``stage`` that matches several stages. Remaining ties resolve by
+        cultivar, management and climate zone, never by the physical order of the rows.
+
         When GDD (Growing Degree Days) is provided and stage is not explicitly
         given, auto-detects the phenological stage by matching GDD against
         the [gddMin, gddMax] thresholds stored in PhenologyStage nodes.
@@ -904,7 +924,8 @@ class GraphDAO:
                 ORDER BY
                     CASE WHEN s.name = $species THEN 0
                          WHEN s.name CONTAINS $species THEN 1
-                         ELSE 2 END
+                         ELSE 2 END,
+                    s.name ASC, coalesce(s.scientificName, '') ASC
                 LIMIT 1
 
                 // ── Find best-matching stage ─────────────────────────────
@@ -933,6 +954,8 @@ class GraphDAO:
                 OPTIONAL MATCH (st)-[:HAS_PARAMETER]->(p:PhenologyParams)
 
                 // Score: exact context > management-only > generic default
+                // Ties (every stage has a default row) resolve by the canonical stage order,
+                // then by names: never by the physical order of the rows.
                 WITH s, st, p
                 ORDER BY
                     CASE WHEN p.cultivar = $cultivar
@@ -940,7 +963,12 @@ class GraphDAO:
                          WHEN p.management = $mgmt
                           AND p.cultivar IS NULL THEN 1
                          WHEN p.isDefault = true THEN 2
-                         ELSE 3 END
+                         ELSE 3 END,
+                    @STAGE_RANK@,
+                    st.name ASC,
+                    coalesce(p.cultivar, '') ASC,
+                    coalesce(p.management, '') ASC,
+                    coalesce(p.climateZone, '') ASC
                 LIMIT 1
 
                 // ── Fetch alternatives ───────────────────────────────────
@@ -995,7 +1023,7 @@ class GraphDAO:
                             conditions: alt.conditions
                         } END
                     ) AS alternatives
-                """,
+                """.replace("@STAGE_RANK@", _phenology_stage_rank_cypher()),
                 species=species,
                 stage=stage,
                 cultivar=cultivar,
@@ -1011,10 +1039,11 @@ class GraphDAO:
                 )
 
             # Filter nulls from alternatives collection
-            alts = [
-                a for a in (record["alternatives"] or [])
-                if a is not None and a.get("kc") is not None
-            ]
+            alts = sorted(
+                (a for a in (record["alternatives"] or []) if a is not None and a.get("kc") is not None),
+                key=lambda a: (a["kc"], str(a.get("sourceShort") or ""), str(a.get("sourceDoi") or ""),
+                               str(a.get("conditions") or "")),
+            )
 
             return {
                 "species": record["species"],
