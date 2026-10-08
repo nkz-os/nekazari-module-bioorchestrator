@@ -48,7 +48,8 @@ from typing import Any
 import numpy as np
 
 ENGINE_NAME = "AquaCrop-OSPy"
-_MIN_ET0 = 0.1  # AquaCrop divides by ET0; its own file reader clips to 0.1
+MIN_ET0 = 0.1  # AquaCrop divides by ET0; its own file reader clips to 0.1
+_MIN_ET0 = MIN_ET0
 _COMPARTMENT_M = 0.1
 _PENETRABILITY_PCT = 100  # no root-restricting layer information is available
 _IRRIGATION_MODES = ("rainfed", "full")
@@ -141,6 +142,11 @@ def _validate_weather(weather: list[DailyWeather]) -> tuple[list[DailyWeather], 
         out.append(DailyWeather(w.day, tmin, tmax, precip, et0))
         prev = w.day
     return out, warns
+
+
+def check_weather_day(w: DailyWeather) -> None:
+    """Raise EngineInputError if a single day would be rejected by the engine."""
+    _validate_weather([w])
 
 
 def _validate_soil(soil: list[SoilLayer]) -> None:
