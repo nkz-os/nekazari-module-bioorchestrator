@@ -37,7 +37,6 @@ from dataclasses import dataclass
 from datetime import date, timedelta
 from importlib.metadata import version as _pkg_version
 from multiprocessing import get_context
-from typing import Optional
 
 ENGINE_NAME = "AquaCrop-OSPy"
 _MIN_ET0 = 0.1  # AquaCrop divides by ET0; its own file reader clips to 0.1
@@ -99,7 +98,7 @@ def _validate_weather(weather: list[DailyWeather]) -> tuple[list[DailyWeather], 
         raise EngineInputError("weather is empty")
     warns: list[str] = []
     out: list[DailyWeather] = []
-    prev: Optional[date] = None
+    prev: date | None = None
     for w in weather:
         if not isinstance(w.day, date):
             raise EngineInputError(f"weather day is not a date: {w.day!r}")
@@ -202,8 +201,7 @@ def run_aquacrop(
         raise EngineInputError(f"planting_date {planting_date} is after the last weather day {last}")
 
     import pandas as pd
-    from aquacrop import (AquaCropModel, Crop, InitialWaterContent,
-                          IrrigationManagement)
+    from aquacrop import AquaCropModel, Crop, InitialWaterContent, IrrigationManagement
 
     # AquaCrop reads weather columns by position: Date must be LAST (as in
     # aquacrop.utils.prepare_weather), otherwise temperatures become Timestamps.
@@ -292,7 +290,7 @@ def run_aquacrop_with_potential(
 
 
 # ----------------------------------------------------------- concurrency
-_pool: Optional[ProcessPoolExecutor] = None
+_pool: ProcessPoolExecutor | None = None
 
 
 def _get_pool() -> ProcessPoolExecutor:

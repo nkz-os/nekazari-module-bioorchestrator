@@ -21,7 +21,7 @@ from app.services.engines.aquacrop_engine import (
 
 # ---------------------------------------------------------------- helpers
 def _weather(start=date(2020, 1, 1), n=10, **kw):
-    base = dict(tmin_c=5.0, tmax_c=15.0, precip_mm=0.0, et0_mm=2.0)
+    base = {"tmin_c": 5.0, "tmax_c": 15.0, "precip_mm": 0.0, "et0_mm": 2.0}
     base.update(kw)
     return [DailyWeather(day=start + timedelta(days=i), **base) for i in range(n)]
 
@@ -31,7 +31,7 @@ def _soil():
 
 
 def _run(**over):
-    args = dict(weather=_weather(), soil=_soil(), crop="Wheat", planting_date=date(2020, 1, 1))
+    args = {"weather": _weather(), "soil": _soil(), "crop": "Wheat", "planting_date": date(2020, 1, 1)}
     args.update(over)
     return run_aquacrop(**args)
 
@@ -117,13 +117,13 @@ def test_no_soil_layers():
 @pytest.mark.parametrize(
     "kw",
     [
-        dict(wp=0.0),
-        dict(wp=0.25),            # wp >= fc
-        dict(fc=0.41),            # fc >= sat
-        dict(sat=1.01),
-        dict(ksat_mm_day=0.0),
-        dict(thickness_m=0.0),
-        dict(wp=float("nan")),
+        {"wp": 0.0},
+        {"wp": 0.25},            # wp >= fc
+        {"fc": 0.41},            # fc >= sat
+        {"sat": 1.01},
+        {"ksat_mm_day": 0.0},
+        {"thickness_m": 0.0},
+        {"wp": float("nan")},
     ],
 )
 def test_bad_soil(kw):
@@ -202,8 +202,13 @@ def _sandyloam_layers():
 
 def _direct_reference(df, layers, irrigation):
     """Same setup, driven straight through AquaCrop (no wrapper)."""
-    from aquacrop import (AquaCropModel, Crop, InitialWaterContent,
-                          IrrigationManagement, Soil)
+    from aquacrop import (
+        AquaCropModel,
+        Crop,
+        InitialWaterContent,
+        IrrigationManagement,
+        Soil,
+    )
 
     s = Soil("custom", dz=[0.1] * 12, adj_rew=0, calc_cn=1)
     for l in layers:
