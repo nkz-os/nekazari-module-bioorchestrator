@@ -25,6 +25,13 @@ def _clear_recommend_cache():
     dao_mod._RECOMMEND_CACHE.clear()
 
 
+@pytest.fixture(autouse=True)
+def _no_organic_scan():
+    """The organic-exclusion count is one more query; keep it off the fake driver (its own tests are on Neo4j)."""
+    with patch.object(GraphDAO, "organic_units_excluded", AsyncMock(return_value={})):
+        yield
+
+
 @pytest.fixture
 def hybrid(monkeypatch):
     monkeypatch.setenv("AGROCLIMATIC_VECTOR", "hybrid")
@@ -439,7 +446,7 @@ async def test_koppen_path_is_one_batch_for_prefiltered_crops():
     assert batch.await_count == 1
     args, kw = batch.await_args
     assert args == (["TRZAX", "ZEAMX"], _SITES)
-    assert kw == {"irrigation_regime": "secano", "top_n": 5, "purpose": "main"}
+    assert kw == {"irrigation_regime": "secano", "top_n": 5, "purpose": "main", "management": "any"}
     assert sorted(r["crop"]["eppo"] for r in out["recommendations"]) == ["TRZAX", "ZEAMX"]
 
 
@@ -737,7 +744,7 @@ async def test_presence_only_crops_are_regional_recs_without_a_number():
         _conds(), ["SECCE", "TRZAX", "LYPES"], extrap, {"TRZAX"}, {"LYPES"}, {"SECCE": _presence_info()})
     # one scan, only for the crops with no evidence at either tier, over the aggregate sites
     assert len(calls) == 1 and calls[0][0] == ["SECCE"] and calls[0][1] == ["UK national list"]
-    assert calls[0][2] == {"irrigation_uri": None, "purpose": "main"}
+    assert calls[0][2] == {"irrigation_uri": None, "purpose": "main", "management": "any"}
     recs = {r["crop"]["eppo"]: r for r in out["recommendations"]}
     sec = recs["SECCE"]
     assert sec["evidence"]["tier"] == "regional" and sec["yield"]["expected_kg_ha"] is None
