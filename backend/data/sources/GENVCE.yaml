@@ -73,6 +73,26 @@ unit:
           Informe GENVCE cereales de invierno 2022/2023, Tabla 17: "Resultados del análisis de varianza de la
           variable producción de grano en cebada de invierno"
       TRZAX: *cereal_purpose
+      TRZDU:
+        default: grain
+        justification: >-
+          Informe GENVCE cereales de invierno 2024/2025, Tabla 79: "Resultados del análisis de varianza de la
+          variable producción de grano en trigo duro"
+      TTLSS:
+        default: grain
+        justification: >-
+          Informe GENVCE cereales de invierno 2010/2011, Tabla 136: "Resultados del análisis de varianza de la
+          variable producción de grano en triticale"
+      AVESA:
+        default: grain
+        justification: >-
+          Informe GENVCE cereales de invierno 2022/2023, Tabla 107: "Resultados del análisis de varianza de la
+          variable producción de grano en avena"
+      SECCE:
+        default: grain
+        justification: >-
+          Informe GENVCE cereales de invierno 2010/2011, Tabla 153: "Resultados del análisis de varianza de la
+          variable producción de grano en centeno"; 2024/2025, Tabla 100: "... en centeno híbrido"
       ZEAMX:
         default: grain
         justification: >-
@@ -93,6 +113,22 @@ unit:
             Informe GENVCE cereales de invierno 2022/2023, Tabla 46: "producción de grano en trigo blando de
             ciclo largo" and Tabla 17 "producción de grano en cebada de invierno"
         TRZAX: *cereal_metric
+        TRZDU:
+          default: grain
+          justification: >-
+            Informe GENVCE cereales de invierno 2024/2025, Tabla 79: "producción de grano en trigo duro"
+        TTLSS:
+          default: grain
+          justification: >-
+            Informe GENVCE cereales de invierno 2010/2011, Tabla 136: "producción de grano en triticale"
+        AVESA:
+          default: grain
+          justification: >-
+            Informe GENVCE cereales de invierno 2022/2023, Tabla 107: "producción de grano en avena"
+        SECCE:
+          default: grain
+          justification: >-
+            Informe GENVCE cereales de invierno 2010/2011, Tabla 153: "producción de grano en centeno"
         ZEAMX:
           default: grain
           justification: >-
@@ -117,6 +153,22 @@ unit:
             Informe GENVCE cereales de invierno 2022/2023, cebada de invierno: "MEDIA 4639 kg/ha al 13% de
             humedad"; the same footer in every cereal report checked (2005/06 to 2024/25, organic wheat included)
         TRZAX: *cereal_moisture
+        TRZDU:
+          default: 13
+          justification: >-
+            Informe GENVCE 2005/2006, trigo duro, Tabla 74: "MEDIA 4505 kg/ha al 13% de humedad"
+        TTLSS:
+          default: 13
+          justification: >-
+            Informe GENVCE cereales de invierno 2012/2013, triticale, Tabla 109: "MEDIA 6253 kg/ha al 13% de humedad"
+        AVESA:
+          default: 13
+          justification: >-
+            Informe GENVCE 2007/2008, avena, Tabla 116: "MEDIA 3708 kg/ha al 13% de humedad"
+        SECCE:
+          default: 13
+          justification: >-
+            Informe GENVCE cereales de invierno 2010/2011, centeno, Tabla 152: "MEDIA 5118 kg/ha al 13% de humedad"
         ZEAMX:
           default: 14
           justification: >-
@@ -147,6 +199,12 @@ observations:
   - {from: agronomic_traits.espigado_dias_respecto_hispanic, variable: heading_days_vs_check, unit: días, qualifier: {default: HISPANIC}}
   - {from: agronomic_traits.espigado_dias_respecto_meseta, variable: heading_days_vs_check, unit: días, qualifier: {default: MESETA}}
   - {from: agronomic_traits.espigado_dias_respecto_sunrise, variable: heading_days_vs_check, unit: días, qualifier: {default: SUNRISE}}
+  - {from: agronomic_traits.espigado_dias_respecto_trujillo, variable: heading_days_vs_check, unit: días, qualifier: {default: TRUJILLO}}
+  - {from: agronomic_traits.espigado_dias_respecto_vitron, variable: heading_days_vs_check, unit: días, qualifier: {default: VITRON}}
+  # oats: panicle emergence is the inflorescence-emergence stage that heading denotes in the other cereals
+  - {from: agronomic_traits.paniculacion_dias_respecto_prevision, variable: heading_days_vs_check, unit: días, qualifier: {default: PREVISION}}
+  - {from: agronomic_traits.fecha_aparicion_panicula, variable: heading_date}
+  - {from: agronomic_traits.fecha_paniculacion, variable: heading_date}
   - {from: agronomic_traits.espigas_m2, variable: spike_density, unit: /m2}
   - {from: agronomic_traits.fecha_encanado, variable: jointing_date}
   - {from: agronomic_traits.fecha_espigado, variable: heading_date}
@@ -191,11 +249,17 @@ observations:
   - {from: disease_scores.rincosporiosis_escala_0_9, variable: scald_score_0_9}
   - {from: disease_scores.rincosporiosis_pct, variable: scald_pct, unit: '%'}
   - {from: disease_scores.roya_amarilla_0_9, variable: yellow_rust_score_0_9}
+  - {from: disease_scores.roya_amarilla_escala_0_9, variable: yellow_rust_score_0_9}
+  - {from: disease_scores.roya_avena_0_9, variable: crown_rust_score_0_9}
+  - {from: disease_scores.roya_de_la_avena_escala_0_9, variable: crown_rust_score_0_9}
+  - {from: disease_scores.roya_de_la_avena_pct, variable: crown_rust_pct, unit: '%'}
   - {from: disease_scores.roya_amarilla_pct, variable: yellow_rust_pct, unit: '%'}
   - {from: disease_scores.roya_parda_0_9, variable: brown_rust_score_0_9}
   - {from: disease_scores.roya_parda_escala_0_9, variable: brown_rust_score_0_9}
   - {from: disease_scores.roya_parda_pct, variable: brown_rust_pct, unit: '%'}
   - {from: disease_scores.septoria_pct, variable: septoria_pct, unit: '%'}
+  - {from: disease_scores.septoria_0_9, variable: septoria_score_0_9}
+  - {from: disease_scores.septoria_escala_0_9, variable: septoria_score_0_9}
   - {from: disease_scores.stay_green_0_5, variable: stay_green_score}
   - {from: disease_scores.stay_green_escala_0_5, variable: stay_green_score}
   - {from: disease_scores.virus_mrdv_pct, variable: mrdv_virus_pct, unit: '%'}
@@ -279,10 +343,6 @@ ignore:
     reason: number of trials in which the variety ranked in the lower tercile (a tercile analysis table); no registered variable models it
   - field: yield_notes.rendimiento_al_9_pct_humedad
     reason: boolean note that the yield is at 9% moisture; the basis is declared once for the whole source above (rapeseed, 9%)
-  - field: disease_scores.septoria_0_9
-    reason: >-
-      septoria visual score (the 2020/21 report prints "(0-9)" in the column header); the registry has only the
-      affected-share variable septoria_pct and a score is not a share, so it is not mapped until a score variable is registered
   - field: quality_params.fuerza_harinera_w
     reason: alveograph strength W of the flour (2016/17 quality table); no registered variable models flour quality, so it is not mapped
   - field: quality_params.relacion_pl
@@ -293,6 +353,36 @@ ignore:
     reason: letters of the mean-separation test printed beside the yield; they compare the means of one table, so no registered variable models them
   - field: yield_notes.red
     reason: network the variety comes from ("preGENVCE"), an attribute of the entry; variety and entry attributes are F2 work
+  - field: agronomic_traits.capacidad_ahijamiento
+    reason: >-
+      tillering capacity without a unit in the key; the reports print it as ears/m2 in some tables and plants/m2 in
+      others (2009/10: Tablas 30, 39 and the triticale table), so the unit is unresolved and nothing is mapped
+  - field: disease_scores.oidio
+    reason: bare key outside the 2005/06-2011/12 campaigns; the reports print % or a 0-9 score per table (2014/15 Tabla 83 prints both) and the extraction did not record which
+  - field: disease_scores.roya_parda
+    reason: bare key outside the 2005/06-2011/12 campaigns; the scale is printed per table and was not recorded by the extraction
+  - field: disease_scores.septoria
+    reason: >-
+      bare key outside the 2005/06-2011/12 campaigns; 2014/15 Tabla 83 prints two septoria columns, a score and a
+      percentage, so the key cannot say which one a value is
+  - field: disease_scores.roya_de_la_avena
+    reason: bare key outside the campaigns whose scale is resolved; the scale is printed per table
+  - field: quality_params.betacarotenos
+    reason: durum grain quality (beta-carotene); no registered variable models grain quality, so it is not mapped (F2)
+  - field: quality_params.color_amarillo
+    reason: durum semolina yellow colour index; no registered variable models grain quality, so it is not mapped (F2)
+  - field: quality_params.gluten_index
+    reason: durum gluten index; no registered variable models grain quality, so it is not mapped (F2)
+  - field: quality_params.indice_caida
+    reason: Hagberg falling number; no registered variable models grain quality, so it is not mapped (F2)
+  - field: quality_params.sds
+    reason: SDS sedimentation volume; no registered variable models grain quality, so it is not mapped (F2)
+  - field: quality_params.vitrosidad_pct
+    reason: durum vitreousness; no registered variable models grain quality, so it is not mapped (F2)
+  - field: quality_params.indice_calidad_respecto_testigos
+    reason: a composite quality index relative to the checks of one table; no registered variable models it (F2)
+  - field: quality_params.indice_global_calidad
+    reason: a composite quality index of the report; no registered variable models it (F2)
   - field: yield_notes.caption_zone_printed
     reason: zone text of a caption that sits in the whole-campaign section of the report; the unit is placed on the section's group (General) and the printed text is kept only as extraction provenance
 sites:
@@ -301,6 +391,6 @@ sites:
   # a table that prints no label: the unit gets this aggregate as its site (raw_site stays empty, keys unchanged)
   unlabelled_site: ES-GENVCE-UNLABELLED
 expected:
-  units: 5013
-  observations: 25347
+  units: 9315
+  observations: 45928
   sites: 46

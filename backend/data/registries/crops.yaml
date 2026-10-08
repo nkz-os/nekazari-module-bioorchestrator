@@ -52,6 +52,60 @@ crops:
       - Cebada de invierno
       - Cebada de primavera
       - barley
+  - eppo: TRZDU
+    scientific_name: Triticum durum
+    family: Poaceae
+    main_product: grain
+    purposes: [grain]
+    seen_in: [GENVCE]
+    aliases:
+      - Triticum durum
+      - Trigo duro
+      - durum wheat
+    notes: >-
+      Durum wheat (EPPO TRZDU, checked in the EPPO Global Database 2026-10-08), from the GENVCE winter-cereal
+      reports 2005/06-2024/25. The 2024/25 report prints "trigo blando duro" in one caption (Tabla 80) of the
+      durum section; the extraction files it as durum.
+  - eppo: TTLSS
+    scientific_name: x Triticosecale
+    family: Poaceae
+    main_product: grain
+    purposes: [grain, forage]
+    seen_in: [GENVCE]
+    aliases:
+      - x Triticosecale
+      - Triticosecale
+      - Triticale
+      - triticale
+    notes: EPPO TTLSS "x Triticosecale sp." (EPPO Global Database, checked 2026-10-08).
+  - eppo: AVESA
+    scientific_name: Avena sativa
+    family: Poaceae
+    main_product: grain
+    purposes: [grain, forage]
+    seen_in: [GENVCE]
+    aliases:
+      - Avena sativa
+      - Avena
+      - oat
+      - oats
+    notes: >-
+      EPPO AVESA (checked 2026-10-08). The GENVCE reports print the crop as "avena" without a species; the
+      extraction records Avena sativa. ASSUMPTION: black oat entries, if any, are A. sativa forms, not A. strigosa.
+  - eppo: SECCE
+    scientific_name: Secale cereale
+    family: Poaceae
+    main_product: grain
+    purposes: [grain, forage]
+    seen_in: [GENVCE]
+    aliases:
+      - Secale cereale
+      - Centeno
+      - Centeno híbrido
+      - rye
+    notes: >-
+      EPPO SECCE (checked 2026-10-08). Hybrid and population rye are one species; "híbrido" is the variety type,
+      kept on the unit as the crop-group label, not a different crop.
   - eppo: TRZAX
     scientific_name: Triticum aestivum
     family: Poaceae
@@ -70,8 +124,8 @@ crops:
       - soft wheat
       - bread wheat
     notes: >-
-      Soft (bread) wheat. Durum wheat is TRZDU and is not registered yet: its only raw occurrence
-      (CREA) is a fabricated placeholder and is excluded. The Romanian wheat rows stored under
+      Soft (bread) wheat. Durum wheat is TRZDU (registered for GENVCE, 2026-10-08); its CREA raw occurrence is a
+      fabricated placeholder and stays excluded. The Romanian wheat rows stored under
       CREA (Fundulea) are not CREA data (unlicensed paper) and are out of scope, so their crop
       label is not registered either.
   - eppo: BRSNN

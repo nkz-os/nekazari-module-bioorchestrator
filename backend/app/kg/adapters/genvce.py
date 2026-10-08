@@ -61,6 +61,7 @@ _ROW_KEYS = frozenset({
     "crop", "crop_scientific", "variety", "agroclimatic_zone", "year", "yield_kg_ha", "yield_relative_pct",
     "quality_params", "disease_scores", "agronomic_traits", "yield_notes", "special_status",
     "irrigation_regime", "trial_location", "page_in_issue", "table_number", "confidence", "source_pages",
+    "source_tables",  # numbers of the trait tables merged into the row: extraction provenance only, not loaded
 })
 _GROUPS = ("quality_params", "disease_scores", "agronomic_traits")
 _METADATA_KEYS = ("article_title", "issue_period", "year", "article_topic")
@@ -70,19 +71,29 @@ _ORGANIC_TOPICS = frozenset({"trigo-ecologico"})
 
 # The extraction names the crop twice: the printed group label ("Cebada de ciclo largo") and the
 # species. The label is the crop; the species is only checked against it.
-_SPECIES_BY_LABEL_STEM = {
-    "maíz": "Zea mays", "cebada": "Hordeum vulgare", "trigo": "Triticum aestivum", "colza": "Brassica napus",
-}
+# Longest label prefix first: "Trigo duro ..." is durum wheat, any other "Trigo ..." soft wheat.
+_SPECIES_BY_LABEL_PREFIX: tuple[tuple[str, str], ...] = (
+    ("trigo duro", "Triticum durum"),
+    ("maíz", "Zea mays"), ("cebada", "Hordeum vulgare"), ("trigo", "Triticum aestivum"),
+    ("colza", "Brassica napus"), ("triticale", "x Triticosecale"), ("avena", "Avena sativa"),
+    ("centeno", "Secale cereale"),
+)
 
 # Campaigns whose disease tables print "(Escala visual 0-9)" in every disease column (checked in the
-# reports of 2005/06, 2006/07, 2007/08, 2008/09, 2009/10, 2010/11 and 2011/12).
+# reports of 2005/06, 2006/07, 2007/08, 2008/09, 2009/10, 2010/11 and 2011/12; re-checked 2026-10-08 for the
+# durum, triticale and oat tables: every "(%)" there heads lodging or moisture, not a disease).
 _SCORE_0_9_CAMPAIGNS = frozenset({
     "2005/2006", "2006/2007", "2007/2008", "2008/2009", "2009/2010", "2010/2011", "2011/2012",
 })
-_BARE_DISEASE_KEYS = ("oidio", "roya_parda", "roya_amarilla", "helmintosporiosis", "rincosporiosis")
+_BARE_DISEASE_KEYS = ("oidio", "roya_parda", "roya_amarilla", "helmintosporiosis", "rincosporiosis", "septoria",
+                      "roya_de_la_avena")
 # The 2013/14 report prints rincosporiosis as "(Escala visual 0-9)" while the extraction wrote the
 # key "rincosporiosis_escala" without the range.
-_SCORE_0_9_BY_KEY_AND_CAMPAIGN = {("rincosporiosis_escala", "2013/2014"): "rincosporiosis_escala_0_9"}
+_SCORE_0_9_BY_KEY_AND_CAMPAIGN = {
+    ("rincosporiosis_escala", "2013/2014"): "rincosporiosis_escala_0_9",
+    # 2012/13 oats, Tabla 95: "ROYA DE LA AVENA (Escala visual 0-9)"
+    ("roya_de_la_avena", "2012/2013"): "roya_de_la_avena_escala_0_9",
+}
 
 # The scale a key names, when it names one (``..._0_9``, ``..._escala_0_5``). A value outside it is an
 # extraction defect (a percentage under a score's name), not a score; the engine refuses such a value,
@@ -122,7 +133,7 @@ def _irrigation_stated_by(zone: str | None) -> str | None:
     return "secano" if rainfed else "regadío"
 
 
-_STRATUM_LABEL = re.compile(r"^(rendimiento|productividad) (alt|medi|baj)[oa]$")
+_STRATUM_LABEL = re.compile(r"^(rendimiento|productividad|producción) (alt|medi|baj)[oa]$")
 _STRATUM_LEVEL = {"alt": "high", "medi": "medium", "baj": "low"}
 
 
@@ -139,6 +150,27 @@ def _productivity_class(zone: str | None) -> str | None:
     if "secano" in label and re.search(r"semi.?rid", label):
         return "rainfed_arid_semiarid"
     return None
+
+
+def _scoped_zone(scope: str | None, label: str | None, where: str, log: WarningLog) -> str | None:
+    """The unit's zone: the group label, under the regional network that the report section names.
+
+    Durum wheat is tested in two networks, "zona Norte" and "zona Sur" (``yield_notes.ambito``, the section
+    heading), and each splits its results by an agroclimatic or yield-stratum label. The same label in the two
+    networks is two different results, so the zone is "<network> / <label>". A scope that is not a zone
+    ("red preGENVCE", a trial network) is provenance only and changes nothing.
+    """
+    if scope is None:
+        return label
+    if not _fold(scope).startswith("zona "):
+        log.add("scope_not_a_zone", "yield_notes.ambito names a network, not a zone: kept as provenance only", where)
+        return label
+    if label is None or _fold(label) == "general":
+        return scope
+    if _fold(scope) in _fold(label):
+        return label
+    log.add("zone_scoped_by_network", "the group label is placed under the network the section names", where)
+    return f"{scope} / {label}"
 
 
 def _regime_not_derivable(zone: str | None) -> str | None:
@@ -289,8 +321,9 @@ def _guard_named_scales(group: dict[str, Any], name: str, where: str, log: Warni
 
 
 def _check_species(label: str, species: Any, where: str) -> None:
-    stem = _fold(label).split(" ")[0]
-    expected = _SPECIES_BY_LABEL_STEM.get(stem)
+    folded = _fold(label)
+    expected = next((sp for prefix, sp in _SPECIES_BY_LABEL_PREFIX
+                     if folded == prefix or folded.startswith(prefix + " ")), None)
     if expected is None:
         raise AdapterError(f"{where}: crop label {label!r} is not one the adapter knows")
     if species != expected:
@@ -331,19 +364,21 @@ def rows_from_extraction(extraction: Mapping[str, Any], file_name: str, log: War
             raise AdapterError(f"{where}: yield_notes must be a mapping or null")
         notes = dict(notes or {})
         table_zone = _text(notes.pop("zone", None))
+        scope = _text(notes.pop("ambito", None))
         year_range = _text(notes.pop("year_range", None))
         period = _text(notes.pop("periodo", None))
         if year_range and period:
             raise AdapterError(f"{where}: both year_range and periodo in yield_notes")
 
         extracted_zone = _text(trial.get("agroclimatic_zone"))
-        zone = table_zone or extracted_zone
+        group_label = table_zone or extracted_zone
         if table_zone and extracted_zone and _fold(table_zone) != _fold(extracted_zone):
             log.add("zone_label_from_table",
                     "the table's own zone label (yield_notes.zone) replaces the extraction's agroclimatic relabel",
                     where)
+        zone = _scoped_zone(scope, group_label, where, log)
 
-        stated = _irrigation_stated_by(zone)
+        stated = _irrigation_stated_by(group_label)
         extracted_irrigation = _text(trial.get("irrigation_regime"))
         if extracted_irrigation is not None:
             if stated is None:
@@ -378,8 +413,8 @@ def rows_from_extraction(extraction: Mapping[str, Any], file_name: str, log: War
             "zone": zone,
             "season": year_range or period or str(year),
             "irrigation": irrigation,
-            "regime_not_derivable": _regime_not_derivable(zone),
-            "productivity_class": _productivity_class(zone),
+            "regime_not_derivable": _regime_not_derivable(group_label),
+            "productivity_class": _productivity_class(group_label),
             "production_system": production_system,
             "yield_kg_ha": trial.get("yield_kg_ha"),
             "yield_relative_pct": trial.get("yield_relative_pct"),
