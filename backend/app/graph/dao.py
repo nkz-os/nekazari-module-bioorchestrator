@@ -5553,7 +5553,7 @@ class GraphDAO:
                 )
             except Exception as e:  # noqa: BLE001
                 logger.warning("Failed to query sowing operations for %s: %s", parcel_id, e)
-                return {"error": f"Could not read sowing operations: {e}"}
+                return {"error": "Could not read sowing operations"}
             finally:
                 await orion2.close()
             try:
@@ -5580,7 +5580,7 @@ class GraphDAO:
                 else:
                     weather_error = f"HTTP {resp.status_code}"
         except Exception as e:  # noqa: BLE001
-            weather_error = str(e)
+            weather_error = "request failed"
             logger.warning("Failed to fetch weather for %s: %s", parcel_id, e)
         if not weather_data:
             return {"error": f"No weather data available for the parcel from {sowing_date.isoformat()} to {today.isoformat()}"
