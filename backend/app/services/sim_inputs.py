@@ -106,31 +106,3 @@ def soil_layers_from_summary(summary: dict) -> list[dict]:
             "sat": sat, "source": source,
         })
     return sorted(layers, key=lambda l: l["top_cm"])
-
-
-def hydraulic_props_from_layers(layers: list[dict]) -> dict:
-    """Collapse soil layers into the single-profile props the engine expects.
-
-    theta_fc / theta_wp / theta_sat: thickness-weighted arithmetic mean.
-    k_sat_mm_d: thickness-weighted harmonic mean (flow in series across layers).
-    awc_mm_per_metre: weighted mean of (fc - wp) * 1000.
-    theta_sat is None unless every layer carries a saturation value.
-    """
-    if not layers:
-        raise SimInputError("no soil layers")
-    total = sum(l["thickness_m"] for l in layers)
-    if total <= 0:
-        raise SimInputError("soil layers have zero total thickness")
-
-    def wmean(key: str) -> float:
-        return sum(l[key] * l["thickness_m"] for l in layers) / total
-
-    sat = wmean("sat") if all(l.get("sat") is not None for l in layers) else None
-    return {
-        "theta_fc": wmean("fc"),
-        "theta_wp": wmean("wp"),
-        "theta_sat": sat,
-        "k_sat_mm_d": total / sum(l["thickness_m"] / l["ksat_mm_day"] for l in layers),
-        "awc_mm_per_metre": sum((l["fc"] - l["wp"]) * l["thickness_m"] for l in layers) / total * 1000.0,
-        "profile_depth_cm": layers[-1]["bottom_cm"] - layers[0]["top_cm"],
-    }

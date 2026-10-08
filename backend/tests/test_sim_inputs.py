@@ -140,24 +140,3 @@ def test_soil_no_horizons():
 def test_soil_bad_depths():
     with pytest.raises(SimInputError):
         soil_layers_from_summary({"horizons": [horizon(30, 30)]})
-
-
-def test_hydraulic_props_weighted():
-    from app.services.sim_inputs import hydraulic_props_from_layers
-    layers = soil_layers_from_summary({"horizons": [
-        horizon(0, 30, fc=0.30, wp=0.15, ksat=10.0), horizon(30, 90, fc=0.24, wp=0.12, ksat=5.0)]})
-    p = hydraulic_props_from_layers(layers)
-    assert p["theta_fc"] == pytest.approx((0.30 * 0.3 + 0.24 * 0.6) / 0.9)
-    assert p["theta_wp"] == pytest.approx((0.15 * 0.3 + 0.12 * 0.6) / 0.9)
-    assert p["theta_sat"] is None
-    assert p["k_sat_mm_d"] == pytest.approx(0.9 / (0.3 / 240 + 0.6 / 120))
-    assert p["awc_mm_per_metre"] == pytest.approx(((0.15 * 0.3 + 0.12 * 0.6) / 0.9) * 1000)
-
-
-def test_hydraulic_props_sat_only_if_all_layers():
-    from app.services.sim_inputs import hydraulic_props_from_layers
-    both = soil_layers_from_summary({"horizons": [
-        horizon(0, 30, saturation=0.5), horizon(30, 60, saturation=0.4)]})
-    assert hydraulic_props_from_layers(both)["theta_sat"] == pytest.approx(0.45)
-    one = soil_layers_from_summary({"horizons": [horizon(0, 30, saturation=0.5), horizon(30, 60)]})
-    assert hydraulic_props_from_layers(one)["theta_sat"] is None
