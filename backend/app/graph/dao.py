@@ -5188,9 +5188,14 @@ class GraphDAO:
         try:
             orion = OrionClient(tenant_id)
             try:
-                weather_entities = await orion.query_entities(type="WeatherObserved", limit=1)
+                weather_entities = await orion.query_entities(type="WeatherObserved", limit=10)
             finally:
                 await orion.close()
+            # Closed-day series entities ("...-daily") carry no current conditions.
+            weather_entities = [
+                e for e in (weather_entities or [])
+                if not str(e.get("id", "")).endswith("-daily")
+            ]
             if not weather_entities:
                 logger.info("No WeatherObserved entities found for tenant %s", tenant_id)
                 return None
