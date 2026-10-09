@@ -4666,7 +4666,14 @@ class GraphDAO:
         }
 
     async def clear_crop_assignment(self, parcel_id: str, tenant_id: str) -> dict:
-        """Remove crop assignment from AgriParcel. Raises on Orion failure."""
+        """Remove crop assignment from AgriParcel. Raises on Orion failure.
+
+        The AgriCrop the parcel pointed at is cancelled first: left active, the platform
+        reconciler would link it again. Cancelling before unlinking makes a failed unlink
+        retryable (the parcel still points at the crop).
+        """
+        import httpx
+
         parcel_id = _to_parcel_urn(parcel_id)
         patch_body = {
             "hasAgriCrop": {"type": "Relationship", "object": None},
@@ -4677,6 +4684,18 @@ class GraphDAO:
         }
         orion = OrionClient(tenant_id)
         try:
+            parcel = await orion.get_entity(parcel_id)
+            crop_id = _resolve_relationship(parcel, "hasAgriCrop") or _resolve_relationship(parcel, "refAgriCrop")
+            if crop_id:
+                try:
+                    # append (POST /attrs): never a silent notUpdated, unlike PATCH
+                    await orion.append_entity_attrs(crop_id, {
+                        "status": {"type": "Property", "value": "cancelled"},
+                    })
+                except httpx.HTTPStatusError as e:
+                    if e.response.status_code != 404:
+                        raise
+                    logger.warning("clear_crop_assignment: linked AgriCrop %s no longer exists", crop_id)
             await orion.update_entity_attrs(parcel_id, patch_body)
         finally:
             await orion.close()
