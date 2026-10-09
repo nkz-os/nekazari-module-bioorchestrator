@@ -234,8 +234,8 @@ def run_aquacrop(
         raise EngineInputError(
             f"planting_date {planting_date} is before the first weather day {clean[0].day}")
     if (planting_date.month, planting_date.day) == (2, 29):
-        # AquaCrop-OSPy takes the planting day as "mm/dd" and parses it in a
-        # non-leap year, so 29 February cannot be represented.
+        # AquaCrop-OSPy parses the planting "mm/dd" (and the simulation end) in
+        # the non-leap mock year 1990, so 29 February cannot be represented.
         raise EngineInputError("planting_date 29 February is not supported by AquaCrop-OSPy")
     last = clean[-1].day
     if planting_date > last:
@@ -284,6 +284,8 @@ def run_aquacrop(
         "Date": pd.to_datetime([w.day for w in clean]),
     })
     sim_end = min(last, planting_date + timedelta(days=364))  # one season only
+    if (sim_end.month, sim_end.day) == (2, 29):  # parsed in the non-leap mock year 1990
+        sim_end -= timedelta(days=1)
     irr = (IrrigationManagement(irrigation_method=0) if irrigation == "rainfed"
            else IrrigationManagement(irrigation_method=1, SMT=[100] * 4))
     with warnings.catch_warnings():

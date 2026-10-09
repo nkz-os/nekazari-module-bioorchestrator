@@ -114,6 +114,13 @@ def test_planting_on_29_february_is_rejected():
         _run(planting_date=date(2020, 2, 29))
 
 
+def test_season_ending_on_29_february_runs():
+    # 2 Mar 2019 + 364 days = 29 Feb 2020: the season end must not be that day.
+    weather = _weather(start=date(2019, 1, 1), n=800, tmin_c=10.0, tmax_c=25.0, precip_mm=2.0)
+    res = run_aquacrop(weather, _soil(), "MaizeGDD", date(2019, 3, 2))
+    assert res["yield_t_ha"] >= 0
+
+
 # --------------------------------------------------------- soil validation
 def test_no_soil_layers():
     with pytest.raises(EngineInputError, match="soil"):
