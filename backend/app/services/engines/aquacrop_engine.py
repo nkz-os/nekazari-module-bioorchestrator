@@ -72,6 +72,10 @@ class WeatherEndsBeforeHarvestError(EngineInputError):
     """The weather series stops before the crop reaches harvest."""
 
 
+class CropCannotMatureError(EngineInputError):
+    """At this site and sowing date the crop needs more than one season to mature."""
+
+
 @dataclass(frozen=True)
 class DailyWeather:
     day: date
@@ -285,8 +289,17 @@ def run_aquacrop(
         except AssertionError as e:
             # GDD crops: AquaCrop asserts (instead of returning no result) when the
             # weather up to the end of the run has too few degree days to mature.
+            if "longer than 1 year to mature" in str(e):
+                raise CropCannotMatureError(
+                    f"crop {crop} does not reach maturity within one season when sown on "
+                    f"{planting_date}: too few degree days at this site") from e
             if "not enough growing degree days" not in str(e):
                 raise
+            if sim_end < last:
+                # The weather goes on past the one-season window: it is the site, not the series.
+                raise CropCannotMatureError(
+                    f"crop {crop} does not reach maturity within one season when sown on "
+                    f"{planting_date}: {e}") from e
             raise WeatherEndsBeforeHarvestError(
                 f"weather ends before harvest: {e} (last weather day {last}, "
                 f"planting {planting_date})") from e

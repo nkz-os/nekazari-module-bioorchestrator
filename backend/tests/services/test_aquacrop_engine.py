@@ -492,3 +492,17 @@ def test_spinup_never_starts_on_previous_planting_anniversary(tunis):
     assert res["initial_water"] == {"method": "spinup", "spinup_days": 364, "start": "1989-10-02"}
     assert res["harvest_date"] > res["planting_date"] == "1990-10-01"
     assert res["daily"][0]["day"] == "1990-10-01"
+
+
+def test_crop_needing_over_a_year_to_mature_is_typed():
+    # Cool site: maize gets ~3 degree days a day, so maturity is more than a year away.
+    weather = _weather(start=date(2020, 1, 1), n=800, tmin_c=6.0, tmax_c=16.0, precip_mm=2.0)
+    with pytest.raises(eng.CropCannotMatureError, match="one season"):
+        run_aquacrop(weather, _soil(), "MaizeGDD", date(2020, 4, 1))
+
+
+def test_maturity_on_the_last_day_of_the_season_window_is_typed():
+    # ~4.66 degree days a day: maize maturity (1700) falls on day 365, which AquaCrop asserts on.
+    weather = _weather(start=date(2020, 1, 1), n=800, tmin_c=7.664, tmax_c=17.664, precip_mm=2.0)
+    with pytest.raises(eng.CropCannotMatureError, match="one season"):
+        run_aquacrop(weather, _soil(), "MaizeGDD", date(2020, 4, 1))

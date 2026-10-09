@@ -276,3 +276,16 @@ def test_durum_wheat_carries_parameters_note(mock_driver, tunis):
     res = _run(GraphDAO(mock_driver), net=_Net(tunis), crop_slug="durum_wheat")
     assert res["aquacrop_crop"] == "WheatGDD"
     assert "bread wheat" in res["crop_parameters_note"]
+
+
+def test_crop_that_cannot_mature_is_a_typed_simulation_error():
+    from app.services.crop_simulation import AquaCropEngine
+
+    async def boom(*a, **k):
+        raise eng.CropCannotMatureError("too few degree days")
+
+    with patch.object(eng, "simulate", boom), pytest.raises(SimulationError) as exc:
+        asyncio.run(AquaCropEngine().simulate(
+            observed=[], analogs={}, soil=[], crop="MaizeGDD", planting=date(2020, 4, 1),
+            irrigation="rainfed", sim_start=None))
+    assert exc.value.code == "crop_cannot_mature" and exc.value.status_code == 422

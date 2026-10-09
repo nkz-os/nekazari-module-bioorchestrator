@@ -46,6 +46,8 @@ class AquaCropEngine:
             return await aq.simulate(observed, analogs, soil, crop, planting, irrigation, sim_start)
         except aq.WeatherEndsBeforeHarvestError as e:
             raise SimulationError("season_incomplete", str(e)) from e
+        except aq.CropCannotMatureError as e:
+            raise SimulationError("crop_cannot_mature", str(e)) from e
         except aq.EngineInputError as e:
             raise SimulationError("invalid_input", str(e)) from e
 
