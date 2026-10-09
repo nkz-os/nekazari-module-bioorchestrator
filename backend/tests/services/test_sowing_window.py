@@ -109,3 +109,17 @@ def test_too_dry_soil_blocks_autumn_but_not_irrigated_maize():
     assert wheat.how == "forced"
     maize = decide_sowing(days, start, start + timedelta(days=59), MAIZE, dry, (0.35, 0.13))
     assert maize.how == "triggered" and maize.sowing_date == start
+
+
+def test_29_february_is_never_the_sowing_day():
+    start = date(2020, 2, 29)  # leap year; no rain trigger for maize
+    days = series(start - timedelta(days=10), 80, lambda i: 14.0)
+    dec = decide_sowing(days, start, start + timedelta(days=59), MAIZE)
+    assert dec.sowing_date == date(2020, 3, 1) and dec.how == "triggered"
+
+
+def test_forced_sowing_on_29_february_moves_to_the_28th():
+    start = date(2020, 1, 15)
+    days = series(start - timedelta(days=10), 80, lambda i: 12.0)
+    dec = decide_sowing(days, start, date(2020, 2, 29), WHEAT)
+    assert dec.how == "forced" and dec.sowing_date == date(2020, 2, 28)

@@ -233,6 +233,10 @@ def run_aquacrop(
     if planting_date < clean[0].day:
         raise EngineInputError(
             f"planting_date {planting_date} is before the first weather day {clean[0].day}")
+    if (planting_date.month, planting_date.day) == (2, 29):
+        # AquaCrop-OSPy takes the planting day as "mm/dd" and parses it in a
+        # non-leap year, so 29 February cannot be represented.
+        raise EngineInputError("planting_date 29 February is not supported by AquaCrop-OSPy")
     last = clean[-1].day
     if planting_date > last:
         raise EngineInputError(f"planting_date {planting_date} is after the last weather day {last}")
@@ -375,12 +379,14 @@ def fallow_topsoil_water(
 ) -> dict[date, float]:
     """Top-10-cm water content (m3/m3) of the bare soil on each day of [start, end].
 
-    Runs the season with the crop planted the day after ``end``, so every day of
-    the window is fallow; spin-up from ``sim_start`` as in ``run_aquacrop``.
+    Runs the season with the crop planted the day after ``end`` (two days after
+    when that is 29 February), so every day of the window is fallow; spin-up from ``sim_start`` as in ``run_aquacrop``.
     Raises the same errors as ``run_aquacrop``.
     """
-    res = run_aquacrop(weather, soil, crop, end + timedelta(days=1), "rainfed",
-                       sim_start, topsoil_until=end)
+    plant = end + timedelta(days=1)
+    if (plant.month, plant.day) == (2, 29):  # not plantable; the window stays fallow anyway
+        plant += timedelta(days=1)
+    res = run_aquacrop(weather, soil, crop, plant, "rainfed", sim_start, topsoil_until=end)
     out = {}
     d = start
     while d <= end:

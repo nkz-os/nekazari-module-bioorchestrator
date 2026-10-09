@@ -3,6 +3,7 @@
 The window opens on the temperature crossing of the crop's rule and stays open
 ``window_days``; the crop is sown on the first window day that meets the rain
 trigger and the tempero check, or on the last day (``forced``) if none does.
+29 February is never a sowing day: AquaCrop-OSPy cannot plant on it.
 Used for historical runs (no forecast). Rules and their sources:
 ``app.services.sowing_rules``.
 """
@@ -88,6 +89,10 @@ def _rain_ok(days: dict, d: date, rule: SowingRule) -> bool:
     return total >= rule.rain_mm
 
 
+def _is_29_feb(d: date) -> bool:
+    return (d.month, d.day) == (2, 29)
+
+
 def _tempero_ok(theta: float, limits: tuple[float, float], rule: SowingRule) -> bool:
     wet, dry = limits
     if rule.tempero == "none":
@@ -117,11 +122,16 @@ def decide_sowing(
         reasons.append("tempero not checked: no topsoil water or no soil limits")
     d = start
     while d <= end:
+        if _is_29_feb(d):
+            reasons.append("29 February skipped: the crop model cannot plant on it")
+            d += timedelta(days=1)
+            continue
         rain = _rain_ok(days, d, rule)
         theta = topsoil.get(d) if check_tempero else None
         soil_ok = (not check_tempero) or (theta is not None and _tempero_ok(theta, limits, rule))
         if rain and soil_ok:
             return SowingDecision(d, "triggered", start, end, check_tempero, reasons)
         d += timedelta(days=1)
+    last = end - timedelta(days=1) if _is_29_feb(end) else end
     reasons.append("no window day met the trigger: sown on the last day")
-    return SowingDecision(end, "forced", start, end, check_tempero, reasons)
+    return SowingDecision(last, "forced", start, end, check_tempero, reasons)

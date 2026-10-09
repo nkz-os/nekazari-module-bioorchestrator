@@ -109,6 +109,11 @@ def test_planting_before_first_weather_day():
         _run(planting_date=date(2019, 12, 31))
 
 
+def test_planting_on_29_february_is_rejected():
+    with pytest.raises(EngineInputError, match="29 February"):
+        _run(planting_date=date(2020, 2, 29))
+
+
 # --------------------------------------------------------- soil validation
 def test_no_soil_layers():
     with pytest.raises(EngineInputError, match="soil"):
@@ -518,3 +523,11 @@ def test_fallow_topsoil_water_covers_the_window_and_stays_physical(tunis):
     assert all(0.0 < v <= top.sat + 1e-6 for v in theta.values())
     # Rain wets the topsoil: the series is not flat.
     assert max(theta.values()) - min(theta.values()) > 0.01
+
+
+def test_fallow_window_ending_on_28_february_of_a_leap_year(tunis):
+    _, weather, layers = tunis
+    start, end = date(1992, 1, 15), date(1992, 2, 28)
+    theta = eng.fallow_topsoil_water(weather, layers, "WheatGDD", start, end,
+                                     sim_start=date(1991, 3, 1))
+    assert max(theta) == end and len(theta) == 45
