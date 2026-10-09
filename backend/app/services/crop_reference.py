@@ -220,7 +220,7 @@ def is_legume_cash_crop(eppo: str, crop_ref: dict | None = None) -> bool:
 _eppo_taxonomy_cache: TTLCache[str, dict | None] = TTLCache(maxsize=200, ttl=86400 * 7)
 _agriknowledge_cache: TTLCache[str, float | None] = TTLCache(maxsize=200, ttl=86400)
 
-EPPO_API_KEY = os.getenv("EPPO_API_KEY", "")
+EPPO_API_KEY = os.getenv("EPPO_API_TOKEN") or os.getenv("EPPO_API_KEY", "")
 EPPO_BASE = "https://api.eppo.int/gd/v2"
 
 

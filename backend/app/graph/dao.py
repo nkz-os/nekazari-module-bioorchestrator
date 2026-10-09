@@ -5783,7 +5783,7 @@ class GraphDAO:
 
         import httpx
 
-        api_key = _os.getenv("EPPO_API_KEY", "")
+        api_key = _os.getenv("EPPO_API_TOKEN") or _os.getenv("EPPO_API_KEY", "")
         base = "https://api.eppo.int/gd/v2"
 
         result: dict = {"shared_pests": [], "shared_count": 0, "risk_level": "unknown", "source_unavailable": False}
@@ -5889,7 +5889,7 @@ class GraphDAO:
         result: dict = {"inputs": [], "source_unavailable": False}
 
         # 1) Get pests for this crop from EPPO
-        api_key = _os.getenv("EPPO_API_KEY", "")
+        api_key = _os.getenv("EPPO_API_TOKEN") or _os.getenv("EPPO_API_KEY", "")
         pest_names: list[str] = []
         if api_key:
             try:
