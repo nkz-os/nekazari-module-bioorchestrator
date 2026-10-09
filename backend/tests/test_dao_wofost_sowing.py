@@ -33,7 +33,7 @@ class _FakeOrion:
         pass
 
 
-def _run(mock_driver, cycles, ops=None, parcel_extra=None):
+def _run(mock_driver, cycles, ops=None, parcel_extra=None, sowing_date=None):
     dao = GraphDAO(mock_driver)
     captured = {}
 
@@ -48,7 +48,7 @@ def _run(mock_driver, cycles, ops=None, parcel_extra=None):
                AsyncMock(return_value={"data_available": False})), \
          patch.object(GraphDAO, "get_phenology_params", AsyncMock(return_value=None)), \
          patch("httpx.AsyncClient.get", AsyncMock(side_effect=RuntimeError("no network"))):
-        result = asyncio.run(dao.run_wofost_simulation(PARCEL, TENANT))
+        result = asyncio.run(dao.run_wofost_simulation(PARCEL, TENANT, sowing_date_str=sowing_date))
     return result, captured
 
 
@@ -90,3 +90,40 @@ def test_wofost_without_cycle_or_operation_uses_legacy_parcel_season(mock_driver
     result, _ = _run(mock_driver, None, [], parcel_extra={"cropSeasonStart": _prop("2025-10-01")})
 
     assert result["sowing_date"] == "2025-10-01"
+
+
+# The platform answered: its "no current cycle" is an answer, not an outage. The parcel's legacy
+# season copy (no longer written, stale or planned) must not stand in for a sowing date then.
+_LEGACY = {"cropSeasonStart": _prop("2025-10-01")}
+_NO_CURRENT = {"current": None, "previous": None, "next": None}
+_PLANNED_NEXT = {"current": None, "previous": None,
+                 "next": {"start": {"date": "2999-04-10", "provenance": "planned"}}}
+
+
+def test_wofost_platform_answered_without_current_ignores_legacy_parcel_season(mock_driver):
+    result, _ = _run(mock_driver, _NO_CURRENT, [], parcel_extra=_LEGACY)
+
+    assert "error" in result and "sowing date" in result["error"].lower()
+
+
+def test_wofost_planned_next_cycle_is_not_a_sowing_date(mock_driver):
+    result, _ = _run(mock_driver, _PLANNED_NEXT, [], parcel_extra=_LEGACY)
+
+    assert "error" in result and "sowing date" in result["error"].lower()
+
+
+def test_wofost_platform_answered_without_current_still_reads_completed_sowing(mock_driver):
+    ops = [{"operationType": _prop("sowing"), "status": _prop("completed"),
+            "endedAt": _prop("2026-03-05T10:00:00Z")}]
+
+    result, _ = _run(mock_driver, _PLANNED_NEXT, ops, parcel_extra=_LEGACY)
+
+    assert result["sowing_date"] == "2026-03-05"
+    assert result["sowing_provenance"] == "actual"
+
+
+def test_wofost_explicit_sowing_date_wins_over_missing_current(mock_driver):
+    result, captured = _run(mock_driver, _NO_CURRENT, [], sowing_date="2026-02-20")
+
+    assert result["sowing_date"] == "2026-02-20"
+    assert captured["sowing_date"].isoformat() == "2026-02-20"

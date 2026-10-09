@@ -320,3 +320,24 @@ def test_crop_context_season_falls_back_to_parcel_copy(mock_driver):
     assert ctx["season"]["start"] == "2025-10-01"
     assert ctx["season"]["end"] == "2026-07-01"
     assert ctx["season"]["start_provenance"] is None
+
+
+def test_crop_context_platform_answered_without_current_uses_next_cycle_as_planned(mock_driver):
+    cycles = {"current": None, "previous": None, "next": {
+        "start": {"date": "2027-03-10", "provenance": "planned"},
+        "end": {"date": "2027-09-30", "provenance": "planned"},
+    }}
+
+    ctx, _ = _context(mock_driver, cycles)
+
+    assert ctx["season"]["start"] == "2027-03-10"
+    assert ctx["season"]["end"] == "2027-09-30"
+    assert ctx["season"]["start_provenance"] == "planned"
+
+
+def test_crop_context_platform_answered_with_no_cycle_does_not_fall_back_to_parcel_copy(mock_driver):
+    ctx, _ = _context(mock_driver, {"current": None, "previous": None, "next": None})
+
+    assert ctx["season"]["start"] is None
+    assert ctx["season"]["end"] is None
+    assert ctx["season"]["start_provenance"] is None

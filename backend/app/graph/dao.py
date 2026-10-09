@@ -4574,13 +4574,19 @@ class GraphDAO:
             management = _extract_prop_value(parcel.get("management"))
             if not crop_uri:
                 return {"error": "Parcel has no crop assigned"}
-            # Season window: the platform's resolved crop cycle; the parcel's legacy copy only
-            # when the platform is unreachable or has no current cycle.
+            # Season window: the platform's resolved crop cycle. The parcel's legacy copy (no
+            # longer written, so stale or planned) only when the platform is unreachable; when it
+            # answered with no current cycle, the next one is shown with its own provenance.
             cycles = await fetch_crop_cycles(parcel_id, tenant_id)
-            cur = (cycles or {}).get("current") or {}
-            season_start = (cur.get("start") or {}).get("date") or _extract_prop_value(parcel.get("cropSeasonStart"))
-            season_end = (cur.get("end") or {}).get("date") or _extract_prop_value(parcel.get("cropSeasonEnd"))
-            start_provenance = (cur.get("start") or {}).get("provenance")
+            if cycles is None:
+                season_start = _extract_prop_value(parcel.get("cropSeasonStart"))
+                season_end = _extract_prop_value(parcel.get("cropSeasonEnd"))
+                start_provenance = None
+            else:
+                cur = cycles.get("current") or cycles.get("next") or {}
+                season_start = (cur.get("start") or {}).get("date")
+                season_end = (cur.get("end") or {}).get("date")
+                start_provenance = (cur.get("start") or {}).get("provenance")
 
             # ── 2. Fetch crop entity ────────────────────────────────────────
             crop_eppo = crop_uri.split(":")[-1] if crop_uri else "unknown"
@@ -5551,6 +5557,7 @@ class GraphDAO:
         # The platform's resolved crop cycle first; the operation scan is only the fallback and
         # reads what happened (a completed sowing's endedAt), never a planned date.
         sowing_provenance: str | None = None
+        cycles: dict | None = None
         if not sowing_date_str:
             cycles = await fetch_crop_cycles(parcel_id, tenant_id)
             cycle_start = (((cycles or {}).get("current") or {}).get("start")) or {}
@@ -5580,8 +5587,9 @@ class GraphDAO:
             except Exception:  # noqa: BLE001,S110
                 pass
 
-            if not sowing_date_str:
-                # Fallback: use crop season start from parcel
+            if not sowing_date_str and cycles is None:
+                # Platform unreachable: the parcel's legacy season copy is all that is left. When it
+                # answered with no current cycle, a planned (next) start is not a sowing.
                 season_start = _extract_prop_value(parcel.get("cropSeasonStart")) or ""
                 if season_start:
                     sowing_date_str = season_start[:10]
