@@ -121,6 +121,16 @@ def test_season_ending_on_29_february_runs():
     assert res["yield_t_ha"] >= 0
 
 
+def test_season_crossing_the_year_with_weather_ending_first_is_typed():
+    # Summer sowing: maturity is reached in December, but AquaCrop's harvest date
+    # (maturity + 30 days) falls after 31 Dec, where the weather ends; AquaCrop-OSPy
+    # then schedules no season at all (IndexError).
+    weather = _weather(start=date(2021, 7, 1), n=549, tmin_c=10.7, tmax_c=24.7, precip_mm=2.0)
+    assert weather[-1].day == date(2022, 12, 31)
+    with pytest.raises(eng.WeatherEndsBeforeHarvestError):
+        run_aquacrop(weather, _soil(), "MaizeGDD", date(2022, 7, 3), sim_start=date(2021, 7, 3))
+
+
 # --------------------------------------------------------- soil validation
 def test_no_soil_layers():
     with pytest.raises(EngineInputError, match="soil"):

@@ -314,6 +314,14 @@ def run_aquacrop(
             raise WeatherEndsBeforeHarvestError(
                 f"weather ends before harvest: {e} (last weather day {last}, "
                 f"planting {planting_date})") from e
+        except IndexError as e:
+            # AquaCrop-OSPy schedules no season (empty planting list) when the season
+            # crosses the year end and the weather stops before its harvest date.
+            if sim_end >= planting_date + timedelta(days=364):
+                raise
+            raise WeatherEndsBeforeHarvestError(
+                f"weather ends before harvest: no season could be scheduled (last weather "
+                f"day {last}, planting {planting_date})") from e
         stats = model.get_simulation_results()
         if stats is False or len(stats) == 0:
             raise WeatherEndsBeforeHarvestError(
