@@ -213,12 +213,17 @@ def run_aquacrop(
     planting_date: date,
     irrigation: str = "rainfed",
     sim_start: date | None = None,
+    topsoil_until: date | None = None,
 ) -> dict:
     """Simulate one season. See module docstring for the output keys.
 
     ``sim_start`` (optional, <= planting date, >= first weather day) requests a
     spin-up. Fewer than ``MIN_SPINUP_DAYS`` of history falls back to field
     capacity on the planting day, with a warning.
+
+    ``topsoil_until`` adds ``topsoil_water``: ISO day -> volumetric water content
+    of the first soil compartment (top 10 cm) for every simulated day up to that
+    date (the fallow before planting when it precedes the planting date).
     """
     clean, warns = _validate_weather(weather)
     _validate_soil(soil)
@@ -311,7 +316,14 @@ def run_aquacrop(
         flux = model.get_water_flux()
 
     row = stats.iloc[0]
-    return _assemble(row, growth, flux, start, planting_date, crop, irrigation, warns, initial_water)
+    out = _assemble(row, growth, flux, start, planting_date, crop, irrigation, warns, initial_water)
+    if topsoil_until is not None:
+        storage = model.get_water_storage()
+        out["topsoil_water"] = {
+            (start + timedelta(days=i)).isoformat(): float(storage.iloc[i]["th1"])
+            for i in range(min(len(storage), (topsoil_until - start).days + 1))
+        }
+    return out
 
 
 def _assemble(row, growth, flux, start, planting_date, crop, irrigation, warns, initial_water) -> dict:
@@ -351,6 +363,32 @@ def _assemble(row, growth, flux, start, planting_date, crop, irrigation, warns, 
         "daily": daily,
         "warnings": list(warns),
     }
+
+
+def fallow_topsoil_water(
+    weather: list[DailyWeather],
+    soil: list[SoilLayer],
+    crop: str,
+    start: date,
+    end: date,
+    sim_start: date | None = None,
+) -> dict[date, float]:
+    """Top-10-cm water content (m3/m3) of the bare soil on each day of [start, end].
+
+    Runs the season with the crop planted the day after ``end``, so every day of
+    the window is fallow; spin-up from ``sim_start`` as in ``run_aquacrop``.
+    Raises the same errors as ``run_aquacrop``.
+    """
+    res = run_aquacrop(weather, soil, crop, end + timedelta(days=1), "rainfed",
+                       sim_start, topsoil_until=end)
+    out = {}
+    d = start
+    while d <= end:
+        v = res["topsoil_water"].get(d.isoformat())
+        if v is not None:
+            out[d] = v
+        d += timedelta(days=1)
+    return out
 
 
 def run_aquacrop_with_potential(

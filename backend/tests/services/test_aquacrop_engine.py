@@ -506,3 +506,15 @@ def test_maturity_on_the_last_day_of_the_season_window_is_typed():
     weather = _weather(start=date(2020, 1, 1), n=800, tmin_c=7.664, tmax_c=17.664, precip_mm=2.0)
     with pytest.raises(eng.CropCannotMatureError, match="one season"):
         run_aquacrop(weather, _soil(), "MaizeGDD", date(2020, 4, 1))
+
+
+def test_fallow_topsoil_water_covers_the_window_and_stays_physical(tunis):
+    _, weather, layers = tunis
+    start, end = date(1990, 10, 1), date(1990, 11, 14)
+    theta = eng.fallow_topsoil_water(weather, layers, "WheatGDD", start, end,
+                                     sim_start=date(1989, 10, 2))
+    assert sorted(theta) == [start + timedelta(days=k) for k in range(45)]
+    top = layers[0]
+    assert all(0.0 < v <= top.sat + 1e-6 for v in theta.values())
+    # Rain wets the topsoil: the series is not flat.
+    assert max(theta.values()) - min(theta.values()) > 0.01
