@@ -12,12 +12,25 @@ class _FakeOrion:
         self.entities = []
         self.fail_create_on_seq = None
         self.fail_query = None
+        # What actually landed per entity, with Orion semantics: PATCH /attrs only
+        # updates attributes the entity already has; POST /attrs appends or overwrites.
+        self.state = {}
+    def _stored(self, eid):
+        if eid not in self.state:
+            seeded = next((e for e in self.entities if e.get("id") == eid), {})
+            self.state[eid] = {k: v for k, v in seeded.items() if k != "id"}
+        return self.state[eid]
     async def create_entity(self, e):
         if self.fail_create_on_seq is not None and e["seq"]["value"] == self.fail_create_on_seq:
             raise httpx.ConnectError("boom")
         self.created.append(e)
-    async def update_entity_attrs(self, eid, attrs): self.patched.append((eid, attrs))
-    async def append_entity_attrs(self, eid, attrs): self.patched.append((eid, attrs))
+    async def update_entity_attrs(self, eid, attrs):
+        self.patched.append((eid, attrs))
+        stored = self._stored(eid)
+        stored.update({k: v for k, v in attrs.items() if k in stored})
+    async def append_entity_attrs(self, eid, attrs):
+        self.patched.append((eid, attrs))
+        self._stored(eid).update(attrs)
     async def query_entities(self, **kw):
         if self.fail_query is not None:
             raise self.fail_query
@@ -138,6 +151,27 @@ async def test_advance_activates_target_demotes_prior_patches_hasagricrop(dao):
     parcel = patched["urn:ngsi-ld:AgriParcel:montiko:p-1"]
     assert parcel["hasAgriCrop"]["object"] == "urn:ngsi-ld:AgriCrop:montiko:p-1:2026:1"
     assert out["status"] == "advanced"
+
+
+@pytest.mark.asyncio
+async def test_advance_declared_dates_land_on_segments_without_those_attributes(dao):
+    d, fake = dao
+    # A planned segment has no plantingDate/plantingDateSource and the active one no
+    # terminationDate: PATCH /attrs would drop them (notUpdated), so they must be appended.
+    fake.entities = [
+        {"id": "urn:ngsi-ld:AgriCrop:montiko:p-1:2026:0", "seq": 0, "status": "active",
+         "terminationMethod": "roller_crimper"},
+        {"id": "urn:ngsi-ld:AgriCrop:montiko:p-1:2026:1", "seq": 1, "status": "planned",
+         "terminationMethod": "harvest"},
+    ]
+    await d.advance_segment("urn:ngsi-ld:AgriParcel:montiko:p-1", "2026", 1, "2026-04-15", "montiko")
+
+    target = fake.state["urn:ngsi-ld:AgriCrop:montiko:p-1:2026:1"]
+    assert target["status"]["value"] == "active"
+    assert target["plantingDate"]["value"]["@value"] == "2026-04-15"
+    assert target["plantingDateSource"] == {"type": "Property", "value": "manual"}
+    prior = fake.state["urn:ngsi-ld:AgriCrop:montiko:p-1:2026:0"]
+    assert prior["terminationDate"]["value"]["@value"] == "2026-04-15"
 
 
 @pytest.mark.asyncio

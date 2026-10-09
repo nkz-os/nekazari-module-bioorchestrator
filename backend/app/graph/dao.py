@@ -3770,12 +3770,14 @@ class GraphDAO:
                     continue
                 method = prior.get("terminationMethod")
                 final = "harvested" if method == "harvest" else "terminated"
-                await client.update_entity_attrs(prior["id"], {
+                # POST /attrs (append): the dates are absent until now and PATCH /attrs
+                # only updates EXISTING attrs, so they would silently not be written.
+                await client.append_entity_attrs(prior["id"], {
                     "status": {"type": "Property", "value": final},
                     "terminationDate": _date,
                 })
-            # activate target with real plantingDate
-            await client.update_entity_attrs(target_id, {
+            # activate target with real plantingDate (append, same reason as above)
+            await client.append_entity_attrs(target_id, {
                 "status": {"type": "Property", "value": "active"},
                 "plantingDate": _date,
                 "plantingDateSource": {"type": "Property", "value": "manual"},
