@@ -48,6 +48,9 @@ async def test_assign_crop_creates_entity():
         assert len(parcel_patch_call) == 1
         patch_body = parcel_patch_call[0][0][1]
         assert patch_body["hasAgriCrop"]["object"] == result["entity_id"]
+        # lifecycle is stored on the AgriCrop; the parcel no longer carries a copy of the season
+        assert create_call["cropLifecycle"] == {"type": "Property", "value": "annual"}
+        assert "cropSeasonStart" not in patch_body and "cropSeasonEnd" not in patch_body
 
 
 @pytest.mark.asyncio

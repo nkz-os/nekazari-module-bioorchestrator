@@ -48,9 +48,9 @@ async def test_create_plan_creates_one_agricrop_per_segment_none_active(dao):
     assert len(fake.created) == 2
     assert all(e["status"]["value"] == "planned" for e in fake.created)
     assert fake.created[0]["seq"]["value"] == 0 and fake.created[1]["seq"]["value"] == 1
-    # parcel season bounds patched, hasAgriCrop NOT patched (nothing active yet)
+    # the parcel is not touched at all: no season bounds copy, hasAgriCrop NOT patched (nothing active yet)
     parcel_patches = [p for p in fake.patched if p[0] == "urn:ngsi-ld:AgriParcel:montiko:p-1"]
-    assert parcel_patches and "cropSeasonStart" in parcel_patches[0][1]
+    assert not parcel_patches
     assert not any("hasAgriCrop" in attrs for _, attrs in fake.patched)
     assert out["status"] == "committed" and len(out["segments"]) == 2
 
@@ -129,6 +129,7 @@ async def test_advance_activates_target_demotes_prior_patches_hasagricrop(dao):
     tgt = patched["urn:ngsi-ld:AgriCrop:montiko:p-1:2026:1"]
     assert tgt["status"]["value"] == "active"
     assert tgt["plantingDate"]["value"]["@value"] == "2026-04-15"
+    assert tgt["plantingDateSource"] == {"type": "Property", "value": "manual"}
     # prior demoted: roller_crimper -> terminated, terminationDate set
     prior = patched["urn:ngsi-ld:AgriCrop:montiko:p-1:2026:0"]
     assert prior["status"]["value"] == "terminated"
