@@ -40,6 +40,8 @@ SEASON_DAYS = 365  # sowing day + 364 days, one season
 _PARCEL_MAX_DAYS = 400  # weather-api limit per request
 _MAX_LISTED_DAYS = 20
 _ARCHIVE_DAILY = "temperature_2m_min,temperature_2m_max,precipitation_sum,et0_fao_evapotranspiration"
+# era5_seamless blends ERA5-Land and ERA5; ERA5-Land alone lacks the inputs of ET0.
+_ARCHIVE_MODELS = "era5_seamless"
 
 
 @dataclass(frozen=True)
@@ -164,7 +166,7 @@ async def fetch_archive_daily(lat: float, lon: float, start: date, end: date) ->
     params = {
         "latitude": lat, "longitude": lon,
         "start_date": start.isoformat(), "end_date": end.isoformat(),
-        "daily": _ARCHIVE_DAILY, "timezone": "UTC",
+        "daily": _ARCHIVE_DAILY, "models": _ARCHIVE_MODELS, "timezone": "UTC",
     }
     try:
         async with httpx.AsyncClient(timeout=60) as client:
@@ -217,9 +219,11 @@ def _et0_warning(raised: list[date]) -> list[str]:
 
 
 # The parcel series is lapse-rate corrected to the parcel altitude; the archive
-# is the grid-cell value. Mixing them is declared, never silent.
+# is corrected to the archive's own terrain model at the point, which can differ
+# from it. Mixing them is declared, never silent.
 ARCHIVE_ALTITUDE_WARNING = (
-    "archive weather is the grid-cell value, not corrected to the parcel altitude")
+    "archive weather is corrected to the archive's terrain height at the point, "
+    "not to the parcel altitude")
 
 
 def _segments(tags: list[tuple[date, str]]) -> list[dict[str, Any]]:

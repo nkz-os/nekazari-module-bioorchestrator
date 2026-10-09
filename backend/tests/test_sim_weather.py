@@ -130,6 +130,7 @@ def test_leading_days_come_from_archive_and_are_tagged():
     assert arch[0].endswith("/v1/archive")
     assert arch[1]["latitude"] == LAT and arch[1]["longitude"] == LON
     assert arch[1]["timezone"] == "UTC"
+    assert arch[1]["models"] == "era5_seamless"
     assert "et0_fao_evapotranspiration" in arch[1]["daily"]
     # archive value mapping
     assert res.weather[0].tmin_c == 2.0 and res.weather[0].et0_mm == 1.2
