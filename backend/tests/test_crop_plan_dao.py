@@ -2,6 +2,7 @@ import httpx
 import pytest
 from fastapi import HTTPException
 
+from app.graph.crop_plan import build_segment_entity
 from app.graph.dao import GraphDAO
 
 
@@ -89,6 +90,48 @@ async def test_create_plan_segment_transport_error_is_collected_not_aborted(dao)
     assert len(fake.created) == 1
     assert fake.created[0]["seq"]["value"] == 1
     assert len(out["segments"]) == 1
+
+
+@pytest.mark.asyncio
+async def test_create_plan_409_appends_attrs_the_existing_entity_lacks(dao):
+    d, fake = dao
+    parcel = "urn:ngsi-ld:AgriParcel:montiko:p-1"
+    seg = {"crop": "Zea mays", "role": "main_crop", "sowing_window": ["2026-04-10", "2026-05-01"],
+           "termination_method": "harvest", "expected_termination": "2026-09-20"}
+    built = build_segment_entity("montiko", parcel, "2026", 0, seg)
+    assert "cropLifecycle" in built  # the attribute this regression is about
+    eid = built["id"]
+    # An earlier commit left the segment without cropLifecycle.
+    fake.entities = [{"id": eid, "seq": 0, "status": "planned"}]
+
+    async def conflict(entity):
+        request = httpx.Request("POST", "http://orion.test/ngsi-ld/v1/entities")
+        raise httpx.HTTPStatusError("Conflict", request=request,
+                                    response=httpx.Response(409, request=request))
+
+    calls = []
+    append, update = fake.append_entity_attrs, fake.update_entity_attrs
+
+    async def spy_append(entity_id, attrs):
+        calls.append(("append", entity_id, attrs))
+        await append(entity_id, attrs)
+
+    async def spy_update(entity_id, attrs):
+        calls.append(("update", entity_id, attrs))
+        await update(entity_id, attrs)
+
+    fake.create_entity = conflict
+    fake.append_entity_attrs = spy_append
+    fake.update_entity_attrs = spy_update
+
+    out = await d.create_crop_plan(parcel, "2026", [seg], "montiko")
+
+    # PATCH /attrs drops attributes the entity lacks, so the 409 path must append.
+    assert [c[0] for c in calls] == ["append"]
+    assert calls[0][1] == eid
+    assert calls[0][2]["cropLifecycle"] == built["cropLifecycle"]
+    assert fake.state[eid]["cropLifecycle"] == built["cropLifecycle"]
+    assert out["segments"] == [eid] and out["warnings"] == []
 
 
 @pytest.mark.asyncio

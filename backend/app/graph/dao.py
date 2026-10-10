@@ -3681,7 +3681,8 @@ class GraphDAO:
                         await client.create_entity(entity)
                     except httpx.HTTPStatusError as e:
                         if e.response.status_code == 409:  # idempotent re-commit
-                            await client.update_entity_attrs(entity["id"], {
+                            # POST /attrs (append): PATCH skips attrs the entity lacks
+                            await client.append_entity_attrs(entity["id"], {
                                 k: v for k, v in entity.items() if k not in ("id", "type", "@context")
                             })
                         else:
