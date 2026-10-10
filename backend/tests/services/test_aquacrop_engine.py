@@ -609,3 +609,17 @@ async def test_simulate_passes_crop_params_and_checks_them_first():
                                crop_params={"Tbase": 1.0})
     finally:
         eng._shutdown_pool()
+
+
+# AquaCrop-OSPy thickens the deepest compartments until the profile reaches the rooting
+# depth + 0.1 m, stopping each at 0.25 m; a profile that cannot get there loops forever.
+def test_soil_too_shallow_for_the_rooting_depth_is_an_error_not_a_hang():
+    shallow = [SoilLayer(thickness_m=0.4, wp=0.10, fc=0.22, sat=0.41, ksat_mm_day=1200.0)]
+    with pytest.raises(EngineInputError, match="rooting depth"):
+        run_aquacrop(_gdd10_weather(), shallow, "WheatGDD", date(2020, 1, 1))
+
+
+def test_soil_extended_to_the_rooting_depth_is_declared():
+    res = run_aquacrop(_gdd10_weather(), _soil(), "WheatGDD", date(2020, 1, 1))
+    # WheatGDD roots reach 1.5 m: AquaCrop simulates 1.2 m of data as 1.6 m.
+    assert any("1.20 m to 1.60 m" in w for w in res["warnings"]), res["warnings"]

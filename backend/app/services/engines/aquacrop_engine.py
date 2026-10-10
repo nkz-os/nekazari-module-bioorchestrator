@@ -10,6 +10,10 @@ Design rules
   curve number (61) and readily evaporable water (9 mm) are AquaCrop's own
   ``custom`` defaults: ASSUMPTION: library defaults until the owner fixes a
   texture-based criterion; they differ from AquaCrop's named-texture presets.
+* AquaCrop-OSPy needs the profile to reach the crop's rooting depth + 0.1 m and
+  gets there by thickening the deepest compartments (repeating their layers). The
+  run declares it in ``warnings``; a profile too shallow to get there is an
+  ``EngineInputError`` (AquaCrop itself would loop forever).
 * The simulation covers at most one year after planting, so exactly one season
   is simulated. By default it starts on the planting day with the soil at field
   capacity. With ``sim_start`` before planting (at least ``MIN_SPINUP_DAYS``
@@ -36,6 +40,7 @@ has no daily stress column), None while biomass_ns is 0.
 from __future__ import annotations
 
 import asyncio
+import copy
 import math
 import os
 import statistics
@@ -245,6 +250,29 @@ def _build_soil(soil: list[SoilLayer]):
     return s
 
 
+def _aquacrop_soil_depth(soil_model, zmax: float) -> float | None:
+    """Profile depth AquaCrop-OSPy will simulate, or None when it can never get there.
+
+    Its ``read_model_parameters`` thickens the deepest compartment under 0.25 m by
+    0.1 m until the profile reaches ``zmax`` + 0.1 m, and loops forever when every
+    compartment is already 0.25 m or more. Same loop on a copy, bounded: a
+    compartment can grow at most three times.
+    """
+    s = copy.deepcopy(soil_model)
+    s.fill_nan()
+    for _ in range(3 * len(s.profile) + 1):
+        if s.zSoil >= zmax + 0.1:
+            return float(s.zSoil)
+        for i in s.profile.index[::-1]:
+            if s.profile.loc[i, "dz"] < 0.25:
+                s.profile.loc[i, "dz"] += 0.1
+                s.fill_nan()
+                break
+        else:
+            return None
+    return None
+
+
 def _version() -> str:
     return _pkg_version("aquacrop")
 
@@ -339,9 +367,23 @@ def run_aquacrop(
            else IrrigationManagement(irrigation_method=1, SMT=[100] * 4))
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
+        soil_model = _build_soil(soil)
+        crop_model = Crop(crop, planting_date=planting_date.strftime("%m/%d"), **params)
+        data_depth = round(sum(l.thickness_m for l in soil), 2)
+        depth = _aquacrop_soil_depth(soil_model, crop_model.Zmax)
+        if depth is None:
+            raise EngineInputError(
+                f"soil profile of {data_depth:.2f} m is too shallow for the rooting depth of "
+                f"{crop} ({crop_model.Zmax} m): AquaCrop-OSPy needs it to reach rooting depth "
+                "+ 0.1 m by thickening compartments up to 0.25 m")
+        if depth > data_depth + 1e-6:
+            warns.append(
+                f"AquaCrop extends the soil profile from {data_depth:.2f} m to {depth:.2f} m "
+                f"(rooting depth {crop_model.Zmax} m + 0.1 m) by thickening its deepest "
+                "compartments; the added depth repeats their layers")
         model = AquaCropModel(
             start.strftime("%Y/%m/%d"), sim_end.strftime("%Y/%m/%d"), df,
-            _build_soil(soil), Crop(crop, planting_date=planting_date.strftime("%m/%d"), **params),
+            soil_model, crop_model,
             InitialWaterContent(value=["FC"]), irrigation_management=irr,
             off_season=spinup_days > 0)
         try:
