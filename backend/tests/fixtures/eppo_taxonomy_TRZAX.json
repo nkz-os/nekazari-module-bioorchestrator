@@ -1,0 +1,56 @@
+[
+  {
+    "eppocode": "1PLAK",
+    "prefname": "Plantae",
+    "level": 1,
+    "type": "Kingdom"
+  },
+  {
+    "eppocode": "1MAGP",
+    "prefname": "Magnoliophyta",
+    "level": 2,
+    "type": "Phylum"
+  },
+  {
+    "eppocode": "1ANGC",
+    "prefname": "Angiospermae",
+    "level": 3,
+    "type": "Class"
+  },
+  {
+    "eppocode": "1COMD",
+    "prefname": "Commelinids",
+    "level": 4,
+    "type": "Category"
+  },
+  {
+    "eppocode": "1POAO",
+    "prefname": "Poales",
+    "level": 5,
+    "type": "Order"
+  },
+  {
+    "eppocode": "1GRAF",
+    "prefname": "Poaceae",
+    "level": 6,
+    "type": "Family"
+  },
+  {
+    "eppocode": "1POOS",
+    "prefname": "Poöideae",
+    "level": 7,
+    "type": "Subfamily"
+  },
+  {
+    "eppocode": "1TRZG",
+    "prefname": "Triticum",
+    "level": 8,
+    "type": "Genus"
+  },
+  {
+    "eppocode": "TRZAX",
+    "prefname": "Triticum aestivum subsp. aestivum",
+    "level": 9,
+    "type": "Species"
+  }
+]

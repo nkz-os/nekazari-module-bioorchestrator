@@ -3546,8 +3546,9 @@ class GraphDAO:
                 await client.create_entity(agri_crop_body)
             except httpx.HTTPStatusError as e:
                 if e.response.status_code == 409:
-                    # Entity already exists — upsert via PATCH attrs
-                    await client.update_entity_attrs(new_crop_id, {
+                    # Entity already exists — upsert via POST /attrs (append): PATCH only
+                    # updates attrs the entity already has, so e.g. cropLifecycle would be dropped.
+                    await client.append_entity_attrs(new_crop_id, {
                         k: v for k, v in agri_crop_body.items()
                         if k not in ("id", "type", "@context", "dateCreated")
                     })

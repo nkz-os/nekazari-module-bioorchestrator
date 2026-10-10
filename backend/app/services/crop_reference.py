@@ -226,6 +226,24 @@ EPPO_BASE = "https://api.eppo.int/gd/v2"
 
 # ── Live data fetchers ──────────────────────────────────────────────────────
 
+def _parse_eppo_taxonomy(data: object, eppo_code: str) -> dict | None:
+    """Parse the EPPO v2 taxonomy payload: a JSON array with one object per rank
+    (``eppocode``, ``prefname``, ``level``, ``type``), ordered Kingdom to the taxon itself.
+    Returns None when the payload is not that shape or carries neither family nor name.
+    """
+    if not isinstance(data, list):
+        return None
+    ranks = [r for r in data if isinstance(r, dict)]
+    family = next((r.get("prefname", "") for r in ranks if r.get("type") == "Family"), "")
+    # The taxon itself is the lineage entry carrying the requested code (else the deepest rank).
+    own = next((r for r in ranks if r.get("eppocode") == eppo_code), ranks[-1] if ranks else {})
+    scientific_name = own.get("prefname", "")
+    if not (family or scientific_name):
+        return None
+    # The lineage endpoint carries no life cycle; the key stays for the cached shape.
+    return {"family": family, "scientific_name": scientific_name, "life_cycle": ""}
+
+
 async def _fetch_eppo_taxonomy(eppo_code: str) -> dict | None:
     """Fetch taxonomy from EPPO API v2. Returns {family, scientific_name, life_cycle} or None."""
     cached = _eppo_taxonomy_cache.get(eppo_code)
@@ -244,14 +262,12 @@ async def _fetch_eppo_taxonomy(eppo_code: str) -> dict | None:
                 headers={"X-Api-Key": EPPO_API_KEY},
             )
             if resp.status_code == 200:
-                data = resp.json()
-                result = {
-                    "family": data.get("family", ""),
-                    "scientific_name": data.get("scientificName", ""),
-                    "life_cycle": data.get("lifeCycle", ""),
-                }
-                _eppo_taxonomy_cache[eppo_code] = result
-                return result
+                result = _parse_eppo_taxonomy(resp.json(), eppo_code)
+                if result is None:
+                    logger.warning("EPPO taxonomy has unexpected shape for %s", eppo_code)
+                else:
+                    _eppo_taxonomy_cache[eppo_code] = result
+                    return result
             elif resp.status_code == 404:
                 _eppo_taxonomy_cache[eppo_code] = {}
                 return None

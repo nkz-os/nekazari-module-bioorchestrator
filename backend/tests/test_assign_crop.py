@@ -91,7 +91,11 @@ async def test_assign_crop_marks_old_harvested():
 
 @pytest.mark.asyncio
 async def test_assign_crop_409_upserts():
-    """If AgriCrop entity already exists (409), do PATCH instead of failing."""
+    """If AgriCrop already exists (409), APPEND attrs (POST /attrs), never PATCH.
+
+    PATCH /attrs only updates attributes the entity already has, so a re-assignment
+    would silently drop an attribute the existing AgriCrop lacks (e.g. cropLifecycle).
+    """
     mock_driver = AsyncMock()
     dao = GraphDAO(mock_driver)
 
@@ -122,8 +126,10 @@ async def test_assign_crop_409_upserts():
         )
 
         assert result["status"] == "assigned"
-        # Should have called update_entity_attrs for the existing entity
-        existing_crop_calls = [c for c in instance.update_entity_attrs.call_args_list
+        # The existing crop is written with append, not PATCH
+        assert not [c for c in instance.update_entity_attrs.call_args_list
+                    if c[0][0] == result["entity_id"]]
+        existing_crop_calls = [c for c in instance.append_entity_attrs.call_args_list
                               if c[0][0] == result["entity_id"]]
         assert len(existing_crop_calls) == 1
         patch_body = existing_crop_calls[0][0][1]
@@ -131,6 +137,7 @@ async def test_assign_crop_409_upserts():
         assert "type" not in patch_body
         assert "dateCreated" not in patch_body
         assert patch_body["species"]["value"] == "TRZAX"
+        assert patch_body["cropLifecycle"] == {"type": "Property", "value": "annual"}
         MockClient.assert_called_once_with(tenant_id="test-tenant")
 
 

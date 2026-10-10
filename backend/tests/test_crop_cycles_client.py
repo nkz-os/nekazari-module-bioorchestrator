@@ -1,6 +1,8 @@
 """fetch_crop_cycles: entity-manager internal route contract and fail-soft behaviour."""
 from __future__ import annotations
 
+import logging
+
 import httpx
 import pytest
 import respx
@@ -45,3 +47,29 @@ async def test_timeout_returns_none():
     respx.get(URL).mock(side_effect=httpx.ConnectTimeout("slow"))
 
     assert await fetch_crop_cycles(PARCEL, "tenant-a") is None
+
+
+@pytest.mark.parametrize(
+    ("response", "expected_fragment"),
+    [
+        (httpx.Response(503), "status=503"),
+        (httpx.Response(200, content=b"<html>gateway</html>"), "not JSON"),
+    ],
+    ids=["non-200", "invalid-json"],
+)
+@respx.mock
+async def test_fallback_is_logged_with_parcel_and_tenant(caplog, monkeypatch, response, expected_fragment):
+    # Importing pcse runs a dictConfig that disables already-created loggers, so caplog
+    # would see nothing depending on import order; re-enable this one.
+    monkeypatch.setattr(logging.getLogger("app.services.crop_cycles_client"), "disabled", False)
+    respx.get(URL).mock(return_value=response)
+
+    with caplog.at_level(logging.WARNING, logger="app.services.crop_cycles_client"):
+        out = await fetch_crop_cycles(PARCEL, "tenant-a")
+
+    assert out is None
+    warnings = [r.getMessage() for r in caplog.records if r.levelno == logging.WARNING]
+    assert len(warnings) == 1
+    assert expected_fragment in warnings[0]
+    assert PARCEL in warnings[0]
+    assert "tenant-a" in warnings[0]
