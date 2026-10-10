@@ -22,7 +22,8 @@ Design rules
 ``run_aquacrop`` output keys
 ----------------------------
 engine, engine_version, crop, planting_date (ISO), harvest_date (ISO),
-initial_water ({method: "spinup"|"assumed_fc", spinup_days, start}), irrigation ("rainfed"|"full"), yield_t_ha (dry yield, AquaCrop column
+initial_water ({method: "spinup"|"assumed_fc", spinup_days, start}), irrigation ("rainfed"|"full"),
+crop_params (phenology overrides used, ``{}`` = the built-in crop), yield_t_ha (dry yield, AquaCrop column
 "Dry yield (tonne/ha)"), biomass_t_ha (last daily ``biomass`` g/m2 / 100),
 seasonal_irrigation_mm (column
 "Seasonal irrigation (mm)"), warnings (list[str]) and ``daily``: list of
@@ -39,7 +40,7 @@ import math
 import os
 import statistics
 import warnings
-from collections.abc import Awaitable, Callable
+from collections.abc import Awaitable, Callable, Mapping
 from concurrent.futures import ProcessPoolExecutor
 from dataclasses import dataclass
 from datetime import date, timedelta
@@ -58,6 +59,10 @@ _IRRIGATION_MODES = ("rainfed", "full")
 MIN_SPINUP_DAYS = 30  # shorter fallow histories do not say anything about soil water
 # AquaCrop crop_params entries that are templates, not crops
 _NON_CROPS = {"Default", "custom"}
+# Phenology a caller may set per run (AquaCrop-OSPy ``Crop`` names): growing degree
+# days from sowing to senescence, maturity and flowering (HIstart), and the
+# lengths of flowering and yield formation. Every other parameter stays built-in.
+PHENOLOGY_PARAMS = ("Senescence", "Maturity", "HIstart", "Flowering", "YldForm")
 
 
 class EngineInputError(ValueError):
@@ -173,6 +178,45 @@ def _validate_soil(soil: list[SoilLayer]) -> None:
             raise EngineInputError(f"ksat_mm_day must be > 0 ({where})")
 
 
+def crop_defaults(crop: str) -> dict:
+    """Built-in AquaCrop parameters of ``crop`` (a copy)."""
+    from aquacrop.entities.crops.crop_params import crop_params
+
+    if crop in _NON_CROPS or crop not in crop_params:
+        raise UnsupportedCropError(f"crop {crop!r} is not an AquaCrop built-in")
+    return dict(crop_params[crop])
+
+
+def _validate_crop_params(crop: str, crop_params) -> dict[str, float]:
+    """Checked phenology overrides (``{}`` without any); see ``PHENOLOGY_PARAMS``."""
+    if crop_params is None:
+        return {}
+    if not isinstance(crop_params, Mapping):
+        raise EngineInputError(f"crop_params must be a mapping, got {type(crop_params).__name__}")
+    unknown = sorted(set(crop_params) - set(PHENOLOGY_PARAMS))
+    if unknown:
+        raise EngineInputError(
+            f"crop_params {unknown} not allowed (allowed: {list(PHENOLOGY_PARAMS)})")
+    base = crop_defaults(crop)
+    if base.get("CalendarType") != 2:
+        raise EngineInputError(
+            f"crop_params are growing degree days: crop {crop!r} uses calendar days")
+    out = {}
+    for k, v in crop_params.items():
+        f = _num(v, k, "crop_params")
+        if f <= 0:
+            raise EngineInputError(f"crop_params {k} must be > 0, got {f}")
+        out[k] = f
+    p = {**base, **out}
+    if not (p["Emergence"] < p["HIstart"] < p["Maturity"] and p["Senescence"] <= p["Maturity"]
+            and p["HIstart"] + p["YldForm"] <= p["Maturity"]):
+        phases = {k: p[k] for k in ("Emergence", *PHENOLOGY_PARAMS)}
+        raise EngineInputError(
+            "crop_params break the phase order (need Emergence < HIstart < Maturity, "
+            f"Senescence <= Maturity, HIstart + YldForm <= Maturity): {phases}")
+    return out
+
+
 def _validate_crop_irrigation(crop: str, irrigation: str) -> None:
     if crop not in supported_crops():
         raise UnsupportedCropError(f"crop {crop!r} is not an AquaCrop built-in")
@@ -214,8 +258,12 @@ def run_aquacrop(
     irrigation: str = "rainfed",
     sim_start: date | None = None,
     topsoil_until: date | None = None,
+    crop_params: Mapping[str, float] | None = None,
 ) -> dict:
     """Simulate one season. See module docstring for the output keys.
+
+    ``crop_params`` (optional) overrides the crop's phenology (``PHENOLOGY_PARAMS``,
+    growing degree days; degree-day crops only); the phase order is checked.
 
     ``sim_start`` (optional, <= planting date, >= first weather day) requests a
     spin-up. Fewer than ``MIN_SPINUP_DAYS`` of history falls back to field
@@ -228,6 +276,7 @@ def run_aquacrop(
     clean, warns = _validate_weather(weather)
     _validate_soil(soil)
     _validate_crop_irrigation(crop, irrigation)
+    params = _validate_crop_params(crop, crop_params)
     if not isinstance(planting_date, date):
         raise EngineInputError(f"planting_date is not a date: {planting_date!r}")
     if planting_date < clean[0].day:
@@ -292,7 +341,7 @@ def run_aquacrop(
         warnings.simplefilter("ignore")
         model = AquaCropModel(
             start.strftime("%Y/%m/%d"), sim_end.strftime("%Y/%m/%d"), df,
-            _build_soil(soil), Crop(crop, planting_date=planting_date.strftime("%m/%d")),
+            _build_soil(soil), Crop(crop, planting_date=planting_date.strftime("%m/%d"), **params),
             InitialWaterContent(value=["FC"]), irrigation_management=irr,
             off_season=spinup_days > 0)
         try:
@@ -330,7 +379,8 @@ def run_aquacrop(
         flux = model.get_water_flux()
 
     row = stats.iloc[0]
-    out = _assemble(row, growth, flux, start, planting_date, crop, irrigation, warns, initial_water)
+    out = _assemble(row, growth, flux, start, planting_date, crop, irrigation, warns, initial_water,
+                    params)
     if topsoil_until is not None:
         storage = model.get_water_storage()
         out["topsoil_water"] = {
@@ -340,7 +390,8 @@ def run_aquacrop(
     return out
 
 
-def _assemble(row, growth, flux, start, planting_date, crop, irrigation, warns, initial_water) -> dict:
+def _assemble(row, growth, flux, start, planting_date, crop, irrigation, warns, initial_water,
+              crop_params) -> dict:
     import pandas as pd
 
     # Rows after termination are zero padding; real season days have dap > 0.
@@ -371,6 +422,7 @@ def _assemble(row, growth, flux, start, planting_date, crop, irrigation, warns, 
         "harvest_date": harvest.isoformat(),
         "initial_water": initial_water,
         "irrigation": irrigation,
+        "crop_params": dict(crop_params),
         "yield_t_ha": float(row["Dry yield (tonne/ha)"]),
         "biomass_t_ha": daily[-1]["biomass"] / 100.0 if daily else None,  # g/m2 -> t/ha
         "seasonal_irrigation_mm": float(row["Seasonal irrigation (mm)"]),
@@ -413,14 +465,17 @@ def run_aquacrop_with_potential(
     crop: str,
     planting_date: date,
     sim_start: date | None = None,
+    crop_params: Mapping[str, float] | None = None,
 ) -> dict:
     """Rainfed run plus a full-irrigation run (SMT=100) as yield potential.
 
     AquaCrop's own "Yield potential" column is NOT water-unlimited, hence the
     second simulation. ``water_gap_pct`` = 100 * (1 - water_limited/potential).
     """
-    wl = run_aquacrop(weather, soil, crop, planting_date, "rainfed", sim_start)
-    pot = run_aquacrop(weather, soil, crop, planting_date, "full", sim_start)
+    wl = run_aquacrop(weather, soil, crop, planting_date, "rainfed", sim_start,
+                      crop_params=crop_params)
+    pot = run_aquacrop(weather, soil, crop, planting_date, "full", sim_start,
+                       crop_params=crop_params)
     p = pot["yield_t_ha"]
     gap = 100.0 * (1.0 - wl["yield_t_ha"] / p) if p > 0 else None
     return {"water_limited": wl, "potential": pot, "water_gap_pct": gap}
@@ -587,6 +642,7 @@ def _combine(members: list[dict], observed_last: date, irrigation: str, status: 
         "irrigation": irrigation,
         "status": status,
         "initial_water": members[0]["water_limited"]["initial_water"],
+        "crop_params": members[0]["water_limited"]["crop_params"],
         "yield_t_ha": yield_v,
         "potential_yield_t_ha": pot_v,
         "water_gap_pct": gap,
@@ -607,6 +663,7 @@ async def simulate(
     planting_date: date,
     irrigation: str = "rainfed",
     sim_start: date | None = None,
+    crop_params: Mapping[str, float] | None = None,
 ) -> dict:
     """Run the season: single run if ``observed`` reaches harvest, else ensemble.
 
@@ -620,15 +677,17 @@ async def simulate(
     ensemble). Percentiles are P10/P50/P90 by linear interpolation.
     Members run in the process pool. ``analogs`` may be an async callable, awaited
     only when the ensemble is actually needed (so a fully observed season never
-    loads climatology).
+    loads climatology). ``crop_params``: as in ``run_aquacrop``, checked before any run.
     """
     _validate_crop_irrigation(crop, irrigation)
+    _validate_crop_params(crop, crop_params)
     loop = asyncio.get_running_loop()
     pool = _get_pool()
     last = observed[-1].day if observed else None
     try:
         single = await loop.run_in_executor(
-            pool, run_aquacrop_with_potential, observed, soil, crop, planting_date, sim_start)
+            pool, run_aquacrop_with_potential, observed, soil, crop, planting_date, sim_start,
+            crop_params)
     except WeatherEndsBeforeHarvestError:
         if last >= planting_date + timedelta(days=364):
             raise
@@ -645,7 +704,8 @@ async def simulate(
     futs = [
         loop.run_in_executor(
             pool, run_aquacrop_with_potential,
-            project_weather(observed, analogs[y], planting_date, y), soil, crop, planting_date, sim_start)
+            project_weather(observed, analogs[y], planting_date, y), soil, crop, planting_date,
+            sim_start, crop_params)
         for y in years
     ]
     members = list(await asyncio.gather(*futs))

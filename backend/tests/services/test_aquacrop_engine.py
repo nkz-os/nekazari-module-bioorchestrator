@@ -548,3 +548,64 @@ def test_fallow_window_ending_on_28_february_of_a_leap_year(tunis):
     theta = eng.fallow_topsoil_water(weather, layers, "WheatGDD", start, end,
                                      sim_start=date(1991, 3, 1))
     assert max(theta) == end and len(theta) == 45
+
+
+# ------------------------------------------------------ phenology overrides
+def _gdd10_weather():
+    # Tmin 5 / Tmax 15: 10 growing degree days a day for WheatGDD (Tbase 0, Tupp 26).
+    return _weather(start=date(2020, 1, 1), n=400, tmin_c=5.0, tmax_c=15.0, precip_mm=2.0)
+
+
+def test_crop_params_lengthen_the_cycle():
+    base = run_aquacrop(_gdd10_weather(), _soil(), "WheatGDD", date(2020, 1, 1), "full")
+    # Senescence moves too: with the built-in CDC the canopy dies some 750 degree days
+    # after senescence starts, and AquaCrop ends the season there.
+    longer = run_aquacrop(_gdd10_weather(), _soil(), "WheatGDD", date(2020, 1, 1), "full",
+                          crop_params={"Maturity": 2600, "Senescence": 1900})
+    gap = (date.fromisoformat(longer["harvest_date"]) - date.fromisoformat(base["harvest_date"]))
+    assert gap.days == 20  # 200 more degree days at 10 a day
+    assert base["crop_params"] == {}
+    assert longer["crop_params"] == {"Maturity": 2600.0, "Senescence": 1900.0}
+
+
+@pytest.mark.parametrize("params, match", [
+    ({"Tbase": 1.0}, "not allowed"),
+    ({"Maturity": 0}, "> 0"),
+    ({"Maturity": float("nan")}, "NaN"),
+    ({"Maturity": "long"}, "not a number"),
+    ({"Maturity": 1200}, "phase order"),  # before flowering (HIstart 1250)
+    ({"YldForm": 2000}, "phase order"),  # grain filling past maturity
+    (["Maturity"], "mapping"),
+])
+def test_crop_params_are_checked(params, match):
+    with pytest.raises(EngineInputError, match=match):
+        run_aquacrop(_gdd10_weather(), _soil(), "WheatGDD", date(2020, 1, 1), crop_params=params)
+
+
+def test_crop_params_need_a_degree_day_crop():
+    with pytest.raises(EngineInputError, match="growing degree days"):
+        run_aquacrop(_gdd10_weather(), _soil(), "Wheat", date(2020, 1, 1),
+                     crop_params={"Maturity": 2600})
+
+
+def test_crop_params_reach_both_runs_with_potential():
+    res = run_aquacrop_with_potential(_gdd10_weather(), _soil(), "WheatGDD", date(2020, 1, 1),
+                                      crop_params={"Maturity": 2600})
+    assert res["water_limited"]["crop_params"] == {"Maturity": 2600.0}
+    assert res["potential"]["crop_params"] == {"Maturity": 2600.0}
+
+
+@pytest.mark.asyncio
+async def test_simulate_passes_crop_params_and_checks_them_first():
+    try:
+        res = await eng.simulate(_gdd10_weather(), {}, _soil(), "WheatGDD", date(2020, 1, 1),
+                                 crop_params={"Maturity": 2600, "Senescence": 1900})
+        assert res["status"] == "complete"
+        assert res["crop_params"] == {"Maturity": 2600.0, "Senescence": 1900.0}
+        # AquaCrop sums degree days from sowing up to the day before harvest: 260 days.
+        assert res["harvest_date"] == "2020-09-17"
+        with pytest.raises(EngineInputError, match="not allowed"):
+            await eng.simulate(_gdd10_weather(), {}, _soil(), "WheatGDD", date(2020, 1, 1),
+                               crop_params={"Tbase": 1.0})
+    finally:
+        eng._shutdown_pool()
