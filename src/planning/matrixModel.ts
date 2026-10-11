@@ -82,3 +82,11 @@ export function previousMain(row: ParcelRow, campaign: number): CycleCell | null
 export function widgetColumns(row: ParcelRow, campaign: number): { campaign: number; cells: CycleCell[] }[] {
   return [campaign - 1, campaign].map((c) => ({ campaign: c, cells: row.cells[String(c)] ?? [] }));
 }
+
+/**
+ * The widget's campaign rows. With an unreadable history there are none: an empty cell would read
+ * "undecided" for a history that could not be read.
+ */
+export function widgetRows(row: ParcelRow, campaign: number): { campaign: number; cells: CycleCell[] }[] {
+  return row.cycles_available ? widgetColumns(row, campaign) : [];
+}
