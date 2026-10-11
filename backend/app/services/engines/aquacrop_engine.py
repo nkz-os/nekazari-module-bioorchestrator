@@ -710,7 +710,8 @@ async def simulate(
     sim_start: date | None = None,
     crop_params: Mapping[str, float] | None = None,
 ) -> dict:
-    """Run the season: single run if ``observed`` reaches harvest, else ensemble.
+    """Run the season: single run if ``observed`` reaches harvest, else ensemble
+    (always the ensemble when ``observed`` ends before the planting date).
 
     ``analogs`` maps analog year -> that year's daily weather (archive). With
     observed weather ending before harvest, one member per analog year is run
@@ -729,19 +730,28 @@ async def simulate(
     loop = asyncio.get_running_loop()
     pool = _get_pool()
     last = observed[-1].day if observed else None
-    try:
-        single = await loop.run_in_executor(
-            pool, run_aquacrop_with_potential, observed, soil, crop, planting_date, sim_start,
-            crop_params)
-    except WeatherEndsBeforeHarvestError:
-        if last >= planting_date + timedelta(days=364):
-            raise
+    if last is None or last < planting_date:
+        # Weather ends before sowing (planning ahead): only the ensemble can run.
         if callable(analogs):
             analogs = await analogs()
         if not analogs:
-            raise
+            raise WeatherEndsBeforeHarvestError(
+                f"weather ends on {last} before the planting date {planting_date} "
+                "and no analog years are available")
     else:
-        return _combine([single], last, irrigation, "complete")
+        try:
+            single = await loop.run_in_executor(
+                pool, run_aquacrop_with_potential, observed, soil, crop, planting_date, sim_start,
+                crop_params)
+        except WeatherEndsBeforeHarvestError:
+            if last >= planting_date + timedelta(days=364):
+                raise
+            if callable(analogs):
+                analogs = await analogs()
+            if not analogs:
+                raise
+        else:
+            return _combine([single], last, irrigation, "complete")
     if len(analogs) < MIN_ENSEMBLE_MEMBERS:
         raise EngineInputError(
             f"climatological ensemble needs >= {MIN_ENSEMBLE_MEMBERS} analog years, got {len(analogs)}")

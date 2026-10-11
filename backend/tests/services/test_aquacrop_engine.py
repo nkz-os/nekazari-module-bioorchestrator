@@ -455,6 +455,26 @@ async def test_ensemble_in_season_and_complete(tunis):
 
 
 @pytest.mark.asyncio
+async def test_observed_ending_before_planting_runs_the_ensemble(tunis):
+    # preseason: real weather ends a month before sowing; every member continues with its year
+    _, weather, layers = tunis
+    planting = date(1980, 10, 1)
+    by_year = _by_year(weather)
+    analogs = {y: by_year[y] + by_year[y + 1] for y in range(1982, 1987)}
+    obs = [w for w in weather if date(1979, 9, 1) <= w.day <= date(1980, 8, 31)]
+    try:
+        res = await eng.simulate(obs, analogs, layers, "Wheat", planting, "rainfed", obs[0].day)
+        assert res["ensemble"]["n_years"] == 5 and res["last_weather_day"] == "1980-08-31"
+        assert all(d["projected"] for d in res["daily"])
+        y = res["yield_t_ha"]
+        assert y["p10"] <= y["p50"] <= y["p90"]
+        with pytest.raises(eng.WeatherEndsBeforeHarvestError):
+            await eng.simulate(obs, {}, layers, "Wheat", planting, "rainfed", obs[0].day)
+    finally:
+        eng._shutdown_pool()
+
+
+@pytest.mark.asyncio
 async def test_ensemble_needs_enough_analog_years(tunis):
     _, weather, layers = tunis
     by_year = _by_year(weather)
