@@ -160,3 +160,9 @@ def get_lifecycle(slug: str) -> str | None:
     info = get_species_info(slug)
     lc = info.get("lifecycle") if info else None
     return lc if lc in ("annual", "perennial") else None
+
+
+def is_woody(slug: str) -> bool:
+    """True for trees, shrubs and vines: a plantation decision, never a campaign choice."""
+    info = get_species_info(slug)
+    return bool(info and info.get("woody"))
