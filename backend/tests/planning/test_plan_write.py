@@ -394,3 +394,11 @@ def test_annual_sown_long_before_its_campaign_is_inconsistent():
         plan_write.validate_plan(_wheat_plan(start="2025-06-01"), TODAY)
     assert e.value.code == "dates_inconsistent"
     plan_write.validate_plan(_wheat_plan(start="2025-08-01"), TODAY)  # opens the previous campaign: allowed
+
+
+def test_a_cover_can_end_by_mowing():
+    cover = {"role": "cover_crop", "crop": "vetch", "sowing_start": "2026-10-01",
+             "expected_termination": "2027-04-20", "termination_method": "mowing"}
+    segs = plan_write.segments_from_plan(_plan(cycles=[cover]))
+    ent = build_segment_entity("t", URN, "2027", 0, segs[0])
+    assert ent["terminationMethod"]["value"] == "mowing"

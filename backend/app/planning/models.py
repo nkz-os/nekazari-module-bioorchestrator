@@ -214,7 +214,7 @@ class PlanCycleIn(BaseModel):
     sowing_start: date
     sowing_end: date | None = None
     expected_termination: date
-    termination_method: Literal["roller_crimper", "harvest", "incorporate", "grazing"] | None = None
+    termination_method: Literal["roller_crimper", "mowing", "harvest", "incorporate", "grazing"] | None = None
 
 
 class PlanIn(BaseModel):
