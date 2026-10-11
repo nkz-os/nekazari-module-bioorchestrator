@@ -1,9 +1,17 @@
 """Planning use cases: read the parcel, apply the pure rules, return contract dicts."""
 from __future__ import annotations
 
+from datetime import date
+
 from app.common.attribution import attach_attributions, rows_source_ids
 from app.core.knowledge import KnowledgeSource
 from app.graph.recommend import sowing_info
+from app.planning.estimates import (
+    aquacrop_status,
+    disagreement,
+    trial_estimate,
+    visible,
+)
 from app.planning.evidence import load_crop_evidence
 from app.planning.fit import (
     MULTI_YEAR,
@@ -159,3 +167,25 @@ async def parcel_varieties(*, dao, source: KnowledgeSource, parcel_id: str, tena
     payload = {**base, "status": "ok", "tier": ev["tier"], "zone_match": ev["zone_match"], "country": ev["country"],
                "n_environments": n_env, "varieties": stats, "data_gaps": data_gaps}
     return attach_attributions(payload, rows_source_ids(ev["rows"]))
+
+
+async def parcel_estimates(*, dao, source: KnowledgeSource, parcel_id: str, tenant_id: str, crop: str,
+                           variety: str | None, regime: str, management: str, sowing_date: date | None) -> dict:
+    eppo = crop_code(crop)
+    env = await load_environment(dao, parcel_id, tenant_id)
+    inputs = {"regime": regime, "management": management, "sowing_date": sowing_date,
+              "sowing_source": "planned" if sowing_date else "none",
+              "soil_source": (env.get("soil") or {}).get("source") or "unavailable",
+              "climate_source": (env.get("climate_detail") or {}).get("source") or "unavailable"}
+    base = {"parcel_id": env["parcel_id"], "crop": eppo, "variety": variety, "inputs": inputs,
+            "unavailable": [aquacrop_status()]}
+    ev = await load_crop_evidence(dao, env, crop_eppo=eppo, regime=regime, management=management)
+    if ev["status"] != "ok":
+        return {**base, "status": ev["status"], "estimates": [], "disagreement": False}
+    attributions = attach_attributions({}, rows_source_ids(ev["rows"]))["attributions"]
+    # The evidence gaps (e.g. evidence_truncated) travel with the estimate they qualify.
+    found = [{**e, "warnings": list(ev["data_gaps"])}
+             for e in (trial_estimate(ev["rows"], variety, attributions, source.graph_id, ev["policy_version"]),)
+             if e is not None]
+    shown = visible(found)
+    return {**base, "status": "ok", "estimates": shown, "disagreement": disagreement(shown)}

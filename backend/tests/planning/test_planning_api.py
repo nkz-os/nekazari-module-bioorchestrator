@@ -80,3 +80,36 @@ def test_varieties_route_does_not_turn_other_value_errors_into_422(client, monke
     monkeypatch.setattr(planning_api, "parcel_varieties", AsyncMock(side_effect=ValueError("bug")))
     crashing = TestClient(app, raise_server_exceptions=False)
     assert crashing.get(VARIETIES_URL, params=VARIETIES_PARAMS).status_code == 500
+
+
+ESTIMATES_URL = "/api/graph/planning/parcels/urn:ngsi-ld:AgriParcel:t:p1/estimates"
+ESTIMATES_PARAMS = {"crop": "TRZAX", "regime": "secano", "management": "conventional"}
+
+
+def test_estimates_route_validates_the_contract(client, monkeypatch):
+    out = {"parcel_id": "p1", "crop": "TRZAX", "variety": None, "status": "ok",
+           "inputs": {"regime": "secano", "management": "conventional", "sowing_date": None, "sowing_source": "none",
+                      "soil_source": "unavailable", "climate_source": "unavailable"},
+           "estimates": [], "unavailable": [{"provider_id": "aquacrop", "reason": "preseason_not_supported"}],
+           "disagreement": False}
+    monkeypatch.setattr(planning_api, "parcel_estimates", AsyncMock(return_value=out))
+    r = client.get("/api/graph/planning/parcels/p1/estimates",
+                   params={"crop": "TRZAX", "regime": "secano", "management": "conventional"})
+    assert r.status_code == 200 and r.json()["unavailable"][0]["reason"] == "preseason_not_supported"
+
+
+def test_estimates_route_404_for_unknown_parcel(client, monkeypatch):
+    from app.planning.service import ParcelNotFound
+    monkeypatch.setattr(planning_api, "parcel_estimates", AsyncMock(side_effect=ParcelNotFound("x")))
+    assert client.get(ESTIMATES_URL, params=ESTIMATES_PARAMS).status_code == 404
+
+
+def test_estimates_route_rejects_unknown_crop(client):
+    r = client.get(ESTIMATES_URL, params={**ESTIMATES_PARAMS, "crop": "zzz"})
+    assert r.status_code == 422
+
+
+def test_estimates_route_does_not_turn_other_value_errors_into_422(client, monkeypatch):
+    monkeypatch.setattr(planning_api, "parcel_estimates", AsyncMock(side_effect=ValueError("bug")))
+    crashing = TestClient(app, raise_server_exceptions=False)
+    assert crashing.get(ESTIMATES_URL, params=ESTIMATES_PARAMS).status_code == 500
