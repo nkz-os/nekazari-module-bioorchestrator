@@ -5,6 +5,9 @@ one NUTS 2 region. GISCO boundary geometries are not used: their licence exclude
 """
 from __future__ import annotations
 
+import functools
+import gzip
+import json
 import re
 from pathlib import Path
 
@@ -29,3 +32,23 @@ def nuts2_for_municipality(ine_code: str, table: dict[str, str]) -> str | None:
     if not isinstance(ine_code, str) or not _INE_MUNICIPALITY.match(ine_code):
         return None
     return table.get(ine_code[:2])
+
+EUROSTAT_DIR = Path(__file__).resolve().parents[2] / "data" / "eurostat"
+
+
+def region_names(jsonstat: dict) -> dict[str, str]:
+    """NUTS 2 code -> name from a JSON-stat document's `geo` labels; Extra-Regio (`..ZZ`) dropped."""
+    category = jsonstat["dimension"]["geo"]["category"]
+    labels = category.get("label") or {}
+    return {code: labels.get(code, code) for code in category["index"]
+            if len(code) == 4 and not code.endswith("ZZ")}
+
+
+@functools.lru_cache(maxsize=1)
+def load_region_names(eurostat_dir: Path | None = None) -> dict[str, str]:
+    """Names from the newest committed apro_cpshr snapshot (the one the graph was seeded from)."""
+    path = max((eurostat_dir or EUROSTAT_DIR).glob("apro_cpshr_nuts2_*.json.gz"), default=None)
+    if path is None:
+        raise FileNotFoundError("no apro_cpshr snapshot in the image")
+    with gzip.open(path, "rt", encoding="utf-8") as f:
+        return region_names(json.load(f)["jsonstat"])

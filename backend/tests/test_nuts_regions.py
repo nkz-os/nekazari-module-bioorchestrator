@@ -49,3 +49,20 @@ def test_known_municipalities(table, ine, nuts):
 @pytest.mark.parametrize("bad", ["", "3120", "312011", "99001", "00001", "ab201", " 31201"])
 def test_malformed_or_unknown_codes_give_none(table, bad):
     assert nuts2_for_municipality(bad, table) is None
+
+
+from app.services.nuts_regions import load_region_names, region_names
+
+
+def test_region_names_keep_only_nuts2_and_drop_extra_regio():
+    doc = {"dimension": {"geo": {"category": {
+        "index": {"ES": 0, "ES2": 1, "ES22": 2, "ESZZ": 3, "FRK1": 4},
+        "label": {"ES": "Spain", "ES2": "Noreste", "ES22": "Comunidad Foral de Navarra",
+                  "ESZZ": "Extra-Regio NUTS 2", "FRK1": "Auvergne"}}}}}
+    assert region_names(doc) == {"ES22": "Comunidad Foral de Navarra", "FRK1": "Auvergne"}
+
+
+def test_snapshot_names_include_navarra():
+    names = load_region_names()
+    assert names["ES22"] == "Comunidad Foral de Navarra"
+    assert not any(code.endswith("ZZ") for code in names)
