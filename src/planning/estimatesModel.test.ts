@@ -13,6 +13,16 @@ describe('estimates model', () => {
     expect(sortEstimates([est('gap_corrected'), est('trial_evidence'), est('water_limited')]).map((e) => e.basis))
       .toEqual(['trial_evidence', 'water_limited', 'gap_corrected']);
   });
+  it('an unknown basis sorts last, never first', () => {
+    expect(sortEstimates([est('bogus' as unknown as Estimate['basis']), est('trial_evidence')]).map((e) => e.basis))
+      .toEqual(['trial_evidence', 'bogus']);
+  });
+  it('validation tone: validated is positive, unvalidated and experimental warn, not_applicable is neutral', () => {
+    expect(validationTone('validated')).toBe('positive');
+    expect(validationTone('unvalidated')).toBe('warning');
+    expect(validationTone('experimental')).toBe('warning');
+    expect(validationTone('not_applicable')).toBe('default');
+  });
   it('attributions once per source; experimental is a warning', () => {
     expect(uniqueAttributions([est('trial_evidence'), est('water_limited')]).length).toBe(1);
     expect(validationTone('experimental')).toBe('warning');

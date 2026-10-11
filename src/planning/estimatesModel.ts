@@ -3,13 +3,20 @@ import type { Basis, Estimate } from './types';
 
 export const BASIS_ORDER: Basis[] = ['trial_evidence', 'water_limited', 'gap_corrected', 'potential'];
 
+/** Rank of a basis; an unknown basis ranks after every known one. */
+const rank = (basis: Basis): number => {
+  const index = BASIS_ORDER.indexOf(basis);
+  return index === -1 ? BASIS_ORDER.length : index;
+};
+
 export function sortEstimates(estimates: Estimate[]): Estimate[] {
-  return [...estimates].sort((a, b) => BASIS_ORDER.indexOf(a.basis) - BASIS_ORDER.indexOf(b.basis));
+  return [...estimates].sort((a, b) => rank(a.basis) - rank(b.basis));
 }
 
+/** Only a validated estimate is positive and only not_applicable is neutral; anything else warns. */
 export function validationTone(status: Estimate['validation']['status']): 'positive' | 'warning' | 'default' {
   if (status === 'validated') return 'positive';
-  return status === 'experimental' ? 'warning' : 'default';
+  return status === 'not_applicable' ? 'default' : 'warning';
 }
 
 export function uniqueAttributions(estimates: Estimate[]): SourceAttributionItem[] {

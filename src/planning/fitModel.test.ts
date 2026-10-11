@@ -13,6 +13,16 @@ describe('fit model', () => {
     expect(g.fits.map((s) => s.species)).toEqual(['barley', 'wheat']);
     expect(g.no_fit.map((s) => s.species)).toEqual(['rapeseed']);
   });
+  it('an unknown verdict lands in caveats, never in fits, and does not throw', () => {
+    const odd = { ...sp('odd', 'fits', 'raro'), verdict: 'bogus' as unknown as SpeciesFit['verdict'] };
+    const g = groupFit([sp('wheat', 'fits', 'trigo'), odd], 'es');
+    expect(g.fits.map((s) => s.species)).toEqual(['wheat']);
+    expect(g.caveats.map((s) => s.species)).toEqual(['odd']);
+  });
+  it('sorting does not throw on a malformed language tag', () => {
+    expect(groupFit([sp('wheat', 'fits', 'trigo'), sp('barley', 'fits', 'cebada')], 'en_US').fits.map((s) => s.species))
+      .toEqual(['barley', 'wheat']);
+  });
   it('keys carry the why of unknowns and tones mark blockers', () => {
     expect(reasonKey({ code: 'soil_unknown', gate: 'soil', params: { why: 'no_parcel_soil' } })).toBe('planning.reason.soil_unknown_no_parcel_soil');
     expect(reasonTone({ code: 'frost_risk', gate: 'frost', params: {} })).toBe('negative');

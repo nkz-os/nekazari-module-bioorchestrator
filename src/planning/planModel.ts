@@ -27,13 +27,24 @@ export function emptyCover(): CycleDraft {
   return { species: '', variety: null, sowing: '', end: '', method: 'roller_crimper' };
 }
 
+const isLeap = (year: number): boolean => (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
+
+/** Calendar date (YYYY-MM-DD) of a day of year in `year`; a day past the end of that year is clamped to Dec 31. */
+export function dateOfDoy(doy: number, year: number): string {
+  const length = isLeap(year) ? 366 : 365;
+  const day = Math.min(Math.max(doy, 1), length);
+  return new Date(Date.UTC(year, 0, day)).toISOString().slice(0, 10);
+}
+
+/** Month of a typical sowing day: read in the autumn year when it falls there, else in the campaign year. */
+function monthOfTypicalDoy(doy: number, campaign: number): number {
+  const autumn = Number(dateOfDoy(doy, campaign - 1).slice(5, 7));
+  return autumn >= AUTUMN_FROM_MONTH ? autumn : Number(dateOfDoy(doy, campaign).slice(5, 7));
+}
+
 export function defaultSowing(s: Sowing, campaign: number): string {
   let month = s.start_month;
-  if (!month && s.typical_sowing_doy) {
-    const d = new Date(Date.UTC(2001, 0, 1));
-    d.setUTCDate(s.typical_sowing_doy);
-    month = d.getUTCMonth() + 1;
-  }
+  if (!month && s.typical_sowing_doy) month = monthOfTypicalDoy(s.typical_sowing_doy, campaign);
   if (!month) return '';
   const year = month >= AUTUMN_FROM_MONTH ? campaign - 1 : campaign;
   return `${year}-${String(month).padStart(2, '0')}-01`;
@@ -44,8 +55,10 @@ export function draftFor(sp: Pick<SpeciesFit, 'species' | 'sowing'>, campaign: n
 }
 
 /**
- * Same rules as backend validate_plan, so the user sees the error before the request. A
- * perennial main crop (alfalfa) starts in the campaign and may end up to MAX_PERENNIAL_YEARS later.
+ * Mirrors the backend's date rules (plan_write.validate_plan) so the user sees the error before the
+ * request; the server stays authoritative. A perennial main crop (alfalfa) starts in the campaign,
+ * ends in or after it and at most MAX_PERENNIAL_YEARS later. An annual cycle ends in the campaign
+ * and opens at most in the campaign before it (autumn sowing).
  */
 export function validateDraft(d: PlanDraft, campaign: number, perennialMain = false): DraftError | null {
   const cycles = d.cover ? [d.cover, d.main] : [d.main];
@@ -55,9 +68,11 @@ export function validateDraft(d: PlanDraft, campaign: number, perennialMain = fa
     const endYear = Number(c.end.slice(0, 4));
     if (c === d.main && perennialMain) {
       if (campaignOfStart(c.sowing) !== campaign) return 'perennial_start_outside_campaign';
-      if (endYear < campaign || endYear > campaign + MAX_PERENNIAL_YEARS) return 'perennial_too_long';
-    } else if (endYear !== campaign) {
-      return 'termination_outside_campaign';
+      if (endYear < campaign) return 'dates_inconsistent';
+      if (endYear > campaign + MAX_PERENNIAL_YEARS) return 'perennial_too_long';
+    } else {
+      if (endYear !== campaign) return 'termination_outside_campaign';
+      if (campaignOfStart(c.sowing) < campaign - 1) return 'dates_inconsistent';
     }
     if (c.sowing > c.end) return 'dates_inconsistent';
   }

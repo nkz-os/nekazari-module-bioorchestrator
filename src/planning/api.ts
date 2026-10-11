@@ -1,6 +1,7 @@
 /** Client of /api/graph/planning (contract 1.0). Empty values are never sent. */
 import { API_BASE, authHeaders } from '../services/api';
 import type { SourceAttributionItem } from '../types/attribution';
+import { CONTRACT_VERSION } from './types';
 import type {
   EstimatesResponse, FarmResponse, FitResponse, Management, PlanIn, PlanWriteResponse, Regime, VarietiesResponse,
 } from './types';
@@ -11,6 +12,7 @@ const enc = encodeURIComponent;
 export class PlanningApiError extends Error {
   constructor(public readonly status: number, public readonly code: string | null) {
     super(`planning api ${status}${code ? ` ${code}` : ''}`);
+    this.name = 'PlanningApiError';
   }
 }
 
@@ -22,6 +24,16 @@ export function buildQuery(params: Record<string, string | number | null | undef
   }
   const text = qs.toString();
   return text ? `?${text}` : '';
+}
+
+const major = (version: string): string => version.split('.')[0];
+
+/** A minor bump is additive and accepted; a major bump is a different contract and refused. */
+function assertContract(payload: unknown, status: number): void {
+  const version = (payload as { contract_version?: unknown } | null | undefined)?.contract_version;
+  if (typeof version === 'string' && major(version) !== major(CONTRACT_VERSION)) {
+    throw new PlanningApiError(status, 'contract_mismatch');
+  }
 }
 
 async function request<T>(method: 'GET' | 'PUT', url: string, body?: unknown, signal?: AbortSignal): Promise<T> {
@@ -40,7 +52,14 @@ async function request<T>(method: 'GET' | 'PUT', url: string, body?: unknown, si
     }
     throw new PlanningApiError(resp.status, code);
   }
-  return (await resp.json()) as T;
+  let payload: unknown;
+  try {
+    payload = await resp.json();
+  } catch {
+    throw new PlanningApiError(resp.status, 'invalid_response');
+  }
+  assertContract(payload, resp.status);
+  return payload as T;
 }
 
 export const fetchFarm = (campaign?: number, parcelId?: string, signal?: AbortSignal) =>

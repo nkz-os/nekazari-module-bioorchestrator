@@ -1,10 +1,13 @@
-import { cropName, monthName } from './format';
+import { cropName, monthName, safeLang } from './format';
 import type { Names, ParamValue, Reason, Sowing, SpeciesFit, TFn, Verdict } from './types';
 
 const BLOCKERS = new Set(['soil_unsuitable', 'soil_ph_unsuitable', 'soil_texture_unsuitable', 'soil_drainage_unsuitable', 'frost_risk']);
 const INFORMATIVE = new Set(['rotation_benefit', 'multi_year']);
 
-/** Every reason i18n key the backend can produce (contract 1.0); keys.test.ts checks them in every locale. */
+/**
+ * Every reason i18n key the backend can produce (contract 1.0). The locale check arrives with Task 10
+ * (keys.test.ts); until then nothing enforces this list against the locale files.
+ */
 export const REASON_KEYS = [
   'soil_unsuitable', 'soil_marginal', 'soil_ph_unsuitable', 'soil_ph_marginal', 'soil_texture_unsuitable', 'soil_texture_marginal',
   'soil_drainage_unsuitable', 'soil_drainage_marginal', 'soil_unknown_no_tolerance', 'soil_unknown_no_parcel_soil',
@@ -15,8 +18,10 @@ export const REASON_KEYS = [
 
 export function groupFit(species: SpeciesFit[], lang: string): Record<Verdict, SpeciesFit[]> {
   const groups: Record<Verdict, SpeciesFit[]> = { fits: [], caveats: [], no_fit: [] };
-  for (const s of species) groups[s.verdict].push(s);
-  const byName = (a: SpeciesFit, b: SpeciesFit) => cropName(a.names, a.species, lang).localeCompare(cropName(b.names, b.species, lang), lang);
+  // An unknown verdict is a caveat at most: it is never shown as a fit, and it never throws.
+  for (const s of species) groups[s.verdict === 'fits' || s.verdict === 'no_fit' ? s.verdict : 'caveats'].push(s);
+  const tag = safeLang(lang);
+  const byName = (a: SpeciesFit, b: SpeciesFit) => cropName(a.names, a.species, tag).localeCompare(cropName(b.names, b.species, tag), tag);
   for (const key of Object.keys(groups) as Verdict[]) groups[key].sort(byName);
   return groups;
 }
