@@ -29,7 +29,7 @@ const OrganicInputs = lazy(() => import('./components/OrganicInputs'));
 const PipelineRunner = lazy(() => import('./components/PipelineRunner'));
 const SourcesDashboard = lazy(() => import('./components/SourcesDashboard'));
 const YieldProjection = lazy(() => import('./components/YieldProjection'));
-const WofostSimulation = lazy(() => import('./components/WofostSimulation'));
+const CropSimulation = lazy(() => import('./components/CropSimulation'));
 const SpeciesExplorer = lazy(() => import('./components/SpeciesExplorer'));
 const SimulateAlternative = lazy(() => import('./components/SimulateAlternative'));
 const BreedDiscovery = lazy(() => import('./components/DADIS/BreedDiscovery').then(m => ({ default: m.BreedDiscovery })));
@@ -41,7 +41,7 @@ const TOOL_MAP: Record<string, React.LazyExoticComponent<React.ComponentType<any
   waterBudget: WaterBudget,
   regenerative: RegenerativeSequence,
   yieldProjection: YieldProjection,
-  wofostSimulation: WofostSimulation,
+  cropSimulation: CropSimulation,
   speciesExplorer: SpeciesExplorer,
   catalog: CropCatalog,
   climate: ClimateExplorer,

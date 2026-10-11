@@ -67,6 +67,41 @@ async function get(path: string, extraHeaders?: Record<string, string>): Promise
   return ct.includes('application/json') ? resp.json() : resp.text();
 }
 
+/** Non-2xx answer carrying the backend `{detail:{code,message}}` body when present. */
+export class ApiError extends Error {
+  constructor(readonly status: number, readonly code: string | null, message: string) {
+    super(message);
+    this.name = 'ApiError';
+  }
+}
+
+/** Reads `{detail:{code,message}}` (or a string `detail`) from a failed response; falls back to `HTTP <status>`. */
+export async function apiErrorFrom(resp: Response): Promise<ApiError> {
+  let code: string | null = null;
+  let message = `HTTP ${resp.status}`;
+  try {
+    const body = await resp.json();
+    const d = body?.detail;
+    if (d && typeof d === 'object') {
+      if (typeof d.code === 'string') code = d.code;
+      if (typeof d.message === 'string' && d.message) message = d.message;
+    } else if (typeof d === 'string' && d) {
+      message = d;
+    }
+  } catch { /* body is not JSON */ }
+  return new ApiError(resp.status, code, message);
+}
+
+/** POST that throws ApiError (status, code, message) on failure; 401 returns null like post(). */
+async function postDetailed(path: string): Promise<any> {
+  const headers: Record<string, string> = { 'Content-Type': 'application/json', ...authHeaders() };
+  const url = path.startsWith('http') ? path : `${BASE}${path}`;
+  const resp = await fetch(url, { method: 'POST', headers, credentials: 'include' });
+  if (resp.status === 401) return null;
+  if (!resp.ok) throw await apiErrorFrom(resp);
+  return resp.json();
+}
+
 async function post(path: string, body?: any, extraHeaders?: Record<string, string>): Promise<any> {
   const headers: Record<string, string> = { 'Content-Type': 'application/json', ...authHeaders(), ...extraHeaders };
   const url = path.startsWith("http") ? path : `${BASE}${path}`;
@@ -242,11 +277,17 @@ export function useBioApi() {
       }
       return get(`${GRAPH}/graph/agriculture/yield-projection?${params.toString()}`);
     },
-    runWofostSimulation: (parcelId: string, cropSlug?: string, sowingDate?: string) => {
-      const params = new URLSearchParams({ parcel_id: parcelId });
-      if (cropSlug) params.set('crop_slug', cropSlug);
-      if (sowingDate) params.set('sowing_date', sowingDate);
-      return post(`${GRAPH}/graph/agriculture/wofost-simulation?${params.toString()}`);
+    runCropSimulation: (p: {
+      parcelId: string;
+      cropSlug?: string;
+      sowingDate?: string;
+      irrigation: 'rainfed' | 'full';
+      engine: string;
+    }) => {
+      const params = new URLSearchParams({ parcel_id: p.parcelId, irrigation: p.irrigation, engine: p.engine });
+      if (p.cropSlug) params.set('crop_slug', p.cropSlug);
+      if (p.sowingDate) params.set('sowing_date', p.sowingDate);
+      return postDetailed(`${GRAPH}/graph/agriculture/crop-simulation?${params.toString()}`);
     },
     rotationPlan: (params: Record<string, string | number>) => {
       const qs = new URLSearchParams();

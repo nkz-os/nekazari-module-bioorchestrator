@@ -48,3 +48,52 @@ def test_fetch_weekly_eto_uses_request_tenant(mock_driver):
     assert _FakeOrionClient._constructed_with == ["asociacion-allotarra"], (
         f"OrionClient was constructed with wrong tenants: {_FakeOrionClient._constructed_with}"
     )
+
+
+@pytest.mark.parametrize("closed", [
+    # dailySummary true is the contract of the closed-day series (weather-worker)
+    {"id": "urn:ngsi-ld:WeatherObserved:t:parcel-1-summary",
+     "dailySummary": {"type": "Property", "value": True}},
+    # the "-daily" id suffix stays as a legacy guard
+    {"id": "urn:ngsi-ld:WeatherObserved:t:parcel-1-daily"},
+])
+def test_fetch_weekly_eto_skips_closed_day_entities(mock_driver, closed):
+    """A closed-day WeatherObserved returned first must be ignored in favour of the live one."""
+
+    class _Orion(_FakeOrionClient):
+        async def query_entities(self, *, type: str, limit: int = 1):
+            assert limit >= 2
+            return [closed, {"id": "urn:ngsi-ld:WeatherObserved:t:parcel-1"}]
+
+    posted: list[dict] = []
+
+    class _Resp:
+        status_code = 200
+
+        def json(self):
+            return {"series": [{"points": [[0, 10.0], [1, 5.0]]}]}
+
+    class _Http:
+        def __init__(self, *a, **k) -> None:
+            pass
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *a):
+            return False
+
+        async def post(self, url, json=None, headers=None):
+            posted.append(json)
+            return _Resp()
+
+    with patch("app.graph.dao.OrionClient", _Orion), patch("httpx.AsyncClient", _Http):
+        dao = GraphDAO(mock_driver)
+        result = asyncio.run(
+            dao._fetch_weekly_eto(
+                tenant_id="t", ws="2026-06-01T00:00:00Z", we="2026-06-08T00:00:00Z"
+            )
+        )
+
+    assert result == 15.0
+    assert posted[0]["series"][0]["entity_urn"] == "urn:ngsi-ld:WeatherObserved:t:parcel-1"

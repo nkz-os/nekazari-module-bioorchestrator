@@ -2,14 +2,20 @@
 import { describe, expect, it } from 'vitest';
 import es from './es.json';
 import en from './en.json';
+import ca from './ca.json';
+import eu from './eu.json';
+import fr from './fr.json';
+import pt from './pt.json';
 import { KOPPEN_CODES, SEASONS, MANAGEMENTS, IRRIGATIONS, PURPOSES } from '../features/whatToSow/pageModel';
+import { KNOWN_ERROR_CODES, WEATHER_SOURCES, SOWING_SOURCES } from '../components/cropSimulationModel';
 import { CAMPAIGN_TOOL_IDS, LIBRARY_TOOL_IDS } from '../utils/navigation';
 
 
-const NAMESPACES = ['whatToSow', 'home', 'expert', 'app.doors', 'app.hubs', 'app.expertMode', 'app.cards', 'sourceAttribution'];
+const NAMESPACES = ['whatToSow', 'home', 'expert', 'app.doors', 'app.hubs', 'app.expertMode', 'app.cards', 'sourceAttribution', 'cropSimulation'];
 
 const SOURCES: Record<string, string> = {
   ...import.meta.glob('../features/whatToSow/**/*.{ts,tsx}', { query: '?raw', import: 'default', eager: true }),
+  ...import.meta.glob('../components/CropSimulation.tsx', { query: '?raw', import: 'default', eager: true }),
   ...import.meta.glob('../components/Home.tsx', { query: '?raw', import: 'default', eager: true }),
   ...import.meta.glob('../components/shared/SourceAttribution.tsx', { query: '?raw', import: 'default', eager: true }),
   ...import.meta.glob('../App.tsx', { query: '?raw', import: 'default', eager: true }),
@@ -76,6 +82,11 @@ const dynamicKeys = (): string[] => [
   ...['expectedYield', 'relativeYield', 'stability', 'water', 'soil', 'frost', 'trust']
     .map((r) => `whatToSow.compare.${r}`),
   ...[...CAMPAIGN_TOOL_IDS, ...LIBRARY_TOOL_IDS].flatMap((id) => [`app.cards.${id}.title`, `app.cards.${id}.subtitle`]),
+  ...[...KNOWN_ERROR_CODES, 'generic'].map((c) => `cropSimulation.errors.${c}`),
+  ...WEATHER_SOURCES.map((c) => `cropSimulation.weatherSource.${c}`),
+  ...SOWING_SOURCES.map((c) => `cropSimulation.sowingSource.${c}`),
+  ...['complete', 'in_season'].map((c) => `cropSimulation.status.${c}`),
+  ...['spinup', 'assumed_fc'].map((c) => `cropSimulation.initialWater.${c}`),
   ...['whatToSow', 'campaign', 'library'].flatMap((d) => [`app.doors.${d}.title`, `app.doors.${d}.description`]),
 ];
 
@@ -90,5 +101,17 @@ describe.each([['es', es], ['en', en]])('locale %s', (_name, dict) => {
   it('has every dynamic key family member', () => {
     const missing = dynamicKeys().filter((key) => !exists(dict, key));
     expect(missing).toEqual([]);
+  });
+});
+
+describe.each([['ca', ca], ['eu', eu], ['fr', fr], ['pt', pt], ['es', es], ['en', en]])('cropSimulation in %s', (_name, dict) => {
+  it('has the same keys as en', () => {
+    const flat = (n: unknown, p = ''): string[] =>
+      n && typeof n === 'object'
+        ? Object.entries(n as object).flatMap(([k, v]) => flat(v, p ? `${p}.${k}` : k))
+        : [p];
+    expect(flat(lookup(dict, 'cropSimulation')).sort()).toEqual(flat(lookup(en, 'cropSimulation')).sort());
+    expect(typeof lookup(dict, 'app.cards.cropSimulation.title')).toBe('string');
+    expect(lookup(dict, 'wofostSimulation')).toBeUndefined();
   });
 });

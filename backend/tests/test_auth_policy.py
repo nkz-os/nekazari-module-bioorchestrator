@@ -13,7 +13,7 @@ URN = "urn:ngsi-ld:AgriParcel:tenant-a:p1"
     ("/api/graph/agriculture/yield-potential", "GET", {"parcel_id": URN}),
     ("/api/graph/agriculture/assign-crop", "POST", {}),
     ("/api/graph/agriculture/crop-plan", "POST", {}),
-    ("/api/graph/agriculture/wofost-simulation", "POST", {"parcel_id": URN}),
+    ("/api/graph/agriculture/crop-simulation", "POST", {"parcel_id": URN}),
     (f"/api/graph/agriculture/crop-plan/{URN}/segments/1/advance", "POST", {}),
     ("/api/graph/agriculture/crop-plan", "GET", {"parcel_id": URN}),
 ])

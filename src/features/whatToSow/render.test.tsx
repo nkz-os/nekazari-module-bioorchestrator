@@ -113,5 +113,12 @@ describe('evidence notes (es)', () => {
     const html = card(r);
     expect(html).toContain('Ningún ensayo indica su régimen de riego');
     expect(html).not.toContain('Pocos ensayos');
+    expect(html).toContain('(pocos)');
+  });
+  it('the card marks few trials only from the backend flag, not its own threshold', () => {
+    const r = base('TRZAX');
+    r.yield = { ...r.yield, n_trials: 4 };
+    r.trust.data_gaps = [];
+    expect(card(r)).not.toContain('(pocos)');
   });
 });

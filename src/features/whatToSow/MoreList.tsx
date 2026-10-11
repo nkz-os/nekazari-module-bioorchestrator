@@ -3,7 +3,6 @@ import { useTranslation } from '@nekazari/sdk';
 import { Badge, Button, Checkbox, Stack, Tooltip } from '@nekazari/ui-kit';
 import type { Recommendation } from '../../types/recommend';
 import type { Intent } from './viewModel';
-import { MIN_TOP_TRIALS } from './viewModel';
 import { RangeBarView, levelOf, useCropName } from './RecommendationCard';
 import ForageNotice from './ForageNotice';
 
@@ -52,7 +51,7 @@ function MoreRow({ rec, scaleMax, compared, compareDisabled, onToggle, onViewFor
     <li className="flex flex-wrap items-center gap-3 py-2 border-b border-nkz-border">
       <span className="w-40 truncate text-nkz-sm font-medium text-nkz-text-primary">
         {name}
-        {rec.yield.n_trials < MIN_TOP_TRIALS && (
+        {rec.trust.data_gaps.includes('low_trial_count') && (
           <span className="ml-2"><Badge intent="warning">{t('whatToSow.more.fewTrials')}</Badge></span>
         )}
       </span>

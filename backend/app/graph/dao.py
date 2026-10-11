@@ -27,7 +27,7 @@ import os
 import re
 import time
 import weakref
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from typing import Any
 from urllib.parse import quote, unquote
 
@@ -5211,11 +5211,14 @@ class GraphDAO:
             finally:
                 await orion.close()
             # Prefer a running station: skip closed-day series entities
-            # (dailySummary true) whose et0 is a daily total (#1043).
+            # (dailySummary true) whose et0 is a daily total (#1043). The "-daily"
+            # id suffix stays as a legacy guard, as in the weather API.
             def _is_daily(e):
                 node = e.get("dailySummary")
-                return isinstance(node, dict) and node.get("value") is True
-            weather_entities = [e for e in weather_entities if not _is_daily(e)]
+                if isinstance(node, dict) and node.get("value") is True:
+                    return True
+                return str(e.get("id", "")).endswith("-daily")
+            weather_entities = [e for e in (weather_entities or []) if not _is_daily(e)]
             if not weather_entities:
                 logger.info("No WeatherObserved entities found for tenant %s", tenant_id)
                 return None
@@ -5517,162 +5520,131 @@ class GraphDAO:
             },
         }
 
-    async def run_wofost_simulation(
+    async def run_crop_simulation(
         self,
         parcel_id: str,
         tenant_id: str = "",
         crop_slug: str | None = None,
         sowing_date_str: str | None = None,
+        irrigation: str = "rainfed",
+        engine: str = "aquacrop",
+        today: date | None = None,
     ) -> dict:
-        """Run WOFOST crop simulation for a parcel with all inputs auto-fetched.
+        """Simulate the parcel's crop season with every input taken from real data.
 
-        Inputs resolved automatically:
-          1. Crop type from parcel's assigned AgriCrop (Orion-LD)
-          2. Sowing date from the platform's crop cycle (fallback: a completed
-             field-operations AgriParcelOperation(sowing))
-          3. Weather from timeseries-reader (backed by weather-worker)
-          4. Soil texture from Soil module → Saxton-Rawls pedotransfer
-          5. Crop parameters from Neo4j PhenologyParams + PCSE defaults
+        Crop: ``crop_slug`` or the parcel's ``hasAgriCrop``. Sowing date: the
+        argument, else the platform's current crop cycle, else the latest completed
+        sowing operation, else (only when the platform is unreachable) the parcel's
+        legacy ``cropSeasonStart``; a plan never counts. Soil: Soil module summary.
+        Weather: parcel daily series + self-hosted archive (see ``sim_weather``).
+        Raises ``SimulationError`` (422 input, 404 parcel, 503 upstream); nothing
+        is defaulted or synthesized.
         """
-        from datetime import date, datetime, timedelta, timezone
-
         import httpx
 
-        from app.services.pedotransfer import texture_to_hydraulic_props
-        from app.services.wofost_service import run_wofost_simulation
+        from app.services.crop_simulation import (
+            check_irrigation,
+            get_engine,
+            run_crop_simulation,
+        )
+        from app.services.sim_errors import SimulationError
+        from app.services.sim_inputs import SimInputError, resolve_sowing_date
 
-        # ── 1. Resolve crop type ──
+        today = today or datetime.now(tz=timezone.utc).date()
+        check_irrigation(irrigation)
+        sim_engine = get_engine(engine)
+
+        # ── 1. Parcel: crop and centroid ──
         orion = OrionClient(tenant_id)
         try:
-            parcel = await orion.get_entity(parcel_id)
-            crop_uri = _resolve_relationship(parcel, "hasAgriCrop") or _resolve_relationship(parcel, "refAgriCrop")
-            if not crop_slug and crop_uri:
-                from app.species_registry import resolve_species
-                crop_eppo = crop_uri.split(":")[-1] if crop_uri else "unknown"
-                crop_slug = resolve_species(crop_eppo) or crop_eppo.lower()
-            if not crop_slug:
-                return {"error": "No crop assigned to parcel and no crop_slug provided"}
+            try:
+                parcel = await orion.get_entity(parcel_id)
+            except httpx.HTTPStatusError as e:
+                if e.response.status_code == 404:
+                    raise SimulationError("parcel_not_found", f"Parcel not found: {parcel_id}", 404) from e
+                logger.error("crop_simulation_parcel_failed parcel=%s tenant=%s status=%s",
+                             parcel_id, tenant_id, e.response.status_code)
+                raise SimulationError("parcel_unavailable", "The parcel could not be read.", 503) from e
+            except httpx.HTTPError as e:
+                logger.error("crop_simulation_parcel_failed parcel=%s tenant=%s error=%s",
+                             parcel_id, tenant_id, type(e).__name__)
+                raise SimulationError("parcel_unavailable", "The parcel could not be read.", 503) from e
         finally:
             await orion.close()
 
-        # ── 2. Resolve sowing date ──
-        # The platform's resolved crop cycle first; the operation scan is only the fallback and
-        # reads what happened (a completed sowing's endedAt), never a planned date.
+        identifier = crop_slug
+        if not identifier:
+            crop_uri = _resolve_relationship(parcel, "hasAgriCrop") or _resolve_relationship(parcel, "refAgriCrop")
+            if not crop_uri:
+                raise SimulationError(
+                    "crop_missing", "No crop is assigned to the parcel and no crop_slug was provided.")
+            identifier = crop_uri.split(":")[-1]
+        crop = sim_engine.resolve_crop(identifier)
+
+        location = parcel.get("location")
+        point = None
+        if isinstance(location, dict):
+            val = location.get("value", location)
+            if isinstance(val, dict):
+                point = _geometry_centroid(val.get("coordinates"))
+        if point is None:
+            raise SimulationError("parcel_location_missing", "The parcel has no usable geometry.")
+        lon, lat = point
+
+        # ── 2. Sowing date: explicit, else the platform's crop cycle, else a completed sowing ──
+        # What happened counts, never a plan. The parcel's legacy season copy is used only when
+        # the platform is unreachable: its "no current cycle" is an answer, not an outage.
         sowing_provenance: str | None = None
+        cycle_start: dict = {}
         cycles: dict | None = None
         if not sowing_date_str:
             cycles = await fetch_crop_cycles(parcel_id, tenant_id)
             cycle_start = (((cycles or {}).get("current") or {}).get("start")) or {}
-            if cycle_start.get("date"):
-                sowing_date_str = cycle_start["date"][:10]
-                sowing_provenance = cycle_start.get("provenance")
-
-        if not sowing_date_str:
+        if sowing_date_str or cycle_start.get("date"):
+            raw = sowing_date_str or cycle_start["date"]
             try:
-                orion2 = OrionClient(tenant_id)
+                sowing_date = date.fromisoformat(raw[:10])
+            except ValueError as e:
+                raise SimulationError(
+                    "invalid_sowing_date", f"Invalid sowing date: {raw} (use YYYY-MM-DD).") from e
+            if sowing_date_str:
+                sowing_source = "request"
+            else:
+                sowing_source, sowing_provenance = "crop_cycle", cycle_start.get("provenance")
+        else:
+            orion2 = OrionClient(tenant_id)
+            try:
                 ops = await orion2.query_entities(
                     type="AgriParcelOperation",
                     q=f'hasAgriParcel=="{parcel_id}"|refAgriParcel=="{parcel_id}"',
-                    limit=20,
+                    limit=200,
                 )
+            except Exception as e:
+                logger.error("crop_simulation_operations_failed parcel=%s tenant=%s error=%s",
+                             parcel_id, tenant_id, type(e).__name__)
+                raise SimulationError(
+                    "operations_unavailable", "The sowing operations could not be read.", 503) from e
+            finally:
                 await orion2.close()
+            try:
+                sowing_date = resolve_sowing_date(ops if isinstance(ops, list) else [], today)
+                sowing_source, sowing_provenance = "field_operations", "actual"
+            except SimInputError as e:
+                legacy = _extract_prop_value(parcel.get("cropSeasonStart")) if cycles is None else None
+                try:
+                    sowing_date = date.fromisoformat(str(legacy)[:10]) if legacy else None
+                except ValueError:
+                    sowing_date = None
+                if sowing_date is None:
+                    raise SimulationError(
+                        "sowing_date_missing",
+                        "No sowing date available: provide one or record a sowing operation.") from e
+                sowing_source = "legacy_parcel_season"
 
-                if ops and isinstance(ops, list):
-                    for op in ops:
-                        op_type = _extract_prop_value(op.get("operationType")) or ""
-                        if op_type.lower() == "sowing" and _extract_prop_value(op.get("status")) == "completed":
-                            done_date = _extract_prop_value(op.get("endedAt")) or _extract_prop_value(op.get("startedAt")) or ""
-                            if done_date:
-                                sowing_date_str = done_date[:10]
-                                sowing_provenance = "actual"
-                                break
-            except Exception:  # noqa: BLE001,S110
-                pass
-
-            if not sowing_date_str and cycles is None:
-                # Platform unreachable: the parcel's legacy season copy is all that is left. When it
-                # answered with no current cycle, a planned (next) start is not a sowing.
-                season_start = _extract_prop_value(parcel.get("cropSeasonStart")) or ""
-                if season_start:
-                    sowing_date_str = season_start[:10]
-
-        if not sowing_date_str:
-            return {"error": "No sowing date available — provide manually or assign a crop with sowing operation"}
-
-        try:
-            sowing_date = date.fromisoformat(sowing_date_str)
-        except ValueError:
-            return {"error": f"Invalid sowing date: {sowing_date_str}"}
-
-        # ── 3. Fetch weather data from timeseries-reader ──
-        today = datetime.now(tz=timezone.utc).date()
-        weather_data = []
-        try:
-            async with httpx.AsyncClient(timeout=30) as client:
-                resp = await client.get(
-                    f"{TIMESERIES_READER_URL}/api/weather/parcel/{parcel_id}/daily",
-                    params={"start": sowing_date.isoformat(), "end": today.isoformat()},
-                    headers={"X-Tenant-ID": tenant_id},
-                )
-                if resp.status_code == 200:
-                    raw = resp.json()
-                    if isinstance(raw, list):
-                        weather_data = raw
-        except Exception as e:  # noqa: BLE001
-            logger.warning("Failed to fetch weather: %s — using defaults", e)
-
-        if not weather_data:
-            # Build synthetic weather from defaults (20°C, 3.5mm ET0/day, 200W/m²)
-            days = (today - sowing_date).days + 180  # project 6 months forward
-            for i in range(days):
-                d = sowing_date + timedelta(days=i)
-                weather_data.append({
-                    "date": d.isoformat(),
-                    "tmin": 12, "tmax": 24, "precip": 2.0,
-                    "radiation_w_m2": 250, "wind_speed_ms": 2.0,
-                    "vapour_pressure_kpa": 1.5, "eto": 3.5,
-                })
-
-        # ── 4. Fetch soil and compute pedotransfer ──
-        from app.services.soil_client import get_parcel_soil_properties
-        soil_actual = await get_parcel_soil_properties(parcel_id, tenant_id)
-
-        sand_pct = 40.0
-        clay_pct = 25.0
-        if soil_actual.get("data_available"):
-            sand_pct = float(soil_actual.get("sand_pct", 40))
-            clay_pct = float(soil_actual.get("clay_pct", 25))
-
-        soil_props = texture_to_hydraulic_props(sand_pct, clay_pct)
-
-        # ── 5. Fetch crop parameters from graph ──
-        graph_params = {}
-        try:
-            phen = await self.get_phenology_params(species=crop_slug)
-            if phen:
-                graph_params["tsum1"] = phen.get("stage_gdd_max") or phen.get("gdd_to_anthesis")
-                graph_params["tsum2"] = phen.get("gdd_to_maturity")
-                graph_params["tbase"] = phen.get("base_temp")
-        except Exception:  # noqa: BLE001,S110
-            pass
-
-        # ── 6. Run simulation ──
-        result = run_wofost_simulation(
-            crop_slug=crop_slug,
-            sowing_date=sowing_date,
-            weather_data=weather_data,
-            soil_hydraulic_props=soil_props,
-            crop_params_override=graph_params if graph_params else None,
-        )
-
-        result["parcel_id"] = parcel_id
-        result["crop_slug"] = crop_slug
-        result["sowing_date"] = sowing_date.isoformat()
-        result["sowing_provenance"] = sowing_provenance
-        result["soil_inputs"] = {"sand_pct": sand_pct, "clay_pct": clay_pct}
-        result["soil_hydraulic"] = soil_props
-        result["weather_days_fetched"] = len(weather_data)
-        return result
+        return await run_crop_simulation(
+            engine_name=engine, parcel_id=parcel_id, tenant_id=tenant_id, crop=crop,
+            sowing_date=sowing_date, sowing_source=sowing_source, irrigation=irrigation,
+            lat=lat, lon=lon, today=today, sowing_provenance=sowing_provenance)
 
     async def get_alerts(self, parcel_id: str, limit: int = 5, max_age_days: int = 7) -> dict:
         """Fetch recent alerts for a parcel from Redis Streams crop:events.
