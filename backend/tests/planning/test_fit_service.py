@@ -74,3 +74,25 @@ async def test_rotation_rules_with_history_are_applied(monkeypatch):
     barley = next(s for s in out["species"] if s["species"] == "barley")
     assert "rotation_restriction" in {r["code"] for r in wheat["reasons"]}
     assert not {"rotation_unknown", "rotation_restriction"} & {r["code"] for r in barley["reasons"]}
+
+
+async def test_unplaceable_cycle_makes_rotation_unknown_even_with_rules(monkeypatch):
+    # A cycle whose species or campaign cannot be placed hides a possible restriction.
+    from app.planning.rotation import Constraint
+
+    ref = Reference(tolerances={}, trial_eppo=frozenset({"TRZAX"}), constraints=(
+        Constraint("wheat", "wheat", "restriction", 1, "disease carry-over", "src"),))
+    history = {"cycles": [
+        {"crop_id": "c1", "species": "TRZAX", "status": "harvested", "campaign_label": 2026,
+         "start": {"date": "2025-11-02", "provenance": "actual"}, "end": {"date": "2026-07-01"}},
+        {"crop_id": "c2", "species": "Unobtainium plantae", "status": "harvested", "campaign_label": 2025,
+         "start": {"date": "2024-11-02", "provenance": "actual"}, "end": {"date": "2025-07-01"}},
+    ]}
+    dao = AsyncMock()
+    dao.get_parcel_environment.return_value = BARE_ENV
+    monkeypatch.setattr(service, "fetch_crop_cycles", AsyncMock(return_value=history))
+    monkeypatch.setattr(service, "load_reference", AsyncMock(return_value=ref))
+    out = await service.parcel_fit(**_fit_args(dao))
+    for s in out["species"]:
+        codes = {r["code"] for r in s["reasons"]}
+        assert "rotation_unknown" in codes and "rotation_restriction" not in codes

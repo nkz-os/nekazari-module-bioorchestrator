@@ -36,3 +36,13 @@ def test_fit_route_404_for_unknown_parcel(client, monkeypatch):
 def test_fit_route_rejects_bad_regime(client):
     r = client.get("/api/graph/planning/parcels/p1/fit", params={"campaign": 2027, "regime": "drip"})
     assert r.status_code == 422
+
+
+def test_fit_route_requires_a_verified_tenant(client, monkeypatch):
+    # The conftest default disables auth; this test runs the real production branch.
+    monkeypatch.setenv("AUTH_DISABLED", "false")
+    called = AsyncMock(return_value=FIT)
+    monkeypatch.setattr(planning_api, "parcel_fit", called)
+    r = client.get("/api/graph/planning/parcels/urn:ngsi-ld:AgriParcel:t:p1/fit", params={"campaign": 2027})
+    assert r.status_code == 401
+    called.assert_not_called()

@@ -1,4 +1,10 @@
-from app.planning.history import cell_from_cycle, cycle_campaigns, past_crops, plain
+from app.planning.history import (
+    cell_from_cycle,
+    cycle_campaigns,
+    history_complete,
+    past_crops,
+    plain,
+)
 
 PAYLOAD = {"cycles": [
     {"crop_id": "c1", "role": "main_crop", "species": "TRZAX", "status": "harvested",
@@ -37,3 +43,13 @@ def test_plain_unwraps_dates_and_properties():
     assert plain({"@type": "Date", "@value": "2027-04-20"}) == "2027-04-20"
     assert plain({"type": "Property", "value": "x"}) == "x"
     assert plain("y") == "y"
+
+
+def test_history_is_complete_only_when_every_cycle_is_placed():
+    assert history_complete(PAYLOAD) and history_complete({"cycles": [ALFALFA]})
+    assert history_complete({"cycles": []})  # no cycles: a known, empty history
+    unknown_species = {**PAYLOAD["cycles"][0], "species": "Unobtainium plantae"}
+    assert not history_complete({"cycles": [PAYLOAD["cycles"][0], unknown_species]})
+    no_campaign = {k: v for k, v in PAYLOAD["cycles"][0].items() if k != "campaign_label"}
+    assert not history_complete({"cycles": [no_campaign]})
+    assert not history_complete(None)

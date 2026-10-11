@@ -80,6 +80,17 @@ def past_crops(payload: dict | None, before_campaign: int) -> list[PastCrop]:
     return out
 
 
+def history_complete(payload: dict | None) -> bool:
+    """True only when every cycle can be placed: a known species and a known campaign.
+
+    A cycle that cannot be placed may hide a rotation restriction, so rotation rules
+    must not be read as "no restriction" from a partial history.
+    """
+    if payload is None:
+        return False
+    return all(species_slug(c.get("species")) and first_campaign(c) is not None for c in cycles_of(payload))
+
+
 def cell_from_cycle(cycle: dict, crop: dict | None) -> dict:
     slug = species_slug(cycle.get("species"))
     info = get_species_info(slug) if slug else None

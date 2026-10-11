@@ -14,7 +14,7 @@ from app.planning.fit import (
     verdict_of,
     water_reasons,
 )
-from app.planning.history import past_crops
+from app.planning.history import history_complete, past_crops
 from app.planning.reference import load_reference
 from app.planning.rotation import rotation_reasons
 from app.services.crop_cycles_client import fetch_crop_cycles
@@ -99,8 +99,9 @@ async def parcel_fit(*, dao, source: KnowledgeSource, parcel_id: str, tenant_id:
                                  tol.frost_damage_c if tol else None)
         season_days = (CROP_REFERENCE.get(catalog_code(eppo)) or {}).get("growing_season_days") if eppo else None
         reasons += water_reasons(regime_used, climate, season_days)
-        # No history, or no rotation rules in the graph at all, is "unknown", never "no restriction".
-        if history is None or not ref.constraints:
+        # No history, a partial one (a cycle that cannot be placed) or no rotation rules in the graph
+        # at all is "unknown", never "no restriction".
+        if history is None or not ref.constraints or not history_complete(cycles):
             reasons.append(ROTATION_UNKNOWN)
         else:
             reasons += rotation_reasons(history, slug, campaign, ref.constraints)
