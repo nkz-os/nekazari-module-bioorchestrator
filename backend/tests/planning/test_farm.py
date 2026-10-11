@@ -147,3 +147,16 @@ def test_a_lone_cover_crop_does_not_decide_the_campaign():
     only_cover = farm_payload([parcel], [], {}, {parcel["id"]: {"cycles": [cover]}}, 2027, [])
     both = farm_payload([parcel], [], {}, {parcel["id"]: {"cycles": [cover, main]}}, 2027, [])
     assert only_cover["summary"]["undecided"] == 1 and both["summary"]["undecided"] == 0
+
+
+@pytest.mark.parametrize("word", ["sin riego", "non-irrigated", "no irrigation", "not irrigated", "no regadío",
+                                  "sin_riego", "nonirrigated", "unirrigated", "sense regadiu", "without irrigation",
+                                  "Non-Irrigated", "no_drip"])
+def test_negated_irrigation_text_is_rainfed(word):
+    assert parcel_regime({"irrigationSystemType": word}, [])[0] == "secano"
+
+
+@pytest.mark.parametrize("word, expected", [("riego por goteo", "regadío"), ("drip", "regadío"),
+                                            ("regadío", "regadío"), ("irrigated", "regadío"), ("something", None)])
+def test_affirmed_irrigation_text_is_unchanged_by_the_negation_rule(word, expected):
+    assert parcel_regime({"irrigationSystemType": word}, [])[0] == expected

@@ -28,6 +28,10 @@ ROLLOVER_MONTH = 7
 _IRRIGATED_WORDS = ("drip", "sprinkler", "flood", "pivot", "irrigat", "regad", "furrow", "gravity", "goteo",
                     "aspersi", "surco", "gravedad", "riego")
 _RAINFED_WORDS = frozenset({"secano", "rainfed", "dryland", "none"})
+# A negation next to an irrigated stem ("sin riego", "non-irrigated") means rainfed: reading it as
+# irrigated would skip the rainfed water check, the unsafe direction.
+_NEGATIONS = frozenset({"sin", "sense", "no", "non", "not", "without", "un"})
+_NEGATING_PREFIXES = ("non", "un")  # glued to a stem: "nonirrigated", "unirrigated"
 
 
 def default_target_campaign(today: date) -> int:
@@ -38,12 +42,24 @@ def campaign_columns(target: int) -> list[int]:
     return [target - 3, target - 2, target - 1, target]
 
 
+def _negates_irrigation(tokens: list[str]) -> bool:
+    return any(
+        tok in _NEGATIONS
+        or any(tok.startswith(prefix) and tok[len(prefix):].startswith(_IRRIGATED_WORDS)
+               for prefix in _NEGATING_PREFIXES)
+        for tok in tokens)
+
+
 def _regime_word(value) -> str | None:
-    text = str(plain(value) or "").lower().strip()
+    # Underscores and hyphens separate words ("sin_riego", "non-irrigated").
+    text = str(plain(value) or "").lower().replace("_", " ").replace("-", " ").strip()
     if not text:
         return None
+    tokens = [t for t in re.split(r"\W+", text) if t]
     irrigated = any(w in text for w in _IRRIGATED_WORDS)
-    rainfed = bool(_RAINFED_WORDS & set(re.split(r"\W+", text)))
+    if irrigated and _negates_irrigation(tokens):
+        return "secano"
+    rainfed = bool(_RAINFED_WORDS & set(tokens))
     if irrigated == rainfed:  # neither, or both: a contradiction is as unknown as silence
         return None
     return "regadío" if irrigated else "secano"
