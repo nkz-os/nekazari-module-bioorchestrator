@@ -19,6 +19,13 @@ units:
   - {code: d, ucum: d, name: day, dimension: time, factor: "1", aliases: [días, dias, days]}
   - {code: /m2, ucum: /m2, name: per square metre, dimension: count_per_area, factor: "1", aliases: [plantas/m2, m-2]}
   - {code: "1", ucum: "1", name: count (dimensionless), dimension: count, factor: "1", aliases: [count]}
+  - {code: s, ucum: s, name: second (falling number), dimension: duration_s, factor: "1", aliases: [segundos]}
+  - {code: mg/kg, ucum: mg/kg, name: milligram per kilogram (ppm by mass), dimension: mass_fraction, factor: "1", aliases: [ppm]}
+  # Units fixed by a test method, for values the reports print without a unit (variables.yaml says which).
+  - {code: 10-4 J, ucum: "10*-4.J", name: alveograph deformation energy W (1e-4 joule), dimension: alveograph_energy, factor: "1"}
+  - {code: mmH2O, ucum: "mm[H2O]", name: millimetre of water (alveograph tenacity P), dimension: pressure_head, factor: "1"}
+  - {code: mm, ucum: mm, name: millimetre, dimension: length, factor: "0.1"}
+  - {code: mL, ucum: mL, name: millilitre (sedimentation volume), dimension: volume, factor: "1"}
 source_units:
-  GENVCE: {kg/ha: kg/ha, "%": "%", cm: cm, g: g, kg/hL: kg/hL, kg/hl: kg/hL, días: d, plantas/m2: /m2}
+  GENVCE: {kg/ha: kg/ha, "%": "%", cm: cm, g: g, kg/hL: kg/hL, kg/hl: kg/hL, días: d, plantas/m2: /m2, s: s, segundos: s, ppm: mg/kg}
   CREA: {q/ha: dt/ha, "%": "%", cm: cm, kg/hl: kg/hL}

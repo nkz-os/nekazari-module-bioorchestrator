@@ -153,3 +153,10 @@ def get_crop_group(slug: str) -> str | None:
         _load()
     data = _registry.get(slug)
     return data.get("crop_group") if data else None
+
+
+def get_lifecycle(slug: str) -> str | None:
+    """Return "annual" or "perennial" for a canonical species slug, or None."""
+    info = get_species_info(slug)
+    lc = info.get("lifecycle") if info else None
+    return lc if lc in ("annual", "perennial") else None

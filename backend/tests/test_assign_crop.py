@@ -48,6 +48,9 @@ async def test_assign_crop_creates_entity():
         assert len(parcel_patch_call) == 1
         patch_body = parcel_patch_call[0][0][1]
         assert patch_body["hasAgriCrop"]["object"] == result["entity_id"]
+        # lifecycle is stored on the AgriCrop; the parcel no longer carries a copy of the season
+        assert create_call["cropLifecycle"] == {"type": "Property", "value": "annual"}
+        assert "cropSeasonStart" not in patch_body and "cropSeasonEnd" not in patch_body
 
 
 @pytest.mark.asyncio
@@ -88,7 +91,11 @@ async def test_assign_crop_marks_old_harvested():
 
 @pytest.mark.asyncio
 async def test_assign_crop_409_upserts():
-    """If AgriCrop entity already exists (409), do PATCH instead of failing."""
+    """If AgriCrop already exists (409), APPEND attrs (POST /attrs), never PATCH.
+
+    PATCH /attrs only updates attributes the entity already has, so a re-assignment
+    would silently drop an attribute the existing AgriCrop lacks (e.g. cropLifecycle).
+    """
     mock_driver = AsyncMock()
     dao = GraphDAO(mock_driver)
 
@@ -119,8 +126,10 @@ async def test_assign_crop_409_upserts():
         )
 
         assert result["status"] == "assigned"
-        # Should have called update_entity_attrs for the existing entity
-        existing_crop_calls = [c for c in instance.update_entity_attrs.call_args_list
+        # The existing crop is written with append, not PATCH
+        assert not [c for c in instance.update_entity_attrs.call_args_list
+                    if c[0][0] == result["entity_id"]]
+        existing_crop_calls = [c for c in instance.append_entity_attrs.call_args_list
                               if c[0][0] == result["entity_id"]]
         assert len(existing_crop_calls) == 1
         patch_body = existing_crop_calls[0][0][1]
@@ -128,6 +137,7 @@ async def test_assign_crop_409_upserts():
         assert "type" not in patch_body
         assert "dateCreated" not in patch_body
         assert patch_body["species"]["value"] == "TRZAX"
+        assert patch_body["cropLifecycle"] == {"type": "Property", "value": "annual"}
         MockClient.assert_called_once_with(tenant_id="test-tenant")
 
 
@@ -210,6 +220,9 @@ async def test_clear_crop_assignment_uses_sdk_and_tenant():
         def __init__(self, tenant_id):
             self.tenant_id = tenant_id
 
+        async def get_entity(self, entity_id):
+            return {"id": entity_id}
+
         async def update_entity_attrs(self, entity_id, attrs):
             nonlocal captured_entity_id, captured_attrs
             captured_entity_id = entity_id
@@ -246,6 +259,9 @@ async def test_clear_crop_assignment_raises_on_orion_error():
         def __init__(self, tenant_id):
             pass
 
+        async def get_entity(self, entity_id):
+            return {"id": entity_id}
+
         async def update_entity_attrs(self, entity_id, attrs):
             raise RuntimeError("orion 400")
 
@@ -261,6 +277,77 @@ async def test_clear_crop_assignment_raises_on_orion_error():
             )
 
     assert close_called, "close() must still be called even when update_entity_attrs raises"
+
+
+class _ClearFakeOrion:
+    """Parcel pointing at a crop; records writes in order."""
+
+    def __init__(self, parcel):
+        self.parcel = parcel
+        self.writes = []
+
+    async def get_entity(self, entity_id):
+        return self.parcel
+
+    async def update_entity_attrs(self, entity_id, attrs):
+        self.writes.append((entity_id, attrs))
+
+    async def append_entity_attrs(self, entity_id, attrs):
+        self.writes.append((entity_id, attrs))
+
+    async def close(self):
+        pass
+
+
+PARCEL_URN = "urn:ngsi-ld:AgriParcel:test-parcel"
+CROP_URN = "urn:ngsi-ld:AgriCrop:acme:test-parcel:2026"
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("rel", ["hasAgriCrop", "refAgriCrop"])
+async def test_clear_crop_assignment_cancels_the_crop_it_unlinks(rel):
+    """An AgriCrop left active would be re-linked by the platform reconciler."""
+    dao = GraphDAO(AsyncMock())
+    fake = _ClearFakeOrion({"id": PARCEL_URN, rel: {"type": "Relationship", "object": CROP_URN}})
+
+    with patch("app.graph.dao.OrionClient", side_effect=lambda t: fake):
+        result = await dao.clear_crop_assignment(parcel_id=PARCEL_URN, tenant_id="acme")
+
+    assert result == {"status": "cleared", "parcel_id": PARCEL_URN}
+    crop_writes = [attrs for eid, attrs in fake.writes if eid == CROP_URN]
+    assert crop_writes == [{"status": {"type": "Property", "value": "cancelled"}}]
+    # the crop is cancelled before the parcel is unlinked, so a failed unlink can be retried
+    assert [eid for eid, _ in fake.writes] == [CROP_URN, PARCEL_URN]
+
+
+@pytest.mark.asyncio
+async def test_clear_crop_assignment_without_crop_only_clears_parcel():
+    dao = GraphDAO(AsyncMock())
+    fake = _ClearFakeOrion({"id": PARCEL_URN})
+
+    with patch("app.graph.dao.OrionClient", side_effect=lambda t: fake):
+        await dao.clear_crop_assignment(parcel_id=PARCEL_URN, tenant_id="acme")
+
+    assert [eid for eid, _ in fake.writes] == [PARCEL_URN]
+
+
+@pytest.mark.asyncio
+async def test_clear_crop_assignment_tolerates_a_linked_crop_that_no_longer_exists():
+    import httpx
+
+    class _Gone(_ClearFakeOrion):
+        async def append_entity_attrs(self, entity_id, attrs):
+            request = httpx.Request("POST", "http://orion/attrs")
+            raise httpx.HTTPStatusError("not found", request=request, response=httpx.Response(404, request=request))
+
+    dao = GraphDAO(AsyncMock())
+    fake = _Gone({"id": PARCEL_URN, "hasAgriCrop": {"type": "Relationship", "object": CROP_URN}})
+
+    with patch("app.graph.dao.OrionClient", side_effect=lambda t: fake):
+        result = await dao.clear_crop_assignment(parcel_id=PARCEL_URN, tenant_id="acme")
+
+    assert result["status"] == "cleared"
+    assert [eid for eid, _ in fake.writes] == [PARCEL_URN]
 
 
 @pytest.mark.asyncio

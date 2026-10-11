@@ -41,7 +41,7 @@ jobs:
       - name: Lint (ruff)
         working-directory: backend
         run: |
-          pip install ruff
+          pip install ruff==0.16.2
           ruff check app/ tests/ scripts/
 
       - name: Run unit tests

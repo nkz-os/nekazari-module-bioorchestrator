@@ -232,6 +232,7 @@ def test_ucum_spellings_are_pinned(reg):
     assert {u.code: u.ucum for u in reg.units} == {
         "kg/ha": "kg/har", "t/ha": "t/har", "dt/ha": "dt/har", "%": "%", "kg/hL": "kg/hL",
         "g": "g", "cm": "cm", "d": "d", "/m2": "/m2", "1": "1",
+        "s": "s", "mg/kg": "mg/kg", "10-4 J": "10*-4.J", "mmH2O": "mm[H2O]", "mm": "mm", "mL": "mL",
     }
 
 

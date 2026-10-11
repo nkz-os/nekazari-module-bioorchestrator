@@ -33,12 +33,19 @@ def prop(v):
 
 def test_sowing_suggested_excluded():
     ops = [op(status="suggested", plannedStartAt=prop("2026-05-01T00:00:00Z"))]
-    with pytest.raises(SimInputError, match="no sowing operation"):
+    with pytest.raises(SimInputError, match="no completed sowing"):
         resolve_sowing_date(ops, TODAY)
 
 
-def test_sowing_planned_date_wrapped_form():
+def test_sowing_planned_operation_is_not_a_sowing_date():
+    # what happened counts, never a plan (the platform's crop-cycle rule)
     ops = [op(status="planned", plannedDate=dt("2026-04-03T08:00:00Z"))]
+    with pytest.raises(SimInputError, match="no completed sowing"):
+        resolve_sowing_date(ops, TODAY)
+
+
+def test_sowing_completed_wrapped_form():
+    ops = [op(endedAt=dt("2026-04-03T08:00:00Z"))]
     assert resolve_sowing_date(ops, TODAY) == date(2026, 4, 3)
 
 
@@ -47,13 +54,14 @@ def test_sowing_started_at_plain_and_case_insensitive():
     assert resolve_sowing_date(ops, TODAY) == date(2026, 3, 2)
 
 
-def test_sowing_planned_start_at_accepted_when_not_suggested():
-    ops = [op(status="planned", plannedStartAt=prop("2026-02-01T00:00:00Z"))]
-    assert resolve_sowing_date(ops, TODAY) == date(2026, 2, 1)
+def test_sowing_started_but_not_completed_is_not_a_sowing_date():
+    ops = [op(status="incomplete", startedAt=prop("2026-02-01T00:00:00Z"))]
+    with pytest.raises(SimInputError, match="no completed sowing"):
+        resolve_sowing_date(ops, TODAY)
 
 
 def test_sowing_future_ignored():
-    ops = [op(plannedDate=dt("2026-12-01T00:00:00Z")), op(startedAt=prop("2026-03-01"))]
+    ops = [op(endedAt=dt("2026-12-01T00:00:00Z")), op(startedAt=prop("2026-03-01"))]
     assert resolve_sowing_date(ops, TODAY) == date(2026, 3, 1)
 
 
@@ -69,12 +77,13 @@ def test_sowing_ignores_other_operation_types():
 
 
 def test_sowing_none():
-    with pytest.raises(SimInputError, match="no sowing operation"):
+    with pytest.raises(SimInputError, match="no completed sowing"):
         resolve_sowing_date([], TODAY)
 
 
-def test_sowing_started_at_wins_over_planned_in_same_op():
-    ops = [op(startedAt=prop("2026-03-05"), plannedDate=dt("2026-03-01T00:00:00Z"))]
+def test_sowing_ended_at_wins_over_started_at_and_plans():
+    ops = [op(startedAt=prop("2026-03-01"), plannedStartAt=prop("2026-02-10T00:00:00Z"),
+              endedAt=prop("2026-03-05T10:00:00Z"))]
     assert resolve_sowing_date(ops, TODAY) == date(2026, 3, 5)
 
 

@@ -31,7 +31,7 @@ def _sowing(day="1990-10-01", status="completed"):
     return {"id": "urn:ngsi-ld:AgriParcelOperation:s", "type": "AgriParcelOperation",
             "operationType": {"type": "Property", "value": "sowing"},
             "status": {"type": "Property", "value": status},
-            "plannedDate": {"type": "Property", "value": {"@type": "DateTime", "@value": f"{day}T00:00:00Z"}}}
+            "endedAt": {"type": "Property", "value": {"@type": "DateTime", "@value": f"{day}T00:00:00Z"}}}
 
 
 SUMMARY = {"horizons": [
@@ -249,7 +249,7 @@ def test_in_season_response_shape(mock_driver, tunis):
     assert [s["source"] for s in w["segments"]] == ["archive", "parcel_daily"]
     assert w["segments"][0]["end"] == "1990-05-31"
     assert len(res["inputs"]["soil"]["layers"]) == 2
-    assert res["inputs"]["sowing"] == {"source": "field_operations"}
+    assert res["inputs"]["sowing"] == {"source": "field_operations", "provenance": "actual"}
     json.dumps(res)  # response must be serialisable
     print(json.dumps({k: v for k, v in res.items() if k != "daily"}, indent=1))
 
@@ -261,7 +261,7 @@ def test_complete_season_has_no_ensemble_and_never_loads_climatology(mock_driver
     assert res["status"] == "complete" and res["ensemble"] is None
     assert isinstance(res["yield_t_ha"], float) and isinstance(res["potential_yield_t_ha"], float)
     assert res["yield_t_ha"] <= res["potential_yield_t_ha"] + 1e-9
-    assert res["inputs"]["sowing"] == {"source": "request"}
+    assert res["inputs"]["sowing"] == {"source": "request", "provenance": None}
     assert res["inputs"]["weather"]["source"] == "parcel_daily"
     assert not any("archive.test" in u for u in net.urls)
 

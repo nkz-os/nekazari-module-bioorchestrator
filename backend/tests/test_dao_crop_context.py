@@ -282,3 +282,62 @@ def test_get_crop_context_soil_suitability_uses_c5_verdict_envelope(mock_driver)
     assert "verdict" in suit
     assert "confidence" in suit
     assert "overall" not in suit or suit.get("overall") is None
+
+
+# ---------------------------------------------------------------------------
+# Season window: the platform's crop cycle wins; the parcel's legacy copy is the fallback
+# ---------------------------------------------------------------------------
+
+def _context(mock_driver, cycles):
+    dao = GraphDAO(mock_driver)
+    with patch("app.graph.dao.OrionClient", _FakeOrionClient), \
+         patch("app.graph.dao.fetch_crop_cycles", AsyncMock(return_value=cycles)) as fetch, \
+         patch.object(GraphDAO, "get_phenology_params", AsyncMock(return_value=None)), \
+         patch.object(GraphDAO, "get_heat_tolerance", AsyncMock(return_value=None)), \
+         patch.object(GraphDAO, "get_soil_suitability", AsyncMock(return_value=None)), \
+         patch("app.services.soil_client.get_parcel_soil_properties", AsyncMock(return_value={"data_available": False})):
+        result = asyncio.run(dao.get_crop_context(PARCEL_ID, tenant_id=TENANT))
+    return result, fetch
+
+
+def test_crop_context_season_from_platform_cycle(mock_driver):
+    cycles = {"current": {
+        "start": {"date": "2026-03-12", "provenance": "actual"},
+        "end": {"date": "2026-11-30", "provenance": "planned"},
+    }}
+
+    ctx, fetch = _context(mock_driver, cycles)
+
+    assert ctx["season"]["start"] == "2026-03-12"
+    assert ctx["season"]["end"] == "2026-11-30"
+    assert ctx["season"]["start_provenance"] == "actual"
+    fetch.assert_awaited_once_with(PARCEL_ID, TENANT)
+
+
+def test_crop_context_season_falls_back_to_parcel_copy(mock_driver):
+    ctx, _ = _context(mock_driver, None)
+
+    assert ctx["season"]["start"] == "2025-10-01"
+    assert ctx["season"]["end"] == "2026-07-01"
+    assert ctx["season"]["start_provenance"] is None
+
+
+def test_crop_context_platform_answered_without_current_uses_next_cycle_as_planned(mock_driver):
+    cycles = {"current": None, "previous": None, "next": {
+        "start": {"date": "2027-03-10", "provenance": "planned"},
+        "end": {"date": "2027-09-30", "provenance": "planned"},
+    }}
+
+    ctx, _ = _context(mock_driver, cycles)
+
+    assert ctx["season"]["start"] == "2027-03-10"
+    assert ctx["season"]["end"] == "2027-09-30"
+    assert ctx["season"]["start_provenance"] == "planned"
+
+
+def test_crop_context_platform_answered_with_no_cycle_does_not_fall_back_to_parcel_copy(mock_driver):
+    ctx, _ = _context(mock_driver, {"current": None, "previous": None, "next": None})
+
+    assert ctx["season"]["start"] is None
+    assert ctx["season"]["end"] is None
+    assert ctx["season"]["start_provenance"] is None

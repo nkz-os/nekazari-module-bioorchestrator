@@ -39,6 +39,7 @@ from app.core.config import settings
 from app.graph import agroclimatic, zone_match
 from app.graph import evidence_policy as ep
 from app.services.country_lookup import country_at
+from app.services.crop_cycles_client import fetch_crop_cycles
 from app.services.soil_client import assess_soil_suitability, get_parcel_soil_properties
 from app.species_registry import (
     CATALOG_SIBLING_CODES,
@@ -3461,6 +3462,7 @@ class GraphDAO:
         # crop-name endpoint defaults to Spanish, so prefer es → en → scientific.
         from app.species_registry import (
             get_crop_group,
+            get_lifecycle,
             get_species_info,
             resolve_species,
         )
@@ -3471,6 +3473,7 @@ class GraphDAO:
         _common = (_info.get("common_names") if _info else None) or {}
         crop_scientific = _info.get("scientific_name") if _info else None
         crop_name_label = _common.get("es") or _common.get("en") or crop_scientific
+        crop_lifecycle = get_lifecycle(_slug) if _slug else None
 
         # Build entity ID for the per-parcel AgriCrop
         new_crop_id = f"urn:ngsi-ld:AgriCrop:{tenant_id}:{parcel_short}:{season_year}"
@@ -3533,6 +3536,8 @@ class GraphDAO:
                 "type": "Property",
                 "value": crop_scientific,
             }
+        if crop_lifecycle:
+            agri_crop_body["cropLifecycle"] = {"type": "Property", "value": crop_lifecycle}
 
         client = OrionClient(tenant_id=tenant_id)
         try:
@@ -3541,8 +3546,9 @@ class GraphDAO:
                 await client.create_entity(agri_crop_body)
             except httpx.HTTPStatusError as e:
                 if e.response.status_code == 409:
-                    # Entity already exists — upsert via PATCH attrs
-                    await client.update_entity_attrs(new_crop_id, {
+                    # Entity already exists — upsert via POST /attrs (append): PATCH only
+                    # updates attrs the entity already has, so e.g. cropLifecycle would be dropped.
+                    await client.append_entity_attrs(new_crop_id, {
                         k: v for k, v in agri_crop_body.items()
                         if k not in ("id", "type", "@context", "dateCreated")
                     })
@@ -3582,14 +3588,6 @@ class GraphDAO:
                 "hasAgriCrop": {"type": "Relationship", "object": new_crop_id},
                 "hasAgriCropVariety": {"type": "Relationship", "object": safe_variety_uri},
                 "management": {"type": "Property", "value": management},
-                "cropSeasonStart": {
-                    "type": "Property",
-                    "value": {"@type": "Date", "@value": season_start},
-                },
-                "cropSeasonEnd": {
-                    "type": "Property",
-                    "value": {"@type": "Date", "@value": season_end},
-                },
             }
             # POST /attrs (append): PATCH /attrs only updates EXISTING attrs, so a
             # first-time hasAgriCrop assignment lands in notUpdated and silently no-ops.
@@ -3664,7 +3662,7 @@ class GraphDAO:
             logger.warning("phenology subscription setup failed for %s: %s", tenant_id, exc)
 
     async def create_crop_plan(self, parcel_id, season, segments, tenant_id) -> dict:
-        """Create one planned AgriCrop per segment + patch parcel season bounds.
+        """Create one planned AgriCrop per segment.
 
         No segment is auto-activated (actual planting happens via advance).
         """
@@ -3683,7 +3681,8 @@ class GraphDAO:
                         await client.create_entity(entity)
                     except httpx.HTTPStatusError as e:
                         if e.response.status_code == 409:  # idempotent re-commit
-                            await client.update_entity_attrs(entity["id"], {
+                            # POST /attrs (append): PATCH skips attrs the entity lacks
+                            await client.append_entity_attrs(entity["id"], {
                                 k: v for k, v in entity.items() if k not in ("id", "type", "@context")
                             })
                         else:
@@ -3695,19 +3694,6 @@ class GraphDAO:
                     warnings.append({"seq": seq, "error": str(e)[:160]})
                     continue
                 ids.append(entity["id"])
-            # patch parcel campaign bounds from first/last windows
-            starts = [s.get("sowing_window", [None])[0] for s in segments if s.get("sowing_window")]
-            ends = [s.get("expected_termination") for s in segments if s.get("expected_termination")]
-            if starts or ends:
-                patch = {}
-                if starts:
-                    patch["cropSeasonStart"] = {"type": "Property", "value": {"@type": "Date", "@value": min(starts)}}
-                if ends:
-                    patch["cropSeasonEnd"] = {"type": "Property", "value": {"@type": "Date", "@value": max(ends)}}
-                try:
-                    await client.append_entity_attrs(parcel_id, patch)
-                except Exception:  # noqa: BLE001
-                    warnings.append({"parcel": "season-bounds patch failed"})
             return {"status": "committed", "parcel_id": parcel_id, "season": season,
                     "segments": ids, "warnings": warnings}
         finally:
@@ -3786,14 +3772,17 @@ class GraphDAO:
                     continue
                 method = prior.get("terminationMethod")
                 final = "harvested" if method == "harvest" else "terminated"
-                await client.update_entity_attrs(prior["id"], {
+                # POST /attrs (append): the dates are absent until now and PATCH /attrs
+                # only updates EXISTING attrs, so they would silently not be written.
+                await client.append_entity_attrs(prior["id"], {
                     "status": {"type": "Property", "value": final},
                     "terminationDate": _date,
                 })
-            # activate target with real plantingDate
-            await client.update_entity_attrs(target_id, {
+            # activate target with real plantingDate (append, same reason as above)
+            await client.append_entity_attrs(target_id, {
                 "status": {"type": "Property", "value": "active"},
                 "plantingDate": _date,
+                "plantingDateSource": {"type": "Property", "value": "manual"},
             })
             # project to parcel commitment (append: may be the parcel's first hasAgriCrop)
             await client.append_entity_attrs(parcel_id, {
@@ -4585,10 +4574,21 @@ class GraphDAO:
             crop_uri = _resolve_relationship(parcel, "hasAgriCrop") or _resolve_relationship(parcel, "refAgriCrop")
             variety_uri = _resolve_relationship(parcel, "hasAgriCropVariety")
             management = _extract_prop_value(parcel.get("management"))
-            season_start = _extract_prop_value(parcel.get("cropSeasonStart"))
-            season_end = _extract_prop_value(parcel.get("cropSeasonEnd"))
             if not crop_uri:
                 return {"error": "Parcel has no crop assigned"}
+            # Season window: the platform's resolved crop cycle. The parcel's legacy copy (no
+            # longer written, so stale or planned) only when the platform is unreachable; when it
+            # answered with no current cycle, the next one is shown with its own provenance.
+            cycles = await fetch_crop_cycles(parcel_id, tenant_id)
+            if cycles is None:
+                season_start = _extract_prop_value(parcel.get("cropSeasonStart"))
+                season_end = _extract_prop_value(parcel.get("cropSeasonEnd"))
+                start_provenance = None
+            else:
+                cur = cycles.get("current") or cycles.get("next") or {}
+                season_start = (cur.get("start") or {}).get("date")
+                season_end = (cur.get("end") or {}).get("date")
+                start_provenance = (cur.get("start") or {}).get("provenance")
 
             # ── 2. Fetch crop entity ────────────────────────────────────────
             crop_eppo = crop_uri.split(":")[-1] if crop_uri else "unknown"
@@ -4663,7 +4663,7 @@ class GraphDAO:
             "crop": {"eppo": crop_eppo, "name": crop_name or crop_eppo, "scientific_name": crop_scientific},
             "variety": {"name": variety_name, "uri": variety_uri} if variety_name else None,
             "management": management,
-            "season": {"start": season_start, "end": season_end, "gdd_accumulated": gdd, "current_stage": phenology.get("stage") if phenology else None},
+            "season": {"start": season_start, "start_provenance": start_provenance, "end": season_end, "gdd_accumulated": gdd, "current_stage": phenology.get("stage") if phenology else None},
             "phenology": {"stage": phenology.get("stage"), "kc": phenology.get("kc"), "ky": phenology.get("ky"), "d1": phenology.get("d1"), "d2": phenology.get("d2"), "mds_ref": phenology.get("mds_ref"), "base_temp": phenology.get("stage_base_temp"), "stage_gdd_min": phenology.get("stage_gdd_min"), "stage_gdd_max": phenology.get("stage_gdd_max")} if phenology else None,
             "thermal_limits": {"heat_damage_c": thermal.get("heat_damage_c"), "frost_damage_c": thermal.get("frost_damage_c"), "heat_accum_hours": thermal.get("heat_accum_hours")} if thermal else None,
             "soil": {"requirements": {"ph_min": soil_req.get("ph_min") if soil_req else None, "ph_max": soil_req.get("ph_max") if soil_req else None, "textures": soil_req.get("textures", []) if soil_req else [], "drainage": soil_req.get("drainage") if soil_req else None, "depth_min_cm": soil_req.get("depth_min_cm") if soil_req else None, "salinity_max_ds_m": soil_req.get("salinity_max_ds_m") if soil_req else None}, "actual": soil_actual, "suitability": soil_suitability},
@@ -4674,7 +4674,14 @@ class GraphDAO:
         }
 
     async def clear_crop_assignment(self, parcel_id: str, tenant_id: str) -> dict:
-        """Remove crop assignment from AgriParcel. Raises on Orion failure."""
+        """Remove crop assignment from AgriParcel. Raises on Orion failure.
+
+        The AgriCrop the parcel pointed at is cancelled first: left active, the platform
+        reconciler would link it again. Cancelling before unlinking makes a failed unlink
+        retryable (the parcel still points at the crop).
+        """
+        import httpx
+
         parcel_id = _to_parcel_urn(parcel_id)
         patch_body = {
             "hasAgriCrop": {"type": "Relationship", "object": None},
@@ -4685,6 +4692,18 @@ class GraphDAO:
         }
         orion = OrionClient(tenant_id)
         try:
+            parcel = await orion.get_entity(parcel_id)
+            crop_id = _resolve_relationship(parcel, "hasAgriCrop") or _resolve_relationship(parcel, "refAgriCrop")
+            if crop_id:
+                try:
+                    # append (POST /attrs): never a silent notUpdated, unlike PATCH
+                    await orion.append_entity_attrs(crop_id, {
+                        "status": {"type": "Property", "value": "cancelled"},
+                    })
+                except httpx.HTTPStatusError as e:
+                    if e.response.status_code != 404:
+                        raise
+                    logger.warning("clear_crop_assignment: linked AgriCrop %s no longer exists", crop_id)
             await orion.update_entity_attrs(parcel_id, patch_body)
         finally:
             await orion.close()
@@ -5188,14 +5207,15 @@ class GraphDAO:
         try:
             orion = OrionClient(tenant_id)
             try:
-                weather_entities = await orion.query_entities(type="WeatherObserved", limit=10)
+                weather_entities = await orion.query_entities(type="WeatherObserved", limit=5)
             finally:
                 await orion.close()
-            # Closed-day series entities ("...-daily") carry no current conditions.
-            weather_entities = [
-                e for e in (weather_entities or [])
-                if not str(e.get("id", "")).endswith("-daily")
-            ]
+            # Prefer a running station: skip closed-day series entities
+            # (dailySummary true) whose et0 is a daily total (#1043).
+            def _is_daily(e):
+                node = e.get("dailySummary")
+                return isinstance(node, dict) and node.get("value") is True
+            weather_entities = [e for e in weather_entities if not _is_daily(e)]
             if not weather_entities:
                 logger.info("No WeatherObserved entities found for tenant %s", tenant_id)
                 return None
@@ -5510,7 +5530,9 @@ class GraphDAO:
         """Simulate the parcel's crop season with every input taken from real data.
 
         Crop: ``crop_slug`` or the parcel's ``hasAgriCrop``. Sowing date: the
-        argument or the latest real sowing operation. Soil: Soil module summary.
+        argument, else the platform's current crop cycle, else the latest completed
+        sowing operation, else (only when the platform is unreachable) the parcel's
+        legacy ``cropSeasonStart``; a plan never counts. Soil: Soil module summary.
         Weather: parcel daily series + self-hosted archive (see ``sim_weather``).
         Raises ``SimulationError`` (422 input, 404 parcel, 503 upstream); nothing
         is defaulted or synthesized.
@@ -5566,14 +5588,26 @@ class GraphDAO:
             raise SimulationError("parcel_location_missing", "The parcel has no usable geometry.")
         lon, lat = point
 
-        # ── 2. Sowing date: explicit, else a real sowing operation ──
-        if sowing_date_str:
+        # ── 2. Sowing date: explicit, else the platform's crop cycle, else a completed sowing ──
+        # What happened counts, never a plan. The parcel's legacy season copy is used only when
+        # the platform is unreachable: its "no current cycle" is an answer, not an outage.
+        sowing_provenance: str | None = None
+        cycle_start: dict = {}
+        cycles: dict | None = None
+        if not sowing_date_str:
+            cycles = await fetch_crop_cycles(parcel_id, tenant_id)
+            cycle_start = (((cycles or {}).get("current") or {}).get("start")) or {}
+        if sowing_date_str or cycle_start.get("date"):
+            raw = sowing_date_str or cycle_start["date"]
             try:
-                sowing_date = date.fromisoformat(sowing_date_str[:10])
+                sowing_date = date.fromisoformat(raw[:10])
             except ValueError as e:
                 raise SimulationError(
-                    "invalid_sowing_date", f"Invalid sowing date: {sowing_date_str} (use YYYY-MM-DD).") from e
-            sowing_source = "request"
+                    "invalid_sowing_date", f"Invalid sowing date: {raw} (use YYYY-MM-DD).") from e
+            if sowing_date_str:
+                sowing_source = "request"
+            else:
+                sowing_source, sowing_provenance = "crop_cycle", cycle_start.get("provenance")
         else:
             orion2 = OrionClient(tenant_id)
             try:
@@ -5591,16 +5625,23 @@ class GraphDAO:
                 await orion2.close()
             try:
                 sowing_date = resolve_sowing_date(ops if isinstance(ops, list) else [], today)
+                sowing_source, sowing_provenance = "field_operations", "actual"
             except SimInputError as e:
-                raise SimulationError(
-                    "sowing_date_missing",
-                    "No sowing date available: provide one or record a sowing operation.") from e
-            sowing_source = "field_operations"
+                legacy = _extract_prop_value(parcel.get("cropSeasonStart")) if cycles is None else None
+                try:
+                    sowing_date = date.fromisoformat(str(legacy)[:10]) if legacy else None
+                except ValueError:
+                    sowing_date = None
+                if sowing_date is None:
+                    raise SimulationError(
+                        "sowing_date_missing",
+                        "No sowing date available: provide one or record a sowing operation.") from e
+                sowing_source = "legacy_parcel_season"
 
         return await run_crop_simulation(
             engine_name=engine, parcel_id=parcel_id, tenant_id=tenant_id, crop=crop,
             sowing_date=sowing_date, sowing_source=sowing_source, irrigation=irrigation,
-            lat=lat, lon=lon, today=today)
+            lat=lat, lon=lon, today=today, sowing_provenance=sowing_provenance)
 
     async def get_alerts(self, parcel_id: str, limit: int = 5, max_age_days: int = 7) -> dict:
         """Fetch recent alerts for a parcel from Redis Streams crop:events.
@@ -5745,7 +5786,7 @@ class GraphDAO:
 
         import httpx
 
-        api_key = _os.getenv("EPPO_API_KEY", "")
+        api_key = _os.getenv("EPPO_API_TOKEN") or _os.getenv("EPPO_API_KEY", "")
         base = "https://api.eppo.int/gd/v2"
 
         result: dict = {"shared_pests": [], "shared_count": 0, "risk_level": "unknown", "source_unavailable": False}
@@ -5851,7 +5892,7 @@ class GraphDAO:
         result: dict = {"inputs": [], "source_unavailable": False}
 
         # 1) Get pests for this crop from EPPO
-        api_key = _os.getenv("EPPO_API_KEY", "")
+        api_key = _os.getenv("EPPO_API_TOKEN") or _os.getenv("EPPO_API_KEY", "")
         pest_names: list[str] = []
         if api_key:
             try:

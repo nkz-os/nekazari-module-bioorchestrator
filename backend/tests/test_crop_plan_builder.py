@@ -30,6 +30,21 @@ def test_builds_planned_segment_with_windows_no_actual_dates():
     assert "terminationDate" not in e
 
 
+def test_segment_writes_new_terms_and_legacy():
+    e = build_segment_entity("t", "urn:ngsi-ld:AgriParcel:p", "2026", 1,
+                             {"role": "cover_crop", "crop": "VICSA", "termination_method": "roller_crimper"})
+    assert e["cropRole"]["value"] == "cover_crop" and e["role"]["value"] == "cover_crop"
+    assert e["cropSegmentSeq"]["value"] == 1 and e["seq"]["value"] == 1
+    assert e["cropLifecycle"]["value"] == "annual"
+
+
+def test_segment_omits_lifecycle_when_crop_missing_or_unknown():
+    for crop in (None, "not a species"):
+        e = build_segment_entity("t", "urn:ngsi-ld:AgriParcel:p", "2026", 0,
+                                 {"role": "main_crop", "crop": crop})
+        assert "cropLifecycle" not in e
+
+
 def test_builds_segment_omits_species_when_crop_missing():
     seg = _seg()
     seg["crop"] = None

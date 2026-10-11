@@ -12,6 +12,9 @@
 # this species' scientific name, or the graph Species node (phenology_sources.yaml) uses it for
 # this very species. Codes of another species (spelt TRZAW/TRZSP) and of species with no entry
 # here (triticale, sorghum, lupin) are not aliased.
+#
+# lifecycle: "annual" | "perennial" — curated here (the EPPO API does not publish it). Stored on the
+# AgriCrop at assignment; the platform's crop-cycle resolver uses it to choose the accumulation start.
 # =============================================================================
 
 species:
@@ -25,6 +28,7 @@ species:
     eppo_code: "TRZAX"
     crop_group: "cereal"
     agrovoc_uri: "http://aims.fao.org/aos/agrovoc/c_7951"
+    lifecycle: "annual"
     common_names: { es: "trigo", en: "wheat", eu: "gari", fr: "blé", ca: "blat", pt: "trigo" }
 
   durum_wheat:
@@ -32,6 +36,7 @@ species:
     eppo_code: "TRZDU"
     crop_group: "cereal"
     agrovoc_uri: "http://aims.fao.org/aos/agrovoc/c_11443"
+    lifecycle: "annual"
     common_names: { es: "trigo duro", en: "durum wheat", eu: "gari gogor", fr: "blé dur", ca: "blat dur", pt: "trigo duro" }
 
   barley:
@@ -39,6 +44,7 @@ species:
     eppo_code: "HORVX"
     crop_group: "cereal"
     agrovoc_uri: "http://aims.fao.org/aos/agrovoc/c_3665"
+    lifecycle: "annual"
     common_names: { es: "cebada", en: "barley", eu: "garagar", fr: "orge", ca: "ordi", pt: "cevada" }
 
   maize:
@@ -48,6 +54,7 @@ species:
     eppo_aliases: ["ZEAMX"]
     crop_group: "cereal"
     agrovoc_uri: "http://aims.fao.org/aos/agrovoc/c_8509"
+    lifecycle: "annual"
     common_names: { es: "maíz", en: "maize", eu: "arto", fr: "maïs", ca: "blat de moro", pt: "milho" }
 
   rice:
@@ -55,6 +62,7 @@ species:
     eppo_code: "ORYSA"
     crop_group: "cereal"
     agrovoc_uri: "http://aims.fao.org/aos/agrovoc/c_5438"
+    lifecycle: "annual"
     common_names: { es: "arroz", en: "rice", eu: "arroza", fr: "riz", ca: "arròs", pt: "arroz" }
 
   oat:
@@ -62,6 +70,7 @@ species:
     eppo_code: "AVESA"
     crop_group: "cereal"
     agrovoc_uri: "http://aims.fao.org/aos/agrovoc/c_728"
+    lifecycle: "annual"
     common_names: { es: "avena", en: "oat", eu: "oloa", fr: "avoine", ca: "civada", pt: "aveia" }
 
   rye:
@@ -69,6 +78,7 @@ species:
     eppo_code: "SECCE"
     crop_group: "cereal"
     agrovoc_uri: "http://aims.fao.org/aos/agrovoc/c_6914"
+    lifecycle: "annual"
     common_names: { es: "centeno", en: "rye", eu: "zekalea", fr: "seigle", ca: "sègol", pt: "centeio" }
 
   buckwheat:
@@ -76,6 +86,7 @@ species:
     eppo_code: "FAGES"
     crop_group: "cereal"
     agrovoc_uri: "http://aims.fao.org/aos/agrovoc/c_2881"
+    lifecycle: "annual"
     common_names: { es: "trigo sarraceno", en: "buckwheat", eu: "artobeltz", fr: "sarrasin", ca: "fajol", pt: "trigo-sarraceno" }
 
   # ===========================================================================
@@ -86,6 +97,7 @@ species:
     scientific_name: "Glycine max"
     eppo_code: "GLXMA"
     agrovoc_uri: "http://aims.fao.org/aos/agrovoc/c_3301"
+    lifecycle: "annual"
     common_names: { es: "soja", en: "soybean", eu: "soja", fr: "soja", ca: "soja", pt: "soja" }
 
   chickpea:
@@ -94,12 +106,14 @@ species:
     # alias CIEAS: Cicer arietinum: every trial of the code carries the same scientific name
     eppo_aliases: ["CIEAS"]
     agrovoc_uri: "http://aims.fao.org/aos/agrovoc/c_1612"
+    lifecycle: "annual"
     common_names: { es: "garbanzo", en: "chickpea", eu: "txixtirio", fr: "pois chiche", ca: "cigró", pt: "grão-de-bico" }
 
   lentil:
     scientific_name: "Lens culinaris"
     eppo_code: "LENCU"
     agrovoc_uri: "http://aims.fao.org/aos/agrovoc/c_4289"
+    lifecycle: "annual"
     common_names: { es: "lenteja", en: "lentil", eu: "dilista", fr: "lentille", ca: "llentia", pt: "lentilha" }
 
   pea:
@@ -108,42 +122,49 @@ species:
     # alias PIBAR: Pisum sativum: every trial of the code carries the same scientific name
     eppo_aliases: ["PIBAR"]
     agrovoc_uri: "http://aims.fao.org/aos/agrovoc/c_5933"
+    lifecycle: "annual"
     common_names: { es: "guisante", en: "pea", eu: "ilar", fr: "pois", ca: "pèsol", pt: "ervilha" }
 
   faba_bean:
     scientific_name: "Vicia faba"
     eppo_code: "VICFX"
     agrovoc_uri: "http://aims.fao.org/aos/agrovoc/c_8217"
+    lifecycle: "annual"
     common_names: { es: "haba", en: "faba bean", eu: "baba", fr: "fève", ca: "fava", pt: "fava" }
 
   vetch:
     scientific_name: "Vicia sativa"
     eppo_code: "VICSA"
     agrovoc_uri: "http://aims.fao.org/aos/agrovoc/c_8222"
+    lifecycle: "annual"
     common_names: { es: "veza", en: "vetch", eu: "zalke", fr: "vesce", ca: "veça", pt: "ervilhaca" }
 
   bitter_vetch:
     scientific_name: "Vicia ervilia"
     eppo_code: "VICER"
     agrovoc_uri: "http://aims.fao.org/aos/agrovoc/c_8219"
+    lifecycle: "annual"
     common_names: { es: "yero", en: "bitter vetch", eu: "txitxirio", fr: "ers", ca: "erb", pt: "ervilha-de-pombo" }
 
   grass_pea:
     scientific_name: "Lathyrus sativus"
     eppo_code: "LTHSA"
     agrovoc_uri: "http://aims.fao.org/aos/agrovoc/c_4218"
+    lifecycle: "annual"
     common_names: { es: "almorta", en: "grass pea", eu: "aizkol", fr: "gesse", ca: "guixa", pt: "chícharo" }
 
   bean:
     scientific_name: "Phaseolus vulgaris"
     eppo_code: "PHSVX"
     agrovoc_uri: "http://aims.fao.org/aos/agrovoc/c_5767"
+    lifecycle: "annual"
     common_names: { es: "judía", en: "bean", eu: "babarrun", fr: "haricot", ca: "mongeta", pt: "feijão" }
 
   alfalfa:
     scientific_name: "Medicago sativa"
     eppo_code: "MEDSA"
     agrovoc_uri: "http://aims.fao.org/aos/agrovoc/c_4692"
+    lifecycle: "perennial"
     common_names: { es: "alfalfa", en: "alfalfa", eu: "alfalfa", fr: "luzerne", ca: "alfals", pt: "alfafa" }
 
   # ===========================================================================
@@ -154,6 +175,7 @@ species:
     scientific_name: "Helianthus annuus"
     eppo_code: "HELAN"
     agrovoc_uri: "http://aims.fao.org/aos/agrovoc/c_3541"
+    lifecycle: "annual"
     common_names: { es: "girasol", en: "sunflower", eu: "ekilore", fr: "tournesol", ca: "gira-sol", pt: "girassol" }
 
   rapeseed:
@@ -162,12 +184,14 @@ species:
     # alias BRSNW: Brassica napus: every trial of the code carries the same scientific name (winter cycle is the trial's cropCycle, not another species)
     eppo_aliases: ["BRSNW"]
     agrovoc_uri: "http://aims.fao.org/aos/agrovoc/c_1066"
+    lifecycle: "annual"
     common_names: { es: "colza", en: "rapeseed", eu: "koltza", fr: "colza", ca: "colza", pt: "colza" }
 
   sugar_beet:
     scientific_name: "Beta vulgaris"
     eppo_code: "BEAVX"
     agrovoc_uri: "http://aims.fao.org/aos/agrovoc/c_891"
+    lifecycle: "annual"
     common_names: { es: "remolacha azucarera", en: "sugar beet", eu: "azukre-erremolatxa", fr: "betterave sucrière", ca: "remolatxa sucrera", pt: "beterraba-sacarina" }
 
   hemp:
@@ -176,6 +200,7 @@ species:
     # alias CNUSA: Cannabis sativa: the code the graph Species node and the phenology seed use
     eppo_aliases: ["CNUSA"]
     agrovoc_uri: "http://aims.fao.org/aos/agrovoc/c_1257"
+    lifecycle: "annual"
     common_names: { es: "cáñamo", en: "hemp", eu: "kalamu", fr: "chanvre", ca: "cànem", pt: "cânhamo" }
 
   flax:
@@ -184,6 +209,7 @@ species:
     # alias LINUS: Linum usitatissimum: the code the graph Species node and the phenology seed use
     eppo_aliases: ["LINUS"]
     agrovoc_uri: "http://aims.fao.org/aos/agrovoc/c_4355"
+    lifecycle: "annual"
     common_names: { es: "lino", en: "flax", eu: "liho", fr: "lin", ca: "lli", pt: "linho" }
 
   # ===========================================================================
@@ -195,6 +221,7 @@ species:
     eppo_code: "SOLTU"
     crop_group: "solanaceous"
     agrovoc_uri: "http://aims.fao.org/aos/agrovoc/c_7227"
+    lifecycle: "annual"
     common_names: { es: "patata", en: "potato", eu: "patata", fr: "pomme de terre", ca: "patata", pt: "batata" }
 
   tomato:
@@ -202,6 +229,7 @@ species:
     eppo_code: "LYPES"
     crop_group: "solanaceous"
     agrovoc_uri: "http://aims.fao.org/aos/agrovoc/c_7223"
+    lifecycle: "annual"
     common_names: { es: "tomate", en: "tomato", eu: "tomate", fr: "tomate", ca: "tomàquet", pt: "tomate" }
 
   pepper:
@@ -209,6 +237,7 @@ species:
     eppo_code: "CPSAN"
     crop_group: "solanaceous"
     agrovoc_uri: "http://aims.fao.org/aos/agrovoc/c_1282"
+    lifecycle: "annual"
     common_names: { es: "pimiento", en: "pepper", eu: "piper", fr: "poivron", ca: "pebrot", pt: "pimento" }
 
   eggplant:
@@ -216,6 +245,7 @@ species:
     eppo_code: "SOLME"
     crop_group: "solanaceous"
     agrovoc_uri: "http://aims.fao.org/aos/agrovoc/c_7218"
+    lifecycle: "annual"
     common_names: { es: "berenjena", en: "eggplant", eu: "alberjinia", fr: "aubergine", ca: "albergínia", pt: "beringela" }
 
   broccoli:
@@ -225,24 +255,28 @@ species:
     # alias BROOL: the code the graph Species node and the phenology seed use for this species
     eppo_aliases: ["BRSOX", "BROOL"]
     agrovoc_uri: "http://aims.fao.org/aos/agrovoc/c_1093"
+    lifecycle: "annual"
     common_names: { es: "brócoli", en: "broccoli", eu: "brokoli", fr: "brocoli", ca: "bròquil", pt: "brócolos" }
 
   leek:
     scientific_name: "Allium porrum"
     eppo_code: "ALLPO"
     agrovoc_uri: "http://aims.fao.org/aos/agrovoc/c_296"
+    lifecycle: "annual"
     common_names: { es: "puerro", en: "leek", eu: "porru", fr: "poireau", ca: "porro", pt: "alho-porro" }
 
   garlic:
     scientific_name: "Allium sativum"
     eppo_code: "ALLSA"
     agrovoc_uri: "http://aims.fao.org/aos/agrovoc/c_284"
+    lifecycle: "annual"
     common_names: { es: "ajo", en: "garlic", eu: "baratxuri", fr: "ail", ca: "all", pt: "alho" }
 
   onion:
     scientific_name: "Allium cepa"
     eppo_code: "ALLCE"
     agrovoc_uri: "http://aims.fao.org/aos/agrovoc/c_289"
+    lifecycle: "annual"
     common_names: { es: "cebolla", en: "onion", eu: "tipula", fr: "oignon", ca: "ceba", pt: "cebola" }
 
   artichoke:
@@ -251,6 +285,7 @@ species:
     # alias CYNSC: Cynara cardunculus var. scolymus: the code the graph Species node and the phenology seed use
     eppo_aliases: ["CYNSC"]
     agrovoc_uri: "http://aims.fao.org/aos/agrovoc/c_2048"
+    lifecycle: "perennial"
     common_names: { es: "alcachofa", en: "artichoke", eu: "alkatxofa", fr: "artichaut", ca: "carxofa", pt: "alcachofra" }
 
   cardoon:
@@ -259,18 +294,21 @@ species:
     # alias CYNCA: Cynara cardunculus: the code the graph Species node and the phenology seed use
     eppo_aliases: ["CYNCA"]
     agrovoc_uri: "http://aims.fao.org/aos/agrovoc/c_2047"
+    lifecycle: "perennial"
     common_names: { es: "cardo", en: "cardoon", eu: "kardu", fr: "cardon", ca: "card", pt: "cardo" }
 
   asparagus:
     scientific_name: "Asparagus officinalis"
     eppo_code: "ASPOF"
     agrovoc_uri: "http://aims.fao.org/aos/agrovoc/c_673"
+    lifecycle: "perennial"
     common_names: { es: "espárrago", en: "asparagus", eu: "zainzuri", fr: "asperge", ca: "espàrrec", pt: "espargo" }
 
   melon:
     scientific_name: "Cucumis melo"
     eppo_code: "CUMME"
     agrovoc_uri: "http://aims.fao.org/aos/agrovoc/c_2003"
+    lifecycle: "annual"
     common_names: { es: "melón", en: "melon", eu: "meloi", fr: "melon", ca: "meló", pt: "melão" }
 
   # ===========================================================================
@@ -282,12 +320,14 @@ species:
     eppo_code: "VITVI"
     crop_group: "grapevine"
     agrovoc_uri: "http://aims.fao.org/aos/agrovoc/c_8283"
+    lifecycle: "perennial"
     common_names: { es: "vid", en: "grapevine", eu: "mahatsondo", fr: "vigne", ca: "vinya", pt: "videira" }
 
   olive:
     scientific_name: "Olea europaea"
     eppo_code: "OLVEU"
     agrovoc_uri: "http://aims.fao.org/aos/agrovoc/c_5339"
+    lifecycle: "perennial"
     common_names: { es: "olivo", en: "olive", eu: "olibondo", fr: "olivier", ca: "olivera", pt: "oliveira" }
 
   almond:
@@ -295,12 +335,14 @@ species:
     eppo_code: "PRNDU"
     crop_group: "stone_fruit"
     agrovoc_uri: "http://aims.fao.org/aos/agrovoc/c_6180"
+    lifecycle: "perennial"
     common_names: { es: "almendro", en: "almond", eu: "arbendol", fr: "amandier", ca: "ametller", pt: "amendoeira" }
 
   pistachio:
     scientific_name: "Pistacia vera"
     eppo_code: "PIAVE"
     agrovoc_uri: "http://aims.fao.org/aos/agrovoc/c_5981"
+    lifecycle: "perennial"
     common_names: { es: "pistacho", en: "pistachio", eu: "pistatxo", fr: "pistachier", ca: "pistatxer", pt: "pistacheiro" }
 
   apple:
@@ -308,6 +350,7 @@ species:
     eppo_code: "MABSD"
     crop_group: "pome_fruit"
     agrovoc_uri: "http://aims.fao.org/aos/agrovoc/c_4555"
+    lifecycle: "perennial"
     common_names: { es: "manzano", en: "apple", eu: "sagar", fr: "pommier", ca: "pomera", pt: "macieira" }
 
   pear:
@@ -315,6 +358,7 @@ species:
     eppo_code: "PYUCO"
     crop_group: "pome_fruit"
     agrovoc_uri: "http://aims.fao.org/aos/agrovoc/c_6393"
+    lifecycle: "perennial"
     common_names: { es: "peral", en: "pear", eu: "udare", fr: "poirier", ca: "perera", pt: "pereira" }
 
   peach:
@@ -322,6 +366,7 @@ species:
     eppo_code: "PRNPS"
     crop_group: "stone_fruit"
     agrovoc_uri: "http://aims.fao.org/aos/agrovoc/c_6281"
+    lifecycle: "perennial"
     common_names: { es: "melocotonero", en: "peach", eu: "mertxika", fr: "pêcher", ca: "presseguer", pt: "pessegueiro" }
 
   apricot:
@@ -329,6 +374,7 @@ species:
     eppo_code: "PRNAR"
     crop_group: "stone_fruit"
     agrovoc_uri: "http://aims.fao.org/aos/agrovoc/c_6196"
+    lifecycle: "perennial"
     common_names: { es: "albaricoquero", en: "apricot", eu: "abrikot", fr: "abricotier", ca: "albercoquer", pt: "damasqueiro" }
 
   plum:
@@ -336,6 +382,7 @@ species:
     eppo_code: "PRNDO"
     crop_group: "stone_fruit"
     agrovoc_uri: "http://aims.fao.org/aos/agrovoc/c_6284"
+    lifecycle: "perennial"
     common_names: { es: "ciruelo", en: "plum", eu: "aran", fr: "prunier", ca: "prunera", pt: "ameixeira" }
 
   cherry:
@@ -343,12 +390,14 @@ species:
     eppo_code: "PRNAV"
     crop_group: "stone_fruit"
     agrovoc_uri: "http://aims.fao.org/aos/agrovoc/c_6278"
+    lifecycle: "perennial"
     common_names: { es: "cerezo", en: "cherry", eu: "gerezi", fr: "cerisier", ca: "cirerer", pt: "cerejeira" }
 
   strawberry:
     scientific_name: "Fragaria × ananassa"
     eppo_code: "FRAAN"
     agrovoc_uri: "http://aims.fao.org/aos/agrovoc/c_3082"
+    lifecycle: "perennial"
     common_names: { es: "fresa", en: "strawberry", eu: "marrubi", fr: "fraisier", ca: "maduixera", pt: "morangueiro" }
 
 # =============================================================================

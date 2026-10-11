@@ -1147,7 +1147,9 @@
     },
     "sowingSource": {
       "request": "request",
-      "field_operations": "field operations"
+      "field_operations": "field operations",
+      "crop_cycle": "crop cycle",
+      "legacy_parcel_season": "season recorded on the parcel"
     },
     "warnings": "Notes",
     "errors": {

@@ -394,7 +394,9 @@
     },
     "sowingSource": {
       "request": "demande",
-      "field_operations": "opérations culturales"
+      "field_operations": "opérations culturales",
+      "crop_cycle": "cycle de culture",
+      "legacy_parcel_season": "campagne enregistrée sur la parcelle"
     },
     "warnings": "Remarques",
     "errors": {

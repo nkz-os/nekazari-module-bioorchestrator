@@ -1,0 +1,50 @@
+[
+  {
+    "eppocode": "1PLAK",
+    "prefname": "Plantae",
+    "level": 1,
+    "type": "Kingdom"
+  },
+  {
+    "eppocode": "1MAGP",
+    "prefname": "Magnoliophyta",
+    "level": 2,
+    "type": "Phylum"
+  },
+  {
+    "eppocode": "1ANGC",
+    "prefname": "Angiospermae",
+    "level": 3,
+    "type": "Class"
+  },
+  {
+    "eppocode": "1LAMD",
+    "prefname": "Lamiids",
+    "level": 4,
+    "type": "Category"
+  },
+  {
+    "eppocode": "1LAMO",
+    "prefname": "Lamiales",
+    "level": 5,
+    "type": "Order"
+  },
+  {
+    "eppocode": "1OLEF",
+    "prefname": "Oleaceae",
+    "level": 6,
+    "type": "Family"
+  },
+  {
+    "eppocode": "1OLVG",
+    "prefname": "Olea",
+    "level": 7,
+    "type": "Genus"
+  },
+  {
+    "eppocode": "OLVEU",
+    "prefname": "Olea europaea",
+    "level": 8,
+    "type": "Species"
+  }
+]

@@ -1,6 +1,8 @@
 """Pure builders for multi-segment crop plan AgriCrop entities (no I/O)."""
 from __future__ import annotations
 
+from app.species_registry import get_lifecycle, resolve_species
+
 VALID_ROLES = {"cover_crop", "main_crop", "catch_crop"}
 VALID_TERMINATION = {"roller_crimper", "harvest", "incorporate", "grazing"}
 
@@ -29,14 +31,22 @@ def build_segment_entity(tenant_id: str, parcel_id: str, season: str, seq: int, 
         "id": segment_urn(tenant_id, parcel_id, season, seq),
         "type": "AgriCrop",
         "hasAgriParcel": {"type": "Relationship", "object": parcel_id},
+        # ``role``/``seq`` are legacy names (not in the platform @context); ``cropRole``/
+        # ``cropSegmentSeq`` are the context terms. Both are written during the transition.
         "role": _prop(segment.get("role")),
+        "cropRole": _prop(segment.get("role")),
         "cropSeason": _prop(season),
         "seq": _prop(seq),
+        "cropSegmentSeq": _prop(seq),
         "status": _prop("planned"),
         "terminationMethod": _prop(segment.get("termination_method")),
     }
     if segment.get("crop"):
         entity["species"] = _prop(segment["crop"])
+        slug = resolve_species(segment["crop"])
+        lifecycle = get_lifecycle(slug) if slug else None
+        if lifecycle:
+            entity["cropLifecycle"] = _prop(lifecycle)
     if segment.get("variety"):
         entity["variety"] = _prop(segment["variety"])
     if window[0]:

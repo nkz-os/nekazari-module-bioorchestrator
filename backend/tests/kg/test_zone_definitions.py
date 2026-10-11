@@ -157,7 +157,8 @@ def test_label_must_state_the_class_it_constrains(tmp_path):
 def test_label_may_not_hide_a_class_it_states(tmp_path):
     def edit(raw):
         labels = [dict(x) for x in raw["definitions"][2]["labels"]]  # the YAML aliases share one list
-        labels[-2] = {"label": "Zona Fría Semiárida", "temperature": ["cold"]}
+        i = next(n for n, x in enumerate(labels) if x["label"] == "Zona Fría Semiárida")
+        labels[i] = {"label": "Zona Fría Semiárida", "temperature": ["cold"]}
         raw["definitions"][2]["labels"] = labels
     with pytest.raises(ZoneDefinitionError, match="does not constrain"):
         load_zone_definitions(_edited(tmp_path, edit))

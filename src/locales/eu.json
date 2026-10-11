@@ -394,7 +394,9 @@
     },
     "sowingSource": {
       "request": "eskaera",
-      "field_operations": "landa-eragiketak"
+      "field_operations": "landa-eragiketak",
+      "crop_cycle": "labore-zikloa",
+      "legacy_parcel_season": "lursailean erregistratutako kanpaina"
     },
     "warnings": "Oharrak",
     "errors": {

@@ -27,6 +27,8 @@ describe('segmentLabel', () => {
     expect(weatherSourceKey('parcel_daily')).toBe('cropSimulation.weatherSource.parcel_daily');
     expect(weatherSourceKey('other')).toBeNull();
     expect(sowingSourceKey('field_operations')).toBe('cropSimulation.sowingSource.field_operations');
+    expect(sowingSourceKey('crop_cycle')).toBe('cropSimulation.sowingSource.crop_cycle');
+    expect(sowingSourceKey('legacy_parcel_season')).toBe('cropSimulation.sowingSource.legacy_parcel_season');
     expect(sowingSourceKey('x')).toBeNull();
   });
 });

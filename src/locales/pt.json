@@ -394,7 +394,9 @@
     },
     "sowingSource": {
       "request": "pedido",
-      "field_operations": "operações de campo"
+      "field_operations": "operações de campo",
+      "crop_cycle": "ciclo de cultura",
+      "legacy_parcel_season": "campanha registada na parcela"
     },
     "warnings": "Notas",
     "errors": {

@@ -37,27 +37,23 @@ def _parse_date(raw: Any) -> date | None:
 
 
 def resolve_sowing_date(operations: list[dict], today: date) -> date:
-    """Most recent real sowing date not after ``today``.
+    """Most recent completed sowing not after ``today``.
 
-    Only sowing operations that are not status "suggested" count. The date is
-    startedAt, else plannedDate, else plannedStartAt.
+    What happened counts, never a plan (the platform's crop-cycle rule): only sowing
+    operations with status "completed", dated by endedAt, else startedAt.
     """
     candidates: list[date] = []
     for op in operations or []:
         op_type = str(_unwrap(op.get("operationType")) or "").lower()
         if op_type != "sowing":
             continue
-        if str(_unwrap(op.get("status")) or "").lower() == "suggested":
+        if str(_unwrap(op.get("status")) or "").lower() != "completed":
             continue
-        d = None
-        for key in ("startedAt", "plannedDate", "plannedStartAt"):
-            d = _parse_date(op.get(key))
-            if d is not None:
-                break
+        d = _parse_date(op.get("endedAt")) or _parse_date(op.get("startedAt"))
         if d is not None and d <= today:
             candidates.append(d)
     if not candidates:
-        raise SimInputError("no sowing operation with a date on or before today")
+        raise SimInputError("no completed sowing operation on or before today")
     return max(candidates)
 
 

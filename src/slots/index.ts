@@ -1,5 +1,4 @@
 import SourceStatusWidget from './SourceStatusWidget';
-import { PipelineRunner } from './PipelineRunnerWidget';
 import RecommendationsPanel from '../components/RecommendationsPanel';
 import CropPlanPanel from '../components/crop-plan/CropPlanPanel';
 
@@ -31,13 +30,7 @@ export const moduleSlots = {
       showWhen: { entityType: ['AgriParcel', 'AgriCrop'] },
     },
   ],
-  'bottom-panel': [
-    {
-      id: 'bioorchestrator-pipeline-runner',
-      moduleId: MODULE_ID,
-      component: 'PipelineRunner',
-      localComponent: PipelineRunner,
-      priority: 30,
-    },
-  ],
+  // The viewer's bottom panel is the time axis of the selected entity. The
+  // ingestion pipeline runner is an admin tool, so it lives on the module page only.
+  'bottom-panel': [],
 };

@@ -44,6 +44,14 @@ def _no_chelsa_network(request, monkeypatch):
     monkeypatch.setattr("app.services.chelsa_climate._rasterio_sampler", _blocked)
 
 
+@pytest.fixture(autouse=True)
+def _no_crop_cycles_network(request, monkeypatch):
+    """Tests never call entity-manager; those that need cycles patch ``app.graph.dao.fetch_crop_cycles``."""
+    if request.node.get_closest_marker("network"):
+        return
+    monkeypatch.setattr("app.graph.dao.fetch_crop_cycles", AsyncMock(return_value=None))
+
+
 @pytest.fixture
 def mock_driver() -> AsyncDriver:
     """Return a mock Neo4j AsyncDriver."""

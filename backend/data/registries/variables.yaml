@@ -68,6 +68,79 @@ variables:
     direction: neutral
     raw_keys: {GENVCE: [proteina_pct]}
     notes: Moisture or dry-matter basis of the percentage is not stated in the extraction.
+  # ── grain and flour quality (GENVCE quality tables; neutral: the better value depends on the end use) ──
+  - id: vitreousness_pct
+    trait: durum grain vitreousness
+    method: share of vitreous kernels
+    scale: percent
+    unit: "%"
+    direction: neutral
+    raw_keys: {GENVCE: [vitrosidad_pct]}
+  - id: gluten_index
+    trait: gluten index
+    method: gluten index method (share of wet gluten retained on the sieve), as printed without a unit
+    scale: ratio
+    unit: "1"
+    direction: neutral
+    raw_keys: {GENVCE: [gluten_index]}
+    notes: Bounded 0-100 by the method.
+  - id: semolina_yellow_index
+    trait: yellow colour of the grain or semolina
+    method: Minolta colorimeter yellow index (the reports print "Índice colorimétrico MINOLTA", no unit)
+    scale: ratio
+    unit: "1"
+    direction: neutral
+    raw_keys: {GENVCE: [color_amarillo]}
+  - id: beta_carotene_content
+    trait: beta-carotene content of the grain
+    method: null
+    scale: ratio
+    unit: mg/kg
+    direction: neutral
+    raw_keys: {GENVCE: [betacarotenos]}
+    notes: The reports print ppm.
+  - id: sds_sedimentation
+    trait: SDS sedimentation
+    method: SDS sedimentation test; printed without a unit (the test reports a sediment volume in mL)
+    scale: ratio
+    unit: mL
+    direction: neutral
+    raw_keys: {GENVCE: [sds]}
+  - id: falling_number
+    trait: Hagberg falling number
+    method: Hagberg-Perten falling number
+    scale: ratio
+    unit: s
+    direction: neutral
+    raw_keys: {GENVCE: [indice_caida, indice_caida_s]}
+  - id: alveograph_w
+    trait: flour strength W (Chopin alveograph)
+    method: Chopin alveograph; printed without a unit (the method expresses W in 10^-4 J)
+    scale: ratio
+    unit: 10-4 J
+    direction: neutral
+    raw_keys: {GENVCE: [fuerza_harinera_w]}
+  - id: alveograph_p
+    trait: dough tenacity P (Chopin alveograph)
+    method: Chopin alveograph; printed without a unit (the method expresses P in mm of water)
+    scale: ratio
+    unit: mmH2O
+    direction: neutral
+    raw_keys: {GENVCE: [tenacidad_p]}
+  - id: alveograph_l
+    trait: dough extensibility L (Chopin alveograph)
+    method: Chopin alveograph; printed without a unit (the method expresses L in mm)
+    scale: ratio
+    unit: mm
+    direction: neutral
+    raw_keys: {GENVCE: [extensibilidad_l]}
+  - id: alveograph_pl
+    trait: tenacity to extensibility ratio P/L (Chopin alveograph)
+    method: Chopin alveograph
+    scale: ratio
+    unit: "1"
+    direction: neutral
+    raw_keys: {GENVCE: [relacion_pl]}
   - id: seed_oil_content
     trait: seed oil (fat) content
     method: null

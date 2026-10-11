@@ -70,7 +70,7 @@ export const WEATHER_SOURCES = ['archive', 'parcel_daily'] as const;
 export const weatherSourceKey = (source: string): string | null =>
   (WEATHER_SOURCES as readonly string[]).includes(source) ? `cropSimulation.weatherSource.${source}` : null;
 
-export const SOWING_SOURCES = ['request', 'field_operations'] as const;
+export const SOWING_SOURCES = ['request', 'crop_cycle', 'field_operations', 'legacy_parcel_season'] as const;
 export const sowingSourceKey = (source: string): string | null =>
   (SOWING_SOURCES as readonly string[]).includes(source) ? `cropSimulation.sowingSource.${source}` : null;
 

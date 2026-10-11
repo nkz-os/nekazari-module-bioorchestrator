@@ -91,6 +91,7 @@ async def run_crop_simulation(
     lat: float,
     lon: float,
     today: date,
+    sowing_provenance: str | None = None,
 ) -> dict[str, Any]:
     """Gather soil and weather, run the engine, build the response.
 
@@ -160,7 +161,7 @@ async def run_crop_simulation(
                 "segments": observed.segments,
             },
             "soil": {"layers": layers},
-            "sowing": {"source": sowing_source},
+            "sowing": {"source": sowing_source, "provenance": sowing_provenance},
         },
         "warnings": warnings,
     }
