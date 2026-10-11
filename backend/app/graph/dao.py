@@ -5529,6 +5529,7 @@ class GraphDAO:
         irrigation: str = "rainfed",
         engine: str = "aquacrop",
         today: date | None = None,
+        progress=None,
     ) -> dict:
         """Simulate the parcel's crop season with every input taken from real data.
 
@@ -5644,7 +5645,7 @@ class GraphDAO:
         return await run_crop_simulation(
             engine_name=engine, parcel_id=parcel_id, tenant_id=tenant_id, crop=crop,
             sowing_date=sowing_date, sowing_source=sowing_source, irrigation=irrigation,
-            lat=lat, lon=lon, today=today, sowing_provenance=sowing_provenance)
+            lat=lat, lon=lon, today=today, sowing_provenance=sowing_provenance, progress=progress)
 
     async def get_alerts(self, parcel_id: str, limit: int = 5, max_age_days: int = 7) -> dict:
         """Fetch recent alerts for a parcel from Redis Streams crop:events.

@@ -475,6 +475,26 @@ async def test_observed_ending_before_planting_runs_the_ensemble(tunis):
 
 
 @pytest.mark.asyncio
+async def test_progress_ticks_once_per_scenario(tunis):
+    _, weather, layers = tunis
+    planting = date(1979, 10, 1)
+    by_year = _by_year(weather)
+    analogs = {y: by_year[y] + by_year[y + 1] for y in range(1980, 1985)}
+    ticks: list[tuple[int, int]] = []
+    try:
+        obs = [w for w in weather if w.day <= date(1980, 2, 1)]
+        await eng.simulate(obs, analogs, layers, "Wheat", planting, "rainfed",
+                           planting - timedelta(days=60), progress=lambda d, t: ticks.append((d, t)))
+        assert ticks[0] == (0, 5) and ticks[-1] == (5, 5) and len(ticks) == 6
+        ticks.clear()
+        await eng.simulate(weather, analogs, layers, "Wheat", planting, "rainfed",
+                           planting - timedelta(days=60), progress=lambda d, t: ticks.append((d, t)))
+        assert ticks == [(1, 1)]  # a single run: one scenario, done
+    finally:
+        eng._shutdown_pool()
+
+
+@pytest.mark.asyncio
 async def test_ensemble_needs_enough_analog_years(tunis):
     _, weather, layers = tunis
     by_year = _by_year(weather)

@@ -349,3 +349,9 @@ def test_engine_adapter_forwards_phenology_overrides():
             observed=[], analogs={}, soil=[], crop="WheatGDD", planting=date(2020, 10, 1),
             irrigation="rainfed", sim_start=None, crop_params={"Maturity": 2600.0}))
     assert seen["kwargs"].get("crop_params") == {"Maturity": 2600.0}
+
+
+def test_progress_reaches_the_dao_caller(mock_driver, tunis):
+    ticks: list[tuple[int, int]] = []
+    _run(GraphDAO(mock_driver), net=_Net(tunis), progress=lambda d, t: ticks.append((d, t)))
+    assert ticks[0] == (0, 5) and ticks[-1] == (5, 5)
