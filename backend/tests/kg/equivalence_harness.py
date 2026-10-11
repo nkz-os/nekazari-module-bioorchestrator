@@ -94,6 +94,9 @@ class _Cond:
         self.annual_rainfall_mm = self.annual_et0_mm = self.coldest_month_min_c = self.annual_temp_c = None
         self.frost_margin_c = None
 
+    def as_dict(self) -> dict:
+        return dict(vars(self))
+
 
 async def collect(driver: Any, *, progress=None) -> dict[str, Any]:
     from app.api.v1 import recommend as rec_api
