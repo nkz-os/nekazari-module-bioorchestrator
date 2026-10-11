@@ -1109,7 +1109,8 @@
     "crop": "Cultivo",
     "status": {
       "complete": "Campaña completa",
-      "in_season": "Campaña en curso"
+      "in_season": "Campaña en curso",
+      "preseason": "Antes de sembrar"
     },
     "yield": "Rendimiento",
     "potentialYield": "Rendimiento potencial",
@@ -1160,9 +1161,9 @@
       "weather_unavailable": "Los datos de tiempo no están disponibles temporalmente. Inténtalo más tarde.",
       "archive_not_configured": "El archivo meteorológico no está configurado en este servidor.",
       "archive_unavailable": "El archivo meteorológico no está disponible temporalmente. Inténtalo más tarde.",
-      "sowing_date_future": "La fecha de siembra no puede ser futura.",
       "parcel_not_found": "No se encontró la parcela.",
-      "generic": "No se pudo completar la simulación."
+      "generic": "No se pudo completar la simulación.",
+      "sowing_date_too_far": "La fecha de siembra está a más de un año vista: la simulación planifica como mucho a un año."
     },
     "ceiling": "Techo con el agua de este año",
     "basis": {

@@ -68,6 +68,12 @@ describe('chartLine', () => {
   });
 });
 
+describe('error hints', () => {
+  it('knows the too-far sowing date', () => {
+    expect(errorHintKey('sowing_date_too_far')).toBe('cropSimulation.errors.sowing_date_too_far');
+  });
+});
+
 describe('expected yield and water gap', () => {
   it('never shows a negative water gap (water does not limit that season)', () => {
     expect(waterGapText(33.2)).toBe('33%');

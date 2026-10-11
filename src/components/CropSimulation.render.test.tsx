@@ -71,6 +71,21 @@ describe('CropSimulationResultView (es)', () => {
     expect(t).toContain('calibrada para Navarra');
   });
 
+  it('preseason: before-sowing badge, ensemble basis and median harvest', () => {
+    const r: CropSimulationResult = {
+      ...base, status: 'preseason',
+      yield_t_ha: { p10: 2.5, p50: 4.1, p90: 5.6 },
+      potential_yield_t_ha: { p10: 6.0, p50: 7.0, p90: 8.0 },
+      ensemble: { n_years: 5, method: 'climatological_ensemble', years: [2021, 2022, 2023, 2024, 2025] },
+      daily: base.daily.map((d) => ({ ...d, projected: true })),
+    };
+    const t = textOf(renderToStaticMarkup(<CropSimulationResultView result={r} />));
+    expect(t).toContain('Antes de sembrar');
+    expect(t).toContain('Basado en 5 campañas pasadas');
+    expect(t).toContain('Fecha de cosecha mediana');
+    expect(t).not.toContain('Campaña completa');
+  });
+
   it('unavailable expected yield says why; a negative water gap shows 0%', () => {
     const r: CropSimulationResult = {
       ...base, irrigation: 'full', water_gap_pct: -1.4,
