@@ -1,0 +1,1058 @@
+# Nutrient-balance coefficients per crop (FertiliCalc schema). P and K elemental, % of DM.
+# Every value: source_id (registered), ref (table/page), raw value and transformation.
+# Generated from the owner-reviewed table; edit the table, not this file by hand.
+dataset_version: 2026-10-11.1
+crops:
+  BEAVX:
+    values:
+      dm_product_pct:
+        value: 20.0
+        source_id: panagos_2022
+        ref: Suppl. Table S1 (not viewed; value read from Dryad Combined_crop_data.csv,
+          rows citing Panagos 2022, variable DM_pc, original_crop "Sugar beet")
+        raw: 20 % DM (humidity rate Eurostat)
+        transformation: none
+        note: 'Texto de Panagos p. 8: los porcentajes de humedad proceden de estadísticas
+          de Eurostat (tabla suplementaria S1).'
+      n_product_pct:
+        value: 0.55
+        source_id: mapa_guia_2010
+        ref: Tabla 20.2, p. 157 (Parte II PDF p. 37)
+        raw: 1.1 kg N / t root (fresh)
+        transformation: N% = 1.1/(10*0.20) [DM 20 % from panagos_2022 Suppl. S1]
+        note: 'FUENTE MIXTA (materia seca 20 % de Panagos; la guía no la da). Raíz:
+          1,1 kg N/t de raíz (Tabla 20.2; las hojas llevan 1,4 aparte). ESSD da 2,1
+          kg N/t = 1,05 % (+91 %); se usa la guía MAPA por el orden de prioridad.'
+      p_product_pct:
+        value: 0.1528
+        source_id: mapa_guia_2010
+        ref: Tabla 20.2, p. 157 (Parte II PDF p. 37)
+        raw: 0.7 kg P2O5 / t root (fresh)
+        transformation: P = 0.7/2.291 = 0.3055 kg P/t; P% = 0.3055/(10*0.20) [DM from
+          panagos_2022]
+        note: 'FUENTE MIXTA (materia seca 20 % de Panagos). Raíz: 0,7 kg P2O5/t de
+          raíz (Tabla 20.2). Panagos da 0,1742 % (+14 %); ESSD 0,250 % (+64 %). Se
+          usa la guía MAPA por el orden de prioridad.'
+      k_product_pct:
+        value: 0.8299
+        source_id: mapa_guia_2010
+        ref: Tabla 20.2, p. 157 (Parte II PDF p. 37)
+        raw: 2.0 kg K2O / t root (fresh)
+        transformation: K = 2.0/1.205 = 1.6598 kg K/t; K% = 1.6598/(10*0.20) [DM from
+          panagos_2022]
+        note: 'FUENTE MIXTA (materia seca 20 % de Panagos). Raíz: 2,0 kg K2O/t de
+          raíz (Tabla 20.2). ESSD da 2,3 kg K/t = 1,150 % (+39 %); se usa la guía
+          MAPA por el orden de prioridad.'
+      n_residue_pct:
+        value: 1.0
+        source_id: fertilicalc_script_2024
+        ref: fertilicalc_script_231124.py, residue defaults (n_res/p_res/k_res)
+        raw: '1.0 % of DM (script literal: n_res[i] = 1./100., i.e. fraction)'
+        transformation: none (default of the reference method)
+        note: 'Valor por defecto de FertiliCalc: no hay dato publicado abierto para
+          los restos de este cultivo; ajústelo si dispone de un análisis o una tabla.
+          La guía MAPA (Tabla 20.2) da lo que llevan las hojas por t de raíz (N 1,4;
+          P2O5 0,4; K2O 3,0 kg/t) pero no su masa, por lo que no se puede pasar a
+          % de MS.'
+      p_residue_pct:
+        value: 0.1
+        source_id: fertilicalc_script_2024
+        ref: fertilicalc_script_231124.py, residue defaults (n_res/p_res/k_res)
+        raw: '0.1 % of DM (script literal: p_res[i] = 0.1/100., i.e. fraction)'
+        transformation: none (default of the reference method)
+        note: 'Valor por defecto de FertiliCalc: no hay dato publicado abierto para
+          los restos de este cultivo; ajústelo si dispone de un análisis o una tabla.
+          La guía MAPA (Tabla 20.2) da lo que llevan las hojas por t de raíz (N 1,4;
+          P2O5 0,4; K2O 3,0 kg/t) pero no su masa, por lo que no se puede pasar a
+          % de MS.'
+      k_residue_pct:
+        value: 1.0
+        source_id: fertilicalc_script_2024
+        ref: fertilicalc_script_231124.py, residue defaults (n_res/p_res/k_res)
+        raw: '1.0 % of DM (script literal: k_res[i] = 1./100., i.e. fraction)'
+        transformation: none (default of the reference method)
+        note: 'Valor por defecto de FertiliCalc: no hay dato publicado abierto para
+          los restos de este cultivo; ajústelo si dispone de un análisis o una tabla.
+          La guía MAPA (Tabla 20.2) da lo que llevan las hojas por t de raíz (N 1,4;
+          P2O5 0,4; K2O 3,0 kg/t) pero no su masa, por lo que no se puede pasar a
+          % de MS.'
+    crop_type: industrial
+    harvest_product: root
+    residue_product: leaves (tops)
+    n_fixing: false
+  BRSNN:
+    values:
+      dm_product_pct:
+        value: 86.0
+        source_id: panagos_2022
+        ref: Suppl. Table S1 (not viewed; value read from Dryad Combined_crop_data.csv,
+          rows citing Panagos 2022, variable DM_pc, original_crop "Rape")
+        raw: 86 % DM (humidity rate Eurostat)
+        transformation: none
+        note: 'Texto de Panagos p. 8: los porcentajes de humedad proceden de estadísticas
+          de Eurostat (tabla suplementaria S1).'
+      n_product_pct:
+        value: 3.605
+        source_id: essd_2024_s3
+        ref: Table S3, p. 10 (PDF) (row "Rapeseed")
+        raw: 31 kg N / t fresh commodity (2 s.f.)
+        transformation: N% = 31/(10*0.86) [DM 86 % from dm_product_pct row]
+        note: 'FUENTE MIXTA: la tabla S3 no indica la humedad; la materia seca (MS)
+          se toma de la fila dm_product_pct de este cultivo.'
+      p_product_pct:
+        value: 0.703
+        source_id: panagos_2022
+        ref: Table 1, p. 9 (row "Rape")
+        raw: 0.703 % P on dry matter yield
+        transformation: none
+        note: Concentración de fósforo en el producto comercial según Panagos; 169
+          muestras.
+      n_residue_pct:
+        value: 1.0
+        source_id: fertilicalc_script_2024
+        ref: fertilicalc_script_231124.py, residue defaults (n_res/p_res/k_res)
+        raw: '1.0 % of DM (script literal: n_res[i] = 1./100., i.e. fraction)'
+        transformation: none (default of the reference method)
+        note: 'Valor por defecto de FertiliCalc: no hay dato publicado abierto para
+          los restos de este cultivo; ajústelo si dispone de un análisis o una tabla.
+          La guía MAPA solo da la extracción de la planta entera (40-50 kg N, 25-30
+          kg P2O5, 35-40 kg K2O por t de grano).'
+      p_residue_pct:
+        value: 0.11
+        source_id: panagos_2022
+        ref: Table 2, p. 11 (row "Rape", Pcr)
+        raw: 0.11 % P on dry matter of residues
+        transformation: none
+        note: 'Panagos usa un único valor genérico para los restos de todos los cereales
+          y oleaginosas (texto p. 11: media 0,11 %).'
+      k_residue_pct:
+        value: 1.0
+        source_id: fertilicalc_script_2024
+        ref: fertilicalc_script_231124.py, residue defaults (n_res/p_res/k_res)
+        raw: '1.0 % of DM (script literal: k_res[i] = 1./100., i.e. fraction)'
+        transformation: none (default of the reference method)
+        note: 'Valor por defecto de FertiliCalc: no hay dato publicado abierto para
+          los restos de este cultivo; ajústelo si dispone de un análisis o una tabla.
+          La guía MAPA solo da la extracción de la planta entera (40-50 kg N, 25-30
+          kg P2O5, 35-40 kg K2O por t de grano).'
+      balance_harvest_index_pct:
+        value: 36.5
+        source_id: panagos_2022
+        ref: Table 2, p. 11 (row "Rape", Rres) + eq. (6), p. 10
+        raw: '1.74 Rres: residue per t of crop production'
+        transformation: 'HI = 100/(1+1.74); eq.(6) multiplies Rres by product DM so
+          Rres is residue DM : product DM'
+        note: El artículo no publica el índice de cosecha; aquí se calcula a partir
+          de Rres (el mismo valor figura en la variable HI de los datos de Dryad).
+      residue_left_pct:
+        value: 80.0
+        source_id: panagos_2022
+        ref: Table 2, p. 11 (row "Rape", Rrem) and text p. 11
+        raw: '0.2 Rrem: ratio of residues removed from the field'
+        transformation: left = 100*(1-0.2)
+        note: Media UE (Panagos); ajústelo a lo que haga en su parcela
+    crop_type: industrial
+    harvest_product: grain
+    n_fixing: false
+  HELAN:
+    values:
+      dm_product_pct:
+        value: 91.0
+        source_id: mapa_guia_2010
+        ref: Texto, p. 167 (Parte II PDF p. 47)
+        raw: 9 % humedad (pipas)
+        transformation: DM = 100 - 9
+        note: Humedad comercial de la pipa que indica la guía (también 2 % de impurezas
+          y 44 % de grasa). Panagos (tabla S1) da 86 (5 puntos menos).
+      n_product_pct:
+        value: 2.637
+        source_id: essd_2024_s3
+        ref: Table S3, p. 11 (PDF) (row "Sunflower seed")
+        raw: 24 kg N / t fresh commodity (2 s.f.)
+        transformation: N% = 24/(10*0.91) [DM 91 % from dm_product_pct row]
+        note: 'FUENTE MIXTA: la tabla S3 no indica la humedad; la materia seca (MS)
+          se toma de la fila dm_product_pct de este cultivo.'
+      p_product_pct:
+        value: 0.5806
+        source_id: panagos_2022
+        ref: Table 1, p. 9 (row "Sunflower")
+        raw: 0.5806 % P on dry matter yield
+        transformation: none
+        note: Panagos, una sola muestra (Sauvant 2004). ESSD da 0,429 % (−26 %); la
+          guía MAPA solo da la planta entera. Se usa Panagos por el orden de prioridad
+          MAPA > Panagos > ESSD.
+      k_product_pct:
+        value: 0.7143
+        source_id: essd_2024_s3
+        ref: Table S3, p. 11 (PDF) (row "Sunflower seed")
+        raw: 6.5 kg K / t fresh commodity (2 s.f.)
+        transformation: K% = 6.5/(10*0.91) [DM 91 % from dm_product_pct row]
+        note: 'FUENTE MIXTA: la tabla S3 no indica la humedad; la materia seca (MS)
+          se toma de la fila dm_product_pct de este cultivo.'
+      n_residue_pct:
+        value: 1.0
+        source_id: fertilicalc_script_2024
+        ref: fertilicalc_script_231124.py, residue defaults (n_res/p_res/k_res)
+        raw: '1.0 % of DM (script literal: n_res[i] = 1./100., i.e. fraction)'
+        transformation: none (default of the reference method)
+        note: 'Valor por defecto de FertiliCalc: no hay dato publicado abierto para
+          los restos de este cultivo; ajústelo si dispone de un análisis o una tabla.
+          La guía MAPA solo da la extracción de la planta entera (30-40 kg N, 15-20
+          kg P2O5, 30-40 kg K2O por t de pipa).'
+      p_residue_pct:
+        value: 0.11
+        source_id: panagos_2022
+        ref: Table 2, p. 11 (row "Sunflower", Pcr)
+        raw: 0.11 % P on dry matter of residues
+        transformation: none
+        note: 'Panagos usa un único valor genérico para los restos de todos los cereales
+          y oleaginosas (texto p. 11: media 0,11 %).'
+      k_residue_pct:
+        value: 1.0
+        source_id: fertilicalc_script_2024
+        ref: fertilicalc_script_231124.py, residue defaults (n_res/p_res/k_res)
+        raw: '1.0 % of DM (script literal: k_res[i] = 1./100., i.e. fraction)'
+        transformation: none (default of the reference method)
+        note: 'Valor por defecto de FertiliCalc: no hay dato publicado abierto para
+          los restos de este cultivo; ajústelo si dispone de un análisis o una tabla.
+          La guía MAPA solo da la extracción de la planta entera (30-40 kg N, 15-20
+          kg P2O5, 30-40 kg K2O por t de pipa).'
+      balance_harvest_index_pct:
+        value: 28.82
+        source_id: panagos_2022
+        ref: Table 2, p. 11 (row "Sunflower", Rres) + eq. (6), p. 10
+        raw: '2.47 Rres: residue per t of crop production'
+        transformation: 'HI = 100/(1+2.47); eq.(6) multiplies Rres by product DM so
+          Rres is residue DM : product DM'
+        note: El artículo no publica el índice de cosecha; aquí se calcula a partir
+          de Rres (el mismo valor figura en la variable HI de los datos de Dryad).
+      residue_left_pct:
+        value: 80.0
+        source_id: panagos_2022
+        ref: Table 2, p. 11 (row "Sunflower", Rrem) and text p. 11
+        raw: '0.2 Rrem: ratio of residues removed from the field'
+        transformation: left = 100*(1-0.2)
+        note: Media UE (Panagos); ajústelo a lo que haga en su parcela
+    crop_type: industrial
+    harvest_product: seed (pipas)
+    n_fixing: false
+  HORVX:
+    values:
+      dm_product_pct:
+        value: 86.0
+        source_id: panagos_2022
+        ref: Suppl. Table S1 (not viewed; value read from Dryad Combined_crop_data.csv,
+          rows citing Panagos 2022, variable DM_pc, original_crop "Barley")
+        raw: 86 % DM (humidity rate Eurostat)
+        transformation: none
+        note: 'Texto de Panagos p. 8: los porcentajes de humedad proceden de estadísticas
+          de Eurostat (tabla suplementaria S1).'
+      n_product_pct:
+        value: 2.093
+        source_id: essd_2024_s3
+        ref: Table S3, p. 8 (PDF) (row "Barley")
+        raw: 18 kg N / t fresh commodity (2 s.f.)
+        transformation: N% = 18/(10*0.86) [DM 86 % from dm_product_pct row]
+        note: 'FUENTE MIXTA: la tabla S3 no indica la humedad; la materia seca (MS)
+          se toma de la fila dm_product_pct de este cultivo.'
+      p_product_pct:
+        value: 0.4058
+        source_id: panagos_2022
+        ref: Table 1, p. 9 (row "Barley")
+        raw: 0.4058 % P on dry matter yield
+        transformation: none
+        note: Concentración de fósforo en el producto comercial según Panagos; 289
+          muestras.
+      k_product_pct:
+        value: 0.6744
+        source_id: essd_2024_s3
+        ref: Table S3, p. 8 (PDF) (row "Barley")
+        raw: 5.8 kg K / t fresh commodity (2 s.f.)
+        transformation: K% = 5.8/(10*0.86) [DM 86 % from dm_product_pct row]
+        note: 'FUENTE MIXTA: la tabla S3 no indica la humedad; la materia seca (MS)
+          se toma de la fila dm_product_pct de este cultivo.'
+      n_residue_pct:
+        value: 0.9896
+        source_id: mapa_guia_2010
+        ref: Tabla 16.2, p. 125 (Parte II PDF p. 5), row Cebada
+        raw: 24-28 kg N / t grain, Tabla 16.2 row Cebada (grain+straw)
+        transformation: N_res% = (26 - 17.9998) / (860 x 0.94) x 100; 26 = midpoint(24,28)
+          kg N/t grain (T16.2, grain+straw); 17.9998 = n_product_pct 2.093 % x 860
+          kg DM/t grain / 100; 860 = 10 x dm_product_pct 86; 0.94 = Rres (panagos_2022
+          Table 2)
+        note: 'FUENTE MIXTA: la guía MAPA da la extracción total del cultivo (grano+paja),
+          24-28 kg N por t de grano; se toma el punto medio (26). Se resta el N del
+          grano (ESSD, 18,0 kg/t) y se divide por la masa de restos (Panagos: Rres
+          0,94 x 860 kg MS de grano/t = 808,4 kg). Con los extremos 24 y 28 saldría
+          0,74 % y 1,24 %. Resultado sensible a ese rango; contraste con un análisis
+          de su paja.'
+      p_residue_pct:
+        value: 0.1622
+        source_id: mapa_guia_2010
+        ref: Tabla 16.2, p. 125 (Parte II PDF p. 5), row Cebada
+        raw: 10-12 kg P2O5 / t grain, Tabla 16.2 row Cebada (grain+straw)
+        transformation: P_res% = (11/2.291 - 3.4899) / (860 x 0.94) x 100; 11 = midpoint(10,12)
+          kg P2O5/t grain (T16.2, grain+straw), /2.291 -> kg P/t = 4.8014; 3.4899
+          = p_product_pct 0.4058 % x 860 kg DM/t grain / 100; 860 = 10 x dm_product_pct
+          86; 0.94 = Rres (panagos_2022 Table 2)
+        note: 'FUENTE MIXTA: la guía MAPA da la extracción total del cultivo (grano+paja),
+          10-12 kg P2O5 por t de grano; punto medio 11 (= 4,80 kg P/t). Se resta el
+          P del grano (Panagos, 0,4058 % MS = 3,49 kg/t) y se divide por 808,4 kg
+          de restos (Panagos: Rres 0,94). Con los extremos 10 y 12 saldría 0,108 %
+          y 0,216 %. Panagos da 0,11 % para restos (−32 % frente a este valor); se
+          usa la guía MAPA por el orden de prioridad MAPA > Panagos > ESSD.'
+      k_residue_pct:
+        value: 2.054
+        source_id: mapa_guia_2010
+        ref: Tabla 16.2, p. 125 (Parte II PDF p. 5), row Cebada
+        raw: 19-35 kg K2O / t grain, Tabla 16.2 row Cebada (grain+straw)
+        transformation: K_res% = (27/1.205 - 5.7998) / (860 x 0.94) x 100; 27 = midpoint(19,35)
+          kg K2O/t grain (T16.2, grain+straw), /1.205 -> kg K/t = 22.4066; 5.7998
+          = k_product_pct 0.6744 % x 860 kg DM/t grain / 100; 860 = 10 x dm_product_pct
+          86; 0.94 = Rres (panagos_2022 Table 2)
+        note: 'FUENTE MIXTA: la guía MAPA da la extracción total del cultivo (grano+paja),
+          19-35 kg K2O por t de grano; punto medio 27 (= 22,41 kg K/t). Se resta el
+          K del grano (ESSD, 5,80 kg/t) y se divide por 808,4 kg de restos (Panagos:
+          Rres 0,94). Con los extremos 19 y 35 saldría 1,23 % y 2,88 %. Contraste
+          con un análisis de su paja.'
+      balance_harvest_index_pct:
+        value: 51.55
+        source_id: panagos_2022
+        ref: Table 2, p. 11 (row "Barley", Rres) + eq. (6), p. 10
+        raw: '0.94 Rres: residue per t of crop production'
+        transformation: 'HI = 100/(1+0.94); eq.(6) multiplies Rres by product DM so
+          Rres is residue DM : product DM'
+        note: El artículo no publica el índice de cosecha; aquí se calcula a partir
+          de Rres (el mismo valor figura en la variable HI de los datos de Dryad).
+      residue_left_pct:
+        value: 50.0
+        source_id: panagos_2022
+        ref: Table 2, p. 11 (row "Barley", Rrem) and text p. 11
+        raw: '0.5 Rrem: ratio of residues removed from the field'
+        transformation: left = 100*(1-0.5)
+        note: Media UE (Panagos); ajústelo a lo que haga en su parcela
+    crop_type: cereal
+    harvest_product: grain
+    residue_product: straw
+    n_fixing: false
+  MEDSA:
+    values:
+      p_product_pct:
+        value: 0.3492
+        source_id: mapa_guia_2010
+        ref: Tabla 22.2, p. 179 (Parte II PDF p. 59)
+        raw: '80 kg P2O5/ha for 10 t DM/ha kg P2O5/ha (title: producción estimada
+          10 t/ha/año de materia seca)'
+        transformation: P2O5 = 80/10 = 8 kg/t DM; P = 8/2.291 = 3.4919 kg/t DM; %
+          = kg/t DM / 10
+        note: 'Guía MAPA, Tabla 22.2: extracción de 80 kg P2O5/ha para 10 t MS/ha.
+          La tabla es de «prados, praderas y alfalfa» a la vez, no solo de alfalfa.
+          Panagos («otros forrajes en tierra arable») da 0,2111 % (−40 %); se usa
+          la guía MAPA por el orden de prioridad.'
+      k_product_pct:
+        value: 2.075
+        source_id: mapa_guia_2010
+        ref: Tabla 22.3, p. 179 (Parte II PDF p. 59)
+        raw: '250 kg K2O/ha for 10 t DM/ha kg K2O/ha (title: producción estimada 10
+          t/ha/año de materia seca)'
+        transformation: K2O = 250/10 = 25 kg/t DM; K = 25/1.205 = 20.7469 kg/t DM;
+          % = kg/t DM / 10
+        note: 'Guía MAPA, Tabla 22.3: extracción de 250 kg K2O/ha para 10 t MS/ha.
+          La tabla es de «prados, praderas y alfalfa» a la vez, no solo de alfalfa.
+          No hay otra fuente comparable (ESSD no tiene forrajes; Panagos solo da fósforo).'
+      n_residue_pct:
+        value: 1.0
+        source_id: fertilicalc_script_2024
+        ref: fertilicalc_script_231124.py, residue defaults (n_res/p_res/k_res)
+        raw: '1.0 % of DM (script literal: n_res[i] = 1./100., i.e. fraction)'
+        transformation: none (default of the reference method)
+        note: 'Valor por defecto de FertiliCalc: no hay dato publicado abierto para
+          los restos de este cultivo; ajústelo si dispone de un análisis o una tabla.'
+      p_residue_pct:
+        value: 0.1
+        source_id: fertilicalc_script_2024
+        ref: fertilicalc_script_231124.py, residue defaults (n_res/p_res/k_res)
+        raw: '0.1 % of DM (script literal: p_res[i] = 0.1/100., i.e. fraction)'
+        transformation: none (default of the reference method)
+        note: 'Valor por defecto de FertiliCalc: no hay dato publicado abierto para
+          los restos de este cultivo; ajústelo si dispone de un análisis o una tabla.'
+      k_residue_pct:
+        value: 1.0
+        source_id: fertilicalc_script_2024
+        ref: fertilicalc_script_231124.py, residue defaults (n_res/p_res/k_res)
+        raw: '1.0 % of DM (script literal: k_res[i] = 1./100., i.e. fraction)'
+        transformation: none (default of the reference method)
+        note: 'Valor por defecto de FertiliCalc: no hay dato publicado abierto para
+          los restos de este cultivo; ajústelo si dispone de un análisis o una tabla.'
+    crop_type: forage_legume
+    harvest_product: cut forage
+    n_fixing: true
+  OLVEU:
+    values:
+      dm_product_pct:
+        value: 35.0
+        source_id: panagos_2022
+        ref: Suppl. Table S1 (not viewed; value read from Dryad Combined_crop_data.csv,
+          rows citing Panagos 2022, variable DM_pc, original_crop "Olives")
+        raw: 35 % DM (humidity rate Eurostat)
+        transformation: none
+        note: 'Texto de Panagos p. 8: los porcentajes de humedad proceden de estadísticas
+          de Eurostat (tabla suplementaria S1).'
+      n_product_pct:
+        value: 2.086
+        source_id: essd_2024_s3
+        ref: Table S3, p. 10 (PDF) (row "Olives")
+        raw: 7.3 kg N / t fresh commodity (2 s.f.)
+        transformation: N% = 7.3/(10*0.35) [DM 35 % from dm_product_pct row]
+        note: 'FUENTE MIXTA: la tabla S3 no indica la humedad; la materia seca (MS)
+          se toma de la fila dm_product_pct de este cultivo.'
+      p_product_pct:
+        value: 0.104
+        source_id: panagos_2022
+        ref: Table 1, p. 10 (row "Olives")
+        raw: 0.104 % P on dry matter yield
+        transformation: none
+        note: 'Panagos (sin recuento de muestras en el artículo). ESSD da 11 kg P/t
+          = 3,14 % de MS (+2922 %): son 25 kg P2O5/t, unas 5-6 veces lo que la guía
+          MAPA da para todo el olivo (4-5 kg P2O5/t, Tabla 27.4); se descarta por
+          error evidente. Se usa Panagos.'
+      k_product_pct:
+        value: 2.857
+        source_id: essd_2024_s3
+        ref: Table S3, p. 10 (PDF) (row "Olives")
+        raw: 10 kg K / t fresh commodity (2 s.f.)
+        transformation: K% = 10/(10*0.35) [DM 35 % from dm_product_pct row]
+        note: 'FUENTE MIXTA: la tabla S3 no indica la humedad; la materia seca (MS)
+          se toma de la fila dm_product_pct de este cultivo.'
+      n_residue_pct:
+        value: 1.0
+        source_id: fertilicalc_script_2024
+        ref: fertilicalc_script_231124.py, residue defaults (n_res/p_res/k_res)
+        raw: '1.0 % of DM (script literal: n_res[i] = 1./100., i.e. fraction)'
+        transformation: none (default of the reference method)
+        note: 'Valor por defecto de FertiliCalc: no hay dato publicado abierto para
+          los restos de este cultivo; ajústelo si dispone de un análisis o una tabla.'
+      p_residue_pct:
+        value: 0.1
+        source_id: fertilicalc_script_2024
+        ref: fertilicalc_script_231124.py, residue defaults (n_res/p_res/k_res)
+        raw: '0.1 % of DM (script literal: p_res[i] = 0.1/100., i.e. fraction)'
+        transformation: none (default of the reference method)
+        note: 'Valor por defecto de FertiliCalc: no hay dato publicado abierto para
+          los restos de este cultivo; ajústelo si dispone de un análisis o una tabla.'
+      k_residue_pct:
+        value: 1.0
+        source_id: fertilicalc_script_2024
+        ref: fertilicalc_script_231124.py, residue defaults (n_res/p_res/k_res)
+        raw: '1.0 % of DM (script literal: k_res[i] = 1./100., i.e. fraction)'
+        transformation: none (default of the reference method)
+        note: 'Valor por defecto de FertiliCalc: no hay dato publicado abierto para
+          los restos de este cultivo; ajústelo si dispone de un análisis o una tabla.'
+    crop_type: tree
+    harvest_product: olives (aceitunas)
+    n_fixing: false
+  PIBSX:
+    values:
+      dm_product_pct:
+        value: 86.0
+        source_id: panagos_2022
+        ref: Suppl. Table S1 (not viewed; value read from Dryad Combined_crop_data.csv,
+          rows citing Panagos 2022, variable DM_pc, original_crop "Pulses")
+        raw: 86 % DM (humidity rate Eurostat)
+        transformation: none
+        note: 'Texto de Panagos p. 8: los porcentajes de humedad proceden de estadísticas
+          de Eurostat (tabla suplementaria S1).'
+      n_product_pct:
+        value: 4.419
+        source_id: essd_2024_s3
+        ref: Table S3, p. 10 (PDF) (row "Peas, dry")
+        raw: 38 kg N / t fresh commodity (2 s.f.)
+        transformation: N% = 38/(10*0.86) [DM 86 % from dm_product_pct row]
+        note: 'FUENTE MIXTA: la tabla S3 no indica la humedad; la materia seca (MS)
+          se toma de la fila dm_product_pct de este cultivo.'
+      p_product_pct:
+        value: 0.497
+        source_id: panagos_2022
+        ref: Table 1, p. 9 (row "Pulses")
+        raw: 0.497 % P on dry matter yield
+        transformation: none
+        note: Panagos, fila genérica «legumbres» (52 muestras). ESSD da 1,012 % (+104
+          %) y la Tabla 18.5 de la guía (20 kg P2O5/t) equivale a 1,015 % (+104 %),
+          pero esa tabla es extracción del cultivo (en el trigo, la misma clase de
+          tabla incluye la paja) y no lo que lleva el grano. Se usa Panagos; contraste
+          con un análisis del grano.
+      k_product_pct:
+        value: 1.14
+        source_id: essd_2024_s3
+        ref: Table S3, p. 10 (PDF) (row "Peas, dry")
+        raw: 9.8 kg K / t fresh commodity (2 s.f.)
+        transformation: K% = 9.8/(10*0.86) [DM 86 % from dm_product_pct row]
+        note: 'FUENTE MIXTA (materia seca 86 % de Panagos). ESSD: 9,8 kg K/t de grano.
+          La Tabla 18.5 de la guía (30 kg K2O/t) equivale a 2,89 % (+154 %), pero
+          es extracción de todo el cultivo, no el contenido del grano; no se usa.'
+      n_residue_pct:
+        value: 1.0
+        source_id: fertilicalc_script_2024
+        ref: fertilicalc_script_231124.py, residue defaults (n_res/p_res/k_res)
+        raw: '1.0 % of DM (script literal: n_res[i] = 1./100., i.e. fraction)'
+        transformation: none (default of the reference method)
+        note: 'Valor por defecto de FertiliCalc: no hay dato publicado abierto para
+          los restos de este cultivo; ajústelo si dispone de un análisis o una tabla.'
+      p_residue_pct:
+        value: 0.1
+        source_id: fertilicalc_script_2024
+        ref: fertilicalc_script_231124.py, residue defaults (n_res/p_res/k_res)
+        raw: '0.1 % of DM (script literal: p_res[i] = 0.1/100., i.e. fraction)'
+        transformation: none (default of the reference method)
+        note: 'Valor por defecto de FertiliCalc: no hay dato publicado abierto para
+          los restos de este cultivo; ajústelo si dispone de un análisis o una tabla.'
+      k_residue_pct:
+        value: 1.0
+        source_id: fertilicalc_script_2024
+        ref: fertilicalc_script_231124.py, residue defaults (n_res/p_res/k_res)
+        raw: '1.0 % of DM (script literal: k_res[i] = 1./100., i.e. fraction)'
+        transformation: none (default of the reference method)
+        note: 'Valor por defecto de FertiliCalc: no hay dato publicado abierto para
+          los restos de este cultivo; ajústelo si dispone de un análisis o una tabla.'
+    crop_type: grain_legume
+    harvest_product: dry grain
+    n_fixing: true
+  PRNDU:
+    values:
+      n_residue_pct:
+        value: 1.0
+        source_id: fertilicalc_script_2024
+        ref: fertilicalc_script_231124.py, residue defaults (n_res/p_res/k_res)
+        raw: '1.0 % of DM (script literal: n_res[i] = 1./100., i.e. fraction)'
+        transformation: none (default of the reference method)
+        note: 'Valor por defecto de FertiliCalc: no hay dato publicado abierto para
+          los restos de este cultivo; ajústelo si dispone de un análisis o una tabla.'
+      p_residue_pct:
+        value: 0.1
+        source_id: fertilicalc_script_2024
+        ref: fertilicalc_script_231124.py, residue defaults (n_res/p_res/k_res)
+        raw: '0.1 % of DM (script literal: p_res[i] = 0.1/100., i.e. fraction)'
+        transformation: none (default of the reference method)
+        note: 'Valor por defecto de FertiliCalc: no hay dato publicado abierto para
+          los restos de este cultivo; ajústelo si dispone de un análisis o una tabla.'
+      k_residue_pct:
+        value: 1.0
+        source_id: fertilicalc_script_2024
+        ref: fertilicalc_script_231124.py, residue defaults (n_res/p_res/k_res)
+        raw: '1.0 % of DM (script literal: k_res[i] = 1./100., i.e. fraction)'
+        transformation: none (default of the reference method)
+        note: 'Valor por defecto de FertiliCalc: no hay dato publicado abierto para
+          los restos de este cultivo; ajústelo si dispone de un análisis o una tabla.'
+    crop_type: tree
+    harvest_product: almond in shell (almendra en cáscara)
+    residue_product: leaves and pruning wood (hojas, madera de poda)
+    n_fixing: false
+  SOLTU:
+    values:
+      dm_product_pct:
+        value: 20.0
+        source_id: panagos_2022
+        ref: Suppl. Table S1 (not viewed; value read from Dryad Combined_crop_data.csv,
+          rows citing Panagos 2022, variable DM_pc, original_crop "Potatoes")
+        raw: 20 % DM (humidity rate Eurostat)
+        transformation: none
+        note: 'Texto de Panagos p. 8: los porcentajes de humedad proceden de estadísticas
+          de Eurostat (tabla suplementaria S1).'
+      n_product_pct:
+        value: 1.25
+        source_id: essd_2024_s3
+        ref: Table S3, p. 10 (PDF) (row "Potatoes")
+        raw: 2.5 kg N / t fresh commodity (2 s.f.)
+        transformation: N% = 2.5/(10*0.20) [DM 20 % from dm_product_pct row]
+        note: 'FUENTE MIXTA (materia seca 20 % de Panagos). ESSD: 2,5 kg N/t de tubérculo.
+          La guía MAPA da 3,5-5 kg N/t (1,75-2,50 %, +40 % a +100 %), pero son «nutrientes
+          absorbidos» por la planta entera, no lo que lleva el tubérculo; no se usa.'
+      p_product_pct:
+        value: 0.2375
+        source_id: panagos_2022
+        ref: Table 1, p. 9 (row "Potatoes")
+        raw: 0.2375 % P on dry matter yield
+        transformation: none
+        note: Panagos (349 muestras). ESSD da 0,50 % (+111 %). La guía MAPA (1,5-2
+          kg P2O5/t) equivale a 0,33-0,44 % (+38 % a +84 %) pero es lo absorbido por
+          la planta entera, no lo del tubérculo. Se usa Panagos.
+      k_product_pct:
+        value: 3.1
+        source_id: essd_2024_s3
+        ref: Table S3, p. 10 (PDF) (row "Potatoes")
+        raw: 6.2 kg K / t fresh commodity (2 s.f.)
+        transformation: K% = 6.2/(10*0.20) [DM 20 % from dm_product_pct row]
+        note: 'FUENTE MIXTA (materia seca 20 % de Panagos). ESSD: 6,2 kg K/t de tubérculo.
+          La guía MAPA da 6-10 kg K2O/t (2,49-4,15 %, −20 % a +34 %), absorción de
+          la planta entera; no se usa.'
+      n_residue_pct:
+        value: 1.0
+        source_id: fertilicalc_script_2024
+        ref: fertilicalc_script_231124.py, residue defaults (n_res/p_res/k_res)
+        raw: '1.0 % of DM (script literal: n_res[i] = 1./100., i.e. fraction)'
+        transformation: none (default of the reference method)
+        note: 'Valor por defecto de FertiliCalc: no hay dato publicado abierto para
+          los restos de este cultivo; ajústelo si dispone de un análisis o una tabla.
+          La guía MAPA no da la composición de la mata.'
+      p_residue_pct:
+        value: 0.1
+        source_id: fertilicalc_script_2024
+        ref: fertilicalc_script_231124.py, residue defaults (n_res/p_res/k_res)
+        raw: '0.1 % of DM (script literal: p_res[i] = 0.1/100., i.e. fraction)'
+        transformation: none (default of the reference method)
+        note: 'Valor por defecto de FertiliCalc: no hay dato publicado abierto para
+          los restos de este cultivo; ajústelo si dispone de un análisis o una tabla.
+          La guía MAPA no da la composición de la mata.'
+      k_residue_pct:
+        value: 1.0
+        source_id: fertilicalc_script_2024
+        ref: fertilicalc_script_231124.py, residue defaults (n_res/p_res/k_res)
+        raw: '1.0 % of DM (script literal: k_res[i] = 1./100., i.e. fraction)'
+        transformation: none (default of the reference method)
+        note: 'Valor por defecto de FertiliCalc: no hay dato publicado abierto para
+          los restos de este cultivo; ajústelo si dispone de un análisis o una tabla.
+          La guía MAPA no da la composición de la mata.'
+    crop_type: tuber_root
+    harvest_product: tubers
+    n_fixing: false
+  TRZAX:
+    values:
+      dm_product_pct:
+        value: 86.0
+        source_id: panagos_2022
+        ref: Suppl. Table S1 (not viewed; value read from Dryad Combined_crop_data.csv,
+          rows citing Panagos 2022, variable DM_pc, original_crop "Soft wheat")
+        raw: 86 % DM (humidity rate Eurostat)
+        transformation: none
+        note: 'Texto de Panagos p. 8: los porcentajes de humedad proceden de estadísticas
+          de Eurostat (tabla suplementaria S1).'
+      n_product_pct:
+        value: 2.442
+        source_id: essd_2024_s3
+        ref: Table S3, p. 11 (PDF) (row "Wheat")
+        raw: 21 kg N / t fresh commodity (2 s.f.)
+        transformation: N% = 21/(10*0.86) [DM 86 % from dm_product_pct row]
+        note: 'FUENTE MIXTA: la tabla S3 no indica la humedad; la materia seca (MS)
+          se toma de la fila dm_product_pct de este cultivo.'
+      p_product_pct:
+        value: 0.3559
+        source_id: panagos_2022
+        ref: Table 1, p. 9 (row "Soft wheat")
+        raw: 0.3559 % P on dry matter yield
+        transformation: none
+        note: Panagos (332 muestras). ESSD da 0,488 % (+37 %); la guía MAPA solo da
+          grano y paja juntos (Tabla 16.2), sin separar. Se usa Panagos por el orden
+          de prioridad MAPA > Panagos > ESSD.
+      k_product_pct:
+        value: 0.6047
+        source_id: essd_2024_s3
+        ref: Table S3, p. 11 (PDF) (row "Wheat")
+        raw: 5.2 kg K / t fresh commodity (2 s.f.)
+        transformation: K% = 5.2/(10*0.86) [DM 86 % from dm_product_pct row]
+        note: 'FUENTE MIXTA: la tabla S3 no indica la humedad; la materia seca (MS)
+          se toma de la fila dm_product_pct de este cultivo.'
+      n_residue_pct:
+        value: 1.574
+        source_id: mapa_guia_2010
+        ref: Tabla 16.2, p. 125 (Parte II PDF p. 5), row Trigo
+        raw: 28-40 kg N / t grain, Tabla 16.2 row Trigo (grain+straw)
+        transformation: N_res% = (34 - 21.0012) / (860 x 0.96) x 100; 34 = midpoint(28,40)
+          kg N/t grain (T16.2, grain+straw); 21.0012 = n_product_pct 2.442 % x 860
+          kg DM/t grain / 100; 860 = 10 x dm_product_pct 86; 0.96 = Rres (panagos_2022
+          Table 2)
+        note: 'FUENTE MIXTA: la guía MAPA da la extracción total del cultivo (grano+paja),
+          28-40 kg N por t de grano; se toma el punto medio (34). Se resta el N del
+          grano (ESSD, 21,0 kg/t) y se divide por la masa de restos (Panagos: Rres
+          0,96 x 860 kg MS de grano/t = 825,6 kg). Con los extremos 28 y 40 saldría
+          0,85 % y 2,30 %; con los 30 kg N/t de promedio que cita el texto de la guía,
+          1,09 %. Resultado sensible a ese rango; contraste con un análisis de su
+          paja.'
+      p_residue_pct:
+        value: 0.2637
+        source_id: mapa_guia_2010
+        ref: Tabla 16.2, p. 125 (Parte II PDF p. 5), row Trigo
+        raw: 9-15 kg P2O5 / t grain, Tabla 16.2 row Trigo (grain+straw)
+        transformation: P_res% = (12/2.291 - 3.0607) / (860 x 0.96) x 100; 12 = midpoint(9,15)
+          kg P2O5/t grain (T16.2, grain+straw), /2.291 -> kg P/t = 5.2379; 3.0607
+          = p_product_pct 0.3559 % x 860 kg DM/t grain / 100; 860 = 10 x dm_product_pct
+          86; 0.96 = Rres (panagos_2022 Table 2)
+        note: 'FUENTE MIXTA: la guía MAPA da la extracción total del cultivo (grano+paja),
+          9-15 kg P2O5 por t de grano; punto medio 12 (= 5,24 kg P/t). Se resta el
+          P del grano (Panagos, 0,3559 % MS = 3,06 kg/t) y se divide por 825,6 kg
+          de restos (Panagos: Rres 0,96). Con los extremos 9 y 15 saldría 0,105 %
+          y 0,422 %. Panagos da 0,11 % para restos (−58 % frente a este valor); se
+          usa la guía MAPA por el orden de prioridad MAPA > Panagos > ESSD.'
+      k_residue_pct:
+        value: 2.134
+        source_id: mapa_guia_2010
+        ref: Tabla 16.2, p. 125 (Parte II PDF p. 5), row Trigo
+        raw: 20-35 kg K2O / t grain, Tabla 16.2 row Trigo (grain+straw)
+        transformation: K_res% = (27.5/1.205 - 5.2004) / (860 x 0.96) x 100; 27.5
+          = midpoint(20,35) kg K2O/t grain (T16.2, grain+straw), /1.205 -> kg K/t
+          = 22.8216; 5.2004 = k_product_pct 0.6047 % x 860 kg DM/t grain / 100; 860
+          = 10 x dm_product_pct 86; 0.96 = Rres (panagos_2022 Table 2)
+        note: 'FUENTE MIXTA: la guía MAPA da la extracción total del cultivo (grano+paja),
+          20-35 kg K2O por t de grano; punto medio 27,5 (= 22,82 kg K/t). Se resta
+          el K del grano (ESSD, 5,20 kg/t) y se divide por 825,6 kg de restos (Panagos:
+          Rres 0,96). Con los extremos 20 y 35 saldría 1,38 % y 2,89 %. Contraste
+          con un análisis de su paja.'
+      balance_harvest_index_pct:
+        value: 51.02
+        source_id: panagos_2022
+        ref: Table 2, p. 11 (row "Soft wheat", Rres) + eq. (6), p. 10
+        raw: '0.96 Rres: residue per t of crop production'
+        transformation: 'HI = 100/(1+0.96); eq.(6) multiplies Rres by product DM so
+          Rres is residue DM : product DM'
+        note: El artículo no publica el índice de cosecha; aquí se calcula a partir
+          de Rres (el mismo valor figura en la variable HI de los datos de Dryad).
+      residue_left_pct:
+        value: 50.0
+        source_id: panagos_2022
+        ref: Table 2, p. 11 (row "Soft wheat", Rrem) and text p. 11
+        raw: '0.5 Rrem: ratio of residues removed from the field'
+        transformation: left = 100*(1-0.5)
+        note: Media UE (Panagos); ajústelo a lo que haga en su parcela
+    crop_type: cereal
+    harvest_product: grain
+    residue_product: straw
+    n_fixing: false
+  TRZDU:
+    values:
+      dm_product_pct:
+        value: 86.0
+        source_id: panagos_2022
+        ref: Suppl. Table S1 (not viewed; value read from Dryad Combined_crop_data.csv,
+          rows citing Panagos 2022, variable DM_pc, original_crop "Durum wheat")
+        raw: 86 % DM (humidity rate Eurostat)
+        transformation: none
+        note: 'Texto de Panagos p. 8: los porcentajes de humedad proceden de estadísticas
+          de Eurostat (tabla suplementaria S1).'
+      n_product_pct:
+        value: 2.442
+        source_id: essd_2024_s3
+        ref: Table S3, p. 11 (PDF) (row "Wheat")
+        raw: 21 kg N / t fresh commodity (2 s.f.)
+        transformation: N% = 21/(10*0.86) [DM 86 % from dm_product_pct row]
+        note: 'FUENTE MIXTA: la tabla S3 no indica la humedad; la materia seca (MS)
+          se toma de la fila dm_product_pct de este cultivo.'
+      p_product_pct:
+        value: 0.3881
+        source_id: panagos_2022
+        ref: Table 1, p. 9 (row "Durum wheat")
+        raw: 0.3881 % P on dry matter yield
+        transformation: none
+        note: Panagos, una sola muestra (Sauvant 2004). ESSD (fila «Wheat») da 0,488
+          % (+26 %); la guía MAPA no distingue trigo duro ni separa grano de paja.
+          Se usa Panagos por el orden de prioridad MAPA > Panagos > ESSD.
+      k_product_pct:
+        value: 0.6047
+        source_id: essd_2024_s3
+        ref: Table S3, p. 11 (PDF) (row "Wheat")
+        raw: 5.2 kg K / t fresh commodity (2 s.f.)
+        transformation: K% = 5.2/(10*0.86) [DM 86 % from dm_product_pct row]
+        note: 'FUENTE MIXTA: la tabla S3 no indica la humedad; la materia seca (MS)
+          se toma de la fila dm_product_pct de este cultivo.'
+      n_residue_pct:
+        value: 1.574
+        source_id: mapa_guia_2010
+        ref: Tabla 16.2, p. 125 (Parte II PDF p. 5), row Trigo
+        raw: 28-40 kg N / t grain, Tabla 16.2 row Trigo (grain+straw)
+        transformation: N_res% = (34 - 21.0012) / (860 x 0.96) x 100; 34 = midpoint(28,40)
+          kg N/t grain (T16.2, grain+straw); 21.0012 = n_product_pct 2.442 % x 860
+          kg DM/t grain / 100; 860 = 10 x dm_product_pct 86; 0.96 = Rres (panagos_2022
+          Table 2)
+        note: 'FUENTE MIXTA: la guía MAPA da la extracción total del cultivo (grano+paja),
+          28-40 kg N por t de grano; se toma el punto medio (34). Se resta el N del
+          grano (ESSD, 21,0 kg/t) y se divide por la masa de restos (Panagos: Rres
+          0,96 x 860 kg MS de grano/t = 825,6 kg). Con los extremos 28 y 40 saldría
+          0,85 % y 2,30 %; con los 30 kg N/t de promedio que cita el texto de la guía,
+          1,09 %. Resultado sensible a ese rango; contraste con un análisis de su
+          paja. La guía MAPA no distingue trigo duro: se usa su fila «Trigo».'
+      p_residue_pct:
+        value: 0.2302
+        source_id: mapa_guia_2010
+        ref: Tabla 16.2, p. 125 (Parte II PDF p. 5), row Trigo
+        raw: 9-15 kg P2O5 / t grain, Tabla 16.2 row Trigo (grain+straw)
+        transformation: P_res% = (12/2.291 - 3.3377) / (860 x 0.96) x 100; 12 = midpoint(9,15)
+          kg P2O5/t grain (T16.2, grain+straw), /2.291 -> kg P/t = 5.2379; 3.3377
+          = p_product_pct 0.3881 % x 860 kg DM/t grain / 100; 860 = 10 x dm_product_pct
+          86; 0.96 = Rres (panagos_2022 Table 2)
+        note: 'FUENTE MIXTA: la guía MAPA da la extracción total del cultivo (grano+paja),
+          9-15 kg P2O5 por t de grano; punto medio 12 (= 5,24 kg P/t). Se resta el
+          P del grano (Panagos, 0,3881 % MS = 3,34 kg/t) y se divide por 825,6 kg
+          de restos (Panagos: Rres 0,96). Con los extremos 9 y 15 saldría 0,072 %
+          y 0,389 %. Panagos da 0,11 % para restos (−52 % frente a este valor); se
+          usa la guía MAPA por el orden de prioridad MAPA > Panagos > ESSD. El P del
+          grano de trigo duro de Panagos es de una sola muestra. La guía MAPA no distingue
+          trigo duro: se usa su fila «Trigo».'
+      k_residue_pct:
+        value: 2.134
+        source_id: mapa_guia_2010
+        ref: Tabla 16.2, p. 125 (Parte II PDF p. 5), row Trigo
+        raw: 20-35 kg K2O / t grain, Tabla 16.2 row Trigo (grain+straw)
+        transformation: K_res% = (27.5/1.205 - 5.2004) / (860 x 0.96) x 100; 27.5
+          = midpoint(20,35) kg K2O/t grain (T16.2, grain+straw), /1.205 -> kg K/t
+          = 22.8216; 5.2004 = k_product_pct 0.6047 % x 860 kg DM/t grain / 100; 860
+          = 10 x dm_product_pct 86; 0.96 = Rres (panagos_2022 Table 2)
+        note: 'FUENTE MIXTA: la guía MAPA da la extracción total del cultivo (grano+paja),
+          20-35 kg K2O por t de grano; punto medio 27,5 (= 22,82 kg K/t). Se resta
+          el K del grano (ESSD, 5,20 kg/t) y se divide por 825,6 kg de restos (Panagos:
+          Rres 0,96). Con los extremos 20 y 35 saldría 1,38 % y 2,89 %. Contraste
+          con un análisis de su paja. La guía MAPA no distingue trigo duro: se usa
+          su fila «Trigo».'
+      balance_harvest_index_pct:
+        value: 51.02
+        source_id: panagos_2022
+        ref: Table 2, p. 11 (row "Durum wheat", Rres) + eq. (6), p. 10
+        raw: '0.96 Rres: residue per t of crop production'
+        transformation: 'HI = 100/(1+0.96); eq.(6) multiplies Rres by product DM so
+          Rres is residue DM : product DM'
+        note: El artículo no publica el índice de cosecha; aquí se calcula a partir
+          de Rres (el mismo valor figura en la variable HI de los datos de Dryad).
+      residue_left_pct:
+        value: 50.0
+        source_id: panagos_2022
+        ref: Table 2, p. 11 (row "Durum wheat", Rrem) and text p. 11
+        raw: '0.5 Rrem: ratio of residues removed from the field'
+        transformation: left = 100*(1-0.5)
+        note: Media UE (Panagos); ajústelo a lo que haga en su parcela
+    crop_type: cereal
+    harvest_product: grain
+    residue_product: straw
+    n_fixing: false
+  VICFX:
+    values:
+      dm_product_pct:
+        value: 86.0
+        source_id: panagos_2022
+        ref: Suppl. Table S1 (not viewed; value read from Dryad Combined_crop_data.csv,
+          rows citing Panagos 2022, variable DM_pc, original_crop "Pulses")
+        raw: 86 % DM (humidity rate Eurostat)
+        transformation: none
+        note: 'Texto de Panagos p. 8: los porcentajes de humedad proceden de estadísticas
+          de Eurostat (tabla suplementaria S1).'
+      n_product_pct:
+        value: 3.488
+        source_id: essd_2024_s3
+        ref: Table S3, p. 8 (PDF) (row "Broad beans, horse beans, dry")
+        raw: 30 kg N / t fresh commodity (2 s.f.)
+        transformation: N% = 30/(10*0.86) [DM 86 % from dm_product_pct row]
+        note: 'FUENTE MIXTA (materia seca 86 % de Panagos). ESSD: 30 kg N/t de grano.
+          La Tabla 18.5 de la guía (60 kg N/t) equivale a 6,98 % (+100 %), pero es
+          extracción del cultivo entero, no el contenido del grano (la propia tabla
+          da 45 kg K2O/t = 37 kg K/t frente a 15 kg K/t del grano según ESSD); no
+          se usa.'
+      p_product_pct:
+        value: 0.497
+        source_id: panagos_2022
+        ref: Table 1, p. 9 (row "Pulses")
+        raw: 0.497 % P on dry matter yield
+        transformation: none
+        note: Panagos, fila genérica «legumbres» (52 muestras). ESSD da 0,593 % (+19
+          %). La Tabla 18.5 de la guía (17 kg P2O5/t) equivale a 0,863 % (+74 %),
+          pero es extracción del cultivo entero y no el contenido del grano; no se
+          usa.
+      k_product_pct:
+        value: 1.744
+        source_id: essd_2024_s3
+        ref: Table S3, p. 8 (PDF) (row "Broad beans, horse beans, dry")
+        raw: 15 kg K / t fresh commodity (2 s.f.)
+        transformation: K% = 15/(10*0.86) [DM 86 % from dm_product_pct row]
+        note: 'FUENTE MIXTA (materia seca 86 % de Panagos). ESSD: 15 kg K/t de grano.
+          La Tabla 18.5 de la guía (45 kg K2O/t) equivale a 4,34 % (+149 %), pero
+          es extracción del cultivo entero, no el contenido del grano; no se usa.'
+      n_residue_pct:
+        value: 1.0
+        source_id: fertilicalc_script_2024
+        ref: fertilicalc_script_231124.py, residue defaults (n_res/p_res/k_res)
+        raw: '1.0 % of DM (script literal: n_res[i] = 1./100., i.e. fraction)'
+        transformation: none (default of the reference method)
+        note: 'Valor por defecto de FertiliCalc: no hay dato publicado abierto para
+          los restos de este cultivo; ajústelo si dispone de un análisis o una tabla.'
+      p_residue_pct:
+        value: 0.1
+        source_id: fertilicalc_script_2024
+        ref: fertilicalc_script_231124.py, residue defaults (n_res/p_res/k_res)
+        raw: '0.1 % of DM (script literal: p_res[i] = 0.1/100., i.e. fraction)'
+        transformation: none (default of the reference method)
+        note: 'Valor por defecto de FertiliCalc: no hay dato publicado abierto para
+          los restos de este cultivo; ajústelo si dispone de un análisis o una tabla.'
+      k_residue_pct:
+        value: 1.0
+        source_id: fertilicalc_script_2024
+        ref: fertilicalc_script_231124.py, residue defaults (n_res/p_res/k_res)
+        raw: '1.0 % of DM (script literal: k_res[i] = 1./100., i.e. fraction)'
+        transformation: none (default of the reference method)
+        note: 'Valor por defecto de FertiliCalc: no hay dato publicado abierto para
+          los restos de este cultivo; ajústelo si dispone de un análisis o una tabla.'
+    crop_type: grain_legume
+    harvest_product: dry grain
+    n_fixing: true
+  VITVI:
+    values:
+      dm_product_pct:
+        value: 15.0
+        source_id: panagos_2022
+        ref: Suppl. Table S1 (not viewed; value read from Dryad Combined_crop_data.csv,
+          rows citing Panagos 2022, variable DM_pc, original_crop "Grapes")
+        raw: 15 % DM (humidity rate Eurostat)
+        transformation: none
+        note: 'Texto de Panagos p. 8: los porcentajes de humedad proceden de estadísticas
+          de Eurostat (tabla suplementaria S1).'
+      n_product_pct:
+        value: 2.4
+        source_id: essd_2024_s3
+        ref: Table S3, p. 9 (PDF) (row "Grapes")
+        raw: 3.6 kg N / t fresh commodity (2 s.f.)
+        transformation: N% = 3.6/(10*0.15) [DM 15 % from dm_product_pct row]
+        note: 'FUENTE MIXTA: la tabla S3 no indica la humedad; la materia seca (MS)
+          se toma de la fila dm_product_pct de este cultivo.'
+      p_product_pct:
+        value: 0.22
+        source_id: panagos_2022
+        ref: Table 1, p. 10 (row "Grapes")
+        raw: 0.22 % P on dry matter yield
+        transformation: none
+        note: Panagos (sin recuento de muestras en el artículo). ESSD da 0,467 % (+112
+          %). La guía MAPA da la vid solo por hectárea (Tabla 26.2), no por tonelada.
+          Se usa Panagos por el orden de prioridad MAPA > Panagos > ESSD.
+      k_product_pct:
+        value: 3.6
+        source_id: essd_2024_s3
+        ref: Table S3, p. 9 (PDF) (row "Grapes")
+        raw: 5.4 kg K / t fresh commodity (2 s.f.)
+        transformation: K% = 5.4/(10*0.15) [DM 15 % from dm_product_pct row]
+        note: 'FUENTE MIXTA: la tabla S3 no indica la humedad; la materia seca (MS)
+          se toma de la fila dm_product_pct de este cultivo.'
+      n_residue_pct:
+        value: 1.0
+        source_id: fertilicalc_script_2024
+        ref: fertilicalc_script_231124.py, residue defaults (n_res/p_res/k_res)
+        raw: '1.0 % of DM (script literal: n_res[i] = 1./100., i.e. fraction)'
+        transformation: none (default of the reference method)
+        note: 'Valor por defecto de FertiliCalc: no hay dato publicado abierto para
+          los restos de este cultivo; ajústelo si dispone de un análisis o una tabla.'
+      p_residue_pct:
+        value: 0.1
+        source_id: fertilicalc_script_2024
+        ref: fertilicalc_script_231124.py, residue defaults (n_res/p_res/k_res)
+        raw: '0.1 % of DM (script literal: p_res[i] = 0.1/100., i.e. fraction)'
+        transformation: none (default of the reference method)
+        note: 'Valor por defecto de FertiliCalc: no hay dato publicado abierto para
+          los restos de este cultivo; ajústelo si dispone de un análisis o una tabla.'
+      k_residue_pct:
+        value: 1.0
+        source_id: fertilicalc_script_2024
+        ref: fertilicalc_script_231124.py, residue defaults (n_res/p_res/k_res)
+        raw: '1.0 % of DM (script literal: k_res[i] = 1./100., i.e. fraction)'
+        transformation: none (default of the reference method)
+        note: 'Valor por defecto de FertiliCalc: no hay dato publicado abierto para
+          los restos de este cultivo; ajústelo si dispone de un análisis o una tabla.'
+    crop_type: tree
+    harvest_product: grapes (racimos)
+    residue_product: leaves and canes (hojas, sarmientos)
+    n_fixing: false
+  ZEAMX:
+    values:
+      dm_product_pct:
+        value: 86.0
+        source_id: panagos_2022
+        ref: Suppl. Table S1 (not viewed; value read from Dryad Combined_crop_data.csv,
+          rows citing Panagos 2022, variable DM_pc, original_crop "Grain maize")
+        raw: 86 % DM (humidity rate Eurostat)
+        transformation: none
+        note: 'Texto de Panagos p. 8: los porcentajes de humedad proceden de estadísticas
+          de Eurostat (tabla suplementaria S1).'
+      n_product_pct:
+        value: 2.093
+        source_id: mapa_guia_2010
+        ref: Tabla 17.6, p. 140 (Parte II PDF p. 20)
+        raw: 18 kg N / t grain (fresh)
+        transformation: N% = 18/(10*0.86) [DM 86 % from panagos_2022 Suppl. S1]
+        note: FUENTE MIXTA (la guía no da la materia seca; se usa el 86 % de Panagos).
+          Se usa la Tabla 17.6 de la guía (18 kg N/t de grano), la de sus propios
+          cálculos. ESSD da 1,395 % (−33 %, 12 kg N/t); la Tabla 17.2 de la guía trae
+          14 kg/t (1,628 %, −22 %) y la 17.4 trae 15,5-19,1 kg/t (1,80-2,22 %).
+      p_product_pct:
+        value: 0.3553
+        source_id: mapa_guia_2010
+        ref: Tabla 17.6, p. 140 (Parte II PDF p. 20)
+        raw: 7 kg P2O5 / t grain (fresh)
+        transformation: P = 7/2.291 = 3.0554 kg P/t; P% = 3.0554/(10*0.86) [DM from
+          panagos_2022]
+        note: 'FUENTE MIXTA (materia seca 86 % de Panagos). Tabla 17.6 de la guía:
+          7 kg P2O5/t de grano (igual en la 17.2; la 17.4 da 7,0-12,3). Panagos da
+          0,238 % (−33 %); ESSD 0,395 % (+11 %).'
+      k_product_pct:
+        value: 0.386
+        source_id: mapa_guia_2010
+        ref: Tabla 17.6, p. 140 (Parte II PDF p. 20)
+        raw: 4 kg K2O / t grain (fresh)
+        transformation: K = 4/1.205 = 3.3195 kg K/t; K% = 3.3195/(10*0.86) [DM from
+          panagos_2022]
+        note: 'FUENTE MIXTA (materia seca 86 % de Panagos). Tabla 17.6: 4 kg K2O/t
+          de grano. La 17.2 da 5 kg/t (0,482 %, +25 %), la 17.4 da 4,5-5,4 kg/t (0,434-0,521
+          %, +12 % a +35 %) y ESSD 4,3 kg K/t (0,500 %, +30 %).'
+      n_residue_pct:
+        value: 0.8222
+        source_id: mapa_guia_2010
+        ref: Tabla 17.2, p. 137 (Parte II PDF p. 17), column «Resto planta»
+        raw: 7 kg N / t grain, 'resto planta' (T17.2, Olson y Sander 1988)
+        transformation: N_res% = 7 / (860 x 0.99) x 100; 7 = kg N per t grain in 'resto
+          planta' (T17.2); 860 = 10 x dm_product_pct 86; 0.99 = Rres (panagos_2022
+          Table 2); residue DM = 851.4 kg/t grain
+        note: 'FUENTE MIXTA: Tabla 17.2 de la guía (Olson y Sander 1988), «resto planta»:
+          7 kg N por t de grano, dividido por la masa de restos de Panagos (Rres 0,99
+          x 860 kg MS de grano/t = 851,4 kg). La Tabla 17.6 de la guía (la usada para
+          el grano) da 9 kg N/t en la parte aérea: saldría 1,057 % (+29 %). La guía
+          no es coherente consigo misma; se usa la 17.2, que da el dato directamente.
+          Contraste con un análisis de sus cañas y hojas.'
+      p_residue_pct:
+        value: 0.1025
+        source_id: mapa_guia_2010
+        ref: Tabla 17.2, p. 137 (Parte II PDF p. 17), column «Resto planta»
+        raw: 2 kg P2O5 / t grain, 'resto planta' (T17.2, Olson y Sander 1988)
+        transformation: P_res% = (2/2.291) / (860 x 0.99) x 100; 2 = kg P2O5 per t
+          grain in 'resto planta' (T17.2), /2.291 -> 0.8730 kg P/t; 860 = 10 x dm_product_pct
+          86; 0.99 = Rres (panagos_2022 Table 2); residue DM = 851.4 kg/t grain
+        note: 'FUENTE MIXTA: Tabla 17.2 de la guía, «resto planta»: 2 kg P2O5 por
+          t de grano (= 0,873 kg P), dividido por la masa de restos de Panagos (851,4
+          kg). La Tabla 17.6 da 3 kg P2O5/t: saldría 0,154 % (+50 %). Panagos da 0,11
+          % para restos (+7 %, dentro del 20 %). Se usa la 17.2.'
+      k_residue_pct:
+        value: 1.949
+        source_id: mapa_guia_2010
+        ref: Tabla 17.2, p. 137 (Parte II PDF p. 17), column «Resto planta»
+        raw: 20 kg K2O / t grain, 'resto planta' (T17.2, Olson y Sander 1988)
+        transformation: K_res% = (20/1.205) / (860 x 0.99) x 100; 20 = kg K2O per
+          t grain in 'resto planta' (T17.2), /1.205 -> 16.5975 kg K/t; 860 = 10 x
+          dm_product_pct 86; 0.99 = Rres (panagos_2022 Table 2); residue DM = 851.4
+          kg/t grain
+        note: 'FUENTE MIXTA: Tabla 17.2 de la guía, «resto planta»: 20 kg K2O por
+          t de grano (= 16,60 kg K), dividido por la masa de restos de Panagos (851,4
+          kg). La Tabla 17.6 da 16 kg K2O/t: saldría 1,560 % (−20 %). Se usa la 17.2.
+          Contraste con un análisis de sus cañas y hojas.'
+      balance_harvest_index_pct:
+        value: 50.25
+        source_id: panagos_2022
+        ref: Table 2, p. 11 (row "Grain maize", Rres) + eq. (6), p. 10
+        raw: '0.99 Rres: residue per t of crop production'
+        transformation: 'HI = 100/(1+0.99); eq.(6) multiplies Rres by product DM so
+          Rres is residue DM : product DM'
+        note: El artículo no publica el índice de cosecha; aquí se calcula a partir
+          de Rres (el mismo valor figura en la variable HI de los datos de Dryad).
+      residue_left_pct:
+        value: 50.0
+        source_id: panagos_2022
+        ref: Table 2, p. 11 (row "Grain maize", Rrem) and text p. 11
+        raw: '0.5 Rrem: ratio of residues removed from the field'
+        transformation: left = 100*(1-0.5)
+        note: Media UE (Panagos); ajústelo a lo que haga en su parcela. La guía MAPA
+          (p. 141) dice que en el maíz lo habitual es picar y enterrar cañas y hojas
+          (su ejemplo de balance, Tablas 17.7-17.8, devuelve toda la parte aérea,
+          es decir 100 %); se mantiene el 50 % de Panagos porque es una decisión de
+          manejo.
+    crop_type: cereal
+    harvest_product: grain
+    residue_product: stalks and leaves (resto planta)
+    n_fixing: false
