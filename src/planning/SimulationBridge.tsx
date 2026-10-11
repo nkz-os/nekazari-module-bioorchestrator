@@ -8,6 +8,7 @@ import { Button, Spinner, Stack } from '@nekazari/ui-kit';
 import { ArrowLeft } from 'lucide-react';
 import { ParcelProvider, useParcelContext } from '../context/ParcelContext';
 import { PlanningScenarioProvider } from '../context/PlanningScenarioContext';
+import LazyBoundary from './LazyBoundary';
 
 const CropSimulation = lazy(() => import('../components/CropSimulation'));
 
@@ -34,9 +35,11 @@ export default function SimulationBridge({ parcelId, onClose }: { parcelId: stri
             <Button variant="ghost" onClick={onClose} leadingIcon={<ArrowLeft className="w-4 h-4" />}>{t('planning.detail.back')}</Button>
           </div>
           <p className="text-nkz-xs text-nkz-text-muted">{t('planning.simulation.temporary')}</p>
-          <Suspense fallback={<Spinner size="lg" />}>
-            <CropSimulation />
-          </Suspense>
+          <LazyBoundary>
+            <Suspense fallback={<Spinner size="lg" />}>
+              <CropSimulation />
+            </Suspense>
+          </LazyBoundary>
         </Stack>
       </PlanningScenarioProvider>
     </ParcelProvider>

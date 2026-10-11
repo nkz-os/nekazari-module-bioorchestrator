@@ -8,6 +8,7 @@ import DisclaimerFooter from '../components/DisclaimerFooter';
 import AdminTools from './AdminTools';
 import { fetchFarm } from './api';
 import { cropName, formatHa } from './format';
+import LazyBoundary from './LazyBoundary';
 import { parseCampaign } from './matrixModel';
 import ParcelDetail from './ParcelDetail';
 import PlanMatrix from './PlanMatrix';
@@ -54,7 +55,7 @@ export default function PlanningApp() {
           </div>
         </Inline>
 
-        {admin ? <AdminTools /> : simulationFor ? (
+        {admin ? <LazyBoundary><AdminTools /></LazyBoundary> : simulationFor ? (
           <SimulationBridge parcelId={simulationFor} onClose={() => setSimulationFor(null)} />
         ) : (
           <>

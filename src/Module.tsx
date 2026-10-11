@@ -8,12 +8,12 @@ const MainPage = lazy(() => import('./App'));
 
 export default defineModule({
   id: 'bioorchestrator',
-  displayName: 'BioOrchestrator',
+  displayName: 'Planificación de cultivos',
   version: pkg.version,
   hostApiVersion: '^2.0.0',
   route: '/bioorchestrator',
   requiredRoles: ['Farmer', 'TechnicalConsultant', 'TenantAdmin', 'PlatformAdmin'],
-  description: 'Biological pipeline orchestrator — Nekazari Platform Module',
+  description: 'Crop planning: crop fit, varieties, rotation and campaign plan — Nekazari Platform Module',
   accent: { base: '#10B981', soft: '#D1FAE5', strong: '#047857' },
   icon: 'flask-conical',
   main: MainPage,
