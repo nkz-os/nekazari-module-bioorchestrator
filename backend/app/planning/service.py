@@ -10,6 +10,7 @@ from app.planning.estimates import (
     aquacrop_status,
     disagreement,
     trial_estimate,
+    usable_rows,
     visible,
 )
 from app.planning.evidence import load_crop_evidence
@@ -181,11 +182,30 @@ async def parcel_estimates(*, dao, source: KnowledgeSource, parcel_id: str, tena
             "unavailable": [aquacrop_status()]}
     ev = await load_crop_evidence(dao, env, crop_eppo=eppo, regime=regime, management=management)
     if ev["status"] != "ok":
-        return {**base, "status": ev["status"], "estimates": [], "disagreement": False}
-    attributions = attach_attributions({}, rows_source_ids(ev["rows"]))["attributions"]
+        # needs_climate is already the status; for no_trials the trial provider also states its reason.
+        reasons = [_no_trials_reason(variety, [])] if ev["status"] == "no_trials" else []
+        return {**base, "status": ev["status"], "unavailable": base["unavailable"] + reasons,
+                "estimates": [], "disagreement": False}
+    gaps = list(ev["data_gaps"])
+    # Credit only the sources of the rows that feed the number (same filter as trial_estimate).
+    attributions = attach_attributions({}, rows_source_ids(usable_rows(ev["rows"], variety)))["attributions"]
     # The evidence gaps (e.g. evidence_truncated) travel with the estimate they qualify.
-    found = [{**e, "warnings": list(ev["data_gaps"])}
+    found = [{**e, "warnings": gaps}
              for e in (trial_estimate(ev["rows"], variety, attributions, source.graph_id, ev["policy_version"]),)
              if e is not None]
+    unavailable = base["unavailable"] + ([] if found else [_no_trials_reason(variety, gaps)])
     shown = visible(found)
-    return {**base, "status": "ok", "estimates": shown, "disagreement": disagreement(shown)}
+    return {**base, "status": "ok", "unavailable": unavailable, "estimates": shown,
+            "disagreement": disagreement(shown)}
+
+
+def _no_trials_reason(variety: str | None, data_gaps: list[str]) -> dict:
+    """Why the trial provider gave no estimate, as a reason code of the ``unavailable`` list."""
+    if variety is None:
+        reason = "no_trials"
+    elif "evidence_truncated" in data_gaps:
+        # The page cap cut the trial list, and the asked variety may sit in the part that was cut.
+        reason = "variety_not_in_evidence_sample"
+    else:
+        reason = "no_trials_for_variety"
+    return {"provider_id": "trial_evidence", "reason": reason}

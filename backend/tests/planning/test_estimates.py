@@ -30,11 +30,24 @@ def test_trial_estimate_in_tonnes_filtered_by_variety():
     assert trial_estimate(rows, "Z", [], "global", "p") is None
 
 
+def _est(basis, p50):
+    return {"basis": basis, "percentiles": {"p10": p50, "p50": p50, "p90": p50}, "validation": {"status": "experimental"}}
+
+
 def test_disagreement_only_between_same_basis_models():
-    def e(basis, p50):
-        return {"basis": basis, "percentiles": {"p10": p50, "p50": p50, "p90": p50}, "validation": {"status": "experimental"}}
-    assert disagreement([e("trial_evidence", 8.0), e("water_limited", 3.0)]) is False
-    assert disagreement([e("water_limited", 8.0), e("water_limited", 3.0)]) is True
+    assert disagreement([_est("trial_evidence", 8.0), _est("water_limited", 3.0)]) is False
+    assert disagreement([_est("water_limited", 8.0), _est("water_limited", 3.0)]) is True
+
+
+def test_disagreement_is_flagged_against_a_zero_estimate():
+    assert disagreement([_est("water_limited", 0.0), _est("water_limited", 5.0)]) is True
+
+
+def test_bool_and_non_finite_yields_never_count():
+    rows = [{"variety": "A", "yield_kg_ha": 6000}, {"variety": "A", "yield_kg_ha": True},
+            {"variety": "A", "yield_kg_ha": float("inf")}, {"variety": "A", "yield_kg_ha": float("nan")}]
+    est = trial_estimate(rows, None, [], "global", "p")
+    assert est["n"] == 1 and est["percentiles"]["p50"] == 6.0
 
 
 def test_unvalidated_is_hidden_and_aquacrop_is_honest_in_v1():
@@ -82,8 +95,45 @@ async def test_parcel_estimates_without_trials_is_no_trials_and_still_declares_a
                                          regime="secano", management="conventional", sowing_date=None)
     EstimatesResponse.model_validate(out)
     assert out["status"] == "no_trials" and out["estimates"] == [] and out["disagreement"] is False
-    assert out["unavailable"] == [AQUACROP_UNAVAILABLE]
+    assert out["unavailable"] == [AQUACROP_UNAVAILABLE, {"provider_id": "trial_evidence", "reason": "no_trials"}]
     assert out["inputs"]["sowing_source"] == "none"
+
+
+async def test_variety_with_no_rows_says_why():
+    rows = [{"variety": "A", "site": "Zona X", "year": 2024, "source_id": "GENVCE", "yield_kg_ha": 6000}]
+    out = await service.parcel_estimates(dao=_dao(rows), source=KnowledgeSource("global", None), parcel_id="p1",
+                                         tenant_id="t", crop="TRZAX", variety="Z", regime="secano",
+                                         management="conventional", sowing_date=None)
+    EstimatesResponse.model_validate(out)
+    assert out["status"] == "ok" and out["estimates"] == []
+    assert out["unavailable"] == [AQUACROP_UNAVAILABLE,
+                                  {"provider_id": "trial_evidence", "reason": "no_trials_for_variety"}]
+
+
+async def test_truncated_evidence_and_variety_absent_says_so():
+    rows = [{"variety": "A", "site": "Zona X", "year": 2024, "source_id": "GENVCE", "yield_kg_ha": 6000}]
+    dao = _dao(rows)
+    dao.list_trial_evidence.return_value = {"items": rows, "total": len(rows) + 1}
+    out = await service.parcel_estimates(dao=dao, source=KnowledgeSource("global", None), parcel_id="p1",
+                                         tenant_id="t", crop="TRZAX", variety="Z", regime="secano",
+                                         management="conventional", sowing_date=None)
+    EstimatesResponse.model_validate(out)
+    assert out["estimates"] == []
+    assert out["unavailable"][1] == {"provider_id": "trial_evidence", "reason": "variety_not_in_evidence_sample"}
+
+
+async def test_attributions_credit_only_the_rows_behind_the_number():
+    rows = [{"variety": "A", "site": "Zona X", "year": 2024, "source_id": "GENVCE", "yield_kg_ha": 6000},
+            {"variety": "B", "site": "Zona X", "year": 2024, "source_id": "CREA", "yield_kg_ha": 5000}]
+
+    both =await service.parcel_estimates(dao=_dao(rows), source=KnowledgeSource("global", None), parcel_id="p1",
+                                          tenant_id="t", crop="TRZAX", variety=None, regime="secano",
+                                          management="conventional", sowing_date=None)
+    assert {a["source_id"] for a in both["estimates"][0]["attributions"]} == {"GENVCE", "CREA"}
+    only_a = await service.parcel_estimates(dao=_dao(rows), source=KnowledgeSource("global", None), parcel_id="p1",
+                                            tenant_id="t", crop="TRZAX", variety="A", regime="secano",
+                                            management="conventional", sowing_date=None)
+    assert {a["source_id"] for a in only_a["estimates"][0]["attributions"]} == {"GENVCE"}
 
 
 async def test_unknown_crop_never_reaches_the_parcel():
