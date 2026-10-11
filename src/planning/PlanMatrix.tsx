@@ -40,7 +40,7 @@ export default function PlanMatrix({ data, farmId, onOpen, editable = true }: Pr
         </thead>
         <tbody>
           {rows.map((row) => (
-            <tr key={row.parcel_id} className="border-t border-nkz-border align-top">
+            <tr key={row.parcel_id} className="border-t border-nkz-border">
               <td className="py-2 pr-4">
                 <span className="font-medium text-nkz-text-primary">{row.name ?? shortId(row.parcel_id)}</span>
                 {row.warnings.map((w, i) => (

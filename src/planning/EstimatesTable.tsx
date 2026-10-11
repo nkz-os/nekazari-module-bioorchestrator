@@ -31,7 +31,7 @@ export default function EstimatesTable({ data }: { data: EstimatesResponse }) {
           </thead>
           <tbody>
             {rows.map((e) => (
-              <tr key={`${e.provider_id}-${e.basis}`} className="border-t border-nkz-border align-top">
+              <tr key={`${e.provider_id}-${e.basis}`} className="border-t border-nkz-border">
                 <td className="py-2 pr-4 font-medium text-nkz-text-primary">
                   {t(`planning.estimate.provider.${e.provider_id}`, { defaultValue: e.provider_id })}
                   {e.validation.status === 'experimental' && (

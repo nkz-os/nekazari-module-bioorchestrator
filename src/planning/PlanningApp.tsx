@@ -72,7 +72,7 @@ export default function PlanningApp() {
                       options={[data.campaign - 1, data.campaign, data.campaign + 1].map((c) => ({ value: String(c), label: `${t('planning.campaign')} ${c}` }))} />
                   </div>
                   {linkedFarms.length > 0 && (
-                    <div className="w-56">
+                    <div className="w-64">
                       <Select value={farmId} onValueChange={setFarmId}
                         options={[{ value: 'all', label: t('planning.farmAll') }, ...linkedFarms.map((f) => ({ value: f.farm_id as string, label: f.name ?? (f.farm_id as string) }))]} />
                     </div>
