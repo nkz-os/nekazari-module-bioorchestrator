@@ -6,6 +6,7 @@ from app.services.eurostat_yields import (
     HUMIDITY,
     MIN_MEDIAN_YEARS,
     PRODUCTION,
+    PlausibleRange,
     build_series,
     parse_jsonstat,
     request_url,
@@ -193,3 +194,105 @@ def test_not_significant_area_gives_no_yield():
     r2023 = next(r for r in rows if r.year == 2023)
     assert r2023.yield_t_ha is None and f"{AREA}:n" in r2023.flags
     assert r2023.area_ha == pytest.approx(81360)
+
+
+# ── plausibility bounds (only the maximum excludes a year) ───────────────────
+
+RANGE = PlausibleRange(min_t_ha=0.5, max_t_ha=14.0, range_id="crop_yield.TRZAX.grain",
+                       status="assumption")
+
+
+def _year_nodes(yields_by_year):
+    nodes = []
+    for year, yld in yields_by_year:
+        n = dict(_nodes()[0])
+        n.update(year=year, yieldTHa=yld, areaHa=1000.0,
+                 productionT=yld * 1000.0 if yld is not None else None)
+        nodes.append(n)
+    return nodes
+
+
+def test_plausible_range_dataclass_is_frozen():
+    assert (RANGE.min_t_ha, RANGE.max_t_ha, RANGE.range_id, RANGE.status) == (
+        0.5, 14.0, "crop_yield.TRZAX.grain", "assumption")
+    with pytest.raises(AttributeError):
+        RANGE.max_t_ha = 99.0
+
+
+def test_above_max_year_is_flagged_kept_in_series_and_dropped_from_the_median():
+    nodes = _year_nodes([(2021, 4.0), (2022, 5.0), (2023, 20.0), (2024, 6.0)])
+    body = yields_payload(nodes, recent=5, plausible=RANGE)
+    assert [(s["year"], s["range_check"]) for s in body["series"]] == [
+        (2021, "ok"), (2022, "ok"), (2023, "above_max"), (2024, "ok")]
+    assert body["series"][2]["yield_t_ha"] == 20.0       # the value itself is never altered
+    assert body["recent_years"] == [2021, 2022, 2024]
+    assert body["years_used"] == 3 and body["latest_year"] == 2024
+    assert body["recent_median_t_ha"] == pytest.approx(5.0)
+
+
+def test_above_max_newest_year_does_not_become_the_latest_year():
+    nodes = _year_nodes([(2021, 4.0), (2022, 5.0), (2023, 6.0), (2024, 20.0)])
+    body = yields_payload(nodes, recent=5, plausible=RANGE)
+    assert body["latest_year"] == 2023 and body["recent_years"] == [2021, 2022, 2023]
+    assert body["series"][-1]["year"] == 2024 and body["series"][-1]["range_check"] == "above_max"
+
+
+def test_window_takes_the_last_recent_years_among_the_plausible_ones():
+    nodes = _year_nodes([(2020, 3.0), (2021, 4.0), (2022, 20.0), (2023, 5.0), (2024, 6.0)])
+    body = yields_payload(nodes, recent=3, plausible=RANGE)
+    assert body["recent_years"] == [2021, 2023, 2024]
+    assert body["recent_median_t_ha"] == pytest.approx(5.0)
+
+
+def test_below_min_year_is_flagged_but_stays_in_the_median():
+    nodes = _year_nodes([(2021, 4.0), (2022, 0.3), (2023, 5.0), (2024, 6.0)])
+    body = yields_payload(nodes, recent=5, plausible=RANGE)
+    assert body["series"][1]["range_check"] == "below_min"
+    assert body["recent_years"] == [2021, 2022, 2023, 2024] and body["years_used"] == 4
+    assert body["recent_median_t_ha"] == pytest.approx(4.5)     # median of 0.3, 4, 5, 6
+
+
+def test_bounds_are_inclusive():
+    nodes = _year_nodes([(2022, 0.5), (2023, 14.0), (2024, 5.0)])
+    body = yields_payload(nodes, recent=5, plausible=RANGE)
+    assert [s["range_check"] for s in body["series"]] == ["ok", "ok", "ok"]
+    assert body["years_used"] == 3
+
+
+def test_a_year_without_a_yield_has_no_range_check():
+    nodes = _year_nodes([(2022, 4.0), (2023, None), (2024, 5.0)])
+    body = yields_payload(nodes, recent=5, plausible=RANGE)
+    assert [s["range_check"] for s in body["series"]] == ["ok", None, "ok"]
+
+
+def test_without_a_range_nothing_is_checked_and_the_median_is_unchanged():
+    nodes = _year_nodes([(2021, 4.0), (2022, 5.0), (2023, 20.0), (2024, 6.0)])
+    body = yields_payload(nodes, recent=5, plausible=None)
+    assert [s["range_check"] for s in body["series"]] == [None, None, None, None]
+    assert body["plausible_range"] is None
+    assert body["recent_years"] == [2021, 2022, 2023, 2024]
+    assert body["recent_median_t_ha"] == pytest.approx(5.5)
+    default = yields_payload(nodes, recent=5)
+    assert default["plausible_range"] is None and default["recent_median_t_ha"] == pytest.approx(5.5)
+
+
+def test_plausible_range_is_reported_with_its_provenance():
+    body = yields_payload(_three_year_nodes(), recent=5, plausible=RANGE)
+    assert body["plausible_range"] == {
+        "min_t_ha": 0.5, "max_t_ha": 14.0, "range_id": "crop_yield.TRZAX.grain",
+        "status": "assumption", "excludes": "above_max"}
+
+
+def test_excluded_years_can_leave_too_few_for_a_median():
+    nodes = _year_nodes([(2022, 4.0), (2023, 20.0), (2024, 6.0)])
+    body = yields_payload(nodes, recent=5, plausible=RANGE)
+    assert body["recent_years"] == [2022, 2024] and body["years_used"] == 2
+    assert body["recent_median_t_ha"] is None
+    assert body["latest_year"] == 2024
+
+
+def test_all_years_above_max_gives_no_window_and_no_latest_year():
+    nodes = _year_nodes([(2022, 20.0), (2023, 30.0)])
+    body = yields_payload(nodes, recent=5, plausible=RANGE)
+    assert body["recent_years"] == [] and body["years_used"] == 0
+    assert body["latest_year"] is None and body["recent_median_t_ha"] is None

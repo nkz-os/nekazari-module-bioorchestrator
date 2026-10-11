@@ -30,6 +30,15 @@ class Cell:
 
 
 @dataclass(frozen=True)
+class PlausibleRange:
+    """Plausible grain-yield envelope of a crop, in t/ha, with the registry range it came from."""
+    min_t_ha: float
+    max_t_ha: float
+    range_id: str        # e.g. "crop_yield.TRZAX.grain"
+    status: str          # registry status, e.g. "assumption"
+
+
+@dataclass(frozen=True)
 class YieldRow:
     nuts: str
     eurostat_crop: str
@@ -165,10 +174,23 @@ def to_node_props(row: YieldRow, *, dataset_updated: str | None, extracted_at: s
     }
 
 
-def yields_payload(nodes: list[dict], recent: int) -> dict:
-    """API body: the annual series plus the median of the last `recent` years with a yield.
+def _range_check(yield_t_ha: float | None, plausible: PlausibleRange | None) -> str | None:
+    if plausible is None or yield_t_ha is None:
+        return None
+    if yield_t_ha > plausible.max_t_ha:
+        return "above_max"
+    if yield_t_ha < plausible.min_t_ha:
+        return "below_min"
+    return "ok"
 
-    The median is given only when the window holds at least MIN_MEDIAN_YEARS yield years;
+
+def yields_payload(nodes: list[dict], recent: int, plausible: PlausibleRange | None = None) -> dict:
+    """API body: the annual series plus the median of the last `recent` plausible yield years.
+
+    Every year stays in `series`; with a `plausible` range each year carries a `range_check`
+    ("ok", "below_min", "above_max", or None without range or yield). Only a year above the
+    maximum leaves the window: a year below the minimum is usually a real bad harvest and stays.
+    The median is given only when the window holds at least MIN_MEDIAN_YEARS years;
     `years_used` and `latest_year` let the consumer judge how much data and how recent.
     """
     if not nodes:
@@ -180,9 +202,11 @@ def yields_payload(nodes: list[dict], recent: int) -> dict:
         "year": n["year"], "area_ha": n.get("areaHa"), "production_t": n.get("productionT"),
         "yield_t_ha": n.get("yieldTHa"), "humidity_pct": n.get("humidityPct"),
         "flags": list(n.get("flags") or []),
+        "range_check": _range_check(n.get("yieldTHa"), plausible),
     } for n in ordered]
-    with_yield = [s for s in series if s["yield_t_ha"] is not None]
-    last = with_yield[-recent:]
+    eligible = [s for s in series
+                if s["yield_t_ha"] is not None and s["range_check"] != "above_max"]
+    last = eligible[-recent:]
     first = ordered[0]
     return {
         "eppo": first["eppo"],
@@ -195,9 +219,14 @@ def yields_payload(nodes: list[dict], recent: int) -> dict:
         "dataset_updated": first.get("datasetUpdated"),
         "extracted_at": first.get("extractedAt"),
         "series": series,
+        "plausible_range": None if plausible is None else {
+            "min_t_ha": plausible.min_t_ha, "max_t_ha": plausible.max_t_ha,
+            "range_id": plausible.range_id, "status": plausible.status,
+            "excludes": "above_max",
+        },
         "recent_median_t_ha": (statistics.median(s["yield_t_ha"] for s in last)
                                if len(last) >= MIN_MEDIAN_YEARS else None),
         "recent_years": [s["year"] for s in last],
         "years_used": len(last),
-        "latest_year": with_yield[-1]["year"] if with_yield else None,
+        "latest_year": eligible[-1]["year"] if eligible else None,
     }
