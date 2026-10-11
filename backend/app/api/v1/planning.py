@@ -119,3 +119,5 @@ async def put_plan(request: Request, parcel_id: str, body: PlanIn):
         return await write_plan(tenant_id=tenant, parcel_urn=parcel_id, plan=body, today=datetime.now(UTC).date())
     except PlanError as e:
         raise HTTPException(status_code=e.status, detail={"code": e.code}) from e
+    except httpx.ConnectError as e:
+        raise HTTPException(status_code=502, detail="Orion-LD unreachable") from e

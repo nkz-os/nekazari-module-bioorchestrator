@@ -275,7 +275,8 @@ def test_put_plan_route_rejects_a_malformed_parcel_id_before_any_io(client, monk
     called.assert_not_called()
 
 
-@pytest.mark.parametrize("code, status", [("campaign_past", 422), ("campaign_started", 409), ("perennial_occupies", 409)])
+@pytest.mark.parametrize("code, status", [("campaign_past", 422), ("campaign_started", 409), ("perennial_occupies", 409),
+                                          ("parcel_not_found", 404)])
 def test_put_plan_route_maps_plan_errors_to_their_status(client, monkeypatch, code, status):
     from app.planning.plan_write import PlanError
     monkeypatch.setattr(planning_api, "write_plan", AsyncMock(side_effect=PlanError(code, status)))
@@ -296,3 +297,8 @@ def test_put_plan_route_requires_a_verified_tenant(client, monkeypatch):
     monkeypatch.setattr(planning_api, "write_plan", called)
     assert client.put(PLAN_URL, json=PLAN_BODY).status_code == 401
     called.assert_not_called()
+
+
+def test_put_plan_route_maps_an_unreachable_orion_to_502(client, monkeypatch):
+    monkeypatch.setattr(planning_api, "write_plan", AsyncMock(side_effect=httpx.ConnectError("down")))
+    assert client.put(PLAN_URL, json=PLAN_BODY).status_code == 502
