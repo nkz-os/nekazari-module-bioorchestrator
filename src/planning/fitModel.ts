@@ -44,6 +44,11 @@ export function reasonTone(r: Reason): 'positive' | 'info' | 'warning' | 'negati
 export function reasonText(r: Reason, names: Record<string, Names>, lang: string, t: TFn): string {
   const params: Record<string, ParamValue> = { ...r.params };
   if (typeof params.previous === 'string') params.previous = cropName(names[params.previous], params.previous, lang);
+  // The backend sends USDA texture classes raw ("sandy-loam"); an unknown class falls back to the raw value.
+  if (r.code.startsWith('soil_texture_') && typeof params.value === 'string') {
+    const raw = params.value;
+    params.value = t(`planning.texture.${raw}`, { defaultValue: raw });
+  }
   return t(reasonKey(r), params);
 }
 

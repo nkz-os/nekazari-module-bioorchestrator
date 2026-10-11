@@ -37,6 +37,8 @@ const FAMILIES = [
   ...['preseason_not_supported', 'engine_not_deployed', 'no_trials', 'no_trials_for_variety',
     'variety_not_in_evidence_sample'].map((k) => `planning.estimate.unavailable.${k}`),
   ...COVER_METHODS.map((k) => `planning.plan.methods.${k}`),
+  ...['sand', 'loamy-sand', 'sandy-loam', 'loam', 'silt-loam', 'silt', 'sandy-clay-loam', 'clay-loam', 'silty-clay-loam',
+    'sandy-clay', 'silty-clay', 'clay'].map((k) => `planning.texture.${k}`),
   ...['missing_species', 'missing_dates', 'termination_outside_campaign', 'dates_inconsistent', 'cycles_overlap',
     'campaign_past', 'campaign_started', 'unknown_crop', 'generic', 'perennial_start_outside_campaign',
     'perennial_too_long', 'perennial_occupies', 'perennial_overlaps_plans', 'parcel_not_found',

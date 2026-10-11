@@ -1,6 +1,17 @@
 import { describe, expect, it } from 'vitest';
-import { groupFit, reasonKey, reasonTone } from './fitModel';
-import type { SpeciesFit } from './types';
+import { groupFit, reasonKey, reasonText, reasonTone } from './fitModel';
+import type { SpeciesFit, TFn } from './types';
+
+// Minimal i18n stand-in: interpolates {{x}} and honours defaultValue for missing keys, like i18next.
+const TEXTS: Record<string, string> = {
+  'planning.texture.sandy-loam': 'franco-arenosa',
+  'planning.reason.soil_texture_unsuitable': 'Textura {{value}}: no apta',
+  'planning.reason.soil_drainage_unsuitable': 'Drenaje {{value}} no apto',
+};
+const fakeT: TFn = (key, opts = {}) => {
+  const raw = TEXTS[key] ?? (typeof opts.defaultValue === 'string' ? opts.defaultValue : key);
+  return raw.replace(/\{\{(\w+)\}\}/g, (_m, name: string) => String(opts[name]));
+};
 
 const sp = (species: string, verdict: SpeciesFit['verdict'], es: string): SpeciesFit => ({
   species, eppo: null, names: { es }, lifecycle: 'annual', verdict, reasons: [], has_variety_trials: false, estimate_providers: [],
@@ -29,5 +40,12 @@ describe('fit model', () => {
     expect(reasonTone({ code: 'rotation_benefit', gate: 'rotation', params: {} })).toBe('positive');
     expect(reasonTone({ code: 'regime_missing', gate: 'data', params: {} })).toBe('warning');
     expect(reasonTone({ code: 'multi_year', gate: 'data', params: {} })).toBe('info');
+  });
+  it('translates soil texture values, falls back to the raw value, and leaves drainage values alone', () => {
+    const texture = (value: string) => ({ code: 'soil_texture_unsuitable', gate: 'soil' as const, params: { value } });
+    expect(reasonText(texture('sandy-loam'), {}, 'es', fakeT)).toBe('Textura franco-arenosa: no apta');
+    expect(reasonText(texture('mystery-soil'), {}, 'es', fakeT)).toBe('Textura mystery-soil: no apta');
+    const drainage = { code: 'soil_drainage_unsuitable', gate: 'soil' as const, params: { value: 'sandy-loam' } };
+    expect(reasonText(drainage, {}, 'es', fakeT)).toBe('Drenaje sandy-loam no apto');
   });
 });
