@@ -435,5 +435,145 @@
       "calibrated": "Fenologia: calibrada per a {{region}}.",
       "builtin": "Fenologia: la d'origen d'AquaCrop."
     }
+  },
+  "planning": {
+    "title": "Planificació de cultius",
+    "subtitle": "Què sembrar a cada parcel·la, amb quina varietat i en quin ordre",
+    "campaign": "Campanya", "farm": "Explotació", "farmAll": "Totes les parcel·les", "retry": "Reintenta",
+    "errorLoad": "No s'ha pogut carregar. Torna-ho a provar.",
+    "empty": { "noParcels": "No hi ha parcel·les", "noParcelsHint": "Crea parcel·les al visor per planificar-ne les campanyes." },
+    "summary": {
+      "area": "{{crop}} {{ha}} ha",
+      "undecided_one": "{{count}} parcel·la sense decidir", "undecided_other": "{{count}} parcel·les sense decidir",
+      "rotation_one": "{{count}} avís de rotació", "rotation_other": "{{count}} avisos de rotació"
+    },
+    "matrix": { "parcel": "Parcel·la", "area": "ha", "regime": "Règim", "choose": "Tria", "change": "Canvia", "legend": "● fet · ◐ declarat · ○ planificat" },
+    "provenance": { "actual": "fet", "declared": "declarat", "planned": "planificat", "unknown": "sense dades" },
+    "role": { "main_crop": "cultiu principal", "cover_crop": "cultiu de cobertura", "catch_crop": "cultiu intermedi" },
+    "regime": { "secano": "Sequer", "regadío": "Regadiu", "unknown": "Sense declarar" },
+    "management": { "conventional": "Convencional", "organic": "Ecològic" },
+    "warning": {
+      "cycles_unavailable": "No s'ha pogut llegir l'historial d'aquesta parcel·la",
+      "regime_missing": "Falta declarar sequer o regadiu",
+      "rotation_restriction": "{{species}} després de {{previous}} ({{previous_campaign}}): possible a partir de {{allowed_from}}",
+      "rotation_unknown": "Rotació no comprovada: historial incomplet o sense regles"
+    },
+    "detail": {
+      "back": "Torna al pla", "previous": "Anterior: {{crop}} ({{campaign}})", "known": "El que sabem",
+      "climate": "Clima", "soil": "Sòl", "noData": "sense dades", "regimeQuestion": "Sequer o regadiu?",
+      "regimeHint": "Cal per veure varietats i simulació: l'evidència mai barreja règims.",
+      "managementLabel": "Maneig", "historyDown": "No s'ha pogut llegir l'historial: la rotació no s'ha comprovat."
+    },
+    "step": { "crop": "1 · Quin cultiu?", "variety": "2 · Quina varietat?", "estimate": "3 · Quina collita esperar?", "plan": "4 · Planificar" },
+    "fit": {
+      "fits": "Encaixa", "caveats": "Amb reserves", "no_fit": "No encaixa",
+      "showNoFit": "Mostra els que no encaixen ({{count}})", "hideNoFit": "Amaga els que no encaixen",
+      "sowing": "sembra {{from}}–{{to}}", "trials": "varietats amb assaigs", "noTrials": "sense assaigs de varietats",
+      "pick": "Tria un cultiu per veure'n les varietats i la collita esperada."
+    },
+    "reason": {
+      "soil_unsuitable": "Sòl no apte per a aquest cultiu",
+      "soil_marginal": "Sòl poc adequat per a aquest cultiu",
+      "soil_ph_unsuitable": "pH {{value}} fora del seu rang ({{min}}–{{max}})",
+      "soil_ph_marginal": "pH {{value}} al límit del seu rang ({{min}}–{{max}})",
+      "soil_texture_unsuitable": "Textura {{value}}: no apta",
+      "soil_texture_marginal": "Textura {{value}}: poc adequada",
+      "soil_drainage_unsuitable": "Drenatge {{value}} no apte",
+      "soil_drainage_marginal": "Drenatge {{value}} poc adequat",
+      "soil_unknown_no_tolerance": "Sense dades de tolerància del sòl per a aquest cultiu",
+      "soil_unknown_no_parcel_soil": "Falta el sòl de la parcel·la",
+      "soil_unknown_not_comparable": "El sòl no es pot comparar amb els seus requisits",
+      "frost_risk": "Risc de gelada: mínima de {{coldest_min_c}} °C; amb el marge de seguretat de {{margin_c}} °C arriba al seu llindar de {{threshold_c}} °C",
+      "frost_unknown_no_climate": "Sense clima de la parcel·la per valorar gelades",
+      "frost_unknown_no_tolerance": "Sense llindar de gelada per a aquest cultiu",
+      "frost_unknown_season_unknown": "Sense calendari de sembra: gelada no valorada",
+      "water_deficit_high": "Dèficit hídric alt en sequer (uns {{deficit_mm}} mm)",
+      "water_unknown": "Sense clima per valorar l'aigua en sequer",
+      "rotation_restriction": "Després de {{previous}} ({{previous_campaign}}): rotació restringida, possible a partir de {{allowed_from}}",
+      "rotation_benefit": "Bona rotació després de {{previous}}",
+      "rotation_unknown": "Rotació no comprovada: sense historial",
+      "regime_missing": "Falta declarar sequer o regadiu",
+      "multi_year": "Plurianual: ocupa diverses campanyes",
+      "climate_unknown": "Sense clima de la parcel·la: aptitud no del tot comprovada"
+    },
+    "texture": {
+      "sand": "arenosa", "loamy-sand": "arenosa franca", "sandy-loam": "franco-arenosa", "loam": "franca",
+      "silt-loam": "franco-llimosa", "silt": "llimosa", "sandy-clay-loam": "franco-argilo-arenosa", "clay-loam": "franco-argilosa",
+      "silty-clay-loam": "franco-argilo-llimosa", "sandy-clay": "argilo-arenosa", "silty-clay": "argilo-llimosa", "clay": "argilosa"
+    },
+    "variety": {
+      "noTrials": "No hi ha assaigs de varietats d'aquest cultiu a la teva zona. Pots planificar-lo sense varietat.",
+      "needsClimate": "Sense el clima de la parcel·la no es pot cercar evidència.",
+      "variety": "Varietat", "relative": "Rend. relatiu", "stability": "Estabilitat", "environments": "Assaigs / anys",
+      "relativeHint": "Rendiment respecte de la mitjana de cada assaig: 100 % = igual que la mitjana.",
+      "stable": "estable", "average": "mitjana", "responsive": "sensible a l'entorn", "few": "pocs assaigs",
+      "tier": { "field": "assaigs de camp", "regional": "mitjanes regionals" },
+      "choose": "Tria", "chosen": "Triada", "none": "Sense varietat"
+    },
+    "gap": {
+      "no_expected_yield": "Sense rendiment esperat",
+      "reference_too_small": "Referència massa petita",
+      "reference_zero": "Referència igual a zero",
+      "cv_undefined": "CV no calculable",
+      "low_trial_count": "Pocs assaigs",
+      "sowing_window_unavailable": "Sense finestra de sembra",
+      "conventional_only_trials": "Només assaigs convencionals",
+      "soil_unavailable": "Sense dades de sòl",
+      "climate_detail_unavailable": "Sense detall climàtic",
+      "frost_tolerance_unavailable": "Sense dades de tolerància a les gelades",
+      "sources_unavailable": "Sense fonts de dades",
+      "no_measured_yield": "Sense rendiment mesurat",
+      "regional_evidence_only": "Només evidència regional/nacional, sense assaigs de camp",
+      "regional_not_comparable": "No comparable amb la mitjana local",
+      "forage_basis_unknown": "Farratge sense base de matèria seca o fresca coneguda",
+      "regional_zone_matched": "Evidència regional de la zona climàtica de GENVCE de la parcel·la",
+      "zone_match_climatology_basis": "Zona estimada amb la climatologia 1981-2010 de la parcel·la; GENVCE classifica cada assaig pel temps de la seva campanya",
+      "regional_country_level": "Evidència regional assignada per país, no per zona",
+      "irrigation_regime_unknown": "Alguns assaigs no indiquen el seu règim de reg",
+      "irrigation_regime_unknown_all": "Cap assaig indica el seu règim de reg; el rendiment pot correspondre a un altre règim",
+      "organic_units_excluded": "S'han exclòs els assaigs ecològics; la xifra correspon a producció convencional",
+      "evidence_truncated": "Hi ha més assaigs dels que s'han analitzat; s'han fet servir els més recents",
+      "insufficient_environments": "Cap assaig té prou varietats per comparar"
+    },
+    "estimate": {
+      "inputs": "Mateixes entrades per a totes: {{regime}} · {{management}} · sembra {{sowing}}",
+      "noSowing": "sense data", "source": "Font", "median": "P50", "range": "P10 – P90", "basisCol": "Base",
+      "basis": { "trial_evidence": "parcel·la d'assaig, maneig òptim", "water_limited": "potencial limitat per l'aigua", "gap_corrected": "amb la bretxa de rendiment de la zona", "potential": "potencial sense limitació d'aigua" },
+      "provider": { "trial_evidence": "Assaigs de la zona", "aquacrop": "AquaCrop" },
+      "experimental": "experimental",
+      "unavailable": { "preseason_not_supported": "Simulació abans de la sembra: encara no disponible", "engine_not_deployed": "pendent",
+        "no_trials": "sense assaigs d'aquest cultiu", "no_trials_for_variety": "sense assaigs d'aquesta varietat a la teva zona",
+        "variety_not_in_evidence_sample": "aquesta varietat no és entre els assaigs analitzats (n'hi ha massa; s'han fet servir els més recents)" },
+      "disagreement": "Els models no coincideixen: incertesa alta.",
+      "trials_one": "{{count}} assaig", "trials_other": "{{count}} assaigs", "years_one": "{{count}} any", "years_other": "{{count}} anys",
+      "none": "Encara no hi ha estimacions per a aquest cultiu."
+    },
+    "plan": {
+      "crop": "Cultiu", "variety": "Varietat", "sowing": "Sembra", "harvest": "Collita prevista", "standEnd": "Final previst del cultiu (fins a 10 anys)",
+      "addCover": "Afegeix una cobertura abans del cultiu", "cover": "Cobertura", "coverSowing": "Sembra de la cobertura",
+      "coverEnd": "Final de la cobertura", "method": "Com s'acaba",
+      "methods": { "roller_crimper": "Corró aixafador (roller crimper)", "incorporate": "Incorporació", "grazing": "Pastura", "harvest": "Collita" },
+      "submit": "Planificar", "needsRegime": "Declara sequer o regadiu abans de planificar.",
+      "otherSpecies": "Una altra espècie…", "speciesName": "Nom de l'espècie",
+      "error": {
+        "missing_species": "Falta triar l'espècie", "missing_dates": "Falten dates",
+        "termination_outside_campaign": "La collita o el final han de caure dins la campanya {{campaign}}",
+        "dates_inconsistent": "Les dates no són coherents", "cycles_overlap": "La cobertura i el cultiu se superposen",
+        "campaign_past": "No es pot planificar una campanya passada",
+        "campaign_started": "Aquesta campanya ja té un cultiu sembrat: canvia'l des de les operacions de camp",
+        "unknown_crop": "Cultiu desconegut", "generic": "No s'ha pogut desar el pla",
+        "perennial_start_outside_campaign": "Un cultiu plurianual s'ha de sembrar a la campanya {{campaign}}",
+        "perennial_too_long": "Un cultiu plurianual ha d'acabar entre {{campaign}} i deu anys després",
+        "perennial_occupies": "La parcel·la té un cultiu plurianual que continua en aquesta campanya: canvia'l des de la seva campanya de sembra",
+        "perennial_overlaps_plans": "El cultiu plurianual se superposa amb cultius ja planificats en campanyes posteriors",
+        "parcel_not_found": "No es troba la parcel·la",
+        "woody_not_campaign_crop": "Un cultiu llenyós no es planifica per campanyes",
+        "contract_mismatch": "La versió del servidor no coincideix amb aquesta pantalla; recarrega la pàgina.",
+        "invalid_response": "El servidor ha respost una cosa inesperada; torna-ho a provar."
+      }
+    },
+    "widget": { "title": "Pla de la parcel·la", "undecided": "Sense decidir", "plan": "Planificar" },
+    "sources": { "open": "Fonts de dades", "close": "Amaga les fonts" },
+    "admin": { "open": "Administració", "close": "Tanca l'administració" }
   }
 }

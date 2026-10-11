@@ -63,8 +63,7 @@ describe('planning strings', () => {
     const missing = [...literalKeys(), ...FAMILIES].filter((k) => !has(dict, k));
     expect(missing).toEqual([]);
   });
-  // enabled in Task 10 (ca, eu, fr, pt)
-  it.skip.each([['ca', ca], ['eu', eu], ['fr', fr], ['pt', pt]])('%s has the same planning keys as en', (_lang, dict) => {
+  it.each([['ca', ca], ['eu', eu], ['fr', fr], ['pt', pt]])('%s has the same planning keys as en', (_lang, dict) => {
     const flat = (node: unknown, prefix = ''): string[] => (node && typeof node === 'object'
       ? Object.entries(node as Record<string, unknown>).flatMap(([k, v]) => flat(v, prefix ? `${prefix}.${k}` : k))
       : [prefix]);

@@ -435,5 +435,145 @@
       "calibrated": "Phénologie : calibrée pour {{region}}.",
       "builtin": "Phénologie : celle d'AquaCrop par défaut."
     }
+  },
+  "planning": {
+    "title": "Planification des cultures",
+    "subtitle": "Quoi semer sur chaque parcelle, avec quelle variété et dans quel ordre",
+    "campaign": "Campagne", "farm": "Exploitation", "farmAll": "Toutes les parcelles", "retry": "Réessayer",
+    "errorLoad": "Chargement impossible. Veuillez réessayer.",
+    "empty": { "noParcels": "Aucune parcelle", "noParcelsHint": "Créez des parcelles dans la visionneuse pour planifier leurs campagnes." },
+    "summary": {
+      "area": "{{crop}} {{ha}} ha",
+      "undecided_one": "{{count}} parcelle sans décision", "undecided_other": "{{count}} parcelles sans décision",
+      "rotation_one": "{{count}} avertissement de rotation", "rotation_other": "{{count}} avertissements de rotation"
+    },
+    "matrix": { "parcel": "Parcelle", "area": "ha", "regime": "Régime", "choose": "Choisir", "change": "Changer", "legend": "● réalisé · ◐ déclaré · ○ planifié" },
+    "provenance": { "actual": "réalisé", "declared": "déclaré", "planned": "planifié", "unknown": "sans données" },
+    "role": { "main_crop": "culture principale", "cover_crop": "couvert végétal", "catch_crop": "culture intermédiaire" },
+    "regime": { "secano": "Sec", "regadío": "Irrigué", "unknown": "Non déclaré" },
+    "management": { "conventional": "Conventionnel", "organic": "Biologique" },
+    "warning": {
+      "cycles_unavailable": "Impossible de lire l'historique de cette parcelle",
+      "regime_missing": "Sec ou irrigué non déclaré",
+      "rotation_restriction": "{{species}} après {{previous}} ({{previous_campaign}}) : possible à partir de {{allowed_from}}",
+      "rotation_unknown": "Rotation non vérifiée : historique incomplet ou absence de règles"
+    },
+    "detail": {
+      "back": "Retour au plan", "previous": "Précédent : {{crop}} ({{campaign}})", "known": "Ce que nous savons",
+      "climate": "Climat", "soil": "Sol", "noData": "sans données", "regimeQuestion": "Sec ou irrigué ?",
+      "regimeHint": "Nécessaire pour afficher les variétés et la simulation : les résultats ne mélangent jamais les régimes.",
+      "managementLabel": "Conduite", "historyDown": "Impossible de lire l'historique : la rotation n'a pas été vérifiée."
+    },
+    "step": { "crop": "1 · Quelle culture ?", "variety": "2 · Quelle variété ?", "estimate": "3 · Quelle récolte attendre ?", "plan": "4 · Planifier" },
+    "fit": {
+      "fits": "Convient", "caveats": "Avec réserves", "no_fit": "Ne convient pas",
+      "showNoFit": "Voir celles qui ne conviennent pas ({{count}})", "hideNoFit": "Masquer celles qui ne conviennent pas",
+      "sowing": "semis {{from}}–{{to}}", "trials": "variétés avec essais", "noTrials": "sans essais variétaux",
+      "pick": "Choisissez une culture pour voir les variétés et la récolte attendue."
+    },
+    "reason": {
+      "soil_unsuitable": "Sol inadapté à cette culture",
+      "soil_marginal": "Sol peu adapté à cette culture",
+      "soil_ph_unsuitable": "pH {{value}} hors de sa plage ({{min}}–{{max}})",
+      "soil_ph_marginal": "pH {{value}} en limite de sa plage ({{min}}–{{max}})",
+      "soil_texture_unsuitable": "Texture inadaptée : {{value}}",
+      "soil_texture_marginal": "Texture peu adaptée : {{value}}",
+      "soil_drainage_unsuitable": "Drainage {{value}} inadapté",
+      "soil_drainage_marginal": "Drainage {{value}} peu adapté",
+      "soil_unknown_no_tolerance": "Pas de données de tolérance du sol pour cette culture",
+      "soil_unknown_no_parcel_soil": "Sol de la parcelle manquant",
+      "soil_unknown_not_comparable": "Le sol ne peut pas être comparé à ses exigences",
+      "frost_risk": "Risque de gel : minimale de {{coldest_min_c}} °C ; avec la marge de sécurité de {{margin_c}} °C, elle atteint son seuil de {{threshold_c}} °C",
+      "frost_unknown_no_climate": "Pas de climat de la parcelle pour évaluer le gel",
+      "frost_unknown_no_tolerance": "Pas de seuil de gel pour cette culture",
+      "frost_unknown_season_unknown": "Pas de calendrier de semis : gel non évalué",
+      "water_deficit_high": "Déficit hydrique élevé en sec (environ {{deficit_mm}} mm)",
+      "water_unknown": "Pas de climat pour évaluer l'eau en sec",
+      "rotation_restriction": "Après {{previous}} ({{previous_campaign}}) : rotation restreinte, possible à partir de {{allowed_from}}",
+      "rotation_benefit": "Bonne rotation après {{previous}}",
+      "rotation_unknown": "Rotation non vérifiée : pas d'historique",
+      "regime_missing": "Sec ou irrigué non déclaré",
+      "multi_year": "Pluriannuelle : occupe plusieurs campagnes",
+      "climate_unknown": "Pas de climat de la parcelle : adéquation non entièrement vérifiée"
+    },
+    "texture": {
+      "sand": "sable", "loamy-sand": "sable limoneux", "sandy-loam": "limon sableux", "loam": "terre franche",
+      "silt-loam": "limon", "silt": "limon fin", "sandy-clay-loam": "limon argilo-sableux", "clay-loam": "argile limono-sableuse",
+      "silty-clay-loam": "limon argileux", "sandy-clay": "argile sableuse", "silty-clay": "argile limoneuse", "clay": "argile"
+    },
+    "variety": {
+      "noTrials": "Aucun essai variétal pour cette culture dans votre zone. Vous pouvez la planifier sans variété.",
+      "needsClimate": "Sans le climat de la parcelle, aucune référence ne peut être recherchée.",
+      "variety": "Variété", "relative": "Rdt relatif", "stability": "Stabilité", "environments": "Essais / années",
+      "relativeHint": "Rendement par rapport à la moyenne de chaque essai : 100 % = égal à la moyenne.",
+      "stable": "stable", "average": "moyenne", "responsive": "sensible à l'environnement", "few": "peu d'essais",
+      "tier": { "field": "essais au champ", "regional": "moyennes régionales" },
+      "choose": "Choisir", "chosen": "Choisie", "none": "Sans variété"
+    },
+    "gap": {
+      "no_expected_yield": "Pas de rendement attendu",
+      "reference_too_small": "Référence trop faible",
+      "reference_zero": "Référence nulle",
+      "cv_undefined": "CV non calculable",
+      "low_trial_count": "Peu d'essais",
+      "sowing_window_unavailable": "Pas de fenêtre de semis",
+      "conventional_only_trials": "Essais conventionnels uniquement",
+      "soil_unavailable": "Pas de données de sol",
+      "climate_detail_unavailable": "Pas de détail climatique",
+      "frost_tolerance_unavailable": "Pas de données de tolérance au gel",
+      "sources_unavailable": "Pas de sources de données",
+      "no_measured_yield": "Pas de rendement mesuré",
+      "regional_evidence_only": "Références régionales/nationales uniquement, sans essais au champ",
+      "regional_not_comparable": "Non comparable à la moyenne locale",
+      "forage_basis_unknown": "Fourrage sans base de matière sèche ou fraîche connue",
+      "regional_zone_matched": "Références régionales de la zone climatique GENVCE de la parcelle",
+      "zone_match_climatology_basis": "Zone estimée à partir de la climatologie 1981-2010 de la parcelle ; GENVCE classe chaque essai selon la météo de sa campagne",
+      "regional_country_level": "Références régionales attribuées par pays, et non par zone",
+      "irrigation_regime_unknown": "Certains essais n'indiquent pas leur régime d'irrigation",
+      "irrigation_regime_unknown_all": "Aucun essai n'indique son régime d'irrigation ; le rendement peut correspondre à un autre régime",
+      "organic_units_excluded": "Les essais en agriculture biologique ont été exclus ; le chiffre correspond à la production conventionnelle",
+      "evidence_truncated": "Il y a plus d'essais que ceux analysés ; les plus récents ont été utilisés",
+      "insufficient_environments": "Aucun essai ne compte assez de variétés pour comparer"
+    },
+    "estimate": {
+      "inputs": "Mêmes paramètres pour toutes : {{regime}} · {{management}} · semis {{sowing}}",
+      "noSowing": "sans date", "source": "Source", "median": "P50", "range": "P10 – P90", "basisCol": "Base",
+      "basis": { "trial_evidence": "parcelle d'essai, conduite optimale", "water_limited": "potentiel limité par l'eau", "gap_corrected": "avec l'écart de rendement de la zone", "potential": "potentiel sans limitation en eau" },
+      "provider": { "trial_evidence": "Essais de la zone", "aquacrop": "AquaCrop" },
+      "experimental": "expérimental",
+      "unavailable": { "preseason_not_supported": "Simulation avant le semis : pas encore disponible", "engine_not_deployed": "en attente",
+        "no_trials": "pas d'essais pour cette culture", "no_trials_for_variety": "pas d'essais de cette variété dans votre zone",
+        "variety_not_in_evidence_sample": "cette variété ne figure pas parmi les essais analysés (il y en a trop ; les plus récents ont été utilisés)" },
+      "disagreement": "Les modèles divergent : forte incertitude.",
+      "trials_one": "{{count}} essai", "trials_other": "{{count}} essais", "years_one": "{{count}} an", "years_other": "{{count}} ans",
+      "none": "Pas encore d'estimations pour cette culture."
+    },
+    "plan": {
+      "crop": "Culture", "variety": "Variété", "sowing": "Semis", "harvest": "Récolte prévue", "standEnd": "Fin prévue de la culture (jusqu'à 10 ans)",
+      "addCover": "Ajouter un couvert avant la culture", "cover": "Couvert", "coverSowing": "Semis du couvert",
+      "coverEnd": "Fin du couvert", "method": "Mode de fin de cycle",
+      "methods": { "roller_crimper": "Rouleau écraseur (roller crimper)", "incorporate": "Enfouissement", "grazing": "Pâturage", "harvest": "Récolte" },
+      "submit": "Planifier", "needsRegime": "Déclarez sec ou irrigué avant de planifier.",
+      "otherSpecies": "Autre espèce…", "speciesName": "Nom de l'espèce",
+      "error": {
+        "missing_species": "Choisissez l'espèce", "missing_dates": "Dates manquantes",
+        "termination_outside_campaign": "La récolte ou la fin doit tomber dans la campagne {{campaign}}",
+        "dates_inconsistent": "Les dates ne sont pas cohérentes", "cycles_overlap": "Le couvert et la culture se chevauchent",
+        "campaign_past": "Impossible de planifier une campagne passée",
+        "campaign_started": "Cette campagne a déjà une culture semée : modifiez-la depuis les opérations de terrain",
+        "unknown_crop": "Culture inconnue", "generic": "Impossible d'enregistrer le plan",
+        "perennial_start_outside_campaign": "Une culture pluriannuelle doit être semée dans la campagne {{campaign}}",
+        "perennial_too_long": "Une culture pluriannuelle doit se terminer entre {{campaign}} et dix ans plus tard",
+        "perennial_occupies": "La parcelle a une culture pluriannuelle qui se poursuit dans cette campagne : modifiez-la depuis sa campagne de semis",
+        "perennial_overlaps_plans": "La culture pluriannuelle chevauche des cultures déjà planifiées dans des campagnes suivantes",
+        "parcel_not_found": "Parcelle introuvable",
+        "woody_not_campaign_crop": "Une culture ligneuse ne se planifie pas par campagne",
+        "contract_mismatch": "La version du serveur ne correspond pas à cet écran ; rechargez la page.",
+        "invalid_response": "Le serveur a renvoyé une réponse inattendue ; réessayez."
+      }
+    },
+    "widget": { "title": "Plan de la parcelle", "undecided": "Sans décision", "plan": "Planifier" },
+    "sources": { "open": "Sources de données", "close": "Masquer les sources" },
+    "admin": { "open": "Administration", "close": "Fermer l'administration" }
   }
 }
