@@ -39,11 +39,13 @@ const FAMILIES = [
   ...COVER_METHODS.map((k) => `planning.plan.methods.${k}`),
   ...['sand', 'loamy-sand', 'sandy-loam', 'loam', 'silt-loam', 'silt', 'sandy-clay-loam', 'clay-loam', 'silty-clay-loam',
     'sandy-clay', 'silty-clay', 'clay'].map((k) => `planning.texture.${k}`),
-  ...['missing_species', 'missing_dates', 'termination_outside_campaign', 'dates_inconsistent', 'cycles_overlap',
+  ...['missing_species', 'species_name_invalid', 'missing_dates', 'termination_outside_campaign', 'dates_inconsistent', 'cycles_overlap',
     'campaign_past', 'campaign_started', 'unknown_crop', 'generic', 'perennial_start_outside_campaign',
     'perennial_too_long', 'perennial_occupies', 'perennial_overlaps_plans', 'parcel_not_found',
     'woody_not_campaign_crop', 'contract_mismatch', 'invalid_response'].map((k) => `planning.plan.error.${k}`),
   'planning.plan.otherSpecies', 'planning.plan.speciesName',
+  // Keys chosen at run time: loadErrorKey() and the lock reasons of ParcelDetail.
+  'planning.error.session', 'planning.errorLoad', 'planning.lock.campaign_unknown',
   'planning.estimate.trials', 'planning.estimate.years',
   // Keys picked inside a conditional, t(cond ? 'a' : 'b'), which literalKeys() does not see.
   'planning.matrix.choose', 'planning.matrix.change', 'planning.sources.open', 'planning.sources.close',

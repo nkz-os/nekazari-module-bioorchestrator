@@ -1194,6 +1194,8 @@
     "subtitle": "What to sow on each parcel, which variety, and in what order",
     "campaign": "Campaign", "farm": "Farm", "farmAll": "All parcels", "retry": "Retry",
     "errorLoad": "Could not load. Please try again.",
+    "reload": "Reload the page",
+    "error": { "session": "Your session has expired: sign in again." },
     "empty": { "noParcels": "No parcels", "noParcelsHint": "Create parcels in the viewer to plan their campaigns." },
     "summary": {
       "area": "{{crop}} {{ha}} ha",
@@ -1246,7 +1248,7 @@
       "water_unknown": "No climate to assess rainfed water",
       "rotation_restriction": "After {{previous}} ({{previous_campaign}}): rotation restricted, possible from {{allowed_from}}",
       "rotation_benefit": "Good rotation after {{previous}}",
-      "rotation_unknown": "Rotation not checked: no history",
+      "rotation_unknown": "Rotation not checked: incomplete history or no rules",
       "regime_missing": "Rainfed or irrigated not declared",
       "multi_year": "Multi-year: occupies several campaigns",
       "climate_unknown": "No parcel climate: fit not fully checked"
@@ -1312,9 +1314,10 @@
       "submit": "Plan", "needsRegime": "Declare rainfed or irrigated before planning.",
       "otherSpecies": "Other species…", "speciesName": "Species name",
       "error": {
+        "species_name_invalid": "Enter a valid species name (letters only, at least 2)",
         "missing_species": "Choose the species", "missing_dates": "Dates missing",
         "termination_outside_campaign": "Harvest or end must fall in campaign {{campaign}}",
-        "dates_inconsistent": "Dates are inconsistent", "cycles_overlap": "The cover crop and the crop overlap",
+        "dates_inconsistent": "Dates are inconsistent", "cycles_overlap": "The dates overlap another crop on the parcel",
         "campaign_past": "A past campaign cannot be planned",
         "campaign_started": "This campaign already has a sown crop: change it from field operations",
         "unknown_crop": "Unknown crop", "generic": "Could not save the plan",
@@ -1328,6 +1331,7 @@
         "invalid_response": "The server sent an unexpected answer; try again."
       }
     },
+    "lock": { "campaign_unknown": "This campaign has a crop of unknown origin or status: check it in field operations" },
     "simulation": { "open": "Simulation of the current campaign", "temporary": "Temporary view: it will move to Crop Health." },
     "widget": { "title": "Parcel plan", "undecided": "Undecided", "plan": "Plan" },
     "sources": { "open": "Data sources", "close": "Hide sources" },

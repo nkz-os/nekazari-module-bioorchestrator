@@ -37,6 +37,9 @@ const ParcelPlanWidget: React.FC<{ entityData?: ParcelEntityData }> = ({ entityD
                 : <span className="text-nkz-text-muted">{t('planning.widget.undecided')}</span>}
             </div>
           ))}
+          {widgetRows(row, data.campaign).length > 0 && (
+            <p className="text-nkz-xs text-nkz-text-muted">{t('planning.matrix.legend')}</p>
+          )}
           {row.warnings.map((w, i) => (
             <p key={`${w.code}-${i}`} className="text-nkz-xs text-nkz-warning">{`⚠ ${warningText(w, namesIndex(data), i18n.language, t)}`}</p>
           ))}

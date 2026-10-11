@@ -441,6 +441,8 @@
     "subtitle": "Quoi semer sur chaque parcelle, avec quelle variété et dans quel ordre",
     "campaign": "Campagne", "farm": "Exploitation", "farmAll": "Toutes les parcelles", "retry": "Réessayer",
     "errorLoad": "Chargement impossible. Veuillez réessayer.",
+    "reload": "Recharger la page",
+    "error": { "session": "Votre session a expiré : reconnectez-vous." },
     "empty": { "noParcels": "Aucune parcelle", "noParcelsHint": "Créez des parcelles dans la visionneuse pour planifier leurs campagnes." },
     "summary": {
       "area": "{{crop}} {{ha}} ha",
@@ -493,7 +495,7 @@
       "water_unknown": "Pas de climat pour évaluer l'eau en sec",
       "rotation_restriction": "Après {{previous}} ({{previous_campaign}}) : rotation restreinte, possible à partir de {{allowed_from}}",
       "rotation_benefit": "Bonne rotation après {{previous}}",
-      "rotation_unknown": "Rotation non vérifiée : pas d'historique",
+      "rotation_unknown": "Rotation non vérifiée : historique incomplet ou sans règles",
       "regime_missing": "Sec ou irrigué non déclaré",
       "multi_year": "Pluriannuelle : occupe plusieurs campagnes",
       "climate_unknown": "Pas de climat de la parcelle : adéquation non entièrement vérifiée"
@@ -559,9 +561,10 @@
       "submit": "Planifier", "needsRegime": "Déclarez sec ou irrigué avant de planifier.",
       "otherSpecies": "Autre espèce…", "speciesName": "Nom de l'espèce",
       "error": {
+        "species_name_invalid": "Saisissez un nom d'espèce valide (lettres uniquement, au moins 2)",
         "missing_species": "Choisissez l'espèce", "missing_dates": "Dates manquantes",
         "termination_outside_campaign": "La récolte ou la fin doit tomber dans la campagne {{campaign}}",
-        "dates_inconsistent": "Les dates ne sont pas cohérentes", "cycles_overlap": "Le couvert et la culture se chevauchent",
+        "dates_inconsistent": "Les dates ne sont pas cohérentes", "cycles_overlap": "Les dates chevauchent une autre culture de la parcelle",
         "campaign_past": "Impossible de planifier une campagne passée",
         "campaign_started": "Cette campagne a déjà une culture semée : modifiez-la depuis les opérations de terrain",
         "unknown_crop": "Culture inconnue", "generic": "Impossible d'enregistrer le plan",
@@ -575,6 +578,7 @@
         "invalid_response": "Le serveur a renvoyé une réponse inattendue ; réessayez."
       }
     },
+    "lock": { "campaign_unknown": "Cette campagne a une culture d'origine ou d'état inconnu : vérifiez-la dans les opérations au champ" },
     "simulation": { "open": "Simulation de la campagne en cours", "temporary": "Vue provisoire : elle passera dans Santé des cultures." },
     "widget": { "title": "Plan de la parcelle", "undecided": "Sans décision", "plan": "Planifier" },
     "sources": { "open": "Sources de données", "close": "Masquer les sources" },

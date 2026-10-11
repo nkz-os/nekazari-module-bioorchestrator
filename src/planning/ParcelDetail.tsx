@@ -16,11 +16,15 @@ import type { Management, ParcelRow, Regime } from './types';
 import { useLoad } from './useLoad';
 import VarietyTable from './VarietyTable';
 
-interface Props { row: ParcelRow; campaign: number; onClose: () => void; onSaved: () => void; onSimulate?: () => void }
+interface Props {
+  row: ParcelRow; campaign: number; onClose: () => void; onSaved: () => void; onSimulate?: () => void;
+  /** Reloads the farm data: offered next to a lock that a failed history read causes. */
+  onReload?: () => void;
+}
 const ESTIMATE_DEBOUNCE_MS = 600;
 const EMPTY_DRAFT: PlanDraft = { main: { species: '', variety: null, sowing: '', end: '', method: null }, cover: null };
 
-export default function ParcelDetail({ row, campaign, onClose, onSaved, onSimulate }: Props) {
+export default function ParcelDetail({ row, campaign, onClose, onSaved, onSimulate, onReload }: Props) {
   const { t, i18n } = useTranslation('bioorchestrator');
   const lang = i18n.language;
   const [regime, setRegime] = useState<Regime | null>(row.regime);
@@ -73,8 +77,9 @@ export default function ParcelDetail({ row, campaign, onClose, onSaved, onSimula
   // A deep link can open a parcel the matrix would not let you plan; the evidence stays, the form does not.
   const locked = lockReason(row, campaign);
   const blocked = locked === 'cycles_unavailable' ? t('planning.warning.cycles_unavailable')
-    : locked ? t(`planning.plan.error.${locked}`, { campaign })
-      : campaign < new Date().getFullYear() ? t('planning.plan.error.campaign_past', { campaign }) : null;
+    : locked === 'campaign_unknown' ? t('planning.lock.campaign_unknown')
+      : locked ? t(`planning.plan.error.${locked}`, { campaign })
+        : campaign < new Date().getFullYear() ? t('planning.plan.error.campaign_past', { campaign }) : null;
   const facts = fit.data?.facts;
   const soilTexture = facts?.soil_texture
     ? t(`planning.texture.${facts.soil_texture}`, { defaultValue: facts.soil_texture })
@@ -95,12 +100,14 @@ export default function ParcelDetail({ row, campaign, onClose, onSaved, onSimula
         )}
       </Inline>
 
-      <Inline gap="inline" wrap align="center">
-        <span className="text-nkz-sm text-nkz-text-muted">{t('planning.detail.known')}:</span>
-        <Badge intent="default">{`${t('planning.detail.climate')}: ${facts?.climate_class ?? t('planning.detail.noData')}`}</Badge>
-        <Badge intent="default">{`${t('planning.detail.soil')}: ${soilTexture}${facts?.soil_ph != null ? `, pH ${facts.soil_ph.toLocaleString(safeLang(lang))}` : ''}`}</Badge>
-        {facts && !facts.history_available && <Badge intent="warning">{t('planning.detail.historyDown')}</Badge>}
-      </Inline>
+      {facts && (
+        <Inline gap="inline" wrap align="center">
+          <span className="text-nkz-sm text-nkz-text-muted">{t('planning.detail.known')}:</span>
+          <Badge intent="default">{`${t('planning.detail.climate')}: ${facts.climate_class ?? t('planning.detail.noData')}`}</Badge>
+          <Badge intent="default">{`${t('planning.detail.soil')}: ${soilTexture}${facts.soil_ph != null ? `, pH ${facts.soil_ph.toLocaleString(safeLang(lang))}` : ''}`}</Badge>
+          {!facts.history_available && <Badge intent="warning">{t('planning.detail.historyDown')}</Badge>}
+        </Inline>
+      )}
 
       {targetCells.length > 0 && (
         <Stack gap="tight">
@@ -140,10 +147,15 @@ export default function ParcelDetail({ row, campaign, onClose, onSaved, onSimula
           </Step>
           <Step title={t('planning.step.plan')}>
             {blocked ? (
-              <p className="text-nkz-sm text-nkz-text-muted">{blocked}</p>
+              <Inline gap="inline" align="center" wrap>
+                <p className="text-nkz-sm text-nkz-text-muted">{blocked}</p>
+                {locked === 'cycles_unavailable' && onReload && (
+                  <Button size="sm" variant="secondary" onClick={onReload}>{t('planning.retry')}</Button>
+                )}
+              </Inline>
             ) : (
               <PlanForm key={chosen.species} parcelId={row.parcel_id} campaign={campaign} regime={regime} management={management} main={chosen}
-                coverOptions={candidates} varieties={varieties.data?.varieties ?? []} draft={draft} onDraft={setDraft} onSaved={onSaved}
+                coverOptions={candidates} draft={draft} onDraft={setDraft} onSaved={onSaved}
                 replacing={targetCells.some((c) => c.provenance === 'planned')} />
             )}
           </Step>

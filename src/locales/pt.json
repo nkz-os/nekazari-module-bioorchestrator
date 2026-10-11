@@ -441,6 +441,8 @@
     "subtitle": "O que semear em cada parcela, com que variedade e por que ordem",
     "campaign": "Campanha", "farm": "Exploração", "farmAll": "Todas as parcelas", "retry": "Tentar novamente",
     "errorLoad": "Não foi possível carregar. Tente novamente.",
+    "reload": "Recarregar a página",
+    "error": { "session": "A sessão expirou: volta a entrar." },
     "empty": { "noParcels": "Sem parcelas", "noParcelsHint": "Crie parcelas no visualizador para planear as respetivas campanhas." },
     "summary": {
       "area": "{{crop}} {{ha}} ha",
@@ -493,7 +495,7 @@
       "water_unknown": "Sem clima para avaliar a água em sequeiro",
       "rotation_restriction": "Depois de {{previous}} ({{previous_campaign}}): rotação restringida, possível a partir de {{allowed_from}}",
       "rotation_benefit": "Boa rotação depois de {{previous}}",
-      "rotation_unknown": "Rotação não verificada: sem historial",
+      "rotation_unknown": "Rotação não verificada: histórico incompleto ou sem regras",
       "regime_missing": "Falta declarar sequeiro ou regadio",
       "multi_year": "Plurianual: ocupa várias campanhas",
       "climate_unknown": "Sem clima da parcela: adequação não totalmente verificada"
@@ -559,9 +561,10 @@
       "submit": "Planear", "needsRegime": "Declare sequeiro ou regadio antes de planear.",
       "otherSpecies": "Outra espécie…", "speciesName": "Nome da espécie",
       "error": {
+        "species_name_invalid": "Escreve um nome de espécie válido (só letras, pelo menos 2)",
         "missing_species": "Falta escolher a espécie", "missing_dates": "Faltam datas",
         "termination_outside_campaign": "A colheita ou o fim têm de cair na campanha {{campaign}}",
-        "dates_inconsistent": "As datas não são coerentes", "cycles_overlap": "A cobertura e a cultura sobrepõem-se",
+        "dates_inconsistent": "As datas não são coerentes", "cycles_overlap": "As datas sobrepõem-se a outra cultura da parcela",
         "campaign_past": "Não é possível planear uma campanha passada",
         "campaign_started": "Esta campanha já tem uma cultura semeada: altere-a a partir das operações de campo",
         "unknown_crop": "Cultura desconhecida", "generic": "Não foi possível guardar o plano",
@@ -575,6 +578,7 @@
         "invalid_response": "O servidor respondeu algo inesperado; tente novamente."
       }
     },
+    "lock": { "campaign_unknown": "Esta campanha tem uma cultura de origem ou estado desconhecido: revê-a nas operações de campo" },
     "simulation": { "open": "Simulação da campanha em curso", "temporary": "Vista provisória: passará para Saúde da cultura." },
     "widget": { "title": "Plano da parcela", "undecided": "Por decidir", "plan": "Planear" },
     "sources": { "open": "Fontes de dados", "close": "Ocultar fontes" },

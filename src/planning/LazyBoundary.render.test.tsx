@@ -18,12 +18,12 @@ describe('LazyBoundary (es)', () => {
   });
 
   it('turns a render error into a failed state', () => {
-    expect(LazyBoundary.getDerivedStateFromError()).toEqual({ failed: true });
+    expect(LazyBoundary.getDerivedStateFromError(new Error('boom'))).toEqual({ failed: true, chunk: false });
   });
 
   it('shows the message and a retry button instead of the children once failed, and retry remounts them', () => {
     const boundary = new LazyBoundary({ children: <p>contenido</p> });
-    boundary.state = { failed: true, attempt: 0 };
+    boundary.state = { failed: true, attempt: 0, chunk: false };
     const html = renderToStaticMarkup(boundary.render() as React.ReactElement);
     expect(html).toContain('No se ha podido cargar');
     expect(html).toContain('Reintentar');
@@ -32,7 +32,19 @@ describe('LazyBoundary (es)', () => {
     let next = boundary.state;
     boundary.setState = ((u: (s: typeof next) => typeof next) => { next = { ...next, ...u(boundary.state) }; }) as never;
     (boundary as unknown as { reset: () => void }).reset();
-    expect(next).toEqual({ failed: false, attempt: 1 });
+    expect(next).toEqual({ failed: false, attempt: 1, chunk: false });
+  });
+
+  it('tells a chunk that failed to load apart: it needs a page reload, not a remount', () => {
+    expect(LazyBoundary.getDerivedStateFromError(new TypeError('Failed to fetch dynamically imported module: x.js'))).toEqual({ failed: true, chunk: true });
+    const named = new Error('x');
+    named.name = 'ChunkLoadError';
+    expect(LazyBoundary.getDerivedStateFromError(named)).toEqual({ failed: true, chunk: true });
+    const boundary = new LazyBoundary({ children: <p>contenido</p> });
+    boundary.state = { failed: true, attempt: 0, chunk: true };
+    const html = renderToStaticMarkup(boundary.render() as React.ReactElement);
+    expect(html).toContain('Recargar la página');
+    expect(html).not.toContain('Reintentar');
   });
 
   it('logs the error with the component stack', () => {

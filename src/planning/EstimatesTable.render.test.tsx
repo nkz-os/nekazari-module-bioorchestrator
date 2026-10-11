@@ -23,7 +23,7 @@ const DATA: EstimatesResponse = {
 describe('EstimatesTable (es)', () => {
   it('one row per source with its basis, and AquaCrop shown as pending', () => {
     const html = renderToStaticMarkup(<EstimatesTable data={DATA} />);
-    expect(html).toContain('Mismas entradas para todas: Secano · Convencional · siembra 2026-11-05');
+    expect(html).toContain('Mismas entradas para todas: Secano · Convencional · siembra 5/11/2026');
     expect(html).toContain('Ensayos de la zona');
     expect(html).toContain('5,1 – 8,2');
     expect(html).toContain('6,8');
@@ -34,5 +34,16 @@ describe('EstimatesTable (es)', () => {
   });
   it('disagreement is said, not averaged', () => {
     expect(renderToStaticMarkup(<EstimatesTable data={{ ...DATA, disagreement: true }} />)).toContain('Los modelos no coinciden');
+  });
+  it('without the parcel climate there is no trial evidence, and it says so above the table', () => {
+    const html = renderToStaticMarkup(<EstimatesTable data={{ ...DATA, status: 'needs_climate', estimates: [] }} />);
+    expect(html).toContain('Sin clima de la parcela no se puede buscar evidencia.');
+    expect(html.indexOf('Sin clima de la parcela')).toBeLessThan(html.indexOf('<table'));
+    expect(renderToStaticMarkup(<EstimatesTable data={DATA} />)).not.toContain('Sin clima de la parcela');
+  });
+  it('shows the sowing date in the user language, as the local date it is', () => {
+    const html = renderToStaticMarkup(<EstimatesTable data={{ ...DATA, inputs: { ...DATA.inputs, sowing_date: '2027-01-01' } }} />);
+    expect(html).toContain('siembra 1/1/2027');
+    expect(renderToStaticMarkup(<EstimatesTable data={{ ...DATA, inputs: { ...DATA.inputs, sowing_date: null } }} />)).toContain('siembra sin fecha');
   });
 });

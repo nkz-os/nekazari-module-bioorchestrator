@@ -12,10 +12,16 @@ export const COVER_METHODS: TerminationMethod[] = ['roller_crimper', 'incorporat
 
 export interface CycleDraft { species: string; variety: string | null; sowing: string; end: string; method: TerminationMethod | null }
 export interface PlanDraft { main: CycleDraft; cover: CycleDraft | null }
-export type DraftError = 'missing_species' | 'missing_dates' | 'termination_outside_campaign' | 'dates_inconsistent'
+export type DraftError = 'missing_species' | 'species_name_invalid' | 'missing_dates' | 'termination_outside_campaign' | 'dates_inconsistent'
   | 'cycles_overlap' | 'perennial_start_outside_campaign' | 'perennial_too_long';
 /** Same cap as the backend (plan_write.MAX_PERENNIAL_YEARS). */
 export const MAX_PERENNIAL_YEARS = 10;
+/**
+ * A cover species the registry does not list is written by name; the server restricts the name to
+ * letters, digits, space, dot, dash, underscore and brackets, 2 to 64 characters, starting with a letter
+ * (plan_write._RAW_SPECIES_RE). Underscore is allowed because registry slugs carry it (faba_bean).
+ */
+export const RAW_SPECIES_NAME = /^[\p{L}][\p{L}\p{N}_ .()-]{1,63}$/u;
 
 /** Campaign a sowing opens (same rule as the backend history.campaign_of_start). */
 export function campaignOfStart(iso: string): number {
@@ -86,12 +92,14 @@ export function draftFromCells(cells: CycleCell[]): PlanDraft | null {
  * Mirrors the backend's date rules (plan_write.validate_plan) so the user sees the error before the
  * request; the server stays authoritative. A perennial main crop (alfalfa) starts in the campaign,
  * ends in or after it and at most MAX_PERENNIAL_YEARS later. An annual cycle ends in the campaign
- * and opens at most in the campaign before it (autumn sowing).
+ * and opens at most in the campaign before it (autumn sowing). A cover species outside `listedCovers`
+ * is free text and must be a valid name.
  */
-export function validateDraft(d: PlanDraft, campaign: number, perennialMain = false): DraftError | null {
+export function validateDraft(d: PlanDraft, campaign: number, perennialMain = false, listedCovers: string[] = []): DraftError | null {
   const cycles = d.cover ? [d.cover, d.main] : [d.main];
   for (const c of cycles) {
     if (!c.species) return 'missing_species';
+    if (c === d.cover && !listedCovers.includes(c.species) && !RAW_SPECIES_NAME.test(c.species.trim())) return 'species_name_invalid';
     if (!c.sowing || !c.end) return 'missing_dates';
     const endYear = Number(c.end.slice(0, 4));
     if (c === d.main && perennialMain) {
@@ -113,7 +121,7 @@ export function validateDraft(d: PlanDraft, campaign: number, perennialMain = fa
 
 export function toPlanIn(d: PlanDraft, campaign: number, regime: Regime, management: Management): PlanIn {
   const cycle = (c: CycleDraft, role: Role): PlanCycleIn => ({
-    role, crop: c.species, variety: c.variety, sowing_start: c.sowing, sowing_end: null,
+    role, crop: c.species.trim(), variety: c.variety, sowing_start: c.sowing, sowing_end: null,
     expected_termination: c.end, termination_method: c.method,
   });
   return {

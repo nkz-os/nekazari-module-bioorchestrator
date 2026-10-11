@@ -18,24 +18,38 @@ export function rowsForFarm(parcels: ParcelRow[], farmId: string, lang: string):
  */
 export function canPlan(row: ParcelRow, campaign: number): boolean {
   if (!row.cycles_available) return false;
-  return !(row.cells[String(campaign)] ?? []).some((c) => (c.status !== 'planned' && c.status !== 'cancelled')
-    || c.provenance === 'actual' || c.provenance === 'declared' || c.provenance === 'unknown'
-    || (c.lifecycle === 'perennial' && (c.first_campaign == null || c.first_campaign < campaign)));
+  return !(row.cells[String(campaign)] ?? []).some((c) => blocksPlan(c, campaign));
 }
 
-export type LockReason = 'cycles_unavailable' | 'perennial_occupies' | 'campaign_started';
+/** A target-campaign cycle the backend would refuse to replace (see canPlan). */
+const blocksPlan = (c: CycleCell, campaign: number): boolean => (c.status !== 'planned' && c.status !== 'cancelled')
+  || c.provenance === 'actual' || c.provenance === 'declared' || c.provenance === 'unknown'
+  || (c.lifecycle === 'perennial' && (c.first_campaign == null || c.first_campaign < campaign));
+
+/**
+ * A blocking cycle that is not known to be sown: its origin or its status is unknown, and it is
+ * neither sown, declared nor in a started status. The lock still holds; only the wording differs.
+ */
+const isUnknownCycle = (c: CycleCell): boolean => (c.provenance === 'unknown' || c.status === null)
+  && c.provenance !== 'actual' && c.provenance !== 'declared' && (c.status === null || c.status === 'planned');
+
+export type LockReason = 'cycles_unavailable' | 'perennial_occupies' | 'campaign_started' | 'campaign_unknown';
 
 /**
  * Why a parcel cannot be planned in the campaign, or null when it can: null exactly when
  * canPlan is true. A deep link can open a parcel the matrix would not offer, and the detail
- * says which of the three refusals applies instead of showing a form the backend would reject.
+ * says which refusal applies instead of showing a form the backend would reject.
+ * `campaign_unknown` replaces `campaign_started` when every blocking cycle has an unknown origin
+ * or status: the parcel is locked all the same, but the text must not say a crop was sown.
  */
 export function lockReason(row: ParcelRow, campaign: number): LockReason | null {
   if (!row.cycles_available) return 'cycles_unavailable';
-  const occupied = (row.cells[String(campaign)] ?? []).some((c) => c.lifecycle === 'perennial'
-    && (c.first_campaign == null || c.first_campaign < campaign));
+  const cells = row.cells[String(campaign)] ?? [];
+  const occupied = cells.some((c) => c.lifecycle === 'perennial' && (c.first_campaign == null || c.first_campaign < campaign));
   if (occupied) return 'perennial_occupies';
-  return canPlan(row, campaign) ? null : 'campaign_started';
+  const blockers = cells.filter((c) => blocksPlan(c, campaign));
+  if (blockers.length === 0) return null;
+  return blockers.every(isUnknownCycle) ? 'campaign_unknown' : 'campaign_started';
 }
 
 /**

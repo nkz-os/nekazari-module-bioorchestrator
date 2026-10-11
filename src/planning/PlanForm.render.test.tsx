@@ -17,8 +17,7 @@ const MAIN: SpeciesFit = {
 };
 const DRAFT: PlanDraft = { main: { species: 'maize', variety: 'Var X', sowing: '2027-04-20', end: '2027-10-01', method: null }, cover: null };
 const props = { parcelId: 'p1', campaign: 2027, regime: 'secano' as const, management: 'conventional' as const, main: MAIN,
-  coverOptions: [], varieties: [{ variety: 'Var X', relative_yield_pct: 105, n_environments: 9, years: [2020, 2024], mean_kg_ha: 1,
-    fw_slope: null, stability: null, few_environments: false }], draft: DRAFT, onDraft: () => {}, onSaved: () => {} };
+  coverOptions: [], draft: DRAFT, onDraft: () => {}, onSaved: () => {} };
 
 describe('PlanForm (es)', () => {
   it('warns above the submit button that saving replaces the current plan', () => {
@@ -28,5 +27,17 @@ describe('PlanForm (es)', () => {
   });
   it('says nothing about replacing when the campaign has no plan yet', () => {
     expect(renderToStaticMarkup(<PlanForm {...props} replacing={false} />)).not.toContain('Al guardar se sustituye');
+  });
+  it('shows the chosen variety as text: the varieties table is the one place it is chosen', () => {
+    const html = renderToStaticMarkup(<PlanForm {...props} replacing={false} />);
+    expect(html).toContain('Variedad: Var X');
+    expect(html).not.toContain('role="combobox"');
+    const none = renderToStaticMarkup(<PlanForm {...props} replacing={false} draft={{ ...DRAFT, main: { ...DRAFT.main, variety: null } }} />);
+    expect(none).toContain('Variedad: Sin variedad');
+  });
+  it('a crop without variety trials and without a variety shows no variety line', () => {
+    const html = renderToStaticMarkup(<PlanForm {...props} replacing={false} main={{ ...MAIN, has_variety_trials: false }}
+      draft={{ ...DRAFT, main: { ...DRAFT.main, variety: null } }} />);
+    expect(html).not.toContain('Variedad:');
   });
 });

@@ -47,10 +47,23 @@ describe('matrix model', () => {
       cell({ lifecycle: 'perennial', first_campaign: 2025 })]), 2027)).toBe('perennial_occupies');
     expect(lockReason(row([cell({ provenance: 'actual', status: 'active' })]), 2027)).toBe('campaign_started');
     expect(lockReason(row([cell({ provenance: 'declared' })]), 2027)).toBe('campaign_started');
-    expect(lockReason(row([cell({ provenance: 'planned', status: null })]), 2027)).toBe('campaign_started');
     expect(lockReason(row([]), 2027)).toBeNull();
     expect(lockReason(row([cell({})]), 2027)).toBeNull();
     expect(lockReason(row([cell({ lifecycle: 'perennial', first_campaign: 2027 })]), 2027)).toBeNull();
+  });
+  it('a target cycle of unknown origin or status says so instead of "started"', () => {
+    expect(lockReason(row([cell({ provenance: 'planned', status: null })]), 2027)).toBe('campaign_unknown');
+    expect(lockReason(row([cell({ provenance: 'unknown', status: 'planned' })]), 2027)).toBe('campaign_unknown');
+    expect(lockReason(row([cell({ provenance: 'unknown', status: null })]), 2027)).toBe('campaign_unknown');
+    // Cells that do not block (a planned one) do not count: only the blocking ones decide the wording.
+    expect(lockReason(row([cell({}), cell({ provenance: 'unknown', status: null })]), 2027)).toBe('campaign_unknown');
+  });
+  it('one blocking cycle that is actually sown, declared or started keeps the "started" wording', () => {
+    expect(lockReason(row([cell({ provenance: 'unknown', status: null }), cell({ provenance: 'actual', status: 'active' })]), 2027)).toBe('campaign_started');
+    expect(lockReason(row([cell({ provenance: 'unknown', status: 'active' })]), 2027)).toBe('campaign_started');
+    expect(lockReason(row([cell({ provenance: 'planned', status: 'harvested' })]), 2027)).toBe('campaign_started');
+    expect(lockReason(row([cell({ provenance: 'actual', status: null })]), 2027)).toBe('campaign_started');
+    expect(lockReason(row([cell({ provenance: 'declared', status: null })]), 2027)).toBe('campaign_started');
   });
   it('lockReason is null exactly when canPlan is true', () => {
     const fixtures: ParcelRow[] = [

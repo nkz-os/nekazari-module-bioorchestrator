@@ -5,19 +5,19 @@ import { Button, FormField, Input, Select, Stack, Switch } from '@nekazari/ui-ki
 import { PlanningApiError, putPlan } from './api';
 import { cropName } from './format';
 import { COVER_METHODS, NONE, emptyCover, isOtherCover, toPlanIn, validateDraft, type CycleDraft, type PlanDraft } from './planModel';
-import type { Management, Regime, SpeciesFit, TerminationMethod, VarietyStat } from './types';
+import type { Management, Regime, SpeciesFit, TerminationMethod } from './types';
 
 /** Select sentinel for "a species that is not in the list": its name is typed in (the server validates it). */
 const OTHER = '__other__';
 
 interface Props {
   parcelId: string; campaign: number; regime: Regime | null; management: Management; main: SpeciesFit;
-  coverOptions: SpeciesFit[]; varieties: VarietyStat[]; draft: PlanDraft; onDraft: (d: PlanDraft) => void; onSaved: () => void;
+  coverOptions: SpeciesFit[]; draft: PlanDraft; onDraft: (d: PlanDraft) => void; onSaved: () => void;
   /** The campaign already has a planned cycle: saving replaces it. */
   replacing: boolean;
 }
 
-export default function PlanForm({ parcelId, campaign, regime, management, main, coverOptions, varieties, draft, onDraft, onSaved, replacing }: Props) {
+export default function PlanForm({ parcelId, campaign, regime, management, main, coverOptions, draft, onDraft, onSaved, replacing }: Props) {
   const { t, i18n } = useTranslation('bioorchestrator');
   const lang = i18n.language;
   const [saving, setSaving] = useState(false);
@@ -34,7 +34,7 @@ export default function PlanForm({ parcelId, campaign, regime, management, main,
 
   async function submit() {
     if (!regime) { setError(t('planning.plan.needsRegime')); return; }
-    const local = validateDraft(draft, campaign, isPerennial);
+    const local = validateDraft(draft, campaign, isPerennial, coverOptions.map((s) => s.species));
     if (local) { setError(t(`planning.plan.error.${local}`, { campaign })); return; }
     setSaving(true);
     setError(null);
@@ -49,7 +49,6 @@ export default function PlanForm({ parcelId, campaign, regime, management, main,
     }
   }
 
-  const varietyOptions = [{ value: NONE, label: t('planning.variety.none') }, ...varieties.map((v) => ({ value: v.variety, label: v.variety }))];
   const coverSpecies = coverOptions.map((s) => ({ value: s.species, label: cropName(s.names, s.species, lang) }));
   // Free-text mode follows the data: a name the options do not list stays visible after a remount or a reload.
   const coverOther = draft.cover ? isOtherCover(draft.cover.species, coverSpecies.map((o) => o.value), otherCover) : false;
@@ -58,11 +57,9 @@ export default function PlanForm({ parcelId, campaign, regime, management, main,
   return (
     <Stack gap="stack">
       <p className="text-nkz-sm font-medium text-nkz-text-primary">{`${t('planning.plan.crop')}: ${cropName(main.names, main.species, lang)}`}</p>
-      {varieties.length > 0 && (
-        <FormField label={t('planning.plan.variety')}>
-          <Select value={draft.main.variety ?? NONE} options={varietyOptions}
-            onValueChange={(v) => setMain({ variety: v === NONE ? null : v })} />
-        </FormField>
+      {/* The varieties table is the one place a variety is chosen; the form only shows the choice. */}
+      {(main.has_variety_trials || draft.main.variety) && (
+        <p className="text-nkz-sm text-nkz-text-primary">{`${t('planning.plan.variety')}: ${draft.main.variety ?? t('planning.variety.none')}`}</p>
       )}
       <FormField label={t('planning.plan.sowing')}>
         <Input type="date" value={draft.main.sowing} onChange={(e) => setMain({ sowing: e.target.value })} />

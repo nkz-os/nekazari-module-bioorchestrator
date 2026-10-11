@@ -1195,6 +1195,8 @@
     "farmAll": "Todas las parcelas",
     "retry": "Reintentar",
     "errorLoad": "No se ha podido cargar. Inténtalo de nuevo.",
+    "reload": "Recargar la página",
+    "error": { "session": "La sesión ha caducado: vuelve a entrar." },
     "empty": { "noParcels": "No hay parcelas", "noParcelsHint": "Crea parcelas en el visor para planificar sus campañas." },
     "summary": {
       "area": "{{crop}} {{ha}} ha",
@@ -1247,7 +1249,7 @@
       "water_unknown": "Sin clima para valorar el agua en secano",
       "rotation_restriction": "Tras {{previous}} ({{previous_campaign}}): rotación restringida, posible desde {{allowed_from}}",
       "rotation_benefit": "Buena rotación tras {{previous}}",
-      "rotation_unknown": "Rotación no comprobada: sin historial",
+      "rotation_unknown": "Rotación no comprobada: historial incompleto o sin reglas",
       "regime_missing": "Falta declarar secano o regadío",
       "multi_year": "Plurianual: ocupa varias campañas",
       "climate_unknown": "Sin clima de la parcela: aptitud no comprobada del todo"
@@ -1313,9 +1315,10 @@
       "submit": "Planificar", "needsRegime": "Declara secano o regadío antes de planificar.",
       "otherSpecies": "Otra especie…", "speciesName": "Nombre de la especie",
       "error": {
+        "species_name_invalid": "Escribe un nombre de especie válido (solo letras, al menos 2)",
         "missing_species": "Falta elegir la especie", "missing_dates": "Faltan fechas",
         "termination_outside_campaign": "La cosecha o el fin deben caer en la campaña {{campaign}}",
-        "dates_inconsistent": "Las fechas no son coherentes", "cycles_overlap": "La cubierta y el cultivo se solapan",
+        "dates_inconsistent": "Las fechas no son coherentes", "cycles_overlap": "Las fechas se solapan con otro cultivo de la parcela",
         "campaign_past": "No se puede planificar una campaña pasada",
         "campaign_started": "Esta campaña ya tiene un cultivo sembrado: cámbialo desde las operaciones de campo",
         "unknown_crop": "Cultivo desconocido", "generic": "No se ha podido guardar el plan",
@@ -1329,6 +1332,7 @@
         "invalid_response": "El servidor respondió algo inesperado; inténtalo de nuevo."
       }
     },
+    "lock": { "campaign_unknown": "Esta campaña tiene un cultivo de origen o estado desconocido: revísalo en las operaciones de campo" },
     "simulation": { "open": "Simulación de la campaña en curso", "temporary": "Vista provisional: pasará a Salud del cultivo." },
     "widget": { "title": "Plan de la parcela", "undecided": "Sin decidir", "plan": "Planificar" },
     "sources": { "open": "Fuentes de datos", "close": "Ocultar fuentes" },

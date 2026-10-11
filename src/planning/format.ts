@@ -32,5 +32,19 @@ export function monthName(month: number, lang: string): string {
   return new Date(Date.UTC(2001, month - 1, 1)).toLocaleString(safeLang(lang), { month: 'short', timeZone: 'UTC' });
 }
 
+/**
+ * An ISO date (YYYY-MM-DD, any time part ignored) in the user's language. It is read as a local date:
+ * parsing it as UTC would show the day before west of Greenwich. Unreadable input comes back as given.
+ */
+export function formatIsoDate(iso: string, lang: string): string {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso);
+  if (!m) return iso;
+  const [year, month, day] = [Number(m[1]), Number(m[2]), Number(m[3])];
+  const date = new Date(year, month - 1, day);
+  // A day that rolled over (February 30th) is not a date.
+  if (date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day) return iso;
+  return date.toLocaleDateString(safeLang(lang));
+}
+
 export const parcelUrn = (id: string): string => (id.startsWith('urn:') ? id : `${PARCEL_PREFIX}${id}`);
 export const shortId = (id: string): string => id.split(':').pop() ?? id;

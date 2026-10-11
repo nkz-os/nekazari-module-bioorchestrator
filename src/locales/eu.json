@@ -441,6 +441,8 @@
     "subtitle": "Zer erein partzela bakoitzean, zein barietaterekin eta zer ordenatan",
     "campaign": "Kanpaina", "farm": "Ustiategia", "farmAll": "Partzela guztiak", "retry": "Saiatu berriro",
     "errorLoad": "Ezin izan da kargatu. Saiatu berriro.",
+    "reload": "Kargatu berriro orria",
+    "error": { "session": "Saioa iraungi da: sartu berriro." },
     "empty": { "noParcels": "Ez dago partzelarik", "noParcelsHint": "Sortu partzelak ikusgailuan haien kanpainak planifikatzeko." },
     "summary": {
       "area": "{{crop}} {{ha}} ha",
@@ -493,7 +495,7 @@
       "water_unknown": "Ez dago klimarik lehorreko uraren egoera baloratzeko",
       "rotation_restriction": "Aurrekoa {{previous}} ({{previous_campaign}}): errotazioa mugatua, ez da posible {{allowed_from}} baino lehen",
       "rotation_benefit": "Errotazio ona: aurrekoa {{previous}}",
-      "rotation_unknown": "Errotazioa ez da egiaztatu: historiarik gabe",
+      "rotation_unknown": "Txandakatzea egiaztatu gabe: historia osatugabea edo araurik gabe",
       "regime_missing": "Lehorrekoa ala ureztatua adierazi gabe",
       "multi_year": "Urte anitzekoa: hainbat kanpaina hartzen ditu",
       "climate_unknown": "Partzelaren klimarik gabe: egokitasuna ez da guztiz egiaztatu"
@@ -559,9 +561,10 @@
       "submit": "Planifikatu", "needsRegime": "Adierazi lehorrekoa ala ureztatua planifikatu aurretik.",
       "otherSpecies": "Beste espezie bat…", "speciesName": "Espeziearen izena",
       "error": {
+        "species_name_invalid": "Idatzi espezie-izen baliozko bat (letrak soilik, gutxienez 2)",
         "missing_species": "Espeziea aukeratu behar da", "missing_dates": "Datak falta dira",
         "termination_outside_campaign": "Uzta edo amaiera {{campaign}} kanpainan egon behar da",
-        "dates_inconsistent": "Datak ez dira koherenteak", "cycles_overlap": "Estaldura eta laborea gainjartzen dira",
+        "dates_inconsistent": "Datak ez dira koherenteak", "cycles_overlap": "Datak lursaileko beste labore batekin gainjartzen dira",
         "campaign_past": "Ezin da iragan den kanpaina bat planifikatu",
         "campaign_started": "Kanpaina honek ereindako labore bat du jada: aldatu landa-eragiketetatik",
         "unknown_crop": "Labore ezezaguna", "generic": "Ezin izan da plana gorde",
@@ -575,6 +578,7 @@
         "invalid_response": "Zerbitzariak ustekabeko erantzuna eman du; saiatu berriro."
       }
     },
+    "lock": { "campaign_unknown": "Kanpaina honek jatorri edo egoera ezezaguneko labore bat du: berrikusi landa-eragiketetan" },
     "simulation": { "open": "Martxan dagoen kanpainaren simulazioa", "temporary": "Behin-behineko ikuspegia: Laborearen osasunera eramango da." },
     "widget": { "title": "Partzelaren plana", "undecided": "Erabaki gabe", "plan": "Planifikatu" },
     "sources": { "open": "Datu-iturriak", "close": "Ezkutatu iturriak" },

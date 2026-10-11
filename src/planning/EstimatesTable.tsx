@@ -3,7 +3,7 @@ import { useTranslation } from '@nekazari/sdk';
 import { Badge, Stack } from '@nekazari/ui-kit';
 import SourceAttribution from '../components/shared/SourceAttribution';
 import { sortEstimates, uniqueAttributions, validationTone } from './estimatesModel';
-import { formatT } from './format';
+import { formatIsoDate, formatT } from './format';
 import type { EstimatesResponse } from './types';
 
 export default function EstimatesTable({ data }: { data: EstimatesResponse }) {
@@ -15,8 +15,9 @@ export default function EstimatesTable({ data }: { data: EstimatesResponse }) {
     <Stack gap="stack">
       <p className="text-nkz-xs text-nkz-text-muted">{t('planning.estimate.inputs', {
         regime: t(`planning.regime.${inputs.regime}`), management: t(`planning.management.${inputs.management}`),
-        sowing: inputs.sowing_date ?? t('planning.estimate.noSowing'),
+        sowing: inputs.sowing_date ? formatIsoDate(inputs.sowing_date, lang) : t('planning.estimate.noSowing'),
       })}</p>
+      {data.status === 'needs_climate' && <p className="text-nkz-sm text-nkz-text-muted">{t('planning.variety.needsClimate')}</p>}
       {data.disagreement && <p className="text-nkz-sm font-medium text-nkz-warning">{t('planning.estimate.disagreement')}</p>}
       {rows.length === 0 && data.unavailable.length === 0 && <p className="text-nkz-sm text-nkz-text-muted">{t('planning.estimate.none')}</p>}
       <div className="overflow-x-auto">

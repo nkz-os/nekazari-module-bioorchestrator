@@ -441,6 +441,8 @@
     "subtitle": "Què sembrar a cada parcel·la, amb quina varietat i en quin ordre",
     "campaign": "Campanya", "farm": "Explotació", "farmAll": "Totes les parcel·les", "retry": "Reintenta",
     "errorLoad": "No s'ha pogut carregar. Torna-ho a provar.",
+    "reload": "Recarrega la pàgina",
+    "error": { "session": "La sessió ha caducat: torna a entrar." },
     "empty": { "noParcels": "No hi ha parcel·les", "noParcelsHint": "Crea parcel·les al visor per planificar-ne les campanyes." },
     "summary": {
       "area": "{{crop}} {{ha}} ha",
@@ -493,7 +495,7 @@
       "water_unknown": "Sense clima per valorar l'aigua en secà",
       "rotation_restriction": "Després de {{previous}} ({{previous_campaign}}): rotació restringida, possible a partir de {{allowed_from}}",
       "rotation_benefit": "Bona rotació després de {{previous}}",
-      "rotation_unknown": "Rotació no comprovada: sense historial",
+      "rotation_unknown": "Rotació no comprovada: historial incomplet o sense regles",
       "regime_missing": "Falta declarar secà o regadiu",
       "multi_year": "Plurianual: ocupa diverses campanyes",
       "climate_unknown": "Sense clima de la parcel·la: aptitud no del tot comprovada"
@@ -559,9 +561,10 @@
       "submit": "Planificar", "needsRegime": "Declara secà o regadiu abans de planificar.",
       "otherSpecies": "Una altra espècie…", "speciesName": "Nom de l'espècie",
       "error": {
+        "species_name_invalid": "Escriu un nom d'espècie vàlid (només lletres, com a mínim 2)",
         "missing_species": "Falta triar l'espècie", "missing_dates": "Falten dates",
         "termination_outside_campaign": "La collita o el final han de caure dins la campanya {{campaign}}",
-        "dates_inconsistent": "Les dates no són coherents", "cycles_overlap": "La cobertura i el cultiu se superposen",
+        "dates_inconsistent": "Les dates no són coherents", "cycles_overlap": "Les dates se solapen amb un altre cultiu de la parcel·la",
         "campaign_past": "No es pot planificar una campanya passada",
         "campaign_started": "Aquesta campanya ja té un cultiu sembrat: canvia'l des de les operacions de camp",
         "unknown_crop": "Cultiu desconegut", "generic": "No s'ha pogut desar el pla",
@@ -575,6 +578,7 @@
         "invalid_response": "El servidor ha respost una cosa inesperada; torna-ho a provar."
       }
     },
+    "lock": { "campaign_unknown": "Aquesta campanya té un cultiu d'origen o estat desconegut: revisa'l a les operacions de camp" },
     "simulation": { "open": "Simulació de la campanya en curs", "temporary": "Vista provisional: passarà a Salut del cultiu." },
     "widget": { "title": "Pla de la parcel·la", "undecided": "Sense decidir", "plan": "Planificar" },
     "sources": { "open": "Fonts de dades", "close": "Amaga les fonts" },

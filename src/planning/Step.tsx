@@ -2,6 +2,7 @@
 import React from 'react';
 import { useTranslation } from '@nekazari/sdk';
 import { Button, Card, Inline, Skeleton, Stack } from '@nekazari/ui-kit';
+import { loadErrorKey } from './errors';
 
 interface Props { title: string; loading?: boolean; error?: unknown; onRetry?: () => void; children?: React.ReactNode }
 
@@ -15,7 +16,7 @@ export default function Step({ title, loading = false, error = null, onRetry, ch
         {loading && <Skeleton variant="rect" height={120} />}
         {!loading && error != null && (
           <Inline gap="inline" align="center" wrap>
-            <p className="text-nkz-sm text-nkz-danger">{t('planning.errorLoad')}</p>
+            <p className="text-nkz-sm text-nkz-danger">{t(loadErrorKey(error))}</p>
             {onRetry && <Button size="sm" variant="secondary" onClick={onRetry}>{t('planning.retry')}</Button>}
           </Inline>
         )}

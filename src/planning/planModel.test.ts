@@ -112,3 +112,32 @@ describe('draftFromCells', () => {
     expect(draftFromCells([cell({ provenance: 'unknown' })])).toBeNull();
   });
 });
+
+describe('free-text cover names', () => {
+  const draft = (cover: string) => ({
+    main: { species: 'maize', variety: null, sowing: '2027-04-20', end: '2027-10-01', method: null },
+    cover: { species: cover, variety: null, sowing: '2026-10-01', end: '2027-04-20', method: 'roller_crimper' as const },
+  });
+  it('accepts a name made of letters, digits, spaces, dots, dashes and brackets (what the server accepts)', () => {
+    for (const ok of ['Phacelia', 'ab', 'Avena sativa (L.)', 'veza-avena', 'Haba ñandú', ' phacelia ', 'bitter_vetch']) {
+      expect(validateDraft(draft(ok), 2027)).toBeNull();
+    }
+  });
+  it('refuses a name the server would not resolve: too short, wrong characters, digit first, too long', () => {
+    for (const bad of ['x', '<b>', 'veza/avena', '1abc', 'a'.repeat(65), '   ', 'a;b']) {
+      expect(validateDraft(draft(bad), 2027)).toBe('species_name_invalid');
+    }
+    expect(validateDraft(draft('a'.repeat(64)), 2027)).toBeNull();
+  });
+  it('a listed species is not checked as a name, and an empty one is still missing_species', () => {
+    expect(validateDraft(draft('x'), 2027, false, ['x'])).toBeNull();
+    expect(validateDraft(draft('veza/avena'), 2027, false, ['vetch'])).toBe('species_name_invalid');
+    expect(validateDraft(draft(''), 2027)).toBe('missing_species');
+  });
+  it('the main crop is never checked as free text', () => {
+    expect(validateDraft({ main: { species: 'x', variety: null, sowing: '2027-04-20', end: '2027-10-01', method: null }, cover: null }, 2027)).toBeNull();
+  });
+  it('the PUT body sends the cover name trimmed, as it was validated', () => {
+    expect(toPlanIn(draft('  phacelia '), 2027, 'secano', 'conventional').cycles[0].crop).toBe('phacelia');
+  });
+});
