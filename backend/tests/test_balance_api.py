@@ -1,9 +1,12 @@
 """Public balance reference endpoints (DAO patched; attributions from the real registry)."""
+import logging
+from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from fastapi.testclient import TestClient
 
+from app.api.v1 import balance as balance_api
 from app.auth import SKIP_AUTH_PREFIXES
 from app.core.dependencies import get_neo4j_driver
 from app.graph.balance_dao import BalanceDao
@@ -98,3 +101,62 @@ def test_regional_yields_maize_registry_code_resolves_to_the_stored_code(client)
         resp = client.get("/api/graph/agriculture/regional-yields?eppo=ZEAMA&nuts=es22")
     assert resp.status_code == 200
     m.assert_awaited_once_with("ZEAMX", "ES22")
+
+
+# ── plausibility bounds from the crop_yield ranges ───────────────────────────
+
+def _with_outlier(rows, eppo="TRZAX"):
+    # one extra year at 15 t/ha (above the TRZAX maximum of 14)
+    outlier = dict(rows[-1], year=2025, areaHa=1000.0, productionT=15000.0, yieldTHa=15.0)
+    return [dict(r, eppo=eppo) for r in [*rows, outlier]]
+
+
+def test_regional_yields_wheat_has_its_range_and_excludes_an_implausible_year(client):
+    rows = _with_outlier(YIELDS)
+    with patch.object(BalanceDao, "get_regional_yields", AsyncMock(return_value=rows)):
+        body = client.get("/api/graph/agriculture/regional-yields?eppo=TRZAX&nuts=es22").json()
+    assert body["plausible_range"] == {
+        "min_t_ha": 0.5, "max_t_ha": 14.0, "range_id": "crop_yield.TRZAX.grain",
+        "status": "assumption", "excludes": "above_max"}
+    assert [s["range_check"] for s in body["series"]] == ["ok", "ok", "ok", "above_max"]
+    assert body["series"][-1]["year"] == 2025 and body["series"][-1]["yield_t_ha"] == 15.0
+    assert body["recent_years"] == [2022, 2023, 2024] and body["latest_year"] == 2024
+    assert body["recent_median_t_ha"] == pytest.approx(331950 / 81360)
+
+
+def test_regional_yields_maize_range_comes_from_the_stored_code(client):
+    with patch.object(BalanceDao, "get_regional_yields", AsyncMock(return_value=YIELDS)):
+        body = client.get("/api/graph/agriculture/regional-yields?eppo=ZEAMA&nuts=es22").json()
+    assert body["plausible_range"]["range_id"] == "crop_yield.ZEAMX.grain"
+    assert (body["plausible_range"]["min_t_ha"], body["plausible_range"]["max_t_ha"]) == (3.0, 24.0)
+
+
+def test_regional_yields_crop_without_a_range_is_not_checked(client):
+    rows = _with_outlier(YIELDS, eppo="BEAVX")
+    with patch.object(BalanceDao, "get_regional_yields", AsyncMock(return_value=rows)):
+        body = client.get("/api/graph/agriculture/regional-yields?eppo=BEAVX&nuts=es22").json()
+    assert body["plausible_range"] is None
+    assert [s["range_check"] for s in body["series"]] == [None] * 4
+    assert body["recent_years"] == [2022, 2023, 2024, 2025]   # the 15 t/ha year stays
+
+
+def test_plausible_range_converts_kg_ha_to_t_ha():
+    got = balance_api._plausible_range("TRZAX")
+    assert (got.min_t_ha, got.max_t_ha, got.range_id, got.status) == (
+        0.5, 14.0, "crop_yield.TRZAX.grain", "assumption")
+    assert balance_api._plausible_range("BEAVX") is None
+
+
+def test_plausible_range_in_another_unit_is_not_guessed(caplog):
+    fake_range = SimpleNamespace(id="crop_yield.XXXXX.grain", min=1.0, max=9.0, unit="t/ha",
+                                 status="assumption")
+    fake = SimpleNamespace(range_for=lambda *_a, **_k: fake_range)
+    with (patch.object(balance_api, "_registries", lambda: fake),
+          caplog.at_level(logging.WARNING, logger=balance_api.logger.name)):
+        assert balance_api._plausible_range("XXXXX") is None
+    assert any("crop_yield.XXXXX.grain" in r.getMessage() and r.levelno == logging.WARNING
+               for r in caplog.records)
+
+
+def test_registries_are_loaded_once():
+    assert balance_api._registries() is balance_api._registries()
