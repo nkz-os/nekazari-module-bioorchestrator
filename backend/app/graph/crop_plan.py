@@ -55,6 +55,11 @@ def build_segment_entity(tenant_id: str, parcel_id: str, season: str, seq: int, 
         entity["sowingWindowEnd"] = _date(window[1])
     if segment.get("expected_termination"):
         entity["expectedTerminationDate"] = _date(segment["expected_termination"])
+    # Per-campaign agronomic context of the cycle (platform context terms since nkz #1093).
+    if segment.get("irrigation_regime"):
+        entity["irrigationRegime"] = _prop(segment["irrigation_regime"])
+    if segment.get("management"):
+        entity["management"] = _prop(segment["management"])
     return entity
 
 

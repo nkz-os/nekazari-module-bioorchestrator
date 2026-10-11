@@ -11,10 +11,12 @@
 # of trials). Add one only when the species identity is unambiguous: the code's trials all carry
 # this species' scientific name, or the graph Species node (phenology_sources.yaml) uses it for
 # this very species. Codes of another species (spelt TRZAW/TRZSP) and of species with no entry
-# here (triticale, sorghum, lupin) are not aliased.
+# here (sorghum, lupin) are not aliased.
 #
 # lifecycle: "annual" | "perennial" — curated here (the EPPO API does not publish it). Stored on the
 # AgriCrop at assignment; the platform's crop-cycle resolver uses it to choose the accumulation start.
+#
+# woody: true — tree, shrub or vine; crop planning never offers it for a campaign.
 # =============================================================================
 
 species:
@@ -77,9 +79,23 @@ species:
     scientific_name: "Secale cereale"
     eppo_code: "SECCE"
     crop_group: "cereal"
-    agrovoc_uri: "http://aims.fao.org/aos/agrovoc/c_6914"
+    agrovoc_uri: "http://aims.fao.org/aos/agrovoc/c_6919"
     lifecycle: "annual"
     common_names: { es: "centeno", en: "rye", eu: "zekalea", fr: "seigle", ca: "sègol", pt: "centeio" }
+
+  triticale:
+    scientific_name: "x Triticosecale"
+    eppo_code: "TTLSS"
+    crop_group: "cereal"
+    agrovoc_uri: "http://aims.fao.org/aos/agrovoc/c_33914"
+    common_names:
+      es: "triticale"
+      en: "triticale"
+      eu: "tritikalea"
+      fr: "triticale"
+      ca: "triticale"
+      pt: "triticale"
+    lifecycle: "annual"
 
   buckwheat:
     scientific_name: "Fagopyrum esculentum"
@@ -321,6 +337,7 @@ species:
     crop_group: "grapevine"
     agrovoc_uri: "http://aims.fao.org/aos/agrovoc/c_8283"
     lifecycle: "perennial"
+    woody: true
     common_names: { es: "vid", en: "grapevine", eu: "mahatsondo", fr: "vigne", ca: "vinya", pt: "videira" }
 
   olive:
@@ -328,6 +345,7 @@ species:
     eppo_code: "OLVEU"
     agrovoc_uri: "http://aims.fao.org/aos/agrovoc/c_5339"
     lifecycle: "perennial"
+    woody: true
     common_names: { es: "olivo", en: "olive", eu: "olibondo", fr: "olivier", ca: "olivera", pt: "oliveira" }
 
   almond:
@@ -336,6 +354,7 @@ species:
     crop_group: "stone_fruit"
     agrovoc_uri: "http://aims.fao.org/aos/agrovoc/c_6180"
     lifecycle: "perennial"
+    woody: true
     common_names: { es: "almendro", en: "almond", eu: "arbendol", fr: "amandier", ca: "ametller", pt: "amendoeira" }
 
   pistachio:
@@ -343,6 +362,7 @@ species:
     eppo_code: "PIAVE"
     agrovoc_uri: "http://aims.fao.org/aos/agrovoc/c_5981"
     lifecycle: "perennial"
+    woody: true
     common_names: { es: "pistacho", en: "pistachio", eu: "pistatxo", fr: "pistachier", ca: "pistatxer", pt: "pistacheiro" }
 
   apple:
@@ -351,6 +371,7 @@ species:
     crop_group: "pome_fruit"
     agrovoc_uri: "http://aims.fao.org/aos/agrovoc/c_4555"
     lifecycle: "perennial"
+    woody: true
     common_names: { es: "manzano", en: "apple", eu: "sagar", fr: "pommier", ca: "pomera", pt: "macieira" }
 
   pear:
@@ -359,6 +380,7 @@ species:
     crop_group: "pome_fruit"
     agrovoc_uri: "http://aims.fao.org/aos/agrovoc/c_6393"
     lifecycle: "perennial"
+    woody: true
     common_names: { es: "peral", en: "pear", eu: "udare", fr: "poirier", ca: "perera", pt: "pereira" }
 
   peach:
@@ -367,6 +389,7 @@ species:
     crop_group: "stone_fruit"
     agrovoc_uri: "http://aims.fao.org/aos/agrovoc/c_6281"
     lifecycle: "perennial"
+    woody: true
     common_names: { es: "melocotonero", en: "peach", eu: "mertxika", fr: "pêcher", ca: "presseguer", pt: "pessegueiro" }
 
   apricot:
@@ -375,6 +398,7 @@ species:
     crop_group: "stone_fruit"
     agrovoc_uri: "http://aims.fao.org/aos/agrovoc/c_6196"
     lifecycle: "perennial"
+    woody: true
     common_names: { es: "albaricoquero", en: "apricot", eu: "abrikot", fr: "abricotier", ca: "albercoquer", pt: "damasqueiro" }
 
   plum:
@@ -383,6 +407,7 @@ species:
     crop_group: "stone_fruit"
     agrovoc_uri: "http://aims.fao.org/aos/agrovoc/c_6284"
     lifecycle: "perennial"
+    woody: true
     common_names: { es: "ciruelo", en: "plum", eu: "aran", fr: "prunier", ca: "prunera", pt: "ameixeira" }
 
   cherry:
@@ -391,6 +416,7 @@ species:
     crop_group: "stone_fruit"
     agrovoc_uri: "http://aims.fao.org/aos/agrovoc/c_6278"
     lifecycle: "perennial"
+    woody: true
     common_names: { es: "cerezo", en: "cherry", eu: "gerezi", fr: "cerisier", ca: "cirerer", pt: "cerejeira" }
 
   strawberry:

@@ -15,11 +15,13 @@ from app.api.v1.attribution import (
 from app.api.v1.graph import DriverDep, _require_tenant_id
 from app.graph import zone_match
 from app.graph.dao import GraphDAO
+from app.graph.evidence_sites import evidence_sites
+from app.graph.parcel_conditions import CLIMATE_KEYS, conditions_from_environment
 
 router = APIRouter()
 
 _TENANT_PARAMS = ("parcel_id", "tenant_id")
-_CLIMATE_KEYS = ("annual_rainfall_mm", "annual_et0_mm", "coldest_month_min_c", "annual_temp_c")
+_CLIMATE_KEYS = CLIMATE_KEYS
 _MAX_CROPS = 4
 _EPPO_RE = re.compile(r"^[A-Z0-9]{2,6}$")
 _EPPO_PATTERN = r"^[A-Za-z0-9]{2,6}$"
@@ -178,26 +180,7 @@ async def recommend_evidence(
                 detail="similarity=vector_v2_fallback needs annual_rainfall_mm, annual_et0_mm (> 0), "
                 "coldest_month_min_c and annual_temp_c",
             )
-        # Same site lookup as the v2 fallback of recommend_for_conditions.
-        sites = await dao.get_similar_sites(
-            climate_class=cond.climate_class, soil_type=cond.soil_type,
-            rainfall_min=None, rainfall_max=None, limit=50,
-            target_features={"rainfall": rain, "et0": et0, "coldest_min": cold, "annual_temp": temp},
-            vector_version="v2",
-        )
-    elif tier == "regional":
-        # Every site of the climate, aggregate pseudo-sites and field-named ones (the regional tier
-        # of the recommendation; the row policy keeps only the rows classed as regional). The
-        # parcel's country, when given, scopes the aggregate sites.
-        sites = await dao.get_similar_sites(
-            climate_class=cond.climate_class, soil_type=None, limit=None, include_aggregate=True,
-            country=country,
-        )
-    else:
-        # Every matching field site, as the recommendation's Köppen path uses.
-        sites = await dao.get_similar_sites(
-            climate_class=cond.climate_class, soil_type=cond.soil_type, limit=None
-        )
+    sites = await evidence_sites(dao, cond.as_dict(), similarity=similarity, tier=tier, country=country)
     evidence = await dao.list_trial_evidence(
         crop=crop.strip().upper(),
         similar_sites=[s["name"] for s in sites],
@@ -253,30 +236,11 @@ async def recommend_for_parcel(
     if not resolved_climate:
         return {"status": "needs_climate", "parcel_environment": env}
 
-    soil = env.get("soil") or {}
-    has_soil = bool(soil.get("data_available"))
-    conditions = {
-        "climate_class": resolved_climate,
-        "soil_type": soil_type or (soil.get("wrb_type") if has_soil else None),
-        "soil_ph": soil.get("ph") if has_soil else None,
-        "soil_texture": soil.get("texture") if has_soil else None,
-        "irrigation_regime": irrigation_regime
-        or (env.get("irrigation") or {}).get("inferred"),
-        "management": management,
-        "season": season,
-        "purpose": purpose,
-        "crops": _parse_crops(crops),
-        "top_n": top_n,
-        "frost_margin_c": frost_margin_c,
-        "country": env.get("country"),
-    }
-    centroid = env.get("centroid") or {}
-    if centroid.get("lat") is not None and centroid.get("lon") is not None:
-        # The parcel point selects the GGCMI crop calendar cell (typical sowing day).
-        # Added only when known, so a pointless parcel keys and ids like the conditions route.
-        conditions["lat"], conditions["lon"] = centroid["lat"], centroid["lon"]
-    for key in _CLIMATE_KEYS:
-        conditions[key] = detail.get(key)
+    conditions = conditions_from_environment(
+        env, climate_class=resolved_climate, soil_type=soil_type,
+        irrigation_regime=irrigation_regime, management=management, season=season, purpose=purpose,
+        crops=_parse_crops(crops), top_n=top_n, frost_margin_c=frost_margin_c,
+    )
     result = await dao.recommend_for_conditions(conditions)
     return attach_attributions(
         {**result, "parcel_environment": env}, recommendation_source_ids(result)

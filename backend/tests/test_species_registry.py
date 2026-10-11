@@ -67,8 +67,8 @@ def test_aliases_are_exactly_the_documented_ones_and_never_collide():
 
 
 def test_codes_of_other_species_or_missing_from_the_registry_stay_unresolved():
-    # spelt (not wheat), triticale, sorghum and lupin have no entry here: no alias is invented
-    for code in ("TRZAW", "TRZSP", "TTLSS", "SORVU", "LUPAL"):
+    # spelt (not wheat), sorghum and lupin have no entry here: no alias is invented
+    for code in ("TRZAW", "TRZSP", "SORVU", "LUPAL"):
         assert resolve_species(code) is None, code
 
 
