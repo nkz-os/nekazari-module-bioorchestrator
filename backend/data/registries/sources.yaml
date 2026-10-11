@@ -1,16 +1,17 @@
 # Source registry: holder, structured licence and mandatory attribution per data source.
 #
 # `commercial_use` is the gate's only licence input: a source can be loaded into a production-targeted
-# build ONLY when it is `allowed` or `permission_granted`. Today that is GENVCE and CREA. Everything
-# else is `denied` (terms prohibit or reserve commercial reuse) or `unknown` (ambiguous, unreadable or
-# not audited): both block loading until a written permission or a clear licence is recorded.
+# build ONLY when it is `allowed` or `permission_granted`. Today that is GENVCE, CREA and the five
+# nutrient-balance reference sources. Everything else is `denied` (terms prohibit or reserve commercial
+# reuse) or `unknown` (ambiguous, unreadable or not audited): both block loading until a written permission
+# or a clear licence is recorded.
 #
 # Evidence: internal licence audit of 2026-10-04/05 (literal quotes, original language). `checked_at` is
 # the date the verdict was established. `tdm_reserved` is null when text-and-data-mining rights were not
 # assessed. `attribution_text` is the mandatory citation shown next to every datum; for GENVCE it is the
-# literal form the reuse notice requires, with the real download date. The attribution fields of GENVCE
-# and CREA equal the ones in sources_registry.json (attribution patch); that file is generated from this
-# one or retired in F2.
+# literal form the reuse notice requires, with the real download date. The attribution fields of every
+# loadable source equal the ones in sources_registry.json (attribution patch); that file is generated from
+# this one or retired in F2.
 version: 1
 sources:
   - source_id: NAVARRA-AGRARIA
@@ -221,6 +222,132 @@ sources:
       notes: 'Terms page: https://www.crea.gov.it/note-legali. Scope: the five ''Fascicolo risultati Mais'' PDFs 2021-2025 (checked:
         none carries a copyright or licence note of its own). The Romanian wheat rows once stored under CREA come from an unrelated
         paper, are not CREA data and are out of scope.'
+  - source_id: mapa_guia_2010
+    name: Guía práctica de la fertilización racional de los cultivos en España
+    institution: Ministerio de Medio Ambiente y Medio Rural y Marino (hoy MAPA)
+    country: ES
+    url: https://www.mapa.gob.es/es/agricultura/publicaciones/publicaciones-fertilizantes
+    licence:
+      licence_id: es-reuse-notice-ley-37-2007
+      terms_url: https://www.mapa.gob.es/es/atencion-al-ciudadano/aviso-legal
+      quote: 'La información contenida en el portal puede ser utilizada sin necesidad de autorización expresa, siempre que
+        se cite la fuente de los documentos objeto de reutilización, con excepción de los contenidos sobre los que existan
+        derechos de propiedad intelectual o industrial por parte de terceros.'
+      quote_language: es
+      checked_at: '2026-10-11'
+      commercial_use: allowed
+      tdm_reserved: null
+      attribution_text: 'Fuente: Ministerio de Medio Ambiente y Medio Rural y Marino (2010). Guía práctica de la
+        fertilización racional de los cultivos en España. NIPO 770-10-150-4. Url: https://www.mapa.gob.es/es/agricultura/publicaciones/publicaciones-fertilizantes
+        (Descarga: 11/10/2026). Datos convertidos por Nekazari.'
+      attribution_url: https://www.mapa.gob.es/es/agricultura/publicaciones/publicaciones-fertilizantes
+      download_date: '2026-10-11'
+      conditions:
+      - the source is cited
+      - third-party content (photographs) excluded
+      - conversions made by Nekazari are indicated
+      processing_note:
+        en: Coefficients are converted by Nekazari to % of dry matter and elemental P and K; the conversion is stated next to each value.
+        es: Los coeficientes los convierte Nekazari a % de materia seca y a P y K elementales; la conversión figura junto a cada valor.
+      notes: Guide edited by the Ministry (copyright holder) with ANFFE and ACEFER; numeric tables only.
+  - source_id: panagos_2022
+    name: Panagos et al. 2022, phosphorus budget of EU agricultural soils
+    institution: European Commission, Joint Research Centre
+    country: EU
+    url: https://doi.org/10.1007/s00003-022-01363-3
+    licence:
+      licence_id: CC-BY-4.0
+      terms_url: https://creativecommons.org/licenses/by/4.0/legalcode
+      quote: 'Open Access This article is licensed under a Creative Commons Attribution 4.0 International License, which
+        permits use, sharing, adaptation, distribution and reproduction in any medium or format, as long as you give appropriate
+        credit to the original author(s) and the source, provide a link to the Creative Commons licence, and indicate if
+        changes were made.'
+      quote_language: en
+      checked_at: '2026-10-11'
+      commercial_use: allowed
+      tdm_reserved: null
+      attribution_text: 'Source: Panagos P. et al. (2022) J. Consum. Prot. Food Saf. 17, doi:10.1007/s00003-022-01363-3.
+        Licence CC BY 4.0. Data converted by Nekazari.'
+      attribution_url: https://doi.org/10.1007/s00003-022-01363-3
+      download_date: '2026-10-11'
+      conditions:
+      - the source is cited
+      - changes made to the data are indicated
+      processing_note:
+        en: Coefficients are converted by Nekazari to % of dry matter and elemental P and K; the conversion is stated next to each value.
+        es: Los coeficientes los convierte Nekazari a % de materia seca y a P y K elementales; la conversión figura junto a cada valor.
+      notes: EU+UK values (Tables 1-2 and supplement).
+  - source_id: essd_2024_s3
+    name: ESSD 2024 cropland nutrient budget, supplement Table S3
+    institution: Earth System Science Data (Copernicus Publications)
+    country: INT
+    url: https://essd.copernicus.org/articles/16/525/2024/
+    licence:
+      licence_id: CC-BY-4.0
+      terms_url: https://creativecommons.org/licenses/by/4.0/legalcode
+      quote: This work is distributed under the Creative Commons Attribution 4.0 License.
+      quote_language: en
+      checked_at: '2026-10-11'
+      commercial_use: allowed
+      tdm_reserved: null
+      attribution_text: 'Source: Earth Syst. Sci. Data 16, 525 (2024), supplement Table S3. Licence CC BY 4.0. Data
+        converted by Nekazari.'
+      attribution_url: https://essd.copernicus.org/articles/16/525/2024/
+      download_date: '2026-10-11'
+      conditions:
+      - the source is cited
+      - changes made to the data are indicated
+      processing_note:
+        en: Coefficients are converted by Nekazari to % of dry matter and elemental P and K; the conversion is stated next to each value.
+        es: Los coeficientes los convierte Nekazari a % de materia seca y a P y K elementales; la conversión figura junto a cada valor.
+      notes: kg N, P, K per tonne of fresh commodity; Table S2 N fixation.
+  - source_id: ludemann_cc0
+    name: Ludemann et al., global crop nutrient concentrations and harvest indices
+    institution: Dryad (dataset doi:10.5061/dryad.n2z34tn0x)
+    country: INT
+    url: https://doi.org/10.5061/dryad.n2z34tn0x
+    licence:
+      licence_id: CC0-1.0
+      terms_url: https://creativecommons.org/publicdomain/zero/1.0/legalcode
+      quote: 'Licenses/restrictions placed on the data: CC0 1.0'
+      quote_language: en
+      checked_at: '2026-10-11'
+      commercial_use: allowed
+      tdm_reserved: null
+      attribution_text: 'Source: Ludemann C. et al., Global data on crop nutrient concentration and harvest indices,
+        Dryad, doi:10.5061/dryad.n2z34tn0x (CC0). Used to fill gaps of the primary sources.'
+      attribution_url: https://doi.org/10.5061/dryad.n2z34tn0x
+      download_date: '2026-10-11'
+      conditions:
+      - none (CC0); cited as good practice
+      processing_note:
+        en: Coefficients are converted by Nekazari to % of dry matter and elemental P and K; the conversion is stated next to each value.
+        es: Los coeficientes los convierte Nekazari a % de materia seca y a P y K elementales; la conversión figura junto a cada valor.
+      notes: The compilation averages upstream sources, some non-commercial; used only where MAPA, Panagos and ESSD have no value (owner decision 2026-10-11).
+  - source_id: eurostat_apro_cpshr
+    name: Eurostat apro_cpshr, crop production in EU standard humidity by NUTS 2 region
+    institution: Eurostat, European Commission
+    country: EU
+    url: https://doi.org/10.2908/APRO_CPSHR
+    licence:
+      licence_id: eurostat-reuse-decision-2011-833
+      terms_url: https://ec.europa.eu/eurostat/help/copyright-notice
+      quote: Reuse of statistical data, metadata, publications, and other dissemination tools published on this website for commercial or non-commercial purposes is authorised provided the source is acknowledged.
+      quote_language: en
+      checked_at: '2026-10-11'
+      commercial_use: allowed
+      tdm_reserved: null
+      attribution_text: 'Fuente: Eurostat (apro_cpshr, doi:10.2908/APRO_CPSHR). Rendimiento calculado por Nekazari como
+        producción / superficie, en humedad estándar UE.'
+      attribution_url: https://doi.org/10.2908/APRO_CPSHR
+      download_date: '2026-10-11'
+      conditions:
+      - the source is acknowledged
+      - changes made to the data are indicated
+      processing_note:
+        en: Yield is derived by Nekazari as harvested production / area (EU standard humidity); Eurostat leaves the NUTS 2 yield empty.
+        es: El rendimiento lo calcula Nekazari como producción / superficie (humedad estándar UE); Eurostat deja vacío el rendimiento NUTS 2.
+      notes: Annual series stored per region and year (area, production, humidity basis), not only means.
   - source_id: BSL
     name: Bundessortenamt (BSL)
     institution: Bundessortenamt — Federal Plant Variety Office
