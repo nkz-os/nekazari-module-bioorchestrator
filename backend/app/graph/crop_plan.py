@@ -4,7 +4,7 @@ from __future__ import annotations
 from app.species_registry import get_lifecycle, resolve_species
 
 VALID_ROLES = {"cover_crop", "main_crop", "catch_crop"}
-VALID_TERMINATION = {"roller_crimper", "harvest", "incorporate", "grazing"}
+VALID_TERMINATION = {"roller_crimper", "mowing", "harvest", "incorporate", "grazing"}
 
 
 def segment_urn(tenant_id: str, parcel_id: str, season: str, seq: int) -> str:
