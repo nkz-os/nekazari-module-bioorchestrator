@@ -42,3 +42,13 @@ async def test_regional_yields_ordered_rows():
     query, params = calls[0]
     assert "RegionalYieldStat" in query and "ORDER BY n.year" in query
     assert params == {"eppo": "TRZAX", "nuts": "ES22"}
+
+
+async def test_list_yield_regions_filters_country_and_nulls():
+    rows = [{"nuts": "ES21", "eppos": ["HORVX", "TRZAX"]}, {"nuts": "ES22", "eppos": ["TRZAX"]}]
+    dao, calls = _dao(data=rows)
+    assert await dao.list_yield_regions("ES") == rows
+    query, params = calls[0]
+    assert "RegionalYieldStat" in query
+    assert "yieldTHa IS NOT NULL" in query and "nuts STARTS WITH $country" in query
+    assert params == {"country": "ES"}

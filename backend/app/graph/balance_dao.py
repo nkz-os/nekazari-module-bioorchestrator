@@ -28,3 +28,16 @@ class BalanceDao:
                 eppo=eppo, nuts=nuts,
             )
             return [dict(r["props"]) for r in await result.data()]
+
+    async def list_yield_regions(self, country: str) -> list[dict]:
+        async with self._driver.session() as s:
+            result = await s.run(
+                """
+                MATCH (n:RegionalYieldStat)
+                WHERE n.nuts STARTS WITH $country AND n.yieldTHa IS NOT NULL
+                RETURN n.nuts AS nuts, collect(DISTINCT n.eppo) AS eppos
+                ORDER BY nuts
+                """,
+                country=country,
+            )
+            return [{"nuts": r["nuts"], "eppos": sorted(r["eppos"])} for r in await result.data()]
