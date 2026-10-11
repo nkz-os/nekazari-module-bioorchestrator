@@ -46,3 +46,9 @@ def test_fit_route_requires_a_verified_tenant(client, monkeypatch):
     r = client.get("/api/graph/planning/parcels/urn:ngsi-ld:AgriParcel:t:p1/fit", params={"campaign": 2027})
     assert r.status_code == 401
     called.assert_not_called()
+
+
+def test_varieties_route_rejects_unknown_crop(client):
+    r = client.get("/api/graph/planning/parcels/p1/varieties",
+                   params={"crop": "zzz", "regime": "secano", "management": "organic"})
+    assert r.status_code == 422

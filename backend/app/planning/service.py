@@ -1,8 +1,10 @@
 """Planning use cases: read the parcel, apply the pure rules, return contract dicts."""
 from __future__ import annotations
 
+from app.common.attribution import attach_attributions, rows_source_ids
 from app.core.knowledge import KnowledgeSource
 from app.graph.recommend import sowing_info
+from app.planning.evidence import load_crop_evidence
 from app.planning.fit import (
     MULTI_YEAR,
     REGIME_MISSING,
@@ -17,6 +19,7 @@ from app.planning.fit import (
 from app.planning.history import history_complete, past_crops
 from app.planning.reference import load_reference
 from app.planning.rotation import rotation_reasons
+from app.planning.varieties import variety_stats
 from app.services.crop_cycles_client import fetch_crop_cycles
 from app.services.crop_reference import CROP_REFERENCE
 from app.services.soil_client import assess_soil_suitability
@@ -27,6 +30,7 @@ from app.species_registry import (
     get_species_info,
     is_woody,
     list_species,
+    resolve_species,
 )
 
 REGIMES = ("secano", "regadío")
@@ -123,3 +127,27 @@ async def parcel_fit(*, dao, source: KnowledgeSource, parcel_id: str, tenant_id:
                   "soil_source": soil.get("source") or "unavailable", "regime": regime_used,
                   "regime_source": regime_source, "history_available": cycles is not None},
     }
+
+
+def crop_code(identifier: str) -> str:
+    """Slug, EPPO code or name -> the code trials are listed under. ValueError when unknown."""
+    slug = resolve_species(identifier)
+    eppo = (get_species_info(slug) or {}).get("eppo_code") if slug else None
+    if not eppo:
+        raise ValueError(f"unknown crop: {identifier[:32]}")
+    return catalog_code(eppo)
+
+
+async def parcel_varieties(*, dao, source: KnowledgeSource, parcel_id: str, tenant_id: str,
+                           crop: str, regime: str, management: str) -> dict:
+    eppo = crop_code(crop)
+    env = await load_environment(dao, parcel_id, tenant_id)
+    base = {"parcel_id": env["parcel_id"], "crop": eppo, "regime": regime, "management": management,
+            "graph_id": source.graph_id}
+    ev = await load_crop_evidence(dao, env, crop_eppo=eppo, regime=regime, management=management)
+    if ev["status"] != "ok":
+        return {**base, "status": ev["status"]}
+    stats, n_env = variety_stats(ev["rows"])
+    payload = {**base, "status": "ok", "tier": ev["tier"], "zone_match": ev["zone_match"], "country": ev["country"],
+               "n_environments": n_env, "varieties": stats, "data_gaps": ev["data_gaps"]}
+    return attach_attributions(payload, rows_source_ids(ev["rows"]))

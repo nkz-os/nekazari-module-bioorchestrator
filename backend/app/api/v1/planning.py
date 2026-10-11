@@ -8,8 +8,8 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from app.api.v1.graph import _require_tenant_id
 from app.core.knowledge import KnowledgeSource, get_knowledge_sources
 from app.graph.dao import GraphDAO
-from app.planning.models import FitResponse, Regime
-from app.planning.service import ParcelNotFound, parcel_fit
+from app.planning.models import FitResponse, Management, Regime, VarietiesResponse
+from app.planning.service import ParcelNotFound, parcel_fit, parcel_varieties
 
 router = APIRouter(prefix="/planning", tags=["planning"])
 SourcesDep = Annotated[list[KnowledgeSource], Depends(get_knowledge_sources)]
@@ -24,5 +24,19 @@ async def fit(request: Request, parcel_id: str, sources: SourcesDep,
     try:
         return await parcel_fit(dao=GraphDAO(source.driver), source=source, parcel_id=parcel_id,
                                 tenant_id=tenant, campaign=campaign, regime=regime)
+    except ParcelNotFound as e:
+        raise HTTPException(status_code=404, detail=str(e)) from e
+
+
+@router.get("/parcels/{parcel_id:path}/varieties", response_model=VarietiesResponse)
+async def varieties(request: Request, parcel_id: str, sources: SourcesDep, regime: Regime, management: Management,
+                    crop: str = Query(..., min_length=2, max_length=64)):
+    tenant = _require_tenant_id(request)
+    source = sources[0]
+    try:
+        return await parcel_varieties(dao=GraphDAO(source.driver), source=source, parcel_id=parcel_id,
+                                      tenant_id=tenant, crop=crop, regime=regime, management=management)
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e)) from e
     except ParcelNotFound as e:
         raise HTTPException(status_code=404, detail=str(e)) from e
