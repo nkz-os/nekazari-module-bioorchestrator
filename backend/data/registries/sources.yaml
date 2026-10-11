@@ -1,7 +1,7 @@
 # Source registry: holder, structured licence and mandatory attribution per data source.
 #
 # `commercial_use` is the gate's only licence input: a source can be loaded into a production-targeted
-# build ONLY when it is `allowed` or `permission_granted`. Today that is GENVCE, CREA and the five
+# build ONLY when it is `allowed` or `permission_granted`. Today that is GENVCE, CREA and the six
 # nutrient-balance reference sources. Everything else is `denied` (terms prohibit or reserve commercial
 # reuse) or `unknown` (ambiguous, unreadable or not audited): both block loading until a written permission
 # or a clear licence is recorded.
@@ -323,7 +323,7 @@ sources:
       processing_note:
         en: Coefficients are converted by Nekazari to % of dry matter and elemental P and K; the conversion is stated next to each value.
         es: Los coeficientes los convierte Nekazari a % de materia seca y a P y K elementales; la conversión figura junto a cada valor.
-      notes: The compilation averages upstream sources, some non-commercial; used only where MAPA, Panagos and ESSD have no value (owner decision 2026-10-11).
+      notes: The compilation averages upstream sources, some of which carry non-commercial terms; used only where MAPA, Panagos and ESSD have no value.
   - source_id: eurostat_apro_cpshr
     name: Eurostat apro_cpshr, crop production in EU standard humidity by NUTS 2 region
     institution: Eurostat, European Commission

@@ -30,3 +30,28 @@ def test_crops_are_registered_species_and_core_crops_present():
     unresolved = sorted(c for c in DOC["crops"] if resolve_species(c) is None)
     assert unresolved == []
     assert {"TRZAX", "HORVX"} <= set(DOC["crops"])
+
+
+def _header(path: Path) -> str:
+    lines = path.read_text(encoding="utf-8").splitlines()
+    block = []
+    for line in lines:
+        if not line.startswith("#"):
+            break
+        block.append(line)
+    return "\n".join(block)
+
+
+def test_coefficients_header_states_the_gpl_defaults_and_the_generated_origin():
+    header = _header(DATA / "crop_balance_coefficients.yaml")
+    assert "fertilicalc_script_2024" in header and "GPL-3.0" in header
+    assert "GPLv3 section 13" in header
+    assert "generated from a reviewed table; do not edit by hand" in header.lower()
+    assert "edit the table" not in header.lower()
+
+
+def test_sources_registry_notices_are_current_and_neutral():
+    path = DATA / "registries" / "sources.yaml"
+    header = " ".join(line.lstrip("# ") for line in _header(path).splitlines())
+    assert "the six nutrient-balance reference sources" in header
+    assert "owner decision" not in path.read_text(encoding="utf-8").lower()

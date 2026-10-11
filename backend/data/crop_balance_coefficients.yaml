@@ -1,6 +1,7 @@
 # Nutrient-balance coefficients per crop (FertiliCalc schema). P and K elemental, % of DM.
 # Every value: source_id (registered), ref (table/page), raw value and transformation.
-# Generated from the owner-reviewed table; edit the table, not this file by hand.
+# Values with source_id fertilicalc_script_2024 are defaults of a GPL-3.0 program (combined under GPLv3 section 13); see the source registry.
+# Generated from a reviewed table; do not edit by hand.
 dataset_version: 2026-10-11.1
 crops:
   BEAVX:
