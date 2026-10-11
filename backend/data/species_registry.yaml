@@ -11,7 +11,7 @@
 # of trials). Add one only when the species identity is unambiguous: the code's trials all carry
 # this species' scientific name, or the graph Species node (phenology_sources.yaml) uses it for
 # this very species. Codes of another species (spelt TRZAW/TRZSP) and of species with no entry
-# here (triticale, sorghum, lupin) are not aliased.
+# here (sorghum, lupin) are not aliased.
 #
 # lifecycle: "annual" | "perennial" — curated here (the EPPO API does not publish it). Stored on the
 # AgriCrop at assignment; the platform's crop-cycle resolver uses it to choose the accumulation start.
@@ -82,6 +82,20 @@ species:
     agrovoc_uri: "http://aims.fao.org/aos/agrovoc/c_6914"
     lifecycle: "annual"
     common_names: { es: "centeno", en: "rye", eu: "zekalea", fr: "seigle", ca: "sègol", pt: "centeio" }
+
+  triticale:
+    scientific_name: "x Triticosecale"
+    eppo_code: "TTLSS"
+    crop_group: "cereal"
+    agrovoc_uri: "http://aims.fao.org/aos/agrovoc/c_33914"
+    common_names:
+      es: "triticale"
+      en: "triticale"
+      eu: "tritikalea"
+      fr: "triticale"
+      ca: "triticale"
+      pt: "triticale"
+    lifecycle: "annual"
 
   buckwheat:
     scientific_name: "Fagopyrum esculentum"
