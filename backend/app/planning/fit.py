@@ -17,6 +17,8 @@ from dataclasses import dataclass
 FROST_MARGIN_C = 5.0  # the recommender's default (ASSUMPTION there: conservative, editable)
 DEFAULT_SEASON_DAYS = 180  # the recommender's _DEFAULT_GROWING_SEASON_DAYS
 WINTER_SOWING_TYPES = frozenset({"autumn", "perennial"})
+NON_WINTER_SOWING_TYPES = frozenset({"spring", "summer"})  # the only types exempt from the winter check
+KNOWN_SOIL_VERDICTS = frozenset({"suitable", "marginal", "unsuitable"})
 WATER_HIGH_DEFICIT_MM = 150.0  # the recommender's "high" band: deficit / 100 >= 1.5
 RAIN_EFFECTIVE_FRACTION = 0.7  # the recommender's effective-rain factor
 
@@ -41,7 +43,7 @@ def soil_reasons(gate: dict, *, parcel_soil_available: bool, tolerance_available
         return [{"code": "soil_unknown", "gate": "soil", "params": {"why": "no_tolerance"}}]
     if not parcel_soil_available:
         return [{"code": "soil_unknown", "gate": "soil", "params": {"why": "no_parcel_soil"}}]
-    if gate.get("verdict") == "unknown":
+    if gate.get("verdict") not in KNOWN_SOIL_VERDICTS:
         return [{"code": "soil_unknown", "gate": "soil", "params": {"why": "not_comparable"}}]
     out = []
     for dim in ("ph", "texture", "drainage"):
@@ -51,15 +53,18 @@ def soil_reasons(gate: dict, *, parcel_soil_available: bool, tolerance_available
             if dim == "ph":
                 params.update(min=detail.get("min"), max=detail.get("max"))
             out.append({"code": f"soil_{dim}_{detail['verdict']}", "gate": "soil", "params": params})
+    if gate["verdict"] != "suitable" and not out:
+        # A marginal or unsuitable overall verdict with no dimension to explain it is not a pass.
+        return [{"code": "soil_unknown", "gate": "soil", "params": {"why": "not_comparable"}}]
     return out
 
 
 def frost_reasons(sowing_type: str | None, coldest_min: float | None, frost_damage_c: float | None,
                   margin: float = FROST_MARGIN_C) -> list[dict]:
-    if sowing_type is None:
-        return [{"code": "frost_unknown", "gate": "frost", "params": {"why": "season_unknown"}}]
-    if sowing_type not in WINTER_SOWING_TYPES:
+    if sowing_type in NON_WINTER_SOWING_TYPES:
         return []
+    if sowing_type not in WINTER_SOWING_TYPES:
+        return [{"code": "frost_unknown", "gate": "frost", "params": {"why": "season_unknown"}}]
     if coldest_min is None:
         return [{"code": "frost_unknown", "gate": "frost", "params": {"why": "no_climate"}}]
     if frost_damage_c is None:
@@ -76,11 +81,12 @@ def water_reasons(regime: str | None, climate: ParcelClimate, season_days: int |
     rain, et0 = climate.annual_rainfall_mm, climate.annual_et0_mm
     if rain is None or not et0:
         return [{"code": "water_unknown", "gate": "water", "params": {}}]
-    days = season_days or DEFAULT_SEASON_DAYS
+    use_default = season_days is None or season_days <= 0
+    days = DEFAULT_SEASON_DAYS if use_default else season_days
     deficit = max(0.0, (days / 365) * et0 - rain * RAIN_EFFECTIVE_FRACTION)
     if deficit >= WATER_HIGH_DEFICIT_MM:
         return [{"code": "water_deficit_high", "gate": "water", "params": {
-            "deficit_mm": round(deficit), "season_days_default": season_days is None}}]
+            "deficit_mm": round(deficit), "season_days_default": use_default}}]
     return []
 
 
