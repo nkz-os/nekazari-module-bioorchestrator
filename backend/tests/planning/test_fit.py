@@ -57,9 +57,15 @@ def test_soil_without_a_known_overall_verdict_is_not_comparable_never_fits():
     assert verdict_of(reasons) == "caveats"
 
 
-def test_non_suitable_overall_verdict_without_a_dimension_detail_is_not_comparable():
-    reasons = soil_reasons(_gate("unsuitable"), parcel_soil_available=True, tolerance_available=True)
-    assert reasons == [{"code": "soil_unknown", "gate": "soil", "params": {"why": "not_comparable"}}]
+def test_overall_unsuitable_without_dimension_detail_is_a_blocker():
+    reasons = soil_reasons({"verdict": "unsuitable"}, parcel_soil_available=True, tolerance_available=True)
+    assert reasons == [{"code": "soil_unsuitable", "gate": "soil", "params": {}}]
+    assert verdict_of(reasons) == "no_fit"
+
+
+def test_overall_marginal_without_dimension_detail_is_a_caveat():
+    reasons = soil_reasons({"verdict": "marginal"}, parcel_soil_available=True, tolerance_available=True)
+    assert reasons == [{"code": "soil_marginal", "gate": "soil", "params": {}}]
     assert verdict_of(reasons) == "caveats"
 
 

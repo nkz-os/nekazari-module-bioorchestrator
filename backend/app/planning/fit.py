@@ -25,8 +25,8 @@ RAIN_EFFECTIVE_FRACTION = 0.7  # the recommender's effective-rain factor
 REGIME_MISSING = {"code": "regime_missing", "gate": "data", "params": {}}
 ROTATION_UNKNOWN = {"code": "rotation_unknown", "gate": "rotation", "params": {}}
 MULTI_YEAR = {"code": "multi_year", "gate": "data", "params": {}}  # a herbaceous perennial occupies several campaigns
-BLOCKERS = frozenset({"soil_ph_unsuitable", "soil_texture_unsuitable", "soil_drainage_unsuitable",
-                      "frost_risk"})
+BLOCKERS = frozenset({"soil_unsuitable", "soil_ph_unsuitable", "soil_texture_unsuitable",
+                      "soil_drainage_unsuitable", "frost_risk"})
 INFORMATIVE = frozenset({"rotation_benefit", "multi_year"})
 VERDICT_ORDER = {"fits": 0, "caveats": 1, "no_fit": 2}
 
@@ -53,10 +53,14 @@ def soil_reasons(gate: dict, *, parcel_soil_available: bool, tolerance_available
             if dim == "ph":
                 params.update(min=detail.get("min"), max=detail.get("max"))
             out.append({"code": f"soil_{dim}_{detail['verdict']}", "gate": "soil", "params": params})
-    if gate["verdict"] != "suitable" and not out:
-        # A marginal or unsuitable overall verdict with no dimension to explain it is not a pass.
-        return [{"code": "soil_unknown", "gate": "soil", "params": {"why": "not_comparable"}}]
-    return out
+    if out:
+        return out
+    # No dimension explains the overall verdict, so the overall verdict itself decides.
+    if gate["verdict"] == "unsuitable":
+        return [{"code": "soil_unsuitable", "gate": "soil", "params": {}}]
+    if gate["verdict"] == "marginal":
+        return [{"code": "soil_marginal", "gate": "soil", "params": {}}]
+    return []
 
 
 def frost_reasons(sowing_type: str | None, coldest_min: float | None, frost_damage_c: float | None,
