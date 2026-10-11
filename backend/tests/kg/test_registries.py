@@ -479,7 +479,7 @@ def test_every_source_has_a_licence_block_with_checked_at(reg):
 def test_loadable_sources_today(reg):
     assert {s.source_id for s in reg.loadable_sources()} == {
         "GENVCE", "CREA", "mapa_guia_2010", "panagos_2022", "essd_2024_s3", "ludemann_cc0",
-        "eurostat_apro_cpshr",
+        "eurostat_apro_cpshr", "fertilicalc_script_2024",
     }
     for source in reg.sources:
         assert source.loadable == (source.licence.commercial_use in ("allowed", "permission_granted"))

@@ -1371,5 +1371,53 @@
       "eu",
       "nuts2"
     ]
+  },
+  {
+    "source_id": "fertilicalc_script_2024",
+    "name": "FertiliCalc reference script (fertilicalc_script_231124.py)",
+    "institution": "Universidad de C\u00f3rdoba / IAS-CSIC (F. J. Villalobos)",
+    "institution_short": "UCO / IAS-CSIC",
+    "country": "ES",
+    "country_name": {
+      "en": "Spain",
+      "es": "Espa\u00f1a",
+      "eu": "Espainia",
+      "fr": "Espagne",
+      "pt": "Espanha"
+    },
+    "url": "https://www.uco.es/fitotecnia/FC_public_with_license_231124.zip",
+    "document_url_template": null,
+    "license_class": "open-source-gpl",
+    "use_type": "reference-coefficients",
+    "official_status": false,
+    "data_format": "source-code",
+    "extraction_method": "manual",
+    "confidence_default": "medium",
+    "attribution": {
+      "en": "Default nutrient concentrations of crop residues from the FertiliCalc reference script (F. J. Villalobos, GPL-3.0), used where no published figure exists for the crop.",
+      "es": "Concentraciones por defecto de nutrientes en los restos de cosecha del script de referencia de FertiliCalc (F. J. Villalobos, GPL-3.0), usadas cuando no hay dato publicado para el cultivo."
+    },
+    "disclaimer": {
+      "en": "Program defaults, not measured data; actual residue composition varies with crop, variety and management. NKZ conversions are informational.",
+      "es": "Valores por defecto del programa, no datos medidos; la composici\u00f3n real de los restos var\u00eda con el cultivo, la variedad y el manejo. Las conversiones de NKZ son informativas."
+    },
+    "attribution_text": "Fuente: FertiliCalc, script de referencia (F. J. Villalobos, GPL-3.0). Valor por defecto del programa cuando no hay dato publicado para el cultivo.",
+    "attribution_url": "https://www.uco.es/fitotecnia/FC_public_with_license_231124.zip",
+    "licence_id": "GPL-3.0",
+    "licence_url": "https://www.gnu.org/licenses/gpl-3.0.html",
+    "download_date": "2026-10-11",
+    "processing_note": {
+      "en": "The values are the residue defaults hard-coded in the script; the script stores them as fractions and Nekazari states them as % of dry matter.",
+      "es": "Los valores son los valores por defecto de los restos de cosecha escritos en el script; el script los guarda como fracciones y Nekazari los expresa en % de materia seca."
+    },
+    "site_urls": [
+      "https://www.uco.es"
+    ],
+    "tags": [
+      "fertilisation",
+      "nutrient-removal",
+      "residues",
+      "spain"
+    ]
   }
 ]
