@@ -410,6 +410,28 @@
       "sowing_date_future": "Ereite-data ezin da etorkizunekoa izan.",
       "parcel_not_found": "Ez da partzela aurkitu.",
       "generic": "Ezin izan da simulazioa osatu."
+    },
+    "ceiling": "Aurtengo urarekin lor daitekeen gehienezkoa",
+    "basis": {
+      "commercial": "Errendimenduak merkataritza-hezetasunean (% {{pct}}).",
+      "dry_matter": "Errendimenduak materia lehorrean."
+    },
+    "expected": {
+      "title": "Zure eremuan espero dena ({{region}})",
+      "coverage": "Kalibratzeko erabili ez ziren urteetan, benetako uzten % {{pct}} horrelako tarte baten barruan geratu zen.",
+      "source": "{{source}} erabiliz kalibratua; batez besteko errorea {{rmse}} t/ha.",
+      "unavailable": "Zure eremuan espero dena: ez dago eskuragarri — {{reason}}.",
+      "reason": {
+        "crop_not_calibrated": "labore hau oraindik ez dago kalibratuta",
+        "irrigated": "lehorreko laboreak bakarrik daude kalibratuta",
+        "outside_calibrated_regions": "kalibrazioak Espainiako probintziak bakarrik hartzen ditu",
+        "region_not_calibrated": "ez dago datu nahikorik probintzia honetarako",
+        "unknown": "ez dago kalibrazio aplikagarririk"
+      }
+    },
+    "phenology": {
+      "calibrated": "Fenologia: {{region}}rako kalibratua.",
+      "builtin": "Fenologia: AquaCrop-en lehenetsia."
     }
   }
 }

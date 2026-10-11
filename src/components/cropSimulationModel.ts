@@ -16,6 +16,16 @@ export interface SoilLayer {
   top_cm: number; bottom_cm: number; wp: number; fc: number; sat: number; ksat_mm_day: number;
 }
 export interface InitialWater { method: 'spinup' | 'assumed_fc'; spinup_days: number; start?: string }
+export interface Region { scheme: string; code: string; name: string }
+export interface YieldBasis { moisture: 'commercial' | 'dry_matter'; grain_moisture_pct: number | null; source: string | null }
+export interface ExpectedRange { low: number; high: number }
+export type ExpectedYield =
+  | {
+    status: 'ok'; basis: 'gap_corrected'; range_t_ha: ExpectedRange; coverage: number; gap_factor: number;
+    region: Region;
+    calibration: { version: string; source: string; validation: { rmse_kg_ha: number; anomaly_r_median: number } };
+  }
+  | { status: 'unavailable'; reason: string };
 
 export interface CropSimulationResult {
   engine: string;
@@ -27,16 +37,21 @@ export interface CropSimulationResult {
   irrigation: Irrigation;
   initial_water: InitialWater;
   status: 'complete' | 'in_season';
+  /** Basis of yield_t_ha and potential_yield_t_ha (commercial moisture or dry matter). */
+  yield_basis: YieldBasis;
   yield_t_ha: number | Percentiles;
   potential_yield_t_ha: number | Percentiles;
   water_gap_pct: number | null;
+  /** Water-limited yield x the region's calibrated gap factor, with its validated range. */
+  expected_yield: ExpectedYield;
   harvest_date: string;
   ensemble: { n_years: number; method: string; years: number[] } | null;
   daily: DailyPoint[];
   inputs: {
     weather: { source: string; start: string; end: string; days: number; segments: WeatherSegment[] };
     soil: { layers: SoilLayer[] };
-    sowing: { source: string };
+    sowing: { source: string; provenance?: string | null };
+    phenology: { source: 'calibrated' | 'builtin'; region: Region | null; params: Record<string, number> };
   };
   warnings: string[];
 }
@@ -64,6 +79,20 @@ export function formatYield(v: number | Percentiles | null | undefined, digits =
   if (isPercentiles(v)) return { main: num(v.p50, digits), range: `${num(v.p10, digits)} – ${num(v.p90, digits)}` };
   return { main: num(v, digits), range: null };
 }
+
+/** Water gap as shown: AquaCrop can return it slightly negative (water does not limit), shown as 0%. */
+export const waterGapText = (gap: number | null | undefined): string =>
+  gap == null ? '—' : `${Math.max(0, gap).toFixed(0)}%`;
+
+export const formatRange = (r: ExpectedRange, digits = 1): string => `${num(r.low, digits)} – ${num(r.high, digits)}`;
+
+export const EXPECTED_REASONS = [
+  'crop_not_calibrated', 'irrigated', 'outside_calibrated_regions', 'region_not_calibrated',
+] as const;
+export const expectedReasonKey = (reason: string): string =>
+  (EXPECTED_REASONS as readonly string[]).includes(reason)
+    ? `cropSimulation.expected.reason.${reason}`
+    : 'cropSimulation.expected.reason.unknown';
 
 /** i18n key for a weather segment source; unknown sources are shown raw by the caller. */
 export const WEATHER_SOURCES = ['archive', 'parcel_daily'] as const;

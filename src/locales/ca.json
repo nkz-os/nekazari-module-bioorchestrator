@@ -410,6 +410,28 @@
       "sowing_date_future": "La data de sembra no pot ser futura.",
       "parcel_not_found": "No s'ha trobat la parcel·la.",
       "generic": "No s'ha pogut completar la simulació."
+    },
+    "ceiling": "Sostre amb l'aigua d'aquest any",
+    "basis": {
+      "commercial": "Rendiments a humitat comercial ({{pct}} %).",
+      "dry_matter": "Rendiments en matèria seca."
+    },
+    "expected": {
+      "title": "Esperat a la teva zona ({{region}})",
+      "coverage": "En anys no utilitzats per calibrar, el {{pct}} % de les collites reals va caure dins d'un rang així.",
+      "source": "Calibrat amb {{source}}; error mitjà {{rmse}} t/ha.",
+      "unavailable": "Esperat a la teva zona: no disponible — {{reason}}.",
+      "reason": {
+        "crop_not_calibrated": "aquest cultiu encara no està calibrat",
+        "irrigated": "només està calibrat el secà",
+        "outside_calibrated_regions": "la calibració només cobreix províncies espanyoles",
+        "region_not_calibrated": "no hi ha prou dades per a aquesta província",
+        "unknown": "no hi ha cap calibració aplicable"
+      }
+    },
+    "phenology": {
+      "calibrated": "Fenologia: calibrada per a {{region}}.",
+      "builtin": "Fenologia: la d'origen d'AquaCrop."
     }
   }
 }

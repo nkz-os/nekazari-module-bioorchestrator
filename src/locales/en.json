@@ -1163,6 +1163,28 @@
       "sowing_date_future": "The sowing date cannot be in the future.",
       "parcel_not_found": "The parcel was not found.",
       "generic": "The simulation could not be completed."
+    },
+    "ceiling": "Ceiling with this year's water",
+    "basis": {
+      "commercial": "Yields at commercial moisture ({{pct}}%).",
+      "dry_matter": "Yields as dry matter."
+    },
+    "expected": {
+      "title": "Expected in your area ({{region}})",
+      "coverage": "In years not used for calibration, {{pct}}% of actual harvests fell within such a range.",
+      "source": "Calibrated against {{source}}; mean error {{rmse}} t/ha.",
+      "unavailable": "Expected in your area: not available — {{reason}}.",
+      "reason": {
+        "crop_not_calibrated": "this crop is not calibrated yet",
+        "irrigated": "only rainfed crops are calibrated",
+        "outside_calibrated_regions": "the calibration only covers Spanish provinces",
+        "region_not_calibrated": "not enough data for this province",
+        "unknown": "no calibration applies"
+      }
+    },
+    "phenology": {
+      "calibrated": "Phenology: calibrated for {{region}}.",
+      "builtin": "Phenology: AquaCrop's default."
     }
   }
 }
