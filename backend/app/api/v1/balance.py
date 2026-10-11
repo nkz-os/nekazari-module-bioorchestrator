@@ -13,6 +13,11 @@ from app.graph.balance_dao import BalanceDao
 from app.kg.registries import DEFAULT_REGISTRIES_PATH, Registries, load_registries
 from app.services.crop_balance import payload_from_node
 from app.services.eurostat_yields import PlausibleRange, yields_payload
+from app.services.nuts_regions import (
+    load_province_table,
+    load_region_names,
+    nuts2_for_municipality,
+)
 from app.species_registry import catalog_code
 from neo4j import AsyncDriver
 
@@ -75,3 +80,36 @@ async def regional_yields(
         raise HTTPException(status_code=404, detail="No regional yields for this crop and region")
     body = yields_payload(rows, recent, _plausible_range(stored_eppo))
     return attach_attributions(body, (r.get("sourceId") for r in rows))
+
+
+_INE = r"^[0-9]{5}$"
+_COUNTRY = r"^[A-Za-z]{2}$"
+
+
+@functools.lru_cache(maxsize=1)
+def _province_table() -> dict[str, str]:
+    return load_province_table()
+
+
+@router.get("/agriculture/nuts-region")
+async def nuts_region(municipality: str = Query(..., pattern=_INE)):
+    """NUTS 2 region of a Spanish municipality (INE code) through its province; no geometry."""
+    nuts = nuts2_for_municipality(municipality, _province_table())
+    if nuts is None:
+        raise HTTPException(status_code=404, detail="Unknown province")
+    return {"municipality": municipality, "country": "ES", "nuts": nuts,
+            "name": load_region_names().get(nuts), "nuts_version": 2024,
+            "method": "ine_province"}
+
+
+@router.get("/agriculture/nuts-regions")
+async def nuts_regions(driver: DriverDep, country: str = Query(..., pattern=_COUNTRY)):
+    """NUTS 2 regions of a country that have Eurostat yields, for a manual pick."""
+    names = load_region_names()
+    rows = await BalanceDao(driver).list_yield_regions(country.upper())
+    regions = [{"nuts": r["nuts"], "name": names[r["nuts"]], "eppos": r["eppos"]}
+               for r in rows if r["nuts"] in names]
+    if not regions:
+        raise HTTPException(status_code=404, detail="No regions with yields")
+    return attach_attributions({"country": country.upper(), "regions": regions},
+                               ["eurostat_apro_cpshr"])

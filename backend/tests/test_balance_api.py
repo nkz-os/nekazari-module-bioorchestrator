@@ -160,3 +160,32 @@ def test_plausible_range_in_another_unit_is_not_guessed(caplog):
 
 def test_registries_are_loaded_once():
     assert balance_api._registries() is balance_api._registries()
+
+
+def test_nuts_region_for_a_spanish_municipality(client):
+    body = client.get("/api/graph/agriculture/nuts-region?municipality=01059").json()
+    assert body == {"municipality": "01059", "country": "ES", "nuts": "ES21",
+                    "name": "País Vasco", "nuts_version": 2024, "method": "ine_province"}
+
+
+def test_nuts_region_bad_and_unknown_codes(client):
+    assert client.get("/api/graph/agriculture/nuts-region?municipality=1059").status_code == 422
+    resp = client.get("/api/graph/agriculture/nuts-region?municipality=99001")
+    assert resp.status_code == 404 and resp.json()["detail"] == "Unknown province"
+
+
+def test_nuts_regions_lists_named_regions_with_data(client):
+    rows = [{"nuts": "ES22", "eppos": ["HORVX", "TRZAX"]}, {"nuts": "ESZZ", "eppos": ["TRZAX"]}]
+    with patch.object(BalanceDao, "list_yield_regions", AsyncMock(return_value=rows)) as m:
+        body = client.get("/api/graph/agriculture/nuts-regions?country=es").json()
+    m.assert_awaited_once_with("ES")
+    assert body["regions"] == [
+        {"nuts": "ES22", "name": "Comunidad Foral de Navarra", "eppos": ["HORVX", "TRZAX"]}]
+    assert [a["source_id"] for a in body["attributions"]] == ["eurostat_apro_cpshr"]
+
+
+def test_nuts_regions_none_is_404_and_bad_country_422(client):
+    with patch.object(BalanceDao, "list_yield_regions", AsyncMock(return_value=[])):
+        resp = client.get("/api/graph/agriculture/nuts-regions?country=XX")
+    assert resp.status_code == 404 and resp.json()["detail"] == "No regions with yields"
+    assert client.get("/api/graph/agriculture/nuts-regions?country=E5").status_code == 422
