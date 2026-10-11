@@ -557,7 +557,7 @@
       "crop": "Culture", "variety": "Variété", "sowing": "Semis", "harvest": "Récolte prévue", "standEnd": "Fin prévue de la culture (jusqu'à 10 ans)",
       "addCover": "Ajouter un couvert avant la culture", "cover": "Couvert", "coverSowing": "Semis du couvert",
       "coverEnd": "Fin du couvert", "method": "Mode de fin de cycle",
-      "methods": { "roller_crimper": "Rouleau écraseur (roller crimper)", "incorporate": "Enfouissement", "grazing": "Pâturage", "harvest": "Récolte" },
+      "methods": { "roller_crimper": "Rouleau écraseur (roller crimper)", "mowing": "Fauche", "incorporate": "Enfouissement", "grazing": "Pâturage", "harvest": "Récolte" },
       "submit": "Planifier", "needsRegime": "Déclarez sec ou irrigué avant de planifier.",
       "otherSpecies": "Autre espèce…", "speciesName": "Nom de l'espèce",
       "error": {

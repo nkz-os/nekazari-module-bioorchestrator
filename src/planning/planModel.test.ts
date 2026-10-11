@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { dateOfDoy, defaultSowing, draftFor, draftFromCells, isOtherCover, toPlanIn, validateDraft } from './planModel';
+import { COVER_METHODS, dateOfDoy, defaultSowing, draftFor, draftFromCells, isOtherCover, toPlanIn, validateDraft } from './planModel';
 import type { CycleCell, SpeciesFit } from './types';
 
 const sowing = (start_month: number | null) => ({ sowing_type: null, start_month, end_month: null, typical_sowing_doy: null, source: null });
@@ -139,5 +139,11 @@ describe('free-text cover names', () => {
   });
   it('the PUT body sends the cover name trimmed, as it was validated', () => {
     expect(toPlanIn(draft('  phacelia '), 2027, 'secano', 'conventional').cycles[0].crop).toBe('phacelia');
+  });
+});
+
+describe('cover termination', () => {
+  it('offers the roller crimper first, then mowing, and nothing else', () => {
+    expect(COVER_METHODS).toEqual(['roller_crimper', 'mowing']);
   });
 });

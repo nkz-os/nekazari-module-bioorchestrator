@@ -557,7 +557,7 @@
       "crop": "Cultura", "variety": "Variedade", "sowing": "Sementeira", "harvest": "Colheita prevista", "standEnd": "Fim previsto da cultura (até 10 anos)",
       "addCover": "Adicionar uma cobertura antes da cultura", "cover": "Cobertura", "coverSowing": "Sementeira da cobertura",
       "coverEnd": "Fim da cobertura", "method": "Como termina",
-      "methods": { "roller_crimper": "Rolo de facas (roller crimper)", "incorporate": "Incorporação", "grazing": "Pastoreio", "harvest": "Colheita" },
+      "methods": { "roller_crimper": "Rolo de facas (roller crimper)", "mowing": "Corte", "incorporate": "Incorporação", "grazing": "Pastoreio", "harvest": "Colheita" },
       "submit": "Planear", "needsRegime": "Declare sequeiro ou regadio antes de planear.",
       "otherSpecies": "Outra espécie…", "speciesName": "Nome da espécie",
       "error": {

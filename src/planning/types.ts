@@ -7,7 +7,7 @@ export type Regime = 'secano' | 'regadío';
 export type Management = 'conventional' | 'organic';
 export type Provenance = 'actual' | 'declared' | 'planned' | 'unknown';
 export type Role = 'main_crop' | 'cover_crop' | 'catch_crop';
-export type TerminationMethod = 'roller_crimper' | 'harvest' | 'incorporate' | 'grazing';
+export type TerminationMethod = 'roller_crimper' | 'mowing' | 'harvest' | 'incorporate' | 'grazing';
 export type ParamValue = string | number | boolean | null;
 export type Names = Record<string, string>;
 export type TFn = (key: string, opts?: Record<string, unknown>) => string;

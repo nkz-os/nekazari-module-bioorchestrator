@@ -1311,7 +1311,7 @@
       "crop": "Cultivo", "variety": "Variedad", "sowing": "Siembra", "harvest": "Cosecha prevista", "standEnd": "Fin previsto del cultivo (hasta 10 años)",
       "addCover": "Añadir cubierta antes del cultivo", "cover": "Cubierta", "coverSowing": "Siembra de la cubierta",
       "coverEnd": "Fin de la cubierta", "method": "Cómo se termina",
-      "methods": { "roller_crimper": "Rodillo aplastador (roller crimper)", "incorporate": "Incorporación", "grazing": "Pastoreo", "harvest": "Cosecha" },
+      "methods": { "roller_crimper": "Rodillo aplastador (roller crimper)", "mowing": "Siega", "incorporate": "Incorporación", "grazing": "Pastoreo", "harvest": "Cosecha" },
       "submit": "Planificar", "needsRegime": "Declara secano o regadío antes de planificar.",
       "otherSpecies": "Otra especie…", "speciesName": "Nombre de la especie",
       "error": {

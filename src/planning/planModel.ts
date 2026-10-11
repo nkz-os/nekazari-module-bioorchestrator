@@ -8,7 +8,8 @@ export const NONE = '__none__';
  * crop sown in August; it is only a default and the user edits it.
  */
 export const AUTUMN_FROM_MONTH = 8;
-export const COVER_METHODS: TerminationMethod[] = ['roller_crimper', 'incorporate', 'grazing', 'harvest'];
+// Owner decision: a cover crop ends by rolling or by mowing.
+export const COVER_METHODS: TerminationMethod[] = ['roller_crimper', 'mowing'];
 
 export interface CycleDraft { species: string; variety: string | null; sowing: string; end: string; method: TerminationMethod | null }
 export interface PlanDraft { main: CycleDraft; cover: CycleDraft | null }

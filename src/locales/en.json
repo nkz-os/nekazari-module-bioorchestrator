@@ -1310,7 +1310,7 @@
       "crop": "Crop", "variety": "Variety", "sowing": "Sowing", "harvest": "Expected harvest", "standEnd": "Expected end of the stand (up to 10 years)",
       "addCover": "Add a cover crop before the crop", "cover": "Cover crop", "coverSowing": "Cover crop sowing",
       "coverEnd": "Cover crop end", "method": "How it ends",
-      "methods": { "roller_crimper": "Roller crimper", "incorporate": "Incorporation", "grazing": "Grazing", "harvest": "Harvest" },
+      "methods": { "roller_crimper": "Roller crimper", "mowing": "Mowing", "incorporate": "Incorporation", "grazing": "Grazing", "harvest": "Harvest" },
       "submit": "Plan", "needsRegime": "Declare rainfed or irrigated before planning.",
       "otherSpecies": "Other species…", "speciesName": "Species name",
       "error": {

@@ -557,7 +557,7 @@
       "crop": "Laborea", "variety": "Barietatea", "sowing": "Ereitea", "harvest": "Espero den uzta", "standEnd": "Laborearen amaiera aurreikusia (10 urte arte)",
       "addCover": "Gehitu estaldura bat laborearen aurretik", "cover": "Estaldura", "coverSowing": "Estalduraren ereitea",
       "coverEnd": "Estalduraren amaiera", "method": "Nola amaitzen den",
-      "methods": { "roller_crimper": "Arrabota zanpatzailea (roller crimper)", "incorporate": "Lurrean sartzea", "grazing": "Abereekin bazkatzea", "harvest": "Uzta" },
+      "methods": { "roller_crimper": "Arrabota zanpatzailea (roller crimper)", "mowing": "Sega", "incorporate": "Lurrean sartzea", "grazing": "Abereekin bazkatzea", "harvest": "Uzta" },
       "submit": "Planifikatu", "needsRegime": "Adierazi lehorrekoa ala ureztatua planifikatu aurretik.",
       "otherSpecies": "Beste espezie bat…", "speciesName": "Espeziearen izena",
       "error": {

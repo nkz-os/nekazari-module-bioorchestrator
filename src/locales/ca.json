@@ -557,7 +557,7 @@
       "crop": "Cultiu", "variety": "Varietat", "sowing": "Sembra", "harvest": "Collita prevista", "standEnd": "Final previst del cultiu (fins a 10 anys)",
       "addCover": "Afegeix una cobertura abans del cultiu", "cover": "Cobertura", "coverSowing": "Sembra de la cobertura",
       "coverEnd": "Final de la cobertura", "method": "Com s'acaba",
-      "methods": { "roller_crimper": "Corró aixafador (roller crimper)", "incorporate": "Incorporació", "grazing": "Pastura", "harvest": "Collita" },
+      "methods": { "roller_crimper": "Corró aixafador (roller crimper)", "mowing": "Sega", "incorporate": "Incorporació", "grazing": "Pastura", "harvest": "Collita" },
       "submit": "Planificar", "needsRegime": "Declara secà o regadiu abans de planificar.",
       "otherSpecies": "Una altra espècie…", "speciesName": "Nom de l'espècie",
       "error": {
