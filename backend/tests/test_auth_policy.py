@@ -16,6 +16,9 @@ URN = "urn:ngsi-ld:AgriParcel:tenant-a:p1"
     ("/api/graph/agriculture/crop-simulation", "POST", {"parcel_id": URN}),
     (f"/api/graph/agriculture/crop-plan/{URN}/segments/1/advance", "POST", {}),
     ("/api/graph/agriculture/crop-plan", "GET", {"parcel_id": URN}),
+    # a simulation job holds a tenant's result: polling it needs the full identity chain
+    ("/api/graph/agriculture/crop-simulation/jobs/0123abcd", "GET", {}),
+    ("/api/graph/agriculture/crop-simulation/jobs", "POST", {"parcel_id": URN}),
 ])
 def test_tenant_requests_require_identity(path, method, query):
     assert requires_identity(path, method, query) is True
