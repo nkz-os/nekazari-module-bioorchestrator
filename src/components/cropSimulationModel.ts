@@ -36,7 +36,7 @@ export interface CropSimulationResult {
   sowing_date: string;
   irrigation: Irrigation;
   initial_water: InitialWater;
-  status: 'complete' | 'in_season';
+  status: 'complete' | 'in_season' | 'preseason';
   /** Basis of yield_t_ha and potential_yield_t_ha (commercial moisture or dry matter). */
   yield_basis: YieldBasis;
   yield_t_ha: number | Percentiles;
@@ -58,7 +58,7 @@ export interface CropSimulationResult {
 
 export const KNOWN_ERROR_CODES = [
   'unsupported_crop', 'weather_gaps', 'soil_incomplete', 'soil_unavailable', 'weather_unavailable',
-  'archive_not_configured', 'archive_unavailable', 'sowing_date_future', 'parcel_not_found',
+  'archive_not_configured', 'archive_unavailable', 'sowing_date_too_far', 'parcel_not_found',
 ] as const;
 
 /** i18n key of the localized hint for a backend error code (generic when unknown or missing). */

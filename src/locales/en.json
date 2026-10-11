@@ -1111,7 +1111,8 @@
     "crop": "Crop",
     "status": {
       "complete": "Complete season",
-      "in_season": "Season in progress"
+      "in_season": "Season in progress",
+      "preseason": "Before sowing"
     },
     "yield": "Yield",
     "potentialYield": "Potential yield",
@@ -1162,9 +1163,9 @@
       "weather_unavailable": "Weather data is temporarily unavailable. Try again later.",
       "archive_not_configured": "The weather archive is not configured on this server.",
       "archive_unavailable": "The weather archive is temporarily unavailable. Try again later.",
-      "sowing_date_future": "The sowing date cannot be in the future.",
       "parcel_not_found": "The parcel was not found.",
-      "generic": "The simulation could not be completed."
+      "generic": "The simulation could not be completed.",
+      "sowing_date_too_far": "The sowing date is more than a year ahead: the simulation plans at most one year ahead."
     },
     "ceiling": "Ceiling with this year's water",
     "basis": {

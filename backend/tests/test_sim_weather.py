@@ -212,12 +212,20 @@ def test_history_starts_at_first_available_day_when_shorter_than_a_year():
     assert res.sim_start == first
 
 
-def test_planting_without_weather_is_weather_gaps():
-    planting, today = date(2026, 3, 1), date(2026, 3, 1)  # nothing before today yet
+def test_past_planting_without_weather_is_weather_gaps():
+    planting, today = date(2026, 3, 1), date(2026, 3, 10)  # the series stops before the sowing
     net = _Net(parcel=lambda p: _parcel_payload(date(2025, 3, 1), date(2026, 2, 27)))
     with patch("httpx.AsyncClient", net), pytest.raises(SimulationError) as ei:
         _run(sw.assemble_observed(PARCEL, TENANT, LAT, LON, planting, today))
     assert ei.value.code == "weather_gaps"
+
+
+def test_sowing_today_is_planning_ahead_not_a_gap():
+    planting, today = date(2026, 3, 1), date(2026, 3, 1)  # today has no weather yet
+    net = _Net(parcel=lambda p: _parcel_payload(date(2025, 3, 1), date(2026, 2, 28)))
+    with patch("httpx.AsyncClient", net):
+        res = _run(sw.assemble_observed(PARCEL, TENANT, LAT, LON, planting, today))
+    assert res.weather[-1].day == date(2026, 2, 28)
 
 
 def test_season_end_caps_observed_range():
@@ -380,3 +388,33 @@ def test_reanalysis_fill_is_tagged_as_reanalysis():
     with patch("httpx.AsyncClient", _Net(parcel=parcel)):
         res = _run(sw.assemble_observed(PARCEL, TENANT, LAT, LON, planting, today))
     assert [s["source"] for s in res.segments] == ["reanalysis", "parcel_daily"]
+
+
+# --------------------------------------------------------- preseason (sowing ahead)
+def test_preseason_observed_weather_runs_up_to_yesterday():
+    planting, today = date(2026, 11, 1), date(2026, 10, 11)
+    net = _Net(parcel=lambda p: _parcel_payload(*_parcel_range(p)))
+    with patch("httpx.AsyncClient", net):
+        res = _run(sw.assemble_observed(PARCEL, TENANT, LAT, LON, planting, today))
+    assert res.weather[0].day == today - timedelta(days=365)
+    assert res.weather[-1].day == today - timedelta(days=1)
+    assert res.sim_start == res.weather[0].day
+
+
+def test_analog_years_exclude_seasons_not_yet_in_the_archive():
+    # the 2025 season of a 1 November sowing ends 2026-10-31: not complete on 2026-10-11
+    assert sw.analog_year_candidates(date(2026, 11, 1), date(2026, 10, 11), 3) == [2022, 2023, 2024]
+    # sown last week: the 2025 season ended 2026-10-04, still inside the archive lag
+    assert sw.analog_year_candidates(date(2026, 10, 5), date(2026, 10, 11), 3) == [2022, 2023, 2024]
+
+
+def test_preseason_analogs_cover_from_today_to_season_end():
+    planting, today = date(2026, 11, 1), date(2026, 10, 11)
+    net = _Net(archive=lambda p: _archive_payload(
+        date.fromisoformat(p["start_date"]), date.fromisoformat(p["end_date"])))
+    with patch("httpx.AsyncClient", net):
+        analogs, warns = _run(sw.assemble_analogs(LAT, LON, planting, today, years=3))
+    assert sorted(analogs) == [2022, 2023, 2024]
+    arch = next(c for c in net.calls if "archive.test" in c[0])
+    assert arch[1]["start_date"] == "2022-10-11"  # today, mapped to the first analog year
+    assert not any("dropped" in w for w in warns)

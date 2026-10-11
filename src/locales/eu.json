@@ -358,7 +358,8 @@
     "crop": "Laborantza",
     "status": {
       "complete": "Denboraldi osoa",
-      "in_season": "Denboraldia abian"
+      "in_season": "Denboraldia abian",
+      "preseason": "Erein aurretik"
     },
     "yield": "Etekina",
     "potentialYield": "Etekin potentziala",
@@ -409,9 +410,9 @@
       "weather_unavailable": "Eguraldi-datuak ez daude eskuragarri une honetan. Saiatu berriro geroago.",
       "archive_not_configured": "Eguraldi-artxiboa ez dago konfiguratuta zerbitzari honetan.",
       "archive_unavailable": "Eguraldi-artxiboa ez dago eskuragarri une honetan. Saiatu berriro geroago.",
-      "sowing_date_future": "Ereite-data ezin da etorkizunekoa izan.",
       "parcel_not_found": "Ez da partzela aurkitu.",
-      "generic": "Ezin izan da simulazioa osatu."
+      "generic": "Ezin izan da simulazioa osatu.",
+      "sowing_date_too_far": "Erein-data urtebete baino urrunago dago: simulazioak gehienez urtebeterako planifikatzen du."
     },
     "ceiling": "Aurtengo urarekin lor daitekeen gehienezkoa",
     "basis": {

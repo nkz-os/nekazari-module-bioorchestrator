@@ -36,6 +36,8 @@ from app.services.soil_headers import soil_module_headers
 logger = logging.getLogger(__name__)
 
 SPINUP_DAYS = 365  # fallow history requested before sowing (spec D2)
+# ERA5 (era5_seamless) reaches the archive about a week late; the freshness alert is at 10 days.
+ARCHIVE_LAG_DAYS = 10
 SEASON_DAYS = 365  # sowing day + 364 days, one season
 _PARCEL_MAX_DAYS = 400  # weather-api limit per request
 _MAX_LISTED_DAYS = 20
@@ -251,11 +253,12 @@ async def assemble_observed(
 ) -> ObservedWeather:
     """Observed daily weather from ``planting - 365 d`` to yesterday (<= season end).
 
-    Raises SimulationError ``weather_gaps`` (422) for unfilled days inside the
-    series or when the sowing day itself has no weather, and 503 codes when a
-    source is unavailable or the archive is needed but not configured.
+    Sowing today or later (planning ahead): the last 365 days up to yesterday, which
+    then run into the analog years. Raises SimulationError ``weather_gaps`` (422) for
+    unfilled days inside the series or when a past sowing day has no weather, and 503
+    codes when a source is unavailable or the archive is needed but not configured.
     """
-    wanted_start = planting - timedelta(days=SPINUP_DAYS)
+    wanted_start = min(planting, today) - timedelta(days=SPINUP_DAYS)
     end = min(today - timedelta(days=1), planting + timedelta(days=SEASON_DAYS - 1))
     parcel_fetch = await fetch_parcel_daily(parcel_id, tenant_id, wanted_start, end)
     parcel = parcel_fetch.days
@@ -283,7 +286,7 @@ async def assemble_observed(
         logger.warning("sim_weather_gaps parcel=%s tenant=%s n=%d", parcel_id, tenant_id, len(gaps))
         raise SimulationError(
             "weather_gaps", f"Weather is missing for {len(gaps)} day(s): {_list_days(gaps)}.")
-    if not first <= planting <= last:
+    if planting < today and not first <= planting <= last:
         raise SimulationError(
             "weather_gaps",
             f"No weather on the sowing date {planting.isoformat()} "
@@ -305,14 +308,17 @@ async def assemble_observed(
 
 # ----------------------------------------------------------------- analogs
 def analog_year_candidates(planting: date, today: date, n_years: int) -> list[int]:
-    """The ``n_years`` seasons before the campaign, newest last.
+    """The ``n_years`` latest seasons already complete in the archive, newest last.
 
     A season starting on the planting date in year Y ends (planting + 364 d) in
-    Y or Y + 1; every Y <= planting.year - 1 has ended before the sowing date,
-    so its data is complete by construction. ``today`` is kept for symmetry with
-    the other assemblers.
+    Y or Y + 1. The newest candidate is planting.year - 1, stepped back while its
+    season ends within ``ARCHIVE_LAG_DAYS`` of today: a sowing ahead (planning) or
+    a few days ago would otherwise pick a season the archive does not yet hold.
     """
+    season_end = planting + timedelta(days=SEASON_DAYS - 1)
     last = planting.year - 1
+    while analog_date(season_end, planting.year, last) >= today - timedelta(days=ARCHIVE_LAG_DAYS):
+        last -= 1
     return list(range(last - n_years + 1, last + 1))
 
 
@@ -329,11 +335,14 @@ async def assemble_analogs(
     _archive_url()  # fail early with archive_not_configured
     cands = analog_year_candidates(planting, today, n)
     season_end = planting + timedelta(days=SEASON_DAYS - 1)
-    fetch_start = analog_date(planting, planting.year, cands[0])
+    # From the sowing, or from today when sowing ahead (the members also need the days
+    # between today and the sowing).
+    first = min(planting, today)
+    fetch_start = analog_date(first, planting.year, cands[0])
     fetch_end = analog_date(season_end, planting.year, cands[-1])
     fetched = await fetch_archive_daily(lat, lon, fetch_start, fetch_end)
     series = fetched.days
-    campaign = _days(planting, season_end)
+    campaign = _days(first, season_end)
     ordered = [series[d] for d in sorted(series)]
     out: dict[int, list[DailyWeather]] = {}
     warns: list[str] = []

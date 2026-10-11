@@ -358,7 +358,8 @@
     "crop": "Cultiu",
     "status": {
       "complete": "Campanya completa",
-      "in_season": "Campanya en curs"
+      "in_season": "Campanya en curs",
+      "preseason": "Abans de sembrar"
     },
     "yield": "Rendiment",
     "potentialYield": "Rendiment potencial",
@@ -409,9 +410,9 @@
       "weather_unavailable": "Les dades de temps no estan disponibles temporalment. Torna-ho a provar més tard.",
       "archive_not_configured": "L'arxiu meteorològic no està configurat en aquest servidor.",
       "archive_unavailable": "L'arxiu meteorològic no està disponible temporalment. Torna-ho a provar més tard.",
-      "sowing_date_future": "La data de sembra no pot ser futura.",
       "parcel_not_found": "No s'ha trobat la parcel·la.",
-      "generic": "No s'ha pogut completar la simulació."
+      "generic": "No s'ha pogut completar la simulació.",
+      "sowing_date_too_far": "La data de sembra és a més d'un any vista: la simulació planifica com a màxim a un any."
     },
     "ceiling": "Sostre amb l'aigua d'aquest any",
     "basis": {

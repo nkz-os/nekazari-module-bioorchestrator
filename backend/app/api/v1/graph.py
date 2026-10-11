@@ -1130,7 +1130,8 @@ async def agriculture_crop_simulation(
     ),
     sowing_date: str | None = Query(
         default=None,
-        description="Sowing date (YYYY-MM-DD, not in the future). Taken from the latest sowing operation if omitted.",
+        description=("Sowing date (YYYY-MM-DD). Today or up to a year ahead runs a preseason ensemble. "
+                     "Taken from the crop cycle or the latest completed sowing if omitted."),
     ),
     irrigation: str = Query(
         default="rainfed",
@@ -1142,8 +1143,9 @@ async def agriculture_crop_simulation(
 
     Inputs come from real data only: soil from the Soil module, daily parcel
     weather (plus the weather archive for earlier days), crop and sowing from
-    the parcel and its operations. A season still in progress is projected to
-    harvest with a climatological ensemble (P10/P50/P90). Input problems answer
+    the parcel and its operations. A season still in progress, or a sowing date today
+    or ahead (status "preseason"), is projected to harvest with a climatological
+    ensemble (P10/P50/P90). Input problems answer
     422 and upstream outages 503, both as ``{"detail": {"code", "message"}}``.
     """
     tenant_id = _require_tenant_id(request)

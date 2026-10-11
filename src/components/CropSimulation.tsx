@@ -104,7 +104,8 @@ function ExpectedYieldCard({ result, t }: { result: CropSimulationResult; t: T }
 export function CropSimulationResultView({ result }: { result: CropSimulationResult }) {
   const { t: tr } = useTranslation('bioorchestrator');
   const t = tr as T;
-  const inSeason = result.status === 'in_season';
+  const preseason = result.status === 'preseason';
+  const ensembleMode = result.status !== 'complete';  // in season or before sowing: P10-P90
   const y = formatYield(result.yield_t_ha);
   const p = formatYield(result.potential_yield_t_ha);
   const iw = result.initial_water;
@@ -118,8 +119,8 @@ export function CropSimulationResultView({ result }: { result: CropSimulationRes
           <Microscope className="w-3 h-3 mr-1 inline" />
           {result.engine} {result.engine_version}
         </Badge>
-        <Badge intent={inSeason ? 'warning' : 'positive'}>
-          {t(inSeason ? 'cropSimulation.status.in_season' : 'cropSimulation.status.complete')}
+        <Badge intent={preseason ? 'info' : ensembleMode ? 'warning' : 'positive'}>
+          {t(`cropSimulation.status.${result.status}`)}
         </Badge>
         <span className="text-nkz-xs text-nkz-text-muted">
           {t('cropSimulation.crop')}: {result.crop_slug} → {result.aquacrop_crop} — {result.sowing_date}
@@ -131,7 +132,7 @@ export function CropSimulationResultView({ result }: { result: CropSimulationRes
         <Metric label={t('cropSimulation.potentialYield')} main={p.main} range={p.range} unit="t/ha" />
         <Metric label={t('cropSimulation.waterGap')}
                 main={waterGapText(result.water_gap_pct)} />
-        <Metric label={t(inSeason ? 'cropSimulation.harvestMedian' : 'cropSimulation.harvestDate')} main={result.harvest_date} />
+        <Metric label={t(ensembleMode ? 'cropSimulation.harvestMedian' : 'cropSimulation.harvestDate')} main={result.harvest_date} />
       </div>
 
       <p className="text-nkz-xs text-nkz-text-muted">
@@ -142,7 +143,7 @@ export function CropSimulationResultView({ result }: { result: CropSimulationRes
 
       <ExpectedYieldCard result={result} t={t} />
 
-      {inSeason && result.ensemble && (
+      {ensembleMode && result.ensemble && (
         <p className="text-nkz-sm text-nkz-text-secondary">
           {t('cropSimulation.ensembleBasis', { n: result.ensemble.n_years, years: result.ensemble.years.join(', ') })}
         </p>
@@ -163,7 +164,7 @@ export function CropSimulationResultView({ result }: { result: CropSimulationRes
             {t('cropSimulation.dailyOutput')}
           </h3>
           <SimChart daily={result.daily} t={t} />
-          {inSeason && <p className="text-nkz-xs text-nkz-text-muted mt-2">{t('cropSimulation.projectedNote')}</p>}
+          {ensembleMode && <p className="text-nkz-xs text-nkz-text-muted mt-2">{t('cropSimulation.projectedNote')}</p>}
         </Card>
       )}
 

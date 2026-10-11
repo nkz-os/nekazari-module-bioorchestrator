@@ -358,7 +358,8 @@
     "crop": "Culture",
     "status": {
       "complete": "Campagne terminée",
-      "in_season": "Campagne en cours"
+      "in_season": "Campagne en cours",
+      "preseason": "Avant le semis"
     },
     "yield": "Rendement",
     "potentialYield": "Rendement potentiel",
@@ -409,9 +410,9 @@
       "weather_unavailable": "Les données météo sont temporairement indisponibles. Réessayez plus tard.",
       "archive_not_configured": "L'archive météo n'est pas configurée sur ce serveur.",
       "archive_unavailable": "L'archive météo est temporairement indisponible. Réessayez plus tard.",
-      "sowing_date_future": "La date de semis ne peut pas être dans le futur.",
       "parcel_not_found": "Parcelle introuvable.",
-      "generic": "La simulation n'a pas pu être menée à terme."
+      "generic": "La simulation n'a pas pu être menée à terme.",
+      "sowing_date_too_far": "La date de semis est à plus d'un an : la simulation planifie au plus à un an."
     },
     "ceiling": "Plafond avec l'eau de cette année",
     "basis": {

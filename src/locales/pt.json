@@ -358,7 +358,8 @@
     "crop": "Cultura",
     "status": {
       "complete": "Campanha completa",
-      "in_season": "Campanha em curso"
+      "in_season": "Campanha em curso",
+      "preseason": "Antes da sementeira"
     },
     "yield": "Produtividade",
     "potentialYield": "Produtividade potencial",
@@ -409,9 +410,9 @@
       "weather_unavailable": "Os dados de tempo estão temporariamente indisponíveis. Tente novamente mais tarde.",
       "archive_not_configured": "O arquivo meteorológico não está configurado neste servidor.",
       "archive_unavailable": "O arquivo meteorológico está temporariamente indisponível. Tente novamente mais tarde.",
-      "sowing_date_future": "A data de sementeira não pode ser futura.",
       "parcel_not_found": "Parcela não encontrada.",
-      "generic": "Não foi possível concluir a simulação."
+      "generic": "Não foi possível concluir a simulação.",
+      "sowing_date_too_far": "A data de sementeira está a mais de um ano: a simulação planeia no máximo a um ano."
     },
     "ceiling": "Teto com a água deste ano",
     "basis": {

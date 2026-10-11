@@ -7,7 +7,7 @@ what it can do in ``capabilities``. Only AquaCrop is implemented.
 from __future__ import annotations
 
 import logging
-from datetime import date
+from datetime import date, timedelta
 from typing import Any, Protocol
 
 from app.services import yield_calibration as yc
@@ -22,6 +22,7 @@ from app.services.soil_client import SoilSummaryError, get_parcel_soil_summary
 logger = logging.getLogger(__name__)
 
 IRRIGATION_MODES = ("rainfed", "full")
+PRESEASON_MAX_DAYS = 366
 
 
 class CropEngine(Protocol):
@@ -103,9 +104,13 @@ async def run_crop_simulation(
     """
     engine = get_engine(engine_name)
     ctx = f"parcel={parcel_id} tenant={tenant_id} engine={engine_name} crop={crop.slug}"
-    if sowing_date > today:
+    # Sowing today or later is planning ahead: real weather up to yesterday, then the
+    # analog years (status "preseason"). Beyond a year the recent weather says nothing.
+    if sowing_date > today + timedelta(days=PRESEASON_MAX_DAYS):
         raise SimulationError(
-            "sowing_date_future", f"The sowing date {sowing_date.isoformat()} is in the future.")
+            "sowing_date_too_far",
+            f"The sowing date {sowing_date.isoformat()} is more than {PRESEASON_MAX_DAYS} days ahead.")
+    preseason = sowing_date >= today
 
     try:
         summary = await get_parcel_soil_summary(parcel_id, tenant_id)
@@ -153,7 +158,7 @@ async def run_crop_simulation(
         "sowing_date": sowing_date.isoformat(),
         "irrigation": irrigation,
         "initial_water": result["initial_water"],
-        "status": result["status"],
+        "status": "preseason" if preseason else result["status"],
         "yield_basis": basis,
         "yield_t_ha": yield_t_ha,
         "potential_yield_t_ha": yc.to_basis(result["potential_yield_t_ha"], basis),

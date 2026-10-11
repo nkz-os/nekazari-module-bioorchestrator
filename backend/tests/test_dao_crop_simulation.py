@@ -172,9 +172,24 @@ def test_parcel_without_location(mock_driver):
     assert _err(GraphDAO(mock_driver)).code == "parcel_location_missing"
 
 
-def test_future_sowing_date(mock_driver):
-    e = _err(GraphDAO(mock_driver), sowing_date_str="1991-02-02")
-    assert (e.code, e.status_code) == ("sowing_date_future", 422)
+def test_sowing_more_than_a_year_ahead_is_refused(mock_driver):
+    e = _err(GraphDAO(mock_driver), sowing_date_str="1992-03-01")  # today 1991-02-01
+    assert (e.code, e.status_code) == ("sowing_date_too_far", 422)
+
+
+def test_future_sowing_is_a_preseason_ensemble(mock_driver, tunis):
+    # planning: sowing in 8 months; real weather up to yesterday, then each analog year
+    net = _Net(tunis)
+    res = _run(GraphDAO(mock_driver), net=net, sowing_date_str="1991-10-01")
+    assert res["status"] == "preseason"
+    assert res["ensemble"]["n_years"] == 5 and res["ensemble"]["years"] == [1985, 1986, 1987, 1988, 1989]
+    assert res["last_weather_day"] == "1991-01-31"
+    assert res["sowing_date"] == "1991-10-01" and res["inputs"]["sowing"]["source"] == "request"
+    assert all(d["projected"] for d in res["daily"])
+    y = res["yield_t_ha"]
+    assert y["p10"] <= y["p50"] <= y["p90"]
+    assert res["expected_yield"]["status"] == "ok"
+    json.dumps(res)
 
 
 def test_invalid_sowing_date(mock_driver):
