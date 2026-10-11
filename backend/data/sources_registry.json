@@ -1141,5 +1141,283 @@
     "disclaimer": {"en": "EU project deliverable; NKZ extrapolations are informational.", "es": "Entregable de proyecto de la UE; las extrapolaciones de NKZ son informativas."},
     "site_urls": [],
     "tags": ["mycorrhiza", "trichoderma", "inoculant", "eu"]
+  },
+  {
+    "source_id": "mapa_guia_2010",
+    "name": "Gu\u00eda pr\u00e1ctica de la fertilizaci\u00f3n racional de los cultivos en Espa\u00f1a",
+    "institution": "Ministerio de Medio Ambiente y Medio Rural y Marino (hoy MAPA)",
+    "institution_short": "MAPA",
+    "country": "ES",
+    "country_name": {
+      "en": "Spain",
+      "es": "Espa\u00f1a",
+      "eu": "Espainia",
+      "fr": "Espagne",
+      "pt": "Espanha"
+    },
+    "url": "https://www.mapa.gob.es/es/agricultura/publicaciones/publicaciones-fertilizantes",
+    "document_url_template": null,
+    "license_class": "public-sector-psi",
+    "use_type": "reference-coefficients",
+    "official_status": true,
+    "data_format": "pdf-extracted",
+    "extraction_method": "manual",
+    "confidence_default": "high",
+    "attribution": {
+      "en": "Nutrient-removal coefficients from the Spanish Ministry's practical guide to rational crop fertilisation (2010), converted by NKZ.",
+      "es": "Coeficientes de extracci\u00f3n de la Gu\u00eda pr\u00e1ctica de la fertilizaci\u00f3n racional de los cultivos en Espa\u00f1a (2010), convertidos por NKZ."
+    },
+    "disclaimer": {
+      "en": "Reference coefficients; actual nutrient removal varies with yield, variety and management. NKZ conversions are informational.",
+      "es": "Coeficientes de referencia; la extracci\u00f3n real de nutrientes var\u00eda con el rendimiento, la variedad y el manejo. Las conversiones de NKZ son informativas."
+    },
+    "attribution_text": "Fuente: Ministerio de Medio Ambiente y Medio Rural y Marino (2010). Gu\u00eda pr\u00e1ctica de la fertilizaci\u00f3n racional de los cultivos en Espa\u00f1a. NIPO 770-10-150-4. Url: https://www.mapa.gob.es/es/agricultura/publicaciones/publicaciones-fertilizantes (Descarga: 11/10/2026). Datos convertidos por Nekazari.",
+    "attribution_url": "https://www.mapa.gob.es/es/agricultura/publicaciones/publicaciones-fertilizantes",
+    "licence_id": "es-reuse-notice-ley-37-2007",
+    "licence_url": "https://www.mapa.gob.es/es/atencion-al-ciudadano/aviso-legal",
+    "download_date": "2026-10-11",
+    "processing_note": {
+      "en": "Coefficients are converted by Nekazari to % of dry matter and elemental P and K; the conversion is stated next to each value.",
+      "es": "Los coeficientes los convierte Nekazari a % de materia seca y a P y K elementales; la conversi\u00f3n figura junto a cada valor."
+    },
+    "site_urls": [
+      "https://www.mapa.gob.es"
+    ],
+    "tags": [
+      "fertilisation",
+      "nutrient-removal",
+      "spain"
+    ]
+  },
+  {
+    "source_id": "panagos_2022",
+    "name": "Panagos et al. 2022, Phosphorus plant removal from European agricultural land",
+    "institution": "European Commission, Joint Research Centre",
+    "institution_short": "JRC",
+    "country": "EU",
+    "country_name": {
+      "en": "European Union",
+      "es": "Uni\u00f3n Europea",
+      "eu": "Europar Batasuna",
+      "fr": "Union europ\u00e9enne",
+      "pt": "Uni\u00e3o Europeia"
+    },
+    "url": "https://doi.org/10.1007/s00003-022-01363-3",
+    "document_url_template": null,
+    "license_class": "open-cc-by",
+    "use_type": "reference-coefficients",
+    "official_status": false,
+    "data_format": "pdf-extracted",
+    "extraction_method": "manual",
+    "confidence_default": "high",
+    "attribution": {
+      "en": "Crop nutrient-removal values from Panagos et al. (2022), European Commission Joint Research Centre, CC BY 4.0, converted by NKZ.",
+      "es": "Valores de extracci\u00f3n de nutrientes de Panagos et al. (2022), Centro Com\u00fan de Investigaci\u00f3n de la Comisi\u00f3n Europea, CC BY 4.0, convertidos por NKZ."
+    },
+    "disclaimer": {
+      "en": "Reference coefficients; actual nutrient removal varies with yield, variety and management. NKZ conversions are informational.",
+      "es": "Coeficientes de referencia; la extracci\u00f3n real de nutrientes var\u00eda con el rendimiento, la variedad y el manejo. Las conversiones de NKZ son informativas."
+    },
+    "attribution_text": "Source: Panagos P. et al. (2022) J. Consum. Prot. Food Saf. 17, doi:10.1007/s00003-022-01363-3. Licence CC BY 4.0. Data converted by Nekazari.",
+    "attribution_url": "https://doi.org/10.1007/s00003-022-01363-3",
+    "licence_id": "CC-BY-4.0",
+    "licence_url": "https://creativecommons.org/licenses/by/4.0/legalcode",
+    "download_date": "2026-10-11",
+    "processing_note": {
+      "en": "Coefficients are converted by Nekazari to % of dry matter and elemental P and K; the conversion is stated next to each value.",
+      "es": "Los coeficientes los convierte Nekazari a % de materia seca y a P y K elementales; la conversi\u00f3n figura junto a cada valor."
+    },
+    "site_urls": [],
+    "tags": [
+      "nutrient-removal",
+      "phosphorus",
+      "eu"
+    ]
+  },
+  {
+    "source_id": "essd_2024_s3",
+    "name": "ESSD 2024 cropland nutrient budget, supplement Table S3",
+    "institution": "Earth System Science Data (Copernicus Publications)",
+    "institution_short": "ESSD",
+    "country": "INT",
+    "country_name": {
+      "en": "International",
+      "es": "Internacional",
+      "eu": "Nazioartekoa",
+      "fr": "International",
+      "pt": "Internacional"
+    },
+    "url": "https://essd.copernicus.org/articles/16/525/2024/",
+    "document_url_template": null,
+    "license_class": "open-cc-by",
+    "use_type": "reference-coefficients",
+    "official_status": false,
+    "data_format": "pdf-extracted",
+    "extraction_method": "manual",
+    "confidence_default": "high",
+    "attribution": {
+      "en": "Crop nutrient-budget coefficients from Earth System Science Data 16, 525 (2024), supplement Table S3, CC BY 4.0, converted by NKZ.",
+      "es": "Coeficientes de balance de nutrientes de Earth System Science Data 16, 525 (2024), tabla S3 del suplemento, CC BY 4.0, convertidos por NKZ."
+    },
+    "disclaimer": {
+      "en": "Reference coefficients; actual nutrient removal varies with yield, variety and management. NKZ conversions are informational.",
+      "es": "Coeficientes de referencia; la extracci\u00f3n real de nutrientes var\u00eda con el rendimiento, la variedad y el manejo. Las conversiones de NKZ son informativas."
+    },
+    "attribution_text": "Source: Ludemann C.I., Wanner N., Chivenge P., Dobermann A. et al. (2024), Earth Syst. Sci. Data 16, 525, doi:10.5194/essd-16-525-2024, supplement Table S3 (FAOSTAT-derived). Licence CC BY 4.0. Data converted by Nekazari.",
+    "attribution_url": "https://essd.copernicus.org/articles/16/525/2024/",
+    "licence_id": "CC-BY-4.0",
+    "licence_url": "https://creativecommons.org/licenses/by/4.0/legalcode",
+    "download_date": "2026-10-11",
+    "processing_note": {
+      "en": "Coefficients are converted by Nekazari to % of dry matter and elemental P and K; the conversion is stated next to each value.",
+      "es": "Los coeficientes los convierte Nekazari a % de materia seca y a P y K elementales; la conversi\u00f3n figura junto a cada valor."
+    },
+    "site_urls": [],
+    "tags": [
+      "nutrient-budget",
+      "cropland",
+      "global"
+    ]
+  },
+  {
+    "source_id": "ludemann_cc0",
+    "name": "Ludemann et al., global crop nutrient concentrations and harvest indices",
+    "institution": "Dryad (dataset doi:10.5061/dryad.n2z34tn0x)",
+    "institution_short": "Dryad",
+    "country": "INT",
+    "country_name": {
+      "en": "International",
+      "es": "Internacional",
+      "eu": "Nazioartekoa",
+      "fr": "International",
+      "pt": "Internacional"
+    },
+    "url": "https://doi.org/10.5061/dryad.n2z34tn0x",
+    "document_url_template": null,
+    "license_class": "cc0",
+    "use_type": "reference-coefficients",
+    "official_status": false,
+    "data_format": "database",
+    "extraction_method": "structured",
+    "confidence_default": "medium",
+    "attribution": {
+      "en": "Global crop nutrient concentrations and harvest indices from Ludemann et al. (Dryad, CC0); used only to fill gaps of the primary sources.",
+      "es": "Concentraciones de nutrientes e \u00edndices de cosecha de Ludemann et al. (Dryad, CC0); se usan solo para cubrir huecos de las fuentes primarias."
+    },
+    "disclaimer": {
+      "en": "Reference coefficients; actual nutrient removal varies with yield, variety and management. NKZ conversions are informational.",
+      "es": "Coeficientes de referencia; la extracci\u00f3n real de nutrientes var\u00eda con el rendimiento, la variedad y el manejo. Las conversiones de NKZ son informativas."
+    },
+    "attribution_text": "Source: Ludemann C. et al., Global data on crop nutrient concentration and harvest indices, Dryad, doi:10.5061/dryad.n2z34tn0x (CC0). Used to fill gaps of the primary sources.",
+    "attribution_url": "https://doi.org/10.5061/dryad.n2z34tn0x",
+    "licence_id": "CC0-1.0",
+    "licence_url": "https://creativecommons.org/publicdomain/zero/1.0/legalcode",
+    "download_date": "2026-10-11",
+    "processing_note": {
+      "en": "Coefficients are converted by Nekazari to % of dry matter and elemental P and K; the conversion is stated next to each value.",
+      "es": "Los coeficientes los convierte Nekazari a % de materia seca y a P y K elementales; la conversi\u00f3n figura junto a cada valor."
+    },
+    "site_urls": [],
+    "tags": [
+      "nutrient-concentration",
+      "harvest-index",
+      "global"
+    ]
+  },
+  {
+    "source_id": "eurostat_apro_cpshr",
+    "name": "Eurostat apro_cpshr, crop production in EU standard humidity by NUTS 2 region",
+    "institution": "Eurostat, European Commission",
+    "institution_short": "Eurostat",
+    "country": "EU",
+    "country_name": {
+      "en": "European Union",
+      "es": "Uni\u00f3n Europea",
+      "eu": "Europar Batasuna",
+      "fr": "Union europ\u00e9enne",
+      "pt": "Uni\u00e3o Europeia"
+    },
+    "url": "https://doi.org/10.2908/APRO_CPSHR",
+    "document_url_template": null,
+    "license_class": "public-sector-psi",
+    "use_type": "regional-statistics",
+    "official_status": true,
+    "data_format": "database",
+    "extraction_method": "structured",
+    "confidence_default": "high",
+    "attribution": {
+      "en": "Crop area and production by NUTS 2 region from Eurostat (apro_cpshr); yield derived by NKZ.",
+      "es": "Superficie y producci\u00f3n de cultivos por regi\u00f3n NUTS 2 de Eurostat (apro_cpshr); rendimiento calculado por NKZ."
+    },
+    "disclaimer": {
+      "en": "Regional statistics in EU standard humidity; yields are NKZ calculations (production / area), not published by Eurostat.",
+      "es": "Estad\u00edsticas regionales en humedad est\u00e1ndar UE; los rendimientos son c\u00e1lculos de NKZ (producci\u00f3n / superficie), no publicados por Eurostat."
+    },
+    "attribution_text": "Fuente: Eurostat (apro_cpshr, doi:10.2908/APRO_CPSHR). Rendimiento calculado por Nekazari como producci\u00f3n / superficie, en humedad est\u00e1ndar UE.",
+    "attribution_url": "https://doi.org/10.2908/APRO_CPSHR",
+    "licence_id": "eurostat-reuse-decision-2011-833",
+    "licence_url": "https://ec.europa.eu/eurostat/help/copyright-notice",
+    "download_date": "2026-10-11",
+    "processing_note": {
+      "en": "Yield is derived by Nekazari as harvested production / area (EU standard humidity); Eurostat leaves the NUTS 2 yield empty.",
+      "es": "El rendimiento lo calcula Nekazari como producci\u00f3n / superficie (humedad est\u00e1ndar UE); Eurostat deja vac\u00edo el rendimiento NUTS 2."
+    },
+    "site_urls": [
+      "https://ec.europa.eu/eurostat"
+    ],
+    "tags": [
+      "crop-statistics",
+      "yield",
+      "eu",
+      "nuts2"
+    ]
+  },
+  {
+    "source_id": "fertilicalc_script_2024",
+    "name": "FertiliCalc reference script (fertilicalc_script_231124.py)",
+    "institution": "Universidad de C\u00f3rdoba / IAS-CSIC (F. J. Villalobos)",
+    "institution_short": "UCO / IAS-CSIC",
+    "country": "ES",
+    "country_name": {
+      "en": "Spain",
+      "es": "Espa\u00f1a",
+      "eu": "Espainia",
+      "fr": "Espagne",
+      "pt": "Espanha"
+    },
+    "url": "https://www.uco.es/fitotecnia/FC_public_with_license_231124.zip",
+    "document_url_template": null,
+    "license_class": "open-source-gpl",
+    "use_type": "reference-coefficients",
+    "official_status": false,
+    "data_format": "source-code",
+    "extraction_method": "manual",
+    "confidence_default": "medium",
+    "attribution": {
+      "en": "Default nutrient concentrations of crop residues from the FertiliCalc reference script (F. J. Villalobos, GPL-3.0), used where no published figure exists for the crop.",
+      "es": "Concentraciones por defecto de nutrientes en los restos de cosecha del script de referencia de FertiliCalc (F. J. Villalobos, GPL-3.0), usadas cuando no hay dato publicado para el cultivo."
+    },
+    "disclaimer": {
+      "en": "Program defaults, not measured data; actual residue composition varies with crop, variety and management. NKZ conversions are informational.",
+      "es": "Valores por defecto del programa, no datos medidos; la composici\u00f3n real de los restos var\u00eda con el cultivo, la variedad y el manejo. Las conversiones de NKZ son informativas."
+    },
+    "attribution_text": "Fuente: FertiliCalc, script de referencia (F. J. Villalobos, GPL-3.0). Valor por defecto del programa cuando no hay dato publicado para el cultivo.",
+    "attribution_url": "https://www.uco.es/fitotecnia/FC_public_with_license_231124.zip",
+    "licence_id": "GPL-3.0",
+    "licence_url": "https://www.gnu.org/licenses/gpl-3.0.html",
+    "download_date": "2026-10-11",
+    "processing_note": {
+      "en": "The values are the residue defaults hard-coded in the script; the script stores them as fractions and Nekazari states them as % of dry matter.",
+      "es": "Los valores son los valores por defecto de los restos de cosecha escritos en el script; el script los guarda como fracciones y Nekazari los expresa en % de materia seca."
+    },
+    "site_urls": [
+      "https://www.uco.es"
+    ],
+    "tags": [
+      "fertilisation",
+      "nutrient-removal",
+      "residues",
+      "spain"
+    ]
   }
 ]
