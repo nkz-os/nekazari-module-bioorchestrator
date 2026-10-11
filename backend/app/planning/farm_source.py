@@ -6,6 +6,7 @@ import logging
 
 from nkz_platform_sdk.orion import OrionClient
 
+from app.planning.service import PARCEL_URN_RE, InvalidParcelId
 from app.services.crop_cycles_client import fetch_crop_cycles
 
 logger = logging.getLogger(__name__)
@@ -26,6 +27,9 @@ async def _all(client, entity_type: str, q: str | None = None) -> list[dict]:
 
 
 async def load_farm(tenant_id: str, parcel_id: str | None = None):
+    # The id goes into an Orion path and a ``q`` filter: never trust the caller to have checked it.
+    if parcel_id and not (isinstance(parcel_id, str) and PARCEL_URN_RE.fullmatch(parcel_id)):
+        raise InvalidParcelId("invalid parcel id")
     client = OrionClient(tenant_id=tenant_id)
     try:
         if parcel_id:

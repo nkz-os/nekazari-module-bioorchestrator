@@ -1,6 +1,7 @@
 """Parcel crop cycles as resolved by the platform (entity-manager)."""
 import logging
 import os
+from urllib.parse import quote
 
 import httpx
 
@@ -10,7 +11,9 @@ logger = logging.getLogger(__name__)
 
 
 async def fetch_crop_cycles(parcel_urn: str, tenant_id: str) -> dict | None:
-    url = f"{settings.entity_manager_url.rstrip('/')}/api/internal/parcels/{parcel_urn}/crop-cycles"
+    # The id sits in a path segment: percent-encode everything but the URN colons so it cannot
+    # reach another path or add a query, whatever the caller validated.
+    url = f"{settings.entity_manager_url.rstrip('/')}/api/internal/parcels/{quote(parcel_urn, safe=':')}/crop-cycles"
     try:
         async with httpx.AsyncClient(timeout=8.0) as client:
             resp = await client.get(url, params={"tenant_id": tenant_id}, headers={

@@ -81,3 +81,15 @@ async def test_listing_reads_every_page(monkeypatch):
     client = AsyncMock()
     client.query_entities.side_effect = query
     assert [e["id"] for e in await farm_source._all(client, "AgriParcel")] == ["a", "b", "c"]
+
+
+@pytest.mark.parametrize("bad", ['urn:ngsi-ld:AgriParcel:t:p1"', "p1", "urn:ngsi-ld:AgriParcel:t:p1\n",
+                                 "urn:ngsi-ld:AgriParcel:a;b", "urn:ngsi-ld:AgriParcel:t/p1?x"])
+async def test_load_farm_refuses_a_malformed_parcel_id_before_any_io(monkeypatch, bad):
+    from app.planning.service import InvalidParcelId
+
+    created = []
+    monkeypatch.setattr(farm_source, "OrionClient", lambda tenant_id: created.append(tenant_id))
+    with pytest.raises(InvalidParcelId):
+        await farm_source.load_farm("t", bad)
+    assert created == []

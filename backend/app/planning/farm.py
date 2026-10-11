@@ -6,6 +6,7 @@ harvest). The user can always pick another one.
 from __future__ import annotations
 
 import math
+import re
 from collections import defaultdict
 from datetime import date
 
@@ -23,7 +24,10 @@ from app.planning.rotation import rotation_reasons
 from app.species_registry import get_species_info
 
 ROLLOVER_MONTH = 7
-_IRRIGATED_WORDS = ("drip", "sprinkler", "flood", "pivot", "irrigat", "regad")
+# Only words we know map to a regime: anything else is "unknown", never a guess.
+_IRRIGATED_WORDS = ("drip", "sprinkler", "flood", "pivot", "irrigat", "regad", "furrow", "gravity", "goteo",
+                    "aspersi", "surco", "gravedad", "riego")
+_RAINFED_WORDS = frozenset({"secano", "rainfed", "dryland", "none"})
 
 
 def default_target_campaign(today: date) -> int:
@@ -38,7 +42,11 @@ def _regime_word(value) -> str | None:
     text = str(plain(value) or "").lower().strip()
     if not text:
         return None
-    return "regadío" if any(w in text for w in _IRRIGATED_WORDS) else "secano"
+    irrigated = any(w in text for w in _IRRIGATED_WORDS)
+    rainfed = bool(_RAINFED_WORDS & set(re.split(r"\W+", text)))
+    if irrigated == rainfed:  # neither, or both: a contradiction is as unknown as silence
+        return None
+    return "regadío" if irrigated else "secano"
 
 
 def parcel_regime(parcel: dict, target_crops: list[dict]) -> tuple[str | None, str]:
@@ -132,7 +140,8 @@ def farm_payload(parcels: list[dict], farms: list[dict], crops_by_id: dict, cycl
                 {"species": s, "names": dict(((get_species_info(s) if s else None) or {}).get("common_names") or {}),
                  "area_ha": round(a, 2)}
                 for s, a in sorted(area.items(), key=lambda kv: -kv[1])],
-            "undecided": sum(1 for r in rows if not r["cells"][str(target)]),
+            # A lone cover crop does not decide the campaign: only a main crop does.
+            "undecided": sum(1 for r in rows if not any(c["role"] == "main_crop" for c in r["cells"][str(target)])),
             "rotation_warnings": sum(1 for r in rows for w in r["warnings"] if w["code"] == "rotation_restriction"),
         },
     }

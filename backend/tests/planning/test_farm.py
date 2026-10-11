@@ -123,3 +123,27 @@ def test_farm_groups_follow_the_parcel_links_and_name_the_farms():
     assert out["farms"] == [{"farm_id": farm_a, "name": "Finca Norte"}, {"farm_id": farm_b, "name": "Finca Sur"},
                             {"farm_id": farm_c, "name": None}]
     assert [r["farm_id"] for r in out["parcels"]] == [farm_b, farm_a, farm_c, farm_a, None]
+
+
+@pytest.mark.parametrize("word, expected", [
+    ("furrow", "regadío"), ("Drip", "regadío"), ("sprinkler", "regadío"), ("flood", "regadío"), ("pivot", "regadío"),
+    ("irrigated", "regadío"), ("regadío", "regadío"), ("gravity", "regadío"), ("goteo", "regadío"),
+    ("aspersión", "regadío"), ("surco", "regadío"), ("gravedad", "regadío"), ("riego por goteo", "regadío"),
+    ("secano", "secano"), ("rainfed", "secano"), ("Dryland", "secano"), ("none", "secano"),
+    ("something", None), ("", None), ("unknown", None), (None, None)])
+def test_regime_word_only_reads_known_words(word, expected):
+    assert parcel_regime({"irrigationSystemType": word}, [])[0] == expected
+
+
+def test_regime_word_that_matches_both_sets_is_unknown():
+    assert parcel_regime({"irrigationRegime": "rainfed with drip"}, [])[0] is None
+
+
+def test_a_lone_cover_crop_does_not_decide_the_campaign():
+    cover = {"crop_id": "c1", "role": "cover_crop", "species": "VICSA", "status": "planned", "campaign_label": 2027,
+             "start": {"date": "2026-10-01", "provenance": "planned"}, "end": {"date": "2027-04-20"}}
+    main = {**cover, "crop_id": "c2", "role": "main_crop", "species": "ZEAMA"}
+    parcel = {"id": "urn:ngsi-ld:AgriParcel:t:p9", "name": "X", "area": 1, "irrigationRegime": "secano"}
+    only_cover = farm_payload([parcel], [], {}, {parcel["id"]: {"cycles": [cover]}}, 2027, [])
+    both = farm_payload([parcel], [], {}, {parcel["id"]: {"cycles": [cover, main]}}, 2027, [])
+    assert only_cover["summary"]["undecided"] == 1 and both["summary"]["undecided"] == 0

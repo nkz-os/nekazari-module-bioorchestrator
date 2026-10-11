@@ -73,3 +73,16 @@ async def test_fallback_is_logged_with_parcel_and_tenant(caplog, monkeypatch, re
     assert expected_fragment in warnings[0]
     assert PARCEL in warnings[0]
     assert "tenant-a" in warnings[0]
+
+
+@respx.mock
+async def test_parcel_urn_is_percent_encoded_in_the_path():
+    # Defence in depth: an id with path or query characters must stay inside its own path segment.
+    route = respx.route(host="entity-manager.test").mock(return_value=httpx.Response(200, json={"cycles": []}))
+
+    await fetch_crop_cycles("urn:ngsi-ld:AgriParcel:p?x=1#f/../y", "tenant-a")
+
+    raw = route.calls[0].request.url.raw_path.decode()
+    path, _, query = raw.partition("?")
+    assert path == "/api/internal/parcels/urn:ngsi-ld:AgriParcel:p%3Fx%3D1%23f%2F..%2Fy/crop-cycles"
+    assert query == "tenant_id=tenant-a"
