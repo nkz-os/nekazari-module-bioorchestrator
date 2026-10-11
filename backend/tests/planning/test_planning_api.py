@@ -1,5 +1,6 @@
 from unittest.mock import AsyncMock, MagicMock
 
+import httpx
 import pytest
 from fastapi.testclient import TestClient
 
@@ -113,3 +114,48 @@ def test_estimates_route_does_not_turn_other_value_errors_into_422(client, monke
     monkeypatch.setattr(planning_api, "parcel_estimates", AsyncMock(side_effect=ValueError("bug")))
     crashing = TestClient(app, raise_server_exceptions=False)
     assert crashing.get(ESTIMATES_URL, params=ESTIMATES_PARAMS).status_code == 500
+
+
+FARM_URL = "/api/graph/planning/farm"
+
+
+def _orion_error(status: int) -> httpx.HTTPStatusError:
+    request = httpx.Request("GET", "http://orion.invalid/entities")
+    return httpx.HTTPStatusError("orion", request=request, response=httpx.Response(status, request=request))
+
+
+def test_farm_route_uses_default_campaign(client, monkeypatch):
+    monkeypatch.setattr(planning_api, "load_farm", AsyncMock(return_value=([], [], {}, {})))
+    monkeypatch.setattr(planning_api, "load_reference", AsyncMock(return_value=MagicMock(constraints=())))
+    r = client.get(FARM_URL)
+    assert r.status_code == 200 and len(r.json()["campaigns"]) == 4
+
+
+def test_farm_route_forwards_campaign_and_parcel(client, monkeypatch):
+    load = AsyncMock(return_value=([], [], {}, {}))
+    monkeypatch.setattr(planning_api, "load_farm", load)
+    monkeypatch.setattr(planning_api, "load_reference", AsyncMock(return_value=MagicMock(constraints=())))
+    r = client.get(FARM_URL, params={"campaign": 2030, "parcel_id": "urn:ngsi-ld:AgriParcel:t:p1"})
+    assert r.status_code == 200 and r.json()["campaign"] == 2030
+    assert load.await_args.args[1] == "urn:ngsi-ld:AgriParcel:t:p1"
+
+
+def test_farm_route_404_when_orion_does_not_know_the_parcel(client, monkeypatch):
+    monkeypatch.setattr(planning_api, "load_farm", AsyncMock(side_effect=_orion_error(404)))
+    monkeypatch.setattr(planning_api, "load_reference", AsyncMock(return_value=MagicMock(constraints=())))
+    assert client.get(FARM_URL, params={"parcel_id": "urn:ngsi-ld:AgriParcel:t:nope"}).status_code == 404
+
+
+def test_farm_route_does_not_hide_other_orion_errors(client, monkeypatch):
+    monkeypatch.setattr(planning_api, "load_farm", AsyncMock(side_effect=_orion_error(500)))
+    monkeypatch.setattr(planning_api, "load_reference", AsyncMock(return_value=MagicMock(constraints=())))
+    crashing = TestClient(app, raise_server_exceptions=False)
+    assert crashing.get(FARM_URL).status_code == 500
+
+
+def test_farm_route_requires_a_verified_tenant(client, monkeypatch):
+    monkeypatch.setenv("AUTH_DISABLED", "false")
+    load = AsyncMock(return_value=([], [], {}, {}))
+    monkeypatch.setattr(planning_api, "load_farm", load)
+    assert client.get(FARM_URL).status_code == 401
+    load.assert_not_called()

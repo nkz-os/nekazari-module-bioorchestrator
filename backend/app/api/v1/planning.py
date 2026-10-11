@@ -1,21 +1,26 @@
 """Crop planning endpoints (contract app.planning.models, version CONTRACT_VERSION)."""
 from __future__ import annotations
 
-from datetime import date
+from datetime import UTC, date, datetime
 from typing import Annotated
 
+import httpx
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 
 from app.api.v1.graph import _require_tenant_id
 from app.core.knowledge import KnowledgeSource, get_knowledge_sources
 from app.graph.dao import GraphDAO
+from app.planning.farm import default_target_campaign, farm_payload
+from app.planning.farm_source import load_farm
 from app.planning.models import (
     EstimatesResponse,
+    FarmResponse,
     FitResponse,
     Management,
     Regime,
     VarietiesResponse,
 )
+from app.planning.reference import load_reference
 from app.planning.service import (
     ParcelNotFound,
     UnknownCrop,
@@ -69,3 +74,19 @@ async def estimates(request: Request, parcel_id: str, sources: SourcesDep, regim
         raise HTTPException(status_code=422, detail=str(e)) from e
     except ParcelNotFound as e:
         raise HTTPException(status_code=404, detail=str(e)) from e
+
+
+@router.get("/farm", response_model=FarmResponse)
+async def farm(request: Request, sources: SourcesDep,
+               campaign: int | None = Query(None, ge=2000, le=2100),
+               parcel_id: str | None = Query(None, max_length=256)):
+    tenant = _require_tenant_id(request)
+    target = campaign or default_target_campaign(datetime.now(UTC).date())
+    try:
+        parcels, farms, crops, cycles = await load_farm(tenant, parcel_id)
+    except httpx.HTTPStatusError as e:
+        if e.response.status_code == 404:
+            raise HTTPException(status_code=404, detail="parcel not found") from e
+        raise
+    ref = await load_reference(sources[0])
+    return farm_payload(parcels, farms, crops, cycles, target, ref.constraints)
