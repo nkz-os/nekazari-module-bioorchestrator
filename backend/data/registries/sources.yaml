@@ -290,7 +290,7 @@ sources:
       checked_at: '2026-10-11'
       commercial_use: allowed
       tdm_reserved: null
-      attribution_text: 'Source: Ludemann C.I., Wanner N., Chivenge P., Dobermann A. (2024), Earth Syst. Sci. Data 16, 525,
+      attribution_text: 'Source: Ludemann C.I., Wanner N., Chivenge P., Dobermann A. et al. (2024), Earth Syst. Sci. Data 16, 525,
         doi:10.5194/essd-16-525-2024, supplement Table S3 (FAOSTAT-derived). Licence CC BY 4.0. Data converted by Nekazari.'
       attribution_url: https://essd.copernicus.org/articles/16/525/2024/
       download_date: '2026-10-11'
