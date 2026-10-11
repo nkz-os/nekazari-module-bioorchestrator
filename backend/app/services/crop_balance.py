@@ -55,7 +55,12 @@ def validate(doc: dict, allowed_sources: set[str]) -> list[CoefficientError]:
     errors: list[CoefficientError] = []
     if not isinstance(doc.get("dataset_version"), str) or not doc["dataset_version"]:
         errors.append(CoefficientError("*", "dataset_version", "missing"))
-    for eppo, crop in (doc.get("crops") or {}).items():
+    crops = doc.get("crops")
+    if not isinstance(crops, dict) or not crops:
+        # The seed prunes nodes absent from the file: an empty list must not validate vacuously.
+        errors.append(CoefficientError("*", "crops", "missing or empty"))
+        crops = {}
+    for eppo, crop in crops.items():
         if crop.get("crop_type") not in CROP_TYPES:
             errors.append(CoefficientError(eppo, "crop_type", "unknown crop type"))
         if not isinstance(crop.get("n_fixing"), bool):

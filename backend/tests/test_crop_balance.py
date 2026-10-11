@@ -97,3 +97,11 @@ def test_note_is_carried_to_the_payload():
     body = payload_from_node(to_node_props("TRZAX", crop, "v"))
     assert body["values"]["n_product_pct"]["note"].startswith("MAPA T17.6")
     assert "note" not in body["values"]["p_product_pct"]
+
+
+@pytest.mark.parametrize("doc", [
+    {"dataset_version": "v"},
+    {"dataset_version": "v", "crops": {}},
+])
+def test_missing_or_empty_crops_rejected(doc):
+    assert [str(e) for e in validate(doc, ALLOWED)] == ["*.crops: missing or empty"]

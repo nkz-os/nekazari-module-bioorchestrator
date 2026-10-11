@@ -55,6 +55,9 @@ def parse_jsonstat(doc: dict) -> list[Cell]:
     expected = {"crops", "strucpro", "geo", "time"}
     if not expected <= set(ids):
         raise ValueError(f"unexpected dimensions {ids}")
+    extra = [dim for dim, size in zip(ids, sizes) if dim not in expected and size > 1]
+    if extra:
+        raise ValueError(f"unexpected multi-valued dimensions {extra}")
     codes = {dim: _codes(doc, dim) for dim in ids}
     strides = [1] * len(ids)
     for i in range(len(ids) - 2, -1, -1):

@@ -54,6 +54,14 @@ def test_parse_rejects_other_dimensions():
         parse_jsonstat(doc)
 
 
+def test_parse_rejects_extra_multi_valued_dimension():
+    doc = _doc(COMMON_WHEAT)
+    doc["dimension"]["freq"]["category"]["index"] = {"A": 0, "Q": 1}
+    doc["size"][0] = 2
+    with pytest.raises(ValueError):
+        parse_jsonstat(doc)
+
+
 def test_yield_is_production_over_area_in_eu_standard_humidity():
     rows = build_series(parse_jsonstat(_doc(COMMON_WHEAT)), {"C1110": "TRZAX"})
     r2024 = next(r for r in rows if r.year == 2024)
