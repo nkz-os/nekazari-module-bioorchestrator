@@ -232,3 +232,165 @@ async def test_written_perennial_cycle_carries_its_lifecycle(monkeypatch):
     await plan_write.write_plan(tenant_id="t", parcel_urn=URN, plan=_plan(**ALFALFA), today=TODAY)
     entity = client.create_entity.await_args.args[0]
     assert entity["cropLifecycle"]["value"] == "perennial" and entity["species"]["value"] == "MEDSA"
+
+
+# --- final-review fixes: conflicts by date overlap, raw cover species, woody and early annuals ---------------
+
+def _wheat_plan(campaign=2027, start="2026-11-10", end="2027-07-01", **over):
+    return PlanIn.model_validate({"campaign": campaign, "regime": "secano", "management": "conventional",
+                                  "cycles": [{"role": "main_crop", "crop": "wheat", "sowing_start": start,
+                                              "expected_termination": end}], **over})
+
+
+def _maize_plan(campaign, start, end):
+    return PlanIn.model_validate({"campaign": campaign, "regime": "regadío", "management": "conventional",
+                                  "cycles": [{"role": "main_crop", "crop": "maize", "sowing_start": start,
+                                              "expected_termination": end}]})
+
+
+def _crop(season, status, start=None, end=None, *, lifecycle=None, seq=0, **extra):
+    entity = {"id": f"urn:ngsi-ld:AgriCrop:t:p1:{season or 'legacy'}:{seq}", "status": status, **extra}
+    if season:
+        entity["cropSeason"] = season
+    if lifecycle:
+        entity["cropLifecycle"] = lifecycle
+    if start:
+        entity["plantingDate" if status != "planned" else "sowingWindowStart"] = {"@type": "Date", "@value": start}
+    if end:
+        entity["harvestDate" if status != "planned" else "expectedTerminationDate"] = end
+    return entity
+
+
+async def test_catch_crop_that_ended_before_the_plan_starts_does_not_block(monkeypatch):
+    catch = _crop("2026", "terminated", "2026-08-10", None, role="catch_crop", terminationDate="2026-11-05")
+    client = _orion(monkeypatch, [catch])
+    await plan_write.write_plan(tenant_id="t", parcel_urn=URN, plan=_wheat_plan(), today=TODAY)
+    assert client.create_entity.await_count == 1
+
+
+async def test_finishing_the_day_the_next_cycle_starts_is_not_an_overlap(monkeypatch):
+    previous = _crop("2026", "harvested", "2026-03-01", "2026-11-10")
+    client = _orion(monkeypatch, [previous])
+    await plan_write.write_plan(tenant_id="t", parcel_urn=URN, plan=_wheat_plan(), today=TODAY)
+    assert client.create_entity.await_count == 1
+
+
+ALFALFA_2029 = _crop("2027", "active", "2026-09-15", "2029-03-15", lifecycle="perennial")
+
+
+async def test_annual_after_a_perennial_that_ends_before_it_is_accepted(monkeypatch):
+    client = _orion(monkeypatch, [ALFALFA_2029])
+    await plan_write.write_plan(tenant_id="t", parcel_urn=URN, plan=_maize_plan(2029, "2029-04-01", "2029-10-01"),
+                                today=TODAY)
+    assert client.create_entity.await_count == 1
+
+
+async def test_annual_sown_while_the_perennial_still_stands_is_refused(monkeypatch):
+    client = _orion(monkeypatch, [ALFALFA_2029])
+    with pytest.raises(plan_write.PlanError) as e:
+        await plan_write.write_plan(tenant_id="t", parcel_urn=URN, plan=_maize_plan(2029, "2029-03-01", "2029-10-01"),
+                                    today=TODAY)
+    assert (e.value.code, e.value.status) == ("perennial_occupies", 409)
+    client.create_entity.assert_not_awaited()
+
+
+async def test_new_perennial_over_an_annual_planned_in_a_later_campaign(monkeypatch):
+    later = _crop("2028", "planned", "2027-11-01", "2028-07-01")
+    client = _orion(monkeypatch, [later])
+    alfalfa = {"campaign": 2027, "cycles": [{"role": "main_crop", "crop": "alfalfa", "sowing_start": "2026-10-01",
+                                              "expected_termination": "2030-06-30"}]}
+    with pytest.raises(plan_write.PlanError) as e:
+        await plan_write.write_plan(tenant_id="t", parcel_urn=URN, plan=_plan(**alfalfa), today=TODAY)
+    assert (e.value.code, e.value.status) == ("perennial_overlaps_plans", 409)
+    client.create_entity.assert_not_awaited()
+
+
+async def test_legacy_active_crop_without_season_or_end_blocks_overlapping_plans(monkeypatch):
+    legacy = _crop(None, "active", "2026-11-01", None)
+    client = _orion(monkeypatch, [legacy])
+    with pytest.raises(plan_write.PlanError) as e:
+        await plan_write.write_plan(tenant_id="t", parcel_urn=URN, plan=_wheat_plan(), today=TODAY)
+    assert (e.value.code, e.value.status) == ("campaign_started", 409)
+    client.create_entity.assert_not_awaited()
+
+
+async def test_planned_cycle_of_another_season_that_overlaps_is_a_cycles_overlap(monkeypatch):
+    other = _crop("2026", "planned", "2026-12-01", "2026-12-31")
+    client = _orion(monkeypatch, [other])
+    with pytest.raises(plan_write.PlanError) as e:
+        await plan_write.write_plan(tenant_id="t", parcel_urn=URN, plan=_wheat_plan(), today=TODAY)
+    assert (e.value.code, e.value.status) == ("cycles_overlap", 409)
+    client.create_entity.assert_not_awaited()
+
+
+async def test_entities_without_a_start_are_ignored(monkeypatch):
+    client = _orion(monkeypatch, [{"id": "urn:ngsi-ld:AgriCrop:t:p1:2026:0", "status": "active", "cropSeason": "2026"}])
+    await plan_write.write_plan(tenant_id="t", parcel_urn=URN, plan=_wheat_plan(), today=TODAY)
+    assert client.create_entity.await_count == 1
+
+
+async def test_a_cycle_of_this_season_that_started_still_refuses_the_plan(monkeypatch):
+    client = _orion(monkeypatch, [_crop("2027", "active", "2026-11-10", None)])
+    with pytest.raises(plan_write.PlanError) as e:
+        await plan_write.write_plan(tenant_id="t", parcel_urn=URN, plan=_wheat_plan(), today=TODAY)
+    assert (e.value.code, e.value.status) == ("campaign_started", 409)
+    client.create_entity.assert_not_awaited()
+
+
+def _cover_plan(crop):
+    return PlanIn.model_validate({"campaign": 2027, "regime": "secano", "management": "conventional", "cycles": [
+        {"role": "cover_crop", "crop": crop, "sowing_start": "2026-10-01", "expected_termination": "2027-04-20"},
+        {"role": "main_crop", "crop": "maize", "sowing_start": "2027-04-20", "expected_termination": "2027-10-01"}]})
+
+
+@pytest.mark.parametrize("role", ["cover_crop", "catch_crop"])
+def test_cover_or_catch_crop_outside_the_registry_is_kept_as_written(role):
+    plan = PlanIn.model_validate({"campaign": 2027, "regime": "secano", "management": "conventional", "cycles": [
+        {"role": role, "crop": "Phacelia tanacetifolia", "sowing_start": "2026-10-01",
+         "expected_termination": "2027-04-20"}]})
+    segments = plan_write.segments_from_plan(plan)
+    assert segments[0]["crop"] == "Phacelia tanacetifolia"
+    entity = build_segment_entity("t", URN, "2027", 0, segments[0])
+    assert entity["species"]["value"] == "Phacelia tanacetifolia" and "cropLifecycle" not in entity
+
+
+def test_cover_crop_in_the_registry_still_resolves_to_its_code():
+    assert plan_write.segments_from_plan(_cover_plan("vetch"))[0]["crop"] == "VICSA"
+
+
+@pytest.mark.parametrize("bad", ["<script>", "Phacelia;DROP", "1phacelia", "_phacelia", "Phacelia\n", 'Pha"celia'])
+def test_raw_cover_crop_names_outside_the_alphabet_are_refused(bad):
+    with pytest.raises(plan_write.PlanError) as e:
+        plan_write.segments_from_plan(_cover_plan(bad))
+    assert e.value.code == "unknown_crop"
+
+
+def test_one_letter_raw_species_is_refused_by_the_name_rule():
+    with pytest.raises(plan_write.PlanError) as e:
+        plan_write.raw_species("x")
+    assert e.value.code == "unknown_crop"
+    assert plan_write.raw_species("Phacélia (mix)") == "Phacélia (mix)"
+
+
+def test_unknown_main_crop_is_still_refused():
+    plan = _cover_plan("vetch").model_copy(deep=True)
+    plan.cycles[1].crop = "Phacelia tanacetifolia"
+    with pytest.raises(plan_write.PlanError) as e:
+        plan_write.segments_from_plan(plan)
+    assert e.value.code == "unknown_crop"
+
+
+@pytest.mark.parametrize("woody", ["olive", "apple", "almond", "grapevine"])
+def test_woody_species_are_not_campaign_crops(woody):
+    plan = _wheat_plan().model_copy(deep=True)
+    plan.cycles[0].crop = woody
+    with pytest.raises(plan_write.PlanError) as e:
+        plan_write.validate_plan(plan, TODAY)
+    assert (e.value.code, e.value.status) == ("woody_not_campaign_crop", 422)
+
+
+def test_annual_sown_long_before_its_campaign_is_inconsistent():
+    with pytest.raises(plan_write.PlanError) as e:
+        plan_write.validate_plan(_wheat_plan(start="2025-06-01"), TODAY)
+    assert e.value.code == "dates_inconsistent"
+    plan_write.validate_plan(_wheat_plan(start="2025-08-01"), TODAY)  # opens the previous campaign: allowed

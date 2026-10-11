@@ -9,12 +9,15 @@ happened in the field is changed from field operations, not from the plan. Rewri
 deletes and recreates its planned cycles (same deterministic ids) and deletes the planned
 cycles the new plan no longer has: they were intentions that never started.
 
-Every cycle of the parcel is read once and placed in campaigns by its DATES (the same rule the
-platform's cycle resolver applies), not only by ``cropSeason``: a cycle written by the legacy
-assign-crop flow has no season, and a perennial's season is just the one it was sown in.
+Every cycle of the parcel is read once. A cycle of another season (or of none: the legacy
+assign-crop flow writes no season) conflicts with the plan only if its DATE INTERVAL overlaps one
+of the plan's cycles: a catch crop that ended last autumn does not block the next campaign, and a
+perennial that ends in March does not block a maize sown in April. A cycle without an end ends
+at the close of the campaign it started in, unless it is a perennial that is not closed.
 """
 from __future__ import annotations
 
+import re
 from datetime import date
 from itertools import pairwise
 
@@ -25,7 +28,7 @@ from app.graph.crop_plan import build_segment_entity
 from app.planning.history import campaign_of_start, iso_date, plain
 from app.planning.models import PlanIn
 from app.planning.service import PARCEL_URN_RE, InvalidParcelId, UnknownCrop, crop_code
-from app.species_registry import get_lifecycle, resolve_species
+from app.species_registry import get_lifecycle, is_woody, resolve_species
 
 _REWRITABLE = {"planned", "cancelled"}
 _CLOSED = {"harvested", "terminated"}
@@ -59,33 +62,21 @@ def _first_date(entity: dict, keys: tuple[str, ...]) -> date | None:
     return None
 
 
-def _span(entity: dict) -> tuple[int, int | None] | None:
-    """Campaigns a cycle occupies, as (first, last); ``last`` None = open-ended; None = cannot be placed.
+def _interval(entity: dict) -> tuple[date, date] | None:
+    """[start, end] a cycle occupies; None = it has no start and cannot be placed.
 
-    An annual without an end occupies the campaign it starts in; only a perennial that is not
-    closed stays open-ended. An end that falls before the campaign its start opens (a short cycle
-    across the August boundary) still occupies that campaign, so the span never comes out empty.
+    A cycle without an end (or with one before its start: bad data must not shrink it) ends at
+    Dec 31 of the campaign it started in; a perennial that is not closed has no end at all.
     """
     begin = _first_date(entity, _START_KEYS)
     if begin is None:
         return None
-    first = campaign_of_start(begin)
     end = _first_date(entity, _END_KEYS)
-    if end is not None:
-        return first, max(first, end.year)
+    if end is not None and end >= begin:
+        return begin, end
     if plain(entity.get("cropLifecycle")) == "perennial" and _status(entity) not in _CLOSED:
-        return first, None
-    return first, first
-
-
-def _covers(span: tuple[int, int | None], campaign: int) -> bool:
-    first, last = span
-    return first <= campaign and (last is None or campaign <= last)
-
-
-def _intersects(span: tuple[int, int | None], lo: int, hi: int) -> bool:
-    first, last = span
-    return first <= hi and (last is None or last >= lo)
+        return begin, date.max
+    return begin, date(campaign_of_start(begin), 12, 31)
 
 
 def validate_plan(plan: PlanIn, today: date) -> None:
@@ -94,6 +85,10 @@ def validate_plan(plan: PlanIn, today: date) -> None:
     spans = []
     for cycle in plan.cycles:
         end = cycle.expected_termination
+        slug = resolve_species(cycle.crop)
+        if slug and is_woody(slug):
+            # Trees and vines are a plantation decision, never a campaign choice.
+            raise PlanError("woody_not_campaign_crop")
         if _lifecycle(cycle.crop) == "perennial":
             if campaign_of_start(cycle.sowing_start) != plan.campaign:
                 raise PlanError("perennial_start_outside_campaign")
@@ -103,6 +98,9 @@ def validate_plan(plan: PlanIn, today: date) -> None:
                 raise PlanError("perennial_too_long")
         elif end.year != plan.campaign:
             raise PlanError("termination_outside_campaign")
+        elif campaign_of_start(cycle.sowing_start) < plan.campaign - 1:
+            # An annual opens at most the previous campaign (autumn sowing).
+            raise PlanError("dates_inconsistent")
         if cycle.sowing_start > end or (cycle.sowing_end and not cycle.sowing_start <= cycle.sowing_end <= end):
             raise PlanError("dates_inconsistent")
         spans.append((cycle.sowing_start, end))
@@ -112,13 +110,27 @@ def validate_plan(plan: PlanIn, today: date) -> None:
             raise PlanError("cycles_overlap")
 
 
+# A cover or catch crop may be a species the registry does not know (phacelia): it is written by name.
+# The name goes into an Orion body, so it is restricted to letters, digits, space, dot, dash and brackets.
+_RAW_SPECIES_RE = re.compile(r"[^\W\d_][\w .()\-]{1,63}")
+_RAW_SPECIES_ROLES = frozenset({"cover_crop", "catch_crop"})
+
+
+def raw_species(name: str) -> str:
+    if not isinstance(name, str) or not _RAW_SPECIES_RE.fullmatch(name):
+        raise PlanError("unknown_crop")
+    return name
+
+
 def segments_from_plan(plan: PlanIn) -> list[dict]:
     segments = []
     for cycle in sorted(plan.cycles, key=lambda c: c.sowing_start):
         try:
             crop = crop_code(cycle.crop)
         except UnknownCrop as e:
-            raise PlanError("unknown_crop") from e
+            if cycle.role not in _RAW_SPECIES_ROLES:
+                raise PlanError("unknown_crop") from e
+            crop = raw_species(cycle.crop)
         segments.append({
             "crop": crop, "role": cycle.role, "variety": cycle.variety,
             "sowing_window": [cycle.sowing_start.isoformat(), (cycle.sowing_end or cycle.sowing_start).isoformat()],
@@ -148,25 +160,44 @@ async def _parcel_cycles(client: OrionClient, parcel_urn: str) -> list[dict]:
             return cycles
 
 
+def _overlap_code(other: dict, new_has_perennial: bool) -> str:
+    if plain(other.get("cropLifecycle")) == "perennial":
+        return "perennial_occupies"
+    if new_has_perennial:
+        return "perennial_overlaps_plans"
+    if _status(other) != "planned":
+        return "campaign_started"
+    return "cycles_overlap"
+
+
+_CONFLICT_PRIORITY = ("perennial_occupies", "perennial_overlaps_plans", "campaign_started", "cycles_overlap")
+
+
 def _check_conflicts(cycles: list[dict], plan: PlanIn) -> list[dict]:
-    """Refuse a plan that collides with what the parcel already has; return this campaign's cycles."""
+    """Refuse a plan that collides with what the parcel already has; return this campaign's cycles.
+
+    This season's cycles are rewritten (planned) or refuse the plan (started). Any other cycle
+    of the parcel conflicts only if its date interval overlaps one of the plan's; touching on
+    the same day is allowed (roller-crimp the cover, then sow).
+    """
     season = str(plan.campaign)
     mine: list[dict] = []
-    others: list[tuple[dict, tuple[int, int | None]]] = []
+    codes: set[str] = set()
+    new_has_perennial = any(_lifecycle(c.crop) == "perennial" for c in plan.cycles)
+    new_intervals = [(c.sowing_start, c.expected_termination) for c in plan.cycles]
     for cycle in cycles:
         if str(plain(cycle.get("cropSeason"))) == season:
             mine.append(cycle)
-        elif _status(cycle) != "cancelled" and (span := _span(cycle)) is not None:
-            others.append((cycle, span))
+            continue
+        if _status(cycle) == "cancelled" or (span := _interval(cycle)) is None:
+            continue
+        if any(span[0] < end and start < span[1] for start, end in new_intervals):
+            codes.add(_overlap_code(cycle, new_has_perennial))
     if any(_status(c) not in _REWRITABLE for c in mine):
         raise PlanError("campaign_started", 409)
-    if any(plain(c.get("cropLifecycle")) == "perennial" and _covers(span, plan.campaign) for c, span in others):
-        raise PlanError("perennial_occupies", 409)
-    if any(_status(c) != "planned" and _covers(span, plan.campaign) for c, span in others):
-        raise PlanError("campaign_started", 409)
-    ends = [c.expected_termination.year for c in plan.cycles if _lifecycle(c.crop) == "perennial"]
-    if ends and any(_intersects(span, plan.campaign + 1, max(ends)) for _, span in others):
-        raise PlanError("perennial_overlaps_plans", 409)
+    for code in _CONFLICT_PRIORITY:
+        if code in codes:
+            raise PlanError(code, 409)
     return mine
 
 
