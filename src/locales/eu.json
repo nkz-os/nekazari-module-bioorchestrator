@@ -459,6 +459,7 @@
       "rotation_unknown": "Errotazioa ez da egiaztatu: historia osatu gabe edo arauak falta dira"
     },
     "detail": {
+      "currentPlan": "Egungo plana",
       "back": "Itzuli planera", "previous": "Aurrekoa: {{crop}} ({{campaign}})", "known": "Dakiguna",
       "climate": "Klima", "soil": "Lurzorua", "noData": "daturik gabe", "regimeQuestion": "Lehorrekoa ala ureztatua?",
       "regimeHint": "Barietateak eta simulazioa ikusteko beharrezkoa da: ebidentziak ez ditu inoiz erregimenak nahasten.",
@@ -549,6 +550,7 @@
       "none": "Oraindik ez dago estimaziorik labore honetarako."
     },
     "plan": {
+      "replaces": "Gordetzean kanpaina honetako egungo plana ordezkatzen da: berrikusi kudeaketa eta estalkia.",
       "crop": "Laborea", "variety": "Barietatea", "sowing": "Ereitea", "harvest": "Espero den uzta", "standEnd": "Laborearen amaiera aurreikusia (10 urte arte)",
       "addCover": "Gehitu estaldura bat laborearen aurretik", "cover": "Estaldura", "coverSowing": "Estalduraren ereitea",
       "coverEnd": "Estalduraren amaiera", "method": "Nola amaitzen den",

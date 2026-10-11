@@ -1213,6 +1213,7 @@
       "rotation_unknown": "Rotación no comprobada: historial incompleto o sin reglas"
     },
     "detail": {
+      "currentPlan": "Plan actual",
       "back": "Volver al plan", "previous": "Anterior: {{crop}} ({{campaign}})", "known": "Lo que sabemos",
       "climate": "Clima", "soil": "Suelo", "noData": "sin datos", "regimeQuestion": "¿Secano o regadío?",
       "regimeHint": "Hace falta para ver variedades y simulación: la evidencia nunca mezcla regímenes.",
@@ -1303,6 +1304,7 @@
       "none": "Todavía no hay estimaciones para este cultivo."
     },
     "plan": {
+      "replaces": "Al guardar se sustituye el plan actual de esta campaña: revisa el manejo y la cubierta.",
       "crop": "Cultivo", "variety": "Variedad", "sowing": "Siembra", "harvest": "Cosecha prevista", "standEnd": "Fin previsto del cultivo (hasta 10 años)",
       "addCover": "Añadir cubierta antes del cultivo", "cover": "Cubierta", "coverSowing": "Siembra de la cubierta",
       "coverEnd": "Fin de la cubierta", "method": "Cómo se termina",

@@ -1,4 +1,4 @@
-import type { Management, PlanCycleIn, PlanIn, Regime, Role, Sowing, SpeciesFit, TerminationMethod } from './types';
+import type { CycleCell, Management, PlanCycleIn, PlanIn, Regime, Role, Sowing, SpeciesFit, TerminationMethod } from './types';
 
 /** Select sentinel for "no value" (Radix Select forbids an empty option value). */
 export const NONE = '__none__';
@@ -61,6 +61,25 @@ export function defaultSowing(s: Sowing, campaign: number): string {
 
 export function draftFor(sp: Pick<SpeciesFit, 'species' | 'sowing'>, campaign: number): PlanDraft {
   return { main: { species: sp.species, variety: null, sowing: defaultSowing(sp.sowing, campaign), end: '', method: null }, cover: null };
+}
+
+/**
+ * The form's starting point when the campaign already has a plan: the planned main crop and the first
+ * planned cover or catch crop, so "Change" edits the plan instead of silently replacing it. Null when
+ * there is no planned main crop. The termination method is not part of the read contract, so a cover
+ * starts with the default one and the form says that saving replaces the plan.
+ */
+export function draftFromCells(cells: CycleCell[]): PlanDraft | null {
+  const planned = cells.filter((c) => c.provenance === 'planned');
+  const main = planned.find((c) => c.role === 'main_crop');
+  if (!main) return null;
+  const cover = planned.find((c) => c.role === 'cover_crop' || c.role === 'catch_crop');
+  return {
+    main: { species: main.species ?? '', variety: main.variety, sowing: main.start ?? '', end: main.end ?? '', method: null },
+    cover: cover
+      ? { species: cover.species ?? cover.species_raw ?? '', variety: cover.variety, sowing: cover.start ?? '', end: cover.end ?? '', method: 'roller_crimper' }
+      : null,
+  };
 }
 
 /**

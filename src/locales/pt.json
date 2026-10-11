@@ -459,6 +459,7 @@
       "rotation_unknown": "Rotação não verificada: historial incompleto ou sem regras"
     },
     "detail": {
+      "currentPlan": "Plano atual",
       "back": "Voltar ao plano", "previous": "Anterior: {{crop}} ({{campaign}})", "known": "O que sabemos",
       "climate": "Clima", "soil": "Solo", "noData": "sem dados", "regimeQuestion": "Sequeiro ou regadio?",
       "regimeHint": "É necessário para ver variedades e simulação: a evidência nunca mistura regimes.",
@@ -549,6 +550,7 @@
       "none": "Ainda não há estimativas para esta cultura."
     },
     "plan": {
+      "replaces": "Ao guardar substitui-se o plano atual desta campanha: revê o maneio e a cobertura.",
       "crop": "Cultura", "variety": "Variedade", "sowing": "Sementeira", "harvest": "Colheita prevista", "standEnd": "Fim previsto da cultura (até 10 anos)",
       "addCover": "Adicionar uma cobertura antes da cultura", "cover": "Cobertura", "coverSowing": "Sementeira da cobertura",
       "coverEnd": "Fim da cobertura", "method": "Como termina",

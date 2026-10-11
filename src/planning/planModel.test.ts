@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { dateOfDoy, defaultSowing, draftFor, isOtherCover, toPlanIn, validateDraft } from './planModel';
-import type { SpeciesFit } from './types';
+import { dateOfDoy, defaultSowing, draftFor, draftFromCells, isOtherCover, toPlanIn, validateDraft } from './planModel';
+import type { CycleCell, SpeciesFit } from './types';
 
 const sowing = (start_month: number | null) => ({ sowing_type: null, start_month, end_month: null, typical_sowing_doy: null, source: null });
 
@@ -72,5 +72,43 @@ describe('isOtherCover', () => {
   it('an empty species is "other" only when the user chose it', () => {
     expect(isOtherCover('', listed, true)).toBe(true);
     expect(isOtherCover('', listed, false)).toBe(false);
+  });
+});
+
+describe('draftFromCells', () => {
+  const cell = (over: Partial<CycleCell>): CycleCell => ({
+    crop_id: 'c', species: 'maize', species_raw: 'ZEAMX', names: { es: 'maíz' }, variety: 'Var X', role: 'main_crop',
+    provenance: 'planned', status: 'planned', start: '2027-04-20', end: '2027-10-01', lifecycle: 'annual', first_campaign: 2027, ...over,
+  });
+  it('starts from the planned main crop: species, variety and dates, no cover, termination method unset', () => {
+    expect(draftFromCells([cell({})])).toEqual({
+      main: { species: 'maize', variety: 'Var X', sowing: '2027-04-20', end: '2027-10-01', method: null }, cover: null,
+    });
+  });
+  it('adds the planned cover, whose free-text name comes from the raw species; its termination method is not in the contract', () => {
+    const cover = cell({ role: 'cover_crop', species: null, species_raw: 'phacelia', variety: null, start: '2026-10-01', end: '2027-04-20' });
+    expect(draftFromCells([cover, cell({})])).toEqual({
+      main: { species: 'maize', variety: 'Var X', sowing: '2027-04-20', end: '2027-10-01', method: null },
+      cover: { species: 'phacelia', variety: null, sowing: '2026-10-01', end: '2027-04-20', method: 'roller_crimper' },
+    });
+  });
+  it('a registry cover uses its slug, a catch crop counts as a cover, and the first one wins', () => {
+    const vetch = cell({ role: 'catch_crop', species: 'vetch', species_raw: 'VICSA', variety: null, start: '2026-10-01', end: '2027-03-01' });
+    const oats = cell({ role: 'cover_crop', species: 'oats', species_raw: 'AVESA', variety: null, start: '2026-11-01', end: '2027-03-01' });
+    expect(draftFromCells([vetch, oats, cell({})])?.cover?.species).toBe('vetch');
+  });
+  it('missing dates become empty strings', () => {
+    expect(draftFromCells([cell({ start: null, end: null })])?.main).toMatchObject({ sowing: '', end: '' });
+  });
+  it('is null without a planned main crop (a lone cover does not make a plan)', () => {
+    expect(draftFromCells([])).toBeNull();
+    expect(draftFromCells([cell({ role: 'cover_crop' })])).toBeNull();
+    expect(draftFromCells([cell({ provenance: 'actual', status: 'active' })])).toBeNull();
+  });
+  it('ignores cells that are not planned', () => {
+    const sownCover = cell({ role: 'cover_crop', provenance: 'actual', status: 'active', species: 'vetch' });
+    expect(draftFromCells([sownCover, cell({})])?.cover).toBeNull();
+    expect(draftFromCells([cell({ provenance: 'declared' }), cell({ variety: 'Planned' })])?.main.variety).toBe('Planned');
+    expect(draftFromCells([cell({ provenance: 'unknown' })])).toBeNull();
   });
 });

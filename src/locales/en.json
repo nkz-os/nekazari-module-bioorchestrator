@@ -1212,6 +1212,7 @@
       "rotation_unknown": "Rotation not checked: incomplete history or no rules"
     },
     "detail": {
+      "currentPlan": "Current plan",
       "back": "Back to the plan", "previous": "Previous: {{crop}} ({{campaign}})", "known": "What we know",
       "climate": "Climate", "soil": "Soil", "noData": "no data", "regimeQuestion": "Rainfed or irrigated?",
       "regimeHint": "Needed to show varieties and simulation: evidence never mixes regimes.",
@@ -1302,6 +1303,7 @@
       "none": "No estimates for this crop yet."
     },
     "plan": {
+      "replaces": "Saving replaces this campaign's current plan: check the management and the cover crop.",
       "crop": "Crop", "variety": "Variety", "sowing": "Sowing", "harvest": "Expected harvest", "standEnd": "Expected end of the stand (up to 10 years)",
       "addCover": "Add a cover crop before the crop", "cover": "Cover crop", "coverSowing": "Cover crop sowing",
       "coverEnd": "Cover crop end", "method": "How it ends",

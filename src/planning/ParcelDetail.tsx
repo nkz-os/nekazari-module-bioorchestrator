@@ -9,7 +9,8 @@ import FitList from './FitList';
 import { cropName, safeLang, shortId } from './format';
 import { lockReason, previousMain, simulationAvailable } from './matrixModel';
 import PlanForm from './PlanForm';
-import { draftFor, type PlanDraft } from './planModel';
+import { CycleLine } from './PlanMatrix';
+import { draftFor, draftFromCells, type PlanDraft } from './planModel';
 import Step from './Step';
 import type { Management, ParcelRow, Regime } from './types';
 import { useLoad } from './useLoad';
@@ -24,10 +25,13 @@ export default function ParcelDetail({ row, campaign, onClose, onSaved, onSimula
   const lang = i18n.language;
   const [regime, setRegime] = useState<Regime | null>(row.regime);
   const [management, setManagement] = useState<Management>('conventional');
-  const [species, setSpecies] = useState<string | null>(null);
-  const [draft, setDraft] = useState<PlanDraft>(EMPTY_DRAFT);
+  // "Change" starts from the plan the campaign already has, so saving never replaces it unseen.
+  const targetCells = row.cells[String(campaign)] ?? [];
+  const [prefill] = useState(() => draftFromCells(targetCells));
+  const [species, setSpecies] = useState<string | null>(prefill?.main.species || null);
+  const [draft, setDraft] = useState<PlanDraft>(prefill ?? EMPTY_DRAFT);
   // The date that feeds the estimates: it follows the sowing field after a pause, not on every keystroke.
-  const [estimateSowing, setEstimateSowing] = useState('');
+  const [estimateSowing, setEstimateSowing] = useState(prefill?.main.sowing ?? '');
   useEffect(() => {
     const id = setTimeout(() => setEstimateSowing(draft.main.sowing), ESTIMATE_DEBOUNCE_MS);
     return () => clearTimeout(id);
@@ -98,6 +102,15 @@ export default function ParcelDetail({ row, campaign, onClose, onSaved, onSimula
         {facts && !facts.history_available && <Badge intent="warning">{t('planning.detail.historyDown')}</Badge>}
       </Inline>
 
+      {targetCells.length > 0 && (
+        <Stack gap="tight">
+          <span className="text-nkz-sm text-nkz-text-muted">{`${t('planning.detail.currentPlan')}:`}</span>
+          <div className="text-nkz-sm text-nkz-text-primary">
+            {targetCells.map((cell, i) => <CycleLine key={cell.crop_id ?? `${campaign}-${i}`} cell={cell} />)}
+          </div>
+        </Stack>
+      )}
+
       <Inline gap="inline" wrap align="end">
         <FormField label={t('planning.detail.regimeQuestion')} description={regime ? undefined : t('planning.detail.regimeHint')}>
           <Select value={regime ?? ''} placeholder={t('planning.detail.regimeQuestion')} options={regimeOptions}
@@ -130,7 +143,8 @@ export default function ParcelDetail({ row, campaign, onClose, onSaved, onSimula
               <p className="text-nkz-sm text-nkz-text-muted">{blocked}</p>
             ) : (
               <PlanForm key={chosen.species} parcelId={row.parcel_id} campaign={campaign} regime={regime} management={management} main={chosen}
-                coverOptions={candidates} varieties={varieties.data?.varieties ?? []} draft={draft} onDraft={setDraft} onSaved={onSaved} />
+                coverOptions={candidates} varieties={varieties.data?.varieties ?? []} draft={draft} onDraft={setDraft} onSaved={onSaved}
+                replacing={targetCells.some((c) => c.provenance === 'planned')} />
             )}
           </Step>
         </>

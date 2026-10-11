@@ -13,9 +13,11 @@ const OTHER = '__other__';
 interface Props {
   parcelId: string; campaign: number; regime: Regime | null; management: Management; main: SpeciesFit;
   coverOptions: SpeciesFit[]; varieties: VarietyStat[]; draft: PlanDraft; onDraft: (d: PlanDraft) => void; onSaved: () => void;
+  /** The campaign already has a planned cycle: saving replaces it. */
+  replacing: boolean;
 }
 
-export default function PlanForm({ parcelId, campaign, regime, management, main, coverOptions, varieties, draft, onDraft, onSaved }: Props) {
+export default function PlanForm({ parcelId, campaign, regime, management, main, coverOptions, varieties, draft, onDraft, onSaved, replacing }: Props) {
   const { t, i18n } = useTranslation('bioorchestrator');
   const lang = i18n.language;
   const [saving, setSaving] = useState(false);
@@ -98,6 +100,7 @@ export default function PlanForm({ parcelId, campaign, regime, management, main,
         </Stack>
       )}
       {error && <p role="alert" className="text-nkz-sm text-nkz-danger">{error}</p>}
+      {replacing && <p className="text-nkz-xs text-nkz-warning">{t('planning.plan.replaces')}</p>}
       <div>
         <Button variant="primary" loading={saving} disabled={saving} onClick={submit}>{t('planning.plan.submit')}</Button>
       </div>

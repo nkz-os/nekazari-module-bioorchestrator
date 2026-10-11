@@ -459,6 +459,7 @@
       "rotation_unknown": "Rotation non vérifiée : historique incomplet ou absence de règles"
     },
     "detail": {
+      "currentPlan": "Plan actuel",
       "back": "Retour au plan", "previous": "Précédent : {{crop}} ({{campaign}})", "known": "Ce que nous savons",
       "climate": "Climat", "soil": "Sol", "noData": "sans données", "regimeQuestion": "Sec ou irrigué ?",
       "regimeHint": "Nécessaire pour afficher les variétés et la simulation : les résultats ne mélangent jamais les régimes.",
@@ -549,6 +550,7 @@
       "none": "Pas encore d'estimations pour cette culture."
     },
     "plan": {
+      "replaces": "L'enregistrement remplace le plan actuel de cette campagne : vérifiez la conduite et le couvert.",
       "crop": "Culture", "variety": "Variété", "sowing": "Semis", "harvest": "Récolte prévue", "standEnd": "Fin prévue de la culture (jusqu'à 10 ans)",
       "addCover": "Ajouter un couvert avant la culture", "cover": "Couvert", "coverSowing": "Semis du couvert",
       "coverEnd": "Fin du couvert", "method": "Mode de fin de cycle",

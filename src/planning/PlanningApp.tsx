@@ -67,7 +67,7 @@ export default function PlanningApp() {
               </Inline>
             )}
             {data && row && (
-              <ParcelDetail row={row} campaign={data.campaign} onClose={() => setOpenParcel(null)}
+              <ParcelDetail key={`${row.parcel_id}:${data.campaign}`} row={row} campaign={data.campaign} onClose={() => setOpenParcel(null)}
                 onSaved={() => { setOpenParcel(null); farm.retry(); }} onSimulate={() => setSimulationFor(row.parcel_id)} />
             )}
             {data && !row && (
