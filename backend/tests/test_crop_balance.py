@@ -91,6 +91,32 @@ def test_node_props_round_trip_to_payload():
     assert set(body["missing"]) == set(FIELDS) - set(DOC["crops"]["TRZAX"]["values"])
 
 
+def _without_residue_product(value):
+    doc = copy.deepcopy(DOC)
+    crop = doc["crops"]["TRZAX"]
+    if value is None:
+        del crop["residue_product"]
+    else:
+        crop["residue_product"] = value
+    return doc
+
+
+@pytest.mark.parametrize("value", [None, ""])
+def test_residue_product_is_optional(value):
+    # Display-only label: a crop whose sources name no residue still validates.
+    doc = _without_residue_product(value)
+    assert validate(doc, ALLOWED) == []
+    props = to_node_props("TRZAX", doc["crops"]["TRZAX"], doc["dataset_version"])
+    assert "residueProduct" not in props
+    assert payload_from_node(props)["residue_product"] is None
+
+
+def test_harvest_product_still_required():
+    doc = copy.deepcopy(DOC)
+    del doc["crops"]["TRZAX"]["harvest_product"]
+    assert [str(e) for e in validate(doc, ALLOWED)] == ["TRZAX.harvest_product: missing"]
+
+
 def test_note_is_carried_to_the_payload():
     crop = copy.deepcopy(DOC["crops"]["TRZAX"])
     crop["values"]["n_product_pct"]["note"] = "MAPA T17.6 vs T17.2 disagree; T17.6 kept"

@@ -65,9 +65,9 @@ def validate(doc: dict, allowed_sources: set[str]) -> list[CoefficientError]:
             errors.append(CoefficientError(eppo, "crop_type", "unknown crop type"))
         if not isinstance(crop.get("n_fixing"), bool):
             errors.append(CoefficientError(eppo, "n_fixing", "must be true or false"))
-        for name in ("harvest_product", "residue_product"):
-            if not crop.get(name):
-                errors.append(CoefficientError(eppo, name, "missing"))
+        # residue_product is a display-only label: optional when no source names the residue.
+        if not crop.get("harvest_product"):
+            errors.append(CoefficientError(eppo, "harvest_product", "missing"))
         for field, entry in (crop.get("values") or {}).items():
             if field not in FIELDS:
                 errors.append(CoefficientError(eppo, field, "unknown field"))
@@ -94,7 +94,6 @@ def to_node_props(eppo: str, crop: dict, dataset_version: str) -> dict:
         "datasetVersion": dataset_version,
         "cropType": crop["crop_type"],
         "harvestProduct": crop["harvest_product"],
-        "residueProduct": crop["residue_product"],
         "nFixing": crop["n_fixing"],
         "sourceIds": sorted({e["source_id"] for e in values.values()}),
         "provenance": json.dumps(
@@ -104,6 +103,9 @@ def to_node_props(eppo: str, crop: dict, dataset_version: str) -> dict:
             ensure_ascii=False, sort_keys=True,
         ),
     }
+    residue_product = crop.get("residue_product")
+    if isinstance(residue_product, str) and residue_product:
+        props["residueProduct"] = residue_product
     for field, entry in values.items():
         props[FIELDS[field][0]] = entry["value"]
     return props
