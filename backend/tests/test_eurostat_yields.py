@@ -1,0 +1,114 @@
+"""Eurostat apro_cpshr parsing and yield derivation (pure)."""
+import pytest
+
+from app.services.eurostat_yields import (
+    AREA,
+    HUMIDITY,
+    PRODUCTION,
+    build_series,
+    parse_jsonstat,
+    request_url,
+    to_node_props,
+    yields_payload,
+)
+
+
+def _doc(values, status=None):
+    # dims: freq(1) × crops(2) × strucpro(3) × geo(1) × time(2) — row-major flat index
+    return {
+        "version": "2.0", "class": "dataset", "updated": "2026-09-08T23:00:00+0200",
+        "id": ["freq", "crops", "strucpro", "geo", "time"],
+        "size": [1, 2, 3, 1, 2],
+        "dimension": {
+            "freq": {"category": {"index": {"A": 0}}},
+            "crops": {"category": {"index": {"C1110": 0, "C1120": 1}}},
+            "strucpro": {"category": {"index": {AREA: 0, HUMIDITY: 1, PRODUCTION: 2}}},
+            "geo": {"category": {"index": {"ES22": 0}}},
+            "time": {"category": {"index": {"2023": 0, "2024": 1}}},
+        },
+        "value": values,
+        "status": status or {},
+    }
+
+
+# flat index = crop*6 + strucpro*2 + time
+COMMON_WHEAT = {"0": 81.36, "1": 76.6, "2": 14.0, "3": 14.0, "4": 331.95, "5": 431.91}
+
+
+def test_parse_decodes_flat_indices():
+    cells = parse_jsonstat(_doc(COMMON_WHEAT))
+    area_2024 = next(c for c in cells if c.strucpro == AREA and c.year == 2024)
+    assert (area_2024.crop, area_2024.geo, area_2024.value) == ("C1110", "ES22", 76.6)
+
+
+def test_parse_keeps_status_only_cells():
+    cells = parse_jsonstat(_doc(COMMON_WHEAT, status={"6": "c"}))
+    flagged = [c for c in cells if c.flag]
+    assert flagged[0].crop == "C1120" and flagged[0].value is None and flagged[0].flag == "c"
+
+
+def test_parse_rejects_other_dimensions():
+    doc = _doc(COMMON_WHEAT)
+    doc["id"] = ["freq", "unit", "geo", "time"]
+    with pytest.raises(ValueError):
+        parse_jsonstat(doc)
+
+
+def test_yield_is_production_over_area_in_eu_standard_humidity():
+    rows = build_series(parse_jsonstat(_doc(COMMON_WHEAT)), {"C1110": "TRZAX"})
+    r2024 = next(r for r in rows if r.year == 2024)
+    assert r2024.area_ha == pytest.approx(76600)
+    assert r2024.production_t == pytest.approx(431910)
+    assert r2024.humidity_pct == 14.0
+    assert r2024.yield_t_ha == pytest.approx(431910 / 76600)
+    assert r2024.eppo == "TRZAX" and r2024.nuts == "ES22"
+
+
+def test_unmapped_crops_are_skipped_and_missing_area_gives_no_yield():
+    values = {**COMMON_WHEAT, "10": 2.0}             # durum production 2023 without area
+    rows = build_series(parse_jsonstat(_doc(values)), {"C1110": "TRZAX", "C1120": "TRZDU"})
+    durum = [r for r in rows if r.eppo == "TRZDU"]
+    assert durum[0].yield_t_ha is None and durum[0].production_t == pytest.approx(2000)
+    assert {r.eppo for r in build_series(parse_jsonstat(_doc(values)), {"C1110": "TRZAX"})} \
+        == {"TRZAX"}
+
+
+def _nodes():
+    rows = build_series(parse_jsonstat(_doc(COMMON_WHEAT)), {"C1110": "TRZAX"})
+    return [to_node_props(r, dataset_updated="2026-09-08T23:00:00+0200",
+                          extracted_at="2026-10-11T10:00:00+00:00",
+                          nuts_version="as published") for r in rows]
+
+
+def test_node_props_carry_provenance_and_basis():
+    n = _nodes()[1]
+    assert n["key"] == "apro_cpshr|ES22|C1110|2024"
+    assert (n["humidityBasis"], n["yieldMethod"], n["sourceId"]) == (
+        "eu_standard", "production_over_area", "eurostat_apro_cpshr")
+    assert n["datasetUpdated"] and n["extractedAt"] and n["nutsVersion"]
+
+
+def test_payload_series_and_recent_median():
+    body = yields_payload(list(reversed(_nodes())), recent=5)
+    assert [s["year"] for s in body["series"]] == [2023, 2024]
+    assert body["recent_years"] == [2023, 2024]
+    assert body["recent_median_t_ha"] == pytest.approx((331950 / 81360 + 431910 / 76600) / 2)
+    assert body["humidity_basis"] == "eu_standard"
+    assert yields_payload(_nodes(), recent=1)["recent_years"] == [2024]
+    with pytest.raises(ValueError):
+        yields_payload([], recent=5)
+
+
+def test_request_url_pins_codes_and_level():
+    url = request_url(["C1120", "C1110"])
+    assert url.startswith("https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/apro_cpshr?")
+    assert "geoLevel=nuts2" in url and url.index("crops=C1110") < url.index("crops=C1120")
+    for code in (AREA, PRODUCTION, HUMIDITY):
+        assert f"strucpro={code}" in url
+    with pytest.raises(ValueError):
+        request_url([])
+
+
+def test_humidity_only_groups_are_dropped():
+    values = {"2": 14.0, "3": 14.0}                     # common wheat: humidity, no area/production
+    assert build_series(parse_jsonstat(_doc(values)), {"C1110": "TRZAX"}) == []
