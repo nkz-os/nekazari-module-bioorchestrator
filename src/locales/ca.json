@@ -390,7 +390,9 @@
     },
     "weatherSource": {
       "archive": "Arxiu",
-      "parcel_daily": "Dades de la parcel·la"
+      "parcel_daily": "Dades de la parcel·la",
+      "model_analysis": "Anàlisi del model",
+      "reanalysis": "Reanàlisi"
     },
     "sowingSource": {
       "request": "sol·licitud",

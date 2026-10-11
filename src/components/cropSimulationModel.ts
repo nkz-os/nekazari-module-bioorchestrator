@@ -95,7 +95,7 @@ export const expectedReasonKey = (reason: string): string =>
     : 'cropSimulation.expected.reason.unknown';
 
 /** i18n key for a weather segment source; unknown sources are shown raw by the caller. */
-export const WEATHER_SOURCES = ['archive', 'parcel_daily'] as const;
+export const WEATHER_SOURCES = ['archive', 'parcel_daily', 'model_analysis', 'reanalysis'] as const;
 export const weatherSourceKey = (source: string): string | null =>
   (WEATHER_SOURCES as readonly string[]).includes(source) ? `cropSimulation.weatherSource.${source}` : null;
 

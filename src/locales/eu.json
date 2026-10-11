@@ -390,7 +390,9 @@
     },
     "weatherSource": {
       "archive": "Artxiboa",
-      "parcel_daily": "Partzelaren datuak"
+      "parcel_daily": "Partzelaren datuak",
+      "model_analysis": "Ereduaren analisia",
+      "reanalysis": "Berranalisia"
     },
     "sowingSource": {
       "request": "eskaera",
