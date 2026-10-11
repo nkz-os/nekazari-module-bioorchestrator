@@ -15,7 +15,7 @@ export default defineModule({
   requiredRoles: ['Farmer', 'TechnicalConsultant', 'TenantAdmin', 'PlatformAdmin'],
   description: 'Crop planning: crop fit, varieties, rotation and campaign plan — Nekazari Platform Module',
   accent: { base: '#10B981', soft: '#D1FAE5', strong: '#047857' },
-  icon: 'flask-conical',
+  icon: 'sprout',
   main: MainPage,
   slots: moduleSlots as never,
 });
