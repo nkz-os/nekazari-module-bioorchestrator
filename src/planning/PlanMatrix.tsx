@@ -1,8 +1,8 @@
 import React from 'react';
 import { useTranslation } from '@nekazari/sdk';
-import { Button, EmptyState } from '@nekazari/ui-kit';
+import { Button, EmptyState, Inline } from '@nekazari/ui-kit';
 import { cropName, formatHa, shortId } from './format';
-import { SYMBOL, canPlan, namesIndex, rowsForFarm, warningText } from './matrixModel';
+import { SYMBOL, canPlan, namesIndex, rowsForFarm, simulationAvailable, warningText } from './matrixModel';
 import type { CycleCell, FarmResponse } from './types';
 
 export function CycleLine({ cell }: { cell: CycleCell }) {
@@ -16,10 +16,14 @@ export function CycleLine({ cell }: { cell: CycleCell }) {
   );
 }
 
-interface Props { data: FarmResponse; farmId: string; onOpen: (parcelId: string) => void; editable?: boolean }
+interface Props {
+  data: FarmResponse; farmId: string; onOpen: (parcelId: string) => void; editable?: boolean;
+  /** Opens the temporary campaign simulation; the link is offered only when the page wires it. */
+  onSimulate?: (parcelId: string) => void;
+}
 
 /** `editable` false (a past campaign) keeps the history readable and offers no way into the form. */
-export default function PlanMatrix({ data, farmId, onOpen, editable = true }: Props) {
+export default function PlanMatrix({ data, farmId, onOpen, editable = true, onSimulate }: Props) {
   const { t, i18n } = useTranslation('bioorchestrator');
   const lang = i18n.language;
   const rows = rowsForFarm(data.parcels, farmId, lang);
@@ -53,13 +57,25 @@ export default function PlanMatrix({ data, farmId, onOpen, editable = true }: Pr
               <td className="py-2 pr-4">{t(`planning.regime.${row.regime ?? 'unknown'}`)}</td>
               {data.campaigns.map((c) => {
                 const cells = row.cells[String(c)] ?? [];
+                const isTarget = c === data.campaign;
+                const plannable = editable && isTarget && canPlan(row, data.campaign);
+                const simulable = Boolean(onSimulate) && isTarget && simulationAvailable(row, data.campaign);
                 return (
                   <td key={c} className="py-2 pr-4">
                     {cells.map((cell, i) => <CycleLine key={cell.crop_id ?? `${c}-${i}`} cell={cell} />)}
-                    {editable && c === data.campaign && canPlan(row, data.campaign) && (
-                      <Button size="sm" variant="secondary" onClick={() => onOpen(row.parcel_id)}>
-                        {t(cells.length ? 'planning.matrix.change' : 'planning.matrix.choose')}
-                      </Button>
+                    {(plannable || simulable) && (
+                      <Inline gap="inline" wrap>
+                        {plannable && (
+                          <Button size="sm" variant="secondary" onClick={() => onOpen(row.parcel_id)}>
+                            {t(cells.length ? 'planning.matrix.change' : 'planning.matrix.choose')}
+                          </Button>
+                        )}
+                        {simulable && (
+                          <Button size="sm" variant="ghost" onClick={() => onSimulate?.(row.parcel_id)}>
+                            {t('planning.simulation.open')}
+                          </Button>
+                        )}
+                      </Inline>
                     )}
                   </td>
                 );

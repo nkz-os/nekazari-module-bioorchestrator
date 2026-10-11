@@ -44,4 +44,20 @@ describe('PlanMatrix (es)', () => {
     expect(html).not.toContain('Elegir');
     expect(html).toContain('● colza · Atlas');
   });
+  it('links to the simulation from the target-campaign cell of a parcel with a sown crop, only when the page wires it', () => {
+    const sown = { crop_id: 'c2', species: 'wheat', species_raw: 'TRZAX', names: { es: 'trigo' }, variety: null, role: 'main_crop',
+      provenance: 'actual' as const, status: 'active', start: null, end: null, lifecycle: 'annual', first_campaign: 2027 };
+    const inField: FarmResponse = { ...DATA, parcels: [
+      { ...DATA.parcels[0], parcel_id: 'urn:ngsi-ld:AgriParcel:t:p3', name: 'En campo', cells: { '2024': [], '2025': [], '2026': [], '2027': [sown] } },
+      { ...DATA.parcels[1], cycles_available: true, cells: { '2024': [], '2025': [], '2026': [], '2027': [] } },
+    ] };
+    const calls: string[] = [];
+    const html = renderToStaticMarkup(<PlanMatrix data={inField} farmId="all" onOpen={() => {}} onSimulate={(id) => calls.push(id)} />);
+    expect(html.split('Simulación de la campaña en curso').length - 1).toBe(1);
+    expect(html.indexOf('En campo')).toBeLessThan(html.indexOf('Simulación de la campaña en curso'));
+    // The planning button is still offered to the free parcel only: the sown one is locked.
+    expect(html.split('Elegir').length - 1).toBe(1);
+    expect(renderToStaticMarkup(<PlanMatrix data={inField} farmId="all" onOpen={() => {}} />)).not.toContain('Simulación de la campaña en curso');
+    expect(calls).toEqual([]);
+  });
 });

@@ -86,7 +86,8 @@ export default function PlanningApp() {
                 </Inline>
                 {openParcel && <p className="text-nkz-sm text-nkz-text-muted">{t('planning.plan.error.parcel_not_found')}</p>}
                 <SummaryLine data={data} />
-                <PlanMatrix data={data} farmId={farmId} onOpen={setOpenParcel} editable={data.campaign >= new Date().getFullYear()} />
+                <PlanMatrix data={data} farmId={farmId} onOpen={setOpenParcel} onSimulate={setSimulationFor}
+                  editable={data.campaign >= new Date().getFullYear()} />
               </Stack>
             )}
           </>
