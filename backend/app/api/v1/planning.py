@@ -17,9 +17,12 @@ from app.planning.models import (
     FarmResponse,
     FitResponse,
     Management,
+    PlanIn,
+    PlanWriteResponse,
     Regime,
     VarietiesResponse,
 )
+from app.planning.plan_write import PlanError, write_plan
 from app.planning.reference import load_reference
 from app.planning.service import (
     InvalidParcelId,
@@ -106,3 +109,13 @@ async def farm(request: Request, sources: SourcesDep,
         raise HTTPException(status_code=502, detail="Orion-LD unreachable") from e
     ref = await load_reference(sources[0])
     return farm_payload(parcels, farms, crops, cycles, target, ref.constraints)
+
+
+@router.put("/parcels/{parcel_id:path}/plan", response_model=PlanWriteResponse)
+async def put_plan(request: Request, parcel_id: str, body: PlanIn):
+    tenant = _require_tenant_id(request)
+    parcel_id = _checked_parcel_urn(parcel_id)
+    try:
+        return await write_plan(tenant_id=tenant, parcel_urn=parcel_id, plan=body, today=datetime.now(UTC).date())
+    except PlanError as e:
+        raise HTTPException(status_code=e.status, detail={"code": e.code}) from e

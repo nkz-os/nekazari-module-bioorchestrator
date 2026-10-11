@@ -249,3 +249,50 @@ def test_parcel_route_rejects_an_empty_parcel_id(client, monkeypatch):
     monkeypatch.setattr(planning_api, "parcel_fit", called)
     assert client.get("/api/graph/planning/parcels//fit", params={"campaign": 2027}).status_code == 422
     called.assert_not_called()
+
+
+PLAN_URL = "/api/graph/planning/parcels/urn:ngsi-ld:AgriParcel:t:p1/plan"
+PLAN_BODY = {"campaign": 2027, "regime": "secano", "management": "conventional", "cycles": [
+    {"role": "main_crop", "crop": "maize", "sowing_start": "2027-04-20", "expected_termination": "2027-10-01"}]}
+PLAN_WRITTEN = {"parcel_id": "urn:ngsi-ld:AgriParcel:t:p1", "campaign": 2027,
+                "written": ["urn:ngsi-ld:AgriCrop:t:p1:2027:0"], "removed": []}
+
+
+def test_put_plan_route_validates_the_contract_and_hands_over_the_normalized_urn(client, monkeypatch):
+    called = AsyncMock(return_value=PLAN_WRITTEN)
+    monkeypatch.setattr(planning_api, "write_plan", called)
+    r = client.put("/api/graph/planning/parcels/p1/plan", json=PLAN_BODY)
+    assert r.status_code == 200 and r.json()["contract_version"] == "1.0"
+    assert called.await_args.kwargs["parcel_urn"] == "urn:ngsi-ld:AgriParcel:p1"
+    assert called.await_args.kwargs["plan"].campaign == 2027
+
+
+def test_put_plan_route_rejects_a_malformed_parcel_id_before_any_io(client, monkeypatch):
+    called = AsyncMock(return_value=PLAN_WRITTEN)
+    monkeypatch.setattr(planning_api, "write_plan", called)
+    r = client.put("/api/graph/planning/parcels/a%3Fx=1/plan", json=PLAN_BODY)
+    assert r.status_code == 422
+    called.assert_not_called()
+
+
+@pytest.mark.parametrize("code, status", [("campaign_past", 422), ("campaign_started", 409), ("perennial_occupies", 409)])
+def test_put_plan_route_maps_plan_errors_to_their_status(client, monkeypatch, code, status):
+    from app.planning.plan_write import PlanError
+    monkeypatch.setattr(planning_api, "write_plan", AsyncMock(side_effect=PlanError(code, status)))
+    r = client.put(PLAN_URL, json=PLAN_BODY)
+    assert r.status_code == status and r.json()["detail"] == {"code": code}
+
+
+def test_put_plan_route_rejects_an_invalid_body(client, monkeypatch):
+    called = AsyncMock(return_value=PLAN_WRITTEN)
+    monkeypatch.setattr(planning_api, "write_plan", called)
+    assert client.put(PLAN_URL, json={**PLAN_BODY, "cycles": []}).status_code == 422
+    called.assert_not_called()
+
+
+def test_put_plan_route_requires_a_verified_tenant(client, monkeypatch):
+    monkeypatch.setenv("AUTH_DISABLED", "false")
+    called = AsyncMock(return_value=PLAN_WRITTEN)
+    monkeypatch.setattr(planning_api, "write_plan", called)
+    assert client.put(PLAN_URL, json=PLAN_BODY).status_code == 401
+    called.assert_not_called()
