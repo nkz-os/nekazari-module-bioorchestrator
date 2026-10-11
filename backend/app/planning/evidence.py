@@ -33,6 +33,11 @@ async def load_crop_evidence(dao, env: dict, *, crop_eppo: str, regime: str, man
         zone_ctx=(zone_match.context_from_zone_id(zone, regime)
                   if tier == "regional" and zone and zone_match.is_zone_country(country) else None),
     )
-    return {"status": "ok", "tier": tier, "zone_match": zm, "country": country, "rows": page.get("items") or [],
-            "data_gaps": list(trust.get("data_gaps") or []), "crop_eppo": rec["crop"]["eppo"],
+    rows = page.get("items") or []
+    data_gaps = list(trust.get("data_gaps") or [])
+    if (page.get("total") or 0) > len(rows):
+        # The page cap cut the trial list: the statistics below rest on part of the evidence.
+        data_gaps.append("evidence_truncated")
+    return {"status": "ok", "tier": tier, "zone_match": zm, "country": country, "rows": rows,
+            "data_gaps": data_gaps, "crop_eppo": rec["crop"]["eppo"],
             "policy_version": result.get("evidence_policy")}

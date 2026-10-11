@@ -1,9 +1,10 @@
 """Variety ranking from trials (pure): yield relative to each trial environment, and stability.
 
 An environment is one trial table: site x year x source. Each variety's yield is divided by
-the environment mean, so year and site cancel out (scientific basis doc 2026-10-08, §1.3).
-The ranking is the mean of those ratios. Stability is the Finlay-Wilkinson (1963) slope:
-the variety's yield regressed on the environment mean.
+the environment mean, so year and site cancel out. The ranking is the mean of those ratios.
+Stability is the Finlay-Wilkinson (1963) slope: the variety's yield regressed on the
+environment mean. A variety with several rows in one environment counts once, at their mean;
+a row without site or year cannot define an environment and is left out.
 ASSUMPTION: MIN_ENV_VARIETIES, MIN_FW_ENVIRONMENTS, FEW_ENVIRONMENTS and the slope bands are
 first choices to review with the owner. They are named constants, so a review changes
 numbers, not code.
@@ -41,13 +42,15 @@ def stability_class(slope: float | None) -> str | None:
 
 
 def variety_stats(rows: list[dict]) -> tuple[list[dict], int]:
-    envs: dict[tuple, dict[str, float]] = defaultdict(dict)
+    cells: dict[tuple, dict[str, list[float]]] = defaultdict(lambda: defaultdict(list))
     for row in rows:
         variety, value = row.get("variety"), row.get("yield_kg_ha")
-        if not variety or not isinstance(value, (int, float)) or value <= 0:
+        site, year = row.get("site"), row.get("year")
+        if not variety or not isinstance(value, (int, float)) or value <= 0 or not site or year is None:
             continue
-        key = (row.get("site"), row.get("year"), row.get("source_id"))
-        envs[key][variety] = max(float(value), envs[key].get(variety, 0.0))
+        cells[(site, year, row.get("source_id"))][variety].append(float(value))
+    envs = {key: {variety: fmean(values) for variety, values in by_variety.items()}
+            for key, by_variety in cells.items()}
     usable = {k: v for k, v in envs.items() if len(v) >= MIN_ENV_VARIETIES}
     means = {k: fmean(v.values()) for k, v in usable.items()}
     per_variety: dict[str, list[tuple[tuple, float, float]]] = defaultdict(list)
@@ -58,14 +61,15 @@ def variety_stats(rows: list[dict]) -> tuple[list[dict], int]:
     for variety, obs in per_variety.items():
         years = sorted({k[1] for k, _, _ in obs if isinstance(k[1], int)})
         slope = fw_slope([m for _, _, m in obs], [y for _, y, _ in obs]) if len(obs) >= MIN_FW_ENVIRONMENTS else None
+        shown_slope = None if slope is None else round(slope, 2)
         stats.append({
             "variety": variety,
             "relative_yield_pct": round(fmean(y / m for _, y, m in obs) * 100, 1),
             "n_environments": len(obs),
             "years": [years[0], years[-1]] if years else [],
             "mean_kg_ha": round(fmean(y for _, y, _ in obs)),
-            "fw_slope": None if slope is None else round(slope, 2),
-            "stability": stability_class(slope),
+            "fw_slope": shown_slope,
+            "stability": stability_class(shown_slope),
             "few_environments": len(obs) < FEW_ENVIRONMENTS,
         })
     stats.sort(key=lambda s: (s["few_environments"], -s["relative_yield_pct"], -s["n_environments"], s["variety"]))

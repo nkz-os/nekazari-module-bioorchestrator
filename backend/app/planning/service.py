@@ -41,6 +41,10 @@ class ParcelNotFound(LookupError):
     pass
 
 
+class UnknownCrop(ValueError):
+    pass
+
+
 def resolve_regime(requested: str | None, env: dict) -> tuple[str | None, str]:
     """The declared regime wins; else the parcel's own attribute; never a guess."""
     if requested in REGIMES:
@@ -130,11 +134,11 @@ async def parcel_fit(*, dao, source: KnowledgeSource, parcel_id: str, tenant_id:
 
 
 def crop_code(identifier: str) -> str:
-    """Slug, EPPO code or name -> the code trials are listed under. ValueError when unknown."""
+    """Slug, EPPO code or name -> the code trials are listed under. UnknownCrop when unknown."""
     slug = resolve_species(identifier)
     eppo = (get_species_info(slug) or {}).get("eppo_code") if slug else None
     if not eppo:
-        raise ValueError(f"unknown crop: {identifier[:32]}")
+        raise UnknownCrop(f"unknown crop: {identifier[:32]}")
     return catalog_code(eppo)
 
 
@@ -148,6 +152,10 @@ async def parcel_varieties(*, dao, source: KnowledgeSource, parcel_id: str, tena
     if ev["status"] != "ok":
         return {**base, "status": ev["status"]}
     stats, n_env = variety_stats(ev["rows"])
+    data_gaps = list(ev["data_gaps"])
+    if not stats:
+        # Trials exist, but no trial table has enough varieties to compare them against each other.
+        data_gaps.append("insufficient_environments")
     payload = {**base, "status": "ok", "tier": ev["tier"], "zone_match": ev["zone_match"], "country": ev["country"],
-               "n_environments": n_env, "varieties": stats, "data_gaps": ev["data_gaps"]}
+               "n_environments": n_env, "varieties": stats, "data_gaps": data_gaps}
     return attach_attributions(payload, rows_source_ids(ev["rows"]))

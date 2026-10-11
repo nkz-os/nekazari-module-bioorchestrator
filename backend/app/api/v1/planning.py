@@ -9,7 +9,12 @@ from app.api.v1.graph import _require_tenant_id
 from app.core.knowledge import KnowledgeSource, get_knowledge_sources
 from app.graph.dao import GraphDAO
 from app.planning.models import FitResponse, Management, Regime, VarietiesResponse
-from app.planning.service import ParcelNotFound, parcel_fit, parcel_varieties
+from app.planning.service import (
+    ParcelNotFound,
+    UnknownCrop,
+    parcel_fit,
+    parcel_varieties,
+)
 
 router = APIRouter(prefix="/planning", tags=["planning"])
 SourcesDep = Annotated[list[KnowledgeSource], Depends(get_knowledge_sources)]
@@ -36,7 +41,7 @@ async def varieties(request: Request, parcel_id: str, sources: SourcesDep, regim
     try:
         return await parcel_varieties(dao=GraphDAO(source.driver), source=source, parcel_id=parcel_id,
                                       tenant_id=tenant, crop=crop, regime=regime, management=management)
-    except ValueError as e:
+    except UnknownCrop as e:
         raise HTTPException(status_code=422, detail=str(e)) from e
     except ParcelNotFound as e:
         raise HTTPException(status_code=404, detail=str(e)) from e
