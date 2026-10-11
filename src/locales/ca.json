@@ -450,17 +450,17 @@
     "matrix": { "parcel": "Parcel·la", "area": "ha", "regime": "Règim", "choose": "Tria", "change": "Canvia", "legend": "● fet · ◐ declarat · ○ planificat" },
     "provenance": { "actual": "fet", "declared": "declarat", "planned": "planificat", "unknown": "sense dades" },
     "role": { "main_crop": "cultiu principal", "cover_crop": "cultiu de cobertura", "catch_crop": "cultiu intermedi" },
-    "regime": { "secano": "Sequer", "regadío": "Regadiu", "unknown": "Sense declarar" },
+    "regime": { "secano": "Secà", "regadío": "Regadiu", "unknown": "Sense declarar" },
     "management": { "conventional": "Convencional", "organic": "Ecològic" },
     "warning": {
       "cycles_unavailable": "No s'ha pogut llegir l'historial d'aquesta parcel·la",
-      "regime_missing": "Falta declarar sequer o regadiu",
+      "regime_missing": "Falta declarar secà o regadiu",
       "rotation_restriction": "{{species}} després de {{previous}} ({{previous_campaign}}): possible a partir de {{allowed_from}}",
       "rotation_unknown": "Rotació no comprovada: historial incomplet o sense regles"
     },
     "detail": {
       "back": "Torna al pla", "previous": "Anterior: {{crop}} ({{campaign}})", "known": "El que sabem",
-      "climate": "Clima", "soil": "Sòl", "noData": "sense dades", "regimeQuestion": "Sequer o regadiu?",
+      "climate": "Clima", "soil": "Sòl", "noData": "sense dades", "regimeQuestion": "Secà o regadiu?",
       "regimeHint": "Cal per veure varietats i simulació: l'evidència mai barreja règims.",
       "managementLabel": "Maneig", "historyDown": "No s'ha pogut llegir l'historial: la rotació no s'ha comprovat."
     },
@@ -487,12 +487,12 @@
       "frost_unknown_no_climate": "Sense clima de la parcel·la per valorar gelades",
       "frost_unknown_no_tolerance": "Sense llindar de gelada per a aquest cultiu",
       "frost_unknown_season_unknown": "Sense calendari de sembra: gelada no valorada",
-      "water_deficit_high": "Dèficit hídric alt en sequer (uns {{deficit_mm}} mm)",
-      "water_unknown": "Sense clima per valorar l'aigua en sequer",
+      "water_deficit_high": "Dèficit hídric alt en secà (uns {{deficit_mm}} mm)",
+      "water_unknown": "Sense clima per valorar l'aigua en secà",
       "rotation_restriction": "Després de {{previous}} ({{previous_campaign}}): rotació restringida, possible a partir de {{allowed_from}}",
       "rotation_benefit": "Bona rotació després de {{previous}}",
       "rotation_unknown": "Rotació no comprovada: sense historial",
-      "regime_missing": "Falta declarar sequer o regadiu",
+      "regime_missing": "Falta declarar secà o regadiu",
       "multi_year": "Plurianual: ocupa diverses campanyes",
       "climate_unknown": "Sense clima de la parcel·la: aptitud no del tot comprovada"
     },
@@ -553,7 +553,7 @@
       "addCover": "Afegeix una cobertura abans del cultiu", "cover": "Cobertura", "coverSowing": "Sembra de la cobertura",
       "coverEnd": "Final de la cobertura", "method": "Com s'acaba",
       "methods": { "roller_crimper": "Corró aixafador (roller crimper)", "incorporate": "Incorporació", "grazing": "Pastura", "harvest": "Collita" },
-      "submit": "Planificar", "needsRegime": "Declara sequer o regadiu abans de planificar.",
+      "submit": "Planificar", "needsRegime": "Declara secà o regadiu abans de planificar.",
       "otherSpecies": "Una altra espècie…", "speciesName": "Nom de l'espècie",
       "error": {
         "missing_species": "Falta triar l'espècie", "missing_dates": "Falten dates",
