@@ -572,6 +572,7 @@
         "invalid_response": "Zerbitzariak ustekabeko erantzuna eman du; saiatu berriro."
       }
     },
+    "simulation": { "open": "Martxan dagoen kanpainaren simulazioa", "temporary": "Behin-behineko ikuspegia: Laborearen osasunera eramango da." },
     "widget": { "title": "Partzelaren plana", "undecided": "Erabaki gabe", "plan": "Planifikatu" },
     "sources": { "open": "Datu-iturriak", "close": "Ezkutatu iturriak" },
     "admin": { "open": "Administrazioa", "close": "Itxi administrazioa" }

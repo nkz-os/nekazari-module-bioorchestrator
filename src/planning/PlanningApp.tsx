@@ -11,6 +11,7 @@ import { cropName, formatHa } from './format';
 import { parseCampaign } from './matrixModel';
 import ParcelDetail from './ParcelDetail';
 import PlanMatrix from './PlanMatrix';
+import SimulationBridge from './SimulationBridge';
 import SourcesFooter from './SourcesFooter';
 import type { FarmResponse } from './types';
 import { useLoad } from './useLoad';
@@ -34,6 +35,8 @@ export default function PlanningApp() {
   const [campaign, setCampaign] = useState<number | undefined>(linkedCampaign);
   const [farmId, setFarmId] = useState('all');
   const [openParcel, setOpenParcel] = useState<string | null>(params.get('parcel'));
+  const view = params.get('view');
+  const [simulationFor, setSimulationFor] = useState<string | null>(view === 'simulation' ? params.get('parcel') : null);
   const [admin, setAdmin] = useState(false);
   const farm = useLoad((s) => fetchFarm(campaign, undefined, s), [campaign]);
   const data = farm.data;
@@ -51,7 +54,9 @@ export default function PlanningApp() {
           </div>
         </Inline>
 
-        {admin ? <AdminTools /> : (
+        {admin ? <AdminTools /> : simulationFor ? (
+          <SimulationBridge parcelId={simulationFor} onClose={() => setSimulationFor(null)} />
+        ) : (
           <>
             {farm.loading && <div className="flex justify-center py-8" aria-busy="true"><Spinner size="lg" /></div>}
             {farm.error != null && (
@@ -62,7 +67,7 @@ export default function PlanningApp() {
             )}
             {data && row && (
               <ParcelDetail row={row} campaign={data.campaign} onClose={() => setOpenParcel(null)}
-                onSaved={() => { setOpenParcel(null); farm.retry(); }} />
+                onSaved={() => { setOpenParcel(null); farm.retry(); }} onSimulate={() => setSimulationFor(row.parcel_id)} />
             )}
             {data && !row && (
               <Stack gap="stack">

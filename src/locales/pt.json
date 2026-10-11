@@ -572,6 +572,7 @@
         "invalid_response": "O servidor respondeu algo inesperado; tente novamente."
       }
     },
+    "simulation": { "open": "Simulação da campanha em curso", "temporary": "Vista provisória: passará para Saúde da cultura." },
     "widget": { "title": "Plano da parcela", "undecided": "Por decidir", "plan": "Planear" },
     "sources": { "open": "Fontes de dados", "close": "Ocultar fontes" },
     "admin": { "open": "Administração", "close": "Fechar administração" }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { canPlan, lockReason, parseCampaign, previousMain, rowsForFarm, warningText, widgetColumns, widgetRows } from './matrixModel';
+import { canPlan, hasSownCrop, lockReason, parseCampaign, previousMain, rowsForFarm, simulationAvailable, warningText, widgetColumns, widgetRows } from './matrixModel';
 import type { CycleCell, ParcelRow } from './types';
 
 const cell = (over: Partial<CycleCell>): CycleCell => ({
@@ -101,5 +101,20 @@ describe('matrix model', () => {
   it('widget rows: the two campaigns when the history is readable, none when it is not', () => {
     expect(widgetRows(row([cell({})]), 2027).map((c) => c.campaign)).toEqual([2026, 2027]);
     expect(widgetRows(row([cell({})], { cycles_available: false }), 2027)).toEqual([]);
+  });
+  it('the campaign simulation link needs a sown crop in the running campaign', () => {
+    expect(hasSownCrop(row([cell({ provenance: 'actual' })]), 2027)).toBe(true);
+    expect(hasSownCrop(row([cell({ provenance: 'declared' })]), 2027)).toBe(true);
+    expect(hasSownCrop(row([cell({ provenance: 'planned' })]), 2027)).toBe(false);
+    expect(hasSownCrop(row([]), 2027)).toBe(false);
+  });
+  it('the simulation link opens for a crop sown in the target or in the campaign before, not for a plan alone', () => {
+    const sownBefore = row([], { cells: { '2026': [cell({ provenance: 'declared' })], '2027': [] } });
+    const plannedBefore = row([], { cells: { '2026': [cell({ provenance: 'planned' })], '2027': [] } });
+    expect(simulationAvailable(row([cell({ provenance: 'actual' })]), 2027)).toBe(true);
+    expect(simulationAvailable(sownBefore, 2027)).toBe(true);
+    expect(simulationAvailable(row([cell({ provenance: 'planned' })]), 2027)).toBe(false);
+    expect(simulationAvailable(plannedBefore, 2027)).toBe(false);
+    expect(simulationAvailable(row([]), 2027)).toBe(false);
   });
 });

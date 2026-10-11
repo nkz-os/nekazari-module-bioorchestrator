@@ -1325,6 +1325,7 @@
         "invalid_response": "The server sent an unexpected answer; try again."
       }
     },
+    "simulation": { "open": "Simulation of the current campaign", "temporary": "Temporary view: it will move to Crop Health." },
     "widget": { "title": "Parcel plan", "undecided": "Undecided", "plan": "Plan" },
     "sources": { "open": "Data sources", "close": "Hide sources" },
     "admin": { "open": "Administration", "close": "Close administration" }

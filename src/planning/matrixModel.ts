@@ -90,3 +90,16 @@ export function widgetColumns(row: ParcelRow, campaign: number): { campaign: num
 export function widgetRows(row: ParcelRow, campaign: number): { campaign: number; cells: CycleCell[] }[] {
   return row.cycles_available ? widgetColumns(row, campaign) : [];
 }
+
+/** Something is sown or declared in that campaign: the campaign simulation has a crop to follow. */
+export function hasSownCrop(row: ParcelRow, campaign: number): boolean {
+  return (row.cells[String(campaign)] ?? []).some((c) => c.provenance === 'actual' || c.provenance === 'declared');
+}
+
+/**
+ * The campaign simulation link: a crop sown in the target campaign, or in the one before (the target
+ * rolls over in autumn, so an autumn-sown crop already sits in the target campaign).
+ */
+export function simulationAvailable(row: ParcelRow, campaign: number): boolean {
+  return hasSownCrop(row, campaign) || hasSownCrop(row, campaign - 1);
+}

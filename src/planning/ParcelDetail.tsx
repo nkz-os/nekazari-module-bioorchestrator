@@ -7,7 +7,7 @@ import { fetchEstimates, fetchFit, fetchVarieties } from './api';
 import EstimatesTable from './EstimatesTable';
 import FitList from './FitList';
 import { cropName, safeLang, shortId } from './format';
-import { lockReason, previousMain } from './matrixModel';
+import { lockReason, previousMain, simulationAvailable } from './matrixModel';
 import PlanForm from './PlanForm';
 import { draftFor, type PlanDraft } from './planModel';
 import Step from './Step';
@@ -15,11 +15,11 @@ import type { Management, ParcelRow, Regime } from './types';
 import { useLoad } from './useLoad';
 import VarietyTable from './VarietyTable';
 
-interface Props { row: ParcelRow; campaign: number; onClose: () => void; onSaved: () => void }
+interface Props { row: ParcelRow; campaign: number; onClose: () => void; onSaved: () => void; onSimulate?: () => void }
 const ESTIMATE_DEBOUNCE_MS = 600;
 const EMPTY_DRAFT: PlanDraft = { main: { species: '', variety: null, sowing: '', end: '', method: null }, cover: null };
 
-export default function ParcelDetail({ row, campaign, onClose, onSaved }: Props) {
+export default function ParcelDetail({ row, campaign, onClose, onSaved, onSimulate }: Props) {
   const { t, i18n } = useTranslation('bioorchestrator');
   const lang = i18n.language;
   const [regime, setRegime] = useState<Regime | null>(row.regime);
@@ -86,6 +86,9 @@ export default function ParcelDetail({ row, campaign, onClose, onSaved }: Props)
         <Button variant="ghost" onClick={onClose} leadingIcon={<ArrowLeft className="w-4 h-4" />}>{t('planning.detail.back')}</Button>
         <h2 className="text-nkz-lg font-semibold text-nkz-text-primary">{`${row.name ?? shortId(row.parcel_id)} · ${campaign}`}</h2>
         {prev && <span className="text-nkz-sm text-nkz-text-muted">{t('planning.detail.previous', { crop: cropName(prev.names, prev.species_raw, lang), campaign: campaign - 1 })}</span>}
+        {onSimulate && simulationAvailable(row, campaign) && (
+          <Button size="sm" variant="secondary" onClick={onSimulate}>{t('planning.simulation.open')}</Button>
+        )}
       </Inline>
 
       <Inline gap="inline" wrap align="center">

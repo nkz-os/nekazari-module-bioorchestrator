@@ -572,6 +572,7 @@
         "invalid_response": "Le serveur a renvoyé une réponse inattendue ; réessayez."
       }
     },
+    "simulation": { "open": "Simulation de la campagne en cours", "temporary": "Vue provisoire : elle passera dans Santé des cultures." },
     "widget": { "title": "Plan de la parcelle", "undecided": "Sans décision", "plan": "Planifier" },
     "sources": { "open": "Sources de données", "close": "Masquer les sources" },
     "admin": { "open": "Administration", "close": "Fermer l'administration" }

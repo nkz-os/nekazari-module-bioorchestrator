@@ -572,6 +572,7 @@
         "invalid_response": "El servidor ha respost una cosa inesperada; torna-ho a provar."
       }
     },
+    "simulation": { "open": "Simulació de la campanya en curs", "temporary": "Vista provisional: passarà a Salut del cultiu." },
     "widget": { "title": "Pla de la parcel·la", "undecided": "Sense decidir", "plan": "Planificar" },
     "sources": { "open": "Fonts de dades", "close": "Amaga les fonts" },
     "admin": { "open": "Administració", "close": "Tanca l'administració" }

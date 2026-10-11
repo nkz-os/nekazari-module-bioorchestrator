@@ -1326,6 +1326,7 @@
         "invalid_response": "El servidor respondió algo inesperado; inténtalo de nuevo."
       }
     },
+    "simulation": { "open": "Simulación de la campaña en curso", "temporary": "Vista provisional: pasará a Salud del cultivo." },
     "widget": { "title": "Plan de la parcela", "undecided": "Sin decidir", "plan": "Planificar" },
     "sources": { "open": "Fuentes de datos", "close": "Ocultar fuentes" },
     "admin": { "open": "Administración", "close": "Cerrar administración" }
