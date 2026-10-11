@@ -24,6 +24,7 @@ RAIN_EFFECTIVE_FRACTION = 0.7  # the recommender's effective-rain factor
 
 REGIME_MISSING = {"code": "regime_missing", "gate": "data", "params": {}}
 ROTATION_UNKNOWN = {"code": "rotation_unknown", "gate": "rotation", "params": {}}
+CLIMATE_UNKNOWN = {"code": "climate_unknown", "gate": "data", "params": {}}  # a caveat on every species, not a blocker
 MULTI_YEAR = {"code": "multi_year", "gate": "data", "params": {}}  # a herbaceous perennial occupies several campaigns
 BLOCKERS = frozenset({"soil_unsuitable", "soil_ph_unsuitable", "soil_texture_unsuitable",
                       "soil_drainage_unsuitable", "frost_risk"})

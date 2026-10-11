@@ -1,6 +1,7 @@
 """Crop planning endpoints (contract app.planning.models, version CONTRACT_VERSION)."""
 from __future__ import annotations
 
+import logging
 from datetime import UTC, date, datetime
 from typing import Annotated
 
@@ -23,7 +24,7 @@ from app.planning.models import (
     VarietiesResponse,
 )
 from app.planning.plan_write import PlanError, write_plan
-from app.planning.reference import load_reference
+from app.planning.reference import EMPTY_REFERENCE, load_reference
 from app.planning.service import (
     InvalidParcelId,
     ParcelNotFound,
@@ -33,6 +34,8 @@ from app.planning.service import (
     parcel_urn,
     parcel_varieties,
 )
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/planning", tags=["planning"])
 SourcesDep = Annotated[list[KnowledgeSource], Depends(get_knowledge_sources)]
@@ -107,8 +110,13 @@ async def farm(request: Request, sources: SourcesDep,
         raise
     except httpx.ConnectError as e:
         raise HTTPException(status_code=502, detail="Orion-LD unreachable") from e
-    ref = await load_reference(sources[0])
-    return farm_payload(parcels, farms, crops, cycles, target, ref.constraints)
+    try:
+        constraints = (await load_reference(sources[0])).constraints
+    except Exception:
+        # A failing step must not take the page down: no rotation rules reads as "rotation unknown".
+        logger.exception("planning farm: reference load failed graph=%s tenant=%s", sources[0].graph_id, tenant)
+        constraints = EMPTY_REFERENCE.constraints
+    return farm_payload(parcels, farms, crops, cycles, target, constraints)
 
 
 @router.put("/parcels/{parcel_id:path}/plan", response_model=PlanWriteResponse)

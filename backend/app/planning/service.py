@@ -1,6 +1,7 @@
 """Planning use cases: read the parcel, apply the pure rules, return contract dicts."""
 from __future__ import annotations
 
+import logging
 import re
 from datetime import date
 
@@ -17,6 +18,7 @@ from app.planning.estimates import (
 )
 from app.planning.evidence import load_crop_evidence
 from app.planning.fit import (
+    CLIMATE_UNKNOWN,
     MULTI_YEAR,
     REGIME_MISSING,
     ROTATION_UNKNOWN,
@@ -28,7 +30,7 @@ from app.planning.fit import (
     water_reasons,
 )
 from app.planning.history import history_complete, past_crops
-from app.planning.reference import load_reference
+from app.planning.reference import EMPTY_REFERENCE, load_reference
 from app.planning.rotation import rotation_reasons
 from app.planning.varieties import variety_stats
 from app.services.crop_cycles_client import fetch_crop_cycles
@@ -43,6 +45,8 @@ from app.species_registry import (
     list_species,
     resolve_species,
 )
+
+logger = logging.getLogger(__name__)
 
 REGIMES = ("secano", "regadío")
 NO_SOWING = {"sowing_type": None, "sowing_window": None, "source": None, "typical_sowing_doy": None}
@@ -108,9 +112,21 @@ async def parcel_fit(*, dao, source: KnowledgeSource, parcel_id: str, tenant_id:
     env = await load_environment(dao, parcel_id, tenant_id)
     regime_used, regime_source = resolve_regime(regime, env)
     cycles = await fetch_crop_cycles(env["parcel_id"], tenant_id)
+    if cycles is not None and not isinstance(cycles, dict):
+        # A malformed answer is "history unavailable", the same as no answer: it must never read as "no history".
+        logger.warning("planning fit: crop-cycles answer is %s, not an object tenant=%s parcel=%s",
+                       type(cycles).__name__, tenant_id, env["parcel_id"])
+        cycles = None
     history = past_crops(cycles, campaign) if cycles is not None else None
-    ref = await load_reference(source)
+    try:
+        ref = await load_reference(source)
+    except Exception:
+        # A failing step must not take the page down: without the reference every gate that needs it is "unknown".
+        logger.exception("planning fit: reference load failed graph=%s tenant=%s parcel=%s",
+                         source.graph_id, tenant_id, env["parcel_id"])
+        ref = EMPTY_REFERENCE
     detail = env.get("climate_detail") or {}
+    climate_known = bool(env.get("climate_class")) and bool(detail)
     climate = ParcelClimate(detail.get("coldest_month_min_c"), detail.get("annual_rainfall_mm"),
                             detail.get("annual_et0_mm"))
     soil = env.get("soil") or {}
@@ -132,8 +148,9 @@ async def parcel_fit(*, dao, source: KnowledgeSource, parcel_id: str, tenant_id:
         gate = assess_soil_suitability(tol.soil if tol else None, soil)
         reasons = soil_reasons(gate, parcel_soil_available=bool(soil.get("data_available")),
                                tolerance_available=bool(tol and tol.soil))
-        reasons += frost_reasons(sowing.get("sowing_type"), climate.coldest_month_min_c,
-                                 tol.frost_damage_c if tol else None)
+        # A herbaceous perennial stands through winter whatever its sowing calendar says.
+        reasons += frost_reasons("perennial" if lifecycle == "perennial" else sowing.get("sowing_type"),
+                                 climate.coldest_month_min_c, tol.frost_damage_c if tol else None)
         season_days = (CROP_REFERENCE.get(catalog_code(eppo)) or {}).get("growing_season_days") if eppo else None
         reasons += water_reasons(regime_used, climate, season_days)
         # No history, a partial one (a cycle that cannot be placed) or no rotation rules in the graph
@@ -144,6 +161,9 @@ async def parcel_fit(*, dao, source: KnowledgeSource, parcel_id: str, tenant_id:
             reasons += rotation_reasons(history, slug, campaign, ref.constraints)
         if regime_used is None:
             reasons.append(REGIME_MISSING)
+        if not climate_known:
+            # Without the parcel's climate the frost, water and sowing gates silently pass: say so.
+            reasons.append(CLIMATE_UNKNOWN)
         if lifecycle == "perennial":
             reasons.append(MULTI_YEAR)
         trials = has_trials(eppo, ref.trial_eppo)

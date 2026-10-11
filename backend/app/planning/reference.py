@@ -52,6 +52,10 @@ class Reference:
     trial_eppo: frozenset[str]
 
 
+# What a failing graph read degrades to: no tolerances and no rotation rules, so every gate that
+# needs them reports "unknown" and nothing can read as "fits".
+EMPTY_REFERENCE = Reference(tolerances={}, constraints=(), trial_eppo=frozenset())
+
 _cache: dict[str, tuple[float, Reference]] = {}
 
 

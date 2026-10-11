@@ -302,3 +302,16 @@ def test_put_plan_route_requires_a_verified_tenant(client, monkeypatch):
 def test_put_plan_route_maps_an_unreachable_orion_to_502(client, monkeypatch):
     monkeypatch.setattr(planning_api, "write_plan", AsyncMock(side_effect=httpx.ConnectError("down")))
     assert client.put(PLAN_URL, json=PLAN_BODY).status_code == 502
+
+
+def test_farm_route_survives_a_failing_reference_load(client, monkeypatch, caplog):
+    # A failing reference read degrades to "rotation unknown"; the page still renders.
+    parcel = {"id": "urn:ngsi-ld:AgriParcel:t:p1", "name": "Soto", "area": 2, "irrigationRegime": "secano"}
+    monkeypatch.setattr(planning_api, "load_farm",
+                        AsyncMock(return_value=([parcel], [], {}, {parcel["id"]: {"cycles": []}})))
+    monkeypatch.setattr(planning_api, "load_reference", AsyncMock(side_effect=RuntimeError("graph down")))
+    with caplog.at_level("ERROR", logger=planning_api.logger.name):
+        r = client.get(FARM_URL, params={"campaign": 2027})
+    assert r.status_code == 200
+    assert [w["code"] for w in r.json()["parcels"][0]["warnings"]] == ["rotation_unknown"]
+    assert any("graph down" in rec.getMessage() or rec.exc_info for rec in caplog.records)
