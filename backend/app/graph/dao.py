@@ -5211,11 +5211,14 @@ class GraphDAO:
             finally:
                 await orion.close()
             # Prefer a running station: skip closed-day series entities
-            # (dailySummary true) whose et0 is a daily total (#1043).
+            # (dailySummary true) whose et0 is a daily total (#1043). The "-daily"
+            # id suffix stays as a legacy guard, as in the weather API.
             def _is_daily(e):
                 node = e.get("dailySummary")
-                return isinstance(node, dict) and node.get("value") is True
-            weather_entities = [e for e in weather_entities if not _is_daily(e)]
+                if isinstance(node, dict) and node.get("value") is True:
+                    return True
+                return str(e.get("id", "")).endswith("-daily")
+            weather_entities = [e for e in (weather_entities or []) if not _is_daily(e)]
             if not weather_entities:
                 logger.info("No WeatherObserved entities found for tenant %s", tenant_id)
                 return None

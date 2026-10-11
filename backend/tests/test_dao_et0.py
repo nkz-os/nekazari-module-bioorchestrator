@@ -50,16 +50,20 @@ def test_fetch_weekly_eto_uses_request_tenant(mock_driver):
     )
 
 
-def test_fetch_weekly_eto_skips_closed_day_entities(mock_driver):
-    """A '-daily' WeatherObserved returned first must be ignored in favour of the live one."""
+@pytest.mark.parametrize("closed", [
+    # dailySummary true is the contract of the closed-day series (weather-worker)
+    {"id": "urn:ngsi-ld:WeatherObserved:t:parcel-1-summary",
+     "dailySummary": {"type": "Property", "value": True}},
+    # the "-daily" id suffix stays as a legacy guard
+    {"id": "urn:ngsi-ld:WeatherObserved:t:parcel-1-daily"},
+])
+def test_fetch_weekly_eto_skips_closed_day_entities(mock_driver, closed):
+    """A closed-day WeatherObserved returned first must be ignored in favour of the live one."""
 
     class _Orion(_FakeOrionClient):
         async def query_entities(self, *, type: str, limit: int = 1):
             assert limit >= 2
-            return [
-                {"id": "urn:ngsi-ld:WeatherObserved:t:parcel-1-daily"},
-                {"id": "urn:ngsi-ld:WeatherObserved:t:parcel-1"},
-            ]
+            return [closed, {"id": "urn:ngsi-ld:WeatherObserved:t:parcel-1"}]
 
     posted: list[dict] = []
 
