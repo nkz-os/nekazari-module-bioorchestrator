@@ -4871,7 +4871,7 @@ species:
   eppo_code: TRZAX
 - name: durum_wheat
   scientific_name: Triticum durum
-  agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_11443
+  agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_7955
   stages:
   - name: initial
     description: From planting to 10% ground cover
@@ -4958,7 +4958,7 @@ species:
   eppo_code: TRZDU
 - name: maize
   scientific_name: Zea mays
-  agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_8487
+  agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_8504
   stages:
   - name: initial
     parameters:
@@ -5012,7 +5012,7 @@ species:
   eppo_code: ZEAMX
 - name: rice
   scientific_name: Oryza sativa
-  agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_6639
+  agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_5438
   stages:
   - name: initial
     parameters:
@@ -5061,7 +5061,7 @@ species:
   eppo_code: ORYSA
 - name: soybean
   scientific_name: Glycine max
-  agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_6706
+  agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_3301
   stages:
   - name: initial
     parameters:
@@ -5110,7 +5110,7 @@ species:
   eppo_code: GLXMA
 - name: sunflower
   scientific_name: Helianthus annuus
-  agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_7205
+  agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_3539
   stages:
   - name: initial
     parameters:
@@ -5159,7 +5159,7 @@ species:
   eppo_code: HELAN
 - name: potato
   scientific_name: Solanum tuberosum
-  agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_7249
+  agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_7221
   stages:
   - name: initial
     parameters:
@@ -5208,7 +5208,7 @@ species:
   eppo_code: SOLTU
 - name: alfalfa
   scientific_name: Medicago sativa
-  agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_4682
+  agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_4693
   stages:
   - name: initial
     parameters:
@@ -5257,7 +5257,7 @@ species:
   eppo_code: MEDSA
 - name: grapevine
   scientific_name: Vitis vinifera
-  agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_8237
+  agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_8283
   stages:
   - name: initial
     parameters:
@@ -5328,7 +5328,7 @@ species:
   eppo_code: VITVI
 - name: olive
   scientific_name: Olea europaea
-  agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_5323
+  agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_5339
   stages:
   - name: initial
     parameters:
@@ -5424,7 +5424,7 @@ species:
   eppo_code: OLVEU
 - name: almond
   scientific_name: Prunus dulcis
-  agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_334
+  agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_6278
   stages:
   - name: initial
     description: FAO-56 initial stage for almond
@@ -5511,7 +5511,7 @@ species:
   eppo_code: PRNDU
 - name: apple
   scientific_name: Malus domestica
-  agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_4558
+  agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_4555
   stages:
   - name: initial
     description: FAO-56 initial stage for apple
@@ -5576,7 +5576,7 @@ species:
   eppo_code: MABSD
 - name: apricot
   scientific_name: Prunus armeniaca
-  agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_543
+  agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_6280
   stages:
   - name: initial
     description: FAO-56 initial stage for apricot
@@ -5641,7 +5641,7 @@ species:
   eppo_code: PRNAR
 - name: artichoke
   scientific_name: Cynara cardunculus var. scolymus
-  agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_638
+  agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_2066
   stages:
   - name: initial
     description: FAO-56 initial stage for artichoke
@@ -5706,7 +5706,7 @@ species:
   eppo_code: CYNSC
 - name: asparagus
   scientific_name: Asparagus officinalis
-  agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_669
+  agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_26366
   stages:
   - name: initial
     description: FAO-56 initial stage for asparagus
@@ -5771,7 +5771,7 @@ species:
   eppo_code: ASPOF
 - name: barley
   scientific_name: Hordeum vulgare
-  agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_3660
+  agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_3662
   stages:
   - name: initial
     description: FAO-56 initial stage for barley
@@ -5836,7 +5836,7 @@ species:
   eppo_code: HORVX
 - name: bean
   scientific_name: Phaseolus vulgaris
-  agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_5762
+  agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_5767
   stages:
   - name: initial
     description: FAO-56 initial stage for bean
@@ -5901,7 +5901,7 @@ species:
   eppo_code: PHSVX
 - name: broccoli
   scientific_name: Brassica oleracea var. italica
-  agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_10877
+  agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_9407
   stages:
   - name: initial
     description: FAO-56 initial stage for broccoli
@@ -5966,7 +5966,7 @@ species:
   eppo_code: BROOL
 - name: buckwheat
   scientific_name: Fagopyrum esculentum
-  agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_2879
+  agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_2777
   stages:
   - name: initial
     description: FAO-56 initial stage for buckwheat
@@ -6031,7 +6031,7 @@ species:
   eppo_code: FAGES
 - name: cardoon
   scientific_name: Cynara cardunculus
-  agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_2015
+  agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_2065
   stages:
   - name: initial
     description: FAO-56 initial stage for cardoon
@@ -6096,7 +6096,7 @@ species:
   eppo_code: CYNCA
 - name: cherry
   scientific_name: Prunus avium
-  agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_6286
+  agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_6281
   stages:
   - name: initial
     description: FAO-56 initial stage for cherry
@@ -6291,7 +6291,7 @@ species:
   eppo_code: LINUS
 - name: garlic
   scientific_name: Allium sativum
-  agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_261
+  agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_290
   stages:
   - name: initial
     description: FAO-56 initial stage for garlic
@@ -6356,7 +6356,7 @@ species:
   eppo_code: ALLSA
 - name: grass_pea
   scientific_name: Lathyrus sativus
-  agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_4219
+  agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_4218
   stages:
   - name: initial
     description: FAO-56 initial stage for grass_pea
@@ -6486,7 +6486,7 @@ species:
   eppo_code: CNUSA
 - name: leek
   scientific_name: Allium porrum
-  agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_425
+  agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_278
   stages:
   - name: initial
     description: FAO-56 initial stage for leek
@@ -6616,7 +6616,7 @@ species:
   eppo_code: LENCU
 - name: oat
   scientific_name: Avena sativa
-  agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_728
+  agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_731
   stages:
   - name: initial
     description: FAO-56 initial stage for oat
@@ -6681,7 +6681,7 @@ species:
   eppo_code: AVESA
 - name: onion
   scientific_name: Allium cepa
-  agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_362
+  agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_281
   stages:
   - name: initial
     description: FAO-56 initial stage for onion
@@ -6811,7 +6811,7 @@ species:
   eppo_code: PIBSX
 - name: peach
   scientific_name: Prunus persica
-  agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_6357
+  agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_6289
   stages:
   - name: initial
     description: FAO-56 initial stage for peach
@@ -6876,7 +6876,7 @@ species:
   eppo_code: PRNPS
 - name: pear
   scientific_name: Pyrus communis
-  agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_6369
+  agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_6391
   stages:
   - name: initial
     description: FAO-56 initial stage for pear
@@ -6941,7 +6941,7 @@ species:
   eppo_code: PYUCO
 - name: pistachio
   scientific_name: Pistacia vera
-  agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_13438
+  agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_5930
   stages:
   - name: initial
     description: FAO-56 initial stage for pistachio
@@ -7006,7 +7006,7 @@ species:
   eppo_code: PIAVE
 - name: plum
   scientific_name: Prunus domestica
-  agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_6282
+  agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_6285
   stages:
   - name: initial
     description: FAO-56 initial stage for plum
@@ -7136,7 +7136,7 @@ species:
   eppo_code: BRSNN
 - name: rye
   scientific_name: Secale cereale
-  agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_6913
+  agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_6919
   stages:
   - name: initial
     description: FAO-56 initial stage for rye
@@ -7201,7 +7201,7 @@ species:
   eppo_code: SECCE
 - name: sugar_beet
   scientific_name: Beta vulgaris
-  agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_891
+  agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_890
   stages:
   - name: initial
     description: FAO-56 initial stage for sugar_beet
@@ -7266,7 +7266,7 @@ species:
   eppo_code: BEAVX
 - name: tomato
   scientific_name: Solanum lycopersicum
-  agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_7805
+  agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_4475
   stages:
   - name: initial
     description: FAO-56 initial stage for tomato
@@ -7396,7 +7396,7 @@ species:
   eppo_code: VICSA
 - name: faba_bean
   scientific_name: Vicia faba
-  agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_8217
+  agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_8220
   stages:
   - name: initial
     description: FAO-56 initial stage for faba_bean
@@ -7461,7 +7461,7 @@ species:
   eppo_code: VICFX
 - name: pepper
   scientific_name: Capsicum annuum
-  agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_1282
+  agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_1288
   stages:
   - name: initial
     description: FAO-56 initial stage for pepper
@@ -7591,7 +7591,7 @@ species:
   eppo_code: SOLME
 - name: strawberry
   scientific_name: Fragaria x ananassa
-  agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_3082
+  agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_33356
   stages:
   - name: initial
     description: FAO-56 initial stage for strawberry
