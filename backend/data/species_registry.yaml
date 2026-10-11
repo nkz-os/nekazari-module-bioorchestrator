@@ -277,7 +277,7 @@ species:
   leek:
     scientific_name: "Allium porrum"
     eppo_code: "ALLPO"
-    agrovoc_uri: "http://aims.fao.org/aos/agrovoc/c_296"
+    agrovoc_uri: "http://aims.fao.org/aos/agrovoc/c_278"
     lifecycle: "annual"
     common_names: { es: "puerro", en: "leek", eu: "porru", fr: "poireau", ca: "porro", pt: "alho-porro" }
 
@@ -300,7 +300,7 @@ species:
     eppo_code: "CYUCA"
     # alias CYNSC: Cynara cardunculus var. scolymus: the code the graph Species node and the phenology seed use
     eppo_aliases: ["CYNSC"]
-    agrovoc_uri: "http://aims.fao.org/aos/agrovoc/c_2048"
+    agrovoc_uri: "http://aims.fao.org/aos/agrovoc/c_2066"
     lifecycle: "perennial"
     common_names: { es: "alcachofa", en: "artichoke", eu: "alkatxofa", fr: "artichaut", ca: "carxofa", pt: "alcachofra" }
 
