@@ -13,9 +13,13 @@ const CropSimulation = lazy(() => import('../components/CropSimulation'));
 
 // ParcelContext selects by the entity id (the AgriParcel URN, as fetchParcels returns it), which is the
 // same id the planning rows carry as parcel_id, so it is passed through unchanged.
+// ParcelProvider also follows the viewer's selected parcel once its list loads; re-assert the parcel the
+// user opened whenever the selection drifts, or the simulation would show another parcel under this one.
 function SelectParcel({ parcelId }: { parcelId: string }) {
-  const { setSelectedParcel } = useParcelContext();
-  useEffect(() => { setSelectedParcel(parcelId); }, [parcelId, setSelectedParcel]);
+  const { selectedParcel, setSelectedParcel } = useParcelContext();
+  useEffect(() => {
+    if (selectedParcel !== parcelId) setSelectedParcel(parcelId);
+  }, [parcelId, selectedParcel, setSelectedParcel]);
   return null;
 }
 
