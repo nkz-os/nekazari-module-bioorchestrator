@@ -4,6 +4,7 @@ import pytest
 from app.services.eurostat_yields import (
     AREA,
     HUMIDITY,
+    MIN_MEDIAN_YEARS,
     PRODUCTION,
     build_series,
     parse_jsonstat,
@@ -96,15 +97,61 @@ def test_node_props_carry_provenance_and_basis():
     assert n["datasetUpdated"] and n["extractedAt"] and n["nutsVersion"]
 
 
-def test_payload_series_and_recent_median():
+def test_payload_series_and_recent_years():
     body = yields_payload(list(reversed(_nodes())), recent=5)
     assert [s["year"] for s in body["series"]] == [2023, 2024]
     assert body["recent_years"] == [2023, 2024]
-    assert body["recent_median_t_ha"] == pytest.approx((331950 / 81360 + 431910 / 76600) / 2)
     assert body["humidity_basis"] == "eu_standard"
     assert yields_payload(_nodes(), recent=1)["recent_years"] == [2024]
     with pytest.raises(ValueError):
         yields_payload([], recent=5)
+
+
+def _three_year_nodes():
+    # 2022-2024 yields of 4.0, 5.0 and 6.0 t/ha
+    nodes = []
+    for year, yld in [(2022, 4.0), (2023, 5.0), (2024, 6.0)]:
+        n = dict(_nodes()[0])
+        n.update(year=year, yieldTHa=yld, areaHa=1000.0, productionT=yld * 1000.0)
+        nodes.append(n)
+    return nodes
+
+
+def test_payload_median_needs_the_minimum_years():
+    assert MIN_MEDIAN_YEARS == 3
+    body = yields_payload(list(reversed(_three_year_nodes())), recent=5)
+    assert body["recent_years"] == [2022, 2023, 2024]
+    assert body["years_used"] == 3 and body["latest_year"] == 2024
+    assert body["recent_median_t_ha"] == pytest.approx(5.0)
+    # two yield years in the window: the years are listed, the median is withheld
+    two = yields_payload(_three_year_nodes(), recent=2)
+    assert two["recent_years"] == [2023, 2024] and two["years_used"] == 2
+    assert two["recent_median_t_ha"] is None
+    assert yields_payload(_nodes(), recent=5)["recent_median_t_ha"] is None
+
+
+def test_payload_single_yield_year_has_no_median():
+    node = dict(_nodes()[0])
+    body = yields_payload([node], recent=5)
+    assert body["recent_median_t_ha"] is None
+    assert body["years_used"] == 1
+    assert body["latest_year"] == node["year"]
+    assert body["recent_years"] == [node["year"]]
+
+
+def test_payload_without_any_yield_has_no_latest_year():
+    node = dict(_nodes()[0], yieldTHa=None)
+    body = yields_payload([node], recent=5)
+    assert body["years_used"] == 0 and body["latest_year"] is None
+    assert body["recent_median_t_ha"] is None and body["recent_years"] == []
+
+
+def test_payload_latest_year_is_the_newest_with_a_yield():
+    nodes = _three_year_nodes()
+    nodes.append(dict(nodes[-1], year=2025, yieldTHa=None))
+    body = yields_payload(nodes, recent=5)
+    assert body["latest_year"] == 2024 and body["years_used"] == 3
+    assert body["series"][-1]["year"] == 2025
 
 
 def test_request_url_pins_codes_and_level():
@@ -120,3 +167,29 @@ def test_request_url_pins_codes_and_level():
 def test_humidity_only_groups_are_dropped():
     values = {"2": 14.0, "3": 14.0}                     # common wheat: humidity, no area/production
     assert build_series(parse_jsonstat(_doc(values)), {"C1110": "TRZAX"}) == []
+
+
+def test_not_significant_zero_production_gives_no_yield():
+    # production 0.0 flagged "n" (not significant) with a reported area: a gap, not a failure
+    values = {"0": 81.36, "1": 76.6, "4": 0.0, "5": 431.91}
+    rows = build_series(parse_jsonstat(_doc(values, status={"4": "n"})), {"C1110": "TRZAX"})
+    r2023 = next(r for r in rows if r.year == 2023)
+    assert r2023.yield_t_ha is None
+    assert r2023.area_ha == pytest.approx(81360) and r2023.production_t == 0.0
+    assert f"{PRODUCTION}:n" in r2023.flags
+    assert next(r for r in rows if r.year == 2024).yield_t_ha == pytest.approx(431910 / 76600)
+
+
+def test_zero_production_without_flag_gives_no_yield():
+    values = {"0": 81.36, "1": 76.6, "4": 0.0, "5": 431.91}
+    rows = build_series(parse_jsonstat(_doc(values)), {"C1110": "TRZAX"})
+    r2023 = next(r for r in rows if r.year == 2023)
+    assert r2023.yield_t_ha is None and r2023.production_t == 0.0 and r2023.flags == ()
+
+
+def test_not_significant_area_gives_no_yield():
+    values = {"0": 81.36, "1": 76.6, "4": 331.95, "5": 431.91}
+    rows = build_series(parse_jsonstat(_doc(values, status={"0": "n"})), {"C1110": "TRZAX"})
+    r2023 = next(r for r in rows if r.year == 2023)
+    assert r2023.yield_t_ha is None and f"{AREA}:n" in r2023.flags
+    assert r2023.area_ha == pytest.approx(81360)

@@ -27,6 +27,11 @@ CONSTRAINT = (
     "CREATE CONSTRAINT regional_yield_stat_key IF NOT EXISTS "
     "FOR (n:RegionalYieldStat) REQUIRE n.key IS UNIQUE"
 )
+# The public regional-yields lookup matches on (eppo, nuts); without this it scans every node.
+INDEX = (
+    "CREATE INDEX regional_yield_stat_eppo_nuts IF NOT EXISTS "
+    "FOR (n:RegionalYieldStat) ON (n.eppo, n.nuts)"
+)
 MERGE = "UNWIND $rows AS row MERGE (n:RegionalYieldStat {key: row.key}) SET n = row"
 BATCH = 1000
 
@@ -71,6 +76,7 @@ def main() -> None:
         driver.verify_connectivity()
         with driver.session() as session:
             session.run(CONSTRAINT).consume()
+            session.run(INDEX).consume()
             for i in range(0, len(rows), BATCH):
                 session.run(MERGE, rows=rows[i:i + BATCH]).consume()
         print(f"[seed_regional_yields] wrote {len(rows)} rows to {args.neo4j_uri}")

@@ -28,7 +28,8 @@ YIELDS = [
      "areaHa": a, "productionT": p, "humidityBasis": "eu_standard", "humidityPct": 14.0,
      "yieldTHa": p / a, "yieldMethod": "production_over_area", "flags": [],
      "datasetUpdated": "2026-09-08T23:00:00+0200", "extractedAt": "2026-10-11T09:29:00+00:00"}
-    for y, a, p in [(2023, 81360.0, 331950.0), (2024, 76600.0, 431910.0)]
+    for y, a, p in [(2022, 79000.0, 316000.0), (2023, 81360.0, 331950.0),
+                    (2024, 76600.0, 431910.0)]
 ]
 
 
@@ -73,8 +74,9 @@ def test_regional_yields_series_median_and_attribution(client):
     with patch.object(BalanceDao, "get_regional_yields", AsyncMock(return_value=YIELDS)) as m:
         body = client.get("/api/graph/agriculture/regional-yields?eppo=TRZAX&nuts=es22").json()
     m.assert_awaited_once_with("TRZAX", "ES22")
-    assert body["humidity_basis"] == "eu_standard" and body["recent_years"] == [2023, 2024]
-    assert body["recent_median_t_ha"] == pytest.approx((331950 / 81360 + 431910 / 76600) / 2)
+    assert body["humidity_basis"] == "eu_standard" and body["recent_years"] == [2022, 2023, 2024]
+    assert body["years_used"] == 3 and body["latest_year"] == 2024
+    assert body["recent_median_t_ha"] == pytest.approx(331950 / 81360)
     assert [a["source_id"] for a in body["attributions"]] == ["eurostat_apro_cpshr"]
 
 
@@ -82,3 +84,17 @@ def test_regional_yields_empty_is_404(client):
     with patch.object(BalanceDao, "get_regional_yields", AsyncMock(return_value=[])):
         resp = client.get("/api/graph/agriculture/regional-yields?eppo=TRZAX&nuts=ES22")
     assert resp.status_code == 404
+
+
+def test_coefficients_maize_registry_code_resolves_to_the_stored_code(client):
+    with patch.object(BalanceDao, "get_crop_coefficients", AsyncMock(return_value=NODE)) as m:
+        resp = client.get("/api/graph/agriculture/crop-balance-coefficients?eppo=zeama")
+    assert resp.status_code == 200
+    m.assert_awaited_once_with("ZEAMX")
+
+
+def test_regional_yields_maize_registry_code_resolves_to_the_stored_code(client):
+    with patch.object(BalanceDao, "get_regional_yields", AsyncMock(return_value=YIELDS)) as m:
+        resp = client.get("/api/graph/agriculture/regional-yields?eppo=ZEAMA&nuts=es22")
+    assert resp.status_code == 200
+    m.assert_awaited_once_with("ZEAMX", "ES22")

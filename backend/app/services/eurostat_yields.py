@@ -15,6 +15,7 @@ AREA = "AR_THS_HA"                 # thousand hectares
 PRODUCTION = "HPRD_HUMD_EU_THS_T"  # thousand tonnes, EU standard humidity
 HUMIDITY = "HUMD_EU_PC"            # EU standard humidity, %
 YIELD_METHOD = "production_over_area"
+MIN_MEDIAN_YEARS = 3               # yield years needed in the window before a median is given
 API_URL = "https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/apro_cpshr"
 
 
@@ -91,7 +92,8 @@ def parse_jsonstat(doc: dict) -> list[Cell]:
 def build_series(cells: list[Cell], crop_map: dict[str, str]) -> list[YieldRow]:
     """Annual rows per (region, crop, year) for the crops in `crop_map` (Eurostat code → EPPO).
 
-    Groups with neither area nor production (only the standard humidity) are dropped.
+    Groups with neither area nor production (only the standard humidity) are dropped. The yield is
+    production / area, and None when production is zero or either input is flagged "n".
     """
     groups: dict[tuple[str, str, int], dict[str, Cell]] = {}
     for c in cells:
@@ -106,7 +108,12 @@ def build_series(cells: list[Cell], crop_map: dict[str, str]) -> list[YieldRow]:
         prod_t = prod.value * 1000 if prod and prod.value is not None else None
         if area_ha is None and prod_t is None:
             continue  # humidity-only cell: no statistic for that region and year
-        yield_t_ha = prod_t / area_ha if area_ha and prod_t is not None and area_ha > 0 else None
+        # A zero production, or a cell flagged "n" (not significant), is a reporting gap and not a
+        # measured yield: keep the row and its flags, but give it no yield.
+        not_significant = any(c is not None and c.flag and "n" in c.flag for c in (area, prod))
+        measurable = (area_ha is not None and area_ha > 0
+                      and prod_t is not None and prod_t > 0 and not not_significant)
+        yield_t_ha = prod_t / area_ha if measurable else None
         flags = tuple(sorted({f"{k}:{v.flag}" for k, v in by_var.items() if v.flag}))
         rows.append(YieldRow(
             nuts=geo, eurostat_crop=crop, eppo=crop_map[crop], year=year,
@@ -159,7 +166,11 @@ def to_node_props(row: YieldRow, *, dataset_updated: str | None, extracted_at: s
 
 
 def yields_payload(nodes: list[dict], recent: int) -> dict:
-    """API body: the annual series plus the median of the last `recent` years with a yield."""
+    """API body: the annual series plus the median of the last `recent` years with a yield.
+
+    The median is given only when the window holds at least MIN_MEDIAN_YEARS yield years;
+    `years_used` and `latest_year` let the consumer judge how much data and how recent.
+    """
     if not nodes:
         raise ValueError("no rows")
     if recent < 1:
@@ -170,7 +181,8 @@ def yields_payload(nodes: list[dict], recent: int) -> dict:
         "yield_t_ha": n.get("yieldTHa"), "humidity_pct": n.get("humidityPct"),
         "flags": list(n.get("flags") or []),
     } for n in ordered]
-    last = [s for s in series if s["yield_t_ha"] is not None][-recent:]
+    with_yield = [s for s in series if s["yield_t_ha"] is not None]
+    last = with_yield[-recent:]
     first = ordered[0]
     return {
         "eppo": first["eppo"],
@@ -183,6 +195,9 @@ def yields_payload(nodes: list[dict], recent: int) -> dict:
         "dataset_updated": first.get("datasetUpdated"),
         "extracted_at": first.get("extractedAt"),
         "series": series,
-        "recent_median_t_ha": statistics.median(s["yield_t_ha"] for s in last) if last else None,
+        "recent_median_t_ha": (statistics.median(s["yield_t_ha"] for s in last)
+                               if len(last) >= MIN_MEDIAN_YEARS else None),
         "recent_years": [s["year"] for s in last],
+        "years_used": len(last),
+        "latest_year": with_yield[-1]["year"] if with_yield else None,
     }
