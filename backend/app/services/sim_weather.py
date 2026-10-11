@@ -114,13 +114,21 @@ def _usable(
 class _Fetched:
     days: dict[date, DailyWeather] = field(default_factory=dict)
     et0_raised: set[date] = field(default_factory=set)
+    sources: dict[date, str] = field(default_factory=dict)  # segment tag per day
+
+
+# The weather API fills days missing from the parcel series on demand (Open-Meteo model
+# analysis for recent days, reanalysis before) and tags each day; its own series and IoT
+# sensors stay "parcel_daily". Days it cannot fill come back empty and are not invented.
+_FILL_TAGS = {"model_analysis": "model_analysis", "reanalysis": "reanalysis"}
 
 
 # ------------------------------------------------------------------ fetching
 async def fetch_parcel_daily(
     parcel_id: str, tenant_id: str, start: date, end: date,
 ) -> _Fetched:
-    """Usable days of the parcel series in [start, end] (requests of <= 400 days)."""
+    """Usable days of the parcel series in [start, end], gaps filled by the weather API
+    (``fill=open_meteo``), each day tagged with its source (requests of <= 400 days)."""
     out = _Fetched()
     url = f"{_weather_api_url()}/api/weather/parcel/{parcel_id}/daily"
     s = start
@@ -129,7 +137,7 @@ async def fetch_parcel_daily(
             while s <= end:
                 e = min(s + timedelta(days=_PARCEL_MAX_DAYS - 1), end)
                 resp = await client.get(
-                    url, params={"start": s.isoformat(), "end": e.isoformat()},
+                    url, params={"start": s.isoformat(), "end": e.isoformat(), "fill": "open_meteo"},
                     headers=soil_module_headers(tenant_id))
                 if resp.status_code != 200:
                     raise SimulationError(
@@ -145,6 +153,7 @@ async def fetch_parcel_daily(
                                         row.get("precip_mm"), row.get("et0_mm"))
                     if w is not None:
                         out.days[d] = w
+                        out.sources[d] = _FILL_TAGS.get(row.get("source"), "parcel_daily")
                         if raised:
                             out.et0_raised.add(d)
                 s = e + timedelta(days=1)
@@ -263,7 +272,7 @@ async def assemble_observed(
     values: dict[date, tuple[DailyWeather, str]] = {}
     for d in _days(wanted_start, end):
         if d in parcel:
-            values[d] = (parcel[d], "parcel_daily")
+            values[d] = (parcel[d], parcel_fetch.sources.get(d, "parcel_daily"))
         elif d <= upper and d in archive:
             values[d] = (archive[d], "archive")
     if not values:
@@ -282,7 +291,7 @@ async def assemble_observed(
     days = _days(first, last)
     raised = sorted(
         d for d in days
-        if d in (parcel_fetch.et0_raised if values[d][1] == "parcel_daily" else archive_fetch.et0_raised))
+        if d in (archive_fetch.et0_raised if values[d][1] == "archive" else parcel_fetch.et0_raised))
     return ObservedWeather(
         weather=[values[d][0] for d in days],
         sim_start=first,

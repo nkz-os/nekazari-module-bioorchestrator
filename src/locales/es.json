@@ -1141,7 +1141,9 @@
     },
     "weatherSource": {
       "archive": "Archivo",
-      "parcel_daily": "Datos de la parcela"
+      "parcel_daily": "Datos de la parcela",
+      "model_analysis": "Análisis del modelo",
+      "reanalysis": "Reanálisis"
     },
     "sowingSource": {
       "request": "solicitud",

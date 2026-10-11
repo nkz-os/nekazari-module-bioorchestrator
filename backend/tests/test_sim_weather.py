@@ -336,3 +336,47 @@ def test_invalid_day_is_not_usable_and_becomes_gap():
         _run(sw.assemble_observed(PARCEL, TENANT, LAT, LON, planting, today))
     assert ei.value.code == "weather_gaps"
 
+
+
+# --------------------------------------------------------- weather-api fill
+def test_parcel_series_is_requested_with_the_weather_api_fill():
+    planting, today = date(2026, 3, 1), date(2026, 3, 20)
+    net = _Net(parcel=lambda p: _parcel_payload(*_parcel_range(p)))
+    with patch("httpx.AsyncClient", net):
+        _run(sw.assemble_observed(PARCEL, TENANT, LAT, LON, planting, today))
+    assert all(c[1].get("fill") == "open_meteo" for c in net.calls if "/api/weather/parcel/" in c[0])
+
+
+def test_days_filled_by_the_weather_api_close_the_gap_and_keep_their_source():
+    # the parcel series lacks two recent days; the weather API fills them with model analysis
+    planting, today = date(2026, 3, 1), date(2026, 3, 20)
+    filled = {date(2026, 3, 16), date(2026, 3, 17)}
+
+    def parcel(p):
+        payload = _parcel_payload(*_parcel_range(p))
+        for row in payload["days"]:
+            d = date.fromisoformat(row["date"])
+            row["source"] = "model_analysis" if d in filled else "parcel_weather"
+        return payload
+
+    net = _Net(parcel=parcel)
+    with patch("httpx.AsyncClient", net):
+        res = _run(sw.assemble_observed(PARCEL, TENANT, LAT, LON, planting, today))
+    assert [s["source"] for s in res.segments] == ["parcel_daily", "model_analysis", "parcel_daily"]
+    seg = res.segments[1]
+    assert (seg["start"], seg["end"], seg["days"]) == ("2026-03-16", "2026-03-17", 2)
+    assert all("archive.test" not in c[0] for c in net.calls)
+
+
+def test_reanalysis_fill_is_tagged_as_reanalysis():
+    planting, today = date(2026, 3, 1), date(2026, 3, 20)
+
+    def parcel(p):
+        payload = _parcel_payload(*_parcel_range(p))
+        for row in payload["days"]:
+            row["source"] = "reanalysis" if row["date"] < "2026-01-01" else "parcel_weather"
+        return payload
+
+    with patch("httpx.AsyncClient", _Net(parcel=parcel)):
+        res = _run(sw.assemble_observed(PARCEL, TENANT, LAT, LON, planting, today))
+    assert [s["source"] for s in res.segments] == ["reanalysis", "parcel_daily"]

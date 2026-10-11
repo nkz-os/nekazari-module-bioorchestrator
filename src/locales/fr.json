@@ -390,7 +390,9 @@
     },
     "weatherSource": {
       "archive": "Archive",
-      "parcel_daily": "Données de la parcelle"
+      "parcel_daily": "Données de la parcelle",
+      "model_analysis": "Analyse du modèle",
+      "reanalysis": "Réanalyse"
     },
     "sowingSource": {
       "request": "demande",

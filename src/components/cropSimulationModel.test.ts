@@ -25,6 +25,8 @@ describe('segmentLabel', () => {
       .toBe('A · 2026-01-01 (1)');
   });
   it('maps known sources to keys', () => {
+    expect(weatherSourceKey('model_analysis')).toBe('cropSimulation.weatherSource.model_analysis');
+    expect(weatherSourceKey('reanalysis')).toBe('cropSimulation.weatherSource.reanalysis');
     expect(weatherSourceKey('parcel_daily')).toBe('cropSimulation.weatherSource.parcel_daily');
     expect(weatherSourceKey('other')).toBeNull();
     expect(sowingSourceKey('field_operations')).toBe('cropSimulation.sowingSource.field_operations');
