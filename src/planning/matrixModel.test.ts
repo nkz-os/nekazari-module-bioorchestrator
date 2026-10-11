@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { canPlan, previousMain, rowsForFarm, warningText, widgetColumns } from './matrixModel';
+import { canPlan, lockReason, previousMain, rowsForFarm, warningText, widgetColumns } from './matrixModel';
 import type { CycleCell, ParcelRow } from './types';
 
 const cell = (over: Partial<CycleCell>): CycleCell => ({
@@ -35,6 +35,34 @@ describe('matrix model', () => {
   it('an unreadable history never reads as free', () => {
     expect(canPlan(row([], { cycles_available: false }), 2027)).toBe(false);
     expect(canPlan(row([]), 2027)).toBe(true);
+  });
+  it('says why a parcel cannot be planned, and nothing when it can', () => {
+    expect(lockReason(row([], { cycles_available: false }), 2027)).toBe('cycles_unavailable');
+    // An unreadable history wins over any cell it may still carry.
+    expect(lockReason(row([cell({ provenance: 'actual', status: 'active' })], { cycles_available: false }), 2027)).toBe('cycles_unavailable');
+    expect(lockReason(row([cell({ lifecycle: 'perennial', first_campaign: 2025 })]), 2027)).toBe('perennial_occupies');
+    expect(lockReason(row([cell({ lifecycle: 'perennial', first_campaign: null })]), 2027)).toBe('perennial_occupies');
+    // A perennial still planned: it takes precedence over a sown annual beside it.
+    expect(lockReason(row([cell({ provenance: 'actual', status: 'active' }),
+      cell({ lifecycle: 'perennial', first_campaign: 2025 })]), 2027)).toBe('perennial_occupies');
+    expect(lockReason(row([cell({ provenance: 'actual', status: 'active' })]), 2027)).toBe('campaign_started');
+    expect(lockReason(row([cell({ provenance: 'declared' })]), 2027)).toBe('campaign_started');
+    expect(lockReason(row([cell({ provenance: 'planned', status: null })]), 2027)).toBe('campaign_started');
+    expect(lockReason(row([]), 2027)).toBeNull();
+    expect(lockReason(row([cell({})]), 2027)).toBeNull();
+    expect(lockReason(row([cell({ lifecycle: 'perennial', first_campaign: 2027 })]), 2027)).toBeNull();
+  });
+  it('lockReason is null exactly when canPlan is true', () => {
+    const fixtures: ParcelRow[] = [
+      row([]), row([cell({})]), row([], { cycles_available: false }),
+      row([cell({ provenance: 'actual', status: 'active' })]), row([cell({ provenance: 'declared' })]),
+      row([cell({ lifecycle: 'perennial', first_campaign: 2025 })]), row([cell({ lifecycle: 'perennial', first_campaign: 2027 })]),
+      row([cell({ lifecycle: 'perennial', first_campaign: null })]),
+      row([cell({ provenance: 'unknown', status: 'active' })]), row([cell({ provenance: 'unknown', status: 'planned' })]),
+      row([cell({ provenance: 'planned', status: null })]), row([cell({ provenance: 'planned', status: 'harvested' })]),
+      row([cell({ provenance: 'planned', status: 'cancelled' })]),
+    ];
+    for (const f of fixtures) expect(lockReason(f, 2027) === null).toBe(canPlan(f, 2027));
   });
   it('filters by farm and sorts by name in the user language', () => {
     const rows = [row([], { name: 'Vega', farm_id: 'f1' }), row([], { name: 'Ábrego', farm_id: 'f2' })];

@@ -23,6 +23,21 @@ export function canPlan(row: ParcelRow, campaign: number): boolean {
     || (c.lifecycle === 'perennial' && (c.first_campaign == null || c.first_campaign < campaign)));
 }
 
+export type LockReason = 'cycles_unavailable' | 'perennial_occupies' | 'campaign_started';
+
+/**
+ * Why a parcel cannot be planned in the campaign, or null when it can: null exactly when
+ * canPlan is true. A deep link can open a parcel the matrix would not offer, and the detail
+ * says which of the three refusals applies instead of showing a form the backend would reject.
+ */
+export function lockReason(row: ParcelRow, campaign: number): LockReason | null {
+  if (!row.cycles_available) return 'cycles_unavailable';
+  const occupied = (row.cells[String(campaign)] ?? []).some((c) => c.lifecycle === 'perennial'
+    && (c.first_campaign == null || c.first_campaign < campaign));
+  if (occupied) return 'perennial_occupies';
+  return canPlan(row, campaign) ? null : 'campaign_started';
+}
+
 export function namesIndex(data: FarmResponse): Record<string, Names> {
   const index: Record<string, Names> = {};
   for (const row of data.parcels) {
