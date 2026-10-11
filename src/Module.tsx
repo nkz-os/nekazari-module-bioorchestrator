@@ -16,6 +16,19 @@ export default defineModule({
   description: 'Crop planning: crop fit, varieties, rotation and campaign plan — Nekazari Platform Module',
   accent: { base: '#10B981', soft: '#D1FAE5', strong: '#047857' },
   icon: 'sprout',
+  // Menu name per UI language; the host falls back to displayName where a language is missing.
+  navigation: {
+    section: 'modules',
+    priority: 50,
+    label: {
+      es: 'Planificación de cultivos',
+      en: 'Crop planning',
+      ca: 'Planificació de cultius',
+      eu: 'Laboreen planifikazioa',
+      fr: 'Planification des cultures',
+      pt: 'Planeamento de culturas',
+    },
+  },
   main: MainPage,
   slots: moduleSlots as never,
 });
