@@ -1220,6 +1220,7 @@
     },
     "step": { "crop": "1 · Which crop?", "variety": "2 · Which variety?", "estimate": "3 · What harvest to expect?", "plan": "4 · Plan" },
     "fit": {
+      "shared": "For every crop:",
       "fits": "Fits", "caveats": "With caveats", "no_fit": "Does not fit",
       "showNoFit": "Show those that do not fit ({{count}})", "hideNoFit": "Hide those that do not fit",
       "sowing": "sowing {{from}}–{{to}}", "trials": "varieties with trials", "noTrials": "no variety trials",

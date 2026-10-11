@@ -467,6 +467,7 @@
     },
     "step": { "crop": "1 · Que cultura?", "variety": "2 · Que variedade?", "estimate": "3 · Que colheita esperar?", "plan": "4 · Planear" },
     "fit": {
+      "shared": "Para todas as culturas:",
       "fits": "Adequada", "caveats": "Com reservas", "no_fit": "Não adequada",
       "showNoFit": "Ver as que não se adequam ({{count}})", "hideNoFit": "Ocultar as que não se adequam",
       "sowing": "sementeira {{from}}–{{to}}", "trials": "variedades com ensaios", "noTrials": "sem ensaios de variedades",

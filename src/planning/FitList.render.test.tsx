@@ -37,4 +37,22 @@ describe('FitList (es)', () => {
     expect(html).not.toContain('Riesgo de helada');
     expect(html).not.toMatch(/kg\/ha|t\/ha/);
   });
+  it('says a reason every crop carries once, above the groups, and not on each crop', () => {
+    const noRegime = { code: 'regime_missing', gate: 'data' as const, params: {} };
+    const shared: FitResponse = { ...FIT, species: FIT.species.map((x) => ({ ...x, reasons: [noRegime, ...x.reasons] })) };
+    const html = renderToStaticMarkup(<FitList fit={shared} selected={null} onSelect={() => {}} />);
+    expect(html.split('Falta declarar secano o regadío').length - 1).toBe(1);
+    expect(html.split('Para todos los cultivos:').length - 1).toBe(1);
+    expect(html.indexOf('Para todos los cultivos:')).toBeLessThan(html.indexOf('Encaja'));
+    expect(html.indexOf('Falta declarar secano o regadío')).toBeLessThan(html.indexOf('Encaja'));
+    // A crop's own reasons stay on the crop.
+    expect(html).toContain('Buena rotación tras garbanzo');
+    expect(html).toContain('Falta el suelo de la parcela');
+  });
+  it('shows no shared line when nothing is shared, and the trials badge only for crops that have trials', () => {
+    const html = renderToStaticMarkup(<FitList fit={FIT} selected={null} onSelect={() => {}} />);
+    expect(html).not.toContain('Para todos los cultivos:');
+    expect(html.split('variedades con ensayos').length - 1).toBe(1);
+    expect(html).not.toContain('sin ensayos de variedades');
+  });
 });

@@ -467,6 +467,7 @@
     },
     "step": { "crop": "1 · Zein labore?", "variety": "2 · Zein barietate?", "estimate": "3 · Zer uzta espero daiteke?", "plan": "4 · Planifikatu" },
     "fit": {
+      "shared": "Labore guztietarako:",
       "fits": "Egokia", "caveats": "Ñabardurekin", "no_fit": "Ez da egokia",
       "showNoFit": "Erakutsi egokiak ez direnak ({{count}})", "hideNoFit": "Ezkutatu egokiak ez direnak",
       "sowing": "ereitea {{from}}–{{to}}", "trials": "saiakuntzak dituzten barietateak", "noTrials": "barietate-saiakuntzarik gabe",

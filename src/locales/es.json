@@ -1221,6 +1221,7 @@
     },
     "step": { "crop": "1 · ¿Qué cultivo?", "variety": "2 · ¿Qué variedad?", "estimate": "3 · ¿Qué cosecha esperar?", "plan": "4 · Planificar" },
     "fit": {
+      "shared": "Para todos los cultivos:",
       "fits": "Encaja", "caveats": "Con reservas", "no_fit": "No encaja",
       "showNoFit": "Ver los que no encajan ({{count}})", "hideNoFit": "Ocultar los que no encajan",
       "sowing": "siembra {{from}}–{{to}}", "trials": "variedades con ensayos", "noTrials": "sin ensayos de variedades",

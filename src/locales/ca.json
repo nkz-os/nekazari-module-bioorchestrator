@@ -467,6 +467,7 @@
     },
     "step": { "crop": "1 · Quin cultiu?", "variety": "2 · Quina varietat?", "estimate": "3 · Quina collita esperar?", "plan": "4 · Planificar" },
     "fit": {
+      "shared": "Per a tots els cultius:",
       "fits": "Encaixa", "caveats": "Amb reserves", "no_fit": "No encaixa",
       "showNoFit": "Mostra els que no encaixen ({{count}})", "hideNoFit": "Amaga els que no encaixen",
       "sowing": "sembra {{from}}–{{to}}", "trials": "varietats amb assaigs", "noTrials": "sense assaigs de varietats",

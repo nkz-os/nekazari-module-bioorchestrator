@@ -30,6 +30,29 @@ export function speciesIndex(species: SpeciesFit[]): Record<string, Names> {
   return Object.fromEntries(species.map((s) => [s.species, s.names]));
 }
 
+const sameParams = (a: Reason['params'], b: Reason['params']): boolean => {
+  const keys = Object.keys(a);
+  return keys.length === Object.keys(b).length && keys.every((k) => k in b && a[k] === b[k]);
+};
+const sameReason = (a: Reason, b: Reason): boolean => a.code === b.code && sameParams(a.params, b.params);
+
+/**
+ * Reasons that every crop carries (the backend repeats the parcel-wide ones, such as a missing regime
+ * or soil, on all of them): reported once in `shared`, and removed from each crop's own list. With
+ * fewer than two crops nothing is shared. Reasons are the same when code and params match by value.
+ */
+export function splitSharedReasons(species: SpeciesFit[]): { shared: Reason[]; perSpecies: Map<string, Reason[]> } {
+  const shared: Reason[] = [];
+  if (species.length >= 2) {
+    for (const r of species[0].reasons) {
+      if (!shared.some((x) => sameReason(x, r)) && species.every((s) => s.reasons.some((x) => sameReason(x, r)))) shared.push(r);
+    }
+  }
+  const perSpecies = new Map<string, Reason[]>();
+  for (const s of species) perSpecies.set(s.species, s.reasons.filter((r) => !shared.some((x) => sameReason(x, r))));
+  return { shared, perSpecies };
+}
+
 export function reasonKey(r: Reason): string {
   const why = typeof r.params.why === 'string' ? `_${r.params.why}` : '';
   return `planning.reason.${r.code}${why}`;
