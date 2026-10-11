@@ -1303,7 +1303,7 @@
       "none": "Todavía no hay estimaciones para este cultivo."
     },
     "plan": {
-      "crop": "Cultivo", "variety": "Variedad", "sowing": "Siembra", "harvest": "Cosecha prevista",
+      "crop": "Cultivo", "variety": "Variedad", "sowing": "Siembra", "harvest": "Cosecha prevista", "standEnd": "Fin previsto del cultivo (hasta 10 años)",
       "addCover": "Añadir cubierta antes del cultivo", "cover": "Cubierta", "coverSowing": "Siembra de la cubierta",
       "coverEnd": "Fin de la cubierta", "method": "Cómo se termina",
       "methods": { "roller_crimper": "Rodillo aplastador (roller crimper)", "incorporate": "Incorporación", "grazing": "Pastoreo", "harvest": "Cosecha" },

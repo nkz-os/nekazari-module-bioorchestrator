@@ -1,12 +1,12 @@
 // src/planning/ParcelDetail.tsx
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useTranslation } from '@nekazari/sdk';
 import { Badge, Button, FormField, Inline, Select, Stack } from '@nekazari/ui-kit';
 import { ArrowLeft } from 'lucide-react';
 import { fetchEstimates, fetchFit, fetchVarieties } from './api';
 import EstimatesTable from './EstimatesTable';
 import FitList from './FitList';
-import { cropName, shortId } from './format';
+import { cropName, safeLang, shortId } from './format';
 import { lockReason, previousMain } from './matrixModel';
 import PlanForm from './PlanForm';
 import { draftFor, type PlanDraft } from './planModel';
@@ -16,6 +16,7 @@ import { useLoad } from './useLoad';
 import VarietyTable from './VarietyTable';
 
 interface Props { row: ParcelRow; campaign: number; onClose: () => void; onSaved: () => void }
+const ESTIMATE_DEBOUNCE_MS = 600;
 const EMPTY_DRAFT: PlanDraft = { main: { species: '', variety: null, sowing: '', end: '', method: null }, cover: null };
 
 export default function ParcelDetail({ row, campaign, onClose, onSaved }: Props) {
@@ -25,6 +26,18 @@ export default function ParcelDetail({ row, campaign, onClose, onSaved }: Props)
   const [management, setManagement] = useState<Management>('conventional');
   const [species, setSpecies] = useState<string | null>(null);
   const [draft, setDraft] = useState<PlanDraft>(EMPTY_DRAFT);
+  // The date that feeds the estimates: it follows the sowing field after a pause, not on every keystroke.
+  const [estimateSowing, setEstimateSowing] = useState('');
+  useEffect(() => {
+    const id = setTimeout(() => setEstimateSowing(draft.main.sowing), ESTIMATE_DEBOUNCE_MS);
+    return () => clearTimeout(id);
+  }, [draft.main.sowing]);
+
+  // A variety belongs to one regime and management: changing either drops it, and so does a loaded
+  // list that does not contain it, so the form never holds a variety the farmer cannot see.
+  const clearVariety = () => setDraft((d) => (d.main.variety === null ? d : { ...d, main: { ...d.main, variety: null } }));
+  const changeRegime = (r: Regime) => { setRegime(r); clearVariety(); };
+  const changeManagement = (m: Management) => { setManagement(m); clearVariety(); };
 
   const fit = useLoad((s) => fetchFit(row.parcel_id, campaign, regime, s), [row.parcel_id, campaign, regime]);
   const chosen = fit.data?.species.find((x) => x.species === species) ?? null;
@@ -33,17 +46,31 @@ export default function ParcelDetail({ row, campaign, onClose, onSaved }: Props)
     [row.parcel_id, chosen?.species, regime, management], Boolean(chosen?.has_variety_trials && regime));
   const estimates = useLoad(
     (s) => fetchEstimates(row.parcel_id, { crop: chosen!.species, variety: draft.main.variety, regime: regime!, management,
-      sowingDate: draft.main.sowing || null }, s),
-    [row.parcel_id, chosen?.species, draft.main.variety, regime, management, draft.main.sowing], Boolean(chosen && regime));
+      sowingDate: estimateSowing || null }, s),
+    [row.parcel_id, chosen?.species, draft.main.variety, regime, management, estimateSowing], Boolean(chosen && regime));
+  const loadedVarieties = varieties.data?.varieties;
+  useEffect(() => {
+    if (!loadedVarieties) return;
+    setDraft((d) => (d.main.variety !== null && !loadedVarieties.some((v) => v.variety === d.main.variety)
+      ? { ...d, main: { ...d.main, variety: null } } : d));
+  }, [loadedVarieties]);
 
   const pick = (slug: string) => {
+    if (slug === species) return; // choosing the crop already chosen keeps the draft
     const sp = fit.data?.species.find((x) => x.species === slug);
     setSpecies(slug);
-    if (sp) setDraft(draftFor(sp, campaign));
+    if (sp) {
+      const next = draftFor(sp, campaign);
+      setDraft(next);
+      setEstimateSowing(next.main.sowing); // a new crop estimates at once, without waiting for the pause
+    }
   };
   const prev = previousMain(row, campaign);
   // A deep link can open a parcel the matrix would not let you plan; the evidence stays, the form does not.
   const locked = lockReason(row, campaign);
+  const blocked = locked === 'cycles_unavailable' ? t('planning.warning.cycles_unavailable')
+    : locked ? t(`planning.plan.error.${locked}`, { campaign })
+      : campaign < new Date().getFullYear() ? t('planning.plan.error.campaign_past', { campaign }) : null;
   const facts = fit.data?.facts;
   const soilTexture = facts?.soil_texture
     ? t(`planning.texture.${facts.soil_texture}`, { defaultValue: facts.soil_texture })
@@ -64,17 +91,17 @@ export default function ParcelDetail({ row, campaign, onClose, onSaved }: Props)
       <Inline gap="inline" wrap align="center">
         <span className="text-nkz-sm text-nkz-text-muted">{t('planning.detail.known')}:</span>
         <Badge intent="default">{`${t('planning.detail.climate')}: ${facts?.climate_class ?? t('planning.detail.noData')}`}</Badge>
-        <Badge intent="default">{`${t('planning.detail.soil')}: ${soilTexture}${facts?.soil_ph != null ? `, pH ${facts.soil_ph}` : ''}`}</Badge>
+        <Badge intent="default">{`${t('planning.detail.soil')}: ${soilTexture}${facts?.soil_ph != null ? `, pH ${facts.soil_ph.toLocaleString(safeLang(lang))}` : ''}`}</Badge>
         {facts && !facts.history_available && <Badge intent="warning">{t('planning.detail.historyDown')}</Badge>}
       </Inline>
 
       <Inline gap="inline" wrap align="end">
         <FormField label={t('planning.detail.regimeQuestion')} description={regime ? undefined : t('planning.detail.regimeHint')}>
           <Select value={regime ?? ''} placeholder={t('planning.detail.regimeQuestion')} options={regimeOptions}
-            onValueChange={(v) => setRegime(v as Regime)} error={!regime} />
+            onValueChange={(v) => changeRegime(v as Regime)} error={!regime} />
         </FormField>
         <FormField label={t('planning.detail.managementLabel')}>
-          <Select value={management} options={managementOptions} onValueChange={(v) => setManagement(v as Management)} />
+          <Select value={management} options={managementOptions} onValueChange={(v) => changeManagement(v as Management)} />
         </FormField>
       </Inline>
 
@@ -96,12 +123,10 @@ export default function ParcelDetail({ row, campaign, onClose, onSaved }: Props)
             {estimates.data && <EstimatesTable data={estimates.data} />}
           </Step>
           <Step title={t('planning.step.plan')}>
-            {locked ? (
-              <p className="text-nkz-sm text-nkz-text-muted">
-                {locked === 'cycles_unavailable' ? t('planning.warning.cycles_unavailable') : t(`planning.plan.error.${locked}`, { campaign })}
-              </p>
+            {blocked ? (
+              <p className="text-nkz-sm text-nkz-text-muted">{blocked}</p>
             ) : (
-              <PlanForm parcelId={row.parcel_id} campaign={campaign} regime={regime} management={management} main={chosen}
+              <PlanForm key={chosen.species} parcelId={row.parcel_id} campaign={campaign} regime={regime} management={management} main={chosen}
                 coverOptions={candidates} varieties={varieties.data?.varieties ?? []} draft={draft} onDraft={setDraft} onSaved={onSaved} />
             )}
           </Step>

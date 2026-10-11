@@ -16,9 +16,10 @@ export function CycleLine({ cell }: { cell: CycleCell }) {
   );
 }
 
-interface Props { data: FarmResponse; farmId: string; onOpen: (parcelId: string) => void }
+interface Props { data: FarmResponse; farmId: string; onOpen: (parcelId: string) => void; editable?: boolean }
 
-export default function PlanMatrix({ data, farmId, onOpen }: Props) {
+/** `editable` false (a past campaign) keeps the history readable and offers no way into the form. */
+export default function PlanMatrix({ data, farmId, onOpen, editable = true }: Props) {
   const { t, i18n } = useTranslation('bioorchestrator');
   const lang = i18n.language;
   const rows = rowsForFarm(data.parcels, farmId, lang);
@@ -55,7 +56,7 @@ export default function PlanMatrix({ data, farmId, onOpen }: Props) {
                 return (
                   <td key={c} className="py-2 pr-4">
                     {cells.map((cell, i) => <CycleLine key={cell.crop_id ?? `${c}-${i}`} cell={cell} />)}
-                    {c === data.campaign && canPlan(row, data.campaign) && (
+                    {editable && c === data.campaign && canPlan(row, data.campaign) && (
                       <Button size="sm" variant="secondary" onClick={() => onOpen(row.parcel_id)}>
                         {t(cells.length ? 'planning.matrix.change' : 'planning.matrix.choose')}
                       </Button>

@@ -8,6 +8,7 @@ import DisclaimerFooter from '../components/DisclaimerFooter';
 import AdminTools from './AdminTools';
 import { fetchFarm } from './api';
 import { cropName, formatHa } from './format';
+import { parseCampaign } from './matrixModel';
 import ParcelDetail from './ParcelDetail';
 import PlanMatrix from './PlanMatrix';
 import SourcesFooter from './SourcesFooter';
@@ -29,7 +30,7 @@ export default function PlanningApp() {
   const { t } = useTranslation('bioorchestrator');
   const { hasRole } = useAuth();
   const [params] = useSearchParams();
-  const linkedCampaign = Number(params.get('campaign')) || undefined;
+  const linkedCampaign = parseCampaign(params.get('campaign'));
   const [campaign, setCampaign] = useState<number | undefined>(linkedCampaign);
   const [farmId, setFarmId] = useState('all');
   const [openParcel, setOpenParcel] = useState<string | null>(params.get('parcel'));
@@ -77,19 +78,20 @@ export default function PlanningApp() {
                     </div>
                   )}
                 </Inline>
+                {openParcel && <p className="text-nkz-sm text-nkz-text-muted">{t('planning.plan.error.parcel_not_found')}</p>}
                 <SummaryLine data={data} />
-                <PlanMatrix data={data} farmId={farmId} onOpen={setOpenParcel} />
+                <PlanMatrix data={data} farmId={farmId} onOpen={setOpenParcel} editable={data.campaign >= new Date().getFullYear()} />
               </Stack>
             )}
           </>
         )}
 
-        <Inline gap="inline" wrap align="center">
-          <SourcesFooter />
-          {hasRole('PlatformAdmin') && (
+        <SourcesFooter />
+        {hasRole('PlatformAdmin') && (
+          <Inline gap="inline" wrap align="center">
             <Button size="sm" variant="ghost" onClick={() => setAdmin((a) => !a)}>{t(admin ? 'planning.admin.close' : 'planning.admin.open')}</Button>
-          )}
-        </Inline>
+          </Inline>
+        )}
         <DisclaimerFooter />
       </Stack>
     </Card>

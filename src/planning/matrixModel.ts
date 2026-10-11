@@ -38,6 +38,17 @@ export function lockReason(row: ParcelRow, campaign: number): LockReason | null 
   return canPlan(row, campaign) ? null : 'campaign_started';
 }
 
+/**
+ * The campaign of a deep link, or undefined when it is not four digits inside the range the
+ * backend accepts (2000-2100): a bad value would make every farm request answer 422 with no way
+ * out of the screen.
+ */
+export function parseCampaign(raw: string | null): number | undefined {
+  if (raw == null || !/^\d{4}$/.test(raw)) return undefined;
+  const n = Number(raw);
+  return n >= 2000 && n <= 2100 ? n : undefined;
+}
+
 export function namesIndex(data: FarmResponse): Record<string, Names> {
   const index: Record<string, Names> = {};
   for (const row of data.parcels) {

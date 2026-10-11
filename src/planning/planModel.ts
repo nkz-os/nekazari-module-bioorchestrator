@@ -23,6 +23,15 @@ export function campaignOfStart(iso: string): number {
   return Number(iso.slice(5, 7)) >= AUTUMN_FROM_MONTH ? year + 1 : year;
 }
 
+/**
+ * Whether the cover-species field is in free-text mode: the user chose "other species", or the
+ * draft holds a name that the current options do not list (the form was remounted, or a reload
+ * dropped the species from the options). The mode follows the data, never only local state.
+ */
+export function isOtherCover(species: string, listed: string[], chosenOther: boolean): boolean {
+  return chosenOther || (species !== '' && !listed.includes(species));
+}
+
 export function emptyCover(): CycleDraft {
   return { species: '', variety: null, sowing: '', end: '', method: 'roller_crimper' };
 }

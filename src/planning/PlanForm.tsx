@@ -4,7 +4,7 @@ import { useTranslation } from '@nekazari/sdk';
 import { Button, FormField, Input, Select, Stack, Switch } from '@nekazari/ui-kit';
 import { PlanningApiError, putPlan } from './api';
 import { cropName } from './format';
-import { COVER_METHODS, NONE, emptyCover, toPlanIn, validateDraft, type CycleDraft, type PlanDraft } from './planModel';
+import { COVER_METHODS, NONE, emptyCover, isOtherCover, toPlanIn, validateDraft, type CycleDraft, type PlanDraft } from './planModel';
 import type { Management, Regime, SpeciesFit, TerminationMethod, VarietyStat } from './types';
 
 /** Select sentinel for "a species that is not in the list": its name is typed in (the server validates it). */
@@ -21,12 +21,18 @@ export default function PlanForm({ parcelId, campaign, regime, management, main,
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [otherCover, setOtherCover] = useState(false);
-  const setMain = (patch: Partial<CycleDraft>) => onDraft({ ...draft, main: { ...draft.main, ...patch } });
-  const setCover = (patch: Partial<CycleDraft>) => draft.cover && onDraft({ ...draft, cover: { ...draft.cover, ...patch } });
+  const isPerennial = main.lifecycle === 'perennial';
+  // An edit makes the last submit error stale: clear it.
+  const setMain = (patch: Partial<CycleDraft>) => { setError(null); onDraft({ ...draft, main: { ...draft.main, ...patch } }); };
+  const setCover = (patch: Partial<CycleDraft>) => {
+    if (!draft.cover) return;
+    setError(null);
+    onDraft({ ...draft, cover: { ...draft.cover, ...patch } });
+  };
 
   async function submit() {
     if (!regime) { setError(t('planning.plan.needsRegime')); return; }
-    const local = validateDraft(draft, campaign, main.lifecycle === 'perennial');
+    const local = validateDraft(draft, campaign, isPerennial);
     if (local) { setError(t(`planning.plan.error.${local}`, { campaign })); return; }
     setSaving(true);
     setError(null);
@@ -43,6 +49,8 @@ export default function PlanForm({ parcelId, campaign, regime, management, main,
 
   const varietyOptions = [{ value: NONE, label: t('planning.variety.none') }, ...varieties.map((v) => ({ value: v.variety, label: v.variety }))];
   const coverSpecies = coverOptions.map((s) => ({ value: s.species, label: cropName(s.names, s.species, lang) }));
+  // Free-text mode follows the data: a name the options do not list stays visible after a remount or a reload.
+  const coverOther = draft.cover ? isOtherCover(draft.cover.species, coverSpecies.map((o) => o.value), otherCover) : false;
   const methods = COVER_METHODS.map((m) => ({ value: m, label: t(`planning.plan.methods.${m}`) }));
 
   return (
@@ -57,22 +65,22 @@ export default function PlanForm({ parcelId, campaign, regime, management, main,
       <FormField label={t('planning.plan.sowing')}>
         <Input type="date" value={draft.main.sowing} onChange={(e) => setMain({ sowing: e.target.value })} />
       </FormField>
-      <FormField label={t('planning.plan.harvest')}>
+      <FormField label={isPerennial ? t('planning.plan.standEnd') : t('planning.plan.harvest')}>
         <Input type="date" value={draft.main.end} onChange={(e) => setMain({ end: e.target.value })} />
       </FormField>
       <Switch checked={draft.cover !== null} label={t('planning.plan.addCover')} labelPosition="right"
-        onChange={(on: boolean) => { setOtherCover(false); onDraft({ ...draft, cover: on ? emptyCover() : null }); }} />
+        onChange={(on: boolean) => { setError(null); setOtherCover(false); onDraft({ ...draft, cover: on ? emptyCover() : null }); }} />
       {draft.cover && (
         <Stack gap="tight">
           <FormField label={t('planning.plan.cover')}>
-            <Select value={otherCover ? OTHER : (draft.cover.species || NONE)} placeholder={t('planning.plan.cover')}
+            <Select value={coverOther ? OTHER : (draft.cover.species || NONE)} placeholder={t('planning.plan.cover')}
               options={[{ value: NONE, label: '—' }, ...coverSpecies, { value: OTHER, label: t('planning.plan.otherSpecies') }]}
               onValueChange={(v) => {
                 setOtherCover(v === OTHER);
                 setCover({ species: v === NONE || v === OTHER ? '' : v });
               }} />
           </FormField>
-          {otherCover && (
+          {coverOther && (
             <FormField label={t('planning.plan.speciesName')}>
               <Input value={draft.cover.species} maxLength={64} onChange={(e) => setCover({ species: e.target.value })} />
             </FormField>

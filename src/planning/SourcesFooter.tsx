@@ -1,7 +1,7 @@
 // src/planning/SourcesFooter.tsx
 import React, { useState } from 'react';
 import { useTranslation } from '@nekazari/sdk';
-import { Button, Stack } from '@nekazari/ui-kit';
+import { Button, Inline, Spinner, Stack } from '@nekazari/ui-kit';
 import SourceAttribution from '../components/shared/SourceAttribution';
 import { fetchAttributions } from './api';
 import { useLoad } from './useLoad';
@@ -18,6 +18,13 @@ export default function SourcesFooter() {
           {t(open ? 'planning.sources.close' : 'planning.sources.open')}
         </Button>
       </div>
+      {open && data.loading && <Spinner size="sm" />}
+      {open && !data.loading && data.error != null && (
+        <Inline gap="inline" align="center" wrap>
+          <p className="text-nkz-sm text-nkz-danger">{t('planning.errorLoad')}</p>
+          <Button size="sm" variant="secondary" onClick={data.retry}>{t('planning.retry')}</Button>
+        </Inline>
+      )}
       {open && data.data && <SourceAttribution attributions={data.data.attributions} />}
     </Stack>
   );

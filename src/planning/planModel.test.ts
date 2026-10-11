@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { dateOfDoy, defaultSowing, draftFor, toPlanIn, validateDraft } from './planModel';
+import { dateOfDoy, defaultSowing, draftFor, isOtherCover, toPlanIn, validateDraft } from './planModel';
 import type { SpeciesFit } from './types';
 
 const sowing = (start_month: number | null) => ({ sowing_type: null, start_month, end_month: null, typical_sowing_doy: null, source: null });
@@ -54,5 +54,23 @@ describe('plan model', () => {
     const body = toPlanIn(draft, 2027, 'secano', 'conventional');
     expect(body.cycles).toEqual([{ role: 'main_crop', crop: 'wheat', variety: null, sowing_start: '2026-11-01',
       sowing_end: null, expected_termination: '2027-07-01', termination_method: null }]);
+  });
+});
+
+describe('isOtherCover', () => {
+  const listed = ['vicia', 'avena'];
+  it('a listed species is not "other"', () => {
+    expect(isOtherCover('vicia', listed, false)).toBe(false);
+  });
+  it('a name typed in "other" mode stays in that mode even when it equals a listed species (the box must not vanish while typing)', () => {
+    expect(isOtherCover('vicia', listed, true)).toBe(true);
+  });
+  it('a typed species that is not listed is "other", even after a remount lost the choice', () => {
+    expect(isOtherCover('phacelia', listed, false)).toBe(true);
+    expect(isOtherCover('phacelia', [], false)).toBe(true);
+  });
+  it('an empty species is "other" only when the user chose it', () => {
+    expect(isOtherCover('', listed, true)).toBe(true);
+    expect(isOtherCover('', listed, false)).toBe(false);
   });
 });

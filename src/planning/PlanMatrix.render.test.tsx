@@ -39,4 +39,9 @@ describe('PlanMatrix (es)', () => {
     expect(html.split('Elegir').length - 1).toBe(1);
     expect(html.indexOf('El Raso')).toBeLessThan(html.indexOf('Soto Alto'));
   });
+  it('offers no choose button on a campaign that is not editable', () => {
+    const html = renderToStaticMarkup(<PlanMatrix data={DATA} farmId="all" editable={false} onOpen={() => {}} />);
+    expect(html).not.toContain('Elegir');
+    expect(html).toContain('● colza · Atlas');
+  });
 });

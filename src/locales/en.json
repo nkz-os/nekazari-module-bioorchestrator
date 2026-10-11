@@ -1302,7 +1302,7 @@
       "none": "No estimates for this crop yet."
     },
     "plan": {
-      "crop": "Crop", "variety": "Variety", "sowing": "Sowing", "harvest": "Expected harvest",
+      "crop": "Crop", "variety": "Variety", "sowing": "Sowing", "harvest": "Expected harvest", "standEnd": "Expected end of the stand (up to 10 years)",
       "addCover": "Add a cover crop before the crop", "cover": "Cover crop", "coverSowing": "Cover crop sowing",
       "coverEnd": "Cover crop end", "method": "How it ends",
       "methods": { "roller_crimper": "Roller crimper", "incorporate": "Incorporation", "grazing": "Grazing", "harvest": "Harvest" },

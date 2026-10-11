@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { canPlan, lockReason, previousMain, rowsForFarm, warningText, widgetColumns } from './matrixModel';
+import { canPlan, lockReason, parseCampaign, previousMain, rowsForFarm, warningText, widgetColumns } from './matrixModel';
 import type { CycleCell, ParcelRow } from './types';
 
 const cell = (over: Partial<CycleCell>): CycleCell => ({
@@ -63,6 +63,12 @@ describe('matrix model', () => {
       row([cell({ provenance: 'planned', status: 'cancelled' })]),
     ];
     for (const f of fixtures) expect(lockReason(f, 2027) === null).toBe(canPlan(f, 2027));
+  });
+  it('reads the deep-link campaign only as an integer the backend accepts (2000-2100)', () => {
+    expect(parseCampaign('2027')).toBe(2027);
+    expect(parseCampaign('2000')).toBe(2000);
+    expect(parseCampaign('2100')).toBe(2100);
+    for (const bad of ['1999', '2101', '2027.5', 'abc', '', ' ', '2027abc', '1e3', '2e3', '+2027', '2027 ', null]) expect(parseCampaign(bad)).toBeUndefined();
   });
   it('filters by farm and sorts by name in the user language', () => {
     const rows = [row([], { name: 'Vega', farm_id: 'f1' }), row([], { name: 'Ábrego', farm_id: 'f2' })];
