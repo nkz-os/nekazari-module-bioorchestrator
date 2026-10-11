@@ -79,7 +79,7 @@ species:
     scientific_name: "Secale cereale"
     eppo_code: "SECCE"
     crop_group: "cereal"
-    agrovoc_uri: "http://aims.fao.org/aos/agrovoc/c_6914"
+    agrovoc_uri: "http://aims.fao.org/aos/agrovoc/c_6919"
     lifecycle: "annual"
     common_names: { es: "centeno", en: "rye", eu: "zekalea", fr: "seigle", ca: "sègol", pt: "centeio" }
 
