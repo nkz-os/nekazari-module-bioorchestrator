@@ -5,6 +5,7 @@ harvest). The user can always pick another one.
 """
 from __future__ import annotations
 
+import math
 from collections import defaultdict
 from datetime import date
 
@@ -53,10 +54,15 @@ def parcel_regime(parcel: dict, target_crops: list[dict]) -> tuple[str | None, s
 
 
 def _area(parcel: dict) -> float | None:
+    raw = plain(parcel.get("area"))
+    if isinstance(raw, bool):  # float(True) would read as 1 ha
+        return None
     try:
-        return float(plain(parcel.get("area")))
+        value = float(raw)
     except (TypeError, ValueError):
         return None
+    # NaN/inf do not survive JSON and a negative area is not a measurement.
+    return value if math.isfinite(value) and value >= 0 else None
 
 
 def _farm_id(parcel: dict) -> str | None:

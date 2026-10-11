@@ -1,5 +1,7 @@
 from datetime import date
 
+import pytest
+
 from app.planning.farm import (
     campaign_columns,
     default_target_campaign,
@@ -86,3 +88,38 @@ def test_missing_cycles_keep_only_cycles_unavailable():
     out = farm_payload([P2], [], {}, CYCLES, 2027, [RAPE])
     codes = [w["code"] for w in out["parcels"][0]["warnings"]]
     assert "cycles_unavailable" in codes and "rotation_unknown" not in codes
+
+
+def _with_area(area):
+    return farm_payload([{"id": "urn:ngsi-ld:AgriParcel:t:pa", "name": "A", "area": area, "irrigationRegime": "secano"}],
+                        [], {}, {}, 2027, [])["parcels"][0]["area_ha"]
+
+
+@pytest.mark.parametrize("bad", [True, False, float("nan"), float("inf"), float("-inf"), -1, "-3.5", "nan", "inf",
+                                 "abc", None, [1], {"value": True}])
+def test_unusable_areas_become_none(bad):
+    assert _with_area(bad) is None
+
+
+@pytest.mark.parametrize("good, expected", [(12.4, 12.4), ("6.1", 6.1), (3, 3.0), (0, 0.0), ({"value": 2.5}, 2.5)])
+def test_usable_areas_are_kept(good, expected):
+    assert _with_area(good) == expected
+
+
+def test_farm_groups_follow_the_parcel_links_and_name_the_farms():
+    farm_a, farm_b, farm_c = ("urn:ngsi-ld:AgriFarm:t:a", "urn:ngsi-ld:AgriFarm:t:b", "urn:ngsi-ld:AgriFarm:t:c")
+    parcels = [
+        {"id": "urn:ngsi-ld:AgriParcel:t:p1", "hasAgriFarm": farm_b, "irrigationRegime": "secano"},
+        {"id": "urn:ngsi-ld:AgriParcel:t:p2", "refAgriFarm": farm_a, "irrigationRegime": "secano"},
+        {"id": "urn:ngsi-ld:AgriParcel:t:p3", "hasAgriFarm": {"type": "Relationship", "object": farm_c},
+         "irrigationRegime": "secano"},
+        {"id": "urn:ngsi-ld:AgriParcel:t:p4", "hasAgriFarm": farm_a, "irrigationRegime": "secano"},
+        {"id": "urn:ngsi-ld:AgriParcel:t:p5", "irrigationRegime": "secano"},
+    ]
+    farms = [{"id": farm_a, "name": "Finca Norte"}, {"id": farm_b, "name": {"type": "Property", "value": "Finca Sur"}},
+             {"id": "urn:ngsi-ld:AgriFarm:t:unlinked", "name": "Sin parcelas"}]
+    out = farm_payload(parcels, farms, {}, {}, 2027, [])
+    FarmResponse.model_validate(out)
+    assert out["farms"] == [{"farm_id": farm_a, "name": "Finca Norte"}, {"farm_id": farm_b, "name": "Finca Sur"},
+                            {"farm_id": farm_c, "name": None}]
+    assert [r["farm_id"] for r in out["parcels"]] == [farm_b, farm_a, farm_c, farm_a, None]

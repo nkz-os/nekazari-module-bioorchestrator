@@ -1,6 +1,9 @@
 from unittest.mock import AsyncMock
 
+import pytest
+
 from app.planning import farm_source
+from app.planning.farm import farm_payload
 
 
 def _patch_orion(monkeypatch, data, calls=None):
@@ -44,11 +47,29 @@ async def test_load_farm_closes_the_client_when_orion_fails(monkeypatch):
     client = AsyncMock()
     client.get_entity.side_effect = RuntimeError("orion down")
     monkeypatch.setattr(farm_source, "OrionClient", lambda tenant_id: client)
-    try:
+    with pytest.raises(RuntimeError, match="orion down"):
         await farm_source.load_farm("t", "urn:ngsi-ld:AgriParcel:t:p1")
-    except RuntimeError:
-        pass
     client.close.assert_awaited()
+
+
+@pytest.mark.parametrize("bad_answer", ["raises", "list", "string"])
+async def test_one_bad_cycles_answer_only_takes_that_parcel_out(monkeypatch, caplog, bad_answer):
+    _patch_orion(monkeypatch, {"AgriParcel": [{"id": "p1", "irrigationRegime": "secano"}, {"id": "p2"}],
+                               "AgriFarm": [], "AgriCrop": []})
+
+    async def fetch(urn, tenant):
+        if urn == "p2":
+            if bad_answer == "raises":
+                raise ValueError("malformed")
+            return [] if bad_answer == "list" else "oops"
+        return {"cycles": []}
+    monkeypatch.setattr(farm_source, "fetch_crop_cycles", fetch)
+    with caplog.at_level("WARNING", logger=farm_source.logger.name):
+        parcels, farms, crops, by_parcel = await farm_source.load_farm("t")
+    assert by_parcel == {"p1": {"cycles": []}, "p2": None}
+    assert any("tenant=t" in r.getMessage() and "parcel=p2" in r.getMessage() for r in caplog.records)
+    rows = farm_payload(parcels, farms, crops, by_parcel, 2027, [])["parcels"]
+    assert [r["cycles_available"] for r in rows] == [True, False]
 
 
 async def test_listing_reads_every_page(monkeypatch):

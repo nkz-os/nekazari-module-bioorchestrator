@@ -22,10 +22,12 @@ from app.planning.models import (
 )
 from app.planning.reference import load_reference
 from app.planning.service import (
+    InvalidParcelId,
     ParcelNotFound,
     UnknownCrop,
     parcel_estimates,
     parcel_fit,
+    parcel_urn,
     parcel_varieties,
 )
 
@@ -34,10 +36,18 @@ SourcesDep = Annotated[list[KnowledgeSource], Depends(get_knowledge_sources)]
 CampaignQ = Query(..., ge=2000, le=2100)
 
 
+def _checked_parcel_urn(raw: str) -> str:
+    try:
+        return parcel_urn(raw)
+    except InvalidParcelId as e:
+        raise HTTPException(status_code=422, detail="invalid parcel id") from e
+
+
 @router.get("/parcels/{parcel_id:path}/fit", response_model=FitResponse)
 async def fit(request: Request, parcel_id: str, sources: SourcesDep,
               campaign: int = CampaignQ, regime: Regime | None = None):
     tenant = _require_tenant_id(request)
+    parcel_id = _checked_parcel_urn(parcel_id)
     source = sources[0]
     try:
         return await parcel_fit(dao=GraphDAO(source.driver), source=source, parcel_id=parcel_id,
@@ -50,6 +60,7 @@ async def fit(request: Request, parcel_id: str, sources: SourcesDep,
 async def varieties(request: Request, parcel_id: str, sources: SourcesDep, regime: Regime, management: Management,
                     crop: str = Query(..., min_length=2, max_length=64)):
     tenant = _require_tenant_id(request)
+    parcel_id = _checked_parcel_urn(parcel_id)
     source = sources[0]
     try:
         return await parcel_varieties(dao=GraphDAO(source.driver), source=source, parcel_id=parcel_id,
@@ -65,6 +76,7 @@ async def estimates(request: Request, parcel_id: str, sources: SourcesDep, regim
                     crop: str = Query(..., min_length=2, max_length=64),
                     variety: str | None = Query(None, max_length=64), sowing_date: date | None = None):
     tenant = _require_tenant_id(request)
+    parcel_id = _checked_parcel_urn(parcel_id)
     source = sources[0]
     try:
         return await parcel_estimates(dao=GraphDAO(source.driver), source=source, parcel_id=parcel_id,
@@ -81,12 +93,16 @@ async def farm(request: Request, sources: SourcesDep,
                campaign: int | None = Query(None, ge=2000, le=2100),
                parcel_id: str | None = Query(None, max_length=256)):
     tenant = _require_tenant_id(request)
+    if parcel_id is not None:
+        parcel_id = _checked_parcel_urn(parcel_id)
     target = campaign or default_target_campaign(datetime.now(UTC).date())
     try:
         parcels, farms, crops, cycles = await load_farm(tenant, parcel_id)
     except httpx.HTTPStatusError as e:
-        if e.response.status_code == 404:
+        if parcel_id is not None and e.response.status_code == 404:
             raise HTTPException(status_code=404, detail="parcel not found") from e
         raise
+    except httpx.ConnectError as e:
+        raise HTTPException(status_code=502, detail="Orion-LD unreachable") from e
     ref = await load_reference(sources[0])
     return farm_payload(parcels, farms, crops, cycles, target, ref.constraints)

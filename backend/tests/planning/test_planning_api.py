@@ -159,3 +159,93 @@ def test_farm_route_requires_a_verified_tenant(client, monkeypatch):
     monkeypatch.setattr(planning_api, "load_farm", load)
     assert client.get(FARM_URL).status_code == 401
     load.assert_not_called()
+
+
+REAL_PARCEL = "urn:ngsi-ld:AgriParcel:12d68d51-35f5-4957-9222-caa961f9a427"
+BAD_PARCEL_IDS = ['x?x="', "p1#frag", "a/../../version", 'p"1', "p 1"]
+
+
+def _quoted(raw: str) -> str:
+    from urllib.parse import quote
+    return quote(raw, safe="")
+
+
+@pytest.mark.parametrize("bad", BAD_PARCEL_IDS)
+def test_farm_route_rejects_a_malformed_parcel_id_before_any_io(client, monkeypatch, bad):
+    load = AsyncMock(return_value=([], [], {}, {}))
+    monkeypatch.setattr(planning_api, "load_farm", load)
+    assert client.get(FARM_URL, params={"parcel_id": bad}).status_code == 422
+    load.assert_not_called()
+
+
+def test_farm_route_rejects_an_empty_parcel_id(client, monkeypatch):
+    load = AsyncMock(return_value=([], [], {}, {}))
+    monkeypatch.setattr(planning_api, "load_farm", load)
+    assert client.get(FARM_URL + "?parcel_id=").status_code == 422
+    load.assert_not_called()
+
+
+@pytest.mark.parametrize("good, expected", [
+    (REAL_PARCEL, REAL_PARCEL),
+    ("urn:ngsi-ld:AgriParcel:t:p1", "urn:ngsi-ld:AgriParcel:t:p1"),
+    ("p1", "urn:ngsi-ld:AgriParcel:p1"),
+])
+def test_farm_route_accepts_and_normalizes_parcel_ids(client, monkeypatch, good, expected):
+    load = AsyncMock(return_value=([], [], {}, {}))
+    monkeypatch.setattr(planning_api, "load_farm", load)
+    monkeypatch.setattr(planning_api, "load_reference", AsyncMock(return_value=MagicMock(constraints=())))
+    assert client.get(FARM_URL, params={"parcel_id": good}).status_code == 200
+    assert load.await_args.args[1] == expected
+
+
+@pytest.mark.parametrize("name, params, service_fn", [
+    ("fit", {"campaign": 2027}, "parcel_fit"),
+    ("varieties", VARIETIES_PARAMS, "parcel_varieties"),
+    ("estimates", ESTIMATES_PARAMS, "parcel_estimates"),
+])
+@pytest.mark.parametrize("bad", BAD_PARCEL_IDS)
+def test_parcel_routes_reject_a_malformed_parcel_id_before_any_io(client, monkeypatch, name, params, service_fn, bad):
+    called = AsyncMock()
+    monkeypatch.setattr(planning_api, service_fn, called)
+    r = client.get(f"/api/graph/planning/parcels/{_quoted(bad)}/{name}", params=params)
+    assert r.status_code == 422
+    called.assert_not_called()
+
+
+@pytest.mark.parametrize("name, params, service_fn, ok", [
+    ("fit", {"campaign": 2027}, "parcel_fit", FIT),
+    ("varieties", VARIETIES_PARAMS, "parcel_varieties", VARIETIES),
+])
+@pytest.mark.parametrize("good, expected", [
+    (REAL_PARCEL, REAL_PARCEL),
+    ("urn:ngsi-ld:AgriParcel:t:p1", "urn:ngsi-ld:AgriParcel:t:p1"),
+    ("p1", "urn:ngsi-ld:AgriParcel:p1"),
+])
+def test_parcel_routes_hand_the_normalized_urn_to_the_service(client, monkeypatch, name, params, service_fn, ok,
+                                                              good, expected):
+    called = AsyncMock(return_value=ok)
+    monkeypatch.setattr(planning_api, service_fn, called)
+    assert client.get(f"/api/graph/planning/parcels/{good}/{name}", params=params).status_code == 200
+    assert called.await_args.kwargs["parcel_id"] == expected
+
+
+def test_farm_route_maps_an_unreachable_orion_to_502(client, monkeypatch):
+    monkeypatch.setattr(planning_api, "load_farm", AsyncMock(side_effect=httpx.ConnectError("down")))
+    monkeypatch.setattr(planning_api, "load_reference", AsyncMock(return_value=MagicMock(constraints=())))
+    assert client.get(FARM_URL).status_code == 502
+    assert client.get(FARM_URL, params={"parcel_id": "p1"}).status_code == 502
+
+
+def test_farm_route_does_not_blame_a_parcel_for_a_listing_404(client, monkeypatch):
+    # Without parcel_id nothing is looked up by id: an Orion 404 is an upstream failure, not "parcel not found".
+    monkeypatch.setattr(planning_api, "load_farm", AsyncMock(side_effect=_orion_error(404)))
+    monkeypatch.setattr(planning_api, "load_reference", AsyncMock(return_value=MagicMock(constraints=())))
+    crashing = TestClient(app, raise_server_exceptions=False)
+    assert crashing.get(FARM_URL).status_code == 500
+
+
+def test_parcel_route_rejects_an_empty_parcel_id(client, monkeypatch):
+    called = AsyncMock()
+    monkeypatch.setattr(planning_api, "parcel_fit", called)
+    assert client.get("/api/graph/planning/parcels//fit", params={"campaign": 2027}).status_code == 422
+    called.assert_not_called()

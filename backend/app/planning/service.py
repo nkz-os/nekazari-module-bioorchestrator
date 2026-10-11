@@ -1,10 +1,12 @@
 """Planning use cases: read the parcel, apply the pure rules, return contract dicts."""
 from __future__ import annotations
 
+import re
 from datetime import date
 
 from app.common.attribution import attach_attributions, rows_source_ids
 from app.core.knowledge import KnowledgeSource
+from app.graph.dao import _to_parcel_urn
 from app.graph.recommend import sowing_info
 from app.planning.estimates import (
     aquacrop_status,
@@ -52,6 +54,24 @@ class ParcelNotFound(LookupError):
 
 class UnknownCrop(ValueError):
     pass
+
+
+class InvalidParcelId(ValueError):
+    pass
+
+
+# A parcel id is interpolated into an Orion path and an NGSI-LD ``q`` filter: anything outside this
+# alphabet (``/ ? # " ;`` ...) could rewrite the request, so it is rejected before any I/O.
+PARCEL_URN_RE = re.compile(r"^urn:ngsi-ld:AgriParcel:[A-Za-z0-9._~:-]+$")
+
+
+def parcel_urn(raw: str) -> str:
+    """Normalize a short id to the AgriParcel URN and validate it; raise InvalidParcelId otherwise."""
+    urn = _to_parcel_urn(raw)
+    # fullmatch: ``$`` alone would accept a trailing newline.
+    if not isinstance(urn, str) or not PARCEL_URN_RE.fullmatch(urn):
+        raise InvalidParcelId("invalid parcel id")
+    return urn
 
 
 def resolve_regime(requested: str | None, env: dict) -> tuple[str | None, str]:

@@ -40,8 +40,18 @@ async def load_farm(tenant_id: str, parcel_id: str | None = None):
     gate = asyncio.Semaphore(CYCLES_CONCURRENCY)
 
     async def cycles(urn: str):
+        # One parcel with a broken answer must not take the whole farm down: it becomes "cycles unavailable".
         async with gate:
-            return await fetch_crop_cycles(urn, tenant_id)
+            try:
+                answer = await fetch_crop_cycles(urn, tenant_id)
+            except Exception:
+                logger.warning("planning farm: crop-cycles failed tenant=%s parcel=%s", tenant_id, urn, exc_info=True)
+                return None
+        if answer is not None and not isinstance(answer, dict):
+            logger.warning("planning farm: crop-cycles answer is %s, not an object tenant=%s parcel=%s",
+                           type(answer).__name__, tenant_id, urn)
+            return None
+        return answer
 
     results = await asyncio.gather(*(cycles(p["id"]) for p in parcels))
     return parcels, farms, {c["id"]: c for c in crops}, dict(zip([p["id"] for p in parcels], results))
