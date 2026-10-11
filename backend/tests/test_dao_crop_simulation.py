@@ -250,6 +250,14 @@ def test_in_season_response_shape(mock_driver, tunis):
     assert w["segments"][0]["end"] == "1990-05-31"
     assert len(res["inputs"]["soil"]["layers"]) == 2
     assert res["inputs"]["sowing"] == {"source": "field_operations", "provenance": "actual"}
+    # rainfed wheat in a calibrated province (the polygon is in Navarra)
+    assert res["yield_basis"]["moisture"] == "commercial" and res["yield_basis"]["grain_moisture_pct"] == 13.0
+    pheno = res["inputs"]["phenology"]
+    assert pheno["source"] == "calibrated" and pheno["region"]["code"] == "31"
+    assert set(pheno["params"]) == {"Senescence", "Maturity", "HIstart", "Flowering", "YldForm"}
+    exp = res["expected_yield"]
+    assert exp["status"] == "ok" and exp["basis"] == "gap_corrected" and exp["region"]["code"] == "31"
+    assert 0 <= exp["range_t_ha"]["low"] <= exp["range_t_ha"]["high"]
     json.dumps(res)  # response must be serialisable
     print(json.dumps({k: v for k, v in res.items() if k != "daily"}, indent=1))
 
@@ -260,16 +268,38 @@ def test_complete_season_has_no_ensemble_and_never_loads_climatology(mock_driver
                crop_slug="wheat")
     assert res["status"] == "complete" and res["ensemble"] is None
     assert isinstance(res["yield_t_ha"], float) and isinstance(res["potential_yield_t_ha"], float)
-    assert res["yield_t_ha"] <= res["potential_yield_t_ha"] + 1e-9
+    # Not an upper bound: AquaCrop raises the harvest index under mild water stress, so the
+    # rainfed grain yield can exceed the irrigated one (water_gap_pct < 0). The gap must match.
+    assert res["water_gap_pct"] == pytest.approx(
+        100 * (1 - res["yield_t_ha"] / res["potential_yield_t_ha"]))
     assert res["inputs"]["sowing"] == {"source": "request", "provenance": None}
     assert res["inputs"]["weather"]["source"] == "parcel_daily"
     assert not any("archive.test" in u for u in net.urls)
+    assert res["expected_yield"]["status"] == "ok"
 
 
 def test_full_irrigation_headline_is_potential(mock_driver, tunis):
     res = _run(GraphDAO(mock_driver), net=_Net(tunis), irrigation="full")
     assert res["irrigation"] == "full"
     assert res["yield_t_ha"] == res["potential_yield_t_ha"]
+    assert res["expected_yield"] == {"status": "unavailable", "reason": "irrigated"}
+    assert res["inputs"]["phenology"] == {"source": "builtin", "region": res["inputs"]["phenology"]["region"],
+                                          "params": {}}
+
+
+def test_parcel_outside_the_calibrated_regions_keeps_the_builtin_crop(mock_driver, tunis):
+    _Orion.parcel = _parcel(location={"type": "Point", "coordinates": [2.35, 48.85]})  # Paris
+    res = _run(GraphDAO(mock_driver), net=_Net(tunis))
+    assert res["expected_yield"] == {"status": "unavailable", "reason": "outside_calibrated_regions"}
+    assert res["inputs"]["phenology"] == {"source": "builtin", "region": None, "params": {}}
+    assert res["yield_basis"]["moisture"] == "commercial"
+
+
+def test_uncalibrated_crop_is_reported_as_dry_matter(mock_driver, tunis):
+    res = _run(GraphDAO(mock_driver), net=_Net(tunis), crop_slug="sunflower",
+               sowing_date_str="1990-04-15", today=date(1990, 6, 1))
+    assert res["yield_basis"] == {"moisture": "dry_matter", "grain_moisture_pct": None, "source": None}
+    assert res["expected_yield"] == {"status": "unavailable", "reason": "crop_not_calibrated"}
 
 
 def test_durum_wheat_carries_parameters_note(mock_driver, tunis):
@@ -289,3 +319,18 @@ def test_crop_that_cannot_mature_is_a_typed_simulation_error():
             observed=[], analogs={}, soil=[], crop="MaizeGDD", planting=date(2020, 4, 1),
             irrigation="rainfed", sim_start=None))
     assert exc.value.code == "crop_cannot_mature" and exc.value.status_code == 422
+
+
+def test_engine_adapter_forwards_phenology_overrides():
+    from app.services import crop_simulation as cs
+    seen = {}
+
+    async def fake(*args, **kwargs):
+        seen["args"], seen["kwargs"] = args, kwargs
+        return {}
+
+    with patch("app.services.crop_simulation.aq.simulate", fake):
+        asyncio.run(cs.AquaCropEngine().simulate(
+            observed=[], analogs={}, soil=[], crop="WheatGDD", planting=date(2020, 10, 1),
+            irrigation="rainfed", sim_start=None, crop_params={"Maturity": 2600.0}))
+    assert seen["kwargs"].get("crop_params") == {"Maturity": 2600.0}
