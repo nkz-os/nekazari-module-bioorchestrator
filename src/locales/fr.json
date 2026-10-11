@@ -410,6 +410,28 @@
       "sowing_date_future": "La date de semis ne peut pas être dans le futur.",
       "parcel_not_found": "Parcelle introuvable.",
       "generic": "La simulation n'a pas pu être menée à terme."
+    },
+    "ceiling": "Plafond avec l'eau de cette année",
+    "basis": {
+      "commercial": "Rendements à l'humidité commerciale ({{pct}} %).",
+      "dry_matter": "Rendements en matière sèche."
+    },
+    "expected": {
+      "title": "Attendu dans votre zone ({{region}})",
+      "coverage": "Les années non utilisées pour la calibration, {{pct}} % des récoltes réelles sont tombées dans une telle plage.",
+      "source": "Calibré sur {{source}} ; erreur moyenne {{rmse}} t/ha.",
+      "unavailable": "Attendu dans votre zone : non disponible — {{reason}}.",
+      "reason": {
+        "crop_not_calibrated": "cette culture n'est pas encore calibrée",
+        "irrigated": "seules les cultures pluviales sont calibrées",
+        "outside_calibrated_regions": "la calibration ne couvre que les provinces espagnoles",
+        "region_not_calibrated": "pas assez de données pour cette province",
+        "unknown": "aucune calibration applicable"
+      }
+    },
+    "phenology": {
+      "calibrated": "Phénologie : calibrée pour {{region}}.",
+      "builtin": "Phénologie : celle d'AquaCrop par défaut."
     }
   }
 }

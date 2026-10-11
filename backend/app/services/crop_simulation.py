@@ -10,7 +10,9 @@ import logging
 from datetime import date
 from typing import Any, Protocol
 
+from app.services import yield_calibration as yc
 from app.services.engines import aquacrop_engine as aq
+from app.services.region_lookup import es_province_at
 from app.services.sim_crops import CropChoice, resolve_aquacrop_crop
 from app.services.sim_errors import SimulationError
 from app.services.sim_inputs import SimInputError, soil_layers_from_summary
@@ -30,7 +32,7 @@ class CropEngine(Protocol):
 
     async def simulate(
         self, *, observed, analogs, soil, crop: str, planting: date,
-        irrigation: str, sim_start: date | None,
+        irrigation: str, sim_start: date | None, crop_params: dict[str, float] | None = None,
     ) -> dict[str, Any]: ...
 
 
@@ -41,9 +43,11 @@ class AquaCropEngine:
     def resolve_crop(self, identifier: str) -> CropChoice:
         return resolve_aquacrop_crop(identifier)
 
-    async def simulate(self, *, observed, analogs, soil, crop, planting, irrigation, sim_start):
+    async def simulate(self, *, observed, analogs, soil, crop, planting, irrigation, sim_start,
+                       crop_params=None):
         try:
-            return await aq.simulate(observed, analogs, soil, crop, planting, irrigation, sim_start)
+            return await aq.simulate(observed, analogs, soil, crop, planting, irrigation, sim_start,
+                                     crop_params=crop_params)
         except aq.WeatherEndsBeforeHarvestError as e:
             raise SimulationError("season_incomplete", str(e)) from e
         except aq.CropCannotMatureError as e:
@@ -123,16 +127,22 @@ async def run_crop_simulation(
         analog_warnings.extend(warns)
         return found
 
+    # Calibrated phenology only where it was validated (crop, regime and region); else built-in.
+    region = es_province_at(lat, lon)
+    phenology = yc.calibrated_phenology(crop.slug, irrigation, region)
     try:
         result = await engine.simulate(
             observed=observed.weather, analogs=analogs, soil=soil, crop=crop.aquacrop_crop,
-            planting=sowing_date, irrigation=irrigation, sim_start=observed.sim_start)
+            planting=sowing_date, irrigation=irrigation, sim_start=observed.sim_start,
+            crop_params=phenology)
     except SimulationError as e:
         logger.warning("crop_simulation_failed %s code=%s", ctx, e.code)
         raise
 
     first, last = observed.weather[0].day, observed.weather[-1].day
     warnings = [*observed.warnings, *analog_warnings, *result["warnings"]]
+    basis = yc.yield_basis(crop.slug)
+    yield_t_ha = yc.to_basis(result["yield_t_ha"], basis)
     out = {
         "engine": engine.name,
         "engine_version": result["engine_version"],
@@ -144,8 +154,10 @@ async def run_crop_simulation(
         "irrigation": irrigation,
         "initial_water": result["initial_water"],
         "status": result["status"],
-        "yield_t_ha": result["yield_t_ha"],
-        "potential_yield_t_ha": result["potential_yield_t_ha"],
+        "yield_basis": basis,
+        "yield_t_ha": yield_t_ha,
+        "potential_yield_t_ha": yc.to_basis(result["potential_yield_t_ha"], basis),
+        "expected_yield": yc.expected_yield(crop.slug, irrigation, region, yield_t_ha),
         "water_gap_pct": result["water_gap_pct"],
         "harvest_date": result["harvest_date"],
         "ensemble": result["ensemble"],
@@ -162,6 +174,8 @@ async def run_crop_simulation(
             },
             "soil": {"layers": layers},
             "sowing": {"source": sowing_source, "provenance": sowing_provenance},
+            "phenology": {"source": "calibrated" if phenology else "builtin", "region": region,
+                          "params": phenology or {}},
         },
         "warnings": warnings,
     }

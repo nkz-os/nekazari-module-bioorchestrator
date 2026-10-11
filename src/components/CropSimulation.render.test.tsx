@@ -20,6 +20,8 @@ import type { CropSimulationResult } from './cropSimulationModel';
 
 const textOf = (html: string) => html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ');
 
+const NAVARRA = { scheme: 'es_province', code: '31', name: 'Navarra' };
+
 const base: CropSimulationResult = {
   engine: 'aquacrop', engine_version: '7.2', crop_slug: 'wheat', aquacrop_crop: 'WheatGDD',
   parcel_id: 'urn:p', sowing_date: '2025-10-01', irrigation: 'rainfed',
@@ -36,7 +38,14 @@ const base: CropSimulationResult = {
       { source: 'parcel_daily', start: '2025-06-01', end: '2026-06-20', days: 385 },
     ] },
     soil: { layers: [{ top_cm: 0, bottom_cm: 30, wp: 0.12, fc: 0.28, sat: 0.43, ksat_mm_day: 120 }] },
-    sowing: { source: 'field_operations' },
+    sowing: { source: 'field_operations', provenance: 'actual' },
+    phenology: { source: 'calibrated', region: NAVARRA, params: { Maturity: 2809.1 } },
+  },
+  yield_basis: { moisture: 'commercial', grain_moisture_pct: 13, source: 'Lloveras et al. 2017' },
+  expected_yield: {
+    status: 'ok', basis: 'gap_corrected', range_t_ha: { low: 2.44, high: 4.06 }, coverage: 0.78,
+    gap_factor: 0.51, region: NAVARRA,
+    calibration: { version: '2026-10-11', source: 'MAPA yearbook', validation: { rmse_kg_ha: 1684, anomaly_r_median: 0.5 } },
   },
   warnings: ['Archive altitude differs from the parcel.'],
 };
@@ -54,6 +63,24 @@ describe('CropSimulationResultView (es)', () => {
     expect(t).toContain('precalentamiento de 364 días');
     expect(t).not.toContain('Basado en');
     expect(t).not.toContain('2.0 – 4.9');
+    expect(t).toContain('Techo con el agua de este año');
+    expect(t).toContain('Esperado en tu zona (Navarra)');
+    expect(t).toContain('2.4 – 4.1 t/ha');
+    expect(t).toContain('el 78 %');
+    expect(t).toContain('humedad comercial (13 %)');
+    expect(t).toContain('calibrada para Navarra');
+  });
+
+  it('unavailable expected yield says why; a negative water gap shows 0%', () => {
+    const r: CropSimulationResult = {
+      ...base, irrigation: 'full', water_gap_pct: -1.4,
+      expected_yield: { status: 'unavailable', reason: 'irrigated' },
+    };
+    const t = textOf(renderToStaticMarkup(<CropSimulationResultView result={r} />));
+    expect(t).toContain('no disponible');
+    expect(t).toContain('solo está calibrado el secano');
+    expect(t).toContain('0%');
+    expect(t).not.toContain('-1%');
   });
 
   it('in-season: P50 headline, P10-P90 range, ensemble basis, assumed_fc note', () => {

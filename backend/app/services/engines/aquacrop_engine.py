@@ -513,6 +513,9 @@ def run_aquacrop_with_potential(
 
     AquaCrop's own "Yield potential" column is NOT water-unlimited, hence the
     second simulation. ``water_gap_pct`` = 100 * (1 - water_limited/potential).
+    It can be slightly negative: AquaCrop raises the harvest index under mild water
+    stress, so the rainfed grain yield can exceed the irrigated one while its biomass
+    stays lower (water does not limit that season).
     """
     wl = run_aquacrop(weather, soil, crop, planting_date, "rainfed", sim_start,
                       crop_params=crop_params)

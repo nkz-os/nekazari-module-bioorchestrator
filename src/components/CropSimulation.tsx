@@ -6,8 +6,9 @@ import { useParcelContext } from '../context/ParcelContext';
 import { usePlanningScenario } from '../context/PlanningScenarioContext';
 import { useBioApi, ApiError } from '../services/api';
 import {
-  ENGINES, chartLine, depthLabel, errorHintKey, formatYield, pct, segmentLabel, sowingSourceKey,
-  weatherSourceKey, type CropSimulationResult, type Engine, type Irrigation,
+  ENGINES, chartLine, depthLabel, errorHintKey, expectedReasonKey, formatRange, formatYield, pct,
+  segmentLabel, sowingSourceKey, waterGapText, weatherSourceKey, type CropSimulationResult, type Engine,
+  type Irrigation,
 } from './cropSimulationModel';
 
 type T = (key: string, opts?: Record<string, unknown>) => string;
@@ -73,6 +74,32 @@ function Metric({ label, main, range, unit, prominent }: {
   );
 }
 
+/** Expected yield in the parcel's region: the calibrated range, or why there is none. */
+function ExpectedYieldCard({ result, t }: { result: CropSimulationResult; t: T }) {
+  const e = result.expected_yield;
+  if (e.status !== 'ok') {
+    return (
+      <p className="text-nkz-sm text-nkz-text-muted">
+        {t('cropSimulation.expected.unavailable', { reason: t(expectedReasonKey(e.reason)) })}
+      </p>
+    );
+  }
+  return (
+    <Card padding="md">
+      <p className="text-nkz-xs text-nkz-text-secondary">{t('cropSimulation.expected.title', { region: e.region.name })}</p>
+      <p className="text-nkz-xl font-bold text-nkz-text-primary">{formatRange(e.range_t_ha)} t/ha</p>
+      <p className="text-nkz-xs text-nkz-text-muted">
+        {t('cropSimulation.expected.coverage', { pct: Math.round(e.coverage * 100) })}
+      </p>
+      <p className="text-nkz-xs text-nkz-text-muted">
+        {t('cropSimulation.expected.source', {
+          source: e.calibration.source, rmse: (e.calibration.validation.rmse_kg_ha / 1000).toFixed(1),
+        })}
+      </p>
+    </Card>
+  );
+}
+
 /** Pure presentation of a simulation answer (no data fetching). */
 export function CropSimulationResultView({ result }: { result: CropSimulationResult }) {
   const { t: tr } = useTranslation('bioorchestrator');
@@ -100,12 +127,20 @@ export function CropSimulationResultView({ result }: { result: CropSimulationRes
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <Metric label={t('cropSimulation.yield')} main={y.main} range={y.range} unit="t/ha" prominent />
+        <Metric label={t('cropSimulation.ceiling')} main={y.main} range={y.range} unit="t/ha" prominent />
         <Metric label={t('cropSimulation.potentialYield')} main={p.main} range={p.range} unit="t/ha" />
         <Metric label={t('cropSimulation.waterGap')}
-                main={result.water_gap_pct == null ? '—' : `${result.water_gap_pct.toFixed(0)}%`} />
+                main={waterGapText(result.water_gap_pct)} />
         <Metric label={t(inSeason ? 'cropSimulation.harvestMedian' : 'cropSimulation.harvestDate')} main={result.harvest_date} />
       </div>
+
+      <p className="text-nkz-xs text-nkz-text-muted">
+        {result.yield_basis.moisture === 'commercial'
+          ? t('cropSimulation.basis.commercial', { pct: result.yield_basis.grain_moisture_pct ?? '' })
+          : t('cropSimulation.basis.dry_matter')}
+      </p>
+
+      <ExpectedYieldCard result={result} t={t} />
 
       {inSeason && result.ensemble && (
         <p className="text-nkz-sm text-nkz-text-secondary">
@@ -172,6 +207,11 @@ export function CropSimulationResultView({ result }: { result: CropSimulationRes
         </div>
         <p className="text-nkz-sm text-nkz-text-secondary mt-4">
           {t('cropSimulation.inputs.sowing')}: {result.sowing_date} ({sowKey ? t(sowKey) : result.inputs.sowing.source})
+        </p>
+        <p className="text-nkz-sm text-nkz-text-secondary">
+          {result.inputs.phenology.source === 'calibrated' && result.inputs.phenology.region
+            ? t('cropSimulation.phenology.calibrated', { region: result.inputs.phenology.region.name })
+            : t('cropSimulation.phenology.builtin')}
         </p>
       </Card>
 

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
-  chartLine, depthLabel, errorHintKey, formatYield, pct, segmentLabel, sowingSourceKey, weatherSourceKey,
+  chartLine, depthLabel, errorHintKey, expectedReasonKey, formatRange, formatYield, pct, segmentLabel,
+  sowingSourceKey, waterGapText, weatherSourceKey,
   type DailyPoint,
 } from './cropSimulationModel';
 
@@ -62,5 +63,18 @@ describe('chartLine', () => {
   });
   it('is empty for no data', () => {
     expect(chartLine([], 'water_stress')).toEqual({ observed: [], projected: [] });
+  });
+});
+
+describe('expected yield and water gap', () => {
+  it('never shows a negative water gap (water does not limit that season)', () => {
+    expect(waterGapText(33.2)).toBe('33%');
+    expect(waterGapText(-1.4)).toBe('0%');
+    expect(waterGapText(null)).toBe('—');
+  });
+  it('formats the expected range and maps unavailable reasons', () => {
+    expect(formatRange({ low: 2.44, high: 4.06 })).toBe('2.4 – 4.1');
+    expect(expectedReasonKey('irrigated')).toBe('cropSimulation.expected.reason.irrigated');
+    expect(expectedReasonKey('other')).toBe('cropSimulation.expected.reason.unknown');
   });
 });

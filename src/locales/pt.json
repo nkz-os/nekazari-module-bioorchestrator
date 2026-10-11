@@ -410,6 +410,28 @@
       "sowing_date_future": "A data de sementeira não pode ser futura.",
       "parcel_not_found": "Parcela não encontrada.",
       "generic": "Não foi possível concluir a simulação."
+    },
+    "ceiling": "Teto com a água deste ano",
+    "basis": {
+      "commercial": "Rendimentos à humidade comercial ({{pct}} %).",
+      "dry_matter": "Rendimentos em matéria seca."
+    },
+    "expected": {
+      "title": "Esperado na sua zona ({{region}})",
+      "coverage": "Nos anos não usados para calibrar, {{pct}} % das colheitas reais ficaram dentro de um intervalo assim.",
+      "source": "Calibrado com {{source}}; erro médio {{rmse}} t/ha.",
+      "unavailable": "Esperado na sua zona: não disponível — {{reason}}.",
+      "reason": {
+        "crop_not_calibrated": "esta cultura ainda não está calibrada",
+        "irrigated": "só o sequeiro está calibrado",
+        "outside_calibrated_regions": "a calibração só cobre províncias espanholas",
+        "region_not_calibrated": "não há dados suficientes para esta província",
+        "unknown": "não há calibração aplicável"
+      }
+    },
+    "phenology": {
+      "calibrated": "Fenologia: calibrada para {{region}}.",
+      "builtin": "Fenologia: a do AquaCrop por defeito."
     }
   }
 }
