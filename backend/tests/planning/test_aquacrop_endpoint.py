@@ -269,7 +269,7 @@ def test_route_validates_the_contract(client, monkeypatch):
                    params={"crop": "TRZAX", "regime": "secano", "sowing_date": SOW.isoformat()})
     assert r.status_code == 200
     body = r.json()
-    assert body["provider_id"] == "aquacrop" and body["contract_version"] == "1.1" and body["state"] == "running"
+    assert body["provider_id"] == "aquacrop" and body["contract_version"] == "1.2" and body["state"] == "running"
     assert called.await_args.kwargs["sowing_date"] == SOW
 
 

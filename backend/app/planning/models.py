@@ -11,7 +11,7 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
-CONTRACT_VERSION = "1.1"
+CONTRACT_VERSION = "1.2"
 
 Verdict = Literal["fits", "caveats", "no_fit"]
 Regime = Literal["secano", "regadío"]
@@ -240,7 +240,11 @@ class PlanCycleIn(BaseModel):
     variety: str | None = Field(None, max_length=64)
     sowing_start: date
     sowing_end: date | None = None
-    expected_termination: date
+    # Owner decision (2026-10-12): the farmer is not asked for a harvest date; the server derives the
+    # ends it needs (plan_write._ends). A date sent here keeps the earlier rules.
+    expected_termination: date | None = None
+    # A perennial main crop (alfalfa) is planned for a number of campaigns instead of an end date.
+    perennial_years: int | None = Field(None, ge=1, le=10)
     termination_method: Literal["roller_crimper", "mowing", "harvest", "incorporate", "grazing"] | None = None
 
 

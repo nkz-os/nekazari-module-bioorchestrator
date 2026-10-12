@@ -39,7 +39,7 @@ export default function PlanForm({ parcelId, campaign, regime, management, main,
     setSaving(true);
     setError(null);
     try {
-      await putPlan(parcelId, toPlanIn(draft, campaign, regime, management));
+      await putPlan(parcelId, toPlanIn(draft, campaign, regime, management, isPerennial));
       onSaved();
     } catch (e) {
       const code = e instanceof PlanningApiError && e.code ? e.code : 'generic';
@@ -64,9 +64,13 @@ export default function PlanForm({ parcelId, campaign, regime, management, main,
       <FormField label={t('planning.plan.sowing')}>
         <Input type="date" value={draft.main.sowing} onChange={(e) => setMain({ sowing: e.target.value })} />
       </FormField>
-      <FormField label={isPerennial ? t('planning.plan.standEnd') : t('planning.plan.harvest')}>
-        <Input type="date" value={draft.main.end} onChange={(e) => setMain({ end: e.target.value })} />
-      </FormField>
+      {/* Owner decision: no harvest date is asked; a perennial is planned for a number of years. */}
+      {isPerennial && (
+        <FormField label={t('planning.plan.years')}>
+          <Input type="number" min={1} max={10} step={1} value={draft.main.years ?? ''}
+            onChange={(e) => setMain({ years: e.target.value === '' ? null : Number(e.target.value) })} />
+        </FormField>
+      )}
       <Switch checked={draft.cover !== null} label={t('planning.plan.addCover')} labelPosition="right"
         onChange={(on: boolean) => { setError(null); setOtherCover(false); onDraft({ ...draft, cover: on ? emptyCover() : null }); }} />
       {draft.cover && (
@@ -87,9 +91,7 @@ export default function PlanForm({ parcelId, campaign, regime, management, main,
           <FormField label={t('planning.plan.coverSowing')}>
             <Input type="date" value={draft.cover.sowing} onChange={(e) => setCover({ sowing: e.target.value })} />
           </FormField>
-          <FormField label={t('planning.plan.coverEnd')}>
-            <Input type="date" value={draft.cover.end} onChange={(e) => setCover({ end: e.target.value })} />
-          </FormField>
+          <p className="text-nkz-xs text-nkz-text-muted">{t('planning.plan.coverEndsAtSowing')}</p>
           <FormField label={t('planning.plan.method')}>
             <Select value={draft.cover.method ?? 'roller_crimper'} options={methods}
               onValueChange={(v) => setCover({ method: v as TerminationMethod })} />

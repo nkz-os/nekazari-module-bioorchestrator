@@ -24,7 +24,7 @@ interface Props {
   onReload?: () => void;
 }
 const ESTIMATE_DEBOUNCE_MS = 600;
-const EMPTY_DRAFT: PlanDraft = { main: { species: '', variety: null, sowing: '', end: '', method: null }, cover: null };
+const EMPTY_DRAFT: PlanDraft = { main: { species: '', variety: null, sowing: '', years: null, method: null }, cover: null };
 
 export default function ParcelDetail({ row, campaign, onClose, onSaved, onSimulate, onReload }: Props) {
   const { t, i18n } = useTranslation('bioorchestrator');
@@ -33,7 +33,7 @@ export default function ParcelDetail({ row, campaign, onClose, onSaved, onSimula
   const [management, setManagement] = useState<Management>('conventional');
   // "Change" starts from the plan the campaign already has, so saving never replaces it unseen.
   const targetCells = row.cells[String(campaign)] ?? [];
-  const [prefill] = useState(() => draftFromCells(targetCells));
+  const [prefill] = useState(() => draftFromCells(targetCells, campaign));
   const [species, setSpecies] = useState<string | null>(prefill?.main.species || null);
   const [draft, setDraft] = useState<PlanDraft>(prefill ?? EMPTY_DRAFT);
   // The date that feeds the estimates: it follows the sowing field after a pause, not on every keystroke.

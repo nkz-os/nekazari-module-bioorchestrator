@@ -15,7 +15,7 @@ const MAIN: SpeciesFit = {
   species: 'maize', eppo: 'ZEAMX', names: { es: 'maíz' }, lifecycle: 'annual', verdict: 'fits', reasons: [], has_variety_trials: true,
   estimate_providers: [], sowing: { sowing_type: null, start_month: 4, end_month: 5, typical_sowing_doy: null, source: null },
 };
-const DRAFT: PlanDraft = { main: { species: 'maize', variety: 'Var X', sowing: '2027-04-20', end: '2027-10-01', method: null }, cover: null };
+const DRAFT: PlanDraft = { main: { species: 'maize', variety: 'Var X', sowing: '2027-04-20', years: null, method: null }, cover: null };
 const props = { parcelId: 'p1', campaign: 2027, regime: 'secano' as const, management: 'conventional' as const, main: MAIN,
   coverOptions: [], draft: DRAFT, onDraft: () => {}, onSaved: () => {} };
 
@@ -39,5 +39,25 @@ describe('PlanForm (es)', () => {
     const html = renderToStaticMarkup(<PlanForm {...props} replacing={false} main={{ ...MAIN, has_variety_trials: false }}
       draft={{ ...DRAFT, main: { ...DRAFT.main, variety: null } }} />);
     expect(html).not.toContain('Variedad:');
+  });
+  it('asks for no harvest or end date (owner decision): only sowings are dated', () => {
+    const html = renderToStaticMarkup(<PlanForm {...props} replacing={false} />);
+    expect(html.split('type="date"').length - 1).toBe(1);
+    expect(html).not.toContain('Cosecha prevista');
+    expect(html).not.toContain('Años previstos');
+  });
+  it('a perennial asks for its years instead of an end date', () => {
+    const alfalfa = { ...MAIN, species: 'alfalfa', lifecycle: 'perennial' as const };
+    const html = renderToStaticMarkup(<PlanForm {...props} replacing={false} main={alfalfa}
+      draft={{ ...DRAFT, main: { ...DRAFT.main, species: 'alfalfa', years: 4 } }} />);
+    expect(html).toContain('Años previstos');
+    expect(html).toContain('type="number"');
+    expect(html).toContain('value="4"');
+  });
+  it('a cover says it ends when the main crop is sown and asks only for its sowing', () => {
+    const cover = { species: 'vetch', variety: null, sowing: '2026-10-01', years: null, method: 'roller_crimper' as const };
+    const html = renderToStaticMarkup(<PlanForm {...props} replacing={false} draft={{ ...DRAFT, cover }} />);
+    expect(html).toContain('La cubierta se termina (rodillo o siega) al sembrar el cultivo principal');
+    expect(html.split('type="date"').length - 1).toBe(2);
   });
 });

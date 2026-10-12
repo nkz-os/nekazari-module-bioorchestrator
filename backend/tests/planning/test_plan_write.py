@@ -402,3 +402,84 @@ def test_a_cover_can_end_by_mowing():
     segs = plan_write.segments_from_plan(_plan(cycles=[cover]))
     ent = build_segment_entity("t", URN, "2027", 0, segs[0])
     assert ent["terminationMethod"]["value"] == "mowing"
+
+
+# --- no harvest date asked (owner decision 2026-10-12) ---------------------------------------------------
+
+def _undated(cycles, campaign=2027):
+    return PlanIn.model_validate({"campaign": campaign, "regime": "secano", "management": "conventional", "cycles": cycles})
+
+
+def test_campaign_close_is_the_day_before_the_autumn_sowings():
+    assert plan_write.campaign_close(2027) == date(2027, 7, 31)
+
+
+async def test_an_annual_main_crop_without_end_stores_none(monkeypatch):
+    client = _orion(monkeypatch, [])
+    plan = _undated([{"role": "main_crop", "crop": "wheat", "sowing_start": "2026-10-20"}])
+    await plan_write.write_plan(tenant_id="t", parcel_urn=URN, plan=plan, today=TODAY)
+    entity = client.create_entity.await_args.args[0]
+    assert "expectedTerminationDate" not in entity and entity["sowingWindowStart"]["value"]["@value"] == "2026-10-20"
+
+
+def test_a_cover_without_end_ends_when_the_main_crop_is_sown():
+    plan = _undated([{"role": "cover_crop", "crop": "vetch", "sowing_start": "2026-10-01", "termination_method": "roller_crimper"},
+                     {"role": "main_crop", "crop": "maize", "sowing_start": "2027-04-20"}])
+    plan_write.validate_plan(plan, TODAY)
+    cover, main = plan_write.segments_from_plan(plan)
+    assert cover["expected_termination"] == "2027-04-20" and main["expected_termination"] is None
+
+
+def test_a_cover_sown_after_the_main_crop_is_inconsistent():
+    plan = _undated([{"role": "cover_crop", "crop": "vetch", "sowing_start": "2027-05-01"},
+                     {"role": "main_crop", "crop": "maize", "sowing_start": "2027-04-20"}])
+    with pytest.raises(plan_write.PlanError, match="dates_inconsistent"):
+        plan_write.validate_plan(plan, TODAY)
+
+
+def test_a_perennial_stands_for_its_years():
+    plan = _undated([{"role": "main_crop", "crop": "alfalfa", "sowing_start": "2026-09-15", "perennial_years": 4}])
+    plan_write.validate_plan(plan, TODAY)
+    (segment,) = plan_write.segments_from_plan(plan)
+    assert segment["expected_termination"] == "2030-07-31"  # campaigns 2027, 2028, 2029 and 2030
+
+
+def test_a_perennial_without_years_or_end_is_missing_its_duration():
+    with pytest.raises(plan_write.PlanError, match="missing_duration"):
+        plan_write.validate_plan(_undated([{"role": "main_crop", "crop": "alfalfa", "sowing_start": "2026-09-15"}]), TODAY)
+
+
+def test_perennial_years_are_bounded_by_the_contract():
+    with pytest.raises(ValueError):
+        _undated([{"role": "main_crop", "crop": "alfalfa", "sowing_start": "2026-09-15", "perennial_years": 11}])
+
+
+@pytest.mark.parametrize("start", ["2027-08-15", "2026-03-01"])
+def test_an_undated_main_crop_must_be_sown_in_its_campaign(start):
+    with pytest.raises(plan_write.PlanError, match="sowing_outside_campaign"):
+        plan_write.validate_plan(_undated([{"role": "main_crop", "crop": "wheat", "sowing_start": start}]), TODAY)
+
+
+def test_a_catch_crop_still_needs_its_date():
+    plan = _undated([{"role": "main_crop", "crop": "wheat", "sowing_start": "2026-10-20"},
+                     {"role": "catch_crop", "crop": "phacelia", "sowing_start": "2027-07-10"}])
+    with pytest.raises(plan_write.PlanError, match="missing_dates"):
+        plan_write.validate_plan(plan, TODAY)
+
+
+async def test_an_undated_wheat_does_not_block_the_next_campaigns_autumn_sowing(monkeypatch):
+    # The 2027 wheat was planned with no end; planning 2028 sown in October 2027 must not see an overlap.
+    wheat = _crop("2027", "planned", "2026-10-20")
+    _orion(monkeypatch, [wheat])
+    plan = _undated([{"role": "main_crop", "crop": "barley", "sowing_start": "2027-10-25"}], campaign=2028)
+    out = await plan_write.write_plan(tenant_id="t", parcel_urn=URN, plan=plan, today=TODAY)
+    assert out["written"]
+
+
+async def test_an_undated_wheat_still_occupies_its_own_campaign(monkeypatch):
+    # Bounded at the campaign close (Jul 31): a 2028 cover sown in July 2027 overlaps the 2027 wheat.
+    _orion(monkeypatch, [_crop("2027", "planned", "2026-10-20")])
+    plan = _undated([{"role": "cover_crop", "crop": "vetch", "sowing_start": "2027-07-10"},
+                     {"role": "main_crop", "crop": "barley", "sowing_start": "2027-10-25"}], campaign=2028)
+    with pytest.raises(plan_write.PlanError, match="cycles_overlap"):
+        await plan_write.write_plan(tenant_id="t", parcel_urn=URN, plan=plan, today=TODAY)
