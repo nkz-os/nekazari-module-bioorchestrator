@@ -1302,6 +1302,7 @@
       "validatedAs": "Validated: {{metric}}",
       "ceiling": "ceiling with the available water, not a forecast", "coverage": "hits {{pct}} % of the years",
       "simulating": "Simulating… {{done}}/{{total}} years", "simulatingStart": "Simulating…",
+      "firstRunNote": "The first simulation in a new area takes a few minutes: we download 15 years of the area's weather. Later ones take about a minute.",
       "moisture": { "commercial": "at {{pct}} % moisture", "commercialNoPct": "at commercial moisture", "dry_matter": "dry matter", "as_reported": "at the moisture each source publishes" },
       "unavailable": { "preseason_not_supported": "Pre-sowing simulation: not available yet", "engine_not_deployed": "pending",
         "no_trials": "no trials for this crop", "no_trials_for_variety": "no trials of this variety in your area",

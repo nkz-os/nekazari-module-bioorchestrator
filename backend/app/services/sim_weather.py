@@ -44,6 +44,10 @@ _MAX_LISTED_DAYS = 20
 _ARCHIVE_DAILY = "temperature_2m_min,temperature_2m_max,precipitation_sum,et0_fao_evapotranspiration"
 # era5_seamless blends ERA5-Land and ERA5; ERA5-Land alone lacks the inputs of ET0.
 _ARCHIVE_MODELS = "era5_seamless"
+# A cold archive cache first pulls the multi-year series from object storage (~80 s measured for
+# 16 years at a new point; 0.5 s once cached). 150 s outlasts it and, with the ensemble run,
+# keeps a planning job inside the UI's 4-minute wait.
+ARCHIVE_TIMEOUT = httpx.Timeout(150.0, connect=10.0)
 
 
 @dataclass(frozen=True)
@@ -180,7 +184,7 @@ async def fetch_archive_daily(lat: float, lon: float, start: date, end: date) ->
         "daily": _ARCHIVE_DAILY, "models": _ARCHIVE_MODELS, "timezone": "UTC",
     }
     try:
-        async with httpx.AsyncClient(timeout=60) as client:
+        async with httpx.AsyncClient(timeout=ARCHIVE_TIMEOUT) as client:
             resp = await client.get(url, params=params)
         if resp.status_code != 200:
             raise SimulationError(

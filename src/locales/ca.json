@@ -549,6 +549,7 @@
       "validatedAs": "Validat: {{metric}}",
       "ceiling": "sostre amb l'aigua disponible, no és una previsió", "coverage": "encerta en el {{pct}} % dels anys",
       "simulating": "Simulant… {{done}}/{{total}} anys", "simulatingStart": "Simulant…",
+      "firstRunNote": "La primera simulació en una zona nova triga uns minuts: descarreguem 15 anys de clima de la zona. Les següents triguen al voltant d'un minut.",
       "moisture": { "commercial": "al {{pct}} % d'humitat", "commercialNoPct": "a humitat comercial", "dry_matter": "en matèria seca", "as_reported": "a la humitat que publica cada font" },
       "unavailable": { "preseason_not_supported": "Simulació abans de la sembra: encara no disponible", "engine_not_deployed": "pendent",
         "no_trials": "sense assaigs d'aquest cultiu", "no_trials_for_variety": "sense assaigs d'aquesta varietat a la teva zona",
