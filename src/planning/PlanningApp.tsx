@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useAuth, useTranslation } from '@nekazari/sdk';
-import { Button, Card, Inline, Select, Spinner, Stack } from '@nekazari/ui-kit';
+import { Button, Card, Inline, Select, Stack } from '@nekazari/ui-kit';
 import { Sprout } from 'lucide-react';
 import DisclaimerFooter from '../components/DisclaimerFooter';
 import AdminTools from './AdminTools';
@@ -10,6 +10,7 @@ import { fetchFarm } from './api';
 import { loadErrorKey } from './errors';
 import { cropName, formatHa } from './format';
 import LazyBoundary from './LazyBoundary';
+import LoadingLine from './LoadingLine';
 import { parseCampaign } from './matrixModel';
 import ParcelDetail from './ParcelDetail';
 import PlanMatrix from './PlanMatrix';
@@ -68,7 +69,7 @@ export default function PlanningApp() {
           <SimulationBridge parcelId={simulationFor} onClose={closeView} />
         ) : (
           <>
-            {farm.loading && <div className="flex justify-center py-8" aria-busy="true"><Spinner size="lg" /></div>}
+            {farm.loading && <LoadingLine text={t('planning.loading.farm')} />}
             {farm.error != null && (
               <Inline gap="inline" align="center">
                 <p className="text-nkz-sm text-nkz-danger">{t(loadErrorKey(farm.error))}</p>

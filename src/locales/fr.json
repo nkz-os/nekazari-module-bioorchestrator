@@ -416,6 +416,7 @@
     }
   },
   "planning": {
+    "loading": {"generic": "Chargement…", "farm": "Chargement de vos parcelles…", "fit": "Analyse des cultures adaptées à cette parcelle…", "varieties": "Recherche de variétés dans les essais de votre zone ; cela peut prendre quelques secondes…", "estimates": "Calcul de la récolte attendue…"},
     "title": "Planification des cultures",
     "subtitle": "Quoi semer sur chaque parcelle, avec quelle variété et dans quel ordre",
     "campaign": "Campagne", "farm": "Exploitation", "farmAll": "Toutes les parcelles", "retry": "Réessayer",

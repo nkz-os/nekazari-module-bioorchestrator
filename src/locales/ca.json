@@ -416,6 +416,7 @@
     }
   },
   "planning": {
+    "loading": {"generic": "S'està carregant…", "farm": "S'estan carregant les teves parcel·les…", "fit": "S'està analitzant quins cultius encaixen en aquesta parcel·la…", "varieties": "S'estan cercant varietats als assaigs de la teva zona; pot trigar uns segons…", "estimates": "S'està calculant la collita esperada…"},
     "title": "Planificació de cultius",
     "subtitle": "Què sembrar a cada parcel·la, amb quina varietat i en quin ordre",
     "campaign": "Campanya", "farm": "Explotació", "farmAll": "Totes les parcel·les", "retry": "Reintenta",
