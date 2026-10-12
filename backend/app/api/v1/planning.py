@@ -25,6 +25,7 @@ from app.planning.models import (
     VarietiesResponse,
 )
 from app.planning.plan_write import PlanError, write_plan
+from app.planning.prefetch import schedule_evidence_prefetch
 from app.planning.reference import EMPTY_REFERENCE, load_reference
 from app.planning.service import (
     InvalidParcelId,
@@ -58,11 +59,16 @@ async def fit(request: Request, parcel_id: str, sources: SourcesDep,
     tenant = _require_tenant_id(request)
     parcel_id = _checked_parcel_urn(parcel_id)
     source = sources[0]
+    dao = GraphDAO(source.driver)
     try:
-        return await parcel_fit(dao=GraphDAO(source.driver), source=source, parcel_id=parcel_id,
-                                tenant_id=tenant, campaign=campaign, regime=regime)
+        result = await parcel_fit(dao=dao, source=source, parcel_id=parcel_id, tenant_id=tenant,
+                                  campaign=campaign, regime=regime)
     except ParcelNotFound as e:
         raise HTTPException(status_code=404, detail=str(e)) from e
+    # While the farmer reads the list, warm the evidence of the first crops (varieties and estimates).
+    schedule_evidence_prefetch(dao, parcel_id=result["parcel_id"], tenant_id=tenant,
+                               regime=result["facts"]["regime"], species=result["species"])
+    return result
 
 
 @router.get("/parcels/{parcel_id:path}/varieties", response_model=VarietiesResponse)

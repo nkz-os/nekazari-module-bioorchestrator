@@ -9,9 +9,14 @@ from app.graph.parcel_conditions import conditions_from_environment
 EVIDENCE_ROWS_MAX = 5000
 
 
+def evidence_conditions(env: dict, *, crop_eppo: str, regime: str, management: str) -> dict:
+    """The recommender conditions behind one crop's evidence: the prefetch must build the same, to hit its cache."""
+    return conditions_from_environment(env, irrigation_regime=regime, management=management,
+                                       crops=[crop_eppo], top_n=1)
+
+
 async def load_crop_evidence(dao, env: dict, *, crop_eppo: str, regime: str, management: str) -> dict:
-    conditions = conditions_from_environment(env, irrigation_regime=regime, management=management,
-                                             crops=[crop_eppo], top_n=1)
+    conditions = evidence_conditions(env, crop_eppo=crop_eppo, regime=regime, management=management)
     if not conditions["climate_class"]:
         return {"status": "needs_climate"}
     result = await dao.recommend_for_conditions(conditions)
