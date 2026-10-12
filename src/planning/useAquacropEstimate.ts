@@ -17,7 +17,7 @@ const IDLE = { response: null, failure: null } as const;
  */
 export function useAquacropEstimate(parcelId: string, q: AquacropQuery, enabled: boolean): AquacropView {
   const [view, setView] = useState<{ key: string } & Omit<AquacropView, 'retry'>>({ key: '', ...IDLE });
-  const inputs = JSON.stringify([parcelId, q.crop, q.regime, q.sowingDate, enabled]);
+  const inputs = JSON.stringify([parcelId, q.crop, q.regime, q.sowingDate, q.sowingMethod ?? null, enabled]);
   const [clicks, setClicks] = useState({ inputs: '', retries: 0, resumes: 0 });
   const failed = useRef(false);
   const retries = retryCountFor(clicks, inputs);

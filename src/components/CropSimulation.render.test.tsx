@@ -51,6 +51,26 @@ const base: CropSimulationResult = {
 };
 
 describe('CropSimulationResultView (es)', () => {
+  it('shows the sowing method, its source and the mulch', () => {
+    const result: CropSimulationResult = { ...base, inputs: { ...base.inputs, field_management:
+      { sowing_method: 'direct', source: 'field_operations', mulch_pct: 30, f_mulch: 0.5 } } };
+    const t = textOf(renderToStaticMarkup(<CropSimulationResultView result={result} />));
+    expect(t).toContain('Método de siembra: directa (operaciones de campo) · rastrojo como acolchado al 30 %');
+  });
+
+  it('bare soil by default says there was no data', () => {
+    const result: CropSimulationResult = { ...base, inputs: { ...base.inputs, field_management:
+      { sowing_method: 'conventional', source: 'default', mulch_pct: null, f_mulch: null } } };
+    const t = textOf(renderToStaticMarkup(<CropSimulationResultView result={result} />));
+    expect(t).toContain('Método de siembra: tradicional (sin dato: suelo desnudo)');
+    expect(t).not.toContain('acolchado');
+  });
+
+  it('an older result without field_management shows no method line', () => {
+    const t = textOf(renderToStaticMarkup(<CropSimulationResultView result={base} />));
+    expect(t).not.toContain('Método de siembra');
+  });
+
   it('complete season: single values, no ensemble text', () => {
     const t = textOf(renderToStaticMarkup(<CropSimulationResultView result={base} />));
     expect(t).toContain('Campaña completa');

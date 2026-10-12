@@ -4,6 +4,7 @@ import { useTranslation } from '@nekazari/sdk';
 import { Badge, Button, FormField, Inline, Select, Stack } from '@nekazari/ui-kit';
 import { ArrowLeft } from 'lucide-react';
 import { fetchEstimates, fetchFit, fetchVarieties } from './api';
+import DirectSowingOption from './DirectSowingOption';
 import { aquacropPending, mergeAquacrop } from './estimatesModel';
 import EstimatesTable from './EstimatesTable';
 import FitList from './FitList';
@@ -31,6 +32,7 @@ export default function ParcelDetail({ row, campaign, onClose, onSaved, onSimula
   const lang = i18n.language;
   const [regime, setRegime] = useState<Regime | null>(row.regime);
   const [management, setManagement] = useState<Management>('conventional');
+  const [directSowing, setDirectSowing] = useState(false);
   // "Change" starts from the plan the campaign already has, so saving never replaces it unseen.
   const targetCells = row.cells[String(campaign)] ?? [];
   const [prefill] = useState(() => draftFromCells(targetCells, campaign));
@@ -61,7 +63,8 @@ export default function ParcelDetail({ row, campaign, onClose, onSaved, onSimula
   // AquaCrop is asynchronous: /estimates only says it will answer ("async"); this polls its own endpoint.
   const aquacrop = useAquacropEstimate(
     row.parcel_id,
-    { crop: chosen?.species ?? '', regime: regime ?? 'secano', sowingDate: estimateSowing || null },
+    { crop: chosen?.species ?? '', regime: regime ?? 'secano', sowingDate: estimateSowing || null,
+      sowingMethod: directSowing ? 'direct' : null },
     Boolean(chosen && regime && estimates.data && aquacropPending(estimates.data)));
   const merged = estimates.data ? mergeAquacrop(estimates.data, aquacrop.response, aquacrop.failure ?? undefined) : null;
   const loadedVarieties = varieties.data?.varieties;
@@ -151,6 +154,12 @@ export default function ParcelDetail({ row, campaign, onClose, onSaved, onSimula
           </Step>
           <Step title={t('planning.step.estimate')} loading={estimates.loading} error={estimates.error} onRetry={estimates.retry}
             loadingText={t('planning.loading.estimates')}>
+            {estimates.data && aquacropPending(estimates.data) && (
+              <DirectSowingOption checked={directSowing} onChange={setDirectSowing}
+                fromOperations={aquacrop.response?.sowing_method === 'direct'
+                  && aquacrop.response.sowing_method_source === 'field_operations'}
+                notApplied={aquacrop.response?.state === 'done' && aquacrop.response.sowing_method !== 'direct'} />
+            )}
             {merged && <EstimatesTable data={merged.data} progress={merged.progress} onRetry={aquacrop.retry} />}
           </Step>
           <Step title={t('planning.step.plan')}>

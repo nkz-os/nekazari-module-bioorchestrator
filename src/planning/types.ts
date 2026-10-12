@@ -1,7 +1,7 @@
-/** Mirror of backend/app/planning/models.py — contract version 1.1. Change both together. */
+/** Mirror of backend/app/planning/models.py — contract version 1.3. Change both together. */
 import type { SourceAttributionItem } from '../types/attribution';
 
-export const CONTRACT_VERSION = '1.2';
+export const CONTRACT_VERSION = '1.3';
 export type Verdict = 'fits' | 'caveats' | 'no_fit';
 export type Regime = 'secano' | 'regadío';
 export type Management = 'conventional' | 'organic';
@@ -51,9 +51,11 @@ export interface EstimatesResponse {
 }
 export interface Unavailable { provider_id: string; reason: string; code?: string | null }
 export type AquacropState = 'unavailable' | 'queued' | 'running' | 'done' | 'failed';
+export type SowingMethod = 'direct' | 'conventional';
 export interface AquacropResponse {
   contract_version: string; provider_id: 'aquacrop'; state: AquacropState; done: number; total: number | null;
   estimates: Estimate[]; unavailable: Unavailable[]; job_id: string | null;
+  sowing_method?: SowingMethod | null; sowing_method_source?: 'request' | 'field_operations' | 'default' | null;
 }
 export interface CycleCell {
   crop_id: string | null; species: string | null; species_raw: string | null; names: Names; variety: string | null;

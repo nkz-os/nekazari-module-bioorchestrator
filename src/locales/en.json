@@ -1111,7 +1111,8 @@
     "inputs": {
       "weather": "Weather",
       "soil": "Soil layers",
-      "sowing": "Sowing"
+      "sowing": "Sowing",
+      "sowingMethod": "Sowing method"
     },
     "soil": {
       "depth": "Depth",
@@ -1132,6 +1133,16 @@
       "crop_cycle": "crop cycle",
       "legacy_parcel_season": "season recorded on the parcel"
     },
+    "sowingMethod": {
+      "direct": "direct",
+      "conventional": "conventional"
+    },
+    "sowingMethodSource": {
+      "request": "request",
+      "field_operations": "field operations",
+      "default": "no data: bare soil"
+    },
+    "mulch": "stubble as a {{pct}} % mulch",
     "warnings": "Notes",
     "errors": {
       "unsupported_crop": "This crop cannot be simulated yet.",
@@ -1278,6 +1289,10 @@
       "basis": { "trial_evidence": "trial plot, optimal management", "water_limited": "water-limited potential", "gap_corrected": "with the area's yield gap", "potential": "potential without water limitation" },
       "provider": { "trial_evidence": "Trials in the area", "aquacrop": "AquaCrop" },
       "experimental": "experimental",
+      "directSowing": "Direct sowing on the stubble",
+      "directSowingHint": "AquaCrop simulates the stubble as a mulch covering 30 % of the soil, which cuts its evaporation.",
+      "directSowingFromOperations": "Simulated with direct sowing, as recorded in the sowing in Field Operations.",
+      "directSowingNotApplied": "The simulation did not apply direct sowing: this result is for bare soil.",
       "validatedAs": "Validated: {{metric}}",
       "ceiling": "ceiling with the available water, not a forecast", "coverage": "hits {{pct}} % of the years",
       "simulating": "Simulating… {{done}}/{{total}} years", "simulatingStart": "Simulating…",

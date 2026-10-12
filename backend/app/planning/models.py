@@ -11,11 +11,12 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
-CONTRACT_VERSION = "1.2"
+CONTRACT_VERSION = "1.3"
 
 Verdict = Literal["fits", "caveats", "no_fit"]
 Regime = Literal["secano", "regadío"]
 Management = Literal["conventional", "organic"]
+SowingMethod = Literal["direct", "conventional"]
 Provenance = Literal["actual", "declared", "planned", "unknown"]
 Gate = Literal["soil", "frost", "water", "rotation", "data"]
 Role = Literal["main_crop", "cover_crop", "catch_crop"]
@@ -173,6 +174,9 @@ class AquacropResponse(BaseModel):
     estimates: list[Estimate] = Field(default_factory=list)
     unavailable: list[Unavailable] = Field(default_factory=list)
     job_id: str | None = None
+    # How the crop was sown in this simulation and where that came from (set once done).
+    sowing_method: SowingMethod | None = None
+    sowing_method_source: Literal["request", "field_operations", "default"] | None = None
 
 
 class CycleCell(BaseModel):

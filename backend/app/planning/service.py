@@ -246,7 +246,7 @@ async def parcel_estimates(*, dao, source: KnowledgeSource, parcel_id: str, tena
 
 async def parcel_aquacrop(*, dao, jobs, tenant_id: str, parcel_id: str, crop: str, regime: str,
                           sowing_date: date | None, today: date | None = None, retry: bool = False,
-                          job_id: str | None = None) -> dict:
+                          job_id: str | None = None, sowing_method: str | None = None) -> dict:
     """State of the AquaCrop provider for this input, starting or joining its simulation job.
 
     Idempotent: the UI polls this. Gated inputs answer ``unavailable`` without touching the
@@ -259,7 +259,8 @@ async def parcel_aquacrop(*, dao, jobs, tenant_id: str, parcel_id: str, crop: st
         # Light poll: read the job by id (tenant-scoped), skipping the parcel lookup. Only the id these very
         # inputs hash to is accepted, so a stale or foreign id never answers for another parcel, crop or
         # date. A lost job, or a failed one being retried, takes the full path below.
-        expected = jobs.job_id(tenant_id, _job_params(parcel_id, crop, sowing_date), today, jobs.version)
+        expected = jobs.job_id(tenant_id, _job_params(parcel_id, crop, sowing_date, sowing_method), today,
+                               jobs.version)
         live = jobs.get(job_id, tenant_id) if job_id == expected else None
         if live is not None and not (live.state == "failed" and retry):
             return _job_view(live, jobs.version)
@@ -269,12 +270,13 @@ async def parcel_aquacrop(*, dao, jobs, tenant_id: str, parcel_id: str, crop: st
         return {"state": "unavailable", "done": 0, "total": None, "estimates": [],
                 "unavailable": [{"provider_id": AQUACROP_ID, "reason": reason}], "job_id": None}
     # The very parameters of POST /agriculture/crop-simulation/jobs, so identical inputs share the job.
-    params = _job_params(env["parcel_id"], crop, sowing_date)
+    params = _job_params(env["parcel_id"], crop, sowing_date, sowing_method)
 
     async def run(progress):
         return await dao.run_crop_simulation(
             parcel_id=params["parcel_id"], tenant_id=tenant_id, crop_slug=params["crop_slug"],
-            sowing_date_str=params["sowing_date"], irrigation="rainfed", engine="aquacrop", progress=progress)
+            sowing_date_str=params["sowing_date"], irrigation="rainfed", engine="aquacrop", progress=progress,
+            sowing_method=params.get("sowing_method"))
 
     # ``start`` relaunches a failed job, which would loop on every poll: look first.
     known = jobs.get(jobs.job_id(tenant_id, params, today, jobs.version), tenant_id)
@@ -291,9 +293,12 @@ async def parcel_aquacrop(*, dao, jobs, tenant_id: str, parcel_id: str, crop: st
     return _job_view(job, jobs.version)
 
 
-def _job_params(parcel_id: str, crop: str, sowing_date: date) -> dict:
-    return {"parcel_id": parcel_id, "crop_slug": resolve_species(crop), "sowing_date": sowing_date.isoformat(),
-            "irrigation": "rainfed", "engine": "aquacrop"}
+def _job_params(parcel_id: str, crop: str, sowing_date: date, sowing_method: str | None = None) -> dict:
+    params = {"parcel_id": parcel_id, "crop_slug": resolve_species(crop), "sowing_date": sowing_date.isoformat(),
+              "irrigation": "rainfed", "engine": "aquacrop"}
+    if sowing_method is not None:  # as POST /agriculture/crop-simulation/jobs: absent keeps the old identity
+        params["sowing_method"] = sowing_method
+    return params
 
 
 def _job_view(job, version: str) -> dict:
@@ -304,6 +309,8 @@ def _job_view(job, version: str) -> dict:
                                "code": (job.error or {}).get("code")}]
     elif job.state == "done":
         out["estimates"], out["unavailable"] = map_result(job.result or {}, version)
+        fm = ((job.result or {}).get("inputs") or {}).get("field_management") or {}
+        out["sowing_method"], out["sowing_method_source"] = fm.get("sowing_method"), fm.get("source")
     return out
 
 

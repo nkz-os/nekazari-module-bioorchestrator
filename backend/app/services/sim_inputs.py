@@ -36,25 +36,56 @@ def _parse_date(raw: Any) -> date | None:
             return None
 
 
+# How the crop was sown, as the ESYRCE records it for cereals (MAPA, ESYRCE 2022, 3.6):
+# "Siembra directa (D)" on the previous crop's stubble, "Siembra tradicional (N)" after tillage.
+SOWING_METHODS = ("direct", "conventional")
+
+
+def operation_sowing_day(op: dict) -> date | None:
+    """Day of a completed sowing operation (endedAt, else startedAt); None for anything else."""
+    if str(_unwrap(op.get("operationType")) or "").lower() != "sowing":
+        return None
+    if str(_unwrap(op.get("status")) or "").lower() != "completed":
+        return None
+    return _parse_date(op.get("endedAt")) or _parse_date(op.get("startedAt"))
+
+
 def resolve_sowing_date(operations: list[dict], today: date) -> date:
     """Most recent completed sowing not after ``today``.
 
     What happened counts, never a plan (the platform's crop-cycle rule): only sowing
     operations with status "completed", dated by endedAt, else startedAt.
     """
-    candidates: list[date] = []
-    for op in operations or []:
-        op_type = str(_unwrap(op.get("operationType")) or "").lower()
-        if op_type != "sowing":
-            continue
-        if str(_unwrap(op.get("status")) or "").lower() != "completed":
-            continue
-        d = _parse_date(op.get("endedAt")) or _parse_date(op.get("startedAt"))
-        if d is not None and d <= today:
-            candidates.append(d)
+    candidates = [d for d in (operation_sowing_day(op) for op in operations or [])
+                  if d is not None and d <= today]
     if not candidates:
         raise SimInputError("no completed sowing operation on or before today")
     return max(candidates)
+
+
+def sowing_method_from_operations(operations: list[dict], sowing_date: date) -> tuple[str | None, list[str]]:
+    """``sowingMethod`` of the completed sowing(s) on ``sowing_date``, with warnings.
+
+    None when no such sowing records a method. A value outside ``SOWING_METHODS`` is
+    ignored (never interpreted); sowings of that day that disagree give None too.
+    """
+    found: set[str] = set()
+    warns: list[str] = []
+    for op in operations or []:
+        if operation_sowing_day(op) != sowing_date:
+            continue
+        raw = _unwrap(op.get("sowingMethod"))
+        if raw is None:
+            continue
+        if raw not in SOWING_METHODS:
+            warns.append(f"sowing method: unknown value {raw!r} on the sowing of {sowing_date} ignored")
+            continue
+        found.add(raw)
+    if len(found) > 1:
+        warns.append(f"sowing method: completed sowings on {sowing_date} disagree "
+                     f"({', '.join(sorted(found))}); bare soil (conventional) assumed")
+        return None, warns
+    return (found.pop() if found else None), warns
 
 
 def _num(h: dict, key: str) -> float | None:

@@ -358,7 +358,8 @@
     "inputs": {
       "weather": "Temps",
       "soil": "Capes de sòl",
-      "sowing": "Sembra"
+      "sowing": "Sembra",
+      "sowingMethod": "Mètode de sembra"
     },
     "soil": {
       "depth": "Profunditat",
@@ -379,6 +380,16 @@
       "crop_cycle": "cicle de cultiu",
       "legacy_parcel_season": "campanya registrada a la parcel·la"
     },
+    "sowingMethod": {
+      "direct": "directa",
+      "conventional": "tradicional"
+    },
+    "sowingMethodSource": {
+      "request": "sol·licitud",
+      "field_operations": "operacions de camp",
+      "default": "sense dades: sòl nu"
+    },
+    "mulch": "rostoll com a encoixinat al {{pct}} %",
     "warnings": "Notes",
     "errors": {
       "unsupported_crop": "Aquest cultiu encara no es pot simular.",
@@ -525,6 +536,10 @@
       "basis": { "trial_evidence": "parcel·la d'assaig, maneig òptim", "water_limited": "potencial limitat per l'aigua", "gap_corrected": "amb la bretxa de rendiment de la zona", "potential": "potencial sense limitació d'aigua" },
       "provider": { "trial_evidence": "Assaigs de la zona", "aquacrop": "AquaCrop" },
       "experimental": "experimental",
+      "directSowing": "Sembra directa sobre el rostoll",
+      "directSowingHint": "AquaCrop simula el rostoll com a encoixinat que cobreix el 30 % del sòl i en redueix l'evaporació.",
+      "directSowingFromOperations": "Simulat amb sembra directa: així consta la sembra registrada a Operacions de camp.",
+      "directSowingNotApplied": "La simulació no ha aplicat la sembra directa: aquest resultat és de sòl nu.",
       "validatedAs": "Validat: {{metric}}",
       "ceiling": "sostre amb l'aigua disponible, no és una previsió", "coverage": "encerta en el {{pct}} % dels anys",
       "simulating": "Simulant… {{done}}/{{total}} anys", "simulatingStart": "Simulant…",

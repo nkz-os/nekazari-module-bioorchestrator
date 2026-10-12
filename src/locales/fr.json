@@ -358,7 +358,8 @@
     "inputs": {
       "weather": "Météo",
       "soil": "Couches de sol",
-      "sowing": "Semis"
+      "sowing": "Semis",
+      "sowingMethod": "Méthode de semis"
     },
     "soil": {
       "depth": "Profondeur",
@@ -379,6 +380,16 @@
       "crop_cycle": "cycle de culture",
       "legacy_parcel_season": "campagne enregistrée sur la parcelle"
     },
+    "sowingMethod": {
+      "direct": "direct",
+      "conventional": "conventionnel"
+    },
+    "sowingMethodSource": {
+      "request": "requête",
+      "field_operations": "opérations au champ",
+      "default": "pas de donnée : sol nu"
+    },
+    "mulch": "chaumes en paillis à {{pct}} %",
     "warnings": "Remarques",
     "errors": {
       "unsupported_crop": "Cette culture ne peut pas encore être simulée.",
@@ -525,6 +536,10 @@
       "basis": { "trial_evidence": "parcelle d'essai, conduite optimale", "water_limited": "potentiel limité par l'eau", "gap_corrected": "avec l'écart de rendement de la zone", "potential": "potentiel sans limitation en eau" },
       "provider": { "trial_evidence": "Essais de la zone", "aquacrop": "AquaCrop" },
       "experimental": "expérimental",
+      "directSowing": "Semis direct sur les chaumes",
+      "directSowingHint": "AquaCrop simule les chaumes comme un paillis couvrant 30 % du sol, qui en réduit l'évaporation.",
+      "directSowingFromOperations": "Simulé en semis direct : c'est ce qu'indique le semis enregistré dans Opérations au champ.",
+      "directSowingNotApplied": "La simulation n'a pas appliqué le semis direct : ce résultat correspond à un sol nu.",
       "validatedAs": "Validé : {{metric}}",
       "ceiling": "plafond avec l'eau disponible, pas une prévision", "coverage": "juste dans {{pct}} % des années",
       "simulating": "Simulation… {{done}}/{{total}} ans", "simulatingStart": "Simulation…",

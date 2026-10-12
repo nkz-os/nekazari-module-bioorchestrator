@@ -68,6 +68,9 @@ _NON_CROPS = {"Default", "custom"}
 # days from sowing to senescence, maturity and flowering (HIstart), and the
 # lengths of flowering and yield formation. Every other parameter stays built-in.
 PHENOLOGY_PARAMS = ("Senescence", "Maturity", "HIstart", "Flowering", "YldForm")
+# Soil evaporation reduction of organic mulches (unincorporated plant residues, straw): "about
+# 50 %" (FAO AquaCrop Reference Manual, ch. 2, 2009, 2.12.2); applied in season and fallow (2.16.1).
+MULCH_F_ORGANIC = 0.5
 
 
 class EngineInputError(ValueError):
@@ -222,6 +225,16 @@ def _validate_crop_params(crop: str, crop_params) -> dict[str, float]:
     return out
 
 
+def _field_management(mulch_pct) -> dict[str, float]:
+    """``{}`` (bare soil) or the residue mulch covering ``mulch_pct`` % of the soil surface."""
+    if mulch_pct is None:
+        return {}
+    pct = _num(mulch_pct, "mulch_pct", "field management")
+    if not 0 < pct <= 100:
+        raise EngineInputError(f"mulch_pct must be within (0, 100], got {pct}")
+    return {"mulch_pct": pct, "f_mulch": MULCH_F_ORGANIC}
+
+
 def _validate_crop_irrigation(crop: str, irrigation: str) -> None:
     if crop not in supported_crops():
         raise UnsupportedCropError(f"crop {crop!r} is not an AquaCrop built-in")
@@ -287,8 +300,13 @@ def run_aquacrop(
     sim_start: date | None = None,
     topsoil_until: date | None = None,
     crop_params: Mapping[str, float] | None = None,
+    mulch_pct: float | None = None,
 ) -> dict:
     """Simulate one season. See module docstring for the output keys.
+
+    ``mulch_pct`` (optional, (0, 100]): soil surface covered by crop residues, in season
+    and in the fallow before sowing, with the FAO organic-mulch effect (``MULCH_F_ORGANIC``);
+    ``field_management`` in the output says what ran.
 
     ``crop_params`` (optional) overrides the crop's phenology (``PHENOLOGY_PARAMS``,
     growing degree days; degree-day crops only); the phase order is checked.
@@ -305,6 +323,7 @@ def run_aquacrop(
     _validate_soil(soil)
     _validate_crop_irrigation(crop, irrigation)
     params = _validate_crop_params(crop, crop_params)
+    field = _field_management(mulch_pct)
     if not isinstance(planting_date, date):
         raise EngineInputError(f"planting_date is not a date: {planting_date!r}")
     if planting_date < clean[0].day:
@@ -349,7 +368,13 @@ def run_aquacrop(
     }
 
     import pandas as pd
-    from aquacrop import AquaCropModel, Crop, InitialWaterContent, IrrigationManagement
+    from aquacrop import (
+        AquaCropModel,
+        Crop,
+        FieldMngt,
+        InitialWaterContent,
+        IrrigationManagement,
+    )
 
     # AquaCrop reads weather columns by position: Date must be LAST (as in
     # aquacrop.utils.prepare_weather), otherwise temperatures become Timestamps.
@@ -381,10 +406,13 @@ def run_aquacrop(
                 f"AquaCrop extends the soil profile from {data_depth:.2f} m to {depth:.2f} m "
                 f"(rooting depth {crop_model.Zmax} m + 0.1 m) by thickening its deepest "
                 "compartments; the added depth repeats their layers")
+        mulch = (FieldMngt(mulches=True, mulch_pct=field["mulch_pct"], f_mulch=field["f_mulch"])
+                 if field else None)
         model = AquaCropModel(
             start.strftime("%Y/%m/%d"), sim_end.strftime("%Y/%m/%d"), df,
             soil_model, crop_model,
             InitialWaterContent(value=["FC"]), irrigation_management=irr,
+            field_management=mulch, fallow_field_management=mulch,
             off_season=spinup_days > 0)
         try:
             model.run_model(till_termination=True)
@@ -423,6 +451,7 @@ def run_aquacrop(
     row = stats.iloc[0]
     out = _assemble(row, growth, flux, start, planting_date, crop, irrigation, warns, initial_water,
                     params)
+    out["field_management"] = field
     if topsoil_until is not None:
         storage = model.get_water_storage()
         out["topsoil_water"] = {
@@ -508,6 +537,7 @@ def run_aquacrop_with_potential(
     planting_date: date,
     sim_start: date | None = None,
     crop_params: Mapping[str, float] | None = None,
+    mulch_pct: float | None = None,
 ) -> dict:
     """Rainfed run plus a full-irrigation run (SMT=100) as yield potential.
 
@@ -518,9 +548,9 @@ def run_aquacrop_with_potential(
     stays lower (water does not limit that season).
     """
     wl = run_aquacrop(weather, soil, crop, planting_date, "rainfed", sim_start,
-                      crop_params=crop_params)
+                      crop_params=crop_params, mulch_pct=mulch_pct)
     pot = run_aquacrop(weather, soil, crop, planting_date, "full", sim_start,
-                       crop_params=crop_params)
+                       crop_params=crop_params, mulch_pct=mulch_pct)
     p = pot["yield_t_ha"]
     gap = 100.0 * (1.0 - wl["yield_t_ha"] / p) if p > 0 else None
     return {"water_limited": wl, "potential": pot, "water_gap_pct": gap}
@@ -688,6 +718,7 @@ def _combine(members: list[dict], observed_last: date, irrigation: str, status: 
         "status": status,
         "initial_water": members[0]["water_limited"]["initial_water"],
         "crop_params": members[0]["water_limited"]["crop_params"],
+        "field_management": members[0]["water_limited"]["field_management"],
         "yield_t_ha": yield_v,
         "potential_yield_t_ha": pot_v,
         "water_gap_pct": gap,
@@ -709,6 +740,7 @@ async def simulate(
     irrigation: str = "rainfed",
     sim_start: date | None = None,
     crop_params: Mapping[str, float] | None = None,
+    mulch_pct: float | None = None,
     progress: Callable[[int, int], None] | None = None,
 ) -> dict:
     """Run the season: single run if ``observed`` reaches harvest, else ensemble
@@ -724,12 +756,14 @@ async def simulate(
     ensemble). Percentiles are P10/P50/P90 by linear interpolation.
     Members run in the process pool. ``analogs`` may be an async callable, awaited
     only when the ensemble is actually needed (so a fully observed season never
-    loads climatology). ``crop_params``: as in ``run_aquacrop``, checked before any run.
+    loads climatology). ``crop_params`` and ``mulch_pct``: as in ``run_aquacrop``, checked
+    before any run.
     ``progress(done, total)`` is called with (0, n) when an ensemble of n scenarios
     starts and after each one finishes, and with (1, 1) after a single run.
     """
     _validate_crop_irrigation(crop, irrigation)
     _validate_crop_params(crop, crop_params)
+    _field_management(mulch_pct)
     loop = asyncio.get_running_loop()
     pool = _get_pool()
     last = observed[-1].day if observed else None
@@ -745,7 +779,7 @@ async def simulate(
         try:
             single = await loop.run_in_executor(
                 pool, run_aquacrop_with_potential, observed, soil, crop, planting_date, sim_start,
-                crop_params)
+                crop_params, mulch_pct)
         except WeatherEndsBeforeHarvestError:
             if last >= planting_date + timedelta(days=364):
                 raise
@@ -765,7 +799,7 @@ async def simulate(
         loop.run_in_executor(
             pool, run_aquacrop_with_potential,
             project_weather(observed, analogs[y], planting_date, y), soil, crop, planting_date,
-            sim_start, crop_params)
+            sim_start, crop_params, mulch_pct)
         for y in years
     ]
     if progress:

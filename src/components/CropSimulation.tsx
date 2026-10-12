@@ -111,6 +111,7 @@ export function CropSimulationResultView({ result }: { result: CropSimulationRes
   const iw = result.initial_water;
   const srcLabel = (s: string) => { const k = weatherSourceKey(s); return k ? t(k) : s; };
   const sowKey = sowingSourceKey(result.inputs.sowing.source);
+  const fm = result.inputs.field_management;
 
   return (
     <>
@@ -209,6 +210,13 @@ export function CropSimulationResultView({ result }: { result: CropSimulationRes
         <p className="text-nkz-sm text-nkz-text-secondary mt-4">
           {t('cropSimulation.inputs.sowing')}: {result.sowing_date} ({sowKey ? t(sowKey) : result.inputs.sowing.source})
         </p>
+        {fm && (
+          <p className="text-nkz-sm text-nkz-text-secondary">
+            {`${t('cropSimulation.inputs.sowingMethod')}: ${t(`cropSimulation.sowingMethod.${fm.sowing_method}`)}`
+              + ` (${t(`cropSimulation.sowingMethodSource.${fm.source}`)})`
+              + (fm.mulch_pct != null ? ` · ${t('cropSimulation.mulch', { pct: fm.mulch_pct })}` : '')}
+          </p>
+        )}
         <p className="text-nkz-sm text-nkz-text-secondary">
           {result.inputs.phenology.source === 'calibrated' && result.inputs.phenology.region
             ? t('cropSimulation.phenology.calibrated', { region: result.inputs.phenology.region.name })

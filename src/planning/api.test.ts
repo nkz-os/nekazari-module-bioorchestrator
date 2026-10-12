@@ -41,6 +41,15 @@ describe('planning api client', () => {
     expect(String(fetchMock.mock.calls[0][0]))
       .toContain('/api/graph/planning/parcels/p1/estimates/aquacrop?crop=wheat&regime=secano&sowing_date=2026-11-01&job_id=j1');
   });
+  it('sends sowing_method only for direct sowing', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, status: 200, json: async () => ({ state: 'queued' }) });
+    vi.stubGlobal('fetch', fetchMock);
+    await fetchAquacrop('p1', { crop: 'wheat', regime: 'secano', sowingDate: '2026-11-01', sowingMethod: 'direct' });
+    expect(String(fetchMock.mock.calls[0][0]))
+      .toContain('/estimates/aquacrop?crop=wheat&regime=secano&sowing_date=2026-11-01&sowing_method=direct');
+    await fetchAquacrop('p1', { crop: 'wheat', regime: 'secano', sowingDate: '2026-11-01', sowingMethod: null });
+    expect(String(fetchMock.mock.calls[1][0])).not.toContain('sowing_method');
+  });
 
   it('sends a PUT with a JSON body, its content type and the session cookie', async () => {
     const fetchMock = vi.fn().mockResolvedValue({ ok: true, status: 200, json: async () => ({ written: [], removed: [] }) });

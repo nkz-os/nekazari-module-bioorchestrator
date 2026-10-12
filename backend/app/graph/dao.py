@@ -5531,13 +5531,17 @@ class GraphDAO:
         engine: str = "aquacrop",
         today: date | None = None,
         progress=None,
+        sowing_method: str | None = None,
     ) -> dict:
         """Simulate the parcel's crop season with every input taken from real data.
 
         Crop: ``crop_slug`` or the parcel's ``hasAgriCrop``. Sowing date: the
         argument, else the platform's current crop cycle, else the latest completed
         sowing operation, else (only when the platform is unreachable) the parcel's
-        legacy ``cropSeasonStart``; a plan never counts. Soil: Soil module summary.
+        legacy ``cropSeasonStart``; a plan never counts. Sowing method: the argument,
+        else the completed sowing operation on the simulated sowing date (``sowingMethod``),
+        else ``conventional`` (bare soil); see ``sim_inputs.sowing_method_from_operations``.
+        Soil: Soil module summary.
         Weather: parcel daily series + self-hosted archive (see ``sim_weather``).
         Raises ``SimulationError`` (422 input, 404 parcel, 503 upstream); nothing
         is defaulted or synthesized.
@@ -5546,15 +5550,21 @@ class GraphDAO:
 
         from app.services.crop_simulation import (
             check_irrigation,
+            check_sowing_method,
             get_engine,
             run_crop_simulation,
         )
         from app.services.sim_errors import SimulationError
-        from app.services.sim_inputs import SimInputError, resolve_sowing_date
+        from app.services.sim_inputs import (
+            SimInputError,
+            resolve_sowing_date,
+            sowing_method_from_operations,
+        )
 
         today = today or datetime.now(tz=timezone.utc).date()
         check_irrigation(irrigation)
         sim_engine = get_engine(engine)
+        check_sowing_method(sowing_method)
 
         # ── 1. Parcel: crop and centroid ──
         orion = OrionClient(tenant_id)
@@ -5596,6 +5606,19 @@ class GraphDAO:
         # ── 2. Sowing date: explicit, else the platform's crop cycle, else a completed sowing ──
         # What happened counts, never a plan. The parcel's legacy season copy is used only when
         # the platform is unreachable: its "no current cycle" is an answer, not an outage.
+        async def _read_operations() -> list:
+            orion_ops = OrionClient(tenant_id)
+            try:
+                found = await orion_ops.query_entities(
+                    type="AgriParcelOperation",
+                    q=f'hasAgriParcel=="{parcel_id}"|refAgriParcel=="{parcel_id}"',
+                    limit=200,
+                )
+            finally:
+                await orion_ops.close()
+            return found if isinstance(found, list) else []
+
+        ops: list | None = None
         sowing_provenance: str | None = None
         cycle_start: dict = {}
         cycles: dict | None = None
@@ -5614,22 +5637,15 @@ class GraphDAO:
             else:
                 sowing_source, sowing_provenance = "crop_cycle", cycle_start.get("provenance")
         else:
-            orion2 = OrionClient(tenant_id)
             try:
-                ops = await orion2.query_entities(
-                    type="AgriParcelOperation",
-                    q=f'hasAgriParcel=="{parcel_id}"|refAgriParcel=="{parcel_id}"',
-                    limit=200,
-                )
+                ops = await _read_operations()
             except Exception as e:
                 logger.error("crop_simulation_operations_failed parcel=%s tenant=%s error=%s",
                              parcel_id, tenant_id, type(e).__name__)
                 raise SimulationError(
                     "operations_unavailable", "The sowing operations could not be read.", 503) from e
-            finally:
-                await orion2.close()
             try:
-                sowing_date = resolve_sowing_date(ops if isinstance(ops, list) else [], today)
+                sowing_date = resolve_sowing_date(ops, today)
                 sowing_source, sowing_provenance = "field_operations", "actual"
             except SimInputError as e:
                 legacy = _extract_prop_value(parcel.get("cropSeasonStart")) if cycles is None else None
@@ -5643,10 +5659,29 @@ class GraphDAO:
                         "No sowing date available: provide one or record a sowing operation.") from e
                 sowing_source = "legacy_parcel_season"
 
+        # ── 3. Sowing method: the request, else the completed sowing of that day, else bare soil ──
+        method_warnings: list[str] = []
+        if sowing_method is not None:
+            method, method_source = sowing_method, "request"
+        else:
+            if ops is None:
+                try:
+                    ops = await _read_operations()
+                except Exception as e:  # noqa: BLE001 — the method is optional: degrade to bare soil + warning
+                    logger.warning("crop_simulation_sowing_method_unread parcel=%s tenant=%s error=%s",
+                                   parcel_id, tenant_id, type(e).__name__)
+                    method_warnings.append(
+                        "sowing method: field operations could not be read; bare soil (conventional) assumed")
+            found, found_warns = sowing_method_from_operations(ops or [], sowing_date)
+            method_warnings.extend(found_warns)
+            method, method_source = (found, "field_operations") if found else ("conventional", "default")
+
         return await run_crop_simulation(
             engine_name=engine, parcel_id=parcel_id, tenant_id=tenant_id, crop=crop,
             sowing_date=sowing_date, sowing_source=sowing_source, irrigation=irrigation,
-            lat=lat, lon=lon, today=today, sowing_provenance=sowing_provenance, progress=progress)
+            lat=lat, lon=lon, today=today, sowing_provenance=sowing_provenance,
+            sowing_method=method, sowing_method_source=method_source, input_warnings=method_warnings,
+            progress=progress)
 
     async def get_alerts(self, parcel_id: str, limit: int = 5, max_age_days: int = 7) -> dict:
         """Fetch recent alerts for a parcel from Redis Streams crop:events.

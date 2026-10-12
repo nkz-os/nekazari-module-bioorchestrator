@@ -358,7 +358,8 @@
     "inputs": {
       "weather": "Tempo",
       "soil": "Camadas de solo",
-      "sowing": "Sementeira"
+      "sowing": "Sementeira",
+      "sowingMethod": "Método de sementeira"
     },
     "soil": {
       "depth": "Profundidade",
@@ -379,6 +380,16 @@
       "crop_cycle": "ciclo de cultura",
       "legacy_parcel_season": "campanha registada na parcela"
     },
+    "sowingMethod": {
+      "direct": "direta",
+      "conventional": "tradicional"
+    },
+    "sowingMethodSource": {
+      "request": "pedido",
+      "field_operations": "operações de campo",
+      "default": "sem dados: solo nu"
+    },
+    "mulch": "restolho como cobertura a {{pct}} %",
     "warnings": "Notas",
     "errors": {
       "unsupported_crop": "Esta cultura ainda não pode ser simulada.",
@@ -525,6 +536,10 @@
       "basis": { "trial_evidence": "parcela de ensaio, maneio ótimo", "water_limited": "potencial limitado pela água", "gap_corrected": "com a lacuna de rendimento da zona", "potential": "potencial sem limitação de água" },
       "provider": { "trial_evidence": "Ensaios da zona", "aquacrop": "AquaCrop" },
       "experimental": "experimental",
+      "directSowing": "Sementeira direta sobre o restolho",
+      "directSowingHint": "O AquaCrop simula o restolho como uma cobertura de 30 % do solo, que reduz a sua evaporação.",
+      "directSowingFromOperations": "Simulado com sementeira direta: é o que consta da sementeira registada em Operações de campo.",
+      "directSowingNotApplied": "A simulação não aplicou a sementeira direta: este resultado é de solo nu.",
       "validatedAs": "Validado: {{metric}}",
       "ceiling": "teto com a água disponível, não é uma previsão", "coverage": "acerta em {{pct}} % dos anos",
       "simulating": "A simular… {{done}}/{{total}} anos", "simulatingStart": "A simular…",

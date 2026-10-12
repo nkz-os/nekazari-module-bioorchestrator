@@ -1109,7 +1109,8 @@
     "inputs": {
       "weather": "Tiempo",
       "soil": "Capas de suelo",
-      "sowing": "Siembra"
+      "sowing": "Siembra",
+      "sowingMethod": "Método de siembra"
     },
     "soil": {
       "depth": "Profundidad",
@@ -1130,6 +1131,16 @@
       "crop_cycle": "ciclo de cultivo",
       "legacy_parcel_season": "campaña registrada en la parcela"
     },
+    "sowingMethod": {
+      "direct": "directa",
+      "conventional": "tradicional"
+    },
+    "sowingMethodSource": {
+      "request": "solicitud",
+      "field_operations": "operaciones de campo",
+      "default": "sin dato: suelo desnudo"
+    },
+    "mulch": "rastrojo como acolchado al {{pct}} %",
     "warnings": "Notas",
     "errors": {
       "unsupported_crop": "Este cultivo aún no se puede simular.",
@@ -1279,6 +1290,10 @@
       "basis": { "trial_evidence": "parcela de ensayo, manejo óptimo", "water_limited": "potencial limitado por agua", "gap_corrected": "con la brecha de la zona", "potential": "potencial sin limitación de agua" },
       "provider": { "trial_evidence": "Ensayos de la zona", "aquacrop": "AquaCrop" },
       "experimental": "experimental",
+      "directSowing": "Siembra directa sobre el rastrojo",
+      "directSowingHint": "AquaCrop simula el rastrojo como acolchado que cubre el 30 % del suelo y reduce su evaporación.",
+      "directSowingFromOperations": "Simulado con siembra directa: así consta la siembra registrada en Operaciones de campo.",
+      "directSowingNotApplied": "La simulación no ha aplicado la siembra directa: este resultado es de suelo desnudo.",
       "validatedAs": "Validado: {{metric}}",
       "ceiling": "techo con el agua disponible, no es una previsión", "coverage": "acierta en el {{pct}} % de los años",
       "simulating": "Simulando… {{done}}/{{total}} años", "simulatingStart": "Simulando…",

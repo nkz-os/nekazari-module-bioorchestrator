@@ -358,7 +358,8 @@
     "inputs": {
       "weather": "Eguraldia",
       "soil": "Lurzoru-geruzak",
-      "sowing": "Ereitea"
+      "sowing": "Ereitea",
+      "sowingMethod": "Ereite-metodoa"
     },
     "soil": {
       "depth": "Sakonera",
@@ -379,6 +380,16 @@
       "crop_cycle": "labore-zikloa",
       "legacy_parcel_season": "lursailean erregistratutako kanpaina"
     },
+    "sowingMethod": {
+      "direct": "zuzenekoa",
+      "conventional": "ohikoa"
+    },
+    "sowingMethodSource": {
+      "request": "eskaera",
+      "field_operations": "landa-eragiketak",
+      "default": "daturik ez: lurzoru biluzia"
+    },
+    "mulch": "anizpea estaldura gisa, % {{pct}}",
     "warnings": "Oharrak",
     "errors": {
       "unsupported_crop": "Laborantza hau ezin da oraindik simulatu.",
@@ -525,6 +536,10 @@
       "basis": { "trial_evidence": "saiakuntza-partzela, kudeaketa optimoa", "water_limited": "urak mugatutako potentziala", "gap_corrected": "eremuko etekin-hutsunearekin", "potential": "uraren mugarik gabeko potentziala" },
       "provider": { "trial_evidence": "Eremuko saiakuntzak", "aquacrop": "AquaCrop" },
       "experimental": "esperimentala",
+      "directSowing": "Zuzeneko ereitea anizpearen gainean",
+      "directSowingHint": "AquaCropek anizpea lurzoruaren % 30 estaltzen duen estaldura gisa simulatzen du, eta lurrunketa murrizten du.",
+      "directSowingFromOperations": "Zuzeneko ereitearekin simulatua: horrela jasota dago Landa-eragiketetan erregistratutako ereitean.",
+      "directSowingNotApplied": "Simulazioak ez du zuzeneko ereitea aplikatu: emaitza hau lurzoru biluziarena da.",
       "validatedAs": "Balioztatua: {{metric}}",
       "ceiling": "eskuragarri dagoen urarekiko sabaia, ez da aurreikuspena", "coverage": "urteen % {{pct}}ean asmatzen du",
       "simulating": "Simulatzen… {{done}}/{{total}} urte", "simulatingStart": "Simulatzen…",

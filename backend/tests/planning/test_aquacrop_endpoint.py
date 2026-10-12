@@ -269,7 +269,7 @@ def test_route_validates_the_contract(client, monkeypatch):
                    params={"crop": "TRZAX", "regime": "secano", "sowing_date": SOW.isoformat()})
     assert r.status_code == 200
     body = r.json()
-    assert body["provider_id"] == "aquacrop" and body["contract_version"] == "1.2" and body["state"] == "running"
+    assert body["provider_id"] == "aquacrop" and body["contract_version"] == "1.3" and body["state"] == "running"
     assert called.await_args.kwargs["sowing_date"] == SOW
 
 
@@ -293,3 +293,60 @@ def test_route_maps_unknown_parcel_and_crop(client, monkeypatch):
     assert client.get(url, params=params).status_code == 404
     monkeypatch.setattr(planning_api, "parcel_aquacrop", AsyncMock(side_effect=service.UnknownCrop("x")))
     assert client.get(url, params=params).status_code == 422
+
+
+# ------------------------------------------------------------- sowing method
+async def test_direct_sowing_is_its_own_job():
+    jobs = FakeJobs()
+    bare = await _call(jobs)
+    direct = await _call(jobs, sowing_method="direct")
+    assert direct["job_id"] != bare["job_id"]
+    assert jobs.started[-1] == {"parcel_id": PARCEL, "crop_slug": "wheat", "sowing_date": SOW.isoformat(),
+                                "irrigation": "rainfed", "engine": "aquacrop", "sowing_method": "direct"}
+
+
+async def test_light_poll_with_method_reads_its_own_job_only():
+    jobs = FakeJobs()
+    direct = await _call(jobs, sowing_method="direct")
+    dao = _dao()
+    polled = await _call(jobs, dao=dao, job_id=direct["job_id"], sowing_method="direct")
+    assert polled["job_id"] == direct["job_id"]
+    dao.get_parcel_environment.assert_not_awaited()
+    # the bare inputs never answer with the direct job, even when handed its id
+    bare = await _call(jobs, job_id=direct["job_id"])
+    assert bare["job_id"] != direct["job_id"]
+
+
+async def test_done_job_echoes_the_method_and_its_source():
+    jobs = FakeJobs()
+    await _call(jobs)
+    job = jobs.only()
+    job.state = "done"
+    job.result = {**RESULT, "inputs": {"field_management": {
+        "sowing_method": "direct", "source": "field_operations", "mulch_pct": 30.0, "f_mulch": 0.5}}}
+    done = await _call(jobs)
+    assert (done["sowing_method"], done["sowing_method_source"]) == ("direct", "field_operations")
+
+
+async def test_the_job_runs_with_the_method():
+    class _RunNow(FakeJobs):
+        async def start(self, tenant, params, run, today=None):
+            await run(lambda done, total: None)
+            return await super().start(tenant, params, run, today)
+
+    dao = _dao()
+    await _call(_RunNow(), dao=dao, sowing_method="direct")
+    assert dao.run_crop_simulation.await_args.kwargs["sowing_method"] == "direct"
+
+
+def test_route_forwards_and_validates_the_sowing_method(client, monkeypatch):
+    import app.api.v1.planning as planning_api
+    called = AsyncMock(return_value={"state": "queued", "estimates": [], "unavailable": [], "job_id": "j"})
+    monkeypatch.setattr(planning_api, "parcel_aquacrop", called)
+    url = f"/api/graph/planning/parcels/{PARCEL}/estimates/aquacrop"
+    params = {"crop": "TRZAX", "regime": "secano"}
+    assert client.get(url, params=params).status_code == 200
+    assert called.await_args.kwargs["sowing_method"] is None
+    client.get(url, params={**params, "sowing_method": "direct"})
+    assert called.await_args.kwargs["sowing_method"] == "direct"
+    assert client.get(url, params={**params, "sowing_method": "no-till"}).status_code == 422
