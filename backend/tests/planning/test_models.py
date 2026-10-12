@@ -17,7 +17,7 @@ def test_fit_response_round_trip():
         "graphs": ["global"],
     }
     out = m.FitResponse.model_validate(payload)
-    assert out.contract_version == m.CONTRACT_VERSION == "1.1"
+    assert out.contract_version == m.CONTRACT_VERSION == "1.2"
 
 
 def test_plan_rejects_unknown_regime_and_empty_cycles():

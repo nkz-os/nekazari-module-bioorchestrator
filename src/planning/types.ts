@@ -1,7 +1,7 @@
 /** Mirror of backend/app/planning/models.py — contract version 1.1. Change both together. */
 import type { SourceAttributionItem } from '../types/attribution';
 
-export const CONTRACT_VERSION = '1.1';
+export const CONTRACT_VERSION = '1.2';
 export type Verdict = 'fits' | 'caveats' | 'no_fit';
 export type Regime = 'secano' | 'regadío';
 export type Management = 'conventional' | 'organic';
@@ -72,7 +72,10 @@ export interface FarmResponse {
 }
 export interface PlanCycleIn {
   role: Role; crop: string; variety: string | null; sowing_start: string; sowing_end: string | null;
-  expected_termination: string; termination_method: TerminationMethod | null;
+  /** Null: the server derives the ends it needs (no harvest date is asked). */
+  expected_termination: string | null; termination_method: TerminationMethod | null;
+  /** A perennial main crop is planned for a number of campaigns (1-10). */
+  perennial_years?: number | null;
 }
 export interface PlanIn { campaign: number; regime: Regime; management: Management; cycles: PlanCycleIn[] }
 export interface PlanWriteResponse { contract_version: string; parcel_id: string; campaign: number; written: string[]; removed: string[] }

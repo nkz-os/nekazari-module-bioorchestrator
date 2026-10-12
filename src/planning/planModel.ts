@@ -11,12 +11,19 @@ export const AUTUMN_FROM_MONTH = 8;
 // Owner decision: a cover crop ends by rolling or by mowing.
 export const COVER_METHODS: TerminationMethod[] = ['roller_crimper', 'mowing'];
 
-export interface CycleDraft { species: string; variety: string | null; sowing: string; end: string; method: TerminationMethod | null }
+/**
+ * Owner decision (2026-10-12): no harvest or end date is asked. An annual main crop occupies the parcel
+ * until its campaign closes, a cover ends when the main crop is sown, and a perennial main crop (alfalfa)
+ * stands for `years` campaigns. The server derives the dates (plan_write._ends).
+ */
+export interface CycleDraft { species: string; variety: string | null; sowing: string; years: number | null; method: TerminationMethod | null }
 export interface PlanDraft { main: CycleDraft; cover: CycleDraft | null }
-export type DraftError = 'missing_species' | 'species_name_invalid' | 'missing_dates' | 'termination_outside_campaign' | 'dates_inconsistent'
-  | 'cycles_overlap' | 'perennial_start_outside_campaign' | 'perennial_too_long';
+export type DraftError = 'missing_species' | 'species_name_invalid' | 'missing_dates' | 'dates_inconsistent'
+  | 'perennial_start_outside_campaign' | 'perennial_too_long' | 'missing_duration' | 'sowing_outside_campaign';
 /** Same cap as the backend (plan_write.MAX_PERENNIAL_YEARS). */
 export const MAX_PERENNIAL_YEARS = 10;
+/** ASSUMPTION: the usual stand of an alfalfa field; only a starting value, the user edits it. */
+export const DEFAULT_PERENNIAL_YEARS = 4;
 /**
  * A cover species the registry does not list is written by name; the server restricts the name to
  * letters, digits, space, dot, dash, underscore and brackets, 2 to 64 characters, starting with a letter
@@ -40,7 +47,7 @@ export function isOtherCover(species: string, listed: string[], chosenOther: boo
 }
 
 export function emptyCover(): CycleDraft {
-  return { species: '', variety: null, sowing: '', end: '', method: 'roller_crimper' };
+  return { species: '', variety: null, sowing: '', years: null, method: 'roller_crimper' };
 }
 
 const isLeap = (year: number): boolean => (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
@@ -66,8 +73,9 @@ export function defaultSowing(s: Sowing, campaign: number): string {
   return `${year}-${String(month).padStart(2, '0')}-01`;
 }
 
-export function draftFor(sp: Pick<SpeciesFit, 'species' | 'sowing'>, campaign: number): PlanDraft {
-  return { main: { species: sp.species, variety: null, sowing: defaultSowing(sp.sowing, campaign), end: '', method: null }, cover: null };
+export function draftFor(sp: Pick<SpeciesFit, 'species' | 'sowing' | 'lifecycle'>, campaign: number): PlanDraft {
+  const years = sp.lifecycle === 'perennial' ? DEFAULT_PERENNIAL_YEARS : null;
+  return { main: { species: sp.species, variety: null, sowing: defaultSowing(sp.sowing, campaign), years, method: null }, cover: null };
 }
 
 /**
@@ -76,54 +84,52 @@ export function draftFor(sp: Pick<SpeciesFit, 'species' | 'sowing'>, campaign: n
  * there is no planned main crop. The termination method is not part of the read contract, so a cover
  * starts with the default one and the form says that saving replaces the plan.
  */
-export function draftFromCells(cells: CycleCell[]): PlanDraft | null {
+export function draftFromCells(cells: CycleCell[], campaign: number): PlanDraft | null {
   const planned = cells.filter((c) => c.provenance === 'planned');
   const main = planned.find((c) => c.role === 'main_crop');
   if (!main) return null;
   const cover = planned.find((c) => c.role === 'cover_crop' || c.role === 'catch_crop');
+  // A perennial's years are read back from its end: the last campaign it stands in.
+  const years = main.lifecycle !== 'perennial' ? null : main.end ? Number(main.end.slice(0, 4)) - campaign + 1 : DEFAULT_PERENNIAL_YEARS;
   return {
-    main: { species: main.species ?? '', variety: main.variety, sowing: main.start ?? '', end: main.end ?? '', method: null },
+    main: { species: main.species ?? '', variety: main.variety, sowing: main.start ?? '', years, method: null },
     cover: cover
-      ? { species: cover.species ?? cover.species_raw ?? '', variety: cover.variety, sowing: cover.start ?? '', end: cover.end ?? '', method: 'roller_crimper' }
+      ? { species: cover.species ?? cover.species_raw ?? '', variety: cover.variety, sowing: cover.start ?? '', years: null, method: 'roller_crimper' }
       : null,
   };
 }
 
 /**
  * Mirrors the backend's date rules (plan_write.validate_plan) so the user sees the error before the
- * request; the server stays authoritative. A perennial main crop (alfalfa) starts in the campaign,
- * ends in or after it and at most MAX_PERENNIAL_YEARS later. An annual cycle ends in the campaign
- * and opens at most in the campaign before it (autumn sowing). A cover species outside `listedCovers`
- * is free text and must be a valid name.
+ * request; the server stays authoritative. Only sowings are dated. An annual main crop is sown in the
+ * campaign; a perennial main crop (alfalfa) is sown in it and stands 1 to MAX_PERENNIAL_YEARS campaigns.
+ * A cover is sown no later than the main crop (it ends when the main crop is sown) and opens at most the
+ * campaign before. A cover species outside `listedCovers` is free text and must be a valid name.
  */
 export function validateDraft(d: PlanDraft, campaign: number, perennialMain = false, listedCovers: string[] = []): DraftError | null {
   const cycles = d.cover ? [d.cover, d.main] : [d.main];
   for (const c of cycles) {
     if (!c.species) return 'missing_species';
     if (c === d.cover && !listedCovers.includes(c.species) && !RAW_SPECIES_NAME.test(c.species.trim())) return 'species_name_invalid';
-    if (!c.sowing || !c.end) return 'missing_dates';
-    const endYear = Number(c.end.slice(0, 4));
-    if (c === d.main && perennialMain) {
-      if (campaignOfStart(c.sowing) !== campaign) return 'perennial_start_outside_campaign';
-      if (endYear < campaign) return 'dates_inconsistent';
-      if (endYear > campaign + MAX_PERENNIAL_YEARS) return 'perennial_too_long';
-    } else {
-      if (endYear !== campaign) return 'termination_outside_campaign';
-      if (campaignOfStart(c.sowing) < campaign - 1) return 'dates_inconsistent';
-    }
-    if (c.sowing > c.end) return 'dates_inconsistent';
+    if (!c.sowing) return 'missing_dates';
   }
-  const spans = cycles.map((c) => [c.sowing, c.end] as const).sort((a, b) => a[0].localeCompare(b[0]));
-  for (let i = 1; i < spans.length; i += 1) {
-    if (spans[i][0] < spans[i - 1][1]) return 'cycles_overlap';
+  const main = d.main;
+  if (perennialMain) {
+    if (campaignOfStart(main.sowing) !== campaign) return 'perennial_start_outside_campaign';
+    if (main.years === null || !Number.isInteger(main.years) || main.years < 1) return 'missing_duration';
+    if (main.years > MAX_PERENNIAL_YEARS) return 'perennial_too_long';
+  } else if (campaignOfStart(main.sowing) !== campaign) {
+    return 'sowing_outside_campaign';
   }
+  if (d.cover && (campaignOfStart(d.cover.sowing) < campaign - 1 || d.cover.sowing > main.sowing)) return 'dates_inconsistent';
   return null;
 }
 
-export function toPlanIn(d: PlanDraft, campaign: number, regime: Regime, management: Management): PlanIn {
+export function toPlanIn(d: PlanDraft, campaign: number, regime: Regime, management: Management, perennialMain = false): PlanIn {
   const cycle = (c: CycleDraft, role: Role): PlanCycleIn => ({
     role, crop: c.species.trim(), variety: c.variety, sowing_start: c.sowing, sowing_end: null,
-    expected_termination: c.end, termination_method: c.method,
+    expected_termination: null, termination_method: c.method,
+    ...(role === 'main_crop' && perennialMain ? { perennial_years: c.years } : {}),
   });
   return {
     campaign, regime, management,

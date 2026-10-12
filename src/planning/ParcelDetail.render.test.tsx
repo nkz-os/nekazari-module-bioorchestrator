@@ -54,11 +54,11 @@ describe('ParcelDetail (es)', () => {
   it('shows no current-plan line when the campaign is empty', () => {
     expect(render(row([]))).not.toContain('Plan actual');
   });
-  it('starts from the current plan: the crop is chosen and the form holds its dates, variety and the replace warning', () => {
+  it('starts from the current plan: the crop is chosen and the form holds its sowing, variety and the replace warning', () => {
     const html = render(row([cell({})]), true);
     expect(html).toContain('aria-pressed="true"');
     expect(html).toContain('value="2027-04-20"');
-    expect(html).toContain('value="2027-10-01"');
+    expect(html).not.toContain('value="2027-10-01"'); // no harvest date is asked any more
     expect(html).toContain('Variedad: Var X');
     expect(html).toContain('Al guardar se sustituye el plan actual de esta campaña');
   });
