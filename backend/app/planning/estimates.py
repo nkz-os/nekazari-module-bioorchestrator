@@ -16,7 +16,7 @@ from statistics import median, quantiles
 
 PROVIDER_TRIALS = "trial_evidence"
 PROVIDER_AQUACROP = "aquacrop"
-DISAGREEMENT_RATIO = 1.5  # ASSUMPTION: P50 max/min among same-basis model estimates; to review
+DISAGREEMENT_RATIO = 1.5  # P50 max/min among same-basis model estimates (owner, 2026-10-13: kept, revisit with use)
 
 
 def percentiles(values: list[float]) -> dict | None:
