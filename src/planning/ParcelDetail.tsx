@@ -8,7 +8,7 @@ import { aquacropPending, mergeAquacrop } from './estimatesModel';
 import EstimatesTable from './EstimatesTable';
 import FitList from './FitList';
 import { cropName, safeLang, shortId } from './format';
-import { lockReason, previousMain, simulationAvailable } from './matrixModel';
+import { lockMessage, lockReason, previousMain, simulationAvailable } from './matrixModel';
 import PlanForm from './PlanForm';
 import { CycleLine } from './PlanMatrix';
 import { draftFor, draftFromCells, type PlanDraft } from './planModel';
@@ -84,10 +84,8 @@ export default function ParcelDetail({ row, campaign, onClose, onSaved, onSimula
   const prev = previousMain(row, campaign);
   // A deep link can open a parcel the matrix would not let you plan; the evidence stays, the form does not.
   const locked = lockReason(row, campaign);
-  const blocked = locked === 'cycles_unavailable' ? t('planning.warning.cycles_unavailable')
-    : locked === 'campaign_unknown' ? t('planning.lock.campaign_unknown')
-      : locked ? t(`planning.plan.error.${locked}`, { campaign })
-        : campaign < new Date().getFullYear() ? t('planning.plan.error.campaign_past', { campaign }) : null;
+  const blocked = locked ? lockMessage(locked, campaign, t)
+    : campaign < new Date().getFullYear() ? t('planning.plan.error.campaign_past', { campaign }) : null;
   const facts = fit.data?.facts;
   const soilTexture = facts?.soil_texture
     ? t(`planning.texture.${facts.soil_texture}`, { defaultValue: facts.soil_texture })

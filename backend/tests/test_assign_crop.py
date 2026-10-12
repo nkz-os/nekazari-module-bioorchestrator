@@ -40,6 +40,8 @@ async def test_assign_crop_creates_entity():
         # can select by crop group (audit 2026-09-30). TRZAX → wheat → cereal.
         create_call = instance.create_entity.call_args[0][0]
         assert create_call["category"] == {"type": "Property", "value": "cereal"}
+        # an assignment is a plan, never a crop in the field (planning would refuse to replace it)
+        assert create_call["status"] == {"type": "Property", "value": "planned"}
         # Should patch both the parcel (hasAgriCrop) and NOT mark old crop (no old crop)
         # parcel commitment must be APPENDED (POST /attrs), not PATCHed, so a
         # first-time hasAgriCrop actually persists instead of landing in notUpdated.

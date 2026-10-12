@@ -2,7 +2,7 @@ import React from 'react';
 import { useTranslation } from '@nekazari/sdk';
 import { Button, EmptyState, Inline } from '@nekazari/ui-kit';
 import { cropName, formatHa, shortId } from './format';
-import { SYMBOL, canPlan, namesIndex, rowsForFarm, simulationAvailable, warningText } from './matrixModel';
+import { SYMBOL, lockMessage, lockReason, namesIndex, rowsForFarm, simulationAvailable, warningText } from './matrixModel';
 import type { CycleCell, FarmResponse } from './types';
 
 export function CycleLine({ cell }: { cell: CycleCell }) {
@@ -58,11 +58,16 @@ export default function PlanMatrix({ data, farmId, onOpen, editable = true, onSi
               {data.campaigns.map((c) => {
                 const cells = row.cells[String(c)] ?? [];
                 const isTarget = c === data.campaign;
-                const plannable = editable && isTarget && canPlan(row, data.campaign);
+                const locked = editable && isTarget ? lockReason(row, data.campaign) : null;
+                const plannable = editable && isTarget && locked === null;
                 const simulable = Boolean(onSimulate) && isTarget && simulationAvailable(row, data.campaign);
                 return (
                   <td key={c} className="py-2 pr-4">
                     {cells.map((cell, i) => <CycleLine key={cell.crop_id ?? `${c}-${i}`} cell={cell} />)}
+                    {/* A locked parcel says why instead of just missing its button; unreadable history is already a row warning. */}
+                    {locked && locked !== 'cycles_unavailable' && (
+                      <span className="block text-nkz-xs text-nkz-text-muted">{lockMessage(locked, data.campaign, t)}</span>
+                    )}
                     {(plannable || simulable) && (
                       <Inline gap="inline" wrap>
                         {plannable && (

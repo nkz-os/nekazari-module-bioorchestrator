@@ -3507,9 +3507,10 @@ class GraphDAO:
                 "type": "Property",
                 "value": management,
             },
+            # Assigning a crop sows nothing: "active" would lock the parcel in planning as if it were in the field.
             "status": {
                 "type": "Property",
-                "value": "active",
+                "value": "planned",
             },
             "dateCreated": {
                 "type": "Property",
