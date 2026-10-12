@@ -134,7 +134,7 @@ export default function ParcelDetail({ row, campaign, onClose, onSaved, onSimula
         </FormField>
       </Inline>
 
-      <Step title={t('planning.step.crop')} loading={fit.loading} error={fit.error} onRetry={fit.retry}>
+      <Step title={t('planning.step.crop')} loading={fit.loading} error={fit.error} onRetry={fit.retry} loadingText={t('planning.loading.fit')}>
         {fit.data && <FitList fit={fit.data} selected={species} onSelect={pick} />}
       </Step>
 
@@ -142,13 +142,15 @@ export default function ParcelDetail({ row, campaign, onClose, onSaved, onSimula
 
       {chosen && regime && (
         <>
-          <Step title={t('planning.step.variety')} loading={varieties.loading} error={varieties.error} onRetry={varieties.retry}>
+          <Step title={t('planning.step.variety')} loading={varieties.loading} error={varieties.error} onRetry={varieties.retry}
+            loadingText={t('planning.loading.varieties')}>
             {chosen.has_variety_trials
               ? varieties.data && <VarietyTable data={varieties.data} selected={draft.main.variety}
                   onSelect={(v) => setDraft({ ...draft, main: { ...draft.main, variety: v } })} />
               : <p className="text-nkz-sm text-nkz-text-muted">{t('planning.variety.noTrials')}</p>}
           </Step>
-          <Step title={t('planning.step.estimate')} loading={estimates.loading} error={estimates.error} onRetry={estimates.retry}>
+          <Step title={t('planning.step.estimate')} loading={estimates.loading} error={estimates.error} onRetry={estimates.retry}
+            loadingText={t('planning.loading.estimates')}>
             {merged && <EstimatesTable data={merged.data} progress={merged.progress} onRetry={aquacrop.retry} />}
           </Step>
           <Step title={t('planning.step.plan')}>

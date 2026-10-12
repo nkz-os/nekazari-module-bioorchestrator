@@ -2,12 +2,13 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from '@nekazari/sdk';
 import { SlotShell } from '@nekazari/viewer-kit';
-import { Button, Inline, Skeleton, Stack } from '@nekazari/ui-kit';
+import { Button, Inline, Stack } from '@nekazari/ui-kit';
 import { CalendarRange } from 'lucide-react';
 import { resolveParcelContext, type ParcelEntityData } from '../utils/entityData';
 import { fetchFarm } from './api';
 import { ACCENT, parcelUrn } from './format';
 import { canPlan, namesIndex, simulationAvailable, warningText, widgetRows } from './matrixModel';
+import LoadingLine from './LoadingLine';
 import { CycleLine } from './PlanMatrix';
 import { useLoad } from './useLoad';
 
@@ -21,7 +22,7 @@ const ParcelPlanWidget: React.FC<{ entityData?: ParcelEntityData }> = ({ entityD
   const row = data?.parcels[0];
   return (
     <SlotShell moduleId="bioorchestrator" title={t('planning.widget.title')} icon={<CalendarRange className="w-4 h-4" />} accent={ACCENT}>
-      {farm.loading && <Skeleton variant="rect" height={64} />}
+      {farm.loading && <LoadingLine text={t('planning.loading.generic')} />}
       {farm.error != null && (
         <Inline gap="inline" align="center" wrap>
           <p className="text-nkz-sm text-nkz-danger">{t('planning.errorLoad')}</p>

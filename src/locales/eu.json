@@ -416,6 +416,7 @@
     }
   },
   "planning": {
+    "loading": {"generic": "Kargatzen…", "farm": "Zure partzelak kargatzen…", "fit": "Partzela honetara egokitzen diren laboreak aztertzen…", "varieties": "Zure eremuko saiakuntzetan barietateak bilatzen; segundo batzuk behar izan ditzake…", "estimates": "Espero den uzta kalkulatzen…"},
     "title": "Laboreen planifikazioa",
     "subtitle": "Zer erein partzela bakoitzean, zein barietaterekin eta zer ordenatan",
     "campaign": "Kanpaina", "farm": "Ustiategia", "farmAll": "Partzela guztiak", "retry": "Saiatu berriro",

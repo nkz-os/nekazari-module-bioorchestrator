@@ -1169,6 +1169,7 @@
     }
   },
   "planning": {
+    "loading": {"generic": "Loading…", "farm": "Loading your parcels…", "fit": "Checking which crops fit this parcel…", "varieties": "Looking for varieties in the trials of your area; this can take a few seconds…", "estimates": "Estimating the expected harvest…"},
     "title": "Crop planning",
     "subtitle": "What to sow on each parcel, which variety, and in what order",
     "campaign": "Campaign", "farm": "Farm", "farmAll": "All parcels", "retry": "Retry",
