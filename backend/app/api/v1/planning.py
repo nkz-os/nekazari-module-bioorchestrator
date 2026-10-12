@@ -22,6 +22,7 @@ from app.planning.models import (
     PlanIn,
     PlanWriteResponse,
     Regime,
+    SowingMethod,
     VarietiesResponse,
 )
 from app.planning.plan_write import PlanError, write_plan
@@ -101,10 +102,13 @@ async def estimates(request: Request, parcel_id: str, sources: SourcesDep, regim
 async def estimates_aquacrop(request: Request, parcel_id: str, sources: SourcesDep, regime: Regime,
                              crop: str = Query(..., min_length=2, max_length=64),
                              sowing_date: date | None = None,
-                             retry: bool = Query(False), job_id: str | None = Query(None, max_length=64)):
+                             retry: bool = Query(False), job_id: str | None = Query(None, max_length=64),
+                             sowing_method: SowingMethod | None = None):
     """Asynchronous AquaCrop estimates: starts or joins the simulation job; poll until it settles.
 
     The engine takes neither management nor variety, so neither is a parameter here.
+    ``sowing_method`` 'direct' simulates the stubble mulch; omitted, the recorded sowing decides,
+    else bare soil.
     ``retry=true`` relaunches a failed (or lost) job; polling never does. ``job_id`` (from the
     previous answer) makes a poll read the job directly, skipping the parcel lookup.
     """
@@ -113,7 +117,7 @@ async def estimates_aquacrop(request: Request, parcel_id: str, sources: SourcesD
     try:
         return await parcel_aquacrop(dao=GraphDAO(sources[0].driver), jobs=shared_sim_jobs(), tenant_id=tenant,
                                      parcel_id=parcel_id, crop=crop, regime=regime, sowing_date=sowing_date,
-                                     retry=retry, job_id=job_id)
+                                     retry=retry, job_id=job_id, sowing_method=sowing_method)
     except UnknownCrop as e:
         raise HTTPException(status_code=422, detail=str(e)) from e
     except ParcelNotFound as e:
