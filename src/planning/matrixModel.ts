@@ -52,6 +52,13 @@ export function lockReason(row: ParcelRow, campaign: number): LockReason | null 
   return blockers.every(isUnknownCycle) ? 'campaign_unknown' : 'campaign_started';
 }
 
+/** The words for a lock reason: the parcel detail and the matrix cell say the same. */
+export function lockMessage(locked: LockReason, campaign: number, t: TFn): string {
+  if (locked === 'cycles_unavailable') return t('planning.warning.cycles_unavailable');
+  if (locked === 'campaign_unknown') return t('planning.lock.campaign_unknown');
+  return t(`planning.plan.error.${locked}`, { campaign });
+}
+
 /**
  * The campaign of a deep link, or undefined when it is not four digits inside the range the
  * backend accepts (2000-2100): a bad value would make every farm request answer 422 with no way

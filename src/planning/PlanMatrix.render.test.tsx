@@ -60,4 +60,18 @@ describe('PlanMatrix (es)', () => {
     expect(renderToStaticMarkup(<PlanMatrix data={inField} farmId="all" onOpen={() => {}} />)).not.toContain('Simulación de la campaña en curso');
     expect(calls).toEqual([]);
   });
+  it('a locked parcel says why in its target cell instead of offering a button', () => {
+    const started = { crop_id: 'c3', species: 'rye', species_raw: 'SECCE', names: { es: 'centeno' }, variety: null, role: 'main_crop',
+      provenance: 'planned' as const, status: 'active', start: null, end: null, lifecycle: 'annual', first_campaign: 2027 };
+    const locked: FarmResponse = { ...DATA, parcels: [{ ...DATA.parcels[0], warnings: [], cells: { '2024': [], '2025': [], '2026': [], '2027': [started] } }] };
+    const html = renderToStaticMarkup(<PlanMatrix data={locked} farmId="all" onOpen={() => {}} />);
+    expect(html).toContain('Esta campaña ya tiene un cultivo sembrado');
+    expect(html).not.toContain('Cambiar');
+    // a past campaign is only history: no lock text either
+    expect(renderToStaticMarkup(<PlanMatrix data={locked} farmId="all" editable={false} onOpen={() => {}} />)).not.toContain('ya tiene un cultivo');
+  });
+  it('unreadable history is said once, as the row warning', () => {
+    const html = renderToStaticMarkup(<PlanMatrix data={DATA} farmId="all" onOpen={() => {}} />);
+    expect(html.split('No se ha podido leer el historial de esta parcela').length - 1).toBe(1);
+  });
 });
