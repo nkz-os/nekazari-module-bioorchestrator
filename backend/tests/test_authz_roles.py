@@ -6,7 +6,6 @@ from __future__ import annotations
 
 import sys
 import time
-import types
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import jwt
@@ -28,6 +27,7 @@ TENANT = "tenant-a"
 ADMIN = "PlatformAdmin"
 CONTRIBUTOR_ROLES = ("TechnicalConsultant", "TenantAdmin", "PlatformAdmin")
 
+_RULE = {"id": "r9", "category": "sowing"}
 _PHENO = {"species": "Zea mays", "stage": "initial", "kc": "0.5"}
 _CONTRIB_BODY = {"crop_id": "urn:ngsi-ld:AgriCrop:maize", "params": {"kc": 0.5}, "provenance": {}}
 
@@ -38,7 +38,6 @@ ADMIN_ONLY = [
     ("action-rules-create", "POST", "/api/graph/action-rules",
      {"json": {"id": "r9", "category": "sowing"}}),
     ("action-rules-update", "PUT", "/api/graph/action-rules/r1", {"json": {"category": "sowing"}}),
-    ("pipeline-run", "POST", "/api/pipeline/run", {"json": {}}),
     ("navarra-ingest", "POST", "/api/ingestion/navarra-agraria", {"params": {"dry_run": "true"}}),
 ]
 CONTRIBUTIONS = [
@@ -136,13 +135,6 @@ def prod(monkeypatch, driver):
     jwks.get_signing_key_from_jwt.return_value = MagicMock(key=_KEY.public_key())
     monkeypatch.setattr(auth, "_jwks_client", lambda url: jwks)
 
-    pipeline = types.ModuleType("ikerketa.pipeline")
-    pipeline.run_pipeline = lambda **kw: types.SimpleNamespace(
-        failure_count=0, entities_before_dedup=0, entities_after_dedup=0,
-        relationships_total=0, crossref_matches=0, total_duration_seconds=0.0, errors=[],
-    )
-    report = types.ModuleType("ikerketa.report")
-    report.generate_report = lambda result: "report"
     navarra = MagicMock()
     navarra.return_value.ingest = AsyncMock(return_value={"nodes": 0})
     ecocrop = MagicMock()
@@ -152,9 +144,7 @@ def prod(monkeypatch, driver):
     orion.return_value.append_entity_attrs = AsyncMock()
 
     with patch.dict(sys.modules, {
-            "ikerketa": MagicMock(__version__="0.1.0"),
-            "ikerketa.pipeline": pipeline,
-            "ikerketa.report": report}), \
+            "ikerketa": MagicMock(__version__="0.1.0")}), \
          patch("app.core.dependencies.init_driver", AsyncMock()), \
          patch("app.core.dependencies.close_driver", AsyncMock()), \
          patch("app.core.dependencies.get_driver", return_value=driver), \
@@ -162,8 +152,7 @@ def prod(monkeypatch, driver):
          patch("app.api.v1.catalog.OrionClient", orion), \
          patch("app.api.v1.catalog.EcoCropIngester", ecocrop), \
          patch("subprocess.Popen", MagicMock()) as popen, \
-         patch("app.ingestion.navarra_ingester.NavarraIngester", navarra), \
-         patch("app.main._store_pipeline_history", AsyncMock()):
+         patch("app.ingestion.navarra_ingester.NavarraIngester", navarra):
         from app.main import app
 
         client = TestClient(app, raise_server_exceptions=False)
@@ -245,7 +234,7 @@ def test_gateway_role_parity_realm_and_client_roles(prod):
         {"realm_access": {"roles": []}, "roles": [ADMIN]},
     ):
         headers = _gateway_headers("", extra_claims=claims)
-        resp = prod.post("/api/pipeline/run", json={}, headers=headers)
+        resp = prod.post("/api/graph/action-rules", json=_RULE, headers=headers)
         assert resp.status_code == 200, claims
 
 
@@ -266,13 +255,13 @@ def test_gateway_signed_non_jwt_token_is_not_an_identity(prod):
         "X-User-Roles": ADMIN,
         "X-Auth-Signature": generate_hmac_signature("hmac-test", token, TENANT),
     }
-    assert prod.post("/api/pipeline/run", json={}, headers=headers).status_code == 401
+    assert prod.post("/api/graph/action-rules", json=_RULE, headers=headers).status_code == 401
 
 
 def test_unverified_jwt_grants_no_roles(prod, monkeypatch):
     # AUTH_STRICT=false skips signature verification, so claims must not grant roles.
     monkeypatch.setenv("AUTH_STRICT", "false")
-    resp = prod.post("/api/pipeline/run", json={}, headers=_bearer({"realm_access": {"roles": [ADMIN]}}))
+    resp = prod.post("/api/graph/action-rules", json=_RULE, headers=_bearer({"realm_access": {"roles": [ADMIN]}}))
     assert resp.status_code == 403
 
 
@@ -328,7 +317,7 @@ def test_jwt_without_admin_role_is_403(prod):
 
 
 def test_jwt_without_any_roles_is_403(prod):
-    resp = prod.post("/api/pipeline/run", json={}, headers=_bearer({}))
+    resp = prod.post("/api/graph/action-rules", json=_RULE, headers=_bearer({}))
     assert resp.status_code == 403
 
 
@@ -336,7 +325,7 @@ def test_unsigned_jwt_is_401(prod):
     forged = jwt.encode({"iss": ISS, "sub": "x", "tenant_id": TENANT,
                          "exp": int(time.time()) + 300, "roles": [ADMIN]},
                         "not-the-idp-key", algorithm="HS256")
-    resp = prod.post("/api/pipeline/run", json={}, headers={"Authorization": f"Bearer {forged}"})
+    resp = prod.post("/api/graph/action-rules", json=_RULE, headers={"Authorization": f"Bearer {forged}"})
     assert resp.status_code == 401
 
 

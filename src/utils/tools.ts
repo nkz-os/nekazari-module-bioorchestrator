@@ -1,7 +1,7 @@
 import type React from 'react';
 import {
   Heart, Activity, RefreshCw, Droplets, Dna, Microscope,
-  Leaf, Globe, Sprout, Thermometer, FlaskRound, GitBranch, Database, Mountain,
+  Leaf, Globe, Sprout, Thermometer, FlaskRound, Database, Mountain,
   TrendingUp,
 } from 'lucide-react';
 
@@ -33,7 +33,6 @@ export const ADVANCED_TOOLS: ToolCardDef[] = [
   { id: 'soil', icon: Mountain, hub: 'codex', compact: true },
   { id: 'rotation', icon: RefreshCw, hub: 'codex', compact: true },
   { id: 'organic', icon: FlaskRound, hub: 'codex', compact: true },
-  { id: 'pipeline', icon: GitBranch, hub: 'codex', compact: true },
   { id: 'sources', icon: Activity, hub: 'codex', compact: true },
   { id: 'dadis', icon: Database, hub: 'codex', compact: true },
   { id: 'speciesExplorer', icon: Leaf, hub: 'codex', compact: true },

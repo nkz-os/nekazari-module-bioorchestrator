@@ -191,9 +191,9 @@ def test_graph_stats_public(client):
 # 401/403 when AUTH_DISABLED is false and no auth header is present.
 
 
-def test_pipeline_run_requires_auth(client, auth_enabled):
-    """POST /api/pipeline/run must require auth when auth is enabled."""
-    resp = client.post("/api/pipeline/run", json={})
+def test_admin_write_requires_auth(client, auth_enabled):
+    """POST /api/graph/action-rules must require auth when auth is enabled."""
+    resp = client.post("/api/graph/action-rules", json={})
     assert resp.status_code in (401, 403), (
         f"Expected 401/403, got {resp.status_code}"
     )
@@ -233,7 +233,7 @@ def test_cors_headers_on_success(client):
 def test_cors_headers_on_401(client, auth_enabled):
     """401 responses must also include CORS headers (browser needs them)."""
     resp = client.get(
-        "/api/pipeline/run",
+        "/api/graph/stats",
         headers={"Origin": "http://localhost:5173"},
     )
     assert resp.status_code in (401, 403)

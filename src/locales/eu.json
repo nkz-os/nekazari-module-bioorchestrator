@@ -47,10 +47,6 @@
         "title": "Organic Inputs",
         "subtitle": "Authorized organic products per crop from EPPO."
       },
-      "pipeline": {
-        "title": "Pipeline",
-        "subtitle": "Data ingestion orchestrator across biodiversity sources."
-      },
       "sources": {
         "title": "Data Sources",
         "subtitle": "Multi-domain biodiversity data availability status."
@@ -84,24 +80,6 @@
       "noDataFile": "Datu-fitxategirik ez"
     },
     "title": "Datu-iturriak"
-  },
-  "pipeline": {
-    "sourcesLabel": "Iturriak (komaz bereizita, hutsik = guztiak)",
-    "sourcesPlaceholder": "agrovoc, eppo, dadis, globaltreesearch...",
-    "limitLabel": "Iturriko muga",
-    "run": "Pipeline exekutatu",
-    "running": "Exekutatzen...",
-    "history": "Azken exekuzioak",
-    "result": {
-      "ok": "Pipeline osatua",
-      "withErrors": "Pipeline osatua erroreekin",
-      "entitiesRaw": "Entitateak (gordin)",
-      "entitiesDedup": "Entitateak (dedup)",
-      "relationships": "Erlazioak",
-      "crossrefs": "Gurutzatzeak",
-      "duration": "Iraupena",
-      "errorsTitle": "Erroreak:"
-    }
   },
   "dadis": {
     "title": "DAD-IS Breed Discovery",
