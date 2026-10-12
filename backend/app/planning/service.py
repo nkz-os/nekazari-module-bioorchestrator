@@ -244,13 +244,20 @@ async def parcel_estimates(*, dao, source: KnowledgeSource, parcel_id: str, tena
 
 
 async def parcel_aquacrop(*, dao, jobs, tenant_id: str, parcel_id: str, crop: str, regime: str,
-                          sowing_date: date | None, today: date | None = None, retry: bool = False) -> dict:
+                          sowing_date: date | None, today: date | None = None, retry: bool = False,
+                          job_id: str | None = None) -> dict:
     """State of the AquaCrop provider for this input, starting or joining its simulation job.
 
     Idempotent: the UI polls this. Gated inputs answer ``unavailable`` without touching the
     engine; a failed job is reported as failed (relaunched only with ``retry``, never by polling) and a lost
     one (restart) is started again by the same call.
     """
+    if job_id:
+        # Light poll: the job is already running for inputs that passed the gate; read it by id (tenant-scoped).
+        # A lost job, or a failed one being retried, takes the full path below.
+        live = jobs.get(job_id, tenant_id)
+        if live is not None and not (live.state == "failed" and retry):
+            return _job_view(live, jobs._version)
     today = today or datetime.now(UTC).date()
     eppo = crop_code(crop)
     env = await load_environment(dao, parcel_id, tenant_id)
@@ -271,13 +278,17 @@ async def parcel_aquacrop(*, dao, jobs, tenant_id: str, parcel_id: str, crop: st
     # ASSUMPTION: _version is read from the store (private) until the engine team exposes it.
     known = jobs.get(jobs.job_id(tenant_id, params, today, jobs._version), tenant_id)
     job = known if known is not None and known.state == "failed" and not retry else await jobs.start(tenant_id, params, run, today)
+    return _job_view(job, jobs._version)
+
+
+def _job_view(job, version: str) -> dict:
     out = {"state": job.state, "done": job.done, "total": job.total, "estimates": [], "unavailable": [],
            "job_id": job.id}
     if job.state == "failed":
         out["unavailable"] = [{"provider_id": AQUACROP_ID, "reason": "engine_error",
                                "code": (job.error or {}).get("code")}]
     elif job.state == "done":
-        out["estimates"], out["unavailable"] = map_result(job.result or {}, jobs._version)
+        out["estimates"], out["unavailable"] = map_result(job.result or {}, version)
     return out
 
 

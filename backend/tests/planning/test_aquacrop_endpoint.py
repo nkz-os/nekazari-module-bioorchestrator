@@ -129,6 +129,44 @@ async def test_retry_on_a_done_or_running_job_changes_nothing():
     assert (await _call(jobs, retry=True))["state"] == "running" and len(jobs.started) == 1
 
 
+async def test_poll_by_job_id_skips_gate_and_environment():
+    jobs = FakeJobs()
+    first = await _call(jobs)
+    jobs.only().state, jobs.only().done, jobs.only().total = "running", 2, 12
+    dao = _dao()
+    out = await _call(jobs, dao=dao, job_id=first["job_id"], crop="barley")  # the gate would say not_validated
+    assert out["state"] == "running" and out["done"] == 2 and out["job_id"] == first["job_id"]
+    dao.get_parcel_environment.assert_not_called()
+
+
+async def test_poll_by_job_id_reports_done_and_failed_without_relaunch():
+    jobs = FakeJobs()
+    first = await _call(jobs)
+    job = jobs.only()
+    job.state, job.result = "done", RESULT
+    out = await _call(jobs, dao=_dao(), job_id=first["job_id"])
+    assert [e["basis"] for e in out["estimates"]] == ["gap_corrected", "water_limited"]
+    job.state, job.error = "failed", {"code": "c"}
+    out = await _call(jobs, job_id=first["job_id"])
+    assert out["unavailable"][0]["reason"] == "engine_error" and len(jobs.started) == 1
+
+
+async def test_unknown_job_id_runs_the_full_path():
+    jobs = FakeJobs()
+    dao = _dao()
+    out = await _call(jobs, dao=dao, job_id="gone")
+    assert out["state"] == "queued" and len(jobs.started) == 1
+    dao.get_parcel_environment.assert_awaited_once()
+
+
+async def test_failed_job_id_with_retry_takes_the_full_path():
+    jobs = FakeJobs()
+    first = await _call(jobs)
+    jobs.only().state, jobs.only().error = "failed", {"code": "c"}
+    out = await _call(jobs, job_id=first["job_id"], retry=True)
+    assert out["state"] == "queued" and len(jobs.started) == 2
+
+
 async def test_a_lost_job_restarts_transparently():
     jobs = FakeJobs()
     first = await _call(jobs)
@@ -175,8 +213,8 @@ def test_route_forwards_retry(client, monkeypatch):
     params = {"crop": "TRZAX", "regime": "secano", "management": "conventional"}
     client.get(url, params=params)
     assert called.await_args.kwargs["retry"] is False
-    client.get(url, params={**params, "retry": "true"})
-    assert called.await_args.kwargs["retry"] is True
+    client.get(url, params={**params, "retry": "true", "job_id": "abc"})
+    assert called.await_args.kwargs["retry"] is True and called.await_args.kwargs["job_id"] == "abc"
 
 
 def test_route_maps_unknown_parcel_and_crop(client, monkeypatch):
