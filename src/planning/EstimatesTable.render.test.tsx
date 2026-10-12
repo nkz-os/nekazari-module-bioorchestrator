@@ -85,4 +85,14 @@ describe('EstimatesTable (es)', () => {
     expect(html).toContain('la simulación ha fallado (código soil_unavailable)');
     expect(html).toContain('sin previsión de cosecha: la parcela está fuera de las provincias calibradas');
   });
+  it('a failed engine offers a retry button; a gate reason does not', () => {
+    const failed = { ...DATA, unavailable: [{ provider_id: 'aquacrop', reason: 'engine_error', code: 'x' }] };
+    expect(renderToStaticMarkup(<EstimatesTable data={failed} onRetry={() => undefined} />)).toContain('Reintentar');
+    expect(renderToStaticMarkup(<EstimatesTable data={DATA} onRetry={() => undefined} />)).not.toContain('Reintentar');
+  });
+  it('no 0/null while the total is unknown', () => {
+    const html = renderToStaticMarkup(<EstimatesTable data={{ ...DATA, unavailable: [{ provider_id: 'aquacrop', reason: 'async' }] }} progress={{ done: 0, total: null }} />);
+    expect(html).toContain('Simulando…');
+    expect(html).not.toContain('null');
+  });
 });

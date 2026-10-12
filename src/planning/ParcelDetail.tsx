@@ -151,7 +151,7 @@ export default function ParcelDetail({ row, campaign, onClose, onSaved, onSimula
               : <p className="text-nkz-sm text-nkz-text-muted">{t('planning.variety.noTrials')}</p>}
           </Step>
           <Step title={t('planning.step.estimate')} loading={estimates.loading} error={estimates.error} onRetry={estimates.retry}>
-            {merged && <EstimatesTable data={merged.data} progress={merged.progress} />}
+            {merged && <EstimatesTable data={merged.data} progress={merged.progress} onRetry={aquacrop.retry} />}
           </Step>
           <Step title={t('planning.step.plan')}>
             {blocked ? (

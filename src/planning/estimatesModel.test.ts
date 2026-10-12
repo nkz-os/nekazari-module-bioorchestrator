@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  AQUACROP_POLL_MS, AQUACROP_POLL_CAP_MS, aquacropPending, disagrees, mergeAquacrop, moistureLabel, pollDecision,
+  AQUACROP_POLL_MS, AQUACROP_POLL_CAP_MS, aquacropPending, disagrees, mergeAquacrop, moistureLabel, pollDecision, progressLabel, retryFlag, canRetry,
   sortEstimates, uniqueAttributions, validationTone,
 } from './estimatesModel';
 import type { AquacropResponse, Estimate, EstimatesResponse } from './types';
@@ -114,5 +114,25 @@ describe('moisture label', () => {
     expect(moistureLabel({ basis: 'commercial', pct: null }).key).toBe('planning.estimate.moisture.commercialNoPct');
     expect(moistureLabel({ basis: 'dry_matter', pct: null }).key).toBe('planning.estimate.moisture.dry_matter');
     expect(moistureLabel({ basis: 'as_reported', pct: null }).key).toBe('planning.estimate.moisture.as_reported');
+  });
+});
+
+describe('progress label', () => {
+  it('shows only "Simulando…" until the total is a positive number', () => {
+    for (const total of [null, 0]) expect(progressLabel({ done: 0, total }).key).toBe('planning.estimate.simulatingStart');
+    expect(progressLabel({ done: 3, total: 12 })).toEqual({ key: 'planning.estimate.simulating', params: { done: 3, total: 12 } });
+  });
+});
+
+describe('retry', () => {
+  it('only the first request after a retry carries retry=true', () => {
+    expect(retryFlag(0, 0)).toBe(false);
+    expect(retryFlag(1, 0)).toBe(true);
+    expect(retryFlag(1, 1)).toBe(false);
+    expect(retryFlag(2, 5)).toBe(false);
+  });
+  it('is offered for an engine error only', () => {
+    expect(canRetry({ provider_id: 'aquacrop', reason: 'engine_error' })).toBe(true);
+    for (const reason of ['timeout', 'not_validated', 'request_failed']) expect(canRetry({ provider_id: 'aquacrop', reason })).toBe(false);
   });
 });

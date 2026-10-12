@@ -34,9 +34,9 @@ class FakeJobs:
 
     async def start(self, tenant, params, run, today=None):
         jid = self.job_id(tenant, params, today, self._version)
-        self.started.append(params)
         job = self.jobs.get(jid)
         if job is None or job.state == "failed":
+            self.started.append(params)  # a launch, as the real store: joining a live job is not one
             job = self.jobs[jid] = Job(jid, tenant)  # queued
         return job
 
@@ -100,6 +100,35 @@ async def test_failed_job_is_reported_not_relaunched_or_emptied():
     assert len(jobs.started) == 1
 
 
+async def test_failed_job_without_retry_never_calls_start_again():
+    jobs = FakeJobs()
+    await _call(jobs)
+    jobs.only().state = "failed"
+    jobs.only().error = {"code": "c"}
+    await _call(jobs)
+    assert len(jobs.started) == 1
+
+
+async def test_failed_job_with_retry_relaunches_once():
+    jobs = FakeJobs()
+    await _call(jobs)
+    jobs.only().state = "failed"
+    jobs.only().error = {"code": "c"}
+    out = await _call(jobs, retry=True)
+    assert out["state"] == "queued" and out["unavailable"] == [] and len(jobs.started) == 2
+
+
+async def test_retry_on_a_done_or_running_job_changes_nothing():
+    jobs = FakeJobs()
+    await _call(jobs)
+    job = jobs.only()
+    job.state, job.result = "done", RESULT
+    out = await _call(jobs, retry=True)
+    assert out["state"] == "done" and len(jobs.started) == 1
+    job.state = "running"
+    assert (await _call(jobs, retry=True))["state"] == "running" and len(jobs.started) == 1
+
+
 async def test_a_lost_job_restarts_transparently():
     jobs = FakeJobs()
     first = await _call(jobs)
@@ -136,6 +165,18 @@ def test_route_validates_the_contract(client, monkeypatch):
     body = r.json()
     assert body["provider_id"] == "aquacrop" and body["contract_version"] == "1.1" and body["state"] == "running"
     assert called.await_args.kwargs["sowing_date"] == SOW
+
+
+def test_route_forwards_retry(client, monkeypatch):
+    import app.api.v1.planning as planning_api
+    called = AsyncMock(return_value={"state": "queued", "estimates": [], "unavailable": [], "job_id": "j"})
+    monkeypatch.setattr(planning_api, "parcel_aquacrop", called)
+    url = f"/api/graph/planning/parcels/{PARCEL}/estimates/aquacrop"
+    params = {"crop": "TRZAX", "regime": "secano", "management": "conventional"}
+    client.get(url, params=params)
+    assert called.await_args.kwargs["retry"] is False
+    client.get(url, params={**params, "retry": "true"})
+    assert called.await_args.kwargs["retry"] is True
 
 
 def test_route_maps_unknown_parcel_and_crop(client, monkeypatch):

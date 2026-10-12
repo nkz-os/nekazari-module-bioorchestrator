@@ -244,11 +244,11 @@ async def parcel_estimates(*, dao, source: KnowledgeSource, parcel_id: str, tena
 
 
 async def parcel_aquacrop(*, dao, jobs, tenant_id: str, parcel_id: str, crop: str, regime: str,
-                          sowing_date: date | None, today: date | None = None) -> dict:
+                          sowing_date: date | None, today: date | None = None, retry: bool = False) -> dict:
     """State of the AquaCrop provider for this input, starting or joining its simulation job.
 
     Idempotent: the UI polls this. Gated inputs answer ``unavailable`` without touching the
-    engine; a failed job is reported as failed (not relaunched on every poll) and a lost
+    engine; a failed job is reported as failed (relaunched only with ``retry``, never by polling) and a lost
     one (restart) is started again by the same call.
     """
     today = today or datetime.now(UTC).date()
@@ -270,7 +270,7 @@ async def parcel_aquacrop(*, dao, jobs, tenant_id: str, parcel_id: str, crop: st
     # ``start`` relaunches a failed job, which would loop on every poll: look first.
     # ASSUMPTION: _version is read from the store (private) until the engine team exposes it.
     known = jobs.get(jobs.job_id(tenant_id, params, today, jobs._version), tenant_id)
-    job = known if known is not None and known.state == "failed" else await jobs.start(tenant_id, params, run, today)
+    job = known if known is not None and known.state == "failed" and not retry else await jobs.start(tenant_id, params, run, today)
     out = {"state": job.state, "done": job.done, "total": job.total, "estimates": [], "unavailable": [],
            "job_id": job.id}
     if job.state == "failed":

@@ -76,3 +76,18 @@ export function moistureLabel(m: Moisture): { key: string; params: Record<string
   }
   return { key: `planning.estimate.moisture.${m.basis}`, params: {} };
 }
+
+/** Progress text: "done/total" only once the total is a positive number (the job API sends null first). */
+export function progressLabel(progress: { done: number; total: number | null }):
+  { key: string; params: Record<string, unknown> } {
+  return progress.total !== null && progress.total > 0
+    ? { key: 'planning.estimate.simulating', params: { done: progress.done, total: progress.total } }
+    : { key: 'planning.estimate.simulatingStart', params: {} };
+}
+
+/** Only the request that follows a user's retry carries retry=true; polling never does. */
+export const retryFlag = (retryCount: number, attempt: number): boolean => retryCount > 0 && attempt === 0;
+
+/** The retry button belongs to a failed engine, never to a gate reason or a timeout. */
+export const canRetry = (u: { provider_id: string; reason: string }): boolean =>
+  u.provider_id === PROVIDER && u.reason === 'engine_error';

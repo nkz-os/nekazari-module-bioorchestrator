@@ -100,17 +100,18 @@ async def estimates(request: Request, parcel_id: str, sources: SourcesDep, regim
 async def estimates_aquacrop(request: Request, parcel_id: str, sources: SourcesDep, regime: Regime,
                              management: Management, crop: str = Query(..., min_length=2, max_length=64),
                              sowing_date: date | None = None,
-                             variety: str | None = Query(None, max_length=64)):
+                             variety: str | None = Query(None, max_length=64),
+                             retry: bool = Query(False)):
     """Asynchronous AquaCrop estimates: starts or joins the simulation job; poll until it settles.
 
     ``management`` and ``variety`` are accepted for symmetry with /estimates: the engine
-    does not use them.
+    does not use them. ``retry=true`` relaunches a failed (or lost) job; polling never does.
     """
     tenant = _require_tenant_id(request)
     parcel_id = _checked_parcel_urn(parcel_id)
     try:
         return await parcel_aquacrop(dao=GraphDAO(sources[0].driver), jobs=_sim_jobs(), tenant_id=tenant,
-                                     parcel_id=parcel_id, crop=crop, regime=regime, sowing_date=sowing_date)
+                                     parcel_id=parcel_id, crop=crop, regime=regime, sowing_date=sowing_date, retry=retry)
     except UnknownCrop as e:
         raise HTTPException(status_code=422, detail=str(e)) from e
     except ParcelNotFound as e:

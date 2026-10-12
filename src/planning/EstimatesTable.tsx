@@ -1,8 +1,8 @@
 import React from 'react';
 import { useTranslation } from '@nekazari/sdk';
-import { Badge, Stack } from '@nekazari/ui-kit';
 import SourceAttribution from '../components/shared/SourceAttribution';
-import { moistureLabel, sortEstimates, uniqueAttributions, validationTone } from './estimatesModel';
+import { Badge, Button, Stack } from '@nekazari/ui-kit';
+import { canRetry, moistureLabel, progressLabel, sortEstimates, uniqueAttributions, validationTone } from './estimatesModel';
 import { formatIsoDate, formatT } from './format';
 import type { Estimate, EstimatesResponse } from './types';
 
@@ -14,7 +14,7 @@ function spread(e: Estimate, lang: string): string {
 
 export interface SimulationProgress { done: number; total: number | null }
 
-export default function EstimatesTable({ data, progress = null }: { data: EstimatesResponse; progress?: SimulationProgress | null }) {
+export default function EstimatesTable({ data, progress = null, onRetry }: { data: EstimatesResponse; progress?: SimulationProgress | null; onRetry?: () => void }) {
   const { t, i18n } = useTranslation('bioorchestrator');
   const lang = i18n.language;
   const rows = sortEstimates(data.estimates);
@@ -72,8 +72,11 @@ export default function EstimatesTable({ data, progress = null }: { data: Estima
                 </td>
                 <td className="py-2 pr-4 text-nkz-text-muted" colSpan={3}>
                   {u.reason === 'async' && progress !== null
-                    ? (progress.total ? t('planning.estimate.simulating', { done: progress.done, total: progress.total }) : t('planning.estimate.simulatingStart'))
+                    ? t(progressLabel(progress).key, progressLabel(progress).params)
                     : t(`planning.estimate.unavailable.${u.reason}`, { defaultValue: u.reason, code: u.code ?? '—' })}
+                  {onRetry && canRetry(u) && (
+                    <> <Button size="sm" variant="secondary" onClick={onRetry}>{t('planning.retry')}</Button></>
+                  )}
                 </td>
               </tr>
             ))}

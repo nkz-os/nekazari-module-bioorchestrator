@@ -77,9 +77,10 @@ export const fetchEstimates = (parcelId: string, q: EstimatesQuery, signal?: Abo
     crop: q.crop, variety: q.variety, regime: q.regime, management: q.management, sowing_date: q.sowingDate,
   })}`, undefined, signal);
 
-export const fetchAquacrop = (parcelId: string, q: EstimatesQuery, signal?: AbortSignal) =>
+export const fetchAquacrop = (parcelId: string, q: EstimatesQuery, signal?: AbortSignal, retry = false) =>
   request<AquacropResponse>('GET', `${PLANNING}/parcels/${enc(parcelId)}/estimates/aquacrop${buildQuery({
     crop: q.crop, variety: q.variety, regime: q.regime, management: q.management, sowing_date: q.sowingDate,
+    retry: retry ? 'true' : null,
   })}`, undefined, signal);
 
 export const putPlan = (parcelId: string, body: PlanIn) =>
