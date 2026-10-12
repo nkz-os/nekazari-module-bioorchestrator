@@ -44,3 +44,9 @@ def test_no_hardcoded_redis_urls_in_app():
         if re.search(r"""from_url\(\s*["']redis://""", line)
     ]
     assert offenders == [], f"hardcoded Redis URL at {offenders}"
+
+
+def test_redis_client_library_is_installed():
+    # The stores import redis.asyncio lazily and swallow errors, so a missing
+    # package fails silently at runtime; make it fail here instead.
+    import redis.asyncio  # noqa: F401
