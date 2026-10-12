@@ -5661,7 +5661,7 @@ class GraphDAO:
 
         try:
             import redis.asyncio as aioredis
-            r = aioredis.Redis.from_url("redis://redis-service:6379/0", socket_timeout=5.0)
+            r = aioredis.Redis.from_url(settings.redis_cache_url, socket_timeout=5.0)
         except Exception:  # noqa: BLE001
             return {"alerts": []}
 

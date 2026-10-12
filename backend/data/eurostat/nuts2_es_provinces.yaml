@@ -1,0 +1,59 @@
+# Spanish province (INE code: first two digits of the 5-digit municipality code) -> NUTS 2 region.
+# NUTS 2024 (Regulation (EC) No 1059/2003 as amended). Each province lies in exactly one
+# autonomous community (NUTS 2), including Illes Balears and Canarias, whose NUTS 3 units are
+# islands rather than provinces. Province codes: INE official list. Official codes, no geometry.
+nuts_version: 2024
+country: ES
+provinces:
+  "01": ES21  # Araba/Álava
+  "02": ES42  # Albacete
+  "03": ES52  # Alicante/Alacant
+  "04": ES61  # Almería
+  "05": ES41  # Ávila
+  "06": ES43  # Badajoz
+  "07": ES53  # Illes Balears
+  "08": ES51  # Barcelona
+  "09": ES41  # Burgos
+  "10": ES43  # Cáceres
+  "11": ES61  # Cádiz
+  "12": ES52  # Castellón/Castelló
+  "13": ES42  # Ciudad Real
+  "14": ES61  # Córdoba
+  "15": ES11  # A Coruña
+  "16": ES42  # Cuenca
+  "17": ES51  # Girona
+  "18": ES61  # Granada
+  "19": ES42  # Guadalajara
+  "20": ES21  # Gipuzkoa
+  "21": ES61  # Huelva
+  "22": ES24  # Huesca
+  "23": ES61  # Jaén
+  "24": ES41  # León
+  "25": ES51  # Lleida
+  "26": ES23  # La Rioja
+  "27": ES11  # Lugo
+  "28": ES30  # Madrid
+  "29": ES61  # Málaga
+  "30": ES62  # Murcia
+  "31": ES22  # Navarra
+  "32": ES11  # Ourense
+  "33": ES12  # Asturias
+  "34": ES41  # Palencia
+  "35": ES70  # Las Palmas
+  "36": ES11  # Pontevedra
+  "37": ES41  # Salamanca
+  "38": ES70  # Santa Cruz de Tenerife
+  "39": ES13  # Cantabria
+  "40": ES41  # Segovia
+  "41": ES61  # Sevilla
+  "42": ES41  # Soria
+  "43": ES51  # Tarragona
+  "44": ES24  # Teruel
+  "45": ES42  # Toledo
+  "46": ES52  # Valencia/València
+  "47": ES41  # Valladolid
+  "48": ES21  # Bizkaia
+  "49": ES41  # Zamora
+  "50": ES24  # Zaragoza
+  "51": ES63  # Ceuta
+  "52": ES64  # Melilla

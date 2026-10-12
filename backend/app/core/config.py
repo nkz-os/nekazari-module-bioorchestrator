@@ -6,6 +6,7 @@ All values can be overridden via environment variables or a .env file.
 from __future__ import annotations
 
 from pathlib import Path
+from urllib.parse import quote
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -37,6 +38,18 @@ class Settings(BaseSettings):
     @property
     def allowed_origins(self) -> list[str]:
         return [o.strip() for o in self.cors_origins.split(",") if o.strip()]
+
+    # ── Redis ─────────────────────────────────────────────────────────────────
+    # Best-effort stores: pipeline history and progress streams, crop events.
+    # The background queue reads REDIS_URL on its own (app/workers/queue.py).
+    redis_host: str = "redis-service:6379"
+    redis_password: str = ""
+
+    @property
+    def redis_cache_url(self) -> str:
+        if self.redis_password:
+            return f"redis://:{quote(self.redis_password, safe='')}@{self.redis_host}/0"
+        return f"redis://{self.redis_host}/0"
 
     # ── Orion-LD ──────────────────────────────────────────────────────────────
     orion_ld_url: str = "http://orion-ld-service:1026"

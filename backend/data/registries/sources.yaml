@@ -247,8 +247,8 @@ sources:
       - third-party content (photographs) excluded
       - conversions made by Nekazari are indicated
       processing_note:
-        en: Coefficients are converted by Nekazari to % of dry matter and elemental P and K; the conversion is stated next to each value.
-        es: Los coeficientes los convierte Nekazari a % de materia seca y a P y K elementales; la conversión figura junto a cada valor.
+        en: Estimates and averages are Nekazari calculations based on these data; they are not data published by the sources.
+        es: Las estimaciones y medias son cálculos de Nekazari a partir de estos datos; no son datos publicados por las fuentes.
       notes: Guide edited by the Ministry (copyright holder) with ANFFE and ACEFER; numeric tables only.
   - source_id: panagos_2022
     name: Panagos et al. 2022, Phosphorus plant removal from European agricultural land
@@ -274,8 +274,8 @@ sources:
       - the source is cited
       - changes made to the data are indicated
       processing_note:
-        en: Coefficients are converted by Nekazari to % of dry matter and elemental P and K; the conversion is stated next to each value.
-        es: Los coeficientes los convierte Nekazari a % de materia seca y a P y K elementales; la conversión figura junto a cada valor.
+        en: Estimates and averages are Nekazari calculations based on these data; they are not data published by the sources.
+        es: Las estimaciones y medias son cálculos de Nekazari a partir de estos datos; no son datos publicados por las fuentes.
       notes: EU+UK values (Tables 1-2 and supplement).
   - source_id: essd_2024_s3
     name: ESSD 2024 cropland nutrient budget, supplement Table S3
@@ -298,8 +298,8 @@ sources:
       - the source is cited
       - changes made to the data are indicated
       processing_note:
-        en: Coefficients are converted by Nekazari to % of dry matter and elemental P and K; the conversion is stated next to each value.
-        es: Los coeficientes los convierte Nekazari a % de materia seca y a P y K elementales; la conversión figura junto a cada valor.
+        en: Estimates and averages are Nekazari calculations based on these data; they are not data published by the sources.
+        es: Las estimaciones y medias son cálculos de Nekazari a partir de estos datos; no son datos publicados por las fuentes.
       notes: kg N, P, K per tonne of fresh commodity; Table S2 N fixation.
   - source_id: ludemann_cc0
     name: Ludemann et al., global crop nutrient concentrations and harvest indices
@@ -321,8 +321,8 @@ sources:
       conditions:
       - none (CC0); cited as good practice
       processing_note:
-        en: Coefficients are converted by Nekazari to % of dry matter and elemental P and K; the conversion is stated next to each value.
-        es: Los coeficientes los convierte Nekazari a % de materia seca y a P y K elementales; la conversión figura junto a cada valor.
+        en: Estimates and averages are Nekazari calculations based on these data; they are not data published by the sources.
+        es: Las estimaciones y medias son cálculos de Nekazari a partir de estos datos; no son datos publicados por las fuentes.
       notes: The compilation averages upstream sources, some of which carry non-commercial terms; used only where MAPA, Panagos and ESSD have no value.
   - source_id: eurostat_apro_cpshr
     name: Eurostat apro_cpshr, crop production in EU standard humidity by NUTS 2 region
@@ -345,8 +345,8 @@ sources:
       - the source is acknowledged
       - changes made to the data are indicated
       processing_note:
-        en: Yield is derived by Nekazari as harvested production / area (EU standard humidity); Eurostat leaves the NUTS 2 yield empty.
-        es: El rendimiento lo calcula Nekazari como producción / superficie (humedad estándar UE); Eurostat deja vacío el rendimiento NUTS 2.
+        en: Estimates and averages are Nekazari calculations based on these data; they are not data published by the sources.
+        es: Las estimaciones y medias son cálculos de Nekazari a partir de estos datos; no son datos publicados por las fuentes.
       notes: Annual series stored per region and year (area, production, humidity basis), not only means.
   - source_id: fertilicalc_script_2024
     name: FertiliCalc reference script (fertilicalc_script_231124.py)
@@ -372,8 +372,8 @@ sources:
       - the GPL-3.0 text of the package is kept with any copy of the script
       - combination with AGPL-3.0 code is permitted by GPL-3.0 section 13
       processing_note:
-        en: The values are the residue defaults hard-coded in the script; the script stores them as fractions and Nekazari states them as % of dry matter.
-        es: Los valores son los valores por defecto de los restos de cosecha escritos en el script; el script los guarda como fracciones y Nekazari los expresa en % de materia seca.
+        en: Estimates and averages are Nekazari calculations based on these data; they are not data published by the sources.
+        es: Las estimaciones y medias son cálculos de Nekazari a partir de estos datos; no son datos publicados por las fuentes.
       notes: Only the residue defaults hard-coded in the script are used; the crop table of the package (crop_data.csv) is not. The script file carries no licence header; the licence is the gpl-3.0.txt shipped in the same ZIP.
   - source_id: BSL
     name: Bundessortenamt (BSL)

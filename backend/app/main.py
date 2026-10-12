@@ -297,6 +297,10 @@ async def lifespan(app: FastAPI):
         # Idempotent schema migrations: a schema failure fails readiness, a transient one only retries.
         await _run_startup_migrations(driver)
 
+    # Warm NUTS reference data (best-effort; logs ERROR, never blocks startup)
+    from app.api.v1.balance import warm_nuts_reference
+    warm_nuts_reference()
+
     # Seed external capability registrations (best-effort)
     try:
         from app.core.dependencies import get_driver
@@ -385,7 +389,7 @@ async def _store_pipeline_history(
     """Store a pipeline run summary in Redis history stream (best-effort)."""
     try:
         import redis.asyncio as aioredis
-        r = aioredis.Redis.from_url("redis://redis-service:6379/0", socket_connect_timeout=3)
+        r = aioredis.Redis.from_url(settings.redis_cache_url, socket_connect_timeout=3)
         entry = {
             "run_id": datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S"),
             "success": success,
@@ -483,7 +487,7 @@ async def pipeline_progress(request: Request, run_id: str = ""):
     import redis.asyncio as aioredis
 
     async def event_stream():
-        r = aioredis.Redis.from_url("redis://redis-service:6379/0", socket_connect_timeout=3)
+        r = aioredis.Redis.from_url(settings.redis_cache_url, socket_connect_timeout=3)
         last_id = "0"
         try:
             while True:
@@ -517,7 +521,7 @@ async def pipeline_history(limit: int = Query(default=10, ge=1, le=50)):
     """Return recent pipeline execution history from Redis."""
     try:
         import redis.asyncio as aioredis
-        r = aioredis.Redis.from_url("redis://redis-service:6379/0", socket_connect_timeout=3)
+        r = aioredis.Redis.from_url(settings.redis_cache_url, socket_connect_timeout=3)
         events = await r.xrevrange("pipeline:history", "+", "-", count=limit)
         await r.aclose()
         history = []
