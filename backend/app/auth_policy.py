@@ -13,6 +13,8 @@ from collections.abc import Mapping
 _AGRICULTURE_PREFIX = "/api/graph/agriculture/"
 _WRITE_METHODS = frozenset({"POST", "PUT", "PATCH", "DELETE"})
 _URN_MARKER = "urn:ngsi-ld:"
+# Tenant-owned resources whose requests carry no parcel id (e.g. polling a job by id).
+_TENANT_PREFIXES = (_AGRICULTURE_PREFIX + "crop-simulation/jobs",)
 
 
 def requires_identity(path: str, method: str, query: Mapping[str, str]) -> bool:
@@ -25,6 +27,8 @@ def requires_identity(path: str, method: str, query: Mapping[str, str]) -> bool:
     would not be classified by this rule — new routes must be checked manually.
     """
     if "parcel_id" in query:
+        return True
+    if path.startswith(_TENANT_PREFIXES):
         return True
     if _URN_MARKER in path:
         return True

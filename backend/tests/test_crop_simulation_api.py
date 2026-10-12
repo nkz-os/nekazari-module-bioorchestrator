@@ -74,3 +74,51 @@ def test_parcel_not_found_is_404(client):
 def test_old_route_is_gone(client):
     assert client.post("/api/graph/agriculture/wofost-simulation",
                        params={"parcel_id": URN}, headers=H).status_code == 404
+
+
+# ------------------------------------------------------------------ jobs
+JOBS = "/api/graph/agriculture/crop-simulation/jobs"
+
+
+@pytest.fixture
+def jobs_client(monkeypatch):
+    class _DAO:
+        def __init__(self, *a, **k): pass
+        async def run_crop_simulation(self, **kw):
+            kw["progress"](0, 3)
+            for i in range(3):
+                kw["progress"](i + 1, 3)
+            return {"status": "preseason", "parcel_id": kw["parcel_id"], "tenant": kw["tenant_id"]}
+
+    monkeypatch.setattr(graph_mod, "GraphDAO", _DAO)
+    monkeypatch.setattr(graph_mod, "_SIM_JOBS", None)
+    monkeypatch.setattr("app.core.dependencies.get_driver", lambda: MagicMock(spec=AsyncDriver))
+    with TestClient(app) as c:
+        yield c
+
+
+def _poll(c, job_id, headers=H):
+    import time
+    for _ in range(100):
+        r = c.get(f"{JOBS}/{job_id}", headers=headers)
+        if r.status_code != 200 or r.json()["state"] in ("done", "failed"):
+            return r
+        time.sleep(0.02)
+    raise AssertionError("job did not finish")
+
+
+def test_job_start_then_poll_until_done(jobs_client):
+    r = jobs_client.post(JOBS, params={"parcel_id": URN, "sowing_date": "2026-11-01"}, headers=H)
+    assert r.status_code == 202
+    job_id = r.json()["job_id"]
+    body = _poll(jobs_client, job_id).json()
+    assert body["state"] == "done" and (body["done"], body["total"]) == (3, 3)
+    assert body["result"]["status"] == "preseason" and body["error"] is None
+    # identical request: same job, already done (the cache)
+    again = jobs_client.post(JOBS, params={"parcel_id": URN, "sowing_date": "2026-11-01"}, headers=H).json()
+    assert again["job_id"] == job_id and again["state"] == "done"
+
+
+def test_unknown_job_is_404(jobs_client):
+    r = jobs_client.get(f"{JOBS}/does-not-exist", headers=H)
+    assert r.status_code == 404 and r.json()["detail"]["code"] == "job_not_found"

@@ -7,6 +7,7 @@ what it can do in ``capabilities``. Only AquaCrop is implemented.
 from __future__ import annotations
 
 import logging
+from collections.abc import Callable
 from datetime import date, timedelta
 from typing import Any, Protocol
 
@@ -34,6 +35,7 @@ class CropEngine(Protocol):
     async def simulate(
         self, *, observed, analogs, soil, crop: str, planting: date,
         irrigation: str, sim_start: date | None, crop_params: dict[str, float] | None = None,
+        progress: Callable[[int, int], None] | None = None,
     ) -> dict[str, Any]: ...
 
 
@@ -45,10 +47,10 @@ class AquaCropEngine:
         return resolve_aquacrop_crop(identifier)
 
     async def simulate(self, *, observed, analogs, soil, crop, planting, irrigation, sim_start,
-                       crop_params=None):
+                       crop_params=None, progress=None):
         try:
             return await aq.simulate(observed, analogs, soil, crop, planting, irrigation, sim_start,
-                                     crop_params=crop_params)
+                                     crop_params=crop_params, progress=progress)
         except aq.WeatherEndsBeforeHarvestError as e:
             raise SimulationError("season_incomplete", str(e)) from e
         except aq.CropCannotMatureError as e:
@@ -97,6 +99,7 @@ async def run_crop_simulation(
     lon: float,
     today: date,
     sowing_provenance: str | None = None,
+    progress: Callable[[int, int], None] | None = None,
 ) -> dict[str, Any]:
     """Gather soil and weather, run the engine, build the response.
 
@@ -139,7 +142,7 @@ async def run_crop_simulation(
         result = await engine.simulate(
             observed=observed.weather, analogs=analogs, soil=soil, crop=crop.aquacrop_crop,
             planting=sowing_date, irrigation=irrigation, sim_start=observed.sim_start,
-            crop_params=phenology)
+            crop_params=phenology, progress=progress)
     except SimulationError as e:
         logger.warning("crop_simulation_failed %s code=%s", ctx, e.code)
         raise

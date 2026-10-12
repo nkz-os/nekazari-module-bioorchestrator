@@ -709,6 +709,7 @@ async def simulate(
     irrigation: str = "rainfed",
     sim_start: date | None = None,
     crop_params: Mapping[str, float] | None = None,
+    progress: Callable[[int, int], None] | None = None,
 ) -> dict:
     """Run the season: single run if ``observed`` reaches harvest, else ensemble
     (always the ensemble when ``observed`` ends before the planting date).
@@ -724,6 +725,8 @@ async def simulate(
     Members run in the process pool. ``analogs`` may be an async callable, awaited
     only when the ensemble is actually needed (so a fully observed season never
     loads climatology). ``crop_params``: as in ``run_aquacrop``, checked before any run.
+    ``progress(done, total)`` is called with (0, n) when an ensemble of n scenarios
+    starts and after each one finishes, and with (1, 1) after a single run.
     """
     _validate_crop_irrigation(crop, irrigation)
     _validate_crop_params(crop, crop_params)
@@ -751,6 +754,8 @@ async def simulate(
             if not analogs:
                 raise
         else:
+            if progress:
+                progress(1, 1)
             return _combine([single], last, irrigation, "complete")
     if len(analogs) < MIN_ENSEMBLE_MEMBERS:
         raise EngineInputError(
@@ -763,6 +768,16 @@ async def simulate(
             sim_start, crop_params)
         for y in years
     ]
+    if progress:
+        finished = [0]
+
+        def _tick(_fut) -> None:
+            finished[0] += 1
+            progress(finished[0], len(futs))
+
+        progress(0, len(futs))
+        for f in futs:
+            f.add_done_callback(_tick)
     members = list(await asyncio.gather(*futs))
     out = _combine(members, last, irrigation, "in_season")
     out["ensemble"]["years"] = years
