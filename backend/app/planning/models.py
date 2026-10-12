@@ -11,7 +11,7 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
-CONTRACT_VERSION = "1.2"
+CONTRACT_VERSION = "1.3"
 
 Verdict = Literal["fits", "caveats", "no_fit"]
 Regime = Literal["secano", "regadío"]

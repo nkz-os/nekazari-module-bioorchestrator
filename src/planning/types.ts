@@ -1,7 +1,7 @@
-/** Mirror of backend/app/planning/models.py — contract version 1.1. Change both together. */
+/** Mirror of backend/app/planning/models.py — contract version 1.3. Change both together. */
 import type { SourceAttributionItem } from '../types/attribution';
 
-export const CONTRACT_VERSION = '1.2';
+export const CONTRACT_VERSION = '1.3';
 export type Verdict = 'fits' | 'caveats' | 'no_fit';
 export type Regime = 'secano' | 'regadío';
 export type Management = 'conventional' | 'organic';
