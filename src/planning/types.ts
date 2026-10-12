@@ -51,9 +51,11 @@ export interface EstimatesResponse {
 }
 export interface Unavailable { provider_id: string; reason: string; code?: string | null }
 export type AquacropState = 'unavailable' | 'queued' | 'running' | 'done' | 'failed';
+export type SowingMethod = 'direct' | 'conventional';
 export interface AquacropResponse {
   contract_version: string; provider_id: 'aquacrop'; state: AquacropState; done: number; total: number | null;
   estimates: Estimate[]; unavailable: Unavailable[]; job_id: string | null;
+  sowing_method?: SowingMethod | null; sowing_method_source?: 'request' | 'field_operations' | 'default' | null;
 }
 export interface CycleCell {
   crop_id: string | null; species: string | null; species_raw: string | null; names: Names; variety: string | null;
