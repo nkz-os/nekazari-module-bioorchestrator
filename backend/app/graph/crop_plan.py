@@ -39,8 +39,10 @@ def build_segment_entity(tenant_id: str, parcel_id: str, season: str, seq: int, 
         "seq": _prop(seq),
         "cropSegmentSeq": _prop(seq),
         "status": _prop("planned"),
-        "terminationMethod": _prop(segment.get("termination_method")),
     }
+    # Orion-LD rejects a null property (400), so an unset method is left out, never sent as null.
+    if segment.get("termination_method"):
+        entity["terminationMethod"] = _prop(segment["termination_method"])
     if segment.get("crop"):
         entity["species"] = _prop(segment["crop"])
         slug = resolve_species(segment["crop"])
