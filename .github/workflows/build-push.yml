@@ -51,6 +51,36 @@ jobs:
         run: pytest tests/ -v --tb=short
 
   # ==========================================================================
+  # Test — frontend type check + unit tests
+  # ==========================================================================
+  test-frontend:
+    name: Test Frontend
+    runs-on: ubuntu-latest
+    env:
+      # pnpm v11+ blocks build scripts by default; esbuild is required by Vite
+      PNPM_ONLY_BUILT_DEPENDENCIES: esbuild
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: Set up Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          cache: "pnpm"
+
+      - name: Install frontend dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Type check
+        run: pnpm exec tsc --noEmit
+
+      - name: Run unit tests
+        run: pnpm test
+
+  # ==========================================================================
   # Build and push backend Docker image
   # ==========================================================================
   build-backend:
@@ -118,7 +148,7 @@ jobs:
   # Publish MF2 remote via OIDC (push to main only)
   publish-module:
     name: Publish Module
-    needs: test
+    needs: [test, test-frontend]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     permissions:
       id-token: write
