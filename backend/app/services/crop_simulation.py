@@ -16,7 +16,7 @@ from app.services.engines import aquacrop_engine as aq
 from app.services.region_lookup import es_province_at
 from app.services.sim_crops import CropChoice, resolve_aquacrop_crop
 from app.services.sim_errors import SimulationError
-from app.services.sim_inputs import SimInputError, soil_layers_from_summary
+from app.services.sim_inputs import SOWING_METHODS, SimInputError, soil_layers_from_summary
 from app.services.sim_weather import assemble_analogs, assemble_observed
 from app.services.soil_client import SoilSummaryError, get_parcel_soil_summary
 
@@ -24,6 +24,11 @@ logger = logging.getLogger(__name__)
 
 IRRIGATION_MODES = ("rainfed", "full")
 PRESEASON_MAX_DAYS = 366
+# Direct sowing leaves the previous crop's stubble on the surface: simulated as an AquaCrop
+# residue mulch covering 30 %, the FAO minimum ground cover after direct seeding for
+# conservation agriculture (FAO, Conservation Agriculture principles). Validated against MAPA
+# yields as a share-weighted mix (no S5 metric worse); never user input.
+DIRECT_SOWING_MULCH_PCT = 30.0
 
 
 class CropEngine(Protocol):
@@ -35,7 +40,7 @@ class CropEngine(Protocol):
     async def simulate(
         self, *, observed, analogs, soil, crop: str, planting: date,
         irrigation: str, sim_start: date | None, crop_params: dict[str, float] | None = None,
-        progress: Callable[[int, int], None] | None = None,
+        mulch_pct: float | None = None, progress: Callable[[int, int], None] | None = None,
     ) -> dict[str, Any]: ...
 
 
@@ -47,10 +52,10 @@ class AquaCropEngine:
         return resolve_aquacrop_crop(identifier)
 
     async def simulate(self, *, observed, analogs, soil, crop, planting, irrigation, sim_start,
-                       crop_params=None, progress=None):
+                       crop_params=None, mulch_pct=None, progress=None):
         try:
             return await aq.simulate(observed, analogs, soil, crop, planting, irrigation, sim_start,
-                                     crop_params=crop_params, progress=progress)
+                                     crop_params=crop_params, mulch_pct=mulch_pct, progress=progress)
         except aq.WeatherEndsBeforeHarvestError as e:
             raise SimulationError("season_incomplete", str(e)) from e
         except aq.CropCannotMatureError as e:
@@ -77,6 +82,17 @@ def check_irrigation(irrigation: str) -> str:
     return irrigation
 
 
+def check_sowing_method(value: str | None) -> str | None:
+    if value is not None and value not in SOWING_METHODS:
+        raise SimulationError(
+            "invalid_sowing_method", f"sowing_method must be one of: {', '.join(SOWING_METHODS)}.")
+    return value
+
+
+def mulch_for(sowing_method: str) -> float | None:
+    return DIRECT_SOWING_MULCH_PCT if sowing_method == "direct" else None
+
+
 def engine_soil(layers: list[dict]) -> list[aq.SoilLayer]:
     """Simulation layers -> engine layers; saturation is mandatory (no texture guess)."""
     missing = [f"{l['top_cm']:g}-{l['bottom_cm']:g} cm" for l in layers if l.get("sat") is None]
@@ -99,6 +115,9 @@ async def run_crop_simulation(
     lon: float,
     today: date,
     sowing_provenance: str | None = None,
+    sowing_method: str = "conventional",
+    sowing_method_source: str = "default",
+    input_warnings: list[str] | None = None,
     progress: Callable[[int, int], None] | None = None,
 ) -> dict[str, Any]:
     """Gather soil and weather, run the engine, build the response.
@@ -142,13 +161,13 @@ async def run_crop_simulation(
         result = await engine.simulate(
             observed=observed.weather, analogs=analogs, soil=soil, crop=crop.aquacrop_crop,
             planting=sowing_date, irrigation=irrigation, sim_start=observed.sim_start,
-            crop_params=phenology, progress=progress)
+            crop_params=phenology, mulch_pct=mulch_for(sowing_method), progress=progress)
     except SimulationError as e:
         logger.warning("crop_simulation_failed %s code=%s", ctx, e.code)
         raise
 
     first, last = observed.weather[0].day, observed.weather[-1].day
-    warnings = [*observed.warnings, *analog_warnings, *result["warnings"]]
+    warnings = [*(input_warnings or []), *observed.warnings, *analog_warnings, *result["warnings"]]
     basis = yc.yield_basis(crop.slug)
     yield_t_ha = yc.to_basis(result["yield_t_ha"], basis)
     out = {
@@ -182,6 +201,11 @@ async def run_crop_simulation(
             },
             "soil": {"layers": layers},
             "sowing": {"source": sowing_source, "provenance": sowing_provenance},
+            "field_management": {
+                "sowing_method": sowing_method, "source": sowing_method_source,
+                "mulch_pct": result["field_management"].get("mulch_pct"),
+                "f_mulch": result["field_management"].get("f_mulch"),
+            },
             "phenology": {"source": "calibrated" if phenology else "builtin", "region": region,
                           "params": phenology or {}},
         },
