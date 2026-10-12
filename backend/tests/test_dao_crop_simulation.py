@@ -355,3 +355,18 @@ def test_progress_reaches_the_dao_caller(mock_driver, tunis):
     ticks: list[tuple[int, int]] = []
     _run(GraphDAO(mock_driver), net=_Net(tunis), progress=lambda d, t: ticks.append((d, t)))
     assert ticks[0] == (0, 5) and ticks[-1] == (5, 5)
+
+
+def test_direct_sowing_recorded_in_operations_runs_with_mulch(mock_driver, tunis):
+    op = _sowing()
+    op["sowingMethod"] = {"type": "Property", "value": "direct"}
+    _Orion.ops = [op]
+    res = _run(GraphDAO(mock_driver), net=_Net(tunis))
+    assert res["inputs"]["field_management"] == {
+        "sowing_method": "direct", "source": "field_operations", "mulch_pct": 30.0, "f_mulch": 0.5}
+
+
+def test_without_method_the_result_is_bare_soil(mock_driver, tunis):
+    res = _run(GraphDAO(mock_driver), net=_Net(tunis))
+    assert res["inputs"]["field_management"] == {
+        "sowing_method": "conventional", "source": "default", "mulch_pct": None, "f_mulch": None}

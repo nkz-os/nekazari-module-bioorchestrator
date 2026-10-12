@@ -41,7 +41,8 @@ class _FakeOrion:
         pass
 
 
-def _run(mock_driver, cycles, ops=None, parcel_extra=None, sowing_date=None):
+def _run(mock_driver, cycles, ops=None, parcel_extra=None, sowing_date=None, sowing_method=None,
+         orion_cls=None):
     dao = GraphDAO(mock_driver)
     captured = {}
 
@@ -49,10 +50,12 @@ def _run(mock_driver, cycles, ops=None, parcel_extra=None, sowing_date=None):
         captured.update(kwargs)
         return {"ok": True}
 
-    with patch("app.graph.dao.OrionClient", lambda tid: _FakeOrion(tid, ops, parcel_extra)), \
+    orion = orion_cls or (lambda tid: _FakeOrion(tid, ops, parcel_extra))
+    with patch("app.graph.dao.OrionClient", orion), \
          patch("app.graph.dao.fetch_crop_cycles", AsyncMock(return_value=cycles)), \
          patch("app.services.crop_simulation.run_crop_simulation", _sim):
-        asyncio.run(dao.run_crop_simulation(PARCEL, TENANT, sowing_date_str=sowing_date, today=TODAY))
+        asyncio.run(dao.run_crop_simulation(PARCEL, TENANT, sowing_date_str=sowing_date, today=TODAY,
+                                            sowing_method=sowing_method))
     return captured
 
 
@@ -132,3 +135,74 @@ def test_explicit_sowing_date_wins_over_missing_current(mock_driver):
 
     assert captured["sowing_date"] == date(2026, 2, 20)
     assert captured["sowing_source"] == "request"
+
+
+# ------------------------------------------------------------- sowing method
+def _sow(day, method=None):
+    op = {"operationType": _prop("sowing"), "status": _prop("completed"),
+          "endedAt": _prop(f"{day}T00:00:00Z")}
+    if method:
+        op["sowingMethod"] = _prop(method)
+    return op
+
+
+def _method(captured):
+    return captured["sowing_method"], captured["sowing_method_source"], captured["input_warnings"]
+
+
+def test_request_method_wins_over_the_recorded_sowing(mock_driver):
+    captured = _run(mock_driver, None, [_sow("2026-03-05", "conventional")], sowing_method="direct")
+    assert _method(captured) == ("direct", "request", [])
+
+
+def test_method_of_the_sowing_that_dated_the_season(mock_driver):
+    captured = _run(mock_driver, None, [_sow("2026-03-05", "direct")])
+    assert captured["sowing_date"] == date(2026, 3, 5)
+    assert _method(captured) == ("direct", "field_operations", [])
+
+
+def test_cycle_date_matches_the_sowing_of_that_day(mock_driver):
+    cycles = {"current": {"start": {"date": "2026-03-12", "provenance": "actual"}}}
+    captured = _run(mock_driver, cycles, [_sow("2026-03-01", "conventional"), _sow("2026-03-12", "direct")])
+    assert _method(captured) == ("direct", "field_operations", [])
+
+
+def test_no_matching_sowing_is_default(mock_driver):
+    cycles = {"current": {"start": {"date": "2026-03-12", "provenance": "actual"}}}
+    captured = _run(mock_driver, cycles, [_sow("2026-03-01", "direct")])
+    assert _method(captured) == ("conventional", "default", [])
+
+
+def test_preseason_without_method_is_default_bare_soil(mock_driver):
+    captured = _run(mock_driver, None, [_sow("2026-03-05", "direct")], sowing_date="2026-11-01")
+    assert captured["sowing_date"] == date(2026, 11, 1)
+    assert _method(captured) == ("conventional", "default", [])
+
+
+class _OpsDown(_FakeOrion):
+    async def query_entities(self, **kwargs):
+        raise RuntimeError("orion down")
+
+
+def test_operations_down_only_for_method_is_a_warning(mock_driver):
+    captured = _run(mock_driver, None, sowing_date="2026-03-05", orion_cls=lambda tid: _OpsDown(tid))
+    assert _method(captured) == (
+        "conventional", "default",
+        ["sowing method: field operations could not be read; bare soil (conventional) assumed"])
+
+
+def test_operations_down_for_the_date_is_still_503(mock_driver):
+    with pytest.raises(SimulationError) as ei:
+        _run(mock_driver, None, orion_cls=lambda tid: _OpsDown(tid))
+    assert ei.value.code == "operations_unavailable" and ei.value.status_code == 503
+
+
+class _NoRead(_FakeOrion):
+    def __init__(self, tenant_id):
+        raise AssertionError("no Orion read expected")
+
+
+def test_invalid_request_method_is_422_before_any_read(mock_driver):
+    with pytest.raises(SimulationError) as ei:
+        _run(mock_driver, None, [], sowing_method="no-till", orion_cls=_NoRead)
+    assert ei.value.code == "invalid_sowing_method"
