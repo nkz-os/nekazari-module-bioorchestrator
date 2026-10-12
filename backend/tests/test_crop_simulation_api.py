@@ -91,7 +91,7 @@ def jobs_client(monkeypatch):
             return {"status": "preseason", "parcel_id": kw["parcel_id"], "tenant": kw["tenant_id"]}
 
     monkeypatch.setattr(graph_mod, "GraphDAO", _DAO)
-    monkeypatch.setattr(graph_mod, "_SIM_JOBS", None)
+    monkeypatch.setattr("app.services.sim_jobs._SHARED", None)
     monkeypatch.setattr("app.core.dependencies.get_driver", lambda: MagicMock(spec=AsyncDriver))
     with TestClient(app) as c:
         yield c
@@ -122,3 +122,13 @@ def test_job_start_then_poll_until_done(jobs_client):
 def test_unknown_job_is_404(jobs_client):
     r = jobs_client.get(f"{JOBS}/does-not-exist", headers=H)
     assert r.status_code == 404 and r.json()["detail"]["code"] == "job_not_found"
+
+
+def test_a_tenant_past_its_cap_gets_429(jobs_client, monkeypatch):
+    class _Full:
+        async def start(self, *a, **k):
+            raise SimulationError("too_many_jobs", "m", 429)
+
+    monkeypatch.setattr(graph_mod, "shared_sim_jobs", lambda: _Full())
+    r = jobs_client.post(JOBS, params={"parcel_id": URN, "sowing_date": "2026-11-01"}, headers=H)
+    assert r.status_code == 429 and r.json()["detail"]["code"] == "too_many_jobs"

@@ -124,3 +124,34 @@ async def test_view_is_the_polling_shape():
     job = await _finish(jobs, (await jobs.start("t1", PARAMS, _ok([]), today=DAY)).id)
     assert sj.SimJobs.view(job) == {"job_id": job.id, "state": "done", "done": 2, "total": 2,
                                     "result": {"ok": True}, "error": None}
+
+
+def _blocked(gate):
+    async def run(progress):
+        await gate.wait()
+        return {"ok": 1}
+    return run
+
+
+@pytest.mark.asyncio
+async def test_a_tenant_is_refused_a_new_job_past_its_unfinished_cap():
+    jobs, gate = sj.SimJobs(version="v1", max_pending_per_tenant=2), asyncio.Event()
+    a = await jobs.start("t1", PARAMS, _blocked(gate), today=DAY)
+    await jobs.start("t1", {**PARAMS, "sowing_date": "2026-11-02"}, _blocked(gate), today=DAY)
+    with pytest.raises(SimulationError) as e:
+        await jobs.start("t1", {**PARAMS, "sowing_date": "2026-11-03"}, _blocked(gate), today=DAY)
+    assert (e.value.code, e.value.status_code) == ("too_many_jobs", 429)
+    # joining an unfinished job is never refused, and another tenant has its own cap
+    assert (await jobs.start("t1", PARAMS, _blocked(gate), today=DAY)).id == a.id
+    other = await jobs.start("t2", PARAMS, _blocked(gate), today=DAY)
+    gate.set()
+    for job_id, tenant in ((a.id, "t1"), (other.id, "t2")):
+        await _finish(jobs, job_id, tenant)
+    assert (await jobs.start("t1", {**PARAMS, "sowing_date": "2026-11-03"}, _ok([]), today=DAY)).state == "queued"
+
+
+def test_version_is_public_and_the_shared_store_is_one(monkeypatch):
+    assert sj.SimJobs(version="v9").version == "v9"
+    monkeypatch.setattr(sj, "_SHARED", None)
+    monkeypatch.setattr(sj, "crop_simulation_version", lambda: "v-shared")
+    assert sj.shared_sim_jobs() is sj.shared_sim_jobs() and sj.shared_sim_jobs().version == "v-shared"
