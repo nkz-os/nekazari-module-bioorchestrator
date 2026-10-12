@@ -252,13 +252,15 @@ async def parcel_aquacrop(*, dao, jobs, tenant_id: str, parcel_id: str, crop: st
     engine; a failed job is reported as failed (relaunched only with ``retry``, never by polling) and a lost
     one (restart) is started again by the same call.
     """
-    if job_id:
-        # Light poll: the job is already running for inputs that passed the gate; read it by id (tenant-scoped).
-        # A lost job, or a failed one being retried, takes the full path below.
-        live = jobs.get(job_id, tenant_id)
+    today = today or datetime.now(UTC).date()
+    if job_id and sowing_date is not None:
+        # Light poll: read the job by id (tenant-scoped), skipping the gate and the parcel lookup. Only the id
+        # these very inputs hash to is accepted, so a stale or foreign id never answers for another parcel,
+        # crop or date. A lost job, or a failed one being retried, takes the full path below.
+        expected = jobs.job_id(tenant_id, _job_params(parcel_id, crop, sowing_date), today, jobs._version)
+        live = jobs.get(job_id, tenant_id) if job_id == expected else None
         if live is not None and not (live.state == "failed" and retry):
             return _job_view(live, jobs._version)
-    today = today or datetime.now(UTC).date()
     eppo = crop_code(crop)
     env = await load_environment(dao, parcel_id, tenant_id)
     reason = aquacrop_gate(eppo, regime, env.get("country"), sowing_date, today)
@@ -266,8 +268,7 @@ async def parcel_aquacrop(*, dao, jobs, tenant_id: str, parcel_id: str, crop: st
         return {"state": "unavailable", "done": 0, "total": None, "estimates": [],
                 "unavailable": [{"provider_id": AQUACROP_ID, "reason": reason}], "job_id": None}
     # The very parameters of POST /agriculture/crop-simulation/jobs, so identical inputs share the job.
-    params = {"parcel_id": env["parcel_id"], "crop_slug": resolve_species(crop), "sowing_date": sowing_date.isoformat(),
-              "irrigation": "rainfed", "engine": "aquacrop"}
+    params = _job_params(env["parcel_id"], crop, sowing_date)
 
     async def run(progress):
         return await dao.run_crop_simulation(
@@ -279,6 +280,11 @@ async def parcel_aquacrop(*, dao, jobs, tenant_id: str, parcel_id: str, crop: st
     known = jobs.get(jobs.job_id(tenant_id, params, today, jobs._version), tenant_id)
     job = known if known is not None and known.state == "failed" and not retry else await jobs.start(tenant_id, params, run, today)
     return _job_view(job, jobs._version)
+
+
+def _job_params(parcel_id: str, crop: str, sowing_date: date) -> dict:
+    return {"parcel_id": parcel_id, "crop_slug": resolve_species(crop), "sowing_date": sowing_date.isoformat(),
+            "irrigation": "rainfed", "engine": "aquacrop"}
 
 
 def _job_view(job, version: str) -> dict:

@@ -134,9 +134,24 @@ async def test_poll_by_job_id_skips_gate_and_environment():
     first = await _call(jobs)
     jobs.only().state, jobs.only().done, jobs.only().total = "running", 2, 12
     dao = _dao()
-    out = await _call(jobs, dao=dao, job_id=first["job_id"], crop="barley")  # the gate would say not_validated
+    out = await _call(jobs, dao=dao, job_id=first["job_id"])
     assert out["state"] == "running" and out["done"] == 2 and out["job_id"] == first["job_id"]
     dao.get_parcel_environment.assert_not_called()
+
+
+@pytest.mark.parametrize("other", [{"crop": "barley"}, {"sowing_date": date.fromordinal(SOW.toordinal() + 1)},
+                                   {"parcel_id": "urn:ngsi-ld:AgriParcel:t:p2"}])
+async def test_a_job_id_of_other_inputs_never_answers_for_these(other):
+    # The id is a hash of the inputs: a stale or foreign id must not show another parcel's, crop's or date's result.
+    jobs = FakeJobs()
+    first = await _call(jobs)
+    jobs.only().state, jobs.only().result = "done", RESULT
+    dao = _dao()
+    if "parcel_id" in other:
+        dao.get_parcel_environment.return_value = {"parcel_id": other["parcel_id"], "country": "ES"}
+    out = await _call(jobs, dao=dao, job_id=first["job_id"], **other)
+    dao.get_parcel_environment.assert_awaited_once()
+    assert out["job_id"] != first["job_id"]
 
 
 async def test_poll_by_job_id_reports_done_and_failed_without_relaunch():
