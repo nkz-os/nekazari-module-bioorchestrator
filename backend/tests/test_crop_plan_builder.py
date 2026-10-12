@@ -30,6 +30,14 @@ def test_builds_planned_segment_with_windows_no_actual_dates():
     assert "terminationDate" not in e
 
 
+def test_a_main_crop_without_method_sends_no_null():
+    # Orion-LD answers 400 to any null property: an unset method must be absent, not null.
+    seg = {**_seg(), "role": "main_crop", "termination_method": None, "variety": None}
+    e = build_segment_entity("montiko", "urn:ngsi-ld:AgriParcel:p-1", "2027", 0, seg)
+    assert "terminationMethod" not in e
+    assert not [k for k, v in e.items() if isinstance(v, dict) and v.get("value", "") is None]
+
+
 def test_segment_writes_new_terms_and_legacy():
     e = build_segment_entity("t", "urn:ngsi-ld:AgriParcel:p", "2026", 1,
                              {"role": "cover_crop", "crop": "VICSA", "termination_method": "roller_crimper"})
