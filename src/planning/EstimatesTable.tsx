@@ -2,7 +2,7 @@ import React from 'react';
 import { useTranslation } from '@nekazari/sdk';
 import SourceAttribution from '../components/shared/SourceAttribution';
 import { Badge, Button, Stack } from '@nekazari/ui-kit';
-import { canRetry, moistureLabel, progressLabel, sortEstimates, uniqueAttributions, validationTone } from './estimatesModel';
+import { canRetry, moistureLabel, progressLabel, unavailableKey, sortEstimates, uniqueAttributions, validationTone } from './estimatesModel';
 import { formatIsoDate, formatT } from './format';
 import type { Estimate, EstimatesResponse } from './types';
 
@@ -49,9 +49,14 @@ export default function EstimatesTable({ data, progress = null, onRetry }: { dat
                   {e.warnings.map((w) => (
                     <Badge key={w} intent="warning">{t(`planning.gap.${w}`, { defaultValue: w })}</Badge>
                   ))}
-                  <span className="block text-nkz-xs text-nkz-text-muted">
-                    {t(`planning.estimate.${e.n_kind}`, { count: e.n })}
-                  </span>
+                  {e.validation.status === 'validated' && e.validation.metric && (
+                    <span className="block text-nkz-xs text-nkz-text-muted">{t('planning.estimate.validatedAs', { metric: e.validation.metric })}</span>
+                  )}
+                  {e.n > 0 && (
+                    <span className="block text-nkz-xs text-nkz-text-muted">
+                      {t(`planning.estimate.${e.n_kind}`, { count: e.n })}
+                    </span>
+                  )}
                   {e.basis === 'water_limited' && <span className="block text-nkz-xs text-nkz-text-muted">{t('planning.estimate.ceiling')}</span>}
                 </td>
                 <td className="py-2 pr-4">
@@ -59,7 +64,9 @@ export default function EstimatesTable({ data, progress = null, onRetry }: { dat
                   {e.coverage != null && (
                     <span className="block text-nkz-xs text-nkz-text-muted">{t('planning.estimate.coverage', { pct: Math.round(e.coverage * 100) })}</span>
                   )}
-                  <span className="block text-nkz-xs text-nkz-text-muted">{t(moistureLabel(e.moisture).key, moistureLabel(e.moisture).params)}</span>
+                  {moistureLabel(e.moisture) && (
+                    <span className="block text-nkz-xs text-nkz-text-muted">{t(moistureLabel(e.moisture)!.key, moistureLabel(e.moisture)!.params)}</span>
+                  )}
                 </td>
                 <td className="py-2 pr-4">{e.percentiles ? formatT(e.percentiles.p50, lang) : '—'}</td>
                 <td className="py-2 pr-4">{t(`planning.estimate.basis.${e.basis}`)}</td>
@@ -70,10 +77,10 @@ export default function EstimatesTable({ data, progress = null, onRetry }: { dat
                 <td className="py-2 pr-4 font-medium text-nkz-text-primary">
                   {t(`planning.estimate.provider.${u.provider_id}`, { defaultValue: u.provider_id })}
                 </td>
-                <td className="py-2 pr-4 text-nkz-text-muted" colSpan={3}>
+                <td className="py-2 pr-4 text-nkz-text-muted" colSpan={3} title={u.code ?? undefined}>
                   {u.reason === 'async' && progress !== null
                     ? t(progressLabel(progress).key, progressLabel(progress).params)
-                    : t(`planning.estimate.unavailable.${u.reason}`, { defaultValue: u.reason, code: u.code ?? '—' })}
+                    : t(unavailableKey(u.reason), { defaultValue: u.reason })}
                   {onRetry && canRetry(u) && (
                     <> <Button size="sm" variant="secondary" onClick={onRetry}>{t('planning.retry')}</Button></>
                   )}

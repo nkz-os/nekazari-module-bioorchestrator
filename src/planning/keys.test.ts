@@ -36,7 +36,7 @@ const FAMILIES = [
   ...['trial_evidence', 'aquacrop'].map((k) => `planning.estimate.provider.${k}`),
   ...['preseason_not_supported', 'engine_not_deployed', 'no_trials', 'no_trials_for_variety',
     'variety_not_in_evidence_sample', 'not_validated', 'needs_sowing_date', 'sowing_date_out_of_range', 'engine_error',
-    'timeout', 'request_failed', 'async', 'water_limited_missing',
+    'timeout', 'still_queued', 'request_failed', 'async', 'water_limited_missing',
     // calibration reasons of the engine, prefixed by the backend: expected_<reason>
     ...['crop_not_calibrated', 'irrigated', 'outside_calibrated_regions', 'region_not_calibrated', 'missing', 'unknown']
       .map((r) => `expected_${r}`)].map((k) => `planning.estimate.unavailable.${k}`),

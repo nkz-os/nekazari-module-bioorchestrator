@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   AQUACROP_POLL_MS, AQUACROP_POLL_CAP_MS, aquacropPending, disagrees, mergeAquacrop, moistureLabel, pollDecision, progressLabel, retryFlag, canRetry,
+  failureFor, jobIdForPoll, nextRetry, retryCountFor, unavailableKey,
   sortEstimates, uniqueAttributions, validationTone,
 } from './estimatesModel';
 import type { AquacropResponse, Estimate, EstimatesResponse } from './types';
@@ -99,7 +100,7 @@ describe('merging the AquaCrop answer into the table', () => {
     expect(out.progress).toBeNull();
   });
   it('a timeout or a failed request is a reason too', () => {
-    expect(mergeAquacrop(BASE, null, 'timeout').data.unavailable).toEqual([{ provider_id: 'aquacrop', reason: 'timeout' }]);
+    expect(mergeAquacrop(BASE, null, 'still_queued').data.unavailable).toEqual([{ provider_id: 'aquacrop', reason: 'still_queued' }]);
     expect(mergeAquacrop(BASE, null, 'request_failed').data.unavailable[0].reason).toBe('request_failed');
   });
   it('without async pending the data is untouched', () => {
@@ -111,9 +112,9 @@ describe('merging the AquaCrop answer into the table', () => {
 describe('moisture label', () => {
   it('names the basis next to every figure', () => {
     expect(moistureLabel({ basis: 'commercial', pct: 13 })).toEqual({ key: 'planning.estimate.moisture.commercial', params: { pct: 13 } });
-    expect(moistureLabel({ basis: 'commercial', pct: null }).key).toBe('planning.estimate.moisture.commercialNoPct');
-    expect(moistureLabel({ basis: 'dry_matter', pct: null }).key).toBe('planning.estimate.moisture.dry_matter');
-    expect(moistureLabel({ basis: 'as_reported', pct: null }).key).toBe('planning.estimate.moisture.as_reported');
+    expect(moistureLabel({ basis: 'commercial', pct: null })?.key).toBe('planning.estimate.moisture.commercialNoPct');
+    expect(moistureLabel({ basis: 'dry_matter', pct: null })?.key).toBe('planning.estimate.moisture.dry_matter');
+    expect(moistureLabel({ basis: 'as_reported', pct: null })?.key).toBe('planning.estimate.moisture.as_reported');
   });
 });
 
@@ -133,6 +134,61 @@ describe('retry', () => {
   });
   it('is offered for an engine error only', () => {
     expect(canRetry({ provider_id: 'aquacrop', reason: 'engine_error' })).toBe(true);
-    for (const reason of ['timeout', 'not_validated', 'request_failed']) expect(canRetry({ provider_id: 'aquacrop', reason })).toBe(false);
+    for (const reason of ['request_failed', 'still_queued']) expect(canRetry({ provider_id: 'aquacrop', reason })).toBe(true);
+    for (const reason of ['timeout', 'not_validated', 'engine_not_deployed']) expect(canRetry({ provider_id: 'aquacrop', reason })).toBe(false);
+  });
+});
+
+describe('deploy skew', () => {
+  it('a payload without the 1.1 fields renders nothing for them', () => {
+    expect(moistureLabel(undefined)).toBeNull();
+    expect(moistureLabel(null)).toBeNull();
+  });
+  it('disagreement tolerates estimates without moisture', () => {
+    const old = (p50: number) => ({ ...model(p50, C13), moisture: undefined } as unknown as Estimate);
+    expect(disagrees([old(8), old(3)])).toBe(true);
+  });
+  it('a 404 or 405 from the endpoint means the backend is not deployed; anything else is a failed request', () => {
+    expect(failureFor({ status: 404 })).toBe('engine_not_deployed');
+    expect(failureFor({ status: 405 })).toBe('engine_not_deployed');
+    expect(failureFor({ status: 500 })).toBe('request_failed');
+    expect(failureFor(new TypeError('network'))).toBe('request_failed');
+    expect(mergeAquacrop(BASE, null, 'engine_not_deployed').data.unavailable).toEqual([{ provider_id: 'aquacrop', reason: 'engine_not_deployed' }]);
+  });
+});
+
+describe('retry state', () => {
+  const IN = 'inputs-a';
+  it('retry=true applies to the click, for the same inputs only', () => {
+    const clicked = nextRetry({ inputs: '', retries: 0, resumes: 0 }, IN, 'retry');
+    expect(retryCountFor(clicked, IN)).toBe(1);
+    expect(retryCountFor(clicked, 'inputs-b')).toBe(0); // any input change resets it
+    expect(retryFlag(retryCountFor(clicked, 'inputs-b'), 0)).toBe(false);
+  });
+  it('a click under other inputs starts from zero', () => {
+    const a = nextRetry({ inputs: '', retries: 0, resumes: 0 }, IN, 'retry');
+    const b = nextRetry(a, 'inputs-b', 'retry');
+    expect(b).toEqual({ inputs: 'inputs-b', retries: 1, resumes: 0 });
+  });
+  it('resume restarts polling without retry=true', () => {
+    const r = nextRetry({ inputs: IN, retries: 0, resumes: 0 }, IN, 'resume');
+    expect(r.resumes).toBe(1);
+    expect(retryFlag(retryCountFor(r, IN), 0)).toBe(false);
+  });
+});
+
+describe('light polls', () => {
+  it('the first request has no job id, later ones carry the previous answer\'s', () => {
+    expect(jobIdForPoll('j1', 0)).toBeNull();
+    expect(jobIdForPoll('j1', 1)).toBe('j1');
+    expect(jobIdForPoll(null, 3)).toBeNull();
+  });
+});
+
+describe('unavailable reason keys', () => {
+  it('an unknown expected_* reason falls back to expected_unknown', () => {
+    expect(unavailableKey('expected_future_reason')).toBe('planning.estimate.unavailable.expected_unknown');
+    expect(unavailableKey('expected_irrigated')).toBe('planning.estimate.unavailable.expected_irrigated');
+    expect(unavailableKey('something_else')).toBe('planning.estimate.unavailable.something_else');
   });
 });

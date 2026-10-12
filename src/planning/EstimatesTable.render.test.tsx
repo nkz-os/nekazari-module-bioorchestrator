@@ -78,11 +78,11 @@ describe('EstimatesTable (es)', () => {
     expect(renderToStaticMarkup(<EstimatesTable data={data} progress={{ done: 3, total: 12 }} />)).toContain('Simulando… 3/12 años');
     expect(renderToStaticMarkup(<EstimatesTable data={data} progress={{ done: 0, total: null }} />)).toContain('Simulando…');
   });
-  it('a failed engine and a calibration reason are said, with the engine code', () => {
+  it('a failed engine and a calibration reason are said', () => {
     const html = renderToStaticMarkup(<EstimatesTable data={{ ...DATA, unavailable: [
       { provider_id: 'aquacrop', reason: 'engine_error', code: 'soil_unavailable' },
       { provider_id: 'aquacrop', reason: 'expected_outside_calibrated_regions' }] }} />);
-    expect(html).toContain('la simulación ha fallado (código soil_unavailable)');
+    expect(html).toContain('La simulación ha fallado');
     expect(html).toContain('sin previsión de cosecha: la parcela está fuera de las provincias calibradas');
   });
   it('a failed engine offers a retry button; a gate reason does not', () => {
@@ -94,5 +94,40 @@ describe('EstimatesTable (es)', () => {
     const html = renderToStaticMarkup(<EstimatesTable data={{ ...DATA, unavailable: [{ provider_id: 'aquacrop', reason: 'async' }] }} progress={{ done: 0, total: null }} />);
     expect(html).toContain('Simulando…');
     expect(html).not.toContain('null');
+  });
+  it('a 1.0-shaped estimate (no moisture, range or coverage) renders without throwing', () => {
+    const old = { ...DATA.estimates[0] } as Partial<Estimate>;
+    delete old.moisture; delete old.range; delete old.coverage;
+    const html = renderToStaticMarkup(<EstimatesTable data={{ ...DATA, estimates: [old as Estimate] }} />);
+    expect(html).toContain('5,1 – 8,2');
+    expect(html).not.toContain('humedad');
+  });
+  it('resumable failures show their text and the retry button', () => {
+    for (const reason of ['request_failed', 'still_queued']) {
+      const html = renderToStaticMarkup(<EstimatesTable data={{ ...DATA, unavailable: [{ provider_id: 'aquacrop', reason }] }} onRetry={() => undefined} />);
+      expect(html).toContain('Reintentar');
+    }
+    expect(renderToStaticMarkup(<EstimatesTable data={{ ...DATA, unavailable: [{ provider_id: 'aquacrop', reason: 'still_queued' }] }} />)).toContain('La simulación sigue en cola');
+  });
+  it('the engine code goes in a title, not in the text', () => {
+    const html = renderToStaticMarkup(<EstimatesTable data={{ ...DATA, unavailable: [{ provider_id: 'aquacrop', reason: 'engine_error', code: 'soil_unavailable' }] }} />);
+    expect(html).toContain('La simulación ha fallado');
+    expect(html).toContain('title="soil_unavailable"');
+    expect(html).not.toContain('(código');
+  });
+  it('an unknown calibration reason falls back to the generic text', () => {
+    expect(renderToStaticMarkup(<EstimatesTable data={{ ...DATA, unavailable: [{ provider_id: 'aquacrop', reason: 'expected_brand_new' }] }} />))
+      .toContain('Sin rendimiento esperado para esta zona');
+  });
+  it('hides n = 0 and states the validation metric of a validated estimate', () => {
+    const html = renderToStaticMarkup(<EstimatesTable data={{ ...DATA, unavailable: [], estimates: [{ ...EXPECTED, n: 0 }] }} />);
+    expect(html).not.toContain('0 años');
+    expect(html).toContain('Validado: RMSE 1.68 t/ha, anomaly r 0.50');
+    expect(renderToStaticMarkup(<EstimatesTable data={DATA} />)).not.toContain('Validado:');
+  });
+  it('the range column header is neutral', () => {
+    const html = renderToStaticMarkup(<EstimatesTable data={DATA} />);
+    expect(html).toContain('Rango (t/ha)');
+    expect(html).not.toContain('P10 – P90</th>');
   });
 });

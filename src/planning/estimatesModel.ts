@@ -51,6 +51,8 @@ export function pollDecision(state: AquacropState | null, elapsedMs: number): 'p
   return elapsedMs >= AQUACROP_POLL_CAP_MS ? 'timeout' : 'poll';
 }
 
+export type AquacropFailure = 'still_queued' | 'request_failed' | 'engine_not_deployed';
+
 export interface MergedEstimates { data: EstimatesResponse; progress: { done: number; total: number | null } | null }
 
 /**
@@ -58,7 +60,7 @@ export interface MergedEstimates { data: EstimatesResponse; progress: { done: nu
  * row stays and `progress` says how far; a failure, timeout or lost request replaces it with its
  * reason, so a missing result is never shown as an empty one.
  */
-export function mergeAquacrop(data: EstimatesResponse, aq: AquacropResponse | null, failure?: 'timeout' | 'request_failed'): MergedEstimates {
+export function mergeAquacrop(data: EstimatesResponse, aq: AquacropResponse | null, failure?: AquacropFailure): MergedEstimates {
   if (!aquacropPending(data)) return { data, progress: null };
   const others = data.unavailable.filter((u) => !(u.provider_id === PROVIDER && u.reason === 'async'));
   if (failure) return { data: { ...data, unavailable: [...others, { provider_id: PROVIDER, reason: failure }] }, progress: null };
@@ -69,7 +71,9 @@ export function mergeAquacrop(data: EstimatesResponse, aq: AquacropResponse | nu
   return { data: { ...data, estimates, unavailable: [...others, ...aq.unavailable], disagreement: disagrees(estimates) }, progress: null };
 }
 
-export function moistureLabel(m: Moisture): { key: string; params: Record<string, unknown> } {
+/** The moisture caption, or null when the payload has none (a 1.0 backend during a staggered deploy). */
+export function moistureLabel(m: Moisture | null | undefined): { key: string; params: Record<string, unknown> } | null {
+  if (!m) return null;
   if (m.basis === 'commercial') {
     return m.pct == null ? { key: 'planning.estimate.moisture.commercialNoPct', params: {} }
       : { key: 'planning.estimate.moisture.commercial', params: { pct: m.pct } };
@@ -88,6 +92,35 @@ export function progressLabel(progress: { done: number; total: number | null }):
 /** Only the request that follows a user's retry carries retry=true; polling never does. */
 export const retryFlag = (retryCount: number, attempt: number): boolean => retryCount > 0 && attempt === 0;
 
-/** The retry button belongs to a failed engine, never to a gate reason or a timeout. */
+/** The button belongs to a failed engine and to the two resumable states, never to a gate reason. */
 export const canRetry = (u: { provider_id: string; reason: string }): boolean =>
-  u.provider_id === PROVIDER && u.reason === 'engine_error';
+  u.provider_id === PROVIDER && ['engine_error', 'request_failed', 'still_queued'].includes(u.reason);
+
+/** A 404/405 means the backend with this endpoint is not deployed yet; any other error is a failed request. */
+export function failureFor(error: unknown): AquacropFailure {
+  const status = (error as { status?: unknown } | null)?.status;
+  return status === 404 || status === 405 ? 'engine_not_deployed' : 'request_failed';
+}
+
+export interface RetryState { inputs: string; retries: number; resumes: number }
+
+/** A click: `retry` relaunches a failed job, `resume` only restarts polling. Other inputs start from zero. */
+export function nextRetry(prev: RetryState, inputs: string, kind: 'retry' | 'resume'): RetryState {
+  const base = prev.inputs === inputs ? prev : { inputs, retries: 0, resumes: 0 };
+  return kind === 'retry' ? { ...base, retries: base.retries + 1 } : { ...base, resumes: base.resumes + 1 };
+}
+
+/** Retries that apply to these inputs: any input change resets them. */
+export const retryCountFor = (state: RetryState, inputs: string): number => (state.inputs === inputs ? state.retries : 0);
+
+/** Light polls: every request after the first carries the job id of the previous answer. */
+export const jobIdForPoll = (lastJobId: string | null, attempt: number): string | null => (attempt === 0 ? null : lastJobId);
+
+const KNOWN_EXPECTED = ['crop_not_calibrated', 'irrigated', 'outside_calibrated_regions', 'region_not_calibrated', 'missing', 'unknown']
+  .map((r) => `expected_${r}`);
+
+/** i18n key of an unavailable reason; a calibration reason this UI does not know reads as the generic one. */
+export function unavailableKey(reason: string): string {
+  const known = reason.startsWith('expected_') && !KNOWN_EXPECTED.includes(reason) ? 'expected_unknown' : reason;
+  return `planning.estimate.unavailable.${known}`;
+}
