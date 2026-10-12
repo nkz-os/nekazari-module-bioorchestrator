@@ -24,7 +24,7 @@ def client(monkeypatch):
 def test_fit_route_validates_the_contract(client, monkeypatch):
     monkeypatch.setattr(planning_api, "parcel_fit", AsyncMock(return_value=FIT))
     r = client.get("/api/graph/planning/parcels/urn:ngsi-ld:AgriParcel:t:p1/fit", params={"campaign": 2027})
-    assert r.status_code == 200 and r.json()["contract_version"] == "1.0"
+    assert r.status_code == 200 and r.json()["contract_version"] == "1.1"
 
 
 def test_fit_route_404_for_unknown_parcel(client, monkeypatch):
@@ -67,7 +67,7 @@ def test_varieties_route_validates_the_contract(client, monkeypatch):
     monkeypatch.setattr(planning_api, "parcel_varieties", AsyncMock(return_value=VARIETIES))
     r = client.get(VARIETIES_URL, params=VARIETIES_PARAMS)
     body = r.json()
-    assert r.status_code == 200 and body["contract_version"] == "1.0"
+    assert r.status_code == 200 and body["contract_version"] == "1.1"
     assert body["varieties"][0]["variety"] == "A" and body["attributions"] == []
 
 
@@ -91,12 +91,12 @@ def test_estimates_route_validates_the_contract(client, monkeypatch):
     out = {"parcel_id": "p1", "crop": "TRZAX", "variety": None, "status": "ok",
            "inputs": {"regime": "secano", "management": "conventional", "sowing_date": None, "sowing_source": "none",
                       "soil_source": "unavailable", "climate_source": "unavailable"},
-           "estimates": [], "unavailable": [{"provider_id": "aquacrop", "reason": "preseason_not_supported"}],
+           "estimates": [], "unavailable": [{"provider_id": "aquacrop", "reason": "async"}],
            "disagreement": False}
     monkeypatch.setattr(planning_api, "parcel_estimates", AsyncMock(return_value=out))
     r = client.get("/api/graph/planning/parcels/p1/estimates",
                    params={"crop": "TRZAX", "regime": "secano", "management": "conventional"})
-    assert r.status_code == 200 and r.json()["unavailable"][0]["reason"] == "preseason_not_supported"
+    assert r.status_code == 200 and r.json()["unavailable"][0]["reason"] == "async"
 
 
 def test_estimates_route_404_for_unknown_parcel(client, monkeypatch):
@@ -262,7 +262,7 @@ def test_put_plan_route_validates_the_contract_and_hands_over_the_normalized_urn
     called = AsyncMock(return_value=PLAN_WRITTEN)
     monkeypatch.setattr(planning_api, "write_plan", called)
     r = client.put("/api/graph/planning/parcels/p1/plan", json=PLAN_BODY)
-    assert r.status_code == 200 and r.json()["contract_version"] == "1.0"
+    assert r.status_code == 200 and r.json()["contract_version"] == "1.1"
     assert called.await_args.kwargs["parcel_urn"] == "urn:ngsi-ld:AgriParcel:p1"
     assert called.await_args.kwargs["plan"].campaign == 2027
 
