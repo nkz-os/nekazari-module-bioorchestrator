@@ -1177,8 +1177,8 @@
     "licence_url": "https://www.mapa.gob.es/es/atencion-al-ciudadano/aviso-legal",
     "download_date": "2026-10-11",
     "processing_note": {
-      "en": "Coefficients are converted by Nekazari to % of dry matter and elemental P and K; the conversion is stated next to each value.",
-      "es": "Los coeficientes los convierte Nekazari a % de materia seca y a P y K elementales; la conversi\u00f3n figura junto a cada valor."
+      "en": "Estimates and averages are Nekazari calculations based on these data; they are not data published by the sources.",
+      "es": "Las estimaciones y medias son c\u00e1lculos de Nekazari a partir de estos datos; no son datos publicados por las fuentes."
     },
     "site_urls": [
       "https://www.mapa.gob.es"
@@ -1224,8 +1224,8 @@
     "licence_url": "https://creativecommons.org/licenses/by/4.0/legalcode",
     "download_date": "2026-10-11",
     "processing_note": {
-      "en": "Coefficients are converted by Nekazari to % of dry matter and elemental P and K; the conversion is stated next to each value.",
-      "es": "Los coeficientes los convierte Nekazari a % de materia seca y a P y K elementales; la conversi\u00f3n figura junto a cada valor."
+      "en": "Estimates and averages are Nekazari calculations based on these data; they are not data published by the sources.",
+      "es": "Las estimaciones y medias son c\u00e1lculos de Nekazari a partir de estos datos; no son datos publicados por las fuentes."
     },
     "site_urls": [],
     "tags": [
@@ -1269,8 +1269,8 @@
     "licence_url": "https://creativecommons.org/licenses/by/4.0/legalcode",
     "download_date": "2026-10-11",
     "processing_note": {
-      "en": "Coefficients are converted by Nekazari to % of dry matter and elemental P and K; the conversion is stated next to each value.",
-      "es": "Los coeficientes los convierte Nekazari a % de materia seca y a P y K elementales; la conversi\u00f3n figura junto a cada valor."
+      "en": "Estimates and averages are Nekazari calculations based on these data; they are not data published by the sources.",
+      "es": "Las estimaciones y medias son c\u00e1lculos de Nekazari a partir de estos datos; no son datos publicados por las fuentes."
     },
     "site_urls": [],
     "tags": [
@@ -1314,8 +1314,8 @@
     "licence_url": "https://creativecommons.org/publicdomain/zero/1.0/legalcode",
     "download_date": "2026-10-11",
     "processing_note": {
-      "en": "Coefficients are converted by Nekazari to % of dry matter and elemental P and K; the conversion is stated next to each value.",
-      "es": "Los coeficientes los convierte Nekazari a % de materia seca y a P y K elementales; la conversi\u00f3n figura junto a cada valor."
+      "en": "Estimates and averages are Nekazari calculations based on these data; they are not data published by the sources.",
+      "es": "Las estimaciones y medias son c\u00e1lculos de Nekazari a partir de estos datos; no son datos publicados por las fuentes."
     },
     "site_urls": [],
     "tags": [
@@ -1359,8 +1359,8 @@
     "licence_url": "https://ec.europa.eu/eurostat/help/copyright-notice",
     "download_date": "2026-10-11",
     "processing_note": {
-      "en": "Yield is derived by Nekazari as harvested production / area (EU standard humidity); Eurostat leaves the NUTS 2 yield empty.",
-      "es": "El rendimiento lo calcula Nekazari como producci\u00f3n / superficie (humedad est\u00e1ndar UE); Eurostat deja vac\u00edo el rendimiento NUTS 2."
+      "en": "Estimates and averages are Nekazari calculations based on these data; they are not data published by the sources.",
+      "es": "Las estimaciones y medias son c\u00e1lculos de Nekazari a partir de estos datos; no son datos publicados por las fuentes."
     },
     "site_urls": [
       "https://ec.europa.eu/eurostat"
@@ -1407,8 +1407,8 @@
     "licence_url": "https://www.gnu.org/licenses/gpl-3.0.html",
     "download_date": "2026-10-11",
     "processing_note": {
-      "en": "The values are the residue defaults hard-coded in the script; the script stores them as fractions and Nekazari states them as % of dry matter.",
-      "es": "Los valores son los valores por defecto de los restos de cosecha escritos en el script; el script los guarda como fracciones y Nekazari los expresa en % de materia seca."
+      "en": "Estimates and averages are Nekazari calculations based on these data; they are not data published by the sources.",
+      "es": "Las estimaciones y medias son cálculos de Nekazari a partir de estos datos; no son datos publicados por las fuentes."
     },
     "site_urls": [
       "https://www.uco.es"
