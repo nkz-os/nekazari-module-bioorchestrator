@@ -27,7 +27,6 @@ export const LIBRARY_TOOL_IDS = [
   'soil',
   'rotation',
   'organic',
-  'pipeline',
   'sources',
   'dadis',
   'speciesExplorer',

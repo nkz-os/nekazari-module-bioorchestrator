@@ -77,7 +77,7 @@ def test_route_walk_sees_the_known_write_routes():
     # Guards the walker itself: an empty result would make the checks below vacuous.
     served = _served_writes()
     assert {
-        ("POST", "/api/pipeline/run"),
+        ("POST", "/api/ingestion/navarra-agraria"),
         ("POST", "/api/crop/catalog/contribute"),
         ("POST", "/api/graph/phenology-params/contribute"),
         ("PUT", "/api/graph/action-rules/{rule_id}"),

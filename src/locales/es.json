@@ -56,10 +56,6 @@
         "title": "Insumos Orgánicos",
         "subtitle": "Productos orgánicos autorizados por cultivo desde EPPO."
       },
-      "pipeline": {
-        "title": "Pipeline",
-        "subtitle": "Orquestador de ingesta de datos entre fuentes de biodiversidad."
-      },
       "sources": {
         "title": "Fuentes de Datos",
         "subtitle": "Estado de disponibilidad de datos de biodiversidad multi-dominio."
@@ -156,24 +152,6 @@
       "noDataFile": "Sin archivo de datos"
     },
     "title": "Fuentes de datos"
-  },
-  "pipeline": {
-    "sourcesLabel": "Fuentes (separadas por comas, vacío = todas)",
-    "sourcesPlaceholder": "agrovoc, eppo, dadis, globaltreesearch...",
-    "limitLabel": "Límite por fuente",
-    "run": "Ejecutar pipeline",
-    "running": "Ejecutando pipeline...",
-    "history": "Ejecuciones recientes",
-    "result": {
-      "ok": "Pipeline completado",
-      "withErrors": "Pipeline completado con errores",
-      "entitiesRaw": "Entidades (bruto)",
-      "entitiesDedup": "Entidades (dedup)",
-      "relationships": "Relaciones",
-      "crossrefs": "Referencias cruzadas",
-      "duration": "Duración",
-      "errorsTitle": "Errores:"
-    }
   },
   "dadis": {
     "title": "DAD-IS Breed Discovery",

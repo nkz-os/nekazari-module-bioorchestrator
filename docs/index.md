@@ -25,7 +25,6 @@ Multi-domain biodiversity ETL pipeline for regenerative agriculture intelligence
 | GET | `/api/graph/health` | Neo4j connectivity check |
 | GET | `/api/graph/stats` | Node/relationship counts |
 | GET | `/api/graph/phenology-params` | Phenology parameters (D1, D2, Kc, MDS_ref) for Crop Health |
-| POST | `/api/pipeline/run` | Trigger IkerKeta ETL pipeline |
 | POST | `/api/dadis/breeds` | DAD-IS breed search |
 | GET | `/api/dadis/breeds/{id}` | Breed details |
 | GET | `/api/dadis/countries` | DAD-IS countries |

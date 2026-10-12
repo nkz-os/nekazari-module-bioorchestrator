@@ -1,7 +1,7 @@
 """NKZ BioOrchestrator Backend — FastAPI wrapper for IkerKeta pipeline.
 
 Mounts the IkerKeta status API and adds NKZ-specific endpoints
-for authentication, pipeline execution, and tenant isolation.
+for authentication and tenant isolation.
 
 Run standalone:
     uvicorn app.main:app --port 8420
@@ -14,16 +14,14 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
-import json as _json
 import logging
 import os
 import time
 from contextlib import asynccontextmanager
-from datetime import datetime, timezone
 
 from fastapi import Depends, FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse, StreamingResponse
+from fastapi.responses import JSONResponse
 from neo4j.exceptions import DriverError, Neo4jError
 from nkz_platform_sdk.orion import OrionClient
 from nkz_platform_sdk.subscriptions import SubscriptionRegistrar
@@ -378,34 +376,6 @@ except ImportError:
     print("[bioorchestrator] ikerketa.api not available — running without data endpoints")
 
 
-async def _store_pipeline_history(
-    success: bool,
-    entities: int,
-    relationships: int,
-    duration_seconds: float,
-    sources: list[str] | None,
-    errors: int,
-) -> None:
-    """Store a pipeline run summary in Redis history stream (best-effort)."""
-    try:
-        import redis.asyncio as aioredis
-        r = aioredis.Redis.from_url(settings.redis_cache_url, socket_connect_timeout=3)
-        entry = {
-            "run_id": datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S"),
-            "success": success,
-            "entities": entities,
-            "relationships": relationships,
-            "duration_seconds": round(duration_seconds, 2),
-            "sources": sources or ["all"],
-            "errors": errors,
-            "timestamp": datetime.now(timezone.utc).isoformat(),
-        }
-        await r.xadd("pipeline:history", {"payload": _json.dumps(entry)}, maxlen=50)
-        await r.aclose()
-    except Exception:  # noqa: BLE001,S110
-        pass
-
-
 @app.get("/healthz")
 async def healthz():
     """K8s liveness probe — always returns 200 if the process is alive.
@@ -433,104 +403,6 @@ async def readyz():
         status_code=503,
         content={"status": "not_ready", "reason": "ikerketa not available"},
     )
-
-
-@app.post("/api/pipeline/run", dependencies=[Depends(require_platform_admin)])
-async def run_pipeline_endpoint(request: Request):
-    """Trigger a pipeline run via the NKZ frontend.
-
-    Body:
-        sources: list[str] | null  — connectors to run
-        limit: int | null          — max records per connector
-    """
-    from ikerketa.pipeline import run_pipeline
-    from ikerketa.report import generate_report
-
-    body = await request.json()
-    sources = body.get("sources")
-    limit = body.get("limit", 50)
-
-    result = run_pipeline(sources=sources, limit=limit, export=True)
-    report = generate_report(result)
-
-    response = {
-        "success": result.failure_count == 0,
-        "entities_before_dedup": result.entities_before_dedup,
-        "entities_after_dedup": result.entities_after_dedup,
-        "relationships": result.relationships_total,
-        "crossref_matches": result.crossref_matches,
-        "duration_seconds": round(result.total_duration_seconds, 2),
-        "errors": result.errors,
-        "report": report,
-    }
-
-    # Store in history (best-effort, non-blocking)
-    await _store_pipeline_history(
-        success=result.failure_count == 0,
-        entities=result.entities_after_dedup,
-        relationships=result.relationships_total,
-        duration_seconds=result.total_duration_seconds,
-        sources=sources,
-        errors=len(result.errors),
-    )
-
-    return response
-
-
-@app.get("/api/pipeline/progress")
-async def pipeline_progress(request: Request, run_id: str = ""):
-    """SSE endpoint for pipeline progress events.
-
-    Streams progress events from the pipeline:progress Redis stream.
-    Each event contains: run_id, step, total, connector, status, timestamp.
-    """
-    import redis.asyncio as aioredis
-
-    async def event_stream():
-        r = aioredis.Redis.from_url(settings.redis_cache_url, socket_connect_timeout=3)
-        last_id = "0"
-        try:
-            while True:
-                if await request.is_disconnected():
-                    break
-                try:
-                    events = await r.xread(
-                        {"pipeline:progress": last_id}, count=10, block=2000
-                    )
-                except Exception:  # noqa: BLE001
-                    break
-                if events:
-                    for _stream_name, messages in events:
-                        for msg_id, data in messages:
-                            last_id = msg_id
-                            payload = _json.loads(data.get(b"payload", data.get("payload", "{}")))
-                            if not run_id or payload.get("run_id") == run_id:
-                                yield f"data: {_json.dumps(payload)}\n\n"
-                else:
-                    yield ": heartbeat\n\n"
-        except Exception:  # noqa: BLE001,S110
-            pass
-        finally:
-            await r.aclose()
-
-    return StreamingResponse(event_stream(), media_type="text/event-stream")
-
-
-@app.get("/api/pipeline/history")
-async def pipeline_history(limit: int = Query(default=10, ge=1, le=50)):
-    """Return recent pipeline execution history from Redis."""
-    try:
-        import redis.asyncio as aioredis
-        r = aioredis.Redis.from_url(settings.redis_cache_url, socket_connect_timeout=3)
-        events = await r.xrevrange("pipeline:history", "+", "-", count=limit)
-        await r.aclose()
-        history = []
-        for _msg_id, data in events:
-            payload = _json.loads(data.get(b"payload", data.get("payload", "{}")))
-            history.append(payload)
-        return {"history": history}
-    except Exception:  # noqa: BLE001
-        return {"history": []}
 
 
 # ═══════════════════════════════════════════════════════════════════════════════

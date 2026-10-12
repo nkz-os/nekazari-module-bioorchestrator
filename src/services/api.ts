@@ -215,8 +215,6 @@ export function useBioApi() {
   // eslint-disable-next-line react-hooks/exhaustive-deps -- functions close over module scope only
   return useMemo(() => ({
     getSources: () => get(`${GRAPH}/graph/agriculture/sources`),
-    runPipeline: (body: any) => post('/api/pipeline/run', body),
-    getPipelineHistory: (limit = 5) => get(`/api/pipeline/history?limit=${limit}`),
     getSpecies: () => get(`${GRAPH}/graph/species`),
     getPhenologyParams: (params: URLSearchParams) => get(`${GRAPH}/graph/phenology-params?${params.toString()}`),
     getCropPlan: (parcelUrn: string) =>
