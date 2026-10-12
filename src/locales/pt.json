@@ -539,6 +539,7 @@
       "directSowing": "Sementeira direta sobre o restolho",
       "directSowingHint": "O AquaCrop simula o restolho como uma cobertura de 30 % do solo, que reduz a sua evaporação.",
       "directSowingFromOperations": "Simulado com sementeira direta: é o que consta da sementeira registada em Operações de campo.",
+      "directSowingNotApplied": "A simulação não aplicou a sementeira direta: este resultado é de solo nu.",
       "validatedAs": "Validado: {{metric}}",
       "ceiling": "teto com a água disponível, não é uma previsão", "coverage": "acerta em {{pct}} % dos anos",
       "simulating": "A simular… {{done}}/{{total}} anos", "simulatingStart": "A simular…",

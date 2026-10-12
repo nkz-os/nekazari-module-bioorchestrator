@@ -157,7 +157,8 @@ export default function ParcelDetail({ row, campaign, onClose, onSaved, onSimula
             {estimates.data && aquacropPending(estimates.data) && (
               <DirectSowingOption checked={directSowing} onChange={setDirectSowing}
                 fromOperations={aquacrop.response?.sowing_method === 'direct'
-                  && aquacrop.response.sowing_method_source === 'field_operations'} />
+                  && aquacrop.response.sowing_method_source === 'field_operations'}
+                notApplied={aquacrop.response?.state === 'done' && aquacrop.response.sowing_method !== 'direct'} />
             )}
             {merged && <EstimatesTable data={merged.data} progress={merged.progress} onRetry={aquacrop.retry} />}
           </Step>

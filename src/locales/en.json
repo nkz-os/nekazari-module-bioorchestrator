@@ -1292,6 +1292,7 @@
       "directSowing": "Direct sowing on the stubble",
       "directSowingHint": "AquaCrop simulates the stubble as a mulch covering 30 % of the soil, which cuts its evaporation.",
       "directSowingFromOperations": "Simulated with direct sowing, as recorded in the sowing in Field Operations.",
+      "directSowingNotApplied": "The simulation did not apply direct sowing: this result is for bare soil.",
       "validatedAs": "Validated: {{metric}}",
       "ceiling": "ceiling with the available water, not a forecast", "coverage": "hits {{pct}} % of the years",
       "simulating": "Simulating… {{done}}/{{total}} years", "simulatingStart": "Simulating…",

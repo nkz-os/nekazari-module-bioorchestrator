@@ -1293,6 +1293,7 @@
       "directSowing": "Siembra directa sobre el rastrojo",
       "directSowingHint": "AquaCrop simula el rastrojo como acolchado que cubre el 30 % del suelo y reduce su evaporación.",
       "directSowingFromOperations": "Simulado con siembra directa: así consta la siembra registrada en Operaciones de campo.",
+      "directSowingNotApplied": "La simulación no ha aplicado la siembra directa: este resultado es de suelo desnudo.",
       "validatedAs": "Validado: {{metric}}",
       "ceiling": "techo con el agua disponible, no es una previsión", "coverage": "acierta en el {{pct}} % de los años",
       "simulating": "Simulando… {{done}}/{{total}} años", "simulatingStart": "Simulando…",

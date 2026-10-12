@@ -18,17 +18,21 @@ const textOf = (html: string) => html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, '
 
 describe('DirectSowingOption (es)', () => {
   it('offers direct sowing and says what it simulates', () => {
-    const t = textOf(renderToStaticMarkup(<DirectSowingOption checked={false} onChange={() => {}} fromOperations={false} />));
+    const t = textOf(renderToStaticMarkup(<DirectSowingOption checked={false} onChange={() => {}} fromOperations={false} notApplied={false} />));
     expect(t).toContain('Siembra directa sobre el rastrojo');
     expect(t).toContain('cubre el 30 % del suelo');
     expect(t).not.toContain('Operaciones de campo');
   });
   it('says when the recorded sowing set direct sowing', () => {
-    const t = textOf(renderToStaticMarkup(<DirectSowingOption checked={false} onChange={() => {}} fromOperations />));
+    const t = textOf(renderToStaticMarkup(<DirectSowingOption checked={false} onChange={() => {}} fromOperations notApplied={false} />));
     expect(t).toContain('así consta la siembra registrada en Operaciones de campo');
   });
+  it('says when a ticked box was not applied (a server without the option)', () => {
+    const t = textOf(renderToStaticMarkup(<DirectSowingOption checked onChange={() => {}} fromOperations={false} notApplied />));
+    expect(t).toContain('no ha aplicado la siembra directa');
+  });
   it('a ticked box needs no note: the request decides', () => {
-    const t = textOf(renderToStaticMarkup(<DirectSowingOption checked onChange={() => {}} fromOperations />));
+    const t = textOf(renderToStaticMarkup(<DirectSowingOption checked onChange={() => {}} fromOperations notApplied={false} />));
     expect(t).not.toContain('Operaciones de campo');
   });
 });

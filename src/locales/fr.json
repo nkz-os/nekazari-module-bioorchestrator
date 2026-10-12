@@ -539,6 +539,7 @@
       "directSowing": "Semis direct sur les chaumes",
       "directSowingHint": "AquaCrop simule les chaumes comme un paillis couvrant 30 % du sol, qui en réduit l'évaporation.",
       "directSowingFromOperations": "Simulé en semis direct : c'est ce qu'indique le semis enregistré dans Opérations au champ.",
+      "directSowingNotApplied": "La simulation n'a pas appliqué le semis direct : ce résultat correspond à un sol nu.",
       "validatedAs": "Validé : {{metric}}",
       "ceiling": "plafond avec l'eau disponible, pas une prévision", "coverage": "juste dans {{pct}} % des années",
       "simulating": "Simulation… {{done}}/{{total}} ans", "simulatingStart": "Simulation…",

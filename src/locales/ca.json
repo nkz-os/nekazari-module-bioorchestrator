@@ -539,6 +539,7 @@
       "directSowing": "Sembra directa sobre el rostoll",
       "directSowingHint": "AquaCrop simula el rostoll com a encoixinat que cobreix el 30 % del sòl i en redueix l'evaporació.",
       "directSowingFromOperations": "Simulat amb sembra directa: així consta la sembra registrada a Operacions de camp.",
+      "directSowingNotApplied": "La simulació no ha aplicat la sembra directa: aquest resultat és de sòl nu.",
       "validatedAs": "Validat: {{metric}}",
       "ceiling": "sostre amb l'aigua disponible, no és una previsió", "coverage": "encerta en el {{pct}} % dels anys",
       "simulating": "Simulant… {{done}}/{{total}} anys", "simulatingStart": "Simulant…",

@@ -539,6 +539,7 @@
       "directSowing": "Zuzeneko ereitea anizpearen gainean",
       "directSowingHint": "AquaCropek anizpea lurzoruaren % 30 estaltzen duen estaldura gisa simulatzen du, eta lurrunketa murrizten du.",
       "directSowingFromOperations": "Zuzeneko ereitearekin simulatua: horrela jasota dago Landa-eragiketetan erregistratutako ereitean.",
+      "directSowingNotApplied": "Simulazioak ez du zuzeneko ereitea aplikatu: emaitza hau lurzoru biluziarena da.",
       "validatedAs": "Balioztatua: {{metric}}",
       "ceiling": "eskuragarri dagoen urarekiko sabaia, ez da aurreikuspena", "coverage": "urteen % {{pct}}ean asmatzen du",
       "simulating": "Simulatzen… {{done}}/{{total}} urte", "simulatingStart": "Simulatzen…",
