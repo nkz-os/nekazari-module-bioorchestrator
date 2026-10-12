@@ -1,17 +1,21 @@
 import { describe, expect, it } from 'vitest';
-import { sortEstimates, uniqueAttributions, validationTone } from './estimatesModel';
-import type { Estimate } from './types';
+import {
+  AQUACROP_POLL_MS, AQUACROP_POLL_CAP_MS, aquacropPending, disagrees, mergeAquacrop, moistureLabel, pollDecision,
+  sortEstimates, uniqueAttributions, validationTone,
+} from './estimatesModel';
+import type { AquacropResponse, Estimate, EstimatesResponse } from './types';
 
 const est = (basis: Estimate['basis'], source = 'GENVCE'): Estimate => ({
-  provider_id: basis, provider_version: 'v', basis, unit: 't/ha', percentiles: { p10: 1, p50: 2, p90: 3 }, n: 1,
+  provider_id: basis, provider_version: 'v', basis, unit: 't/ha', percentiles: { p10: 1, p50: 2, p90: 3 }, range: null, coverage: null,
+  moisture: { basis: 'as_reported', pct: null }, n: 1,
   n_kind: 'trials', validation: { status: 'not_applicable', metric: null, scope: null }, warnings: [], graph_id: 'global',
   attributions: [{ source_id: source, text: source, url: '', licence_id: '', licence_url: '' }],
 });
 
 describe('estimates model', () => {
-  it('orders trials first, then water-limited, then gap-corrected', () => {
-    expect(sortEstimates([est('gap_corrected'), est('trial_evidence'), est('water_limited')]).map((e) => e.basis))
-      .toEqual(['trial_evidence', 'water_limited', 'gap_corrected']);
+  it('orders trials first, then gap-corrected (the expected yield), then the water-limited ceiling', () => {
+    expect(sortEstimates([est('water_limited'), est('trial_evidence'), est('gap_corrected')]).map((e) => e.basis))
+      .toEqual(['trial_evidence', 'gap_corrected', 'water_limited']);
   });
   it('an unknown basis sorts last, never first', () => {
     expect(sortEstimates([est('bogus' as unknown as Estimate['basis']), est('trial_evidence')]).map((e) => e.basis))
@@ -26,5 +30,89 @@ describe('estimates model', () => {
   it('attributions once per source; experimental is a warning', () => {
     expect(uniqueAttributions([est('trial_evidence'), est('water_limited')]).length).toBe(1);
     expect(validationTone('experimental')).toBe('warning');
+  });
+});
+
+const C13 = { basis: 'commercial', pct: 13 } as const;
+const DM = { basis: 'dry_matter', pct: null } as const;
+const model = (p50: number, moisture: Estimate['moisture']): Estimate => ({ ...est('water_limited'), provider_id: 'm', percentiles: { p10: p50, p50, p90: p50 }, moisture });
+const rangeOnly: Estimate = { ...est('gap_corrected'), percentiles: null, range: { low: 2, high: 5 }, coverage: 0.78, moisture: C13 };
+
+describe('disagreement (same rule as the backend)', () => {
+  it('compares P50 only at the same basis AND the same moisture', () => {
+    expect(disagrees([model(8, C13), model(3, DM)])).toBe(false);
+    expect(disagrees([model(8, C13), model(3, { basis: 'commercial', pct: 14 })])).toBe(false);
+    expect(disagrees([model(8, C13), model(3, C13)])).toBe(true);
+  });
+  it('range-only figures and trials never take part', () => {
+    expect(disagrees([rangeOnly, rangeOnly, model(5, C13)])).toBe(false);
+    expect(disagrees([est('trial_evidence'), est('trial_evidence')])).toBe(false);
+  });
+});
+
+const aq = (over: Partial<AquacropResponse>): AquacropResponse => ({
+  contract_version: '1.1', provider_id: 'aquacrop', state: 'queued', done: 0, total: null, estimates: [], unavailable: [], job_id: 'j', ...over,
+});
+const BASE: EstimatesResponse = {
+  contract_version: '1.1', parcel_id: 'p', crop: 'TRZAX', variety: null, status: 'ok', disagreement: false,
+  inputs: { regime: 'secano', management: 'conventional', sowing_date: '2026-11-05', sowing_source: 'planned', soil_source: 's', climate_source: 'c' },
+  estimates: [est('trial_evidence')], unavailable: [{ provider_id: 'aquacrop', reason: 'async' }],
+};
+
+describe('polling', () => {
+  it('knows when AquaCrop will answer', () => {
+    expect(aquacropPending(BASE)).toBe(true);
+    expect(aquacropPending({ ...BASE, unavailable: [{ provider_id: 'aquacrop', reason: 'not_validated' }] })).toBe(false);
+  });
+  it('polls while queued or running, stops on any settled state', () => {
+    expect(AQUACROP_POLL_MS).toBe(3000);
+    for (const s of ['queued', 'running'] as const) expect(pollDecision(s, 1000)).toBe('poll');
+    for (const s of ['done', 'failed', 'unavailable'] as const) expect(pollDecision(s, 1000)).toBe('stop');
+    expect(pollDecision(null, 0)).toBe('poll'); // first request not answered yet
+  });
+  it('gives up after the 4-minute cap, and says it did', () => {
+    expect(AQUACROP_POLL_CAP_MS).toBe(240000);
+    expect(pollDecision('running', AQUACROP_POLL_CAP_MS)).toBe('timeout');
+    expect(pollDecision('done', AQUACROP_POLL_CAP_MS)).toBe('stop');
+  });
+});
+
+describe('merging the AquaCrop answer into the table', () => {
+  it('keeps the async row while it runs', () => {
+    expect(mergeAquacrop(BASE, aq({ state: 'running', done: 3, total: 12 })).data.unavailable).toEqual(BASE.unavailable);
+    expect(mergeAquacrop(BASE, aq({ state: 'running', done: 3, total: 12 })).progress).toEqual({ done: 3, total: 12 });
+    expect(mergeAquacrop(BASE, null).progress).toEqual({ done: 0, total: null });
+  });
+  it('done: its estimates join and the async row goes', () => {
+    const out = mergeAquacrop(BASE, aq({ state: 'done', estimates: [rangeOnly, model(3, C13)], unavailable: [{ provider_id: 'aquacrop', reason: 'expected_missing' }] }));
+    expect(out.progress).toBeNull();
+    expect(out.data.estimates.length).toBe(3);
+    expect(out.data.unavailable).toEqual([{ provider_id: 'aquacrop', reason: 'expected_missing' }]);
+  });
+  it('recomputes the disagreement client-side', () => {
+    const out = mergeAquacrop({ ...BASE, estimates: [model(8, C13)] }, aq({ state: 'done', estimates: [model(3, C13)] }));
+    expect(out.data.disagreement).toBe(true);
+  });
+  it('failed is shown as failed, never as an empty result', () => {
+    const out = mergeAquacrop(BASE, aq({ state: 'failed', unavailable: [{ provider_id: 'aquacrop', reason: 'engine_error', code: 'x' }] }));
+    expect(out.data.unavailable).toEqual([{ provider_id: 'aquacrop', reason: 'engine_error', code: 'x' }]);
+    expect(out.progress).toBeNull();
+  });
+  it('a timeout or a failed request is a reason too', () => {
+    expect(mergeAquacrop(BASE, null, 'timeout').data.unavailable).toEqual([{ provider_id: 'aquacrop', reason: 'timeout' }]);
+    expect(mergeAquacrop(BASE, null, 'request_failed').data.unavailable[0].reason).toBe('request_failed');
+  });
+  it('without async pending the data is untouched', () => {
+    const settled = { ...BASE, unavailable: [{ provider_id: 'aquacrop', reason: 'not_validated' }] };
+    expect(mergeAquacrop(settled, null)).toEqual({ data: settled, progress: null });
+  });
+});
+
+describe('moisture label', () => {
+  it('names the basis next to every figure', () => {
+    expect(moistureLabel({ basis: 'commercial', pct: 13 })).toEqual({ key: 'planning.estimate.moisture.commercial', params: { pct: 13 } });
+    expect(moistureLabel({ basis: 'commercial', pct: null }).key).toBe('planning.estimate.moisture.commercialNoPct');
+    expect(moistureLabel({ basis: 'dry_matter', pct: null }).key).toBe('planning.estimate.moisture.dry_matter');
+    expect(moistureLabel({ basis: 'as_reported', pct: null }).key).toBe('planning.estimate.moisture.as_reported');
   });
 });

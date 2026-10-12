@@ -1,9 +1,9 @@
-/** Client of /api/graph/planning (contract 1.0). Empty values are never sent. */
+/** Client of /api/graph/planning (contract 1.1). Empty values are never sent. */
 import { API_BASE, authHeaders } from '../services/api';
 import type { SourceAttributionItem } from '../types/attribution';
 import { CONTRACT_VERSION } from './types';
 import type {
-  EstimatesResponse, FarmResponse, FitResponse, Management, PlanIn, PlanWriteResponse, Regime, VarietiesResponse,
+  AquacropResponse, EstimatesResponse, FarmResponse, FitResponse, Management, PlanIn, PlanWriteResponse, Regime, VarietiesResponse,
 } from './types';
 
 const PLANNING = `${API_BASE}/api/graph/planning`;
@@ -74,6 +74,11 @@ export const fetchVarieties = (parcelId: string, crop: string, regime: Regime, m
 export interface EstimatesQuery { crop: string; variety: string | null; regime: Regime; management: Management; sowingDate: string | null }
 export const fetchEstimates = (parcelId: string, q: EstimatesQuery, signal?: AbortSignal) =>
   request<EstimatesResponse>('GET', `${PLANNING}/parcels/${enc(parcelId)}/estimates${buildQuery({
+    crop: q.crop, variety: q.variety, regime: q.regime, management: q.management, sowing_date: q.sowingDate,
+  })}`, undefined, signal);
+
+export const fetchAquacrop = (parcelId: string, q: EstimatesQuery, signal?: AbortSignal) =>
+  request<AquacropResponse>('GET', `${PLANNING}/parcels/${enc(parcelId)}/estimates/aquacrop${buildQuery({
     crop: q.crop, variety: q.variety, regime: q.regime, management: q.management, sowing_date: q.sowingDate,
   })}`, undefined, signal);
 
