@@ -158,7 +158,7 @@ class TestParcelEnvironment:
             dao = GraphDAO(driver)
             result = await dao.get_parcel_environment("urn:ngsi-ld:AgriParcel:irr-1")
 
-            assert result["irrigation"]["inferred"] == "regadío"
+            assert result["irrigation"]["inferred"] == "irrigated"
             assert result["irrigation"]["source"] == "irrigationSystemType"
 
     @pytest.mark.asyncio
