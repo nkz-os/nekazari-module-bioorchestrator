@@ -207,8 +207,8 @@ def test_disagreeing_sowings_fall_back_with_warning():
     ops = [_sow("2025-10-20", "direct"), _sow("2025-10-20", "conventional")]
     method, warns = sowing_method_from_operations(ops, D)
     assert method is None
-    assert warns == ["sowing method: completed sowings on 2025-10-20 disagree "
-                     "(conventional, direct); bare soil (conventional) assumed"]
+    assert warns == [("sowing method: completed sowings on 2025-10-20 disagree "
+                      "(conventional, direct); bare soil (conventional) assumed")]
 
 
 def test_plain_string_values_are_accepted():

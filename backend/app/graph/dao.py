@@ -5667,7 +5667,7 @@ class GraphDAO:
             if ops is None:
                 try:
                     ops = await _read_operations()
-                except Exception as e:
+                except Exception as e:  # noqa: BLE001 — the method is optional: degrade to bare soil + warning
                     logger.warning("crop_simulation_sowing_method_unread parcel=%s tenant=%s error=%s",
                                    parcel_id, tenant_id, type(e).__name__)
                     method_warnings.append(

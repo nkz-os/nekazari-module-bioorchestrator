@@ -16,7 +16,11 @@ from app.services.engines import aquacrop_engine as aq
 from app.services.region_lookup import es_province_at
 from app.services.sim_crops import CropChoice, resolve_aquacrop_crop
 from app.services.sim_errors import SimulationError
-from app.services.sim_inputs import SOWING_METHODS, SimInputError, soil_layers_from_summary
+from app.services.sim_inputs import (
+    SOWING_METHODS,
+    SimInputError,
+    soil_layers_from_summary,
+)
 from app.services.sim_weather import assemble_analogs, assemble_observed
 from app.services.soil_client import SoilSummaryError, get_parcel_soil_summary
 

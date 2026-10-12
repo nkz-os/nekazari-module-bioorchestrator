@@ -368,7 +368,13 @@ def run_aquacrop(
     }
 
     import pandas as pd
-    from aquacrop import AquaCropModel, Crop, FieldMngt, InitialWaterContent, IrrigationManagement
+    from aquacrop import (
+        AquaCropModel,
+        Crop,
+        FieldMngt,
+        InitialWaterContent,
+        IrrigationManagement,
+    )
 
     # AquaCrop reads weather columns by position: Date must be LAST (as in
     # aquacrop.utils.prepare_weather), otherwise temperatures become Timestamps.

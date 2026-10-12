@@ -1190,7 +1190,9 @@ async def agriculture_crop_simulation_job_start(
     """
     tenant_id = _require_tenant_id(request)
     dao = GraphDAO(driver)
-    from app.services.crop_simulation import check_sowing_method  # lazy, as the DAO imports it
+    from app.services.crop_simulation import (
+        check_sowing_method,  # lazy, as the DAO imports it
+    )
 
     try:
         check_sowing_method(sowing_method)

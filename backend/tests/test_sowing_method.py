@@ -1,7 +1,11 @@
 """The sowing method vocabulary and its mulch (validated values, Anexo 14)."""
 import pytest
 
-from app.services.crop_simulation import DIRECT_SOWING_MULCH_PCT, check_sowing_method, mulch_for
+from app.services.crop_simulation import (
+    DIRECT_SOWING_MULCH_PCT,
+    check_sowing_method,
+    mulch_for,
+)
 from app.services.sim_errors import SimulationError
 
 
