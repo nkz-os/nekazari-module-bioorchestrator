@@ -35,9 +35,11 @@ class BalanceDao:
                 """
                 MATCH (n:RegionalYieldStat)
                 WHERE n.nuts STARTS WITH $country AND n.yieldTHa IS NOT NULL
-                RETURN n.nuts AS nuts, collect(DISTINCT n.eppo) AS eppos
+                RETURN n.nuts AS nuts, collect(DISTINCT n.eppo) AS eppos,
+                       max(n.year) AS latest_year
                 ORDER BY nuts
                 """,
                 country=country,
             )
-            return [{"nuts": r["nuts"], "eppos": sorted(r["eppos"])} for r in await result.data()]
+            return [{"nuts": r["nuts"], "eppos": sorted(r["eppos"]), "latest_year": r["latest_year"]}
+                    for r in await result.data()]

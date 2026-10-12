@@ -29,7 +29,7 @@ def load_province_table(path: Path | None = None) -> dict[str, str]:
 
 def nuts2_for_municipality(ine_code: str, table: dict[str, str]) -> str | None:
     """NUTS 2 of a Spanish municipality (5-digit INE code), or None if malformed or unknown."""
-    if not isinstance(ine_code, str) or not _INE_MUNICIPALITY.match(ine_code):
+    if not isinstance(ine_code, str) or not _INE_MUNICIPALITY.fullmatch(ine_code):
         return None
     return table.get(ine_code[:2])
 
@@ -52,3 +52,11 @@ def load_region_names(eurostat_dir: Path | None = None) -> dict[str, str]:
         raise FileNotFoundError("no apro_cpshr snapshot in the image")
     with gzip.open(path, "rt", encoding="utf-8") as f:
         return region_names(json.load(f)["jsonstat"])
+
+
+_SUPERSEDED_MARKERS = ("(NUTS 20", "(former", "(statistical region")
+
+
+def is_superseded(name: str) -> bool:
+    """True when Eurostat's own label marks the code as belonging to another NUTS version."""
+    return any(marker in name for marker in _SUPERSEDED_MARKERS)

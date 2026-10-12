@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import functools
 import logging
+import time
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -14,6 +15,7 @@ from app.kg.registries import DEFAULT_REGISTRIES_PATH, Registries, load_registri
 from app.services.crop_balance import payload_from_node
 from app.services.eurostat_yields import PlausibleRange, yields_payload
 from app.services.nuts_regions import (
+    is_superseded,
     load_province_table,
     load_region_names,
     nuts2_for_municipality,
@@ -91,25 +93,66 @@ def _province_table() -> dict[str, str]:
     return load_province_table()
 
 
+_REGION_TTL_S = 600.0
+_REGION_CACHE: dict[str, tuple[float, list[dict]]] = {}
+_monotonic = time.monotonic
+
+
+def _names_or_none() -> dict[str, str] | None:
+    """Region names, or None (logged) when the snapshot cannot be read: names are decoration."""
+    try:
+        return load_region_names()
+    except Exception as exc:  # noqa: BLE001
+        logger.error("NUTS region names unavailable: %s: %s", type(exc).__name__, exc)
+        return None
+
+
+def warm_nuts_reference() -> None:
+    """Load the province table and region names at startup; never raises."""
+    try:
+        _province_table()
+    except Exception as exc:  # noqa: BLE001
+        logger.error("NUTS province table unavailable: %s: %s", type(exc).__name__, exc)
+    _names_or_none()
+
+
 @router.get("/agriculture/nuts-region")
 async def nuts_region(municipality: str = Query(..., pattern=_INE)):
-    """NUTS 2 region of a Spanish municipality (INE code) through its province; no geometry."""
+    """NUTS 2 region of a Spanish municipality (INE code) through its province; no geometry.
+
+    Resolves the province only: the municipality's existence is not checked.
+    """
     nuts = nuts2_for_municipality(municipality, _province_table())
     if nuts is None:
         raise HTTPException(status_code=404, detail="Unknown province")
+    names = _names_or_none() or {}
     return {"municipality": municipality, "country": "ES", "nuts": nuts,
-            "name": load_region_names().get(nuts), "nuts_version": 2024,
+            "name": names.get(nuts), "nuts_version": 2024,
             "method": "ine_province"}
 
 
 @router.get("/agriculture/nuts-regions")
 async def nuts_regions(driver: DriverDep, country: str = Query(..., pattern=_COUNTRY)):
-    """NUTS 2 regions of a country that have Eurostat yields, for a manual pick."""
-    names = load_region_names()
-    rows = await BalanceDao(driver).list_yield_regions(country.upper())
-    regions = [{"nuts": r["nuts"], "name": names[r["nuts"]], "eppos": r["eppos"]}
-               for r in rows if r["nuts"] in names]
+    """Current NUTS 2 regions of a country that have Eurostat yields, for a manual pick.
+
+    Codes Eurostat labels as belonging to another NUTS version are left out; `latest_year` is the
+    newest year with a yield. Cached in-process for 10 minutes per country.
+    """
+    country = country.upper()
+    now = _monotonic()
+    hit = _REGION_CACHE.get(country)
+    if hit is not None and now - hit[0] < _REGION_TTL_S:
+        regions = hit[1]
+    else:
+        names = _names_or_none()
+        if names is None:
+            raise HTTPException(status_code=503, detail="Region names unavailable")
+        rows = await BalanceDao(driver).list_yield_regions(country)
+        regions = [{"nuts": r["nuts"], "name": names[r["nuts"]], "eppos": r["eppos"],
+                    "latest_year": r.get("latest_year")}
+                   for r in rows if r["nuts"] in names and not is_superseded(names[r["nuts"]])]
+        _REGION_CACHE[country] = (now, regions)
     if not regions:
         raise HTTPException(status_code=404, detail="No regions with yields")
-    return attach_attributions({"country": country.upper(), "regions": regions},
+    return attach_attributions({"country": country, "regions": regions},
                                ["eurostat_apro_cpshr"])

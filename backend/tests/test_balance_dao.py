@@ -45,10 +45,12 @@ async def test_regional_yields_ordered_rows():
 
 
 async def test_list_yield_regions_filters_country_and_nulls():
-    rows = [{"nuts": "ES21", "eppos": ["HORVX", "TRZAX"]}, {"nuts": "ES22", "eppos": ["TRZAX"]}]
+    rows = [{"nuts": "ES21", "eppos": ["HORVX", "TRZAX"], "latest_year": 2024},
+            {"nuts": "ES22", "eppos": ["TRZAX"], "latest_year": 2023}]
     dao, calls = _dao(data=rows)
     assert await dao.list_yield_regions("ES") == rows
     query, params = calls[0]
     assert "RegionalYieldStat" in query
     assert "yieldTHa IS NOT NULL" in query and "nuts STARTS WITH $country" in query
+    assert "max(n.year) AS latest_year" in query
     assert params == {"country": "ES"}

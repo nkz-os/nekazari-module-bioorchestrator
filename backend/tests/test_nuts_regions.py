@@ -46,12 +46,12 @@ def test_known_municipalities(table, ine, nuts):
     assert nuts2_for_municipality(ine, table) == nuts
 
 
-@pytest.mark.parametrize("bad", ["", "3120", "312011", "99001", "00001", "ab201", " 31201"])
+@pytest.mark.parametrize("bad", ["", "3120", "312011", "99001", "00001", "ab201", " 31201", "31201\n"])
 def test_malformed_or_unknown_codes_give_none(table, bad):
     assert nuts2_for_municipality(bad, table) is None
 
 
-from app.services.nuts_regions import load_region_names, region_names
+from app.services.nuts_regions import is_superseded, load_region_names, region_names
 
 
 def test_region_names_keep_only_nuts2_and_drop_extra_regio():
@@ -66,3 +66,23 @@ def test_snapshot_names_include_navarra():
     names = load_region_names()
     assert names["ES22"] == "Comunidad Foral de Navarra"
     assert not any(code.endswith("ZZ") for code in names)
+
+
+@pytest.mark.parametrize("code,expected", [
+    ("ITD5", True),    # (NUTS 2006)
+    ("EL11", True),    # (NUTS 2010)
+    ("FR21", True),    # (NUTS 2013)
+    ("NL31", True),    # (NUTS 2021)
+    ("HR01", True),    # (former statistical region)
+    ("NO01", True),    # (statistical region 2016)
+    ("ITH5", False),
+    ("ES22", False),
+])
+def test_is_superseded_on_real_snapshot_labels(code, expected):
+    assert is_superseded(load_region_names()[code]) is expected
+
+
+def test_is_superseded_plain_labels():
+    assert is_superseded("Utrecht") is False
+    assert is_superseded("Emilia-Romagna (NUTS 2006)") is True
+    assert is_superseded("X (former statistical region)") is True

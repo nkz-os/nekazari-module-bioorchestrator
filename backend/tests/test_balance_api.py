@@ -175,12 +175,14 @@ def test_nuts_region_bad_and_unknown_codes(client):
 
 
 def test_nuts_regions_lists_named_regions_with_data(client):
-    rows = [{"nuts": "ES22", "eppos": ["HORVX", "TRZAX"]}, {"nuts": "ESZZ", "eppos": ["TRZAX"]}]
+    rows = [{"nuts": "ES22", "eppos": ["HORVX", "TRZAX"], "latest_year": 2024},
+            {"nuts": "ESZZ", "eppos": ["TRZAX"], "latest_year": 2024}]
     with patch.object(BalanceDao, "list_yield_regions", AsyncMock(return_value=rows)) as m:
         body = client.get("/api/graph/agriculture/nuts-regions?country=es").json()
     m.assert_awaited_once_with("ES")
     assert body["regions"] == [
-        {"nuts": "ES22", "name": "Comunidad Foral de Navarra", "eppos": ["HORVX", "TRZAX"]}]
+        {"nuts": "ES22", "name": "Comunidad Foral de Navarra", "eppos": ["HORVX", "TRZAX"],
+         "latest_year": 2024}]
     assert [a["source_id"] for a in body["attributions"]] == ["eurostat_apro_cpshr"]
 
 
@@ -189,3 +191,48 @@ def test_nuts_regions_none_is_404_and_bad_country_422(client):
         resp = client.get("/api/graph/agriculture/nuts-regions?country=XX")
     assert resp.status_code == 404 and resp.json()["detail"] == "No regions with yields"
     assert client.get("/api/graph/agriculture/nuts-regions?country=E5").status_code == 422
+
+
+@pytest.fixture(autouse=True)
+def _fresh_region_cache():
+    from app.api.v1 import balance
+    balance._REGION_CACHE.clear()
+    yield
+    balance._REGION_CACHE.clear()
+
+
+def test_nuts_regions_drops_superseded_and_passes_latest_year(client, _fresh_region_cache):
+    rows = [{"nuts": "ITD5", "eppos": ["TRZAX"], "latest_year": 2014},
+            {"nuts": "ITH5", "eppos": ["TRZAX"], "latest_year": 2024}]
+    with patch.object(BalanceDao, "list_yield_regions", AsyncMock(return_value=rows)):
+        body = client.get("/api/graph/agriculture/nuts-regions?country=IT").json()
+    assert [(r["nuts"], r["latest_year"]) for r in body["regions"]] == [("ITH5", 2024)]
+
+
+def test_nuts_regions_cached_within_ttl(client, _fresh_region_cache):
+    rows = [{"nuts": "ES22", "eppos": ["TRZAX"], "latest_year": 2024}]
+    clock = [1000.0]
+    with patch("app.api.v1.balance._monotonic", lambda: clock[0]), \
+            patch.object(BalanceDao, "list_yield_regions", AsyncMock(return_value=rows)) as m:
+        assert client.get("/api/graph/agriculture/nuts-regions?country=ES").status_code == 200
+        clock[0] += 599
+        assert client.get("/api/graph/agriculture/nuts-regions?country=es").status_code == 200
+        assert m.await_count == 1
+        clock[0] += 2
+        assert client.get("/api/graph/agriculture/nuts-regions?country=ES").status_code == 200
+        assert m.await_count == 2
+
+
+def test_nuts_region_survives_names_failure(client):
+    with patch("app.api.v1.balance.load_region_names", side_effect=OSError("boom")):
+        resp = client.get("/api/graph/agriculture/nuts-region?municipality=31201")
+    assert resp.status_code == 200
+    assert resp.json()["nuts"] == "ES22" and resp.json()["name"] is None
+
+
+def test_warm_nuts_reference_logs_error_and_does_not_raise(caplog):
+    from app.api.v1 import balance
+    with patch("app.api.v1.balance.load_region_names", side_effect=OSError("boom")), \
+            caplog.at_level("ERROR"):
+        balance.warm_nuts_reference()
+    assert any("boom" in r.getMessage() for r in caplog.records)
