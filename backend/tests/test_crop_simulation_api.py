@@ -36,13 +36,13 @@ def client(monkeypatch):
 
 def test_ok_passes_query_params(client):
     r = client.post(URL, params={"parcel_id": URN, "crop_slug": "maize", "sowing_date": "2026-04-20",
-                                 "irrigation": "full"}, headers=H)
+                                 "irrigation": "full", "sowing_method": "direct"}, headers=H)
     assert r.status_code == 200 and r.json()["status"] == "complete"
     kw = {k: v for k, v in client.calls[0].items() if k != "tenant_id"}  # tenant: auth is disabled in tests
     assert client.calls[0]["tenant_id"]
     assert kw == {
         "parcel_id": URN, "crop_slug": "maize",
-        "sowing_date_str": "2026-04-20", "irrigation": "full", "engine": "aquacrop"}
+        "sowing_date_str": "2026-04-20", "irrigation": "full", "engine": "aquacrop", "sowing_method": "direct"}
 
 
 def test_defaults(client):
@@ -50,6 +50,7 @@ def test_defaults(client):
     kw = client.calls[0]
     assert (kw["irrigation"], kw["engine"], kw["crop_slug"], kw["sowing_date_str"]) == (
         "rainfed", "aquacrop", None, None)
+    assert kw["sowing_method"] is None
 
 
 def test_input_error_is_422_with_code_and_message(client):
@@ -58,6 +59,13 @@ def test_input_error_is_422_with_code_and_message(client):
     assert r.status_code == 422
     assert r.json() == {"detail": {"code": "unsupported_crop",
                                    "message": "Crop 'olive' cannot be simulated yet."}}
+
+
+def test_invalid_sowing_method_is_422(client):
+    client.outcome["raise"] = SimulationError(
+        "invalid_sowing_method", "sowing_method must be one of: direct, conventional.")
+    r = client.post(URL, params={"parcel_id": URN, "sowing_method": "no-till"}, headers=H)
+    assert r.status_code == 422 and r.json()["detail"]["code"] == "invalid_sowing_method"
 
 
 def test_upstream_error_is_503(client):
@@ -132,3 +140,19 @@ def test_a_tenant_past_its_cap_gets_429(jobs_client, monkeypatch):
     monkeypatch.setattr(graph_mod, "shared_sim_jobs", lambda: _Full())
     r = jobs_client.post(JOBS, params={"parcel_id": URN, "sowing_date": "2026-11-01"}, headers=H)
     assert r.status_code == 429 and r.json()["detail"]["code"] == "too_many_jobs"
+
+
+def test_job_rejects_an_invalid_method_before_starting(jobs_client):
+    r = jobs_client.post(JOBS, params={"parcel_id": URN, "sowing_date": "2026-11-01",
+                                       "sowing_method": "no-till"}, headers=H)
+    assert r.status_code == 422 and r.json()["detail"]["code"] == "invalid_sowing_method"
+
+
+def test_direct_sowing_is_its_own_job_and_absent_keeps_old_identity(jobs_client):
+    q = {"parcel_id": URN, "sowing_date": "2026-11-01"}
+    bare = jobs_client.post(JOBS, params=q, headers=H).json()["job_id"]
+    direct = jobs_client.post(JOBS, params={**q, "sowing_method": "direct"}, headers=H).json()["job_id"]
+    assert direct != bare
+    _poll(jobs_client, bare)
+    _poll(jobs_client, direct)
+    assert jobs_client.post(JOBS, params=q, headers=H).json()["job_id"] == bare

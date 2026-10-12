@@ -1139,6 +1139,11 @@ async def agriculture_crop_simulation(
         description="'rainfed' or 'full' (irrigated to field capacity): the scenario of the headline yield.",
     ),
     engine: str = Query(default="aquacrop", description="Simulation engine."),
+    sowing_method: str | None = Query(
+        default=None,
+        description=("'direct' (sown on the previous crop's stubble: simulated with the residue mulch) or "
+                     "'conventional'. Taken from the recorded sowing if omitted; bare soil without it."),
+    ),
 ):
     """Simulate the parcel's crop season (yield, water stress, daily canopy).
 
@@ -1159,6 +1164,7 @@ async def agriculture_crop_simulation(
             sowing_date_str=sowing_date,
             irrigation=irrigation,
             engine=engine,
+            sowing_method=sowing_method,
         )
     except SimulationError as e:
         raise HTTPException(status_code=e.status_code, detail=e.detail()) from e
@@ -1173,6 +1179,7 @@ async def agriculture_crop_simulation_job_start(
     sowing_date: str | None = Query(default=None, description="As in crop-simulation."),
     irrigation: str = Query(default="rainfed", description="As in crop-simulation."),
     engine: str = Query(default="aquacrop", description="Simulation engine."),
+    sowing_method: str | None = Query(default=None, description="As in crop-simulation."),
 ):
     """Start (or join) an asynchronous crop simulation; poll it by ``job_id``.
 
@@ -1183,13 +1190,22 @@ async def agriculture_crop_simulation_job_start(
     """
     tenant_id = _require_tenant_id(request)
     dao = GraphDAO(driver)
+    from app.services.crop_simulation import check_sowing_method  # lazy, as the DAO imports it
+
+    try:
+        check_sowing_method(sowing_method)
+    except SimulationError as e:
+        raise HTTPException(status_code=e.status_code, detail=e.detail()) from e
     params = {"parcel_id": parcel_id, "crop_slug": crop_slug, "sowing_date": sowing_date,
               "irrigation": irrigation, "engine": engine}
+    if sowing_method is not None:  # absent keeps the identity of requests made before the parameter
+        params["sowing_method"] = sowing_method
 
     async def run(progress):
         return await dao.run_crop_simulation(
             parcel_id=parcel_id, tenant_id=tenant_id, crop_slug=crop_slug,
-            sowing_date_str=sowing_date, irrigation=irrigation, engine=engine, progress=progress)
+            sowing_date_str=sowing_date, irrigation=irrigation, engine=engine, progress=progress,
+            sowing_method=sowing_method)
 
     try:
         return SimJobs.view(await shared_sim_jobs().start(tenant_id, params, run))
