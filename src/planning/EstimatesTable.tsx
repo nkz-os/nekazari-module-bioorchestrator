@@ -2,11 +2,19 @@ import React from 'react';
 import { useTranslation } from '@nekazari/sdk';
 import { Badge, Stack } from '@nekazari/ui-kit';
 import SourceAttribution from '../components/shared/SourceAttribution';
-import { sortEstimates, uniqueAttributions, validationTone } from './estimatesModel';
+import { moistureLabel, sortEstimates, uniqueAttributions, validationTone } from './estimatesModel';
 import { formatIsoDate, formatT } from './format';
-import type { EstimatesResponse } from './types';
+import type { Estimate, EstimatesResponse } from './types';
 
-export default function EstimatesTable({ data }: { data: EstimatesResponse }) {
+/** "low – high t/ha" from the percentiles (P10–P90) or, for a range-only figure, from its range. */
+function spread(e: Estimate, lang: string): string {
+  const [low, high] = e.percentiles ? [e.percentiles.p10, e.percentiles.p90] : e.range ? [e.range.low, e.range.high] : [null, null];
+  return low === null || high === null ? '—' : `${formatT(low, lang)} – ${formatT(high, lang)} ${e.unit}`;
+}
+
+export interface SimulationProgress { done: number; total: number | null }
+
+export default function EstimatesTable({ data, progress = null }: { data: EstimatesResponse; progress?: SimulationProgress | null }) {
   const { t, i18n } = useTranslation('bioorchestrator');
   const lang = i18n.language;
   const rows = sortEstimates(data.estimates);
@@ -44,19 +52,28 @@ export default function EstimatesTable({ data }: { data: EstimatesResponse }) {
                   <span className="block text-nkz-xs text-nkz-text-muted">
                     {t(`planning.estimate.${e.n_kind}`, { count: e.n })}
                   </span>
+                  {e.basis === 'water_limited' && <span className="block text-nkz-xs text-nkz-text-muted">{t('planning.estimate.ceiling')}</span>}
                 </td>
-                <td className="py-2 pr-4">{`${formatT(e.percentiles.p10, lang)} – ${formatT(e.percentiles.p90, lang)} ${e.unit}`}</td>
-                <td className="py-2 pr-4">{formatT(e.percentiles.p50, lang)}</td>
+                <td className="py-2 pr-4">
+                  {spread(e, lang)}
+                  {e.coverage != null && (
+                    <span className="block text-nkz-xs text-nkz-text-muted">{t('planning.estimate.coverage', { pct: Math.round(e.coverage * 100) })}</span>
+                  )}
+                  <span className="block text-nkz-xs text-nkz-text-muted">{t(moistureLabel(e.moisture).key, moistureLabel(e.moisture).params)}</span>
+                </td>
+                <td className="py-2 pr-4">{e.percentiles ? formatT(e.percentiles.p50, lang) : '—'}</td>
                 <td className="py-2 pr-4">{t(`planning.estimate.basis.${e.basis}`)}</td>
               </tr>
             ))}
-            {data.unavailable.map((u) => (
-              <tr key={u.provider_id} className="border-t border-nkz-border">
+            {data.unavailable.map((u, i) => (
+              <tr key={`${u.provider_id}-${u.reason}-${i}`} className="border-t border-nkz-border">
                 <td className="py-2 pr-4 font-medium text-nkz-text-primary">
                   {t(`planning.estimate.provider.${u.provider_id}`, { defaultValue: u.provider_id })}
                 </td>
                 <td className="py-2 pr-4 text-nkz-text-muted" colSpan={3}>
-                  {t(`planning.estimate.unavailable.${u.reason}`, { defaultValue: u.reason })}
+                  {u.reason === 'async' && progress !== null
+                    ? (progress.total ? t('planning.estimate.simulating', { done: progress.done, total: progress.total }) : t('planning.estimate.simulatingStart'))
+                    : t(`planning.estimate.unavailable.${u.reason}`, { defaultValue: u.reason, code: u.code ?? '—' })}
                 </td>
               </tr>
             ))}
