@@ -663,3 +663,45 @@ def test_soil_extended_to_the_rooting_depth_is_declared():
     res = run_aquacrop(_gdd10_weather(), _soil(), "WheatGDD", date(2020, 1, 1))
     # WheatGDD roots reach 1.5 m: AquaCrop simulates 1.2 m of data as 1.6 m.
     assert any("1.20 m to 1.60 m" in w for w in res["warnings"]), res["warnings"]
+
+
+# ------------------------------------------------------------- residue mulch
+def test_stubble_mulch_reduces_soil_evaporation_losses():
+    # FAO AquaCrop Reference Manual ch. 2 (2009), 2.12.2: plant residues cut soil evaporation ~50 %
+    dry = _weather(start=date(2020, 1, 1), n=400, tmin_c=8.0, tmax_c=26.0, precip_mm=0.6)
+    bare = run_aquacrop(dry, _soil(), "WheatGDD", date(2020, 3, 1), sim_start=date(2020, 1, 1))
+    mulched = run_aquacrop(dry, _soil(), "WheatGDD", date(2020, 3, 1), sim_start=date(2020, 1, 1),
+                           mulch_pct=60)
+    assert mulched["field_management"] == {"mulch_pct": 60.0, "f_mulch": 0.5}
+    assert bare["field_management"] == {}
+    assert mulched["yield_t_ha"] > bare["yield_t_ha"]
+
+
+@pytest.mark.parametrize("pct", [0, -5, 101])
+def test_mulch_cover_must_be_a_percentage(pct):
+    with pytest.raises(EngineInputError, match="mulch_pct"):
+        run_aquacrop(_gdd10_weather(), _soil(), "WheatGDD", date(2020, 1, 1), mulch_pct=pct)
+
+
+def test_no_mulch_is_todays_bare_run():
+    a = run_aquacrop(_gdd10_weather(), _soil(), "WheatGDD", date(2020, 1, 1))
+    b = run_aquacrop(_gdd10_weather(), _soil(), "WheatGDD", date(2020, 1, 1), mulch_pct=None)
+    assert a == b and a["field_management"] == {}
+
+
+@pytest.mark.asyncio
+async def test_simulate_reports_the_mulch_it_ran_with():
+    try:
+        res = await eng.simulate(_gdd10_weather(), {}, _soil(), "WheatGDD", date(2020, 1, 1),
+                                 mulch_pct=30)
+        assert res["field_management"] == {"mulch_pct": 30.0, "f_mulch": 0.5}
+        bare = await eng.simulate(_gdd10_weather(), {}, _soil(), "WheatGDD", date(2020, 1, 1))
+        assert bare["field_management"] == {}
+    finally:
+        eng._shutdown_pool()
+
+
+@pytest.mark.asyncio
+async def test_simulate_checks_mulch_before_any_run():
+    with pytest.raises(EngineInputError, match="mulch_pct"):
+        await eng.simulate(_gdd10_weather(), {}, _soil(), "WheatGDD", date(2020, 1, 1), mulch_pct=0)
