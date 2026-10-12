@@ -14,6 +14,7 @@ from app.graph.dao import GraphDAO
 from app.planning.farm import default_target_campaign, farm_payload
 from app.planning.farm_source import load_farm
 from app.planning.models import (
+    AquacropResponse,
     EstimatesResponse,
     FarmResponse,
     FitResponse,
@@ -29,11 +30,13 @@ from app.planning.service import (
     InvalidParcelId,
     ParcelNotFound,
     UnknownCrop,
+    parcel_aquacrop,
     parcel_estimates,
     parcel_fit,
     parcel_urn,
     parcel_varieties,
 )
+from app.services.sim_jobs import shared_sim_jobs
 
 logger = logging.getLogger(__name__)
 
@@ -88,6 +91,29 @@ async def estimates(request: Request, parcel_id: str, sources: SourcesDep, regim
         return await parcel_estimates(dao=GraphDAO(source.driver), source=source, parcel_id=parcel_id,
                                       tenant_id=tenant, crop=crop, variety=variety, regime=regime,
                                       management=management, sowing_date=sowing_date)
+    except UnknownCrop as e:
+        raise HTTPException(status_code=422, detail=str(e)) from e
+    except ParcelNotFound as e:
+        raise HTTPException(status_code=404, detail=str(e)) from e
+
+
+@router.get("/parcels/{parcel_id:path}/estimates/aquacrop", response_model=AquacropResponse)
+async def estimates_aquacrop(request: Request, parcel_id: str, sources: SourcesDep, regime: Regime,
+                             crop: str = Query(..., min_length=2, max_length=64),
+                             sowing_date: date | None = None,
+                             retry: bool = Query(False), job_id: str | None = Query(None, max_length=64)):
+    """Asynchronous AquaCrop estimates: starts or joins the simulation job; poll until it settles.
+
+    The engine takes neither management nor variety, so neither is a parameter here.
+    ``retry=true`` relaunches a failed (or lost) job; polling never does. ``job_id`` (from the
+    previous answer) makes a poll read the job directly, skipping the parcel lookup.
+    """
+    tenant = _require_tenant_id(request)
+    parcel_id = _checked_parcel_urn(parcel_id)
+    try:
+        return await parcel_aquacrop(dao=GraphDAO(sources[0].driver), jobs=shared_sim_jobs(), tenant_id=tenant,
+                                     parcel_id=parcel_id, crop=crop, regime=regime, sowing_date=sowing_date,
+                                     retry=retry, job_id=job_id)
     except UnknownCrop as e:
         raise HTTPException(status_code=422, detail=str(e)) from e
     except ParcelNotFound as e:

@@ -11,7 +11,7 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
-CONTRACT_VERSION = "1.0"
+CONTRACT_VERSION = "1.1"
 
 Verdict = Literal["fits", "caveats", "no_fit"]
 Regime = Literal["secano", "regadío"]
@@ -108,12 +108,26 @@ class Validation(BaseModel):
     scope: str | None = None
 
 
+class Range(BaseModel):
+    low: float
+    high: float
+
+
+class Moisture(BaseModel):
+    """Grain moisture the figure is expressed at; figures are only compared at the same one."""
+    basis: Literal["commercial", "dry_matter", "as_reported"]
+    pct: float | None = None
+
+
 class Estimate(BaseModel):
     provider_id: str
     provider_version: str
     basis: Literal["trial_evidence", "water_limited", "gap_corrected", "potential"]
     unit: Literal["t/ha"] = "t/ha"
-    percentiles: Percentiles
+    percentiles: Percentiles | None = None  # null for range-only figures (1.1)
+    range: Range | None = None  # 1.1: low-high without a median
+    coverage: float | None = None  # 1.1: measured share of held-out years inside the range
+    moisture: Moisture = Field(default_factory=lambda: Moisture(basis="as_reported"))  # 1.1
     n: int
     n_kind: Literal["trials", "years"]
     validation: Validation
@@ -125,6 +139,7 @@ class Estimate(BaseModel):
 class Unavailable(BaseModel):
     provider_id: str
     reason: str
+    code: str | None = None  # 1.1: the provider's own error code, when it has one
 
 
 class EstimateInputs(BaseModel):
@@ -146,6 +161,18 @@ class EstimatesResponse(BaseModel):
     estimates: list[Estimate]
     unavailable: list[Unavailable]
     disagreement: bool
+
+
+class AquacropResponse(BaseModel):
+    """State of the asynchronous AquaCrop provider (1.1); the UI polls this until it settles."""
+    contract_version: str = CONTRACT_VERSION
+    provider_id: Literal["aquacrop"] = "aquacrop"
+    state: Literal["unavailable", "queued", "running", "done", "failed"]
+    done: int = 0
+    total: int | None = None
+    estimates: list[Estimate] = Field(default_factory=list)
+    unavailable: list[Unavailable] = Field(default_factory=list)
+    job_id: str | None = None
 
 
 class CycleCell(BaseModel):

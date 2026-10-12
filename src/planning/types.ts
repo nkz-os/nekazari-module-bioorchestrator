@@ -1,7 +1,7 @@
-/** Mirror of backend/app/planning/models.py — contract version 1.0. Change both together. */
+/** Mirror of backend/app/planning/models.py — contract version 1.1. Change both together. */
 import type { SourceAttributionItem } from '../types/attribution';
 
-export const CONTRACT_VERSION = '1.0';
+export const CONTRACT_VERSION = '1.1';
 export type Verdict = 'fits' | 'caveats' | 'no_fit';
 export type Regime = 'secano' | 'regadío';
 export type Management = 'conventional' | 'organic';
@@ -34,9 +34,12 @@ export interface VarietiesResponse {
   varieties: VarietyStat[]; data_gaps: string[]; attributions: SourceAttributionItem[]; graph_id: string;
 }
 export type Basis = 'trial_evidence' | 'water_limited' | 'gap_corrected' | 'potential';
+export interface Moisture { basis: 'commercial' | 'dry_matter' | 'as_reported'; pct: number | null }
 export interface Estimate {
   provider_id: string; provider_version: string; basis: Basis; unit: 't/ha';
-  percentiles: { p10: number; p50: number; p90: number }; n: number; n_kind: 'trials' | 'years';
+  percentiles: { p10: number; p50: number; p90: number } | null; // null for range-only figures (1.1)
+  range: { low: number; high: number } | null; coverage: number | null; moisture: Moisture;
+  n: number; n_kind: 'trials' | 'years';
   validation: { status: 'validated' | 'experimental' | 'unvalidated' | 'not_applicable'; metric: string | null; scope: string | null };
   warnings: string[]; attributions: SourceAttributionItem[]; graph_id: string | null;
 }
@@ -44,7 +47,13 @@ export interface EstimatesResponse {
   contract_version: string; parcel_id: string; crop: string; variety: string | null;
   status: 'ok' | 'no_trials' | 'needs_climate';
   inputs: { regime: Regime; management: Management; sowing_date: string | null; sowing_source: 'planned' | 'none'; soil_source: string; climate_source: string };
-  estimates: Estimate[]; unavailable: { provider_id: string; reason: string }[]; disagreement: boolean;
+  estimates: Estimate[]; unavailable: Unavailable[]; disagreement: boolean;
+}
+export interface Unavailable { provider_id: string; reason: string; code?: string | null }
+export type AquacropState = 'unavailable' | 'queued' | 'running' | 'done' | 'failed';
+export interface AquacropResponse {
+  contract_version: string; provider_id: 'aquacrop'; state: AquacropState; done: number; total: number | null;
+  estimates: Estimate[]; unavailable: Unavailable[]; job_id: string | null;
 }
 export interface CycleCell {
   crop_id: string | null; species: string | null; species_raw: string | null; names: Names; variety: string | null;

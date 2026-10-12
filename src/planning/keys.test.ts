@@ -35,7 +35,11 @@ const FAMILIES = [
   ...['trial_evidence', 'water_limited', 'gap_corrected', 'potential'].map((k) => `planning.estimate.basis.${k}`),
   ...['trial_evidence', 'aquacrop'].map((k) => `planning.estimate.provider.${k}`),
   ...['preseason_not_supported', 'engine_not_deployed', 'no_trials', 'no_trials_for_variety',
-    'variety_not_in_evidence_sample'].map((k) => `planning.estimate.unavailable.${k}`),
+    'variety_not_in_evidence_sample', 'not_validated', 'needs_sowing_date', 'sowing_date_out_of_range', 'engine_error',
+    'timeout', 'still_queued', 'request_failed', 'async', 'water_limited_missing',
+    // calibration reasons of the engine, prefixed by the backend: expected_<reason>
+    ...['crop_not_calibrated', 'irrigated', 'outside_calibrated_regions', 'region_not_calibrated', 'missing', 'unknown']
+      .map((r) => `expected_${r}`)].map((k) => `planning.estimate.unavailable.${k}`),
   ...COVER_METHODS.map((k) => `planning.plan.methods.${k}`),
   ...['sand', 'loamy-sand', 'sandy-loam', 'loam', 'silt-loam', 'silt', 'sandy-clay-loam', 'clay-loam', 'silty-clay-loam',
     'sandy-clay', 'silty-clay', 'clay'].map((k) => `planning.texture.${k}`),
@@ -46,7 +50,8 @@ const FAMILIES = [
   'planning.plan.otherSpecies', 'planning.plan.speciesName',
   // Keys chosen at run time: loadErrorKey() and the lock reasons of ParcelDetail.
   'planning.error.session', 'planning.errorLoad', 'planning.lock.campaign_unknown',
-  'planning.estimate.trials', 'planning.estimate.years',
+  'planning.estimate.trials', 'planning.estimate.years', 'planning.estimate.simulating', 'planning.estimate.simulatingStart',
+  ...['commercial', 'commercialNoPct', 'dry_matter', 'as_reported'].map((k) => `planning.estimate.moisture.${k}`),
   // Keys picked inside a conditional, t(cond ? 'a' : 'b'), which literalKeys() does not see.
   'planning.matrix.choose', 'planning.matrix.change', 'planning.sources.open', 'planning.sources.close',
   'planning.admin.open', 'planning.admin.close', 'planning.fit.trials', 'planning.fit.noTrials',

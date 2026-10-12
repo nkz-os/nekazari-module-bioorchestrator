@@ -50,14 +50,17 @@ def test_bool_and_non_finite_yields_never_count():
     assert est["n"] == 1 and est["percentiles"]["p50"] == 6.0
 
 
-def test_unvalidated_is_hidden_and_aquacrop_is_honest_in_v1():
+def test_unvalidated_is_hidden_and_aquacrop_lists_async_or_its_gate_reason():
     assert visible([{"validation": {"status": "unvalidated"}}]) == []
-    assert aquacrop_status() == {"provider_id": "aquacrop", "reason": "preseason_not_supported"}
+    assert aquacrop_status(None) == {"provider_id": "aquacrop", "reason": "async"}
+    assert aquacrop_status("not_validated") == {"provider_id": "aquacrop", "reason": "not_validated"}
 
 
 ENV = {"parcel_id": "urn:ngsi-ld:AgriParcel:t:p1", "climate_class": "Csa", "country": "ES",
        "centroid": {"lat": None, "lon": None}, "soil": {"data_available": False}, "irrigation": {}, "climate_detail": {}}
-AQUACROP_UNAVAILABLE = {"provider_id": "aquacrop", "reason": "preseason_not_supported"}
+AQUACROP_ASYNC = {"provider_id": "aquacrop", "reason": "async"}
+NEEDS_DATE = {"provider_id": "aquacrop", "reason": "needs_sowing_date"}
+TODAY = date(2026, 10, 12)
 
 
 def _dao(rows, recommendations=None):
@@ -73,15 +76,20 @@ def _dao(rows, recommendations=None):
     return dao
 
 
+def est_moisture(out):
+    return out["estimates"][0]["moisture"]
+
+
 async def test_parcel_estimates_from_trials_is_validated_and_declares_aquacrop():
     rows = [{"variety": v, "site": "Zona X", "year": 2024, "source_id": "GENVCE", "yield_kg_ha": y}
             for v, y in [("A", 6000), ("A", 7000), ("B", 1000)]]
     out = await service.parcel_estimates(dao=_dao(rows), source=KnowledgeSource("global", None), parcel_id="p1",
                                          tenant_id="t", crop="wheat", variety="A", regime="secano",
-                                         management="conventional", sowing_date=date(2027, 3, 1))
+                                         management="conventional", sowing_date=date(2027, 3, 1), today=TODAY)
     EstimatesResponse.model_validate(out)
     assert out["status"] == "ok" and out["crop"] == "TRZAX" and out["variety"] == "A"
-    assert out["unavailable"] == [AQUACROP_UNAVAILABLE] and out["disagreement"] is False
+    assert out["unavailable"] == [AQUACROP_ASYNC] and out["disagreement"] is False
+    assert est_moisture(out) == {"basis": "as_reported", "pct": None}
     assert out["inputs"]["sowing_source"] == "planned" and out["inputs"]["sowing_date"] == date(2027, 3, 1)
     (est,) = out["estimates"]
     assert est["basis"] == "trial_evidence" and est["percentiles"]["p50"] == 6.5 and est["n"] == 2
@@ -95,7 +103,7 @@ async def test_parcel_estimates_without_trials_is_no_trials_and_still_declares_a
                                          regime="secano", management="conventional", sowing_date=None)
     EstimatesResponse.model_validate(out)
     assert out["status"] == "no_trials" and out["estimates"] == [] and out["disagreement"] is False
-    assert out["unavailable"] == [AQUACROP_UNAVAILABLE, {"provider_id": "trial_evidence", "reason": "no_trials"}]
+    assert out["unavailable"] == [NEEDS_DATE, {"provider_id": "trial_evidence", "reason": "no_trials"}]
     assert out["inputs"]["sowing_source"] == "none"
 
 
@@ -106,7 +114,7 @@ async def test_variety_with_no_rows_says_why():
                                          management="conventional", sowing_date=None)
     EstimatesResponse.model_validate(out)
     assert out["status"] == "ok" and out["estimates"] == []
-    assert out["unavailable"] == [AQUACROP_UNAVAILABLE,
+    assert out["unavailable"] == [NEEDS_DATE,
                                   {"provider_id": "trial_evidence", "reason": "no_trials_for_variety"}]
 
 

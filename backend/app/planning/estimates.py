@@ -5,9 +5,8 @@ caller), declares its basis and validation status, and is never averaged with an
 ``unvalidated`` estimates are not returned; a provider that cannot answer says why in
 ``unavailable``.
 
-AquaCrop simulates sown campaigns only: its endpoint rejects a future sowing date. Until it
-offers a pre-sowing mode (planned sowing day over the historical years), planning lists it as
-unavailable with ``preseason_not_supported``.
+AquaCrop is asynchronous (see ``aquacrop_provider`` and the ``/estimates/aquacrop`` endpoint):
+this listing only says whether it will answer (``async``) or why it will not.
 """
 from __future__ import annotations
 
@@ -52,19 +51,27 @@ def trial_estimate(rows: list[dict], variety: str | None, attributions: list[dic
     return {"provider_id": PROVIDER_TRIALS, "provider_version": policy_version or "unknown",
             "basis": "trial_evidence", "unit": "t/ha", "percentiles": {k: round(v, 2) for k, v in pct.items()},
             "n": len(tonnes), "n_kind": "trials", "validation": {"status": "not_applicable"},
+            "moisture": {"basis": "as_reported", "pct": None},
             "warnings": [], "attributions": attributions, "graph_id": graph_id}
 
 
-def aquacrop_status() -> dict:
-    return {"provider_id": PROVIDER_AQUACROP, "reason": "preseason_not_supported"}
+def aquacrop_status(gate_reason: str | None) -> dict:
+    """The AquaCrop entry of ``unavailable`` in /estimates: ``async`` when it will answer (poll it)."""
+    return {"provider_id": PROVIDER_AQUACROP, "reason": gate_reason or "async"}
 
 
 def disagreement(estimates: list[dict]) -> bool:
-    by_basis: dict[str, list[float]] = defaultdict(list)
+    """Same-basis AND same-moisture model medians that differ by more than DISAGREEMENT_RATIO.
+
+    Range-only figures have no median and trial evidence is never compared with models.
+    """
+    groups: dict[tuple, list[float]] = defaultdict(list)
     for e in estimates:
-        if e["basis"] != "trial_evidence":
-            by_basis[e["basis"]].append(e["percentiles"]["p50"])
-    return any(len(v) >= 2 and max(v) > DISAGREEMENT_RATIO * min(v) for v in by_basis.values())
+        if e["basis"] == "trial_evidence" or not e.get("percentiles"):
+            continue
+        moisture = e.get("moisture") or {}
+        groups[(e["basis"], moisture.get("basis"), moisture.get("pct"))].append(e["percentiles"]["p50"])
+    return any(len(v) >= 2 and max(v) > DISAGREEMENT_RATIO * min(v) for v in groups.values())
 
 
 def visible(estimates: list[dict]) -> list[dict]:

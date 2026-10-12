@@ -21,7 +21,7 @@ from app.core.dependencies import (
 )
 from app.graph.dao import GraphDAO
 from app.services.sim_errors import SimulationError
-from app.services.sim_jobs import SimJobs, crop_simulation_version
+from app.services.sim_jobs import SimJobs, shared_sim_jobs
 from app.species_registry import get_species_info, resolve_species
 from neo4j import AsyncDriver
 
@@ -1164,17 +1164,6 @@ async def agriculture_crop_simulation(
         raise HTTPException(status_code=e.status_code, detail=e.detail()) from e
 
 
-_SIM_JOBS: SimJobs | None = None
-
-
-def _sim_jobs() -> SimJobs:
-    """The process-wide job store (single replica), keyed by engine + calibration version."""
-    global _SIM_JOBS
-    if _SIM_JOBS is None:
-        _SIM_JOBS = SimJobs(version=crop_simulation_version())
-    return _SIM_JOBS
-
-
 @router.post("/agriculture/crop-simulation/jobs", status_code=202)
 async def agriculture_crop_simulation_job_start(
     driver: DriverDep,
@@ -1189,7 +1178,8 @@ async def agriculture_crop_simulation_job_start(
 
     Same inputs as ``crop-simulation``. An identical request on the same day returns
     the same job, finished jobs answering at once. Body: ``{job_id, state, done,
-    total, result, error}`` with state queued | running | done | failed.
+    total, result, error}`` with state queued | running | done | failed. A tenant with
+    too many unfinished jobs gets 429 ``too_many_jobs``.
     """
     tenant_id = _require_tenant_id(request)
     dao = GraphDAO(driver)
@@ -1201,14 +1191,17 @@ async def agriculture_crop_simulation_job_start(
             parcel_id=parcel_id, tenant_id=tenant_id, crop_slug=crop_slug,
             sowing_date_str=sowing_date, irrigation=irrigation, engine=engine, progress=progress)
 
-    return SimJobs.view(await _sim_jobs().start(tenant_id, params, run))
+    try:
+        return SimJobs.view(await shared_sim_jobs().start(tenant_id, params, run))
+    except SimulationError as e:
+        raise HTTPException(status_code=e.status_code, detail=e.detail()) from e
 
 
 @router.get("/agriculture/crop-simulation/jobs/{job_id}")
 async def agriculture_crop_simulation_job_status(request: Request, job_id: str):
     """State and progress of a simulation job; ``result`` is the crop-simulation answer."""
     tenant_id = _require_tenant_id(request)
-    job = _sim_jobs().get(job_id, tenant_id)
+    job = shared_sim_jobs().get(job_id, tenant_id)
     if job is None:
         raise HTTPException(status_code=404, detail={"code": "job_not_found",
                                                      "message": "No such simulation job."})

@@ -4,6 +4,7 @@ import { useTranslation } from '@nekazari/sdk';
 import { Badge, Button, FormField, Inline, Select, Stack } from '@nekazari/ui-kit';
 import { ArrowLeft } from 'lucide-react';
 import { fetchEstimates, fetchFit, fetchVarieties } from './api';
+import { aquacropPending, mergeAquacrop } from './estimatesModel';
 import EstimatesTable from './EstimatesTable';
 import FitList from './FitList';
 import { cropName, safeLang, shortId } from './format';
@@ -13,6 +14,7 @@ import { CycleLine } from './PlanMatrix';
 import { draftFor, draftFromCells, type PlanDraft } from './planModel';
 import Step from './Step';
 import type { Management, ParcelRow, Regime } from './types';
+import { useAquacropEstimate } from './useAquacropEstimate';
 import { useLoad } from './useLoad';
 import VarietyTable from './VarietyTable';
 
@@ -56,6 +58,12 @@ export default function ParcelDetail({ row, campaign, onClose, onSaved, onSimula
     (s) => fetchEstimates(row.parcel_id, { crop: chosen!.species, variety: draft.main.variety, regime: regime!, management,
       sowingDate: estimateSowing || null }, s),
     [row.parcel_id, chosen?.species, draft.main.variety, regime, management, estimateSowing], Boolean(chosen && regime));
+  // AquaCrop is asynchronous: /estimates only says it will answer ("async"); this polls its own endpoint.
+  const aquacrop = useAquacropEstimate(
+    row.parcel_id,
+    { crop: chosen?.species ?? '', regime: regime ?? 'secano', sowingDate: estimateSowing || null },
+    Boolean(chosen && regime && estimates.data && aquacropPending(estimates.data)));
+  const merged = estimates.data ? mergeAquacrop(estimates.data, aquacrop.response, aquacrop.failure ?? undefined) : null;
   const loadedVarieties = varieties.data?.varieties;
   useEffect(() => {
     if (!loadedVarieties) return;
@@ -143,7 +151,7 @@ export default function ParcelDetail({ row, campaign, onClose, onSaved, onSimula
               : <p className="text-nkz-sm text-nkz-text-muted">{t('planning.variety.noTrials')}</p>}
           </Step>
           <Step title={t('planning.step.estimate')} loading={estimates.loading} error={estimates.error} onRetry={estimates.retry}>
-            {estimates.data && <EstimatesTable data={estimates.data} />}
+            {merged && <EstimatesTable data={merged.data} progress={merged.progress} onRetry={aquacrop.retry} />}
           </Step>
           <Step title={t('planning.step.plan')}>
             {blocked ? (

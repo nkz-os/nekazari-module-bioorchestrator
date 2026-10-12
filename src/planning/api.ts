@@ -1,9 +1,9 @@
-/** Client of /api/graph/planning (contract 1.0). Empty values are never sent. */
+/** Client of /api/graph/planning (contract 1.1). Empty values are never sent. */
 import { API_BASE, authHeaders } from '../services/api';
 import type { SourceAttributionItem } from '../types/attribution';
 import { CONTRACT_VERSION } from './types';
 import type {
-  EstimatesResponse, FarmResponse, FitResponse, Management, PlanIn, PlanWriteResponse, Regime, VarietiesResponse,
+  AquacropResponse, EstimatesResponse, FarmResponse, FitResponse, Management, PlanIn, PlanWriteResponse, Regime, VarietiesResponse,
 } from './types';
 
 const PLANNING = `${API_BASE}/api/graph/planning`;
@@ -75,6 +75,14 @@ export interface EstimatesQuery { crop: string; variety: string | null; regime: 
 export const fetchEstimates = (parcelId: string, q: EstimatesQuery, signal?: AbortSignal) =>
   request<EstimatesResponse>('GET', `${PLANNING}/parcels/${enc(parcelId)}/estimates${buildQuery({
     crop: q.crop, variety: q.variety, regime: q.regime, management: q.management, sowing_date: q.sowingDate,
+  })}`, undefined, signal);
+
+/** The engine takes neither variety nor management: changing them must not restart a simulation. */
+export type AquacropQuery = Pick<EstimatesQuery, 'crop' | 'regime' | 'sowingDate'>;
+export const fetchAquacrop = (parcelId: string, q: AquacropQuery, signal?: AbortSignal, opts: { retry?: boolean; jobId?: string | null } = {}) =>
+  request<AquacropResponse>('GET', `${PLANNING}/parcels/${enc(parcelId)}/estimates/aquacrop${buildQuery({
+    crop: q.crop, regime: q.regime, sowing_date: q.sowingDate,
+    retry: opts.retry ? 'true' : null, job_id: opts.jobId,
   })}`, undefined, signal);
 
 export const putPlan = (parcelId: string, body: PlanIn) =>

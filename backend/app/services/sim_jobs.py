@@ -8,7 +8,9 @@ one answers at once (the cache) and a running one is shared. A new day is a new 
 The store lives in this process: the service runs a single replica (as the
 background queue assumes), keeps at most ``MAX_JOBS`` jobs (oldest finished first
 out) and loses them on restart (the client starts again). Simulations run one at a
-time: each already fills the AquaCrop process pool.
+time: each already fills the AquaCrop process pool. A tenant may have at most
+``MAX_PENDING_PER_TENANT`` unfinished jobs, so one tenant cannot queue ahead of all
+the others.
 """
 
 from __future__ import annotations
@@ -28,6 +30,9 @@ from app.services.sim_errors import SimulationError
 logger = logging.getLogger(__name__)
 
 MAX_JOBS = 256
+# ASSUMPTION: 3 unfinished jobs per tenant (a parcel and a couple of sowing-date changes);
+# beyond that a request is refused (429) until one finishes, about a minute per simulation.
+MAX_PENDING_PER_TENANT = 3
 FINISHED = ("done", "failed")
 
 Progress = Callable[[int, int], None]
@@ -47,11 +52,18 @@ class Job:
 
 
 class SimJobs:
-    def __init__(self, *, version: str, max_jobs: int = MAX_JOBS, max_concurrent: int = 1):
+    def __init__(self, *, version: str, max_jobs: int = MAX_JOBS, max_concurrent: int = 1,
+                 max_pending_per_tenant: int = MAX_PENDING_PER_TENANT):
         self._version = version
         self._max_jobs = max_jobs
+        self._max_pending = max_pending_per_tenant
         self._jobs: OrderedDict[str, Job] = OrderedDict()
         self._slots = asyncio.Semaphore(max_concurrent)
+
+    @property
+    def version(self) -> str:
+        """Engine and calibration version that job ids are keyed by."""
+        return self._version
 
     @staticmethod
     def job_id(tenant_id: str, params: dict[str, Any], today: date, version: str) -> str:
@@ -65,6 +77,10 @@ class SimJobs:
         if job is not None and job.state != "failed":
             self._jobs.move_to_end(jid)
             return job
+        pending = sum(1 for j in self._jobs.values() if j.tenant_id == tenant_id and j.state not in FINISHED)
+        if pending >= self._max_pending:
+            raise SimulationError("too_many_jobs", "Other simulations of this tenant are still waiting or "
+                                  "running; try again when one finishes.", 429)
         job = Job(jid, tenant_id)
         self._jobs[jid] = job
         self._jobs.move_to_end(jid)
@@ -117,3 +133,14 @@ def crop_simulation_version() -> str:
 
     cal = yc._calibration("wheat") or {}
     return f"aquacrop-{aq._version()}|calibration-{cal.get('version', 'none')}"
+
+
+_SHARED: SimJobs | None = None
+
+
+def shared_sim_jobs() -> SimJobs:
+    """The process-wide job store (single replica): every route that starts simulations shares it."""
+    global _SHARED
+    if _SHARED is None:
+        _SHARED = SimJobs(version=crop_simulation_version())
+    return _SHARED

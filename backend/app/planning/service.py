@@ -3,12 +3,14 @@ from __future__ import annotations
 
 import logging
 import re
-from datetime import date
+from datetime import UTC, date, datetime
 
 from app.common.attribution import attach_attributions, rows_source_ids
 from app.core.knowledge import KnowledgeSource
 from app.graph.dao import _to_parcel_urn
 from app.graph.recommend import sowing_info
+from app.planning.aquacrop_provider import PROVIDER_ID as AQUACROP_ID
+from app.planning.aquacrop_provider import aquacrop_gate, map_result, poll_in_scope
 from app.planning.estimates import (
     aquacrop_status,
     disagreement,
@@ -35,6 +37,7 @@ from app.planning.rotation import rotation_reasons
 from app.planning.varieties import variety_stats
 from app.services.crop_cycles_client import fetch_crop_cycles
 from app.services.crop_reference import CROP_REFERENCE
+from app.services.sim_errors import SimulationError
 from app.services.soil_client import assess_soil_suitability
 from app.services.sowing_windows import load_rows
 from app.species_registry import (
@@ -211,15 +214,17 @@ async def parcel_varieties(*, dao, source: KnowledgeSource, parcel_id: str, tena
 
 
 async def parcel_estimates(*, dao, source: KnowledgeSource, parcel_id: str, tenant_id: str, crop: str,
-                           variety: str | None, regime: str, management: str, sowing_date: date | None) -> dict:
+                           variety: str | None, regime: str, management: str, sowing_date: date | None,
+                           today: date | None = None) -> dict:
     eppo = crop_code(crop)
     env = await load_environment(dao, parcel_id, tenant_id)
+    gate = aquacrop_gate(eppo, regime, env.get("country"), sowing_date, today or datetime.now(UTC).date())
     inputs = {"regime": regime, "management": management, "sowing_date": sowing_date,
               "sowing_source": "planned" if sowing_date else "none",
               "soil_source": (env.get("soil") or {}).get("source") or "unavailable",
               "climate_source": (env.get("climate_detail") or {}).get("source") or "unavailable"}
     base = {"parcel_id": env["parcel_id"], "crop": eppo, "variety": variety, "inputs": inputs,
-            "unavailable": [aquacrop_status()]}
+            "unavailable": [aquacrop_status(gate)]}
     ev = await load_crop_evidence(dao, env, crop_eppo=eppo, regime=regime, management=management)
     if ev["status"] != "ok":
         # needs_climate is already the status; for no_trials the trial provider also states its reason.
@@ -237,6 +242,69 @@ async def parcel_estimates(*, dao, source: KnowledgeSource, parcel_id: str, tena
     shown = visible(found)
     return {**base, "status": "ok", "unavailable": unavailable, "estimates": shown,
             "disagreement": disagreement(shown)}
+
+
+async def parcel_aquacrop(*, dao, jobs, tenant_id: str, parcel_id: str, crop: str, regime: str,
+                          sowing_date: date | None, today: date | None = None, retry: bool = False,
+                          job_id: str | None = None) -> dict:
+    """State of the AquaCrop provider for this input, starting or joining its simulation job.
+
+    Idempotent: the UI polls this. Gated inputs answer ``unavailable`` without touching the
+    engine; a failed job is reported as failed (relaunched only with ``retry``, never by polling) and a lost
+    one (restart) is started again by the same call.
+    """
+    today = today or datetime.now(UTC).date()
+    eppo = crop_code(crop)
+    if job_id and sowing_date is not None and poll_in_scope(eppo, regime, sowing_date, today):
+        # Light poll: read the job by id (tenant-scoped), skipping the parcel lookup. Only the id these very
+        # inputs hash to is accepted, so a stale or foreign id never answers for another parcel, crop or
+        # date. A lost job, or a failed one being retried, takes the full path below.
+        expected = jobs.job_id(tenant_id, _job_params(parcel_id, crop, sowing_date), today, jobs.version)
+        live = jobs.get(job_id, tenant_id) if job_id == expected else None
+        if live is not None and not (live.state == "failed" and retry):
+            return _job_view(live, jobs.version)
+    env = await load_environment(dao, parcel_id, tenant_id)
+    reason = aquacrop_gate(eppo, regime, env.get("country"), sowing_date, today)
+    if reason is not None:
+        return {"state": "unavailable", "done": 0, "total": None, "estimates": [],
+                "unavailable": [{"provider_id": AQUACROP_ID, "reason": reason}], "job_id": None}
+    # The very parameters of POST /agriculture/crop-simulation/jobs, so identical inputs share the job.
+    params = _job_params(env["parcel_id"], crop, sowing_date)
+
+    async def run(progress):
+        return await dao.run_crop_simulation(
+            parcel_id=params["parcel_id"], tenant_id=tenant_id, crop_slug=params["crop_slug"],
+            sowing_date_str=params["sowing_date"], irrigation="rainfed", engine="aquacrop", progress=progress)
+
+    # ``start`` relaunches a failed job, which would loop on every poll: look first.
+    known = jobs.get(jobs.job_id(tenant_id, params, today, jobs.version), tenant_id)
+    if known is not None and known.state == "failed" and not retry:
+        return _job_view(known, jobs.version)
+    try:
+        job = await jobs.start(tenant_id, params, run, today)
+    except SimulationError as e:
+        if e.code != "too_many_jobs":
+            raise
+        # The tenant's other simulations are still waiting or running: say so, start nothing.
+        return {"state": "unavailable", "done": 0, "total": None, "estimates": [],
+                "unavailable": [{"provider_id": AQUACROP_ID, "reason": "busy"}], "job_id": None}
+    return _job_view(job, jobs.version)
+
+
+def _job_params(parcel_id: str, crop: str, sowing_date: date) -> dict:
+    return {"parcel_id": parcel_id, "crop_slug": resolve_species(crop), "sowing_date": sowing_date.isoformat(),
+            "irrigation": "rainfed", "engine": "aquacrop"}
+
+
+def _job_view(job, version: str) -> dict:
+    out = {"state": job.state, "done": job.done, "total": job.total, "estimates": [], "unavailable": [],
+           "job_id": job.id}
+    if job.state == "failed":
+        out["unavailable"] = [{"provider_id": AQUACROP_ID, "reason": "engine_error",
+                               "code": (job.error or {}).get("code")}]
+    elif job.state == "done":
+        out["estimates"], out["unavailable"] = map_result(job.result or {}, version)
+    return out
 
 
 def _no_trials_reason(variety: str | None, data_gaps: list[str]) -> dict:
