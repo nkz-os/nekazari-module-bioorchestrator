@@ -6,9 +6,11 @@ from datetime import date
 import pytest
 
 from app.services.sim_inputs import (
+    SOWING_METHODS,
     SimInputError,
     resolve_sowing_date,
     soil_layers_from_summary,
+    sowing_method_from_operations,
 )
 
 TODAY = date(2026, 10, 8)
@@ -149,3 +151,67 @@ def test_soil_no_horizons():
 def test_soil_bad_depths():
     with pytest.raises(SimInputError):
         soil_layers_from_summary({"horizons": [horizon(30, 30)]})
+
+
+# ------------------------------------------------------------- sowing method
+def _p(v):
+    return {"type": "Property", "value": v}
+
+
+def _sow(day, method=None, status="completed", key="endedAt"):
+    op = {"operationType": _p("sowing"), "status": _p(status),
+          key: _p({"@type": "DateTime", "@value": f"{day}T08:00:00Z"})}
+    if method is not None:
+        op["sowingMethod"] = _p(method)
+    return op
+
+
+D = date(2025, 10, 20)
+
+
+def test_vocabulary_is_esyrce_d_n():
+    assert SOWING_METHODS == ("direct", "conventional")
+
+
+def test_method_of_the_completed_sowing_on_the_day():
+    assert sowing_method_from_operations([_sow("2025-10-20", "direct")], D) == ("direct", [])
+
+
+def test_started_at_dates_a_sowing_without_end():
+    assert sowing_method_from_operations([_sow("2025-10-20", "direct", key="startedAt")], D) == ("direct", [])
+
+
+def test_other_day_planned_or_other_type_do_not_count():
+    ops = [_sow("2025-10-19", "direct"), _sow("2025-10-20", "direct", status="planned"),
+           {"operationType": _p("tillage"), "status": _p("completed"),
+            "endedAt": _p("2025-10-20T08:00:00Z"), "sowingMethod": _p("direct")}]
+    assert sowing_method_from_operations(ops, D) == (None, [])
+
+
+def test_sowing_without_method_is_no_information():
+    assert sowing_method_from_operations([_sow("2025-10-20")], D) == (None, [])
+
+
+def test_unknown_method_is_ignored_with_warning():
+    method, warns = sowing_method_from_operations([_sow("2025-10-20", "no-till")], D)
+    assert method is None
+    assert warns == ["sowing method: unknown value 'no-till' on the sowing of 2025-10-20 ignored"]
+
+
+def test_agreeing_sowings_give_the_method():
+    ops = [_sow("2025-10-20", "direct"), _sow("2025-10-20", "direct")]
+    assert sowing_method_from_operations(ops, D) == ("direct", [])
+
+
+def test_disagreeing_sowings_fall_back_with_warning():
+    ops = [_sow("2025-10-20", "direct"), _sow("2025-10-20", "conventional")]
+    method, warns = sowing_method_from_operations(ops, D)
+    assert method is None
+    assert warns == ["sowing method: completed sowings on 2025-10-20 disagree "
+                     "(conventional, direct); bare soil (conventional) assumed"]
+
+
+def test_plain_string_values_are_accepted():
+    op = {"operationType": "sowing", "status": "completed", "endedAt": "2025-10-20",
+          "sowingMethod": "conventional"}
+    assert sowing_method_from_operations([op], D) == ("conventional", [])
