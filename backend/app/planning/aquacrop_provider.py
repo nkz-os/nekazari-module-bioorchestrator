@@ -34,6 +34,15 @@ def aquacrop_gate(crop_eppo: str, regime: str, country: str | None, sowing_date:
     return None
 
 
+def poll_in_scope(crop_eppo: str, regime: str, sowing_date: date, today: date) -> bool:
+    """Whether a light poll (no parcel lookup) may read a job: the gate, for some validated country.
+
+    The parcel's own country was gated when its job was started, and the job id covers the parcel.
+    """
+    return any(aquacrop_gate(crop_eppo, regime, country, sowing_date, today) is None
+               for _, _, country in VALIDATED)
+
+
 def _moisture(basis: Any) -> dict:
     basis = basis if isinstance(basis, dict) else {}
     kind = basis.get("moisture")

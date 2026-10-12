@@ -1,7 +1,7 @@
 import React from 'react';
 import { useTranslation } from '@nekazari/sdk';
-import SourceAttribution from '../components/shared/SourceAttribution';
 import { Badge, Button, Stack } from '@nekazari/ui-kit';
+import SourceAttribution from '../components/shared/SourceAttribution';
 import { canRetry, moistureLabel, progressLabel, unavailableKey, sortEstimates, uniqueAttributions, validationTone } from './estimatesModel';
 import { formatIsoDate, formatT } from './format';
 import type { Estimate, EstimatesResponse } from './types';
@@ -77,10 +77,11 @@ export default function EstimatesTable({ data, progress = null, onRetry }: { dat
                 <td className="py-2 pr-4 font-medium text-nkz-text-primary">
                   {t(`planning.estimate.provider.${u.provider_id}`, { defaultValue: u.provider_id })}
                 </td>
-                <td className="py-2 pr-4 text-nkz-text-muted" colSpan={3} title={u.code ?? undefined}>
+                <td className="py-2 pr-4 text-nkz-text-muted" colSpan={3}
+                  title={u.code ? t(`cropSimulation.errors.${u.code}`, { defaultValue: t('cropSimulation.errors.generic') }) : undefined}>
                   {u.reason === 'async' && progress !== null
                     ? t(progressLabel(progress).key, progressLabel(progress).params)
-                    : t(unavailableKey(u.reason), { defaultValue: u.reason })}
+                    : t(unavailableKey(u.reason), { defaultValue: t('planning.estimate.unavailable.unknown') })}
                   {onRetry && canRetry(u) && (
                     <> <Button size="sm" variant="secondary" onClick={onRetry}>{t('planning.retry')}</Button></>
                   )}

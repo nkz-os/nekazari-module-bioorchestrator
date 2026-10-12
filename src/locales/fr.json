@@ -560,6 +560,8 @@
         "timeout": "la simulation prend trop de temps ; réessayez plus tard",
         "still_queued": "La simulation est toujours en attente",
         "request_failed": "Impossible de consulter la simulation",
+        "busy": "d'autres simulations sont en cours ; réessayez dans une minute",
+        "unknown": "non disponible",
         "async": "simulation en cours…",
         "expected_crop_not_calibrated": "pas de prévision de récolte : culture non calibrée",
         "expected_irrigated": "pas de prévision de récolte : seul le pluvial est calibré",

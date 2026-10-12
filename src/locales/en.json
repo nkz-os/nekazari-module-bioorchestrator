@@ -1313,6 +1313,8 @@
         "timeout": "the simulation is taking too long; try again later",
         "still_queued": "The simulation is still queued",
         "request_failed": "The simulation could not be checked",
+        "busy": "you have other simulations in progress; try again in a minute",
+        "unknown": "not available",
         "async": "simulating…",
         "expected_crop_not_calibrated": "no harvest forecast: crop not calibrated",
         "expected_irrigated": "no harvest forecast: only rainfed is calibrated",

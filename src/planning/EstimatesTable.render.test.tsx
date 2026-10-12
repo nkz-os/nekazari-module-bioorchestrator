@@ -109,11 +109,23 @@ describe('EstimatesTable (es)', () => {
     }
     expect(renderToStaticMarkup(<EstimatesTable data={{ ...DATA, unavailable: [{ provider_id: 'aquacrop', reason: 'still_queued' }] }} />)).toContain('La simulación sigue en cola');
   });
-  it('the engine code goes in a title, not in the text', () => {
+  it('the engine code is explained in a translated title, not in the text', () => {
     const html = renderToStaticMarkup(<EstimatesTable data={{ ...DATA, unavailable: [{ provider_id: 'aquacrop', reason: 'engine_error', code: 'soil_unavailable' }] }} />);
     expect(html).toContain('La simulación ha fallado');
-    expect(html).toContain('title="soil_unavailable"');
-    expect(html).not.toContain('(código');
+    expect(html).toContain('title="Los datos de suelo no están disponibles temporalmente. Inténtalo más tarde."');
+    expect(html).not.toContain('soil_unavailable');
+    const unknown = renderToStaticMarkup(<EstimatesTable data={{ ...DATA, unavailable: [{ provider_id: 'aquacrop', reason: 'engine_error', code: 'brand_new' }] }} />);
+    expect(unknown).not.toContain('brand_new');
+  });
+  it('a busy queue is said in words and can be retried', () => {
+    const html = renderToStaticMarkup(<EstimatesTable data={{ ...DATA, unavailable: [{ provider_id: 'aquacrop', reason: 'busy' }] }} onRetry={() => undefined} />);
+    expect(html).toContain('tienes otras simulaciones en curso');
+    expect(html).toContain('Reintentar');
+  });
+  it('an unknown reason never shows its raw code', () => {
+    const html = renderToStaticMarkup(<EstimatesTable data={{ ...DATA, unavailable: [{ provider_id: 'aquacrop', reason: 'brand_new_reason' }] }} />);
+    expect(html).toContain('no disponible');
+    expect(html).not.toContain('brand_new_reason');
   });
   it('an unknown calibration reason falls back to the generic text', () => {
     expect(renderToStaticMarkup(<EstimatesTable data={{ ...DATA, unavailable: [{ provider_id: 'aquacrop', reason: 'expected_brand_new' }] }} />))

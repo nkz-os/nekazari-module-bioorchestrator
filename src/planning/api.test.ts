@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { buildQuery, fetchEstimates, fetchFit, PlanningApiError, putPlan } from './api';
+import { buildQuery, fetchAquacrop, fetchEstimates, fetchFit, PlanningApiError, putPlan } from './api';
 
 afterEach(() => vi.unstubAllGlobals());
 
@@ -33,6 +33,13 @@ describe('planning api client', () => {
     const url = String(fetchMock.mock.calls[0][0]);
     expect(url).toContain('/api/graph/planning/parcels/p1/estimates?crop=wheat&regime=secano&management=organic&sowing_date=2026-11-01');
     expect(url).not.toContain('variety');
+  });
+  it('asks AquaCrop only for what the engine takes, and a poll carries the job id', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, status: 200, json: async () => ({ state: 'queued' }) });
+    vi.stubGlobal('fetch', fetchMock);
+    await fetchAquacrop('p1', { crop: 'wheat', regime: 'secano', sowingDate: '2026-11-01' }, undefined, { jobId: 'j1' });
+    expect(String(fetchMock.mock.calls[0][0]))
+      .toContain('/api/graph/planning/parcels/p1/estimates/aquacrop?crop=wheat&regime=secano&sowing_date=2026-11-01&job_id=j1');
   });
 
   it('sends a PUT with a JSON body, its content type and the session cookie', async () => {

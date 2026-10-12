@@ -1,4 +1,5 @@
 """/planning/.../estimates/aquacrop with a fake job store: no engine runs."""
+import asyncio
 from datetime import UTC, date, datetime
 from unittest.mock import AsyncMock, MagicMock
 
@@ -7,6 +8,7 @@ from fastapi.testclient import TestClient
 
 from app.main import app
 from app.planning import service
+from app.services.sim_errors import SimulationError
 from app.services.sim_jobs import Job, SimJobs
 from neo4j import AsyncDriver
 
@@ -20,21 +22,24 @@ RESULT = {"status": "preseason", "yield_basis": {"moisture": "commercial", "grai
 
 
 class FakeJobs:
-    """Same surface as SimJobs for the provider: job_id/get/start, _version."""
-    _version = "v-test"
+    """Same surface as SimJobs for the provider: job_id/get/start, version."""
+    version = "v-test"
     job_id = staticmethod(SimJobs.job_id)
 
-    def __init__(self):
+    def __init__(self, full: bool = False):
         self.jobs: dict[str, Job] = {}
         self.started: list[dict] = []
+        self.full = full  # the tenant is past its cap of unfinished jobs
 
     def get(self, jid, tenant):
         j = self.jobs.get(jid)
         return j if j and j.tenant_id == tenant else None
 
     async def start(self, tenant, params, run, today=None):
-        jid = self.job_id(tenant, params, today, self._version)
+        jid = self.job_id(tenant, params, today, self.version)
         job = self.jobs.get(jid)
+        if (job is None or job.state == "failed") and self.full:
+            raise SimulationError("too_many_jobs", "m", 429)
         if job is None or job.state == "failed":
             self.started.append(params)  # a launch, as the real store: joining a live job is not one
             job = self.jobs[jid] = Job(jid, tenant)  # queued
@@ -190,6 +195,55 @@ async def test_a_lost_job_restarts_transparently():
     assert again["state"] == "queued" and again["job_id"] == first["job_id"] and len(jobs.started) == 2
 
 
+async def test_a_tenant_past_its_cap_is_told_busy_and_nothing_starts():
+    jobs = FakeJobs(full=True)
+    out = await _call(jobs)
+    assert out["state"] == "unavailable" and out["job_id"] is None and out["estimates"] == []
+    assert out["unavailable"] == [{"provider_id": "aquacrop", "reason": "busy"}] and jobs.started == []
+
+
+async def test_a_job_already_running_is_joined_even_past_the_cap():
+    jobs = FakeJobs()
+    first = await _call(jobs)
+    jobs.full = True
+    assert (await _call(jobs))["job_id"] == first["job_id"]
+
+
+async def test_a_light_poll_out_of_scope_takes_the_gate():
+    # The job id covers parcel, crop and date, not the regime: an irrigated poll must not read a rainfed job.
+    jobs = FakeJobs()
+    first = await _call(jobs)
+    jobs.only().state, jobs.only().result = "done", RESULT
+    dao = _dao()
+    out = await _call(jobs, dao=dao, job_id=first["job_id"], regime="regadío")
+    assert out["state"] == "unavailable" and out["unavailable"][0]["reason"] == "not_validated"
+    dao.get_parcel_environment.assert_awaited_once()
+
+
+async def test_the_light_poll_reads_the_real_store():
+    # Pins the provider to the real SimJobs surface: a rename there makes polls take the full path, failing here.
+    jobs, gate = SimJobs(version="v-real"), asyncio.Event()
+    dao = _dao()
+
+    async def simulate(**kw):
+        await gate.wait()
+        return RESULT
+    dao.run_crop_simulation.side_effect = simulate
+    first = await _call(jobs, dao=dao)
+    assert first["state"] in ("queued", "running") and first["job_id"]
+    polled = await _call(jobs, dao=dao, job_id=first["job_id"])
+    assert polled["job_id"] == first["job_id"]
+    dao.get_parcel_environment.assert_awaited_once()
+    gate.set()
+    for _ in range(200):
+        if jobs.get(first["job_id"], "t").state == "done":
+            break
+        await asyncio.sleep(0.01)
+    done = await _call(jobs, dao=dao, job_id=first["job_id"])
+    assert done["state"] == "done" and done["estimates"][0]["provider_version"] == "v-real"
+    dao.get_parcel_environment.assert_awaited_once()
+
+
 async def test_unknown_parcel_and_crop_propagate():
     dao = _dao()
     dao.get_parcel_environment.return_value = {"error": "nope"}
@@ -212,8 +266,7 @@ def test_route_validates_the_contract(client, monkeypatch):
     called = AsyncMock(return_value=out)
     monkeypatch.setattr(planning_api, "parcel_aquacrop", called)
     r = client.get(f"/api/graph/planning/parcels/{PARCEL}/estimates/aquacrop",
-                   params={"crop": "TRZAX", "regime": "secano", "management": "conventional",
-                           "sowing_date": SOW.isoformat()})
+                   params={"crop": "TRZAX", "regime": "secano", "sowing_date": SOW.isoformat()})
     assert r.status_code == 200
     body = r.json()
     assert body["provider_id"] == "aquacrop" and body["contract_version"] == "1.1" and body["state"] == "running"
@@ -225,8 +278,8 @@ def test_route_forwards_retry(client, monkeypatch):
     called = AsyncMock(return_value={"state": "queued", "estimates": [], "unavailable": [], "job_id": "j"})
     monkeypatch.setattr(planning_api, "parcel_aquacrop", called)
     url = f"/api/graph/planning/parcels/{PARCEL}/estimates/aquacrop"
-    params = {"crop": "TRZAX", "regime": "secano", "management": "conventional"}
-    client.get(url, params=params)
+    params = {"crop": "TRZAX", "regime": "secano", "management": "conventional"}  # extra params are ignored
+    assert client.get(url, params=params).status_code == 200
     assert called.await_args.kwargs["retry"] is False
     client.get(url, params={**params, "retry": "true", "job_id": "abc"})
     assert called.await_args.kwargs["retry"] is True and called.await_args.kwargs["job_id"] == "abc"

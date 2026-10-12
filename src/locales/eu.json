@@ -560,6 +560,8 @@
         "timeout": "simulazioak gehiegi irauten du; saiatu berriro geroago",
         "still_queued": "Simulazioa ilaran dago oraindik",
         "request_failed": "Ezin izan da simulazioa kontsultatu",
+        "busy": "beste simulazio batzuk martxan dituzu; saiatu berriro minutu batean",
+        "unknown": "ez dago erabilgarri",
         "async": "simulatzen…",
         "expected_crop_not_calibrated": "uztaren aurreikuspenik ez: laborea ez dago kalibratuta",
         "expected_irrigated": "uztaren aurreikuspenik ez: soilik lehorra dago kalibratuta",

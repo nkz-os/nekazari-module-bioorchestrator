@@ -10,7 +10,7 @@ from app.core.knowledge import KnowledgeSource
 from app.graph.dao import _to_parcel_urn
 from app.graph.recommend import sowing_info
 from app.planning.aquacrop_provider import PROVIDER_ID as AQUACROP_ID
-from app.planning.aquacrop_provider import aquacrop_gate, map_result
+from app.planning.aquacrop_provider import aquacrop_gate, map_result, poll_in_scope
 from app.planning.estimates import (
     aquacrop_status,
     disagreement,
@@ -37,6 +37,7 @@ from app.planning.rotation import rotation_reasons
 from app.planning.varieties import variety_stats
 from app.services.crop_cycles_client import fetch_crop_cycles
 from app.services.crop_reference import CROP_REFERENCE
+from app.services.sim_errors import SimulationError
 from app.services.soil_client import assess_soil_suitability
 from app.services.sowing_windows import load_rows
 from app.species_registry import (
@@ -253,15 +254,15 @@ async def parcel_aquacrop(*, dao, jobs, tenant_id: str, parcel_id: str, crop: st
     one (restart) is started again by the same call.
     """
     today = today or datetime.now(UTC).date()
-    if job_id and sowing_date is not None:
-        # Light poll: read the job by id (tenant-scoped), skipping the gate and the parcel lookup. Only the id
-        # these very inputs hash to is accepted, so a stale or foreign id never answers for another parcel,
-        # crop or date. A lost job, or a failed one being retried, takes the full path below.
-        expected = jobs.job_id(tenant_id, _job_params(parcel_id, crop, sowing_date), today, jobs._version)
+    eppo = crop_code(crop)
+    if job_id and sowing_date is not None and poll_in_scope(eppo, regime, sowing_date, today):
+        # Light poll: read the job by id (tenant-scoped), skipping the parcel lookup. Only the id these very
+        # inputs hash to is accepted, so a stale or foreign id never answers for another parcel, crop or
+        # date. A lost job, or a failed one being retried, takes the full path below.
+        expected = jobs.job_id(tenant_id, _job_params(parcel_id, crop, sowing_date), today, jobs.version)
         live = jobs.get(job_id, tenant_id) if job_id == expected else None
         if live is not None and not (live.state == "failed" and retry):
-            return _job_view(live, jobs._version)
-    eppo = crop_code(crop)
+            return _job_view(live, jobs.version)
     env = await load_environment(dao, parcel_id, tenant_id)
     reason = aquacrop_gate(eppo, regime, env.get("country"), sowing_date, today)
     if reason is not None:
@@ -276,10 +277,18 @@ async def parcel_aquacrop(*, dao, jobs, tenant_id: str, parcel_id: str, crop: st
             sowing_date_str=params["sowing_date"], irrigation="rainfed", engine="aquacrop", progress=progress)
 
     # ``start`` relaunches a failed job, which would loop on every poll: look first.
-    # ASSUMPTION: _version is read from the store (private) until the engine team exposes it.
-    known = jobs.get(jobs.job_id(tenant_id, params, today, jobs._version), tenant_id)
-    job = known if known is not None and known.state == "failed" and not retry else await jobs.start(tenant_id, params, run, today)
-    return _job_view(job, jobs._version)
+    known = jobs.get(jobs.job_id(tenant_id, params, today, jobs.version), tenant_id)
+    if known is not None and known.state == "failed" and not retry:
+        return _job_view(known, jobs.version)
+    try:
+        job = await jobs.start(tenant_id, params, run, today)
+    except SimulationError as e:
+        if e.code != "too_many_jobs":
+            raise
+        # The tenant's other simulations are still waiting or running: say so, start nothing.
+        return {"state": "unavailable", "done": 0, "total": None, "estimates": [],
+                "unavailable": [{"provider_id": AQUACROP_ID, "reason": "busy"}], "job_id": None}
+    return _job_view(job, jobs.version)
 
 
 def _job_params(parcel_id: str, crop: str, sowing_date: date) -> dict:

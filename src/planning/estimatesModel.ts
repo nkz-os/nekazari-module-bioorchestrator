@@ -92,9 +92,9 @@ export function progressLabel(progress: { done: number; total: number | null }):
 /** Only the request that follows a user's retry carries retry=true; polling never does. */
 export const retryFlag = (retryCount: number, attempt: number): boolean => retryCount > 0 && attempt === 0;
 
-/** The button belongs to a failed engine and to the two resumable states, never to a gate reason. */
+/** The button belongs to a failed engine, a busy queue and the two resumable states, never to a gate reason. */
 export const canRetry = (u: { provider_id: string; reason: string }): boolean =>
-  u.provider_id === PROVIDER && ['engine_error', 'request_failed', 'still_queued'].includes(u.reason);
+  u.provider_id === PROVIDER && ['engine_error', 'busy', 'request_failed', 'still_queued'].includes(u.reason);
 
 /** A 404/405 means the backend with this endpoint is not deployed yet; any other error is a failed request. */
 export function failureFor(error: unknown): AquacropFailure {

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { fetchAquacrop, type EstimatesQuery } from './api';
+import { fetchAquacrop, type AquacropQuery } from './api';
 import {
   AQUACROP_POLL_MS, failureFor, jobIdForPoll, nextRetry, pollDecision, retryCountFor, retryFlag, type AquacropFailure,
 } from './estimatesModel';
@@ -15,9 +15,9 @@ const IDLE = { response: null, failure: null } as const;
  * 4-minute cap); stops on done, failed, unavailable, a failed request, or unmount. The endpoint is
  * idempotent, so a poll after a pod restart simply restarts the job. `enabled` false = no request.
  */
-export function useAquacropEstimate(parcelId: string, q: EstimatesQuery, enabled: boolean): AquacropView {
+export function useAquacropEstimate(parcelId: string, q: AquacropQuery, enabled: boolean): AquacropView {
   const [view, setView] = useState<{ key: string } & Omit<AquacropView, 'retry'>>({ key: '', ...IDLE });
-  const inputs = JSON.stringify([parcelId, q, enabled]);
+  const inputs = JSON.stringify([parcelId, q.crop, q.regime, q.sowingDate, enabled]);
   const [clicks, setClicks] = useState({ inputs: '', retries: 0, resumes: 0 });
   const failed = useRef(false);
   const retries = retryCountFor(clicks, inputs);
@@ -50,7 +50,7 @@ export function useAquacropEstimate(parcelId: string, q: EstimatesQuery, enabled
     };
     step();
     return () => { ctrl.abort(); if (timer) clearTimeout(timer); };
-    // `q` is serialised into `key`.
+    // `q`'s fields are serialised into `key`.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key]);
   // An answer for other inputs is never shown.

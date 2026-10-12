@@ -77,9 +77,11 @@ export const fetchEstimates = (parcelId: string, q: EstimatesQuery, signal?: Abo
     crop: q.crop, variety: q.variety, regime: q.regime, management: q.management, sowing_date: q.sowingDate,
   })}`, undefined, signal);
 
-export const fetchAquacrop = (parcelId: string, q: EstimatesQuery, signal?: AbortSignal, opts: { retry?: boolean; jobId?: string | null } = {}) =>
+/** The engine takes neither variety nor management: changing them must not restart a simulation. */
+export type AquacropQuery = Pick<EstimatesQuery, 'crop' | 'regime' | 'sowingDate'>;
+export const fetchAquacrop = (parcelId: string, q: AquacropQuery, signal?: AbortSignal, opts: { retry?: boolean; jobId?: string | null } = {}) =>
   request<AquacropResponse>('GET', `${PLANNING}/parcels/${enc(parcelId)}/estimates/aquacrop${buildQuery({
-    crop: q.crop, variety: q.variety, regime: q.regime, management: q.management, sowing_date: q.sowingDate,
+    crop: q.crop, regime: q.regime, sowing_date: q.sowingDate,
     retry: opts.retry ? 'true' : null, job_id: opts.jobId,
   })}`, undefined, signal);
 

@@ -560,6 +560,8 @@
         "timeout": "la simulació triga massa; torna-ho a provar més tard",
         "still_queued": "La simulació encara és a la cua",
         "request_failed": "No s'ha pogut consultar la simulació",
+        "busy": "tens altres simulacions en curs; torna-ho a provar d'aquí a un minut",
+        "unknown": "no disponible",
         "async": "simulant…",
         "expected_crop_not_calibrated": "sense previsió de collita: cultiu no calibrat",
         "expected_irrigated": "sense previsió de collita: només està calibrat el secà",

@@ -61,7 +61,7 @@ export default function ParcelDetail({ row, campaign, onClose, onSaved, onSimula
   // AquaCrop is asynchronous: /estimates only says it will answer ("async"); this polls its own endpoint.
   const aquacrop = useAquacropEstimate(
     row.parcel_id,
-    { crop: chosen?.species ?? '', variety: draft.main.variety, regime: regime ?? 'secano', management, sowingDate: estimateSowing || null },
+    { crop: chosen?.species ?? '', regime: regime ?? 'secano', sowingDate: estimateSowing || null },
     Boolean(chosen && regime && estimates.data && aquacropPending(estimates.data)));
   const merged = estimates.data ? mergeAquacrop(estimates.data, aquacrop.response, aquacrop.failure ?? undefined) : null;
   const loadedVarieties = varieties.data?.varieties;

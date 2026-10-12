@@ -1314,6 +1314,8 @@
         "timeout": "la simulación tarda demasiado; inténtalo más tarde",
         "still_queued": "La simulación sigue en cola",
         "request_failed": "No se pudo consultar la simulación",
+        "busy": "tienes otras simulaciones en curso; inténtalo de nuevo en un minuto",
+        "unknown": "no disponible",
         "async": "simulando…",
         "expected_crop_not_calibrated": "sin previsión de cosecha: cultivo no calibrado",
         "expected_irrigated": "sin previsión de cosecha: solo está calibrado el secano",

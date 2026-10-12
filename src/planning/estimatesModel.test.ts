@@ -134,7 +134,7 @@ describe('retry', () => {
   });
   it('is offered for an engine error only', () => {
     expect(canRetry({ provider_id: 'aquacrop', reason: 'engine_error' })).toBe(true);
-    for (const reason of ['request_failed', 'still_queued']) expect(canRetry({ provider_id: 'aquacrop', reason })).toBe(true);
+    for (const reason of ['busy', 'request_failed', 'still_queued']) expect(canRetry({ provider_id: 'aquacrop', reason })).toBe(true);
     for (const reason of ['timeout', 'not_validated', 'engine_not_deployed']) expect(canRetry({ provider_id: 'aquacrop', reason })).toBe(false);
   });
 });
