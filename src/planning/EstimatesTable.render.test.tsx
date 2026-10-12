@@ -12,7 +12,7 @@ import type { Estimate, EstimatesResponse } from './types';
 
 const DATA: EstimatesResponse = {
   contract_version: '1.0', parcel_id: 'p1', crop: 'TRZAX', variety: null, status: 'ok', disagreement: false,
-  inputs: { regime: 'secano', management: 'conventional', sowing_date: '2026-11-05', sowing_source: 'planned',
+  inputs: { regime: 'rainfed', management: 'conventional', sowing_date: '2026-11-05', sowing_source: 'planned',
     soil_source: 'soil_module', climate_source: 'chelsa_v2.1' },
   estimates: [{ provider_id: 'trial_evidence', provider_version: 'p', basis: 'trial_evidence', unit: 't/ha',
     percentiles: { p10: 5.1, p50: 6.8, p90: 8.2 }, range: null, coverage: null,

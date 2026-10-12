@@ -14,7 +14,7 @@ URN = "urn:ngsi-ld:AgriParcel:t:p1"
 
 
 def _plan(**over):
-    base = {"campaign": 2027, "regime": "secano", "management": "conventional", "cycles": [
+    base = {"campaign": 2027, "regime": "rainfed", "management": "conventional", "cycles": [
         {"role": "cover_crop", "crop": "vetch", "sowing_start": "2026-10-01", "expected_termination": "2027-04-20",
          "termination_method": "roller_crimper"},
         {"role": "main_crop", "crop": "maize", "variety": "P1524", "sowing_start": "2027-04-20",
@@ -63,7 +63,7 @@ def test_segments_are_chronological_and_carry_regime_and_management():
     assert [s["role"] for s in segs] == ["cover_crop", "main_crop"]
     assert segs[1]["crop"] == "ZEAMX" and segs[1]["sowing_window"] == ["2027-04-20", "2027-04-20"]
     ent = build_segment_entity("t", URN, "2027", 1, segs[1])
-    assert ent["irrigationRegime"]["value"] == "secano" and ent["management"]["value"] == "conventional"
+    assert ent["irrigationRegime"]["value"] == "rainfed" and ent["management"]["value"] == "conventional"
     assert ent["expectedTerminationDate"]["value"]["@value"] == "2027-10-01" and "hasAgriCrop" not in ent
 
 
@@ -237,13 +237,13 @@ async def test_written_perennial_cycle_carries_its_lifecycle(monkeypatch):
 # --- final-review fixes: conflicts by date overlap, raw cover species, woody and early annuals ---------------
 
 def _wheat_plan(campaign=2027, start="2026-11-10", end="2027-07-01", **over):
-    return PlanIn.model_validate({"campaign": campaign, "regime": "secano", "management": "conventional",
+    return PlanIn.model_validate({"campaign": campaign, "regime": "rainfed", "management": "conventional",
                                   "cycles": [{"role": "main_crop", "crop": "wheat", "sowing_start": start,
                                               "expected_termination": end}], **over})
 
 
 def _maize_plan(campaign, start, end):
-    return PlanIn.model_validate({"campaign": campaign, "regime": "regadío", "management": "conventional",
+    return PlanIn.model_validate({"campaign": campaign, "regime": "irrigated", "management": "conventional",
                                   "cycles": [{"role": "main_crop", "crop": "maize", "sowing_start": start,
                                               "expected_termination": end}]})
 
@@ -338,14 +338,14 @@ async def test_a_cycle_of_this_season_that_started_still_refuses_the_plan(monkey
 
 
 def _cover_plan(crop):
-    return PlanIn.model_validate({"campaign": 2027, "regime": "secano", "management": "conventional", "cycles": [
+    return PlanIn.model_validate({"campaign": 2027, "regime": "rainfed", "management": "conventional", "cycles": [
         {"role": "cover_crop", "crop": crop, "sowing_start": "2026-10-01", "expected_termination": "2027-04-20"},
         {"role": "main_crop", "crop": "maize", "sowing_start": "2027-04-20", "expected_termination": "2027-10-01"}]})
 
 
 @pytest.mark.parametrize("role", ["cover_crop", "catch_crop"])
 def test_cover_or_catch_crop_outside_the_registry_is_kept_as_written(role):
-    plan = PlanIn.model_validate({"campaign": 2027, "regime": "secano", "management": "conventional", "cycles": [
+    plan = PlanIn.model_validate({"campaign": 2027, "regime": "rainfed", "management": "conventional", "cycles": [
         {"role": role, "crop": "Phacelia tanacetifolia", "sowing_start": "2026-10-01",
          "expected_termination": "2027-04-20"}]})
     segments = plan_write.segments_from_plan(plan)
@@ -407,7 +407,7 @@ def test_a_cover_can_end_by_mowing():
 # --- no harvest date asked (owner decision 2026-10-12) ---------------------------------------------------
 
 def _undated(cycles, campaign=2027):
-    return PlanIn.model_validate({"campaign": campaign, "regime": "secano", "management": "conventional", "cycles": cycles})
+    return PlanIn.model_validate({"campaign": campaign, "regime": "rainfed", "management": "conventional", "cycles": cycles})
 
 
 def test_campaign_close_is_the_day_before_the_autumn_sowings():

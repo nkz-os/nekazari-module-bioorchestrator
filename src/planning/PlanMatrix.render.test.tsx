@@ -15,7 +15,7 @@ const DATA: FarmResponse = {
   farms: [{ farm_id: null, name: null }],
   summary: { area_by_crop: [], undecided: 1, rotation_warnings: 1 },
   parcels: [
-    { parcel_id: 'urn:ngsi-ld:AgriParcel:t:p1', name: 'Soto Alto', area_ha: 12.4, farm_id: null, regime: 'secano',
+    { parcel_id: 'urn:ngsi-ld:AgriParcel:t:p1', name: 'Soto Alto', area_ha: 12.4, farm_id: null, regime: 'rainfed',
       regime_source: 'declared', cycles_available: true,
       cells: { '2024': [], '2025': [], '2026': [{ crop_id: 'c1', species: 'rapeseed', species_raw: 'BRSNN', names: { es: 'colza' },
         variety: 'Atlas', role: 'main_crop', provenance: 'actual', status: 'harvested', start: null, end: null,

@@ -49,7 +49,7 @@ describe('plan model', () => {
   });
   it('builds the PUT body with no end dates: the server derives them', () => {
     const fit = { species: 'wheat', sowing: sowing(11), lifecycle: 'annual' } as SpeciesFit;
-    const body = toPlanIn(draftFor(fit, 2027), 2027, 'secano', 'conventional');
+    const body = toPlanIn(draftFor(fit, 2027), 2027, 'rainfed', 'conventional');
     expect(body.cycles).toEqual([{ role: 'main_crop', crop: 'wheat', variety: null, sowing_start: '2026-11-01',
       sowing_end: null, expected_termination: null, termination_method: null }]);
   });
@@ -57,7 +57,7 @@ describe('plan model', () => {
     const fit = { species: 'alfalfa', sowing: sowing(9), lifecycle: 'perennial' } as SpeciesFit;
     const draft = draftFor(fit, 2027);
     expect(draft.main.years).toBe(DEFAULT_PERENNIAL_YEARS);
-    expect(toPlanIn(draft, 2027, 'secano', 'conventional', true).cycles[0]).toMatchObject({ perennial_years: 4, expected_termination: null });
+    expect(toPlanIn(draft, 2027, 'rainfed', 'conventional', true).cycles[0]).toMatchObject({ perennial_years: 4, expected_termination: null });
   });
 });
 
@@ -149,7 +149,7 @@ describe('free-text cover names', () => {
     expect(validateDraft({ main: { species: 'x', variety: null, sowing: '2027-04-20', years: null, method: null }, cover: null }, 2027)).toBeNull();
   });
   it('the PUT body sends the cover name trimmed, as it was validated', () => {
-    expect(toPlanIn(draft('  phacelia '), 2027, 'secano', 'conventional').cycles[0].crop).toBe('phacelia');
+    expect(toPlanIn(draft('  phacelia '), 2027, 'rainfed', 'conventional').cycles[0].crop).toBe('phacelia');
   });
 });
 

@@ -24,7 +24,7 @@ def client(monkeypatch):
 def test_fit_route_validates_the_contract(client, monkeypatch):
     monkeypatch.setattr(planning_api, "parcel_fit", AsyncMock(return_value=FIT))
     r = client.get("/api/graph/planning/parcels/urn:ngsi-ld:AgriParcel:t:p1/fit", params={"campaign": 2027})
-    assert r.status_code == 200 and r.json()["contract_version"] == "1.3"
+    assert r.status_code == 200 and r.json()["contract_version"] == "2.0"
 
 
 def test_fit_route_404_for_unknown_parcel(client, monkeypatch):
@@ -51,15 +51,15 @@ def test_fit_route_requires_a_verified_tenant(client, monkeypatch):
 
 def test_varieties_route_rejects_unknown_crop(client):
     r = client.get("/api/graph/planning/parcels/p1/varieties",
-                   params={"crop": "zzz", "regime": "secano", "management": "organic"})
+                   params={"crop": "zzz", "regime": "rainfed", "management": "organic"})
     assert r.status_code == 422
 
 
-VARIETIES = {"parcel_id": "urn:ngsi-ld:AgriParcel:t:p1", "crop": "TRZAX", "regime": "secano",
+VARIETIES = {"parcel_id": "urn:ngsi-ld:AgriParcel:t:p1", "crop": "TRZAX", "regime": "rainfed",
              "management": "organic", "graph_id": "global", "status": "ok", "tier": "field", "n_environments": 3,
              "varieties": [{"variety": "A", "relative_yield_pct": 110.0, "n_environments": 3, "years": [2023, 2025],
                             "mean_kg_ha": 6000, "fw_slope": None, "stability": None, "few_environments": False}]}
-VARIETIES_PARAMS = {"crop": "wheat", "regime": "secano", "management": "organic"}
+VARIETIES_PARAMS = {"crop": "wheat", "regime": "rainfed", "management": "organic"}
 VARIETIES_URL = "/api/graph/planning/parcels/urn:ngsi-ld:AgriParcel:t:p1/varieties"
 
 
@@ -67,7 +67,7 @@ def test_varieties_route_validates_the_contract(client, monkeypatch):
     monkeypatch.setattr(planning_api, "parcel_varieties", AsyncMock(return_value=VARIETIES))
     r = client.get(VARIETIES_URL, params=VARIETIES_PARAMS)
     body = r.json()
-    assert r.status_code == 200 and body["contract_version"] == "1.3"
+    assert r.status_code == 200 and body["contract_version"] == "2.0"
     assert body["varieties"][0]["variety"] == "A" and body["attributions"] == []
 
 
@@ -84,18 +84,18 @@ def test_varieties_route_does_not_turn_other_value_errors_into_422(client, monke
 
 
 ESTIMATES_URL = "/api/graph/planning/parcels/urn:ngsi-ld:AgriParcel:t:p1/estimates"
-ESTIMATES_PARAMS = {"crop": "TRZAX", "regime": "secano", "management": "conventional"}
+ESTIMATES_PARAMS = {"crop": "TRZAX", "regime": "rainfed", "management": "conventional"}
 
 
 def test_estimates_route_validates_the_contract(client, monkeypatch):
     out = {"parcel_id": "p1", "crop": "TRZAX", "variety": None, "status": "ok",
-           "inputs": {"regime": "secano", "management": "conventional", "sowing_date": None, "sowing_source": "none",
+           "inputs": {"regime": "rainfed", "management": "conventional", "sowing_date": None, "sowing_source": "none",
                       "soil_source": "unavailable", "climate_source": "unavailable"},
            "estimates": [], "unavailable": [{"provider_id": "aquacrop", "reason": "async"}],
            "disagreement": False}
     monkeypatch.setattr(planning_api, "parcel_estimates", AsyncMock(return_value=out))
     r = client.get("/api/graph/planning/parcels/p1/estimates",
-                   params={"crop": "TRZAX", "regime": "secano", "management": "conventional"})
+                   params={"crop": "TRZAX", "regime": "rainfed", "management": "conventional"})
     assert r.status_code == 200 and r.json()["unavailable"][0]["reason"] == "async"
 
 
@@ -252,7 +252,7 @@ def test_parcel_route_rejects_an_empty_parcel_id(client, monkeypatch):
 
 
 PLAN_URL = "/api/graph/planning/parcels/urn:ngsi-ld:AgriParcel:t:p1/plan"
-PLAN_BODY = {"campaign": 2027, "regime": "secano", "management": "conventional", "cycles": [
+PLAN_BODY = {"campaign": 2027, "regime": "rainfed", "management": "conventional", "cycles": [
     {"role": "main_crop", "crop": "maize", "sowing_start": "2027-04-20", "expected_termination": "2027-10-01"}]}
 PLAN_WRITTEN = {"parcel_id": "urn:ngsi-ld:AgriParcel:t:p1", "campaign": 2027,
                 "written": ["urn:ngsi-ld:AgriCrop:t:p1:2027:0"], "removed": []}
@@ -262,7 +262,7 @@ def test_put_plan_route_validates_the_contract_and_hands_over_the_normalized_urn
     called = AsyncMock(return_value=PLAN_WRITTEN)
     monkeypatch.setattr(planning_api, "write_plan", called)
     r = client.put("/api/graph/planning/parcels/p1/plan", json=PLAN_BODY)
-    assert r.status_code == 200 and r.json()["contract_version"] == "1.3"
+    assert r.status_code == 200 and r.json()["contract_version"] == "2.0"
     assert called.await_args.kwargs["parcel_urn"] == "urn:ngsi-ld:AgriParcel:p1"
     assert called.await_args.kwargs["plan"].campaign == 2027
 
@@ -306,7 +306,7 @@ def test_put_plan_route_maps_an_unreachable_orion_to_502(client, monkeypatch):
 
 def test_farm_route_survives_a_failing_reference_load(client, monkeypatch, caplog):
     # A failing reference read degrades to "rotation unknown"; the page still renders.
-    parcel = {"id": "urn:ngsi-ld:AgriParcel:t:p1", "name": "Soto", "area": 2, "irrigationRegime": "secano"}
+    parcel = {"id": "urn:ngsi-ld:AgriParcel:t:p1", "name": "Soto", "area": 2, "irrigationRegime": "rainfed"}
     monkeypatch.setattr(planning_api, "load_farm",
                         AsyncMock(return_value=([parcel], [], {}, {parcel["id"]: {"cycles": []}})))
     monkeypatch.setattr(planning_api, "load_reference", AsyncMock(side_effect=RuntimeError("graph down")))
@@ -315,3 +315,10 @@ def test_farm_route_survives_a_failing_reference_load(client, monkeypatch, caplo
     assert r.status_code == 200
     assert [w["code"] for w in r.json()["parcels"][0]["warnings"]] == ["rotation_unknown"]
     assert any("graph down" in rec.getMessage() or rec.exc_info for rec in caplog.records)
+
+
+def test_routes_still_read_the_spanish_regime_words(client, monkeypatch):
+    called = AsyncMock(return_value={**FIT, "facts": {**FIT["facts"], "regime": "rainfed", "regime_source": "declared"}})
+    monkeypatch.setattr(planning_api, "parcel_fit", called)
+    r = client.get("/api/graph/planning/parcels/urn:ngsi-ld:AgriParcel:t:p1/fit", params={"campaign": 2027, "regime": "secano"})
+    assert r.status_code == 200 and called.await_args.kwargs["regime"] == "rainfed"

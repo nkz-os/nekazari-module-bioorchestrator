@@ -443,7 +443,7 @@
     "matrix": { "parcel": "Parcel·la", "area": "ha", "regime": "Règim", "choose": "Tria", "change": "Canvia", "legend": "● fet · ◐ declarat · ○ planificat" },
     "provenance": { "actual": "fet", "declared": "declarat", "planned": "planificat", "unknown": "sense dades" },
     "role": { "main_crop": "cultiu principal", "cover_crop": "cultiu de cobertura", "catch_crop": "cultiu intermedi" },
-    "regime": { "secano": "Secà", "regadío": "Regadiu", "unknown": "Sense declarar" },
+    "regime": { "rainfed": "Secà", "irrigated": "Regadiu", "unknown": "Sense declarar" },
     "management": { "conventional": "Convencional", "organic": "Ecològic" },
     "warning": {
       "cycles_unavailable": "No s'ha pogut llegir l'historial d'aquesta parcel·la",

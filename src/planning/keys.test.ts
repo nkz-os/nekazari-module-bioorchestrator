@@ -25,7 +25,7 @@ function literalKeys(): string[] {
 const FAMILIES = [
   ...REASON_KEYS.map((k) => `planning.reason.${k}`),
   ...['cycles_unavailable', 'regime_missing', 'rotation_restriction', 'rotation_unknown'].map((k) => `planning.warning.${k}`),
-  ...['secano', 'regadío', 'unknown'].map((k) => `planning.regime.${k}`),
+  ...['rainfed', 'irrigated', 'unknown'].map((k) => `planning.regime.${k}`),
   ...['conventional', 'organic'].map((k) => `planning.management.${k}`),
   ...['actual', 'declared', 'planned', 'unknown'].map((k) => `planning.provenance.${k}`),
   ...['main_crop', 'cover_crop', 'catch_crop'].map((k) => `planning.role.${k}`),

@@ -26,7 +26,7 @@ const sp = (species: string, es: string, over: Partial<SpeciesFit> = {}): Specie
 const FIT: FitResponse = {
   contract_version: '1.0', parcel_id: 'p1', campaign: 2027, graphs: ['global'],
   facts: { climate_class: 'Csa', climate_source: 'chelsa_v2.1', soil_texture: 'loam', soil_ph: 7.5, soil_source: 'soil_module',
-    regime: 'secano', regime_source: 'declared', history_available: true },
+    regime: 'rainfed', regime_source: 'declared', history_available: true },
   species: [sp('maize', 'maíz'), sp('vetch', 'veza', { has_variety_trials: false })],
 };
 const cell = (over: Partial<CycleCell>): CycleCell => ({
@@ -34,7 +34,7 @@ const cell = (over: Partial<CycleCell>): CycleCell => ({
   provenance: 'planned', status: 'planned', start: '2027-04-20', end: '2027-10-01', lifecycle: 'annual', first_campaign: 2027, ...over,
 });
 const row = (cells: CycleCell[], over: Partial<ParcelRow> = {}): ParcelRow => ({
-  parcel_id: 'urn:ngsi-ld:AgriParcel:t:p1', name: 'Soto Alto', area_ha: 12, farm_id: null, regime: 'secano',
+  parcel_id: 'urn:ngsi-ld:AgriParcel:t:p1', name: 'Soto Alto', area_ha: 12, farm_id: null, regime: 'rainfed',
   regime_source: 'declared', cycles_available: true, cells: { '2026': [], '2027': cells }, warnings: [], ...over,
 });
 const render = (r: ParcelRow, withFit = false, onReload?: () => void) => {

@@ -7,14 +7,23 @@ version). Reason ``code`` values are i18n keys of the UI (``planning.reason.<cod
 from __future__ import annotations
 
 from datetime import date
-from typing import Any, Literal
+from typing import Annotated, Any, Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, BeforeValidator, Field
 
-CONTRACT_VERSION = "1.3"
+CONTRACT_VERSION = "2.0"
 
 Verdict = Literal["fits", "caveats", "no_fit"]
-Regime = Literal["secano", "regadío"]
+# Owner decision (2026-10-13): the regime vocabulary is rainfed | irrigated. The Spanish words that
+# earlier clients sent are still read on input and never written.
+_LEGACY_REGIMES = {"secano": "rainfed", "regadío": "irrigated", "regadio": "irrigated"}
+
+
+def _legacy_regime(value: Any) -> Any:
+    return _LEGACY_REGIMES.get(value, value) if isinstance(value, str) else value
+
+
+Regime = Annotated[Literal["rainfed", "irrigated"], BeforeValidator(_legacy_regime)]
 Management = Literal["conventional", "organic"]
 SowingMethod = Literal["direct", "conventional"]
 Provenance = Literal["actual", "declared", "planned", "unknown"]

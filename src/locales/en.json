@@ -1196,7 +1196,7 @@
     "matrix": { "parcel": "Parcel", "area": "ha", "regime": "Regime", "choose": "Choose", "change": "Change", "legend": "● done · ◐ declared · ○ planned" },
     "provenance": { "actual": "done", "declared": "declared", "planned": "planned", "unknown": "no data" },
     "role": { "main_crop": "main crop", "cover_crop": "cover crop", "catch_crop": "catch crop" },
-    "regime": { "secano": "Rainfed", "regadío": "Irrigated", "unknown": "Not declared" },
+    "regime": { "rainfed": "Rainfed", "irrigated": "Irrigated", "unknown": "Not declared" },
     "management": { "conventional": "Conventional", "organic": "Organic" },
     "warning": {
       "cycles_unavailable": "Could not read this parcel's history",

@@ -56,7 +56,7 @@ const aq = (over: Partial<AquacropResponse>): AquacropResponse => ({
 });
 const BASE: EstimatesResponse = {
   contract_version: '1.1', parcel_id: 'p', crop: 'TRZAX', variety: null, status: 'ok', disagreement: false,
-  inputs: { regime: 'secano', management: 'conventional', sowing_date: '2026-11-05', sowing_source: 'planned', soil_source: 's', climate_source: 'c' },
+  inputs: { regime: 'rainfed', management: 'conventional', sowing_date: '2026-11-05', sowing_source: 'planned', soil_source: 's', climate_source: 'c' },
   estimates: [est('trial_evidence')], unavailable: [{ provider_id: 'aquacrop', reason: 'async' }],
 };
 

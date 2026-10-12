@@ -12,7 +12,7 @@ from app.planning.models import FarmResponse
 from app.planning.rotation import Constraint
 
 RAPE = Constraint("rapeseed", "rapeseed", "restriction", 3, "clubroot", "FAO")
-P1 = {"id": "urn:ngsi-ld:AgriParcel:t:p1", "name": "Soto", "area": 12.4, "irrigationRegime": "secano"}
+P1 = {"id": "urn:ngsi-ld:AgriParcel:t:p1", "name": "Soto", "area": 12.4, "irrigationRegime": "rainfed"}
 P2 = {"id": "urn:ngsi-ld:AgriParcel:t:p2", "name": "Vega", "area": "6.1"}
 CYCLES = {
     P1["id"]: {"cycles": [
@@ -34,7 +34,7 @@ def test_open_perennial_fills_its_campaigns_and_is_not_undecided():
     alfalfa = {"crop_id": "a1", "role": "main_crop", "species": "MEDSA", "status": "active", "lifecycle": "perennial",
                "campaign_label": 2024, "start": {"date": "2024-09-15", "provenance": "actual"},
                "end": {"date": None, "provenance": None}}
-    p = {"id": "urn:ngsi-ld:AgriParcel:t:p3", "name": "Alfalfa", "area": 3, "irrigationRegime": "regadío"}
+    p = {"id": "urn:ngsi-ld:AgriParcel:t:p3", "name": "Alfalfa", "area": 3, "irrigationRegime": "irrigated"}
     out = farm_payload([p], [], {}, {p["id"]: {"cycles": [alfalfa]}}, 2027, [])
     row = out["parcels"][0]
     assert [len(row["cells"][str(c)]) for c in (2024, 2025, 2026, 2027)] == [0, 1, 1, 1]
@@ -49,8 +49,8 @@ def test_target_campaign_rolls_over_in_july():
 
 
 def test_regime_prefers_the_target_campaign_crop():
-    assert parcel_regime({"irrigationRegime": "secano"}, [{"irrigationRegime": "regadío"}]) == ("regadío", "crop")
-    assert parcel_regime({"irrigationSystemType": "drip"}, []) == ("regadío", "parcel:irrigationSystemType")
+    assert parcel_regime({"irrigationRegime": "rainfed"}, [{"irrigationRegime": "irrigated"}]) == ("irrigated", "crop")
+    assert parcel_regime({"irrigationSystemType": "drip"}, []) == ("irrigated", "parcel:irrigationSystemType")
     assert parcel_regime({}, []) == (None, "unknown")
 
 
@@ -91,7 +91,7 @@ def test_missing_cycles_keep_only_cycles_unavailable():
 
 
 def _with_area(area):
-    return farm_payload([{"id": "urn:ngsi-ld:AgriParcel:t:pa", "name": "A", "area": area, "irrigationRegime": "secano"}],
+    return farm_payload([{"id": "urn:ngsi-ld:AgriParcel:t:pa", "name": "A", "area": area, "irrigationRegime": "rainfed"}],
                         [], {}, {}, 2027, [])["parcels"][0]["area_ha"]
 
 
@@ -109,12 +109,12 @@ def test_usable_areas_are_kept(good, expected):
 def test_farm_groups_follow_the_parcel_links_and_name_the_farms():
     farm_a, farm_b, farm_c = ("urn:ngsi-ld:AgriFarm:t:a", "urn:ngsi-ld:AgriFarm:t:b", "urn:ngsi-ld:AgriFarm:t:c")
     parcels = [
-        {"id": "urn:ngsi-ld:AgriParcel:t:p1", "hasAgriFarm": farm_b, "irrigationRegime": "secano"},
-        {"id": "urn:ngsi-ld:AgriParcel:t:p2", "refAgriFarm": farm_a, "irrigationRegime": "secano"},
+        {"id": "urn:ngsi-ld:AgriParcel:t:p1", "hasAgriFarm": farm_b, "irrigationRegime": "rainfed"},
+        {"id": "urn:ngsi-ld:AgriParcel:t:p2", "refAgriFarm": farm_a, "irrigationRegime": "rainfed"},
         {"id": "urn:ngsi-ld:AgriParcel:t:p3", "hasAgriFarm": {"type": "Relationship", "object": farm_c},
-         "irrigationRegime": "secano"},
-        {"id": "urn:ngsi-ld:AgriParcel:t:p4", "hasAgriFarm": farm_a, "irrigationRegime": "secano"},
-        {"id": "urn:ngsi-ld:AgriParcel:t:p5", "irrigationRegime": "secano"},
+         "irrigationRegime": "rainfed"},
+        {"id": "urn:ngsi-ld:AgriParcel:t:p4", "hasAgriFarm": farm_a, "irrigationRegime": "rainfed"},
+        {"id": "urn:ngsi-ld:AgriParcel:t:p5", "irrigationRegime": "rainfed"},
     ]
     farms = [{"id": farm_a, "name": "Finca Norte"}, {"id": farm_b, "name": {"type": "Property", "value": "Finca Sur"}},
              {"id": "urn:ngsi-ld:AgriFarm:t:unlinked", "name": "Sin parcelas"}]
@@ -126,10 +126,10 @@ def test_farm_groups_follow_the_parcel_links_and_name_the_farms():
 
 
 @pytest.mark.parametrize("word, expected", [
-    ("furrow", "regadío"), ("Drip", "regadío"), ("sprinkler", "regadío"), ("flood", "regadío"), ("pivot", "regadío"),
-    ("irrigated", "regadío"), ("regadío", "regadío"), ("gravity", "regadío"), ("goteo", "regadío"),
-    ("aspersión", "regadío"), ("surco", "regadío"), ("gravedad", "regadío"), ("riego por goteo", "regadío"),
-    ("secano", "secano"), ("rainfed", "secano"), ("Dryland", "secano"), ("none", "secano"),
+    ("furrow", "irrigated"), ("Drip", "irrigated"), ("sprinkler", "irrigated"), ("flood", "irrigated"), ("pivot", "irrigated"),
+    ("irrigated", "irrigated"), ("regadío", "irrigated"), ("gravity", "irrigated"), ("goteo", "irrigated"),
+    ("aspersión", "irrigated"), ("surco", "irrigated"), ("gravedad", "irrigated"), ("riego por goteo", "irrigated"),
+    ("secano", "rainfed"), ("rainfed", "rainfed"), ("Dryland", "rainfed"), ("none", "rainfed"),
     ("something", None), ("", None), ("unknown", None), (None, None)])
 def test_regime_word_only_reads_known_words(word, expected):
     assert parcel_regime({"irrigationSystemType": word}, [])[0] == expected
@@ -143,7 +143,7 @@ def test_a_lone_cover_crop_does_not_decide_the_campaign():
     cover = {"crop_id": "c1", "role": "cover_crop", "species": "VICSA", "status": "planned", "campaign_label": 2027,
              "start": {"date": "2026-10-01", "provenance": "planned"}, "end": {"date": "2027-04-20"}}
     main = {**cover, "crop_id": "c2", "role": "main_crop", "species": "ZEAMA"}
-    parcel = {"id": "urn:ngsi-ld:AgriParcel:t:p9", "name": "X", "area": 1, "irrigationRegime": "secano"}
+    parcel = {"id": "urn:ngsi-ld:AgriParcel:t:p9", "name": "X", "area": 1, "irrigationRegime": "rainfed"}
     only_cover = farm_payload([parcel], [], {}, {parcel["id"]: {"cycles": [cover]}}, 2027, [])
     both = farm_payload([parcel], [], {}, {parcel["id"]: {"cycles": [cover, main]}}, 2027, [])
     assert only_cover["summary"]["undecided"] == 1 and both["summary"]["undecided"] == 0
@@ -153,10 +153,10 @@ def test_a_lone_cover_crop_does_not_decide_the_campaign():
                                   "sin_riego", "nonirrigated", "unirrigated", "sense regadiu", "without irrigation",
                                   "Non-Irrigated", "no_drip"])
 def test_negated_irrigation_text_is_rainfed(word):
-    assert parcel_regime({"irrigationSystemType": word}, [])[0] == "secano"
+    assert parcel_regime({"irrigationSystemType": word}, [])[0] == "rainfed"
 
 
-@pytest.mark.parametrize("word, expected", [("riego por goteo", "regadío"), ("drip", "regadío"),
-                                            ("regadío", "regadío"), ("irrigated", "regadío"), ("something", None)])
+@pytest.mark.parametrize("word, expected", [("riego por goteo", "irrigated"), ("drip", "irrigated"),
+                                            ("regadío", "irrigated"), ("irrigated", "irrigated"), ("something", None)])
 def test_affirmed_irrigation_text_is_unchanged_by_the_negation_rule(word, expected):
     assert parcel_regime({"irrigationSystemType": word}, [])[0] == expected

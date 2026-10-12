@@ -17,7 +17,7 @@ def test_fit_response_round_trip():
         "graphs": ["global"],
     }
     out = m.FitResponse.model_validate(payload)
-    assert out.contract_version == m.CONTRACT_VERSION == "1.3"
+    assert out.contract_version == m.CONTRACT_VERSION == "2.0"
 
 
 def test_plan_rejects_unknown_regime_and_empty_cycles():
@@ -36,3 +36,11 @@ def test_estimate_1_1_is_additive_and_range_only_is_valid():
                                       "moisture": {"basis": "commercial", "pct": 13.0}})
     assert only.percentiles is None and only.range.high == 5
     assert m.Unavailable(provider_id="aquacrop", reason="engine_error", code="soil_unavailable").code
+
+
+def test_the_spanish_regime_words_of_earlier_clients_are_read_as_the_new_ones():
+    # Owner decision (2026-10-13): rainfed | irrigated; the Spanish words are accepted on input only.
+    plan = m.PlanIn.model_validate({"campaign": 2027, "regime": "secano", "management": "conventional",
+                                    "cycles": [{"role": "main_crop", "crop": "wheat", "sowing_start": "2026-10-20"}]})
+    assert plan.regime == "rainfed"
+    assert m.PlanIn.model_validate({**plan.model_dump(mode="json"), "regime": "regadío"}).regime == "irrigated"

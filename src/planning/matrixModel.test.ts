@@ -7,7 +7,7 @@ const cell = (over: Partial<CycleCell>): CycleCell => ({
   provenance: 'planned', status: 'planned', start: null, end: null, lifecycle: 'annual', first_campaign: 2027, ...over,
 });
 const row = (cells: CycleCell[], over: Partial<ParcelRow> = {}): ParcelRow => ({
-  parcel_id: 'urn:ngsi-ld:AgriParcel:t:p1', name: 'Soto', area_ha: 1, farm_id: null, regime: 'secano',
+  parcel_id: 'urn:ngsi-ld:AgriParcel:t:p1', name: 'Soto', area_ha: 1, farm_id: null, regime: 'rainfed',
   regime_source: 'declared', cycles_available: true, cells: { '2026': [], '2027': cells }, warnings: [], ...over,
 });
 

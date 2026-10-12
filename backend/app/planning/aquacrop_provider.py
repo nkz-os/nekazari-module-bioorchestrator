@@ -17,7 +17,7 @@ MAX_SOWING_AHEAD_DAYS = 366  # the engine's pre-season window: [today, today + 3
 # provinces, RMSE 1.68 t/ha, anomaly r 0.50. Barley (AquaCrop only has spring barley),
 # irrigated maize, sunflower and the rest are NOT validated: they never run the engine.
 VALIDATED: dict[tuple[str, str, str], dict[str, str]] = {
-    ("TRZAX", "secano", "ES"): {"metric": "RMSE 1.68 t/ha, anomaly r 0.50",
+    ("TRZAX", "rainfed", "ES"): {"metric": "RMSE 1.68 t/ha, anomaly r 0.50",
                                 "scope": "ES, 44 provinces, MAPA 2008–2022"},
 }
 
@@ -64,7 +64,7 @@ def _metric(validation: Any, static: str) -> str:
 
 def map_result(result: dict, provider_version: str) -> tuple[list[dict], list[dict]]:
     """A finished simulation -> (estimates, unavailable): expected yield first, then the ceiling."""
-    static = VALIDATED[("TRZAX", "secano", "ES")]
+    static = VALIDATED[("TRZAX", "rainfed", "ES")]
     moisture = _moisture(result.get("yield_basis"))
     n = (result.get("ensemble") or {}).get("n_years") or 0
     base = {"provider_id": PROVIDER_ID, "provider_version": provider_version, "unit": "t/ha", "n": n,

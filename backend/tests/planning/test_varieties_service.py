@@ -15,7 +15,7 @@ async def test_no_recommendation_means_no_trials():
     dao.get_parcel_environment.return_value = ENV
     dao.recommend_for_conditions.return_value = {"status": "ok", "conditions": {"country": "ES"}, "recommendations": []}
     out = await service.parcel_varieties(dao=dao, source=KnowledgeSource("global", None), parcel_id="p1",
-                                         tenant_id="t", crop="wheat", regime="secano", management="conventional")
+                                         tenant_id="t", crop="wheat", regime="rainfed", management="conventional")
     VarietiesResponse.model_validate(out)
     assert out["status"] == "no_trials" and out["crop"] == "TRZAX"
 
@@ -32,7 +32,7 @@ async def test_ok_lists_stats_and_attributions():
             for v, y in {"A": 6000, "B": 5000, "C": 4000}.items()]
     dao.list_trial_evidence.return_value = {"items": rows, "total": 3}
     out = await service.parcel_varieties(dao=dao, source=KnowledgeSource("global", None), parcel_id="p1",
-                                         tenant_id="t", crop="TRZAX", regime="secano", management="conventional")
+                                         tenant_id="t", crop="TRZAX", regime="rainfed", management="conventional")
     VarietiesResponse.model_validate(out)
     assert out["status"] == "ok" and out["tier"] == "regional" and out["varieties"][0]["variety"] == "A"
     assert any(a.get("source_id") == "GENVCE" for a in out["attributions"])
@@ -54,7 +54,7 @@ async def test_no_environment_with_enough_varieties_is_flagged_but_ok():
     rows = [{"variety": v, "site": "Zona X", "year": 2024, "source_id": "GENVCE", "yield_kg_ha": y}
             for v, y in {"A": 6000, "B": 5000}.items()]
     out = await service.parcel_varieties(dao=_ok_dao(rows), source=KnowledgeSource("global", None), parcel_id="p1",
-                                         tenant_id="t", crop="TRZAX", regime="secano", management="conventional")
+                                         tenant_id="t", crop="TRZAX", regime="rainfed", management="conventional")
     VarietiesResponse.model_validate(out)
     assert out["status"] == "ok" and out["varieties"] == [] and out["n_environments"] == 0
     assert out["data_gaps"] == ["regional_evidence_only", "insufficient_environments"]
@@ -64,7 +64,7 @@ async def test_environment_without_climate_class_never_asks_the_recommender():
     dao = AsyncMock()
     dao.get_parcel_environment.return_value = {**ENV, "climate_class": None}
     out = await service.parcel_varieties(dao=dao, source=KnowledgeSource("global", None), parcel_id="p1",
-                                         tenant_id="t", crop="wheat", regime="secano", management="conventional")
+                                         tenant_id="t", crop="wheat", regime="rainfed", management="conventional")
     VarietiesResponse.model_validate(out)
     assert out["status"] == "needs_climate"
     dao.recommend_for_conditions.assert_not_called()

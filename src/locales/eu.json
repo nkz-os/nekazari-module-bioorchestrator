@@ -443,7 +443,7 @@
     "matrix": { "parcel": "Partzela", "area": "ha", "regime": "Erregimena", "choose": "Aukeratu", "change": "Aldatu", "legend": "● eginda · ◐ adierazita · ○ planifikatuta" },
     "provenance": { "actual": "eginda", "declared": "adierazita", "planned": "planifikatuta", "unknown": "daturik gabe" },
     "role": { "main_crop": "labore nagusia", "cover_crop": "estaldura-laborea", "catch_crop": "tarteko laborea" },
-    "regime": { "secano": "Lehorrekoa", "regadío": "Ureztatua", "unknown": "Adierazi gabe" },
+    "regime": { "rainfed": "Lehorrekoa", "irrigated": "Ureztatua", "unknown": "Adierazi gabe" },
     "management": { "conventional": "Konbentzionala", "organic": "Ekologikoa" },
     "warning": {
       "cycles_unavailable": "Ezin izan da partzela honen historia irakurri",

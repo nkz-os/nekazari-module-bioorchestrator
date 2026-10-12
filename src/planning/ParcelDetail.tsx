@@ -63,7 +63,7 @@ export default function ParcelDetail({ row, campaign, onClose, onSaved, onSimula
   // AquaCrop is asynchronous: /estimates only says it will answer ("async"); this polls its own endpoint.
   const aquacrop = useAquacropEstimate(
     row.parcel_id,
-    { crop: chosen?.species ?? '', regime: regime ?? 'secano', sowingDate: estimateSowing || null,
+    { crop: chosen?.species ?? '', regime: regime ?? 'rainfed', sowingDate: estimateSowing || null,
       sowingMethod: directSowing ? 'direct' : null },
     Boolean(chosen && regime && estimates.data && aquacropPending(estimates.data)));
   const merged = estimates.data ? mergeAquacrop(estimates.data, aquacrop.response, aquacrop.failure ?? undefined) : null;
@@ -93,7 +93,7 @@ export default function ParcelDetail({ row, campaign, onClose, onSaved, onSimula
   const soilTexture = facts?.soil_texture
     ? t(`planning.texture.${facts.soil_texture}`, { defaultValue: facts.soil_texture })
     : t('planning.detail.noData');
-  const regimeOptions = (['secano', 'regadío'] as const).map((r) => ({ value: r, label: t(`planning.regime.${r}`) }));
+  const regimeOptions = (['rainfed', 'irrigated'] as const).map((r) => ({ value: r, label: t(`planning.regime.${r}`) }));
   const managementOptions = (['conventional', 'organic'] as const).map((m) => ({ value: m, label: t(`planning.management.${m}`) }));
   // Cover crops are annual: a perennial is never offered as a cover.
   const candidates = (fit.data?.species ?? []).filter((s) => s.verdict !== 'no_fit' && s.lifecycle !== 'perennial');

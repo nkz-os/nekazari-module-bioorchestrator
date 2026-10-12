@@ -276,3 +276,9 @@ def test_load_reads_given_path(tmp_path):
     p = tmp_path / "c.json"
     p.write_text(json.dumps(_doc({})))
     assert g.load(p)["grid"]["nrows"] == 2
+
+
+def test_any_spelling_of_irrigated_reads_the_irrigated_layer():
+    # Planning sends rainfed | irrigated since 2026-10-13; older callers send the Spanish words.
+    assert g._regime("irrigated") == g._regime("regadío") == "ir"
+    assert g._regime("rainfed") == g._regime("secano") == g._regime(None) == "rf"

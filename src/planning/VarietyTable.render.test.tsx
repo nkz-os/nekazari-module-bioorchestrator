@@ -11,7 +11,7 @@ import VarietyTable from './VarietyTable';
 import type { VarietiesResponse } from './types';
 
 const base: VarietiesResponse = {
-  contract_version: '1.0', parcel_id: 'p1', crop: 'TRZAX', regime: 'secano', management: 'conventional',
+  contract_version: '1.0', parcel_id: 'p1', crop: 'TRZAX', regime: 'rainfed', management: 'conventional',
   status: 'ok', tier: 'regional', zone_match: null, country: 'ES', n_environments: 12, graph_id: 'global',
   data_gaps: ['regional_evidence_only'], attributions: [],
   varieties: [{ variety: 'Var A', relative_yield_pct: 108, n_environments: 14, years: [2019, 2024], mean_kg_ha: 6100,

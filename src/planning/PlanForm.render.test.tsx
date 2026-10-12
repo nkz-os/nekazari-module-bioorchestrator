@@ -16,7 +16,7 @@ const MAIN: SpeciesFit = {
   estimate_providers: [], sowing: { sowing_type: null, start_month: 4, end_month: 5, typical_sowing_doy: null, source: null },
 };
 const DRAFT: PlanDraft = { main: { species: 'maize', variety: 'Var X', sowing: '2027-04-20', years: null, method: null }, cover: null };
-const props = { parcelId: 'p1', campaign: 2027, regime: 'secano' as const, management: 'conventional' as const, main: MAIN,
+const props = { parcelId: 'p1', campaign: 2027, regime: 'rainfed' as const, management: 'conventional' as const, main: MAIN,
   coverOptions: [], draft: DRAFT, onDraft: () => {}, onSaved: () => {} };
 
 describe('PlanForm (es)', () => {

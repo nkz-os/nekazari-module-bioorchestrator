@@ -40,9 +40,9 @@ def test_autumn_crop_frost_risk_and_unknown_season():
 
 def test_water_only_for_rainfed_and_unknown_without_climate():
     dry = ParcelClimate(coldest_month_min_c=0.0, annual_rainfall_mm=300.0, annual_et0_mm=1300.0)
-    assert water_reasons("regadío", dry, 180) == []
-    assert water_reasons("secano", dry, 180)[0]["code"] == "water_deficit_high"
-    assert water_reasons("secano", ParcelClimate(None, None, None), 180)[0]["code"] == "water_unknown"
+    assert water_reasons("irrigated", dry, 180) == []
+    assert water_reasons("rainfed", dry, 180)[0]["code"] == "water_deficit_high"
+    assert water_reasons("rainfed", ParcelClimate(None, None, None), 180)[0]["code"] == "water_unknown"
 
 
 def test_benefit_alone_still_fits_and_missing_regime_is_a_caveat():
@@ -81,6 +81,6 @@ def test_summer_crop_is_not_exposed_to_winter_frost():
 
 def test_non_positive_season_days_fall_back_to_the_default_and_say_so():
     dry = ParcelClimate(coldest_month_min_c=0.0, annual_rainfall_mm=300.0, annual_et0_mm=1300.0)
-    out = water_reasons("secano", dry, 0)
+    out = water_reasons("rainfed", dry, 0)
     assert out[0]["code"] == "water_deficit_high"
     assert out[0]["params"]["season_days_default"] is True
