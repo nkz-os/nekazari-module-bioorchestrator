@@ -549,6 +549,7 @@
       "validatedAs": "Validé : {{metric}}",
       "ceiling": "plafond avec l'eau disponible, pas une prévision", "coverage": "juste dans {{pct}} % des années",
       "simulating": "Simulation… {{done}}/{{total}} ans", "simulatingStart": "Simulation…",
+      "firstRunNote": "La première simulation dans une nouvelle zone prend quelques minutes : nous téléchargeons 15 ans de climat de la zone. Les suivantes prennent environ une minute.",
       "moisture": { "commercial": "à {{pct}} % d'humidité", "commercialNoPct": "à l'humidité commerciale", "dry_matter": "en matière sèche", "as_reported": "à l'humidité publiée par chaque source" },
       "unavailable": { "preseason_not_supported": "Simulation avant le semis : pas encore disponible", "engine_not_deployed": "en attente",
         "no_trials": "pas d'essais pour cette culture", "no_trials_for_variety": "pas d'essais de cette variété dans votre zone",

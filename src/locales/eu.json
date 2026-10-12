@@ -549,6 +549,7 @@
       "validatedAs": "Balioztatua: {{metric}}",
       "ceiling": "eskuragarri dagoen urarekiko sabaia, ez da aurreikuspena", "coverage": "urteen % {{pct}}ean asmatzen du",
       "simulating": "Simulatzen… {{done}}/{{total}} urte", "simulatingStart": "Simulatzen…",
+      "firstRunNote": "Eremu berri bateko lehen simulazioak minutu batzuk behar ditu: eremuaren 15 urteko klima deskargatzen dugu. Hurrengoek minutu bat inguru behar dute.",
       "moisture": { "commercial": "% {{pct}}eko hezetasunean", "commercialNoPct": "hezetasun komertzialean", "dry_matter": "materia lehorrean", "as_reported": "iturri bakoitzak argitaratzen duen hezetasunean" },
       "unavailable": { "preseason_not_supported": "Ereiteaurreko simulazioa: oraindik ez dago eskuragarri", "engine_not_deployed": "zain",
         "no_trials": "ez dago saiakuntzarik labore honetarako", "no_trials_for_variety": "ez dago barietate honen saiakuntzarik zure eremuan",

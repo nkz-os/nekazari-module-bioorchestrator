@@ -82,6 +82,9 @@ export default function EstimatesTable({ data, progress = null, onRetry }: { dat
                   {u.reason === 'async' && progress !== null
                     ? t(progressLabel(progress).key, progressLabel(progress).params)
                     : t(unavailableKey(u.reason), { defaultValue: t('planning.estimate.unavailable.unknown') })}
+                  {u.reason === 'async' && progress !== null && (
+                    <span className="block text-nkz-xs text-nkz-text-muted">{t('planning.estimate.firstRunNote')}</span>
+                  )}
                   {onRetry && canRetry(u) && (
                     <> <Button size="sm" variant="secondary" onClick={onRetry}>{t('planning.retry')}</Button></>
                   )}

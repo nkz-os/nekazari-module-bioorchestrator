@@ -78,6 +78,12 @@ describe('EstimatesTable (es)', () => {
     expect(renderToStaticMarkup(<EstimatesTable data={data} progress={{ done: 3, total: 12 }} />)).toContain('Simulando… 3/12 años');
     expect(renderToStaticMarkup(<EstimatesTable data={data} progress={{ done: 0, total: null }} />)).toContain('Simulando…');
   });
+  it('while AquaCrop runs it says the first run in an area takes minutes, and only then', () => {
+    const data = { ...DATA, unavailable: [{ provider_id: 'aquacrop', reason: 'async' }] };
+    const note = 'La primera simulación en una zona nueva tarda unos minutos';
+    expect(renderToStaticMarkup(<EstimatesTable data={data} progress={{ done: 0, total: null }} />)).toContain(note);
+    expect(renderToStaticMarkup(<EstimatesTable data={DATA} />)).not.toContain(note);
+  });
   it('a failed engine and a calibration reason are said', () => {
     const html = renderToStaticMarkup(<EstimatesTable data={{ ...DATA, unavailable: [
       { provider_id: 'aquacrop', reason: 'engine_error', code: 'soil_unavailable' },

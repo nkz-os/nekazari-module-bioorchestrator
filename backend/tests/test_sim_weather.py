@@ -52,9 +52,11 @@ class _Net:
         self.parcel, self.archive = parcel, archive
         self.parcel_status, self.archive_status, self.raises = parcel_status, archive_status, raises
         self.calls: list[tuple[str, dict, dict]] = []
+        self.client_kwargs: list[dict] = []
 
     def __call__(self, *a, **k):
         net = self
+        net.client_kwargs.append(k)
 
         async def get(url, params=None, headers=None):
             net.calls.append((url, dict(params or {}), dict(headers or {})))
@@ -418,3 +420,14 @@ def test_preseason_analogs_cover_from_today_to_season_end():
     arch = next(c for c in net.calls if "archive.test" in c[0])
     assert arch[1]["start_date"] == "2022-10-11"  # today, mapped to the first analog year
     assert not any("dropped" in w for w in warns)
+
+
+def test_archive_waits_for_a_cold_cache():
+    # A cold archive cache first pulls the multi-year series from object storage (~80 s measured
+    # for 16 years at a new point); the read timeout must outlast it, the connect one need not.
+    net = _Net(archive=lambda p: _archive_payload(date.fromisoformat(p["start_date"]),
+                                                  date.fromisoformat(p["end_date"])))
+    with patch("httpx.AsyncClient", net):
+        _run(sw.fetch_archive_daily(LAT, LON, date(2020, 1, 1), date(2020, 1, 10)))
+    timeout = net.client_kwargs[0]["timeout"]
+    assert (timeout.read, timeout.connect) == (150.0, 10.0)
