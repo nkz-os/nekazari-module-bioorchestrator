@@ -358,7 +358,8 @@
     "inputs": {
       "weather": "Temps",
       "soil": "Capes de sòl",
-      "sowing": "Sembra"
+      "sowing": "Sembra",
+      "sowingMethod": "Mètode de sembra"
     },
     "soil": {
       "depth": "Profunditat",
@@ -379,6 +380,16 @@
       "crop_cycle": "cicle de cultiu",
       "legacy_parcel_season": "campanya registrada a la parcel·la"
     },
+    "sowingMethod": {
+      "direct": "directa",
+      "conventional": "tradicional"
+    },
+    "sowingMethodSource": {
+      "request": "sol·licitud",
+      "field_operations": "operacions de camp",
+      "default": "sense dades: sòl nu"
+    },
+    "mulch": "rostoll com a encoixinat al {{pct}} %",
     "warnings": "Notes",
     "errors": {
       "unsupported_crop": "Aquest cultiu encara no es pot simular.",

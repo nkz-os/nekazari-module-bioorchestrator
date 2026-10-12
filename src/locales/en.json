@@ -1111,7 +1111,8 @@
     "inputs": {
       "weather": "Weather",
       "soil": "Soil layers",
-      "sowing": "Sowing"
+      "sowing": "Sowing",
+      "sowingMethod": "Sowing method"
     },
     "soil": {
       "depth": "Depth",
@@ -1132,6 +1133,16 @@
       "crop_cycle": "crop cycle",
       "legacy_parcel_season": "season recorded on the parcel"
     },
+    "sowingMethod": {
+      "direct": "direct",
+      "conventional": "conventional"
+    },
+    "sowingMethodSource": {
+      "request": "request",
+      "field_operations": "field operations",
+      "default": "no data: bare soil"
+    },
+    "mulch": "stubble as a {{pct}} % mulch",
     "warnings": "Notes",
     "errors": {
       "unsupported_crop": "This crop cannot be simulated yet.",

@@ -358,7 +358,8 @@
     "inputs": {
       "weather": "Eguraldia",
       "soil": "Lurzoru-geruzak",
-      "sowing": "Ereitea"
+      "sowing": "Ereitea",
+      "sowingMethod": "Ereite-metodoa"
     },
     "soil": {
       "depth": "Sakonera",
@@ -379,6 +380,16 @@
       "crop_cycle": "labore-zikloa",
       "legacy_parcel_season": "lursailean erregistratutako kanpaina"
     },
+    "sowingMethod": {
+      "direct": "zuzenekoa",
+      "conventional": "ohikoa"
+    },
+    "sowingMethodSource": {
+      "request": "eskaera",
+      "field_operations": "landa-eragiketak",
+      "default": "daturik ez: lurzoru biluzia"
+    },
+    "mulch": "anizpea estaldura gisa, % {{pct}}",
     "warnings": "Oharrak",
     "errors": {
       "unsupported_crop": "Laborantza hau ezin da oraindik simulatu.",

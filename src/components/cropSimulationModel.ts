@@ -51,6 +51,10 @@ export interface CropSimulationResult {
     weather: { source: string; start: string; end: string; days: number; segments: WeatherSegment[] };
     soil: { layers: SoilLayer[] };
     sowing: { source: string; provenance?: string | null };
+    field_management?: {
+      sowing_method: 'direct' | 'conventional'; source: 'request' | 'field_operations' | 'default';
+      mulch_pct: number | null; f_mulch: number | null;
+    };
     phenology: { source: 'calibrated' | 'builtin'; region: Region | null; params: Record<string, number> };
   };
   warnings: string[];

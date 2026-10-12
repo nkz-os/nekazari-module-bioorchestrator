@@ -358,7 +358,8 @@
     "inputs": {
       "weather": "Tempo",
       "soil": "Camadas de solo",
-      "sowing": "Sementeira"
+      "sowing": "Sementeira",
+      "sowingMethod": "Método de sementeira"
     },
     "soil": {
       "depth": "Profundidade",
@@ -379,6 +380,16 @@
       "crop_cycle": "ciclo de cultura",
       "legacy_parcel_season": "campanha registada na parcela"
     },
+    "sowingMethod": {
+      "direct": "direta",
+      "conventional": "tradicional"
+    },
+    "sowingMethodSource": {
+      "request": "pedido",
+      "field_operations": "operações de campo",
+      "default": "sem dados: solo nu"
+    },
+    "mulch": "restolho como cobertura a {{pct}} %",
     "warnings": "Notas",
     "errors": {
       "unsupported_crop": "Esta cultura ainda não pode ser simulada.",
