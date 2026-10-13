@@ -1,7 +1,8 @@
-/** Mirror of backend/app/planning/models.py — contract version 2.1. Change both together. */
+/** Mirror of backend/app/planning/models.py — contract version 2.2. Change both together. */
 import type { SourceAttributionItem } from '../types/attribution';
+import type { Fortnight } from './fortnight';
 
-export const CONTRACT_VERSION = '2.1';
+export const CONTRACT_VERSION = '2.2';
 export type Verdict = 'fits' | 'caveats' | 'no_fit';
 /** Owner decision (2026-10-13): one vocabulary everywhere; the words shown are translated. */
 export type Regime = 'rainfed' | 'irrigated';
@@ -94,3 +95,13 @@ export interface PlanCycleIn {
 }
 export interface PlanIn { campaign: number; regime: Regime; management: Management; cycles: PlanCycleIn[] }
 export interface PlanWriteResponse { contract_version: string; parcel_id: string; campaign: number; written: string[]; removed: string[] }
+
+/** GET /parcels/{id}/calendar (2.2): fortnights for a plan, the main window and a coherent cover. */
+export interface CalendarResponse {
+  contract_version: string; parcel_id: string; campaign: number; crop: string | null; cover_crop: string | null;
+  fortnights: Fortnight[];
+  main: { window: Fortnight | null; window_source: string | null; default: Fortnight | null; selected: Fortnight | null;
+    options: Fortnight[]; perennial_years_default: number | null };
+  previous: { crop: string | null; end: string | null; end_source: 'harvest_recorded' | 'planned_end' | 'typical_maturity' | 'campaign_start' };
+  cover: { fits: boolean; default: Fortnight | null; options: Fortnight[]; ends: string | null; weeks: number | null; short: boolean } | null;
+}

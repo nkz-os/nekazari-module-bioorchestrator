@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   AQUACROP_POLL_MS, AQUACROP_POLL_CAP_MS, aquacropPending, disagrees, mergeAquacrop, moistureLabel, pollDecision, progressLabel, retryFlag, canRetry,
   failureFor, jobIdForPoll, nextRetry, retryCountFor, unavailableKey,
-  sortEstimates, uniqueAttributions, validationTone,
+  sortEstimates, uniqueAttributions, validationTone, yieldSummary,
 } from './estimatesModel';
 import type { AquacropResponse, Estimate, EstimatesResponse } from './types';
 
@@ -190,5 +190,20 @@ describe('unavailable reason keys', () => {
     expect(unavailableKey('expected_future_reason')).toBe('planning.estimate.unavailable.expected_unknown');
     expect(unavailableKey('expected_irrigated')).toBe('planning.estimate.unavailable.expected_irrigated');
     expect(unavailableKey('something_else')).toBe('planning.estimate.unavailable.something_else');
+  });
+});
+
+describe('yieldSummary', () => {
+  const e = (basis: string, over: object) => ({ basis, percentiles: null, range: null, validation: { status: 'validated' }, ...over }) as never;
+  it('prefers the expected (gap-corrected) range, then trial evidence P10–P90; never the ceiling', () => {
+    expect(yieldSummary([e('water_limited', { percentiles: { p10: 3, p50: 6, p90: 10 } }), e('gap_corrected', { range: { low: 0.6, high: 5 } })]))
+      .toEqual({ low: 0.6, high: 5 });
+    expect(yieldSummary([e('trial_evidence', { percentiles: { p10: 5.1, p50: 6.8, p90: 8.2 } })])).toEqual({ low: 5.1, high: 8.2 });
+    expect(yieldSummary([e('water_limited', { percentiles: { p10: 3, p50: 6, p90: 10 } })])).toBeNull();
+  });
+  it('a model range shows only when validated; trial evidence is shown as it is (not a model)', () => {
+    expect(yieldSummary([e('gap_corrected', { range: { low: 2, high: 5 }, validation: { status: 'experimental' } }),
+      e('trial_evidence', { percentiles: { p10: 5.1, p50: 6.8, p90: 8.2 }, validation: { status: 'not_applicable' } })]))
+      .toEqual({ low: 5.1, high: 8.2 });
   });
 });

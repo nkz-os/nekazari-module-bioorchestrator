@@ -11,7 +11,7 @@ from typing import Annotated, Any, Literal
 
 from pydantic import BaseModel, BeforeValidator, Field
 
-CONTRACT_VERSION = "2.1"
+CONTRACT_VERSION = "2.2"
 
 Verdict = Literal["fits", "caveats", "no_fit"]
 # Owner decision (2026-10-13): the regime vocabulary is rainfed | irrigated. The Spanish words that
@@ -309,3 +309,44 @@ class PlanWriteResponse(BaseModel):
     campaign: int
     written: list[str]
     removed: list[str]
+
+
+class FortnightOut(BaseModel):
+    start: date
+    end: date
+
+
+class CalendarMain(BaseModel):
+    window: FortnightOut | None
+    window_source: str | None
+    default: FortnightOut | None
+    selected: FortnightOut | None
+    options: list[FortnightOut]
+    perennial_years_default: int | None
+
+
+class CalendarPrevious(BaseModel):
+    crop: str | None
+    end: date | None
+    end_source: Literal["harvest_recorded", "planned_end", "typical_maturity", "campaign_start"]
+
+
+class CalendarCover(BaseModel):
+    fits: bool
+    default: FortnightOut | None
+    options: list[FortnightOut]
+    ends: date | None
+    weeks: int | None
+    short: bool
+
+
+class CalendarResponse(BaseModel):
+    contract_version: str = CONTRACT_VERSION
+    parcel_id: str
+    campaign: int
+    crop: str | None
+    cover_crop: str | None
+    fortnights: list[FortnightOut]
+    main: CalendarMain
+    previous: CalendarPrevious
+    cover: CalendarCover | None

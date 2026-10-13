@@ -160,13 +160,9 @@
       "regimeHint": "Cal per veure varietats i simulació: l'evidència mai barreja règims.",
       "managementLabel": "Maneig", "historyDown": "No s'ha pogut llegir l'historial: la rotació no s'ha comprovat."
     },
-    "step": { "crop": "1 · Quin cultiu?", "variety": "2 · Quina varietat?", "estimate": "3 · Quina collita esperar?", "plan": "4 · Planificar" },
     "fit": {
-      "shared": "Per a tots els cultius:",
       "fits": "Encaixa", "caveats": "Amb reserves", "no_fit": "No encaixa",
-      "showNoFit": "Mostra els que no encaixen ({{count}})", "hideNoFit": "Amaga els que no encaixen",
-      "sowing": "sembra {{from}}–{{to}}", "trials": "varietats amb assaigs", "noTrials": "sense assaigs de varietats",
-      "pick": "Tria un cultiu per veure'n les varietats i la collita esperada."
+      "sowing": "sembra {{from}}–{{to}}"
     },
     "reason": {
       "soil_unsuitable": "Sòl no apte per a aquest cultiu",
@@ -205,7 +201,7 @@
       "relativeHint": "Rendiment respecte de la mitjana de cada assaig: 100 % = igual que la mitjana.",
       "stable": "estable", "average": "mitjana", "responsive": "sensible a l'entorn", "few": "pocs assaigs",
       "tier": { "field": "assaigs de camp", "regional": "mitjanes regionals" },
-      "choose": "Tria", "chosen": "Triada", "none": "Sense varietat"
+      "choose": "Tria", "chosen": "Triada"
     },
     "gap": {
       "no_expected_yield": "Sense rendiment esperat",
@@ -273,11 +269,10 @@
     },
     "plan": {
       "replaces": "En desar se substitueix el pla actual d'aquesta campanya: revisa el maneig i la coberta.",
-      "crop": "Cultiu", "variety": "Varietat", "sowing": "Sembra", "years": "Anys previstos",
-      "addCover": "Afegeix una cobertura abans del cultiu", "cover": "Cobertura", "coverSowing": "Sembra de la cobertura",
-      "coverEndsAtSowing": "La cobertura s'acaba (corró o sega) en sembrar el cultiu principal", "method": "Com s'acaba",
+      "years": "Anys previstos",
+      "cover": "Cobertura",
+      "method": "Com s'acaba",
       "methods": { "roller_crimper": "Corró aixafador (roller crimper)", "mowing": "Sega", "incorporate": "Incorporació", "grazing": "Pastura", "harvest": "Collita" },
-      "submit": "Planificar", "needsRegime": "Declara secà o regadiu abans de planificar.",
       "otherSpecies": "Una altra espècie…", "speciesName": "Nom de l'espècie",
       "error": {
         "species_name_invalid": "Escriu un nom d'espècie vàlid (només lletres, com a mínim 2)",
@@ -299,6 +294,7 @@
         "invalid_response": "El servidor ha respost una cosa inesperada; torna-ho a provar."
       }
     },
+    "wizard": {"step": "Pas {{n}} de {{total}}", "next": "Següent", "back": "Enrere", "save": "Desa el pla", "crop": {"title": "Què sembraràs?", "recommended": "Recomanats per a aquesta parcel·la", "search": "Cerca un altre cultiu", "noResults": "Cap cultiu amb aquest nom"}, "variety": {"title": "Quina varietat?", "none": "Sense varietat / ho decideixo després", "all": "Mostra totes les varietats", "why": {"productive": "La més productiva a la teva zona", "stable": "La més estable entre anys", "balanced": "Bona producció i estable"}}, "sowing": {"title": "Quan sembraràs?", "chosen": "Sembra de {{crop}}: {{range}}", "recommended": "Recomanat a la teva zona: {{range}}", "noWindow": "No coneixem la finestra de sembra d'aquest cultiu a la teva zona: tria una quinzena", "years": "Quants anys?"}, "cover": {"title": "Coberta abans?", "no": "No", "yes": "Sí", "grows": "La coberta creix del {{range}}, unes {{weeks}} setmanes", "short": "Poc temps per a una coberta: unes {{weeks}} setmanes", "noFit": "No hi cap una coberta abans d'aquesta sembra", "ends": "S'acaba ({{method}}) en sembrar el cultiu principal"}, "summary": {"title": "El teu pla", "yield": "Collita esperada {{low}}–{{high}} t/ha", "detail": "Mostra el detall", "regimeNotSaved": "El pla s'ha desat, però no s'ha pogut desar secà/regadiu a la parcel·la; es tornarà a provar en desar el pròxim pla", "continue": "Continua"}, "change": "Canvia"},
     "lock": { "campaign_unknown": "Aquesta campanya té un cultiu d'origen o estat desconegut: revisa'l a les operacions de camp" },
     "simulation": { "open": "Simulació de la campanya en curs", "temporary": "Vista provisional: passarà a Salut del cultiu." },
     "widget": { "title": "Pla de la parcel·la", "undecided": "Sense decidir", "plan": "Planificar" },

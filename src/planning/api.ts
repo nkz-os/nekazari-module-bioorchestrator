@@ -3,7 +3,7 @@ import { API_BASE, authHeaders } from '../services/api';
 import type { SourceAttributionItem } from '../types/attribution';
 import { CONTRACT_VERSION } from './types';
 import type {
-  AquacropResponse, EstimatesResponse, FarmResponse, FitResponse, Management, PlanIn, PlanWriteResponse, Regime, VarietiesResponse,
+  AquacropResponse, CalendarResponse, EstimatesResponse, FarmResponse, FitResponse, Management, PlanIn, PlanWriteResponse, Regime, VarietiesResponse,
 } from './types';
 
 const PLANNING = `${API_BASE}/api/graph/planning`;
@@ -91,3 +91,22 @@ export const putPlan = (parcelId: string, body: PlanIn) =>
 export const fetchAttributions = (signal?: AbortSignal) =>
   request<{ attributions: SourceAttributionItem[]; total: number }>(
     'GET', `${API_BASE}/api/graph/agriculture/sources/attributions`, undefined, signal);
+
+export interface CalendarQuery { campaign: number; crop: string; cover: string | null; mainSowing: string | null }
+export const fetchCalendar = (parcelId: string, q: CalendarQuery, signal?: AbortSignal) =>
+  request<CalendarResponse>('GET', `${PLANNING}/parcels/${enc(parcelId)}/calendar${buildQuery({
+    campaign: q.campaign, crop: q.crop, cover: q.cover, main_sowing: q.mainSowing,
+  })}`, undefined, signal);
+
+/**
+ * W10: the regime the farmer chose is remembered on the parcel (entity-manager is the parcel's writer),
+ * so it is not asked again and in-season forecasts can run. Only what the farmer chose; never a guess.
+ */
+export async function saveParcelRegime(parcelId: string, regime: Regime): Promise<void> {
+  const res = await fetch(`${API_BASE}/api/entities/parcels/${enc(parcelId)}`, {
+    method: 'PATCH', credentials: 'include',
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
+    body: JSON.stringify({ attributes: { irrigationRegime: { type: 'Property', value: regime } } }),
+  });
+  if (!res.ok) throw new PlanningApiError(res.status, null);
+}
