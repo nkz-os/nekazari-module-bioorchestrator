@@ -1,6 +1,7 @@
 """Planning use cases: read the parcel, apply the pure rules, return contract dicts."""
 from __future__ import annotations
 
+import calendar
 import logging
 import re
 from datetime import UTC, date, datetime, timedelta
@@ -49,6 +50,7 @@ from app.planning.history import (
 from app.planning.reference import EMPTY_REFERENCE, load_reference
 from app.planning.rotation import rotation_reasons
 from app.planning.varieties import variety_stats
+from app.services import ggcmi_calendar
 from app.services.crop_cycles_client import fetch_crop_cycles
 from app.services.crop_reference import CROP_REFERENCE
 from app.services.sim_errors import SimulationError
@@ -344,14 +346,36 @@ class CalendarInputError(ValueError):
     """A calendar request the rules refuse (code in the message)."""
 
 
-def previous_crop(cycles: dict | None, campaign: int, *, sowing_for) -> PreviousCrop | None:
+def typical_maturity(slug: str | None, start: date, *, lat: float | None, lon: float | None,
+                     regime: str | None) -> date | None:
+    """When a crop sown on ``start`` typically matures at the point (GGCMI calendar); None when unknown.
+
+    The calendars list crops under the catalog code (maize is ZEAMA in the registry, ZEAMX there).
+    """
+    eppo = (get_species_info(slug) or {}).get("eppo_code") if slug else None
+    if not eppo:
+        return None
+    cal = ggcmi_calendar.lookup(catalog_code(eppo), lat, lon, irrigation=regime)
+    if not cal or not cal.get("maturity_doy"):
+        return None
+    doy = int(cal["maturity_doy"])
+    for year in (start.year, start.year + 1):
+        day = date(year, 1, 1) + timedelta(days=min(doy, 366 if calendar.isleap(year) else 365) - 1)
+        if day > start:
+            return day
+    return None
+
+
+def previous_crop(cycles: dict | None, campaign: int, *, maturity_for) -> PreviousCrop | None:
     """The main crop that precedes the campaign and when it ends (spec §4, first found).
 
-    ``sowing_for(eppo)`` returns the crop's sowing calendar (its ``cycle_days``), for the typical end.
+    ``maturity_for(slug, start)`` gives the typical end of a crop with no end recorded or planned.
     """
     def campaign_of(c: dict) -> int | None:
+        # The sowing decides the campaign (Aug-Jul). The core's label is the end year, or the start
+        # year when there is no end, which puts an autumn sowing without an end one campaign early.
         start = iso_date((c.get("start") or {}).get("date"))
-        return first_campaign(c) or (campaign_of_start(start) if start else None)
+        return campaign_of_start(start) if start else first_campaign(c)
 
     mains = [c for c in cycles_of(cycles) if c.get("role") == "main_crop"
              and (campaign_of(c) or campaign) < campaign]
@@ -366,10 +390,9 @@ def previous_crop(cycles: dict | None, campaign: int, *, sowing_for) -> Previous
     if end_date:
         return PreviousCrop(slug, end_date, "planned_end")
     start = iso_date((last.get("start") or {}).get("date"))
-    eppo = (get_species_info(slug) or {}).get("eppo_code") if slug else None
-    days = (sowing_for(eppo) or {}).get("cycle_days") if eppo else None
-    if start and days:
-        return PreviousCrop(slug, start + timedelta(days=int(days)), "typical_maturity")
+    typical = maturity_for(slug, start) if start else None
+    if typical:
+        return PreviousCrop(slug, typical, "typical_maturity")
     return PreviousCrop(slug, None, "campaign_start")
 
 
@@ -391,10 +414,14 @@ async def parcel_calendar(*, dao, parcel_id: str, tenant_id: str, campaign: int,
                            lat=centroid.get("lat"), lon=centroid.get("lon"), irrigation=regime) if code else {}
 
     cycles = await fetch_crop_cycles(env["parcel_id"], tenant_id)
+
+    def maturity_for(prev_slug: str | None, start: date) -> date | None:
+        return typical_maturity(prev_slug, start, lat=centroid.get("lat"), lon=centroid.get("lon"), regime=regime)
+
     out = build_calendar(campaign=campaign, sowing=sowing_for(eppo),
                          perennial=get_lifecycle(slug) == "perennial" if slug else False,
                          main_sowing=fortnight_of(main_sowing).start if main_sowing else None,
                          previous=previous_crop(cycles if isinstance(cycles, dict) else None, campaign,
-                                                sowing_for=sowing_for),
+                                                maturity_for=maturity_for),
                          with_cover=cover is not None)
     return {"parcel_id": env["parcel_id"], "campaign": campaign, "crop": slug, "cover_crop": cover, **out}

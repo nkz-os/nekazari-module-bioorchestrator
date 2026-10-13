@@ -27,26 +27,54 @@ def _cycle(species, start, end, end_prov, label=None):
 
 def test_previous_crop_prefers_a_recorded_harvest():
     cycles = {"cycles": [_cycle("TRZAX", "2025-10-20", "2026-07-05", "actual", 2026)]}
-    assert service.previous_crop(cycles, 2027, sowing_for=lambda eppo: {}) == \
+    assert service.previous_crop(cycles, 2027, maturity_for=lambda slug, start: None) == \
         PreviousCrop("wheat", date(2026, 7, 5), "harvest_recorded")
 
 
 def test_previous_crop_uses_a_planned_end_then_typical_maturity():
     planned = {"cycles": [_cycle("TRZAX", "2025-10-20", "2026-07-01", "planned", 2026)]}
-    assert service.previous_crop(planned, 2027, sowing_for=lambda e: {}).end_source == "planned_end"
+    assert service.previous_crop(planned, 2027, maturity_for=lambda slug, start: None).end_source == "planned_end"
     open_end = {"cycles": [_cycle("ZEAMX", "2026-04-20", None, None)]}  # no label: campaign from the sowing date
-    prev = service.previous_crop(open_end, 2027, sowing_for=lambda e: {"cycle_days": 150})
+    prev = service.previous_crop(open_end, 2027, maturity_for=lambda slug, start: date(2026, 9, 17))
     assert prev == PreviousCrop("maize", date(2026, 9, 17), "typical_maturity")
 
 
 def test_the_campaign_being_planned_and_later_ones_are_not_previous():
     cycles = {"cycles": [_cycle("TRZAX", "2026-10-20", None, None, 2027), _cycle("ZEAMX", "2027-04-20", None, None)]}
-    assert service.previous_crop(cycles, 2027, sowing_for=lambda e: {}) is None
+    assert service.previous_crop(cycles, 2027, maturity_for=lambda slug, start: None) is None
+
+
+def test_an_autumn_sowing_without_end_belongs_to_the_next_campaign_whatever_the_core_label():
+    # The core labels a cycle with no end by its start year (2026); sown in October it opens campaign 2027,
+    # so planning 2027 must not take it (the plan being replaced) as the previous crop.
+    cycles = {"cycles": [_cycle("TRZAX", "2026-10-20", None, None, 2026)]}
+    assert service.previous_crop(cycles, 2027, maturity_for=lambda slug, start: None) is None
+
+
+def test_typical_maturity_reads_the_ggcmi_calendar_under_the_catalog_code():
+    # Maize is ZEAMA in the registry and ZEAMX in the calendars; GGCMI matures it on day 264 here.
+    assert service.typical_maturity("maize", date(2027, 4, 16), lat=42.6, lon=-1.6, regime="rainfed") == date(2027, 9, 21)
+    # Winter wheat sown in autumn matures the next summer, never before its sowing.
+    assert service.typical_maturity("wheat", date(2026, 10, 20), lat=42.6, lon=-1.6, regime="rainfed").year == 2027
+    assert service.typical_maturity("chickpea", date(2027, 3, 1), lat=42.6, lon=-1.6, regime="rainfed") is None
+
+
+async def test_a_planned_summer_crop_without_end_leaves_no_room_for_an_august_cover(monkeypatch):
+    # Real sowing calendars and GGCMI; only the core is stubbed, with the payload shape it really sends.
+    dao = AsyncMock()
+    dao.get_parcel_environment.return_value = ENV
+    maize = _cycle("ZEAMX", "2027-04-16", None, None, 2027)
+    maize["status"] = "planned"
+    monkeypatch.setattr(service, "fetch_crop_cycles", AsyncMock(return_value={"cycles": [maize]}))
+    out = await service.parcel_calendar(dao=dao, parcel_id=ENV["parcel_id"], tenant_id="t", campaign=2028,
+                                        crop="wheat", cover="cover", main_sowing=None)
+    assert out["previous"] == {"crop": "maize", "end": "2027-09-21", "end_source": "typical_maturity"}
+    assert out["cover"]["default"]["start"] > "2027-09-21"
 
 
 def test_no_previous_crop_is_none():
-    assert service.previous_crop({"cycles": []}, 2027, sowing_for=lambda e: {}) is None
-    assert service.previous_crop(None, 2027, sowing_for=lambda e: {}) is None
+    assert service.previous_crop({"cycles": []}, 2027, maturity_for=lambda slug, start: None) is None
+    assert service.previous_crop(None, 2027, maturity_for=lambda slug, start: None) is None
 
 
 async def test_calendar_service_wires_sowing_cycles_and_cover(monkeypatch):
