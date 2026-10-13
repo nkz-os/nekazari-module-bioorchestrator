@@ -23,6 +23,7 @@ from fastapi import Depends, FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from neo4j.exceptions import DriverError, Neo4jError
+from nkz_platform_sdk.notify_auth import derived_tokens_from_env
 from nkz_platform_sdk.orion import OrionClient
 from nkz_platform_sdk.subscriptions import SubscriptionRegistrar
 
@@ -79,10 +80,10 @@ async def _ensure_catalog_subscription():
         subscriptions=[{"type": "AgriCrop"}],
         module_name="bioorchestrator",
         context_url=settings.context_url,
-        notification_headers=(
-            {"X-Internal-Service-Secret": internal_secret}
-            if internal_secret else None
-        ),
+        # The registrar owns the receiver auth header: master secret (legacy) or, with
+        # NKZ_NOTIFY_DERIVED_TOKENS on, a token bound to the tenant and this receiver.
+        internal_secret=internal_secret or None,
+        derived_tokens=bool(internal_secret) and derived_tokens_from_env(),
     )
     try:
         result = await registrar.ensure_all([settings.catalog_tenant])

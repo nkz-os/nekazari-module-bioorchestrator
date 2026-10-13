@@ -32,6 +32,7 @@ from typing import Any
 from urllib.parse import quote, unquote
 
 from nkz_platform_sdk.agronomy import AgronomicValue, Source
+from nkz_platform_sdk.notify_auth import derived_tokens_from_env
 from nkz_platform_sdk.orion import OrionClient
 from nkz_platform_sdk.subscriptions import SubscriptionDef, SubscriptionRegistrar
 
@@ -3652,10 +3653,10 @@ class GraphDAO:
                 )],
                 module_name="bioorchestrator",
                 context_url=settings.context_url,
-                notification_headers=(
-                    {"X-Internal-Service-Secret": internal_secret}
-                    if internal_secret else None
-                ),
+                # The registrar owns the receiver auth header: master secret (legacy) or, with
+                # NKZ_NOTIFY_DERIVED_TOKENS on, a token bound to the tenant and this receiver.
+                internal_secret=internal_secret or None,
+                derived_tokens=bool(internal_secret) and derived_tokens_from_env(),
             )
             result = await registrar.ensure_all([tenant_id])
             logger.info("phenology subscription ensured for %s: %s", tenant_id, result)

@@ -58,3 +58,23 @@ def test_invalid_payload_400():
     r = c.post("/api/graph/internal/phenology-update", json={"nope": 1},
                headers={"NGSILD-Tenant": "montiko"})
     assert r.status_code == 400
+
+
+def test_derived_token_accepted_once_master_refused(monkeypatch):
+    from nkz_platform_sdk.notify_auth import TOKEN_HEADER, notification_token
+
+    monkeypatch.setenv("NOTIFY_REQUIRE_INTERNAL_SECRET", "true")
+    monkeypatch.setenv("INTERNAL_SERVICE_SECRET", "test-secret")
+    monkeypatch.setenv("NKZ_NOTIFY_ACCEPT_MASTER", "false")
+    # Starlette's TestClient sends Host: testserver; the token binds to that host.
+    token = notification_token("test-secret", "tenant-a", "testserver")
+    url = "/api/graph/internal/phenology-update"
+    with patch.object(phenology_notify, "_dispatch"):
+        c = TestClient(_app())
+        ok = c.post(url, json={"data": []}, headers={"NGSILD-Tenant": "tenant-a", TOKEN_HEADER: token})
+        other = c.post(url, json={"data": []}, headers={"NGSILD-Tenant": "tenant-b", TOKEN_HEADER: token})
+        master = c.post(url, json={"data": []}, headers={
+            "NGSILD-Tenant": "tenant-a", "X-Internal-Service-Secret": "test-secret"})
+    assert ok.status_code == 204
+    assert other.status_code == 401
+    assert master.status_code == 401

@@ -25,3 +25,26 @@ def test_filter_non_agri_crop():
     ]
     agri_crops = [e for e in entities if e.get("type") == "AgriCrop"]
     assert len(agri_crops) == 2
+
+
+def test_derived_token_accepted_once_master_refused(monkeypatch):
+    from fastapi import FastAPI
+    from fastapi.testclient import TestClient
+    from nkz_platform_sdk.notify_auth import TOKEN_HEADER, notification_token
+
+    from app.api.v1 import notify
+
+    monkeypatch.setenv("NOTIFY_REQUIRE_INTERNAL_SECRET", "true")
+    monkeypatch.setenv("INTERNAL_SERVICE_SECRET", "test-secret")
+    monkeypatch.setenv("NKZ_NOTIFY_ACCEPT_MASTER", "false")
+    app = FastAPI()
+    app.include_router(notify.router, prefix="/api/ngsi-ld")
+    c = TestClient(app)
+    # Starlette's TestClient sends Host: testserver; the token binds to that host.
+    token = notification_token("test-secret", "tenant-a", "testserver")
+    url = "/api/ngsi-ld/notify"
+    body = {"data": []}
+    assert c.post(url, json=body, headers={"Fiware-Service": "tenant-a", TOKEN_HEADER: token}).status_code == 204
+    assert c.post(url, json=body, headers={"Fiware-Service": "tenant-b", TOKEN_HEADER: token}).status_code == 401
+    assert c.post(url, json=body, headers={
+        "Fiware-Service": "tenant-a", "X-Internal-Service-Secret": "test-secret"}).status_code == 401
