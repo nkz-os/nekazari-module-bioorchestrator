@@ -739,3 +739,20 @@ async def test_simulate_reports_the_mulch_it_ran_with():
 async def test_simulate_checks_mulch_before_any_run():
     with pytest.raises(EngineInputError, match="mulch_pct"):
         await eng.simulate(_gdd10_weather(), {}, _soil(), "WheatGDD", date(2020, 1, 1), mulch_pct=0)
+
+
+# ------------------------------------------------------- soil evaporation depth
+def test_soil_evaporation_dries_at_most_the_fao56_layer():
+    # FAO-56 eq. 73: Ze 0.10-0.15 m; AquaCrop's default lets the evaporating layer reach 0.30 m.
+    s = eng._build_soil(_soil())
+    assert eng.SOIL_EVAP_DEPTH_M == 0.15
+    assert s.evap_z_max == 0.15 and s.evap_z_min <= 0.15
+
+
+def test_the_wheat_calibration_was_fitted_with_the_engine_evaporation_depth():
+    # The gap factors only hold for the configuration they were fitted on.
+    import json
+
+    from app.services import yield_calibration as yc
+    data = json.loads((yc.DATA_DIR / yc.CALIBRATION_FILES["wheat"]).read_text(encoding="utf-8"))
+    assert data["soil_evaporation_depth_m"] == eng.SOIL_EVAP_DEPTH_M

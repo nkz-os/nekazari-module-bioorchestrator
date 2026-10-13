@@ -8,9 +8,9 @@ Design rules
 * Only AquaCrop built-in crops and parameters are used, plus the sourced cultivars of
   ``CULTIVARS`` (a built-in crop with one published cultivar's values; ``supported_crops()``).
 * Soil is built as an AquaCrop ``custom`` soil from the supplied layers. The
-  curve number (61) and readily evaporable water (9 mm) are AquaCrop's own
-  ``custom`` defaults: ASSUMPTION: library defaults until the owner fixes a
-  texture-based criterion; they differ from AquaCrop's named-texture presets.
+  curve number comes from the top layer's Ksat and the readily evaporable water
+  from its water contents, with AquaCrop's own rules; soil evaporation dries at
+  most the FAO-56 surface layer (``SOIL_EVAP_DEPTH_M``).
 * AquaCrop-OSPy needs the profile to reach the crop's rooting depth + 0.1 m and
   gets there by thickening the deepest compartments (repeating their layers). The
   run declares it in ``warnings``; a profile too shallow to get there is an
@@ -285,6 +285,12 @@ def _compartments(soil: list[SoilLayer]) -> list[float]:
     return dz
 
 
+# Deepest layer soil evaporation may dry: FAO-56 (Allen et al. 1998) eq. 73 gives Ze 0.10-0.15 m;
+# AquaCrop's default lets the evaporating layer grow to 0.30 m (Reference Manual ch. 2, 2.12.4).
+# Validated against MAPA yields with the gap-factor calibration fitted on it (2026-10-13).
+SOIL_EVAP_DEPTH_M = 0.15
+
+
 def _build_soil(soil: list[SoilLayer]):
     from aquacrop import Soil
 
@@ -294,6 +300,9 @@ def _build_soil(soil: list[SoilLayer]):
     s = Soil("custom", dz=_compartments(soil), adj_rew=0, calc_cn=1)
     for l in soil:
         s.add_layer(l.thickness_m, l.wp, l.fc, l.sat, l.ksat_mm_day, _PENETRABILITY_PCT)
+    # The evaporating layer grows from evap_z_min to evap_z_max as the surface dries.
+    s.evap_z_max = SOIL_EVAP_DEPTH_M
+    s.evap_z_min = min(s.evap_z_min, SOIL_EVAP_DEPTH_M)
     return s
 
 
