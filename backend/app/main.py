@@ -260,6 +260,9 @@ async def _start_background_tasks():
         # silently kills the forever-running run_loop (queue then never dispatches).
         _BG_TASKS.add(asyncio.create_task(background_queue.run_loop()))
         _BG_TASKS.add(asyncio.create_task(_ensure_catalog_subscription()))
+        # Per-tenant subscriptions (phenology) wherever the module is installed, healed hourly.
+        from app.services.tenant_subscriptions import run_reconciler
+        _BG_TASKS.add(asyncio.create_task(run_reconciler()))
         async def _reconcile_guarded():
             try:
                 await _reconcile_catalog()

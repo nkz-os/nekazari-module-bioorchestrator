@@ -32,11 +32,8 @@ from typing import Any
 from urllib.parse import quote, unquote
 
 from nkz_platform_sdk.agronomy import AgronomicValue, Source
-from nkz_platform_sdk.notify_auth import derived_tokens_from_env
 from nkz_platform_sdk.orion import OrionClient
-from nkz_platform_sdk.subscriptions import SubscriptionDef, SubscriptionRegistrar
 
-from app.core.config import settings
 from app.graph import agroclimatic, zone_match
 from app.graph import evidence_policy as ep
 from app.services.country_lookup import country_at
@@ -2837,33 +2834,6 @@ class GraphDAO:
     # ═══════════════════════════════════════════════════════════════════════════
     # F4: Crop-Health Integration
     # ═══════════════════════════════════════════════════════════════════════════
-
-    async def _ensure_phenology_subscription(self, tenant_id: str) -> None:
-        """Idempotently ensure the per-tenant CropHealthAssessment subscription.
-
-        Its only caller was the legacy assign-crop flow (removed); it stays until the
-        subscription is registered at module install instead. Fail-soft: never raises.
-        """
-        try:
-            internal_secret = os.getenv("INTERNAL_SERVICE_SECRET", "")
-            registrar = SubscriptionRegistrar(
-                orion_url=settings.orion_ld_url,
-                notification_url="http://bioorchestrator-api-service:8420/api/graph/internal/phenology-update",
-                subscriptions=[SubscriptionDef(
-                    type="CropHealthAssessment",
-                    watched_attributes=["phenologyStage"],
-                )],
-                module_name="bioorchestrator",
-                context_url=settings.context_url,
-                # The registrar owns the receiver auth header: master secret (legacy) or, with
-                # NKZ_NOTIFY_DERIVED_TOKENS on, a token bound to the tenant and this receiver.
-                internal_secret=internal_secret or None,
-                derived_tokens=bool(internal_secret) and derived_tokens_from_env(),
-            )
-            result = await registrar.ensure_all([tenant_id])
-            logger.info("phenology subscription ensured for %s: %s", tenant_id, result)
-        except Exception as exc:  # noqa: BLE001
-            logger.warning("phenology subscription setup failed for %s: %s", tenant_id, exc)
 
     async def create_crop_plan(self, parcel_id, season, segments, tenant_id) -> dict:
         """Create one planned AgriCrop per segment.
