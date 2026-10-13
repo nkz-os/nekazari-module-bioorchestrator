@@ -97,3 +97,40 @@ def test_a_future_sowing_is_preseason():
 def test_a_stale_current_cycle_is_season_too_old():
     old = date.fromordinal(TODAY.toordinal() - MAX_SEASON_DAYS - 1).isoformat()
     assert resolve_in_season(PARCEL, CROPS, cycles(day=old), TODAY) == "season_too_old"
+
+
+# ---- review fixes (2026-10-13)
+@pytest.mark.parametrize("cycles", [["x"], {"current": "x"}, {"current": {"start": "2025-10-20"}}])
+def test_a_malformed_core_answer_is_cycles_unavailable(cycles):
+    assert resolve_in_season(PARCEL, CROPS, cycles, TODAY) == "cycles_unavailable"
+
+
+def test_a_malformed_sowing_date_is_no_sowing_date():
+    assert resolve_in_season(PARCEL, CROPS, cycles(day="20-10-2025"), TODAY) == "no_sowing_date"
+
+
+def test_a_non_string_crop_id_falls_back_to_the_cycle_species():
+    got = resolve_in_season(PARCEL, CROPS, cycles(crop_id=["a"]), TODAY)
+    assert (got.eppo, got.regime_source) == ("TRZAX", "parcel:irrigationRegime")
+
+
+def _previous(end="2026-07-10", end_provenance="actual"):
+    return {"crop_id": CROP_ID, "species": "TRZAX", "start": {"date": "2025-10-20", "provenance": "actual"},
+            "end": {"date": end, "provenance": end_provenance}}
+
+
+def test_a_recently_harvested_season_has_ended():
+    after = date(2026, 8, 15)
+    assert resolve_in_season(PARCEL, CROPS, {"current": None, "previous": _previous()}, after) == "season_ended"
+
+
+def test_a_due_next_crop_wins_over_the_ended_season():
+    after = date(2026, 11, 20)
+    pending = {"crop_id": CROP_ID, "species": "TRZAX", "start": {"date": "2026-11-01", "provenance": "planned"}}
+    got = resolve_in_season(PARCEL, CROPS, {"current": None, "previous": _previous(), "pending": pending}, after)
+    assert got == "not_sown"
+
+
+@pytest.mark.parametrize("prev", [_previous(end_provenance="planned"), _previous(end="2025-07-01")])
+def test_an_unrecorded_or_old_end_is_no_committed_crop(prev):
+    assert resolve_in_season(PARCEL, CROPS, {"current": None, "previous": prev}, date(2026, 8, 15)) == "no_committed_crop"

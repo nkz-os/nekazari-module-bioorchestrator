@@ -7,6 +7,7 @@ again here; when the core does not answer the reason is ``cycles_unavailable``.
 """
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass
 from datetime import UTC, date, datetime, timedelta
 
@@ -22,6 +23,7 @@ from app.services.crop_cycles_client import fetch_crop_cycles
 from app.services.sim_errors import SimulationError
 from app.species_registry import catalog_code, get_species_info, resolve_species
 
+logger = logging.getLogger(__name__)
 MAX_SEASON_DAYS = 366
 FACT = ("actual", "declared")
 
@@ -47,21 +49,52 @@ def _country(parcel: dict) -> str | None:
     return country_at(lat, lon)
 
 
+def _iso(value) -> date | None:
+    try:
+        return date.fromisoformat(str(value)[:10]) if value else None
+    except ValueError:
+        return None
+
+
+def _ended_recently(previous, today: date) -> bool:
+    """The previous cycle was sown and its end (harvest) is recorded within the season window."""
+    if not isinstance(previous, dict):
+        return False
+    start, end = previous.get("start"), previous.get("end")
+    if not (isinstance(start, dict) and isinstance(end, dict)):
+        return False
+    ended = _iso(end.get("date"))
+    return (start.get("provenance") in FACT and end.get("provenance") == "actual" and ended is not None
+            and today - timedelta(days=MAX_SEASON_DAYS) <= ended <= today)
+
+
 def resolve_in_season(parcel: dict, crops: dict[str, dict], cycles: dict | None,
                       today: date) -> InSeasonInputs | str:
-    """The inputs of an in-season forecast, or the reason code why there is none."""
-    if cycles is None:
+    """The inputs of an in-season forecast, or the reason code why there is none.
+
+    No current cycle: a crop due but not sown (``pending``) is ``not_sown``; else a season whose
+    harvest was just recorded is ``season_ended``; else ``no_committed_crop``. A malformed core
+    answer is treated as no answer (``cycles_unavailable``), never guessed through.
+    """
+    if not isinstance(cycles, dict):
         return "cycles_unavailable"
     current = cycles.get("current")
+    if current is not None and not isinstance(current, dict):
+        return "cycles_unavailable"
     if not current:
-        return "not_sown" if cycles.get("pending") else "no_committed_crop"
+        if cycles.get("pending"):
+            return "not_sown"
+        return "season_ended" if _ended_recently(cycles.get("previous"), today) else "no_committed_crop"
     start = current.get("start") or {}
+    if not isinstance(start, dict):
+        return "cycles_unavailable"
     if start.get("provenance") not in FACT:
         return "not_sown"
-    if not start.get("date"):
+    sowing = _iso(start.get("date"))
+    if sowing is None:
         return "no_sowing_date"
-    sowing = date.fromisoformat(str(start["date"])[:10])
-    crop = crops.get(current.get("crop_id")) or {}
+    crop_id = current.get("crop_id")
+    crop = (crops.get(crop_id) if isinstance(crop_id, str) else None) or {}
     slug = resolve_species(str(current.get("species") or crop.get("species") or ""))
     eppo = (get_species_info(slug) or {}).get("eppo_code") if slug else None
     if not eppo:
@@ -121,6 +154,10 @@ def _unavailable(reason: str, code: str | None = None) -> dict:
             "job_id": None, "season": None}
 
 
+def _failed(reason: str, code: str) -> dict:
+    return {**_unavailable(reason, code), "state": "failed"}
+
+
 def _view(job, inputs: InSeasonInputs, version: str) -> dict:
     out = {"state": job.state, "done": job.done, "total": job.total, "estimates": [], "unavailable": [],
            "job_id": job.id, "season": None}
@@ -146,7 +183,13 @@ async def parcel_in_season(*, dao, jobs, tenant_id: str, parcel_id: str, today: 
     except httpx.HTTPStatusError as e:
         if e.response.status_code == 404:
             raise ParcelNotFound(parcel_id) from e
-        raise
+        code = f"http_{e.response.status_code}"
+        logger.warning("in_season_parcel_unavailable tenant=%s parcel=%s code=%s", tenant_id, parcel_id, code)
+        return _failed("parcel_unavailable", code)
+    except httpx.HTTPError as e:
+        code = type(e).__name__
+        logger.warning("in_season_parcel_unavailable tenant=%s parcel=%s code=%s", tenant_id, parcel_id, code)
+        return _failed("parcel_unavailable", code)
     inputs = resolve_in_season(parcel, crops, cycles, today)
     if isinstance(inputs, str):
         return _unavailable(inputs)

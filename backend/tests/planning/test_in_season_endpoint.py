@@ -31,13 +31,14 @@ class FakeJobs:
     job_id = staticmethod(SimJobs.job_id)
 
     def __init__(self, full=False):
-        self.jobs, self.started, self.full = {}, [], full
+        self.jobs, self.started, self.full, self.runs = {}, [], full, []
 
     def get(self, jid, tenant):
         j = self.jobs.get(jid)
         return j if j and j.tenant_id == tenant else None
 
     async def start(self, tenant, params, run, today=None):
+        self.runs.append(run)
         jid = self.job_id(tenant, params, today, self.version)
         job = self.jobs.get(jid)
         if (job is None or job.state == "failed") and self.full:
@@ -162,3 +163,33 @@ def test_route_404_for_unknown_parcel(client, monkeypatch):
     import app.api.v1.planning as planning_api
     monkeypatch.setattr(planning_api, "parcel_in_season", AsyncMock(side_effect=ParcelNotFound("x")))
     assert client.get(URL).status_code == 404
+
+
+# ---- review fixes (2026-10-13)
+async def test_an_unreachable_broker_fails_with_a_code_not_a_500():
+    async def down(tenant, parcel_id):
+        raise httpx.ConnectError("down")
+
+    async def busy(tenant, parcel_id):
+        raise httpx.HTTPStatusError("x", request=httpx.Request("GET", "http://x"), response=httpx.Response(503))
+
+    for load, code in ((down, "ConnectError"), (busy, "http_503")):
+        out = await call(FakeJobs(), load=load)
+        assert out["state"] == "failed" and out["job_id"] is None and out["season"] is None
+        assert out["unavailable"] == [{"provider_id": "aquacrop", "reason": "parcel_unavailable", "code": code}]
+
+
+async def test_the_job_runs_the_engine_with_the_sown_date_only():
+    from unittest.mock import ANY
+
+    from app.planning import service
+    jobs = FakeJobs()
+    dao = AsyncMock()
+    dao.run_crop_simulation.return_value = RESULT
+    await call(jobs, dao=dao)
+    # the very identity of the preseason and crop-simulation jobs: identical inputs share one
+    assert jobs.started == [service._job_params(PARCEL_ID, "wheat", date(2025, 10, 20))]
+    assert await jobs.runs[-1](lambda done, total: None) == RESULT
+    dao.run_crop_simulation.assert_awaited_once_with(
+        parcel_id=PARCEL_ID, tenant_id="t", crop_slug="wheat", sowing_date_str="2025-10-20",
+        irrigation="rainfed", engine="aquacrop", progress=ANY)
