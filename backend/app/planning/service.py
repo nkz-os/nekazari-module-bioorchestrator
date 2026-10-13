@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import logging
 import re
-from datetime import UTC, date, datetime
+from datetime import UTC, date, datetime, timedelta
 
 from app.common.attribution import attach_attributions, rows_source_ids
 from app.core.knowledge import KnowledgeSource
@@ -11,6 +11,12 @@ from app.graph.dao import _to_parcel_urn
 from app.graph.recommend import sowing_info
 from app.planning.aquacrop_provider import PROVIDER_ID as AQUACROP_ID
 from app.planning.aquacrop_provider import aquacrop_gate, map_result, poll_in_scope
+from app.planning.calendar import (
+    PreviousCrop,
+    build_calendar,
+    campaign_fortnights,
+    fortnight_of,
+)
 from app.planning.estimates import (
     aquacrop_status,
     disagreement,
@@ -31,7 +37,15 @@ from app.planning.fit import (
     verdict_of,
     water_reasons,
 )
-from app.planning.history import history_complete, past_crops
+from app.planning.history import (
+    campaign_of_start,
+    cycles_of,
+    first_campaign,
+    history_complete,
+    iso_date,
+    past_crops,
+    species_slug,
+)
 from app.planning.reference import EMPTY_REFERENCE, load_reference
 from app.planning.rotation import rotation_reasons
 from app.planning.varieties import variety_stats
@@ -324,3 +338,63 @@ def _no_trials_reason(variety: str | None, data_gaps: list[str]) -> dict:
     else:
         reason = "no_trials_for_variety"
     return {"provider_id": "trial_evidence", "reason": reason}
+
+
+class CalendarInputError(ValueError):
+    """A calendar request the rules refuse (code in the message)."""
+
+
+def previous_crop(cycles: dict | None, campaign: int, *, sowing_for) -> PreviousCrop | None:
+    """The main crop that precedes the campaign and when it ends (spec §4, first found).
+
+    ``sowing_for(eppo)`` returns the crop's sowing calendar (its ``cycle_days``), for the typical end.
+    """
+    def campaign_of(c: dict) -> int | None:
+        start = iso_date((c.get("start") or {}).get("date"))
+        return first_campaign(c) or (campaign_of_start(start) if start else None)
+
+    mains = [c for c in cycles_of(cycles) if c.get("role") == "main_crop"
+             and (campaign_of(c) or campaign) < campaign]
+    if not mains:
+        return None
+    last = max(mains, key=lambda c: iso_date((c.get("start") or {}).get("date")) or date.min)
+    slug = species_slug(last.get("species"))
+    end = last.get("end") or {}
+    end_date = iso_date(end.get("date"))
+    if end_date and end.get("provenance") in ("actual", "declared"):
+        return PreviousCrop(slug, end_date, "harvest_recorded")
+    if end_date:
+        return PreviousCrop(slug, end_date, "planned_end")
+    start = iso_date((last.get("start") or {}).get("date"))
+    eppo = (get_species_info(slug) or {}).get("eppo_code") if slug else None
+    days = (sowing_for(eppo) or {}).get("cycle_days") if eppo else None
+    if start and days:
+        return PreviousCrop(slug, start + timedelta(days=int(days)), "typical_maturity")
+    return PreviousCrop(slug, None, "campaign_start")
+
+
+async def parcel_calendar(*, dao, parcel_id: str, tenant_id: str, campaign: int, crop: str,
+                          cover: str | None, main_sowing: date | None) -> dict:
+    """Fortnights for a plan: the main sowing window and a cover coherent with it (spec W6)."""
+    eppo = crop_code(crop)
+    slug = resolve_species(crop)
+    env = await load_environment(dao, parcel_id, tenant_id)
+    fns = campaign_fortnights(campaign)
+    if main_sowing is not None and not (fns[0].start <= main_sowing <= fns[-1].end):
+        raise CalendarInputError("main_sowing_outside_campaign")
+    regime, _ = resolve_regime(None, env)
+    rows = load_rows()
+    centroid = env.get("centroid") or {}
+
+    def sowing_for(code: str | None) -> dict:
+        return sowing_info(code, env.get("climate_class"), rows, env.get("country"),
+                           lat=centroid.get("lat"), lon=centroid.get("lon"), irrigation=regime) if code else {}
+
+    cycles = await fetch_crop_cycles(env["parcel_id"], tenant_id)
+    out = build_calendar(campaign=campaign, sowing=sowing_for(eppo),
+                         perennial=get_lifecycle(slug) == "perennial" if slug else False,
+                         main_sowing=fortnight_of(main_sowing).start if main_sowing else None,
+                         previous=previous_crop(cycles if isinstance(cycles, dict) else None, campaign,
+                                                sowing_for=sowing_for),
+                         with_cover=cover is not None)
+    return {"parcel_id": env["parcel_id"], "campaign": campaign, "crop": slug, "cover_crop": cover, **out}

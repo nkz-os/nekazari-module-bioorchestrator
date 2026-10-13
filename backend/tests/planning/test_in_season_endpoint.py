@@ -155,7 +155,7 @@ def test_route_answers_the_2_1_contract(client, monkeypatch):
         "state": "unavailable", "done": 0, "total": None, "estimates": [],
         "unavailable": [{"provider_id": "aquacrop", "reason": "not_sown"}], "job_id": None, "season": None}))
     r = client.get(URL)
-    assert r.status_code == 200 and r.json()["contract_version"] == "2.1"
+    assert r.status_code == 200 and r.json()["contract_version"] == "2.2"
     assert r.json()["unavailable"] == [{"provider_id": "aquacrop", "reason": "not_sown", "code": None}]
 
 

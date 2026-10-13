@@ -16,6 +16,7 @@ from app.planning.farm_source import load_farm
 from app.planning.in_season import parcel_in_season
 from app.planning.models import (
     AquacropResponse,
+    CalendarResponse,
     EstimatesResponse,
     FarmResponse,
     FitResponse,
@@ -31,10 +32,12 @@ from app.planning.plan_write import PlanError, write_plan
 from app.planning.prefetch import schedule_evidence_prefetch
 from app.planning.reference import EMPTY_REFERENCE, load_reference
 from app.planning.service import (
+    CalendarInputError,
     InvalidParcelId,
     ParcelNotFound,
     UnknownCrop,
     parcel_aquacrop,
+    parcel_calendar,
     parcel_estimates,
     parcel_fit,
     parcel_urn,
@@ -146,6 +149,25 @@ async def estimates_in_season(request: Request, parcel_id: str, sources: Sources
     try:
         return await parcel_in_season(dao=GraphDAO(sources[0].driver), jobs=shared_sim_jobs(),
                                       tenant_id=tenant, parcel_id=parcel_id, retry=retry)
+    except ParcelNotFound as e:
+        raise HTTPException(status_code=404, detail=str(e)) from e
+
+
+@router.get("/parcels/{parcel_id:path}/calendar", response_model=CalendarResponse)
+async def calendar(request: Request, parcel_id: str, sources: SourcesDep, campaign: int = CampaignQ,
+                   crop: str = Query(..., min_length=2, max_length=64),
+                   cover: str | None = Query(None, min_length=2, max_length=64),
+                   main_sowing: date | None = None):
+    """Fortnights for a plan: the main sowing window and a cover coherent with it (spec W6)."""
+    tenant = _require_tenant_id(request)
+    parcel_id = _checked_parcel_urn(parcel_id)
+    try:
+        return await parcel_calendar(dao=GraphDAO(sources[0].driver), parcel_id=parcel_id, tenant_id=tenant,
+                                     campaign=campaign, crop=crop, cover=cover, main_sowing=main_sowing)
+    except UnknownCrop as e:
+        raise HTTPException(status_code=422, detail=str(e)) from e
+    except CalendarInputError as e:
+        raise HTTPException(status_code=422, detail={"code": str(e)}) from e
     except ParcelNotFound as e:
         raise HTTPException(status_code=404, detail=str(e)) from e
 
