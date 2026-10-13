@@ -1,4 +1,5 @@
-"""Species -> AquaCrop built-in crop. Anything not listed is refused, never defaulted."""
+"""Species -> AquaCrop crop (built-in or sourced cultivar). Anything not listed is refused,
+never defaulted."""
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -11,7 +12,7 @@ from app.species_registry import resolve_species
 AQUACROP_CROPS: dict[str, str] = {
     "wheat": "WheatGDD",
     "durum_wheat": "WheatGDD",
-    "barley": "BarleyGDD",
+    "barley": "BarleyPonente",  # winter barley; BarleyGDD is a July-sown Ethiopian cultivar
     "maize": "MaizeGDD",
     "rice": "PaddyRiceGDD",
     "soybean": "SoybeanGDD",

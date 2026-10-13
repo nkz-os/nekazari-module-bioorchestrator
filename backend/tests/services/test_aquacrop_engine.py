@@ -596,6 +596,40 @@ def _gdd10_weather():
     return _weather(start=date(2020, 1, 1), n=400, tmin_c=5.0, tmax_c=15.0, precip_mm=2.0)
 
 
+# ------------------------------------------------------- sourced cultivars
+def test_supported_crops_lists_sourced_cultivars():
+    assert "BarleyPonente" in supported_crops()
+
+
+def test_ponente_takes_the_source_values_over_barley_gdd():
+    # Abrha et al. 2012, Exp. Agric. 48(2), tables 5-6; BarleyGDD keeps the shared table 6 values
+    p = eng.crop_defaults("BarleyPonente")
+    assert (p["Tbase"], p["Tupp"]) == (2.0, 28.0)
+    assert (p["Emergence"], p["HIstart"], p["Flowering"]) == (226.0, 1166.0, 180.0)
+    assert (p["Senescence"], p["Maturity"], p["MaxRooting"], p["YldForm"]) == (
+        1289.0, 1746.0, 1208.0, 475.0)
+    assert (p["CCx"], p["HI0"], p["CGC"], p["CDC"]) == (0.95, 0.44, 0.0087, 0.006)
+    assert p["PlantPop"] * p["SeedSize"] * 1e-8 == pytest.approx(0.03)  # CC0 3 %
+    assert (p["WP"], p["Kcb"], p["Zmax"], p["p_up3"]) == (15.0, 1.1, 1.3, 0.55)
+
+
+def test_ponente_matures_at_its_own_degree_days():
+    # Tmin 5 / Tmax 15 with Tbase 2: 8 degree days a day; maturity 1746 -> 219 days
+    res = run_aquacrop(_gdd10_weather(), _soil(), "BarleyPonente", date(2020, 1, 1), "full")
+    days = (date.fromisoformat(res["harvest_date"]) - date(2020, 1, 1)).days
+    assert days == 219
+    assert res["yield_t_ha"] > 0
+
+
+def test_cultivar_phenology_overrides_are_checked_against_the_cultivar():
+    shorter = run_aquacrop(_gdd10_weather(), _soil(), "BarleyPonente", date(2020, 1, 1), "full",
+                           crop_params={"Maturity": 1700.0, "Senescence": 1250.0})
+    assert shorter["crop_params"] == {"Maturity": 1700.0, "Senescence": 1250.0}
+    with pytest.raises(EngineInputError, match="phase order"):  # before HIstart + YldForm
+        run_aquacrop(_gdd10_weather(), _soil(), "BarleyPonente", date(2020, 1, 1),
+                     crop_params={"Maturity": 1300.0})
+
+
 def test_crop_params_lengthen_the_cycle():
     base = run_aquacrop(_gdd10_weather(), _soil(), "WheatGDD", date(2020, 1, 1), "full")
     # Senescence moves too: with the built-in CDC the canopy dies some 750 degree days
