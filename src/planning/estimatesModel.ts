@@ -124,3 +124,14 @@ export function unavailableKey(reason: string): string {
   const known = reason.startsWith('expected_') && !KNOWN_EXPECTED.includes(reason) ? 'expected_unknown' : reason;
   return `planning.estimate.unavailable.${known}`;
 }
+
+/**
+ * The one-line expected yield (W3): the gap-corrected range when its model is validated, then trial
+ * evidence P10–P90 (observed, not a model); never a ceiling, never an unvalidated model's figure.
+ */
+export function yieldSummary(estimates: Estimate[]): { low: number; high: number } | null {
+  const gap = estimates.find((e) => e.basis === 'gap_corrected' && e.range && e.validation.status === 'validated');
+  if (gap?.range) return { low: gap.range.low, high: gap.range.high };
+  const trial = estimates.find((e) => e.basis === 'trial_evidence' && e.percentiles);
+  return trial?.percentiles ? { low: trial.percentiles.p10, high: trial.percentiles.p90 } : null;
+}
