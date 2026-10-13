@@ -20,6 +20,7 @@ from app.services.nuts_regions import (
     load_region_names,
     nuts2_for_municipality,
 )
+from app.services.region_lookup import es_province_at
 from app.species_registry import catalog_code
 from neo4j import AsyncDriver
 
@@ -117,18 +118,36 @@ def warm_nuts_reference() -> None:
 
 
 @router.get("/agriculture/nuts-region")
-async def nuts_region(municipality: str = Query(..., pattern=_INE)):
-    """NUTS 2 region of a Spanish municipality (INE code) through its province; no geometry.
+async def nuts_region(
+    municipality: str | None = Query(None, pattern=_INE),
+    lat: float | None = Query(None, ge=-90, le=90),
+    lon: float | None = Query(None, ge=-180, le=180),
+):
+    """NUTS 2 region of a Spanish municipality (INE code) or of a point, through its province.
 
-    Resolves the province only: the municipality's existence is not checked.
+    Exactly one locator: `municipality`, or `lat` with `lon`. No GISCO geometry: the point case
+    uses the public-domain province boundaries. The municipality's existence is not checked.
     """
-    nuts = nuts2_for_municipality(municipality, _province_table())
+    has_point = lat is not None or lon is not None
+    if (municipality is not None) == has_point or (has_point and (lat is None or lon is None)):
+        raise HTTPException(status_code=422,
+                            detail="Give either municipality or both lat and lon")
+    if municipality is not None:
+        nuts = nuts2_for_municipality(municipality, _province_table())
+        if nuts is None:
+            raise HTTPException(status_code=404, detail="Unknown province")
+        names = _names_or_none() or {}
+        return {"municipality": municipality, "country": "ES", "nuts": nuts,
+                "name": names.get(nuts), "nuts_version": 2024,
+                "method": "ine_province"}
+    province = es_province_at(lat, lon)
+    nuts = _province_table().get(province["code"]) if province else None
     if nuts is None:
-        raise HTTPException(status_code=404, detail="Unknown province")
+        raise HTTPException(status_code=404, detail="No NUTS 2 region for this point")
     names = _names_or_none() or {}
-    return {"municipality": municipality, "country": "ES", "nuts": nuts,
+    return {"lat": lat, "lon": lon, "country": "ES", "nuts": nuts,
             "name": names.get(nuts), "nuts_version": 2024,
-            "method": "ine_province"}
+            "method": "natural_earth_province"}
 
 
 @router.get("/agriculture/nuts-regions")
