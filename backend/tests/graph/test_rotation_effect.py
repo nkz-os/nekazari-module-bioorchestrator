@@ -44,42 +44,9 @@ async def dao(neo4j_url):
 
 
 @pytest.mark.asyncio
-async def test_benefits_are_not_excluded(dao):
-    names = {c["name"] for c in await dao.recommend_next_crop("wheat")}
-    assert {"chickpea", "lentil", "pea"} <= names, \
-        f"N-fixing successors must survive, got {names}"
-
-
-@pytest.mark.asyncio
-async def test_restrictions_are_excluded(dao):
-    names = {c["name"] for c in await dao.recommend_next_crop("wheat")}
-    assert "sunflower" not in names, "a restriction must be excluded"
-
-
-@pytest.mark.asyncio
-async def test_missing_effect_is_treated_as_restriction(dao):
-    names = {c["name"] for c in await dao.recommend_next_crop("wheat")}
-    assert "barley" not in names, \
-        "a node without effect must fail safe to restriction"
-
-
-@pytest.mark.asyncio
 async def test_get_rotation_constraints_exposes_effect(dao):
     rows = await dao.get_rotation_constraints("wheat")
     by_crop = {r["crop_b"]: r["effect"] for r in rows}
     assert by_crop["chickpea"] == "benefit"
     assert by_crop["sunflower"] == "restriction"
 
-
-@pytest.mark.asyncio
-async def test_scenario_allows_benefit(dao):
-    """A benefit must not raise a rotation issue, whatever its interval."""
-    out = await dao.simulate_scenario("wheat", "chickpea")
-    assert out["rotation_ok"] is True, out["rotation_issue"]
-
-
-@pytest.mark.asyncio
-async def test_scenario_flags_restriction(dao):
-    out = await dao.simulate_scenario("wheat", "sunflower")
-    assert out["rotation_ok"] is False
-    assert "Sclerotinia" in out["rotation_issue"]

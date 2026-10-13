@@ -162,7 +162,7 @@ Crop-Health writes CropHealthAssessment.phenologyStage=flowering  (broker, per-t
         ▼
 POST /api/graph/internal/phenology-update  →  evaluate agronomist-editable ActionRules (Neo4j)
         ▼
-CropAdvisory upserted to the broker  →  GET /api/graph/agriculture/advisories
+CropAdvisory upserted to the broker
 ```
 
 BioOrchestrator **reads** the state Crop-Health computed — it never recomputes phenology. A matched rule (e.g. *cover crop reached flowering + roller-crimper termination*) produces a `CropAdvisory` (a recommendation in the Plan layer), never an `AgriParcelOperation` (the actual event, owned by Field-Operations). The subscription is registered lazily, per-tenant, when a crop is assigned.
@@ -182,20 +182,10 @@ Full i18n support in **6 languages**: English, Spanish, Basque, French, Portugue
 | `GET /crops` | List available EPPO crops |
 | `GET /trial-sites` | List trial sites with climate metadata |
 | `GET /variety-trials` | Raw variety trial results with env filters |
-| `GET /similar-sites` | Find sites similar to a target environment |
-| `GET /extrapolate` | Rank varieties for a crop+climate+soil combination — each variety carries `yield_provenance` (measured/partial/derived) and optional weather-adjusted penalties |
 | `GET /crop-name` | Localized crop name from EPPO code (used by Field-Operations/ROPO) |
-| `GET /compare-crops` | Multi-crop comparison (agronomic, environmental, economic) |
-| `GET /rotation-plan` | Multi-year rotation + PAC compliance evaluation (eco-schemes) |
-| `GET /regenerative-sequence` | Cover crop → protein crop + carbon projection (SOC, CO₂e) |
 | `GET /crop-context` | Full crop context for a parcel (phenology, thermal, soil) |
-| `GET /yield-potential` | Expected yield with confidence interval from trials |
-| `GET /water-budget` | ETc-based irrigation demand per parcel |
-| `POST /assign-crop` | Assign variety + management — single source of truth for `AgriParcel.hasAgriCrop`; registers the per-tenant phenology subscription |
 | `POST /crop-plan` · `GET /crop-plan` | Multi-segment crop plan (cover/main/catch) as a dated `AgriCrop` set |
 | `POST /crop-plan/{parcel}/segments/{seq}/advance` | Mark a segment sown — planned → active → harvested transition |
-| `GET /advisories` | `CropAdvisory` recommendations for a parcel (output of the Contract-2 action-rule loop) |
-| `GET /alerts` | Redis-sourced alerts + eco-impact enrichment (pollinators, pesticides) |
 | `GET /organic-inputs` | FiBL authorized inputs per crop pest |
 
 ### Graph (`/api/graph/*`)
@@ -211,9 +201,7 @@ Full i18n support in **6 languages**: English, Spanish, Basque, French, Portugue
 | `GET /nutrient-profile` | NPK uptake per stage |
 | `GET /soil-suitability` | Soil requirements per species |
 | `GET /rotation-constraints` | Crop rotation rules |
-| `GET /recommendations/next-crop` | Crop suggestion after rotation |
 | `GET /recommendations/fertilizer` | NPK fertilizer needs |
-| `GET /recommendations/simulate` | A/B crop scenario comparison |
 | `GET /protected-area-check` | Natura 2000 proximity |
 | `GET /varieties` | CPVO registered varieties |
 | `GET /pollinators` | GBIF pollinator species |

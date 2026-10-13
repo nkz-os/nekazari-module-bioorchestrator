@@ -89,33 +89,6 @@ async def _seed(dao):
         )
 
 
-def test_yield_potential_is_the_mean_of_deduplicated_policy_field_trials(dao):
-    res = _run(dao.get_yield_potential(variety="LG AURUS", crop="TRZAX"))
-    assert res["expected_yield_kg_ha"] == 7000.0  # (8000 + 6000) / 2: twin once, no BSL/derived/forage/national
-    assert res["trials_analyzed"] == 2
-    assert res["confidence_interval"][0] < 7000.0 < res["confidence_interval"][1]
-    assert sorted(res["similar_sites"]) == ["A", "B"]
-    assert "data_gaps" not in res
-
-
-def test_yield_potential_without_eligible_evidence_is_null_with_a_gap_never_zero(dao):
-    note_only = _run(dao.get_yield_potential(variety="NOTE ONLY", crop="TRZAX"))
-    assert note_only["expected_yield_kg_ha"] is None and note_only["confidence_interval"] is None
-    assert note_only["trials_analyzed"] == 0 and note_only["data_gaps"] == ["no_measured_yield"]
-    reg_only = _run(dao.get_yield_potential(variety="REG ONLY", crop="TRZAX"))
-    assert reg_only["expected_yield_kg_ha"] is None and reg_only["data_gaps"] == ["no_field_trials"]
-    unknown = _run(dao.get_yield_potential(variety="NOPE", crop="TRZAX"))
-    assert unknown["expected_yield_kg_ha"] is None and unknown["data_gaps"] == ["no_trial_data"]
-    for res in (note_only, reg_only, unknown):
-        assert "yield_gap_pct" not in res and "yield_gap_kg_ha" not in res
-
-
-def test_yield_potential_finds_a_variety_whatever_other_trials_yield(dao):
-    """The variety is filtered in the query: 210 higher-yielding trials of the crop do not push it out."""
-    res = _run(dao.get_yield_potential(variety="LOW", crop="BIAS"))
-    assert res["expected_yield_kg_ha"] == 1000.0 and res["trials_analyzed"] == 1
-
-
 def test_variety_trials_listing_is_field_tier_policy_rows(dao):
     rows = _run(dao.get_variety_trials(crop="TRZAX", variety="lg aurus", limit=50))
     assert {r["evidence_tier"] for r in rows} == {"field"}
@@ -145,29 +118,6 @@ def test_variety_trials_every_tier_when_asked_and_labelled(dao):
 def test_variety_trials_rows_carry_their_source_id(dao):
     rows = _run(dao.get_variety_trials(crop="TRZAX", variety="lg aurus", limit=50))
     assert {r["source_id"] for r in rows} == {"SRC", "BSL"}  # measured trials + the BSL/derived note rows
-
-
-def test_yield_potential_credits_only_the_trials_behind_the_number(dao):
-    res = _run(dao.get_yield_potential(variety="LG AURUS", crop="TRZAX"))
-    assert res["expected_yield_kg_ha"] == 7000.0
-    # the number is the mean of the SRC field trials: the BSL note rows and the AHDB national record
-    # (kept out of the mean by the policy) are not credited
-    assert res["source_ids"] == ["SRC"]
-
-
-def test_yield_potential_without_a_number_credits_no_source(dao):
-    # only a BSL note at a field site / only a national record / no trial at all: nothing is shown
-    for variety in ("NOTE ONLY", "REG ONLY", "NOPE"):
-        res = _run(dao.get_yield_potential(variety=variety, crop="TRZAX"))
-        assert res["expected_yield_kg_ha"] is None and res["source_ids"] == [], variety
-
-
-def test_site_source_ids_come_from_the_trials_at_each_site(dao):
-    got = _run(dao.get_site_source_ids(["A", "B", "UK national list", "NOT A SITE"]))
-    assert got["A"] == ["BSL", "GENVCE", "SRC"] and got["B"] == ["SRC"]  # the GENVCE zone row is credited too
-    assert got["UK national list"] == ["AHDB"]
-    assert "NOT A SITE" not in got
-    assert _run(dao.get_site_source_ids([])) == {}
 
 
 def test_trial_sites_summary_lists_the_sources_of_each_site(dao):
@@ -201,12 +151,3 @@ def test_extrapolate_credits_the_ranked_varieties_not_the_sites_of_other_crops(d
     assert [v["variety"] for v in res["ranked_varieties"]] == ["W1"]
     assert {sid for v in res["ranked_varieties"] for sid in v["source_ids"]} == {"ITACYL"}
 
-
-def test_genvce_variety_at_a_field_named_site_has_no_field_yield_potential(dao):
-    """A GENVCE row is regional evidence whatever its site: null with a gap, never 0, never listed as field."""
-    res = _run(dao.get_yield_potential(variety="GENVCE ONLY", crop="TRZAX"))
-    assert res["expected_yield_kg_ha"] is None and res["confidence_interval"] is None
-    assert res["trials_analyzed"] == 0 and res["data_gaps"] == ["no_field_trials"]
-    assert _run(dao.get_variety_trials(crop="TRZAX", variety="GENVCE ONLY", limit=50)) == []
-    rows = _run(dao.get_variety_trials(crop="TRZAX", variety="GENVCE ONLY", tier=None, limit=50))
-    assert [(r["evidence_tier"], r["yield_kg_ha"]) for r in rows] == [("regional", 9000.0)]

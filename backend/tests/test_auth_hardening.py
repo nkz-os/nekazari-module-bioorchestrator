@@ -210,23 +210,6 @@ def test_non_ascii_gateway_signature_is_401(prod):
 
 # ── I5a: extrapolate must not accept a caller tenant ───────────────────────
 
-def test_extrapolate_ignores_tenant_query_param(prod):
-    client, _ = prod
-    seen = {}
-
-    async def fake_extrapolate(self, **kwargs):
-        seen.update(kwargs)
-        return {"ranked_varieties": []}
-
-    with patch("app.graph.dao.GraphDAO.extrapolate_varieties", fake_extrapolate):
-        r = client.get(
-            f"/api/graph/agriculture/extrapolate?crop=TRZAX&parcel_id={URN}&tenant_id=tenant-b",
-            headers=_gateway_headers(),
-        )
-    assert r.status_code == 200
-    assert seen["tenant_id"] == "tenant-a"
-
-
 # ── 401 detail never echoes the exception ──────────────────────────────────
 
 def test_jwt_failure_detail_is_fixed(prod):

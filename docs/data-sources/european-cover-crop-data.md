@@ -13,7 +13,7 @@ DiverIMPACTS), JRC MARS Crop Monitoring Bulletins, and national experimental
 stations (INTIA Navarra, ITACyL, IFAPA).
 
 **Purpose:** Replace hardcoded USDA/SARE tables in the BioOrchestrator
-`/api/graph/agriculture/regenerative-sequence` endpoint with European-validated data.
+regenerative-sequence logic with European-validated data.
 
 ---
 
