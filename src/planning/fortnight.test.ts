@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { campaignFortnights, formatRange, fortnightOf, middleDay, monthColumns, monthLabel, sameFortnight, weeksBetween } from './fortnight';
+import { campaignFortnights, formatRange, fortnightOf, withFortnight, middleDay, monthColumns, monthLabel, sameFortnight, weeksBetween } from './fortnight';
 
 const F = (start: string, end: string) => ({ start, end });
 
@@ -35,5 +35,11 @@ describe('fortnights', () => {
     expect(sameFortnight(F('2026-10-16', '2026-10-31'), F('2026-10-16', '2026-10-31'))).toBe(true);
     expect(sameFortnight(null, F('2026-10-16', '2026-10-31'))).toBe(false);
     expect(weeksBetween('2026-08-01', '2026-10-16')).toBe(10);
+  });
+  it('a fortnight outside a list is inserted in order, never duplicated', () => {
+    const list = [F('2026-10-01', '2026-10-15'), F('2026-10-16', '2026-10-31')];
+    expect(withFortnight(list, F('2026-09-16', '2026-09-30')).map((f) => f.start)).toEqual(['2026-09-16', '2026-10-01', '2026-10-16']);
+    expect(withFortnight(list, list[1])).toBe(list);
+    expect(withFortnight(list, null)).toBe(list);
   });
 });

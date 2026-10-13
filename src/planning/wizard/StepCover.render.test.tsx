@@ -38,7 +38,7 @@ describe('StepCover (es)', () => {
     const cal = { fortnights: fns, main: { selected: fns[5] }, cover: { fits: true, default: fns[1], options: fns.slice(1, 5),
       ends: '2026-10-16', weeks: 8, short: false } } as unknown as CalendarResponse;
     const html = renderToStaticMarkup(<StepCover cal={cal} on {...props} sowing={fns[1]} />);
-    expect(html.split('data-recommended=').length - 1).toBe(4); // strip cells only
+    expect(html.match(/<button[^>]*data-bar=/g)).toHaveLength(4); // selectable strip cells only
   });
   it('"Otra especie" opens the name field even before anything is typed', () => {
     const cal = { ...base, cover: { fits: true, default: F('2026-08-01', '2026-08-15'), options: [F('2026-08-01', '2026-08-15')],
@@ -54,5 +54,17 @@ describe('StepCover (es)', () => {
     const html = renderToStaticMarkup(<StepCover cal={cal} on {...props} sowing={F('2026-09-16', '2026-09-30')} />);
     expect(html).toContain('unas 4 semanas');
     expect(html).toContain('Poco tiempo para una cubierta');
+  });
+  it('the cover strip ends on the main sowing, shown but not selectable, and nothing is shaded as recommended', () => {
+    const fns = ['2026-08-01', '2026-08-16', '2026-09-01', '2026-09-16', '2026-10-01', '2026-10-16'].map((d) => F(d, d));
+    const cal = { fortnights: fns, main: { selected: fns[5] }, cover: { fits: true, default: fns[1], options: fns.slice(1, 5),
+      ends: '2026-10-16', weeks: 8, short: false } } as unknown as CalendarResponse;
+    const html = renderToStaticMarkup(<StepCover cal={cal} on {...props} sowing={fns[1]} />);
+    expect(html.split('data-bar=').length - 1).toBe(5);
+    expect(html).not.toContain('data-recommended="true"');
+  });
+  it('without a calendar there is no Sí to offer', () => {
+    const cal = { ...base, cover: null } as unknown as CalendarResponse;
+    expect(renderToStaticMarkup(<StepCover cal={cal} on={false} {...props} />)).not.toContain('>Sí<');
   });
 });

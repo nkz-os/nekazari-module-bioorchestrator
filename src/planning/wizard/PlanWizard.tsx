@@ -57,6 +57,8 @@ export default function PlanWizard({ row, campaign, regime, management, onSaved,
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [regimeNotice, setRegimeNotice] = useState(false);
+  // A plan saved here exists now: saving again replaces it.
+  const [saved, setSaved] = useState(false);
   // The main fortnight the calendar proposed: asking again with it would return the same answer, so it is not sent.
   const [proposedMain, setProposedMain] = useState<Fortnight | null>(null);
 
@@ -123,6 +125,7 @@ export default function PlanWizard({ row, campaign, regime, management, onSaved,
       const toParcel = regimeToSave(row, regime);
       const outcome = await savePlan(() => putPlan(row.parcel_id, toPlanIn(s, campaign, regime, management)),
         toParcel ? () => saveParcelRegime(row.parcel_id, toParcel) : null);
+      setSaved(true);
       if (outcome === 'regime_not_saved') {
         console.warn('planning: plan saved, parcel regime not saved', { parcel: row.parcel_id, campaign, regime });
         setRegimeNotice(true);
@@ -213,7 +216,7 @@ export default function PlanWizard({ row, campaign, regime, management, onSaved,
                   {merged && <EstimatesTable data={merged.data} progress={merged.progress} onRetry={aquacrop.retry} />}
                 </Stack>
               )}
-              replacing={replacing} saving={saving} error={error} regimeNotice={regimeNotice} onSave={save} onContinue={onSaved} />
+              replacing={(replacing || saved) && !regimeNotice} saving={saving} error={error} regimeNotice={regimeNotice} onSave={save} onContinue={onSaved} />
           </Step>
         );
     }
@@ -228,7 +231,8 @@ export default function PlanWizard({ row, campaign, regime, management, onSaved,
           <Button variant="primary" disabled={!canAdvance(s, listedCovers)} onClick={() => setS(next)}>{t('planning.wizard.next')}</Button>
         </Inline>
       )}
-      {atSummary && <div><Button variant="secondary" onClick={() => setS(back)}>{t('planning.wizard.back')}</Button></div>}
+      {/* Going back after a regime notice means editing again: the next save is a new one. */}
+      {atSummary && <div><Button variant="secondary" onClick={() => { setRegimeNotice(false); setS(back); }}>{t('planning.wizard.back')}</Button></div>}
     </Stack>
   );
 }

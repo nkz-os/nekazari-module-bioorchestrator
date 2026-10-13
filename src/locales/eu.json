@@ -157,7 +157,7 @@
       "currentPlan": "Egungo plana",
       "back": "Itzuli planera", "previous": "Aurrekoa: {{crop}} ({{campaign}})", "known": "Dakiguna",
       "climate": "Klima", "soil": "Lurzorua", "noData": "daturik gabe", "regimeQuestion": "Lehorrekoa ala ureztatua?",
-      "regimeHint": "Barietateak eta simulazioa ikusteko beharrezkoa da: ebidentziak ez ditu inoiz erregimenak nahasten.",
+      "regimeHint": "Planifikatzeko beharrezkoa da: ebidentziak eta simulazioek ez dituzte inoiz lehorra eta ureztatua nahasten.",
       "managementLabel": "Kudeaketa", "historyDown": "Ezin izan da historia irakurri: errotazioa ez da egiaztatu."
     },
     "fit": {

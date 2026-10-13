@@ -47,6 +47,13 @@ describe('wizard model', () => {
     const moved = setSowing(s, { start: '2027-02-16', end: '2027-02-28' }, [AUG1]);
     expect(moved.coverSowing).toEqual(AUG1);
   });
+  it('the fallback cover sowing is the first option still before the new main sowing, or none', () => {
+    const MAR1 = { start: '2027-03-01', end: '2027-03-15' };
+    const s = { ...pickCrop(initialState(), 'maize', false, false, null), coverOn: true, coverSpecies: 'vetch', coverSowing: MAR1 };
+    const FEB16 = { start: '2027-02-16', end: '2027-02-28' };
+    expect(setSowing(s, FEB16, [MAR1, AUG1]).coverSowing).toEqual(AUG1);
+    expect(setSowing(s, FEB16, [MAR1]).coverSowing).toBeNull();
+  });
   it('back keeps choices; next never runs past the summary', () => {
     let s = pickCrop(initialState(), 'wheat', false, false, null);
     s = next(next(next(next(s))));

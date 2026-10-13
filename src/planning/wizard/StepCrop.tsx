@@ -7,6 +7,14 @@ import type { FitResponse, SpeciesFit } from '../types';
 
 const VERDICT_TONE = { fits: 'positive', caveats: 'warning', no_fit: 'negative' } as const;
 
+const fold = (text: string) => text.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase();
+
+/** Search ignores accents and case: "maiz" finds "maíz". */
+export const matchesCrop = (name: string, query: string): boolean => fold(name).includes(fold(query.trim()));
+
+/** A crop that does not fit says every reason; the others say their first one. */
+export const cardReasons = (s: SpeciesFit) => (s.verdict === 'no_fit' ? s.reasons : s.reasons.slice(0, 1));
+
 export const recommendedCrops = (species: SpeciesFit[], max = 6): SpeciesFit[] =>
   species.filter((s) => s.verdict !== 'no_fit').slice(0, max);
 
@@ -23,12 +31,12 @@ export default function StepCrop({ fit, selected, onPick }: Props) {
       <span className="block">
         <span className="font-medium">{cropName(s.names, s.species, lang)}</span>{' '}
         <Badge intent={VERDICT_TONE[s.verdict]}>{t(`planning.fit.${s.verdict}`)}</Badge>
-        {s.reasons[0] && <Badge intent={reasonTone(s.reasons[0])}>{reasonText(s.reasons[0], names, lang, t)}</Badge>}
+        {cardReasons(s).map((r, i) => <Badge key={`${r.code}-${i}`} intent={reasonTone(r)}>{reasonText(r, names, lang, t)}</Badge>)}
       </span>
     </Button>
   );
-  const q = query.trim().toLowerCase();
-  const found = q ? fit.species.filter((s) => cropName(s.names, s.species, lang).toLowerCase().includes(q)) : [];
+  const q = query.trim();
+  const found = q ? fit.species.filter((s) => matchesCrop(cropName(s.names, s.species, lang), q)) : [];
   return (
     <Stack gap="stack">
       <h3 className="text-nkz-lg font-semibold text-nkz-text-primary">{t('planning.wizard.crop.title')}</h3>

@@ -5,10 +5,12 @@ import { formatRange, monthColumns, monthLabel, sameFortnight, type Fortnight } 
 interface Props {
   fortnights: Fortnight[]; recommended?: Fortnight[]; selected: Fortnight | null;
   bar?: { start: string; end: string } | null; onSelect?: (f: Fortnight) => void; label: string;
+  /** When given, only these cells can be chosen; the others are shown read-only. */
+  selectable?: Fortnight[];
 }
 
 /** Months × two halves (W8): the recommended window shaded, the choice marked, an optional bar. */
-export default function FortnightStrip({ fortnights, recommended = [], selected, bar = null, onSelect, label }: Props) {
+export default function FortnightStrip({ fortnights, recommended = [], selected, bar = null, onSelect, label, selectable }: Props) {
   const { i18n } = useTranslation('bioorchestrator');
   const lang = i18n.language;
   const inBar = (f: Fortnight) => Boolean(bar && f.start >= bar.start && f.start <= bar.end);
@@ -26,7 +28,7 @@ export default function FortnightStrip({ fortnights, recommended = [], selected,
                   : rec ? 'border-nkz-accent-base bg-nkz-accent-soft text-nkz-text-primary' : 'border-nkz-border text-nkz-text-muted'}${inBar(f) ? ' ring-2 ring-nkz-success' : ''}`;
                 const day = f.start.slice(8, 10) === '01' ? '1' : '16';
                 const props = { 'aria-label': formatRange(f, lang), 'data-recommended': String(rec), 'data-bar': String(inBar(f)), className: cls };
-                return onSelect
+                return onSelect && (!selectable || selectable.some((x) => sameFortnight(x, f)))
                   ? <button key={f.start} type="button" aria-pressed={sel} onClick={() => onSelect(f)} {...props}>{day}</button>
                   : <span key={f.start} {...props}>{day}</span>;
               })}

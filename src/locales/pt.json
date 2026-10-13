@@ -157,7 +157,7 @@
       "currentPlan": "Plano atual",
       "back": "Voltar ao plano", "previous": "Anterior: {{crop}} ({{campaign}})", "known": "O que sabemos",
       "climate": "Clima", "soil": "Solo", "noData": "sem dados", "regimeQuestion": "Sequeiro ou regadio?",
-      "regimeHint": "É necessário para ver variedades e simulação: a evidência nunca mistura regimes.",
+      "regimeHint": "É necessário para planear: a evidência e as simulações nunca misturam sequeiro e regadio.",
       "managementLabel": "Maneio", "historyDown": "Não foi possível ler o historial: a rotação não foi verificada."
     },
     "fit": {

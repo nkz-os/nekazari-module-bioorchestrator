@@ -61,3 +61,9 @@ export function monthColumns(fortnights: Fortnight[]): MonthColumn[] {
 
 export const weeksBetween = (startIso: string, endIso: string): number =>
   Math.floor((utc(endIso).getTime() - utc(startIso).getTime()) / (7 * 86_400_000));
+
+/** The list with `f` in its place (by start), unchanged when `f` is null or already there. */
+export function withFortnight(list: Fortnight[], f: Fortnight | null): Fortnight[] {
+  if (!f || list.some((x) => sameFortnight(x, f))) return list;
+  return [...list, f].sort((a, b) => a.start.localeCompare(b.start));
+}

@@ -157,7 +157,7 @@
       "currentPlan": "Plan actuel",
       "back": "Retour au plan", "previous": "Précédent : {{crop}} ({{campaign}})", "known": "Ce que nous savons",
       "climate": "Climat", "soil": "Sol", "noData": "sans données", "regimeQuestion": "Sec ou irrigué ?",
-      "regimeHint": "Nécessaire pour afficher les variétés et la simulation : les résultats ne mélangent jamais les régimes.",
+      "regimeHint": "Nécessaire pour planifier : les résultats et les simulations ne mélangent jamais sec et irrigué.",
       "managementLabel": "Conduite", "historyDown": "Impossible de lire l'historique : la rotation n'a pas été vérifiée."
     },
     "fit": {

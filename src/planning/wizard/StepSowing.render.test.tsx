@@ -31,4 +31,9 @@ describe('StepSowing (es)', () => {
     expect(renderToStaticMarkup(<StepSowing cal={CAL} cropName="alfalfa" selected={CAL.main.selected} years={4} perennial
       onSowing={() => {}} onYears={() => {}} />)).toContain('¿Cuántos años?');
   });
+  it('a chosen sowing outside the offered fortnights is still drawn, pressed', () => {
+    const html = renderToStaticMarkup(<StepSowing cal={CAL} cropName="trigo" selected={F('2026-12-01', '2026-12-15')} years={null}
+      perennial={false} onSowing={() => {}} onYears={() => {}} />);
+    expect(html).toMatch(/aria-pressed="true"[^>]*aria-label="[^"]*diciembre/);
+  });
 });

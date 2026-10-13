@@ -2,7 +2,7 @@ import React from 'react';
 import { useTranslation } from '@nekazari/sdk';
 import { Button, FormField, Inline, Input, Select, Stack } from '@nekazari/ui-kit';
 import FortnightStrip from '../FortnightStrip';
-import { formatRange, weeksBetween, type Fortnight } from '../fortnight';
+import { formatRange, weeksBetween, withFortnight, type Fortnight } from '../fortnight';
 import { cropName } from '../format';
 import { COVER_METHODS, NONE, SHORT_COVER_WEEKS, isOtherCover } from '../planModel';
 import type { CalendarResponse, SpeciesFit, TerminationMethod } from '../types';
@@ -30,7 +30,8 @@ export default function StepCover({ cal, on, species, sowing, method, other: cho
   return (
     <Stack gap="stack">
       <h3 className="text-nkz-lg font-semibold text-nkz-text-primary">{t('planning.wizard.cover.title')}</h3>
-      {cover && !cover.fits ? <p className="text-nkz-sm text-nkz-text-muted">{t('planning.wizard.cover.noFit')}</p> : (
+      {/* Without a calendar answer (it failed) there is nothing coherent to offer: the step shows its retry. */}
+      {!cover ? null : !cover.fits ? <p className="text-nkz-sm text-nkz-text-muted">{t('planning.wizard.cover.noFit')}</p> : (
         <Inline gap="inline">
           <Button variant={!on ? 'primary' : 'secondary'} aria-pressed={!on} onClick={() => onOn(false)}>{t('planning.wizard.cover.no')}</Button>
           <Button variant={on ? 'primary' : 'secondary'} aria-pressed={on} onClick={() => onOn(true)}>{t('planning.wizard.cover.yes')}</Button>
@@ -50,10 +51,11 @@ export default function StepCover({ cal, on, species, sowing, method, other: cho
             <Select value={method} options={COVER_METHODS.map((m) => ({ value: m, label: t(`planning.plan.methods.${m}`) }))}
               onValueChange={(v) => onMethod(v as TerminationMethod)} />
           </FormField>
-          {/* Only fortnights that fit before the main sowing: any other would be a cover ending before it starts. */}
-          <FortnightStrip fortnights={cover.options} selected={sowing} onSelect={onSowing} label={t('planning.wizard.cover.title')}
-            bar={sowing && cover.ends ? { start: sowing.start, end: cover.ends } : null}
-            recommended={cover.options} />
+          {/* Only fortnights that fit before the main sowing can be chosen (any other would be a cover ending
+              before it starts); the main sowing closes the strip, shown where the cover bar ends. */}
+          <FortnightStrip fortnights={withFortnight(cover.options, cal.main.selected)} selectable={cover.options}
+            selected={sowing} onSelect={onSowing} label={t('planning.wizard.cover.title')}
+            bar={sowing && cover.ends ? { start: sowing.start, end: cover.ends } : null} />
           {sowing && cover.ends && (
             <p className="text-nkz-sm text-nkz-text-primary">{t('planning.wizard.cover.grows', {
               range: formatRange({ start: sowing.start, end: cover.ends }, lang), weeks: weeks ?? 0 })}</p>

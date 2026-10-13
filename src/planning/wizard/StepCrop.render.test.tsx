@@ -5,7 +5,7 @@ vi.mock('@nekazari/sdk', async () => {
   const { esT } = await import('../testI18n');
   return { useTranslation: () => ({ t: esT, i18n: { language: 'es' } }), i18n: {} };
 });
-import StepCrop, { recommendedCrops } from './StepCrop';
+import StepCrop, { cardReasons, matchesCrop, recommendedCrops } from './StepCrop';
 import type { FitResponse, SpeciesFit } from '../types';
 
 const sp = (species: string, verdict: SpeciesFit['verdict']): SpeciesFit => ({ species, eppo: null, names: { es: species },
@@ -30,5 +30,15 @@ describe('StepCrop', () => {
     const html = renderToStaticMarkup(<StepCrop fit={FIT} selected={null} onPick={() => {}} />);
     expect(html).toContain('Con reservas');
     expect(html).toContain('Encaja');
+  });
+  it('search ignores accents and case', () => {
+    expect(matchesCrop('Maíz', 'maiz')).toBe(true);
+    expect(matchesCrop('maíz', 'MA')).toBe(true);
+    expect(matchesCrop('trigo', 'maiz')).toBe(false);
+  });
+  it('a crop that does not fit shows all its reasons; the others one line', () => {
+    const r = (code: string) => ({ code, params: {} }) as never;
+    expect(cardReasons({ ...sp('rice', 'no_fit'), reasons: [r('a'), r('b')] })).toHaveLength(2);
+    expect(cardReasons({ ...sp('wheat', 'caveats'), reasons: [r('a'), r('b')] })).toHaveLength(1);
   });
 });

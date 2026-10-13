@@ -174,7 +174,7 @@
       "currentPlan": "Current plan",
       "back": "Back to the plan", "previous": "Previous: {{crop}} ({{campaign}})", "known": "What we know",
       "climate": "Climate", "soil": "Soil", "noData": "no data", "regimeQuestion": "Rainfed or irrigated?",
-      "regimeHint": "Needed to show varieties and simulation: evidence never mixes regimes.",
+      "regimeHint": "Needed to plan: evidence and simulations never mix rainfed and irrigated.",
       "managementLabel": "Management", "historyDown": "Could not read the history: rotation was not checked."
     },
     "fit": {
