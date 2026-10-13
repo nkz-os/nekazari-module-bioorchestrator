@@ -63,7 +63,7 @@ describe('ParcelDetail (es)', () => {
   it('a parcel without a regime asks for it first and shows no wizard until it is chosen', () => {
     const html = render(row([], { regime: null, regime_source: 'unknown' }), true);
     expect(html).toContain('¿Secano o regadío?');
-    expect(html).toContain('Hace falta para ver variedades');
+    expect(html).toContain('Hace falta para planificar');
     expect(html).not.toContain('Paso 1 de');
   });
   it('an open campaign shows the wizard at its first step; "Cambiar" starts from the current plan', () => {

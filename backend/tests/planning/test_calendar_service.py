@@ -147,3 +147,22 @@ def test_calendar_route_names_a_refused_main_sowing(client, monkeypatch):
 
 def test_calendar_route_requires_a_crop(client):
     assert client.get(URL, params={"campaign": 2027}).status_code == 422
+
+async def test_the_calendar_reads_the_regime_of_the_plan_not_only_the_parcels(monkeypatch):
+    dao = AsyncMock()
+    dao.get_parcel_environment.return_value = ENV  # the parcel says rainfed
+    monkeypatch.setattr(service, "fetch_crop_cycles", AsyncMock(return_value=None))
+    seen = []
+    monkeypatch.setattr(service, "sowing_info", lambda *a, **k: seen.append(k.get("irrigation")) or
+                        {"sowing_window": None, "typical_sowing_doy": None, "source": None})
+    await service.parcel_calendar(dao=dao, parcel_id=ENV["parcel_id"], tenant_id="t", campaign=2027,
+                                  crop="wheat", cover=None, main_sowing=None, regime="irrigated")
+    assert seen == ["irrigated"]
+
+
+def test_calendar_route_passes_the_regime(client, monkeypatch):
+    called = AsyncMock(return_value=BODY)
+    monkeypatch.setattr(planning_api, "parcel_calendar", called)
+    assert client.get(URL, params={"campaign": 2027, "crop": "wheat", "regime": "irrigated"}).status_code == 200
+    assert called.call_args.kwargs["regime"] == "irrigated"
+    assert client.get(URL, params={"campaign": 2027, "crop": "wheat", "regime": "drip"}).status_code == 422

@@ -51,7 +51,7 @@ export function pickCrop(s: WizardState, crop: string, hasTrials: boolean, peren
 /** A new main sowing; a cover sowing that would no longer start before it falls back to the first option. */
 export function setSowing(s: WizardState, sowing: Fortnight, coverOptions: Fortnight[]): WizardState {
   const keep = s.coverSowing && s.coverSowing.start < sowing.start;
-  return { ...s, sowing, coverSowing: keep ? s.coverSowing : (coverOptions[0] ?? null) };
+  return { ...s, sowing, coverSowing: keep ? s.coverSowing : (coverOptions.find((o) => o.start < sowing.start) ?? null) };
 }
 
 export function canAdvance(s: WizardState, coverListed: string[]): boolean {

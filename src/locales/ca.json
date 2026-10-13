@@ -157,7 +157,7 @@
       "currentPlan": "Pla actual",
       "back": "Torna al pla", "previous": "Anterior: {{crop}} ({{campaign}})", "known": "El que sabem",
       "climate": "Clima", "soil": "Sòl", "noData": "sense dades", "regimeQuestion": "Secà o regadiu?",
-      "regimeHint": "Cal per veure varietats i simulació: l'evidència mai barreja règims.",
+      "regimeHint": "Cal per planificar: l'evidència i les simulacions mai barregen secà i regadiu.",
       "managementLabel": "Maneig", "historyDown": "No s'ha pogut llegir l'historial: la rotació no s'ha comprovat."
     },
     "fit": {

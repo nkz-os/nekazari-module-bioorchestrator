@@ -28,4 +28,9 @@ describe('FortnightStrip (es)', () => {
   it('without onSelect the cells are not buttons (read-only bar)', () => {
     expect(renderToStaticMarkup(<FortnightStrip fortnights={ALL} selected={null} label="x" />)).not.toContain('<button');
   });
+  it('cells outside the selectable ones are read-only (the end of a cover bar)', () => {
+    const html = renderToStaticMarkup(<FortnightStrip fortnights={ALL} selectable={ALL.slice(0, 2)} selected={null} label="x" onSelect={() => {}} />);
+    expect(html.split('<button').length - 1).toBe(2);
+    expect(html.split('data-bar=').length - 1).toBe(4);
+  });
 });

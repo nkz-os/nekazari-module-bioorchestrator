@@ -177,7 +177,7 @@
       "currentPlan": "Plan actual",
       "back": "Volver al plan", "previous": "Anterior: {{crop}} ({{campaign}})", "known": "Lo que sabemos",
       "climate": "Clima", "soil": "Suelo", "noData": "sin datos", "regimeQuestion": "¿Secano o regadío?",
-      "regimeHint": "Hace falta para ver variedades y simulación: la evidencia nunca mezcla regímenes.",
+      "regimeHint": "Hace falta para planificar: la evidencia y las simulaciones nunca mezclan secano y regadío.",
       "managementLabel": "Manejo", "historyDown": "No se ha podido leer el historial: la rotación no se ha comprobado."
     },
     "fit": {
