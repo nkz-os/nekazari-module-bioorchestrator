@@ -62,7 +62,7 @@ def test_static_metric_when_the_result_carries_no_validation():
     r = _result()
     r["expected_yield"]["calibration"] = {}
     ests, _ = map_result(r, "v")
-    assert ests[0]["validation"]["metric"] == "RMSE 1.68 t/ha, anomaly r 0.50"
+    assert ests[0]["validation"]["metric"] == "RMSE 1.65 t/ha, anomaly r 0.48"
 
 
 def test_expected_unavailable_keeps_the_ceiling_and_says_why():
