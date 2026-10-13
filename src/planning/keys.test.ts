@@ -41,6 +41,7 @@ const FAMILIES = [
     ...['crop_not_calibrated', 'irrigated', 'outside_calibrated_regions', 'region_not_calibrated', 'missing', 'unknown']
       .map((r) => `expected_${r}`)].map((k) => `planning.estimate.unavailable.${k}`),
   ...COVER_METHODS.map((k) => `planning.plan.methods.${k}`),
+  ...['productive', 'stable', 'balanced'].map((k) => `planning.wizard.variety.why.${k}`),
   ...['sand', 'loamy-sand', 'sandy-loam', 'loam', 'silt-loam', 'silt', 'sandy-clay-loam', 'clay-loam', 'silty-clay-loam',
     'sandy-clay', 'silty-clay', 'clay'].map((k) => `planning.texture.${k}`),
   ...['missing_species', 'species_name_invalid', 'missing_dates', 'termination_outside_campaign', 'dates_inconsistent', 'cycles_overlap',

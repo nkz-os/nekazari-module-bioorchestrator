@@ -316,6 +316,7 @@
         "invalid_response": "The server sent an unexpected answer; try again."
       }
     },
+    "wizard": {"step": "Step {{n}} of {{total}}", "next": "Next", "back": "Back", "save": "Save plan", "crop": {"title": "What will you sow?", "recommended": "Recommended for this parcel", "search": "Search another crop", "noResults": "No crop with that name"}, "variety": {"title": "Which variety?", "none": "No variety / decide later", "all": "See all varieties", "why": {"productive": "The most productive in your area", "stable": "The most stable across years", "balanced": "Good yield and stable"}}},
     "lock": { "campaign_unknown": "This campaign has a crop of unknown origin or status: check it in field operations" },
     "simulation": { "open": "Simulation of the current campaign", "temporary": "Temporary view: it will move to Crop Health." },
     "widget": { "title": "Parcel plan", "undecided": "Undecided", "plan": "Plan" },

@@ -1,0 +1,40 @@
+import React, { useState } from 'react';
+import { useTranslation } from '@nekazari/sdk';
+import { Badge, Button, Input, Stack } from '@nekazari/ui-kit';
+import { reasonText, reasonTone, speciesIndex } from '../fitModel';
+import { cropName } from '../format';
+import type { FitResponse, SpeciesFit } from '../types';
+
+export const recommendedCrops = (species: SpeciesFit[], max = 6): SpeciesFit[] =>
+  species.filter((s) => s.verdict !== 'no_fit').slice(0, max);
+
+interface Props { fit: FitResponse; selected: string | null; onPick: (sp: SpeciesFit) => void }
+
+export default function StepCrop({ fit, selected, onPick }: Props) {
+  const { t, i18n } = useTranslation('bioorchestrator');
+  const lang = i18n.language;
+  const [query, setQuery] = useState('');
+  const names = speciesIndex(fit.species);
+  const card = (s: SpeciesFit) => (
+    <Button key={s.species} variant={selected === s.species ? 'primary' : 'secondary'} aria-pressed={selected === s.species}
+      onClick={() => onPick(s)} className="w-full justify-start text-left">
+      <span className="block">
+        <span className="font-medium">{cropName(s.names, s.species, lang)}</span>
+        {s.reasons[0] && <Badge intent={reasonTone(s.reasons[0])}>{reasonText(s.reasons[0], names, lang, t)}</Badge>}
+      </span>
+    </Button>
+  );
+  const q = query.trim().toLowerCase();
+  const found = q ? fit.species.filter((s) => cropName(s.names, s.species, lang).toLowerCase().includes(q)) : [];
+  return (
+    <Stack gap="stack">
+      <h3 className="text-nkz-lg font-semibold text-nkz-text-primary">{t('planning.wizard.crop.title')}</h3>
+      <p className="text-nkz-sm text-nkz-text-muted">{t('planning.wizard.crop.recommended')}</p>
+      <Stack gap="tight">{recommendedCrops(fit.species).map(card)}</Stack>
+      <Input value={query} placeholder={t('planning.wizard.crop.search')} aria-label={t('planning.wizard.crop.search')}
+        onChange={(e) => setQuery(e.target.value)} />
+      {q && (found.length ? <Stack gap="tight">{found.map(card)}</Stack>
+        : <p className="text-nkz-sm text-nkz-text-muted">{t('planning.wizard.crop.noResults')}</p>)}
+    </Stack>
+  );
+}

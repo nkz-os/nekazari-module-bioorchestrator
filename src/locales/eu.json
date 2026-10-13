@@ -299,6 +299,7 @@
         "invalid_response": "Zerbitzariak ustekabeko erantzuna eman du; saiatu berriro."
       }
     },
+    "wizard": {"step": "{{n}}/{{total}} urratsa", "next": "Hurrengoa", "back": "Atzera", "save": "Gorde plana", "crop": {"title": "Zer ereingo duzu?", "recommended": "Partzela honetarako gomendatuak", "search": "Bilatu beste labore bat", "noResults": "Ez dago izen hori duen laborerik"}, "variety": {"title": "Zein barietate?", "none": "Barietaterik gabe / gero erabakiko dut", "all": "Ikusi barietate guztiak", "why": {"productive": "Zure eremuan emankorrena", "stable": "Urteen artean egonkorrena", "balanced": "Ekoizpen ona eta egonkorra"}}},
     "lock": { "campaign_unknown": "Kanpaina honek jatorri edo egoera ezezaguneko labore bat du: berrikusi landa-eragiketetan" },
     "simulation": { "open": "Martxan dagoen kanpainaren simulazioa", "temporary": "Behin-behineko ikuspegia: Laborearen osasunera eramango da." },
     "widget": { "title": "Partzelaren plana", "undecided": "Erabaki gabe", "plan": "Planifikatu" },

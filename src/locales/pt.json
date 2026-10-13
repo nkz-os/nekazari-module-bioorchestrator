@@ -299,6 +299,7 @@
         "invalid_response": "O servidor respondeu algo inesperado; tente novamente."
       }
     },
+    "wizard": {"step": "Passo {{n}} de {{total}}", "next": "Seguinte", "back": "Voltar", "save": "Guardar plano", "crop": {"title": "O que vai semear?", "recommended": "Recomendadas para esta parcela", "search": "Procurar outra cultura", "noResults": "Nenhuma cultura com esse nome"}, "variety": {"title": "Que variedade?", "none": "Sem variedade / decido depois", "all": "Ver todas as variedades", "why": {"productive": "A mais produtiva na sua zona", "stable": "A mais estável entre anos", "balanced": "Boa produção e estável"}}},
     "lock": { "campaign_unknown": "Esta campanha tem uma cultura de origem ou estado desconhecido: revê-a nas operações de campo" },
     "simulation": { "open": "Simulação da campanha em curso", "temporary": "Vista provisória: passará para Saúde da cultura." },
     "widget": { "title": "Plano da parcela", "undecided": "Por decidir", "plan": "Planear" },

@@ -299,6 +299,7 @@
         "invalid_response": "El servidor ha respost una cosa inesperada; torna-ho a provar."
       }
     },
+    "wizard": {"step": "Pas {{n}} de {{total}}", "next": "Següent", "back": "Enrere", "save": "Desa el pla", "crop": {"title": "Què sembraràs?", "recommended": "Recomanats per a aquesta parcel·la", "search": "Cerca un altre cultiu", "noResults": "Cap cultiu amb aquest nom"}, "variety": {"title": "Quina varietat?", "none": "Sense varietat / ho decideixo després", "all": "Mostra totes les varietats", "why": {"productive": "La més productiva a la teva zona", "stable": "La més estable entre anys", "balanced": "Bona producció i estable"}}},
     "lock": { "campaign_unknown": "Aquesta campanya té un cultiu d'origen o estat desconegut: revisa'l a les operacions de camp" },
     "simulation": { "open": "Simulació de la campanya en curs", "temporary": "Vista provisional: passarà a Salut del cultiu." },
     "widget": { "title": "Pla de la parcel·la", "undecided": "Sense decidir", "plan": "Planificar" },

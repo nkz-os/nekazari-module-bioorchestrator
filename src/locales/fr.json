@@ -299,6 +299,7 @@
         "invalid_response": "Le serveur a renvoyé une réponse inattendue ; réessayez."
       }
     },
+    "wizard": {"step": "Étape {{n}} sur {{total}}", "next": "Suivant", "back": "Retour", "save": "Enregistrer le plan", "crop": {"title": "Que allez-vous semer ?", "recommended": "Recommandées pour cette parcelle", "search": "Chercher une autre culture", "noResults": "Aucune culture de ce nom"}, "variety": {"title": "Quelle variété ?", "none": "Sans variété / je déciderai plus tard", "all": "Voir toutes les variétés", "why": {"productive": "La plus productive dans votre zone", "stable": "La plus stable d'une année sur l'autre", "balanced": "Bon rendement et stable"}}},
     "lock": { "campaign_unknown": "Cette campagne a une culture d'origine ou d'état inconnu : vérifiez-la dans les opérations au champ" },
     "simulation": { "open": "Simulation de la campagne en cours", "temporary": "Vue provisoire : elle passera dans Santé des cultures." },
     "widget": { "title": "Plan de la parcelle", "undecided": "Sans décision", "plan": "Planifier" },
