@@ -81,7 +81,7 @@ def frost_reasons(sowing_type: str | None, coldest_min: float | None, frost_dama
 
 
 def water_reasons(regime: str | None, climate: ParcelClimate, season_days: int | None) -> list[dict]:
-    if regime != "secano":
+    if regime != "rainfed":
         return []
     rain, et0 = climate.annual_rainfall_mm, climate.annual_et0_mm
     if rain is None or not et0:

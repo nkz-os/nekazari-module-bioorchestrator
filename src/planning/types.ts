@@ -1,9 +1,10 @@
-/** Mirror of backend/app/planning/models.py — contract version 1.3. Change both together. */
+/** Mirror of backend/app/planning/models.py — contract version 2.0. Change both together. */
 import type { SourceAttributionItem } from '../types/attribution';
 
-export const CONTRACT_VERSION = '1.3';
+export const CONTRACT_VERSION = '2.0';
 export type Verdict = 'fits' | 'caveats' | 'no_fit';
-export type Regime = 'secano' | 'regadío';
+/** Owner decision (2026-10-13): one vocabulary everywhere; the words shown are translated. */
+export type Regime = 'rainfed' | 'irrigated';
 export type Management = 'conventional' | 'organic';
 export type Provenance = 'actual' | 'declared' | 'planned' | 'unknown';
 export type Role = 'main_crop' | 'cover_crop' | 'catch_crop';

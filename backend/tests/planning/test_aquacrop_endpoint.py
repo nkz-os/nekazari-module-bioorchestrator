@@ -58,7 +58,7 @@ def _dao():
 
 async def _call(jobs, dao=None, **over):
     kw = {"dao": dao or _dao(), "jobs": jobs, "tenant_id": "t", "parcel_id": PARCEL, "crop": "wheat",
-          "regime": "secano", "sowing_date": SOW, "today": TODAY}
+          "regime": "rainfed", "sowing_date": SOW, "today": TODAY}
     return await service.parcel_aquacrop(**{**kw, **over})
 
 
@@ -215,7 +215,7 @@ async def test_a_light_poll_out_of_scope_takes_the_gate():
     first = await _call(jobs)
     jobs.only().state, jobs.only().result = "done", RESULT
     dao = _dao()
-    out = await _call(jobs, dao=dao, job_id=first["job_id"], regime="regadío")
+    out = await _call(jobs, dao=dao, job_id=first["job_id"], regime="irrigated")
     assert out["state"] == "unavailable" and out["unavailable"][0]["reason"] == "not_validated"
     dao.get_parcel_environment.assert_awaited_once()
 
@@ -266,10 +266,10 @@ def test_route_validates_the_contract(client, monkeypatch):
     called = AsyncMock(return_value=out)
     monkeypatch.setattr(planning_api, "parcel_aquacrop", called)
     r = client.get(f"/api/graph/planning/parcels/{PARCEL}/estimates/aquacrop",
-                   params={"crop": "TRZAX", "regime": "secano", "sowing_date": SOW.isoformat()})
+                   params={"crop": "TRZAX", "regime": "rainfed", "sowing_date": SOW.isoformat()})
     assert r.status_code == 200
     body = r.json()
-    assert body["provider_id"] == "aquacrop" and body["contract_version"] == "1.3" and body["state"] == "running"
+    assert body["provider_id"] == "aquacrop" and body["contract_version"] == "2.0" and body["state"] == "running"
     assert called.await_args.kwargs["sowing_date"] == SOW
 
 
@@ -278,7 +278,7 @@ def test_route_forwards_retry(client, monkeypatch):
     called = AsyncMock(return_value={"state": "queued", "estimates": [], "unavailable": [], "job_id": "j"})
     monkeypatch.setattr(planning_api, "parcel_aquacrop", called)
     url = f"/api/graph/planning/parcels/{PARCEL}/estimates/aquacrop"
-    params = {"crop": "TRZAX", "regime": "secano", "management": "conventional"}  # extra params are ignored
+    params = {"crop": "TRZAX", "regime": "rainfed", "management": "conventional"}  # extra params are ignored
     assert client.get(url, params=params).status_code == 200
     assert called.await_args.kwargs["retry"] is False
     client.get(url, params={**params, "retry": "true", "job_id": "abc"})
@@ -287,7 +287,7 @@ def test_route_forwards_retry(client, monkeypatch):
 
 def test_route_maps_unknown_parcel_and_crop(client, monkeypatch):
     import app.api.v1.planning as planning_api
-    params = {"crop": "TRZAX", "regime": "secano", "management": "conventional"}
+    params = {"crop": "TRZAX", "regime": "rainfed", "management": "conventional"}
     url = f"/api/graph/planning/parcels/{PARCEL}/estimates/aquacrop"
     monkeypatch.setattr(planning_api, "parcel_aquacrop", AsyncMock(side_effect=service.ParcelNotFound("x")))
     assert client.get(url, params=params).status_code == 404
@@ -344,7 +344,7 @@ def test_route_forwards_and_validates_the_sowing_method(client, monkeypatch):
     called = AsyncMock(return_value={"state": "queued", "estimates": [], "unavailable": [], "job_id": "j"})
     monkeypatch.setattr(planning_api, "parcel_aquacrop", called)
     url = f"/api/graph/planning/parcels/{PARCEL}/estimates/aquacrop"
-    params = {"crop": "TRZAX", "regime": "secano"}
+    params = {"crop": "TRZAX", "regime": "rainfed"}
     assert client.get(url, params=params).status_code == 200
     assert called.await_args.kwargs["sowing_method"] is None
     client.get(url, params={**params, "sowing_method": "direct"})

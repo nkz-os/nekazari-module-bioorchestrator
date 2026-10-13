@@ -5,7 +5,7 @@ from app.graph.parcel_conditions import conditions_from_environment
 
 ENV = {"climate_class": "Csa", "country": "ES", "centroid": {"lat": 42.0, "lon": -1.6},
        "soil": {"data_available": True, "wrb_type": "Calcisol", "ph": 8.1, "texture": "clay loam"},
-       "irrigation": {"inferred": "secano"},
+       "irrigation": {"inferred": "rainfed"},
        "climate_detail": {"annual_rainfall_mm": 450.0, "annual_et0_mm": 1100.0,
                           "coldest_month_min_c": -1.0, "annual_temp_c": 13.0}}
 
@@ -14,7 +14,7 @@ def test_conditions_carry_parcel_values_in_the_recommender_order():
     c = conditions_from_environment(ENV, management="organic", crops=["TRZAX"], top_n=1)
     assert list(c)[:12] == ["climate_class", "soil_type", "soil_ph", "soil_texture", "irrigation_regime",
                             "management", "season", "purpose", "crops", "top_n", "frost_margin_c", "country"]
-    assert (c["soil_type"], c["irrigation_regime"], c["lat"], c["annual_temp_c"]) == ("Calcisol", "secano", 42.0, 13.0)
+    assert (c["soil_type"], c["irrigation_regime"], c["lat"], c["annual_temp_c"]) == ("Calcisol", "rainfed", 42.0, 13.0)
 
 
 def test_soil_values_dropped_when_soil_unavailable():

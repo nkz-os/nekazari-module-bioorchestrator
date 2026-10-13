@@ -17,7 +17,7 @@ const sp = (species: string, es: string, verdict: SpeciesFit['verdict'], reasons
 const FIT: FitResponse = {
   contract_version: '1.0', parcel_id: 'p1', campaign: 2027, graphs: ['global'],
   facts: { climate_class: 'Csa', climate_source: 'chelsa_v2.1', soil_texture: null, soil_ph: null, soil_source: 'unavailable',
-    regime: 'secano', regime_source: 'declared', history_available: true },
+    regime: 'rainfed', regime_source: 'declared', history_available: true },
   species: [
     sp('wheat', 'trigo', 'fits', [{ code: 'rotation_benefit', gate: 'rotation', params: { previous: 'chickpea' } }], true),
     sp('chickpea', 'garbanzo', 'caveats', [{ code: 'soil_unknown', gate: 'soil', params: { why: 'no_parcel_soil' } }]),

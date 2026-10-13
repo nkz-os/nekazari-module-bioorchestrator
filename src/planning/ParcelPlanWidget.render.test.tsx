@@ -16,7 +16,7 @@ import ParcelPlanWidget from './ParcelPlanWidget';
 import type { FarmResponse, ParcelRow } from './types';
 
 const parcel = (over: Partial<ParcelRow>): ParcelRow => ({
-  parcel_id: 'urn:ngsi-ld:AgriParcel:t:p1', name: 'Soto Alto', area_ha: 12, farm_id: null, regime: 'secano', regime_source: 'declared',
+  parcel_id: 'urn:ngsi-ld:AgriParcel:t:p1', name: 'Soto Alto', area_ha: 12, farm_id: null, regime: 'rainfed', regime_source: 'declared',
   cycles_available: true, cells: { '2026': [], '2027': [] }, warnings: [], ...over,
 });
 const render = (row: ParcelRow) => {

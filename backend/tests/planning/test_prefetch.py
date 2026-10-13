@@ -30,17 +30,17 @@ def test_the_first_three_crops_that_fit_and_have_trials_are_chosen_in_list_order
 async def test_nothing_is_scheduled_without_a_regime_or_a_crop():
     dao = _dao()
     assert prefetch.schedule_evidence_prefetch(dao, parcel_id=P, tenant_id="t", regime=None, species=[_sp("A")]) is None
-    assert prefetch.schedule_evidence_prefetch(dao, parcel_id=P, tenant_id="t", regime="secano", species=[]) is None
+    assert prefetch.schedule_evidence_prefetch(dao, parcel_id=P, tenant_id="t", regime="rainfed", species=[]) is None
     dao.get_parcel_environment.assert_not_called()
 
 
 async def test_the_prefetch_asks_the_recommender_exactly_what_the_evidence_will():
     # Same conditions = same recommender cache key: picking the crop then answers from the cache.
     dao = _dao()
-    await prefetch.schedule_evidence_prefetch(dao, parcel_id=P, tenant_id="t", regime="secano", species=[_sp("TRZAX")])
+    await prefetch.schedule_evidence_prefetch(dao, parcel_id=P, tenant_id="t", regime="rainfed", species=[_sp("TRZAX")])
     warmed = dao.recommend_for_conditions.await_args.args[0]
     later = _dao()
-    await load_crop_evidence(later, ENV, crop_eppo="TRZAX", regime="secano", management="conventional")
+    await load_crop_evidence(later, ENV, crop_eppo="TRZAX", regime="rainfed", management="conventional")
     assert warmed == later.recommend_for_conditions.await_args.args[0]
 
 
@@ -56,8 +56,8 @@ async def test_crops_are_warmed_one_at_a_time_and_prefetches_never_overlap():
         return {"status": "ok", "recommendations": []}
 
     dao.recommend_for_conditions.side_effect = slow
-    a = prefetch.schedule_evidence_prefetch(dao, parcel_id=P, tenant_id="t", regime="secano", species=[_sp("A"), _sp("B")])
-    b = prefetch.schedule_evidence_prefetch(dao, parcel_id=P, tenant_id="u", regime="secano", species=[_sp("C")])
+    a = prefetch.schedule_evidence_prefetch(dao, parcel_id=P, tenant_id="t", regime="rainfed", species=[_sp("A"), _sp("B")])
+    b = prefetch.schedule_evidence_prefetch(dao, parcel_id=P, tenant_id="u", regime="rainfed", species=[_sp("C")])
     await asyncio.sleep(0.05)
     gate.set()
     await asyncio.gather(a, b)
@@ -68,16 +68,16 @@ async def test_a_failing_prefetch_is_logged_and_never_raises(caplog):
     dao = _dao()
     dao.recommend_for_conditions.side_effect = RuntimeError("neo4j down")
     with caplog.at_level(logging.WARNING, logger="app.planning.prefetch"):
-        await prefetch.schedule_evidence_prefetch(dao, parcel_id=P, tenant_id="t", regime="secano", species=[_sp("A")])
+        await prefetch.schedule_evidence_prefetch(dao, parcel_id=P, tenant_id="t", regime="rainfed", species=[_sp("A")])
     assert "planning prefetch failed" in caplog.text
 
 
 async def test_an_unknown_parcel_or_climate_stops_without_the_recommender():
     dao = _dao()
     dao.get_parcel_environment.return_value = {"error": "nope"}
-    await prefetch.schedule_evidence_prefetch(dao, parcel_id=P, tenant_id="t", regime="secano", species=[_sp("A")])
+    await prefetch.schedule_evidence_prefetch(dao, parcel_id=P, tenant_id="t", regime="rainfed", species=[_sp("A")])
     dao.get_parcel_environment.return_value = {**ENV, "climate_class": None}
-    await prefetch.schedule_evidence_prefetch(dao, parcel_id=P, tenant_id="t", regime="secano", species=[_sp("A")])
+    await prefetch.schedule_evidence_prefetch(dao, parcel_id=P, tenant_id="t", regime="rainfed", species=[_sp("A")])
     dao.recommend_for_conditions.assert_not_called()
 
 
@@ -91,11 +91,11 @@ def test_the_fit_route_schedules_the_prefetch_with_the_resolved_regime(monkeypat
     monkeypatch.setattr("app.core.knowledge.get_driver", lambda: MagicMock(spec=AsyncDriver))
     fit = {"parcel_id": P, "campaign": 2027, "graphs": ["global"], "species": [],
            "facts": {"climate_class": "Csa", "climate_source": "chelsa", "soil_texture": None, "soil_ph": None,
-                     "soil_source": "unavailable", "regime": "secano", "regime_source": "declared", "history_available": True}}
+                     "soil_source": "unavailable", "regime": "rainfed", "regime_source": "declared", "history_available": True}}
     monkeypatch.setattr(planning_api, "parcel_fit", AsyncMock(return_value=fit))
     scheduled = MagicMock()
     monkeypatch.setattr(planning_api, "schedule_evidence_prefetch", scheduled)
     r = TestClient(app).get(f"/api/graph/planning/parcels/{P}/fit", params={"campaign": 2027})
     assert r.status_code == 200
     kw = scheduled.call_args.kwargs
-    assert (kw["parcel_id"], kw["regime"], kw["species"]) == (P, "secano", [])
+    assert (kw["parcel_id"], kw["regime"], kw["species"]) == (P, "rainfed", [])

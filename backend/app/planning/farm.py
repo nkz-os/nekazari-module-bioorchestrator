@@ -58,11 +58,11 @@ def _regime_word(value) -> str | None:
     tokens = [t for t in re.split(r"\W+", text) if t]
     irrigated = any(w in text for w in _IRRIGATED_WORDS)
     if irrigated and _negates_irrigation(tokens):
-        return "secano"
+        return "rainfed"
     rainfed = bool(_RAINFED_WORDS & set(tokens))
     if irrigated == rainfed:  # neither, or both: a contradiction is as unknown as silence
         return None
-    return "regadío" if irrigated else "secano"
+    return "irrigated" if irrigated else "rainfed"
 
 
 def parcel_regime(parcel: dict, target_crops: list[dict]) -> tuple[str | None, str]:

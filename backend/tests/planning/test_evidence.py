@@ -22,11 +22,11 @@ ROWS = [{"variety": "A", "site": "Zona X", "year": 2024, "source_id": "GENVCE", 
 
 
 async def test_a_truncated_page_is_flagged():
-    ev = await load_crop_evidence(_dao(6000, ROWS), ENV, crop_eppo="TRZAX", regime="secano", management="conventional")
+    ev = await load_crop_evidence(_dao(6000, ROWS), ENV, crop_eppo="TRZAX", regime="rainfed", management="conventional")
     assert ev["status"] == "ok" and len(ev["rows"]) == 2
     assert ev["data_gaps"] == ["low_trial_count", "evidence_truncated"]
 
 
 async def test_a_complete_page_is_not_flagged():
-    ev = await load_crop_evidence(_dao(2, ROWS), ENV, crop_eppo="TRZAX", regime="secano", management="conventional")
+    ev = await load_crop_evidence(_dao(2, ROWS), ENV, crop_eppo="TRZAX", regime="rainfed", management="conventional")
     assert ev["data_gaps"] == ["low_trial_count"]

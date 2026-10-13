@@ -1,10 +1,8 @@
 """Rotation rules against a parcel's crop history (pure).
 
-ASSUMPTION: ``RotationConstraint.intervalYears`` is the minimum number of campaigns between
-crop A and crop B. B planned in campaign T after A in campaign t is restricted while
-T - t <= interval; it is allowed again from t + interval + 1. The existing scenario check
-words it the same way ("Minimum interval: N years"). Confirm against the constraint
-sources before trusting edge years.
+``RotationConstraint.intervalYears`` is the number of whole campaigns without the crop (owner,
+2026-10-13): B planned in campaign T after A in campaign t is restricted while T - t <= interval
+and allowed again from t + interval + 1 (an interval of 4 leaves four campaigns without it).
 """
 from __future__ import annotations
 

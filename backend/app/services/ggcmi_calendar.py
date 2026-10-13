@@ -57,7 +57,14 @@ def load(path: Path | None = None) -> dict:
 
 
 def _regime(irrigation: str | None) -> str:
-    return "ir" if irrigation == "regadío" else "rf"
+    # Any spelling of irrigated (irrigated, regadío, ...) reads the irrigated layer.
+    from app.graph.evidence_policy import (
+        IRRIGATION_URIS,
+        REGIME_IRRIGATED,
+        irrigation_uri,
+    )
+
+    return "ir" if irrigation_uri(irrigation) == IRRIGATION_URIS[REGIME_IRRIGATED] else "rf"
 
 
 def _cell(grid: dict, lat: float, lon: float) -> tuple[int, int] | None:
@@ -99,9 +106,9 @@ def lookup(eppo: str, lat: float | None, lon: float | None, irrigation: str | No
            *, data: dict | None = None) -> dict | None:
     """``{planting_doy, maturity_doy, cycle_days, source, layer, rainfed_fallback}`` or None.
 
-    ``irrigation`` ``"regadío"`` reads the irrigated layer and, when it has no
+    ``irrigation`` irrigated (``"irrigated"``, ``"regadío"``, ...) reads the irrigated layer and, when it has no
     allowed value, the rainfed one (``layer`` ``"rf"``, ``rainfed_fallback``
-    True, also noted in ``source``); ``"secano"`` or unknown reads only the
+    True, also noted in ``source``); rainfed or unknown reads only the
     rainfed layer. Wheat order: winter wheat (ir, rf), then spring wheat only
     where winter wheat has no calendar at all. None when the crop is unmapped, the point
     lies outside the grid, the cell has no data (e.g. sea) or its source was

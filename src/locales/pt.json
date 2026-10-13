@@ -145,7 +145,7 @@
     "matrix": { "parcel": "Parcela", "area": "ha", "regime": "Regime", "choose": "Escolher", "change": "Alterar", "legend": "● realizado · ◐ declarado · ○ planeado" },
     "provenance": { "actual": "realizado", "declared": "declarado", "planned": "planeado", "unknown": "sem dados" },
     "role": { "main_crop": "cultura principal", "cover_crop": "cultura de cobertura", "catch_crop": "cultura intercalar" },
-    "regime": { "secano": "Sequeiro", "regadío": "Regadio", "unknown": "Por declarar" },
+    "regime": { "rainfed": "Sequeiro", "irrigated": "Regadio", "unknown": "Por declarar" },
     "management": { "conventional": "Convencional", "organic": "Biológico" },
     "warning": {
       "cycles_unavailable": "Não foi possível ler o historial desta parcela",

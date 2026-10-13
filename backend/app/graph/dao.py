@@ -3848,9 +3848,9 @@ class GraphDAO:
         if irrig_sys:
             irrig_lower = str(irrig_sys).lower().strip()
             if any(w in irrig_lower for w in ("drip", "sprinkler", "flood", "pivot", "irrigat")):
-                irrigation_inferred = "regadío"
+                irrigation_inferred = "irrigated"
             else:
-                irrigation_inferred = "secano"
+                irrigation_inferred = "rainfed"
             irrigation_source = "irrigationSystemType"
         else:
             # Platform custom Property
@@ -3858,9 +3858,9 @@ class GraphDAO:
             if irrig_regime:
                 regime_lower = str(irrig_regime).lower().strip()
                 if "regad" in regime_lower or "irrig" in regime_lower:
-                    irrigation_inferred = "regadío"
+                    irrigation_inferred = "irrigated"
                 else:
-                    irrigation_inferred = "secano"
+                    irrigation_inferred = "rainfed"
                 irrigation_source = "irrigationRegime"
             else:
                 irrigation_inferred = None

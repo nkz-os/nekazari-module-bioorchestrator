@@ -10,18 +10,18 @@ TODAY = date(2026, 10, 12)
 
 
 @pytest.mark.parametrize("crop, regime, country, sowing, reason", [
-    ("TRZAX", "secano", "ES", date(2026, 11, 15), None),
-    ("TRZAX", "secano", "ES", TODAY, None),
-    ("TRZAX", "secano", "ES", date(2027, 10, 13), None),  # today + 366
-    ("HORVX", "secano", "ES", date(2026, 11, 15), "not_validated"),
-    ("TRZAX", "regadío", "ES", date(2026, 11, 15), "not_validated"),
-    ("TRZAX", "secano", "PT", date(2026, 11, 15), "not_validated"),
-    ("TRZAX", "secano", None, date(2026, 11, 15), "not_validated"),
-    ("TRZAX", "secano", "ES", None, "needs_sowing_date"),
-    ("TRZAX", "secano", "ES", date(2026, 10, 11), "sowing_date_out_of_range"),
-    ("TRZAX", "secano", "ES", date(2027, 10, 14), "sowing_date_out_of_range"),
+    ("TRZAX", "rainfed", "ES", date(2026, 11, 15), None),
+    ("TRZAX", "rainfed", "ES", TODAY, None),
+    ("TRZAX", "rainfed", "ES", date(2027, 10, 13), None),  # today + 366
+    ("HORVX", "rainfed", "ES", date(2026, 11, 15), "not_validated"),
+    ("TRZAX", "irrigated", "ES", date(2026, 11, 15), "not_validated"),
+    ("TRZAX", "rainfed", "PT", date(2026, 11, 15), "not_validated"),
+    ("TRZAX", "rainfed", None, date(2026, 11, 15), "not_validated"),
+    ("TRZAX", "rainfed", "ES", None, "needs_sowing_date"),
+    ("TRZAX", "rainfed", "ES", date(2026, 10, 11), "sowing_date_out_of_range"),
+    ("TRZAX", "rainfed", "ES", date(2027, 10, 14), "sowing_date_out_of_range"),
     # not validated wins over a missing date: an unvalidated crop never asks for more input
-    ("HORVX", "secano", "ES", None, "not_validated"),
+    ("HORVX", "rainfed", "ES", None, "not_validated"),
 ])
 def test_gate_truth_table(crop, regime, country, sowing, reason):
     assert aquacrop_gate(crop, regime, country, sowing, TODAY) == reason

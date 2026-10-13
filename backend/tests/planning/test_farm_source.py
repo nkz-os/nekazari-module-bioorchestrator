@@ -54,7 +54,7 @@ async def test_load_farm_closes_the_client_when_orion_fails(monkeypatch):
 
 @pytest.mark.parametrize("bad_answer", ["raises", "list", "string"])
 async def test_one_bad_cycles_answer_only_takes_that_parcel_out(monkeypatch, caplog, bad_answer):
-    _patch_orion(monkeypatch, {"AgriParcel": [{"id": "p1", "irrigationRegime": "secano"}, {"id": "p2"}],
+    _patch_orion(monkeypatch, {"AgriParcel": [{"id": "p1", "irrigationRegime": "rainfed"}, {"id": "p2"}],
                                "AgriFarm": [], "AgriCrop": []})
 
     async def fetch(urn, tenant):

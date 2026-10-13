@@ -5,8 +5,8 @@ the environment mean, so year and site cancel out. The ranking is the mean of th
 Stability is the Finlay-Wilkinson (1963) slope: the variety's yield regressed on the
 environment mean. A variety with several rows in one environment counts once, at their mean;
 a row without site or year cannot define an environment and is left out.
-ASSUMPTION: MIN_ENV_VARIETIES, MIN_FW_ENVIRONMENTS, FEW_ENVIRONMENTS and the slope bands are
-first choices to review with the owner. They are named constants, so a review changes
+MIN_ENV_VARIETIES, MIN_FW_ENVIRONMENTS, FEW_ENVIRONMENTS and the slope bands are kept as they
+are (owner, 2026-10-13), to revisit with real use. They are named constants, so a review changes
 numbers, not code.
 """
 from __future__ import annotations

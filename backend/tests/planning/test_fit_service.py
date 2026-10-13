@@ -141,7 +141,7 @@ def _codes(out, slug):
 async def test_unknown_climate_is_a_caveat_so_nothing_fits(monkeypatch, detail):
     # Soil, regime and history all known; no climate: it must not read as "fits".
     dao = _setup(monkeypatch, _soil_env(climate_class=None, climate_detail=detail))
-    out = await service.parcel_fit(**{**_fit_args(dao), "regime": "regadío"})
+    out = await service.parcel_fit(**{**_fit_args(dao), "regime": "irrigated"})
     FitResponse.model_validate(out)
     assert all(s["verdict"] != "fits" for s in out["species"])
     for slug in ("soybean", "sunflower", "strawberry"):
@@ -153,14 +153,14 @@ async def test_unknown_climate_is_a_caveat_so_nothing_fits(monkeypatch, detail):
 
 async def test_climate_class_without_detail_is_still_unknown(monkeypatch):
     dao = _setup(monkeypatch, _soil_env(climate_class="Csa", climate_detail=None))
-    out = await service.parcel_fit(**{**_fit_args(dao), "regime": "regadío"})
+    out = await service.parcel_fit(**{**_fit_args(dao), "regime": "irrigated"})
     assert "climate_unknown" in _codes(out, "soybean")
 
 
 async def test_known_climate_has_no_climate_unknown(monkeypatch):
     detail = {"coldest_month_min_c": 3.0, "annual_rainfall_mm": 600.0, "annual_et0_mm": 1000.0, "source": "x"}
     dao = _setup(monkeypatch, _soil_env(climate_class="Csa", climate_detail=detail))
-    out = await service.parcel_fit(**{**_fit_args(dao), "regime": "regadío"})
+    out = await service.parcel_fit(**{**_fit_args(dao), "regime": "irrigated"})
     assert all("climate_unknown" not in {r["code"] for r in s["reasons"]} for s in out["species"])
 
 
@@ -171,14 +171,14 @@ MILD = {"coldest_month_min_c": 3.0, "annual_rainfall_mm": 600.0, "annual_et0_mm"
 async def test_perennial_gets_the_frost_gate_evaluated(monkeypatch):
     # strawberry stands through winter: coldest -12 - margin 5 <= threshold -10 -> frost_risk.
     dao = _setup(monkeypatch, _soil_env("Dfb", COLD), ref=_tolerant_ref(frost_c=-10.0))
-    out = await service.parcel_fit(**{**_fit_args(dao), "regime": "regadío"})
+    out = await service.parcel_fit(**{**_fit_args(dao), "regime": "irrigated"})
     strawberry = next(s for s in out["species"] if s["species"] == "strawberry")
     assert "frost_risk" in _codes(out, "strawberry") and strawberry["verdict"] == "no_fit"
 
 
 async def test_perennial_with_climate_and_tolerance_has_no_frost_unknown(monkeypatch):
     dao = _setup(monkeypatch, _soil_env("Csa", MILD), ref=_tolerant_ref(frost_c=-15.0))
-    out = await service.parcel_fit(**{**_fit_args(dao), "regime": "regadío"})
+    out = await service.parcel_fit(**{**_fit_args(dao), "regime": "irrigated"})
     codes = _codes(out, "alfalfa")
     assert "frost_unknown" not in codes and "frost_risk" not in codes
 
@@ -187,7 +187,7 @@ async def test_failing_reference_load_does_not_take_the_fit_down(monkeypatch, ca
     dao = _setup(monkeypatch, _soil_env("Csa", MILD))
     monkeypatch.setattr(service, "load_reference", AsyncMock(side_effect=RuntimeError("graph down")))
     with caplog.at_level("ERROR", logger=service.logger.name):
-        out = await service.parcel_fit(**{**_fit_args(dao), "regime": "regadío"})
+        out = await service.parcel_fit(**{**_fit_args(dao), "regime": "irrigated"})
     FitResponse.model_validate(out)
     assert out["species"] and all(s["verdict"] != "fits" for s in out["species"])
     codes = _codes(out, "wheat")
@@ -198,6 +198,6 @@ async def test_failing_reference_load_does_not_take_the_fit_down(monkeypatch, ca
 @pytest.mark.parametrize("answer", [[], "oops", 3, ["cycles"]])
 async def test_crop_cycles_answer_that_is_not_an_object_is_history_unavailable(monkeypatch, answer):
     dao = _setup(monkeypatch, _soil_env("Csa", MILD), cycles=answer)
-    out = await service.parcel_fit(**{**_fit_args(dao), "regime": "regadío"})
+    out = await service.parcel_fit(**{**_fit_args(dao), "regime": "irrigated"})
     assert out["facts"]["history_available"] is False
     assert all("rotation_unknown" in {r["code"] for r in s["reasons"]} for s in out["species"])

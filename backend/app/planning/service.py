@@ -51,7 +51,7 @@ from app.species_registry import (
 
 logger = logging.getLogger(__name__)
 
-REGIMES = ("secano", "regadío")
+REGIMES = ("rainfed", "irrigated")
 NO_SOWING = {"sowing_type": None, "sowing_window": None, "source": None, "typical_sowing_doy": None}
 
 
