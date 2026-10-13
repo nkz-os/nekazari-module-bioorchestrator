@@ -5,6 +5,8 @@ import { reasonText, reasonTone, speciesIndex } from '../fitModel';
 import { cropName } from '../format';
 import type { FitResponse, SpeciesFit } from '../types';
 
+const VERDICT_TONE = { fits: 'positive', caveats: 'warning', no_fit: 'negative' } as const;
+
 export const recommendedCrops = (species: SpeciesFit[], max = 6): SpeciesFit[] =>
   species.filter((s) => s.verdict !== 'no_fit').slice(0, max);
 
@@ -19,7 +21,8 @@ export default function StepCrop({ fit, selected, onPick }: Props) {
     <Button key={s.species} variant={selected === s.species ? 'primary' : 'secondary'} aria-pressed={selected === s.species}
       onClick={() => onPick(s)} className="w-full justify-start text-left">
       <span className="block">
-        <span className="font-medium">{cropName(s.names, s.species, lang)}</span>
+        <span className="font-medium">{cropName(s.names, s.species, lang)}</span>{' '}
+        <Badge intent={VERDICT_TONE[s.verdict]}>{t(`planning.fit.${s.verdict}`)}</Badge>
         {s.reasons[0] && <Badge intent={reasonTone(s.reasons[0])}>{reasonText(s.reasons[0], names, lang, t)}</Badge>}
       </span>
     </Button>

@@ -160,13 +160,9 @@
       "regimeHint": "Nécessaire pour afficher les variétés et la simulation : les résultats ne mélangent jamais les régimes.",
       "managementLabel": "Conduite", "historyDown": "Impossible de lire l'historique : la rotation n'a pas été vérifiée."
     },
-    "step": { "crop": "1 · Quelle culture ?", "variety": "2 · Quelle variété ?", "estimate": "3 · Quelle récolte attendre ?", "plan": "4 · Planifier" },
     "fit": {
-      "shared": "Pour toutes les cultures :",
       "fits": "Convient", "caveats": "Avec réserves", "no_fit": "Ne convient pas",
-      "showNoFit": "Voir celles qui ne conviennent pas ({{count}})", "hideNoFit": "Masquer celles qui ne conviennent pas",
-      "sowing": "semis {{from}}–{{to}}", "trials": "variétés avec essais", "noTrials": "sans essais variétaux",
-      "pick": "Choisissez une culture pour voir les variétés et la récolte attendue."
+      "sowing": "semis {{from}}–{{to}}"
     },
     "reason": {
       "soil_unsuitable": "Sol inadapté à cette culture",
@@ -205,7 +201,7 @@
       "relativeHint": "Rendement par rapport à la moyenne de chaque essai : 100 % = égal à la moyenne.",
       "stable": "stable", "average": "moyenne", "responsive": "sensible à l'environnement", "few": "peu d'essais",
       "tier": { "field": "essais au champ", "regional": "moyennes régionales" },
-      "choose": "Choisir", "chosen": "Choisie", "none": "Sans variété"
+      "choose": "Choisir", "chosen": "Choisie"
     },
     "gap": {
       "no_expected_yield": "Pas de rendement attendu",
@@ -273,11 +269,10 @@
     },
     "plan": {
       "replaces": "L'enregistrement remplace le plan actuel de cette campagne : vérifiez la conduite et le couvert.",
-      "crop": "Culture", "variety": "Variété", "sowing": "Semis", "years": "Années prévues",
-      "addCover": "Ajouter un couvert avant la culture", "cover": "Couvert", "coverSowing": "Semis du couvert",
-      "coverEndsAtSowing": "Le couvert est détruit (rouleau ou fauche) au semis de la culture principale", "method": "Mode de fin de cycle",
+      "years": "Années prévues",
+      "cover": "Couvert",
+      "method": "Mode de fin de cycle",
       "methods": { "roller_crimper": "Rouleau écraseur (roller crimper)", "mowing": "Fauche", "incorporate": "Enfouissement", "grazing": "Pâturage", "harvest": "Récolte" },
-      "submit": "Planifier", "needsRegime": "Déclarez sec ou irrigué avant de planifier.",
       "otherSpecies": "Autre espèce…", "speciesName": "Nom de l'espèce",
       "error": {
         "species_name_invalid": "Saisissez un nom d'espèce valide (lettres uniquement, au moins 2)",
@@ -299,7 +294,7 @@
         "invalid_response": "Le serveur a renvoyé une réponse inattendue ; réessayez."
       }
     },
-    "wizard": {"step": "Étape {{n}} sur {{total}}", "next": "Suivant", "back": "Retour", "save": "Enregistrer le plan", "crop": {"title": "Que allez-vous semer ?", "recommended": "Recommandées pour cette parcelle", "search": "Chercher une autre culture", "noResults": "Aucune culture de ce nom"}, "variety": {"title": "Quelle variété ?", "none": "Sans variété / je déciderai plus tard", "all": "Voir toutes les variétés", "why": {"productive": "La plus productive dans votre zone", "stable": "La plus stable d'une année sur l'autre", "balanced": "Bon rendement et stable"}}, "sowing": {"title": "Quand allez-vous semer ?", "chosen": "Semis de {{crop}} : {{range}}", "recommended": "Recommandé dans votre zone : {{range}}", "noWindow": "Nous ne connaissons pas la fenêtre de semis de cette culture dans votre zone : choisissez une quinzaine", "years": "Combien d'années ?"}, "cover": {"title": "Un couvert avant ?", "no": "Non", "yes": "Oui", "grows": "Le couvert pousse du {{range}}, environ {{weeks}} semaines", "short": "Peu de temps pour un couvert : environ {{weeks}} semaines", "noFit": "Pas de place pour un couvert avant ce semis", "ends": "Détruit ({{method}}) au semis de la culture principale"}, "summary": {"title": "Votre plan", "yield": "Récolte attendue {{low}}–{{high}} t/ha", "detail": "Voir le détail", "regimeNotSaved": "Le plan est enregistré, mais sec/irrigué n'a pas pu être retenu sur la parcelle ; la question sera reposée"}},
+    "wizard": {"step": "Étape {{n}} sur {{total}}", "next": "Suivant", "back": "Retour", "save": "Enregistrer le plan", "crop": {"title": "Que allez-vous semer ?", "recommended": "Recommandées pour cette parcelle", "search": "Chercher une autre culture", "noResults": "Aucune culture de ce nom"}, "variety": {"title": "Quelle variété ?", "none": "Sans variété / je déciderai plus tard", "all": "Voir toutes les variétés", "why": {"productive": "La plus productive dans votre zone", "stable": "La plus stable d'une année sur l'autre", "balanced": "Bon rendement et stable"}}, "sowing": {"title": "Quand allez-vous semer ?", "chosen": "Semis de {{crop}} : {{range}}", "recommended": "Recommandé dans votre zone : {{range}}", "noWindow": "Nous ne connaissons pas la fenêtre de semis de cette culture dans votre zone : choisissez une quinzaine", "years": "Combien d'années ?"}, "cover": {"title": "Un couvert avant ?", "no": "Non", "yes": "Oui", "grows": "Le couvert pousse du {{range}}, environ {{weeks}} semaines", "short": "Peu de temps pour un couvert : environ {{weeks}} semaines", "noFit": "Pas de place pour un couvert avant ce semis", "ends": "Détruit ({{method}}) au semis de la culture principale"}, "summary": {"title": "Votre plan", "yield": "Récolte attendue {{low}}–{{high}} t/ha", "detail": "Voir le détail", "regimeNotSaved": "Le plan est enregistré, mais sec/irrigué n'a pas pu être retenu sur la parcelle ; la question sera reposée", "continue": "Continuer"}, "change": "Modifier"},
     "lock": { "campaign_unknown": "Cette campagne a une culture d'origine ou d'état inconnu : vérifiez-la dans les opérations au champ" },
     "simulation": { "open": "Simulation de la campagne en cours", "temporary": "Vue provisoire : elle passera dans Santé des cultures." },
     "widget": { "title": "Plan de la parcelle", "undecided": "Sans décision", "plan": "Planifier" },

@@ -160,13 +160,9 @@
       "regimeHint": "Barietateak eta simulazioa ikusteko beharrezkoa da: ebidentziak ez ditu inoiz erregimenak nahasten.",
       "managementLabel": "Kudeaketa", "historyDown": "Ezin izan da historia irakurri: errotazioa ez da egiaztatu."
     },
-    "step": { "crop": "1 · Zein labore?", "variety": "2 · Zein barietate?", "estimate": "3 · Zer uzta espero daiteke?", "plan": "4 · Planifikatu" },
     "fit": {
-      "shared": "Labore guztietarako:",
       "fits": "Egokia", "caveats": "Ñabardurekin", "no_fit": "Ez da egokia",
-      "showNoFit": "Erakutsi egokiak ez direnak ({{count}})", "hideNoFit": "Ezkutatu egokiak ez direnak",
-      "sowing": "ereitea {{from}}–{{to}}", "trials": "saiakuntzak dituzten barietateak", "noTrials": "barietate-saiakuntzarik gabe",
-      "pick": "Aukeratu labore bat barietateak eta espero den uzta ikusteko."
+      "sowing": "ereitea {{from}}–{{to}}"
     },
     "reason": {
       "soil_unsuitable": "Lurzorua ez da egokia labore honetarako",
@@ -205,7 +201,7 @@
       "relativeHint": "Etekina saiakuntza bakoitzaren batezbestekoarekin alderatuta: % 100 = batezbestekoaren berdina.",
       "stable": "egonkorra", "average": "ertaina", "responsive": "ingurunearekiko sentikorra", "few": "saiakuntza gutxi",
       "tier": { "field": "landa-saiakuntzak", "regional": "eskualdeko batezbestekoak" },
-      "choose": "Aukeratu", "chosen": "Aukeratuta", "none": "Barietaterik gabe"
+      "choose": "Aukeratu", "chosen": "Aukeratuta"
     },
     "gap": {
       "no_expected_yield": "Espero den etekinik gabe",
@@ -273,11 +269,10 @@
     },
     "plan": {
       "replaces": "Gordetzean kanpaina honetako egungo plana ordezkatzen da: berrikusi kudeaketa eta estalkia.",
-      "crop": "Laborea", "variety": "Barietatea", "sowing": "Ereitea", "years": "Aurreikusitako urteak",
-      "addCover": "Gehitu estaldura bat laborearen aurretik", "cover": "Estaldura", "coverSowing": "Estalduraren ereitea",
-      "coverEndsAtSowing": "Estaldura (arrabolarekin edo segarekin) labore nagusia ereitean amaitzen da", "method": "Nola amaitzen den",
+      "years": "Aurreikusitako urteak",
+      "cover": "Estaldura",
+      "method": "Nola amaitzen den",
       "methods": { "roller_crimper": "Arrabota zanpatzailea (roller crimper)", "mowing": "Sega", "incorporate": "Lurrean sartzea", "grazing": "Abereekin bazkatzea", "harvest": "Uzta" },
-      "submit": "Planifikatu", "needsRegime": "Adierazi lehorrekoa ala ureztatua planifikatu aurretik.",
       "otherSpecies": "Beste espezie bat…", "speciesName": "Espeziearen izena",
       "error": {
         "species_name_invalid": "Idatzi espezie-izen baliozko bat (letrak soilik, gutxienez 2)",
@@ -299,7 +294,7 @@
         "invalid_response": "Zerbitzariak ustekabeko erantzuna eman du; saiatu berriro."
       }
     },
-    "wizard": {"step": "{{n}}/{{total}} urratsa", "next": "Hurrengoa", "back": "Atzera", "save": "Gorde plana", "crop": {"title": "Zer ereingo duzu?", "recommended": "Partzela honetarako gomendatuak", "search": "Bilatu beste labore bat", "noResults": "Ez dago izen hori duen laborerik"}, "variety": {"title": "Zein barietate?", "none": "Barietaterik gabe / gero erabakiko dut", "all": "Ikusi barietate guztiak", "why": {"productive": "Zure eremuan emankorrena", "stable": "Urteen artean egonkorrena", "balanced": "Ekoizpen ona eta egonkorra"}}, "sowing": {"title": "Noiz ereingo duzu?", "chosen": "{{crop}} ereitea: {{range}}", "recommended": "Zure eremuan gomendatua: {{range}}", "noWindow": "Ez dakigu labore honen ereite-leihoa zure eremuan: aukeratu hamabostaldi bat", "years": "Zenbat urte?"}, "cover": {"title": "Estaldura aurretik?", "no": "Ez", "yes": "Bai", "grows": "Estaldura {{range}} hazten da, {{weeks}} aste inguru", "short": "Denbora gutxi estaldura baterako: {{weeks}} aste inguru", "noFit": "Ez dago estaldurarako tarterik ereite honen aurretik", "ends": "Labore nagusia ereitean amaitzen da ({{method}})"}, "summary": {"title": "Zure plana", "yield": "Espero den uzta {{low}}–{{high}} t/ha", "detail": "Ikusi xehetasunak", "regimeNotSaved": "Plana gorde da, baina ezin izan da lehorra/ureztatua partzelan gogoratu; berriro galdetuko da"}},
+    "wizard": {"step": "{{n}}/{{total}} urratsa", "next": "Hurrengoa", "back": "Atzera", "save": "Gorde plana", "crop": {"title": "Zer ereingo duzu?", "recommended": "Partzela honetarako gomendatuak", "search": "Bilatu beste labore bat", "noResults": "Ez dago izen hori duen laborerik"}, "variety": {"title": "Zein barietate?", "none": "Barietaterik gabe / gero erabakiko dut", "all": "Ikusi barietate guztiak", "why": {"productive": "Zure eremuan emankorrena", "stable": "Urteen artean egonkorrena", "balanced": "Ekoizpen ona eta egonkorra"}}, "sowing": {"title": "Noiz ereingo duzu?", "chosen": "{{crop}} ereitea: {{range}}", "recommended": "Zure eremuan gomendatua: {{range}}", "noWindow": "Ez dakigu labore honen ereite-leihoa zure eremuan: aukeratu hamabostaldi bat", "years": "Zenbat urte?"}, "cover": {"title": "Estaldura aurretik?", "no": "Ez", "yes": "Bai", "grows": "Estaldura {{range}} hazten da, {{weeks}} aste inguru", "short": "Denbora gutxi estaldura baterako: {{weeks}} aste inguru", "noFit": "Ez dago estaldurarako tarterik ereite honen aurretik", "ends": "Labore nagusia ereitean amaitzen da ({{method}})"}, "summary": {"title": "Zure plana", "yield": "Espero den uzta {{low}}–{{high}} t/ha", "detail": "Ikusi xehetasunak", "regimeNotSaved": "Plana gorde da, baina ezin izan da lehorra/ureztatua partzelan gogoratu; berriro galdetuko da", "continue": "Jarraitu"}, "change": "Aldatu"},
     "lock": { "campaign_unknown": "Kanpaina honek jatorri edo egoera ezezaguneko labore bat du: berrikusi landa-eragiketetan" },
     "simulation": { "open": "Martxan dagoen kanpainaren simulazioa", "temporary": "Behin-behineko ikuspegia: Laborearen osasunera eramango da." },
     "widget": { "title": "Partzelaren plana", "undecided": "Erabaki gabe", "plan": "Planifikatu" },

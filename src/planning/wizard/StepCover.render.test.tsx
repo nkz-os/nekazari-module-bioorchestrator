@@ -10,7 +10,7 @@ import type { CalendarResponse } from '../types';
 
 const F = (start: string, end: string) => ({ start, end });
 const base = { fortnights: [F('2026-08-01', '2026-08-15'), F('2026-08-16', '2026-08-31')], main: { selected: F('2026-10-16', '2026-10-31') } };
-const props = { coverOptions: [], onOn: () => {}, onSpecies: () => {}, onSowing: () => {}, onMethod: () => {}, species: 'vetch',
+const props = { coverOptions: [], other: false, onOther: () => {}, onOn: () => {}, onSpecies: () => {}, onSowing: () => {}, onMethod: () => {}, species: 'vetch',
   sowing: F('2026-08-01', '2026-08-15'), method: 'roller_crimper' as const };
 
 describe('StepCover (es)', () => {
@@ -39,5 +39,13 @@ describe('StepCover (es)', () => {
       ends: '2026-10-16', weeks: 8, short: false } } as unknown as CalendarResponse;
     const html = renderToStaticMarkup(<StepCover cal={cal} on {...props} sowing={fns[1]} />);
     expect(html.split('data-recommended=').length - 1).toBe(4); // strip cells only
+  });
+  it('"Otra especie" opens the name field even before anything is typed', () => {
+    const cal = { ...base, cover: { fits: true, default: F('2026-08-01', '2026-08-15'), options: [F('2026-08-01', '2026-08-15')],
+      ends: '2026-10-16', weeks: 10, short: false } } as unknown as CalendarResponse;
+    const html = renderToStaticMarkup(<StepCover cal={cal} on {...props} species="" other />);
+    expect(html).toContain('Nombre de la especie');
+    expect(renderToStaticMarkup(<StepCover cal={cal} on {...props} species="" />))
+      .not.toContain('Nombre de la especie');
   });
 });

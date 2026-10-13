@@ -9,11 +9,13 @@ export interface WizardState {
   step: WizardStep; crop: string | null; hasTrials: boolean; perennial: boolean;
   variety: string | null; sowing: Fortnight | null; years: number | null;
   coverOn: boolean; coverSpecies: string; coverSowing: Fortnight | null; coverMethod: TerminationMethod;
+  /** "Otra especie" chosen for the cover: its name is typed. */
+  coverOther: boolean;
 }
 
 export function initialState(prefill?: Partial<WizardState>): WizardState {
   return { step: 'crop', crop: null, hasTrials: false, perennial: false, variety: null, sowing: null, years: null,
-    coverOn: false, coverSpecies: '', coverSowing: null, coverMethod: 'roller_crimper', ...prefill };
+    coverOn: false, coverSpecies: '', coverSowing: null, coverMethod: 'roller_crimper', coverOther: false, ...prefill };
 }
 
 /**
@@ -43,7 +45,7 @@ export const stepsOf = (s: WizardState): WizardStep[] =>
 export function pickCrop(s: WizardState, crop: string, hasTrials: boolean, perennial: boolean, years: number | null): WizardState {
   if (s.crop === crop) return s;
   return { ...s, crop, hasTrials, perennial, years: perennial ? years : null, variety: null, sowing: null,
-    coverOn: false, coverSpecies: '', coverSowing: null };
+    coverOn: false, coverSpecies: '', coverSowing: null, coverOther: false };
 }
 
 /** A new main sowing; a cover sowing that would no longer start before it falls back to the first option. */
@@ -90,4 +92,20 @@ export function toPlanIn(s: WizardState, campaign: number, regime: Regime, manag
       sowing_end: s.coverSowing.end, expected_termination: null, termination_method: s.coverMethod }, main]
     : [main];
   return { campaign, regime, management, cycles };
+}
+
+/**
+ * Save order (W10): the plan first; then, when the parcel had no regime, the one the farmer chose.
+ * A failed plan throws and writes nothing else. A failed regime never rolls the plan back: it is
+ * reported, and the regime is simply asked again next time.
+ */
+export async function savePlan(put: () => Promise<unknown>, saveRegime: (() => Promise<void>) | null): Promise<'saved' | 'regime_not_saved'> {
+  await put();
+  if (!saveRegime) return 'saved';
+  try {
+    await saveRegime();
+    return 'saved';
+  } catch {
+    return 'regime_not_saved';
+  }
 }

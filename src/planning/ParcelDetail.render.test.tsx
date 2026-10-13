@@ -43,30 +43,32 @@ const render = (r: ParcelRow, withFit = false, onReload?: () => void) => {
 };
 
 describe('ParcelDetail (es)', () => {
-  it('shows the current plan of the campaign above the regime question', () => {
+  it('shows the current plan of the campaign above the wizard', () => {
     const cover = cell({ crop_id: 'c0', role: 'cover_crop', species: 'vetch', species_raw: 'VICSA', names: { es: 'veza' }, variety: null });
-    const html = render(row([cover, cell({})]));
+    const html = render(row([cover, cell({})]), true);
     expect(html).toContain('Plan actual:');
     expect(html).toContain('○ maíz · Var X');
     expect(html).toContain('○ veza');
-    expect(html.indexOf('Plan actual')).toBeLessThan(html.indexOf('¿Secano o regadío?'));
+    expect(html.indexOf('Plan actual')).toBeLessThan(html.indexOf('Paso 1 de'));
   });
   it('shows no current-plan line when the campaign is empty', () => {
     expect(render(row([]))).not.toContain('Plan actual');
   });
-  it('starts from the current plan: the crop is chosen and the form holds its sowing, variety and the replace warning', () => {
-    const html = render(row([cell({})]), true);
-    expect(html).toContain('aria-pressed="true"');
-    expect(html).toContain('value="2027-04-20"');
-    expect(html).not.toContain('value="2027-10-01"'); // no harvest date is asked any more
-    expect(html).toContain('Variedad: Var X');
-    expect(html).toContain('Al guardar se sustituye el plan actual de esta campaña');
-  });
-  it('a campaign without a plan starts with nothing chosen and no replace warning', () => {
+  it('the header says the regime and management, with Cambiar instead of open selects', () => {
     const html = render(row([]), true);
-    expect(html).not.toContain('aria-pressed="true"');
-    expect(html).not.toContain('Al guardar se sustituye');
-    expect(html).toContain('Elige un cultivo');
+    expect(html).toContain('Secano · Convencional');
+    expect(html).toContain('Cambiar');
+    expect(html).not.toContain('¿Secano o regadío?');
+  });
+  it('a parcel without a regime asks for it first and shows no wizard until it is chosen', () => {
+    const html = render(row([], { regime: null, regime_source: 'unknown' }), true);
+    expect(html).toContain('¿Secano o regadío?');
+    expect(html).toContain('Hace falta para ver variedades');
+    expect(html).not.toContain('Paso 1 de');
+  });
+  it('an open campaign shows the wizard at its first step; "Cambiar" starts from the current plan', () => {
+    expect(render(row([]), true)).toMatch(/Paso 1 de \d/);
+    expect(render(row([cell({})]), true)).toMatch(/aria-pressed="true"[^>]*>(?:(?!<\/button>).)*maíz/);
   });
   it('shows what we know of the parcel only once the fit has answered, never as "sin datos" while it loads', () => {
     const loading = render(row([]));
@@ -77,7 +79,7 @@ describe('ParcelDetail (es)', () => {
     expect(loaded).toContain('Clima: Csa');
   });
   it('a lock from an unreadable history offers a retry only when the page can reload', () => {
-    // The lock text sits in the plan step, which opens once a crop is chosen: here from the plan the cells still carry.
+    // A locked campaign shows why instead of the wizard.
     const unreadable = row([cell({})], { cycles_available: false });
     const withReload = render(unreadable, true, () => {});
     expect(withReload).toContain('No se ha podido leer el historial de esta parcela');

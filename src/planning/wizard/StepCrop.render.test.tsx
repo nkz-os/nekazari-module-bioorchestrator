@@ -26,4 +26,9 @@ describe('StepCrop', () => {
     expect(html).toContain('Recomendados para esta parcela');
     expect(html).toContain('Buscar otro cultivo');
   });
+  it('each card says its verdict, so a crop with caveats reads as such', () => {
+    const html = renderToStaticMarkup(<StepCrop fit={FIT} selected={null} onPick={() => {}} />);
+    expect(html).toContain('Con reservas');
+    expect(html).toContain('Encaja');
+  });
 });

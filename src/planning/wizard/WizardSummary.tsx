@@ -6,9 +6,11 @@ import { formatT } from '../format';
 interface Props {
   lines: string[]; yieldLine: { low: number; high: number } | null; detail: React.ReactNode;
   replacing: boolean; saving: boolean; error: string | null; regimeNotice: boolean; onSave: () => void;
+  /** After a regime notice the plan is already saved: this leaves the wizard. */
+  onContinue?: () => void;
 }
 
-export default function WizardSummary({ lines, yieldLine, detail, replacing, saving, error, regimeNotice, onSave }: Props) {
+export default function WizardSummary({ lines, yieldLine, detail, replacing, saving, error, regimeNotice, onSave, onContinue }: Props) {
   const { t, i18n } = useTranslation('bioorchestrator');
   const [open, setOpen] = useState(false);
   return (
@@ -22,7 +24,9 @@ export default function WizardSummary({ lines, yieldLine, detail, replacing, sav
       {replacing && <p className="text-nkz-xs text-nkz-warning">{t('planning.plan.replaces')}</p>}
       {error && <p role="alert" className="text-nkz-sm text-nkz-danger">{error}</p>}
       {regimeNotice && <p className="text-nkz-sm text-nkz-warning">{t('planning.wizard.summary.regimeNotSaved')}</p>}
-      <div><Button variant="primary" loading={saving} disabled={saving} onClick={onSave}>{t('planning.wizard.save')}</Button></div>
+      <div>{regimeNotice && onContinue
+        ? <Button variant="primary" onClick={onContinue}>{t('planning.wizard.summary.continue')}</Button>
+        : <Button variant="primary" loading={saving} disabled={saving} onClick={onSave}>{t('planning.wizard.save')}</Button>}</div>
     </Stack>
   );
 }

@@ -11,16 +11,18 @@ const OTHER = '__other__';
 
 interface Props {
   cal: CalendarResponse; on: boolean; species: string; sowing: Fortnight | null; method: TerminationMethod;
+  /** "Otra especie" was chosen: the name field shows even while it is empty. */
+  other: boolean; onOther: (other: boolean) => void;
   coverOptions: SpeciesFit[]; onOn: (on: boolean) => void; onSpecies: (s: string) => void;
   onSowing: (f: Fortnight) => void; onMethod: (m: TerminationMethod) => void;
 }
 
-export default function StepCover({ cal, on, species, sowing, method, coverOptions, onOn, onSpecies, onSowing, onMethod }: Props) {
+export default function StepCover({ cal, on, species, sowing, method, other: chosenOther, onOther, coverOptions, onOn, onSpecies, onSowing, onMethod }: Props) {
   const { t, i18n } = useTranslation('bioorchestrator');
   const lang = i18n.language;
   const cover = cal.cover;
   const listed = coverOptions.map((s) => s.species);
-  const other = isOtherCover(species, listed, false);
+  const other = isOtherCover(species, listed, chosenOther);
   const methodLabel = t(`planning.plan.methods.${method}`);
   return (
     <Stack gap="stack">
@@ -37,7 +39,7 @@ export default function StepCover({ cal, on, species, sowing, method, coverOptio
             <Select value={other ? OTHER : (species || NONE)}
               options={[{ value: NONE, label: '—' }, ...coverOptions.map((s) => ({ value: s.species, label: cropName(s.names, s.species, lang) })),
                 { value: OTHER, label: t('planning.plan.otherSpecies') }]}
-              onValueChange={(v) => onSpecies(v === NONE || v === OTHER ? '' : v)} />
+              onValueChange={(v) => { onOther(v === OTHER); onSpecies(v === NONE || v === OTHER ? '' : v); }} />
           </FormField>
           {other && <FormField label={t('planning.plan.speciesName')}>
             <Input value={species} maxLength={64} onChange={(e) => onSpecies(e.target.value)} /></FormField>}

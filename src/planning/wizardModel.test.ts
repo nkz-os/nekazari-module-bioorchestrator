@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { back, canAdvance, initialState, next, pickCrop, prefillFromCells, setSowing, stepsOf, toPlanIn } from './wizardModel';
+import { back, canAdvance, initialState, next, pickCrop, prefillFromCells, savePlan, setSowing, stepsOf, toPlanIn } from './wizardModel';
+import { vi } from 'vitest';
 import type { CycleCell } from './types';
 
 const OCT2 = { start: '2026-10-16', end: '2026-10-31' };
@@ -65,6 +66,12 @@ describe('wizard model', () => {
     expect(prefillFromCells([cell({ role: 'cover_crop' })], 2027)).toEqual({});
     expect(prefillFromCells([cell({ provenance: 'actual' })], 2027)).toEqual({});
   });
+  it('a free-text cover name is checked and sent trimmed, as the server resolves it', () => {
+    const s = { ...pickCrop(initialState(), 'maize', false, false, null), step: 'cover' as const, sowing: OCT2, coverOn: true,
+      coverSpecies: '  phacelia ', coverSowing: AUG1 };
+    expect(canAdvance(s, ['vetch'])).toBe(true);
+    expect(toPlanIn(s, 2027, 'rainfed', 'conventional').cycles[0].crop).toBe('phacelia');
+  });
   it('builds the PUT body with fortnight windows; the cover end is derived by the server', () => {
     const s = { ...pickCrop(initialState(), 'wheat', false, false, null), variety: 'RGT TOCAYO', sowing: OCT2,
       coverOn: true, coverSpecies: 'vetch', coverSowing: AUG1, coverMethod: 'roller_crimper' as const };
@@ -74,5 +81,26 @@ describe('wizard model', () => {
       { role: 'main_crop', crop: 'wheat', variety: 'RGT TOCAYO', sowing_start: '2026-10-16', sowing_end: '2026-10-31',
         expected_termination: null, termination_method: null },
     ]);
+  });
+});
+
+describe('savePlan (W10)', () => {
+  it('saves the plan, then the regime the farmer chose for a parcel that had none', async () => {
+    const order: string[] = [];
+    const out = await savePlan(async () => { order.push('plan'); }, async () => { order.push('regime'); });
+    expect([out, order]).toEqual(['saved', ['plan', 'regime']]);
+  });
+  it('a failed regime save keeps the plan: it reports, never rolls back', async () => {
+    const put = vi.fn().mockResolvedValue(undefined);
+    expect(await savePlan(put, () => Promise.reject(new Error('503')))).toBe('regime_not_saved');
+    expect(put).toHaveBeenCalledTimes(1);
+  });
+  it('a failed plan save throws and never writes the regime', async () => {
+    const regime = vi.fn();
+    await expect(savePlan(() => Promise.reject(new Error('409')), regime)).rejects.toThrow('409');
+    expect(regime).not.toHaveBeenCalled();
+  });
+  it('a parcel that already has a regime writes only the plan', async () => {
+    expect(await savePlan(async () => {}, null)).toBe('saved');
   });
 });

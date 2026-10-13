@@ -160,13 +160,9 @@
       "regimeHint": "É necessário para ver variedades e simulação: a evidência nunca mistura regimes.",
       "managementLabel": "Maneio", "historyDown": "Não foi possível ler o historial: a rotação não foi verificada."
     },
-    "step": { "crop": "1 · Que cultura?", "variety": "2 · Que variedade?", "estimate": "3 · Que colheita esperar?", "plan": "4 · Planear" },
     "fit": {
-      "shared": "Para todas as culturas:",
       "fits": "Adequada", "caveats": "Com reservas", "no_fit": "Não adequada",
-      "showNoFit": "Ver as que não se adequam ({{count}})", "hideNoFit": "Ocultar as que não se adequam",
-      "sowing": "sementeira {{from}}–{{to}}", "trials": "variedades com ensaios", "noTrials": "sem ensaios de variedades",
-      "pick": "Escolha uma cultura para ver variedades e a colheita esperada."
+      "sowing": "sementeira {{from}}–{{to}}"
     },
     "reason": {
       "soil_unsuitable": "Solo inapto para esta cultura",
@@ -205,7 +201,7 @@
       "relativeHint": "Rendimento face à média de cada ensaio: 100 % = igual à média.",
       "stable": "estável", "average": "média", "responsive": "sensível ao ambiente", "few": "poucos ensaios",
       "tier": { "field": "ensaios de campo", "regional": "médias regionais" },
-      "choose": "Escolher", "chosen": "Escolhida", "none": "Sem variedade"
+      "choose": "Escolher", "chosen": "Escolhida"
     },
     "gap": {
       "no_expected_yield": "Sem rendimento esperado",
@@ -273,11 +269,10 @@
     },
     "plan": {
       "replaces": "Ao guardar substitui-se o plano atual desta campanha: revê o maneio e a cobertura.",
-      "crop": "Cultura", "variety": "Variedade", "sowing": "Sementeira", "years": "Anos previstos",
-      "addCover": "Adicionar uma cobertura antes da cultura", "cover": "Cobertura", "coverSowing": "Sementeira da cobertura",
-      "coverEndsAtSowing": "A cobertura termina (rolo ou ceifa) ao semear a cultura principal", "method": "Como termina",
+      "years": "Anos previstos",
+      "cover": "Cobertura",
+      "method": "Como termina",
       "methods": { "roller_crimper": "Rolo de facas (roller crimper)", "mowing": "Corte", "incorporate": "Incorporação", "grazing": "Pastoreio", "harvest": "Colheita" },
-      "submit": "Planear", "needsRegime": "Declare sequeiro ou regadio antes de planear.",
       "otherSpecies": "Outra espécie…", "speciesName": "Nome da espécie",
       "error": {
         "species_name_invalid": "Escreve um nome de espécie válido (só letras, pelo menos 2)",
@@ -299,7 +294,7 @@
         "invalid_response": "O servidor respondeu algo inesperado; tente novamente."
       }
     },
-    "wizard": {"step": "Passo {{n}} de {{total}}", "next": "Seguinte", "back": "Voltar", "save": "Guardar plano", "crop": {"title": "O que vai semear?", "recommended": "Recomendadas para esta parcela", "search": "Procurar outra cultura", "noResults": "Nenhuma cultura com esse nome"}, "variety": {"title": "Que variedade?", "none": "Sem variedade / decido depois", "all": "Ver todas as variedades", "why": {"productive": "A mais produtiva na sua zona", "stable": "A mais estável entre anos", "balanced": "Boa produção e estável"}}, "sowing": {"title": "Quando vai semear?", "chosen": "Sementeira de {{crop}}: {{range}}", "recommended": "Recomendado na sua zona: {{range}}", "noWindow": "Não conhecemos a janela de sementeira desta cultura na sua zona: escolha uma quinzena", "years": "Quantos anos?"}, "cover": {"title": "Cobertura antes?", "no": "Não", "yes": "Sim", "grows": "A cobertura cresce de {{range}}, cerca de {{weeks}} semanas", "short": "Pouco tempo para uma cobertura: cerca de {{weeks}} semanas", "noFit": "Não cabe uma cobertura antes desta sementeira", "ends": "Termina ({{method}}) ao semear a cultura principal"}, "summary": {"title": "O seu plano", "yield": "Colheita esperada {{low}}–{{high}} t/ha", "detail": "Ver detalhe", "regimeNotSaved": "O plano foi guardado, mas não foi possível lembrar sequeiro/regadio na parcela; voltará a ser perguntado"}},
+    "wizard": {"step": "Passo {{n}} de {{total}}", "next": "Seguinte", "back": "Voltar", "save": "Guardar plano", "crop": {"title": "O que vai semear?", "recommended": "Recomendadas para esta parcela", "search": "Procurar outra cultura", "noResults": "Nenhuma cultura com esse nome"}, "variety": {"title": "Que variedade?", "none": "Sem variedade / decido depois", "all": "Ver todas as variedades", "why": {"productive": "A mais produtiva na sua zona", "stable": "A mais estável entre anos", "balanced": "Boa produção e estável"}}, "sowing": {"title": "Quando vai semear?", "chosen": "Sementeira de {{crop}}: {{range}}", "recommended": "Recomendado na sua zona: {{range}}", "noWindow": "Não conhecemos a janela de sementeira desta cultura na sua zona: escolha uma quinzena", "years": "Quantos anos?"}, "cover": {"title": "Cobertura antes?", "no": "Não", "yes": "Sim", "grows": "A cobertura cresce de {{range}}, cerca de {{weeks}} semanas", "short": "Pouco tempo para uma cobertura: cerca de {{weeks}} semanas", "noFit": "Não cabe uma cobertura antes desta sementeira", "ends": "Termina ({{method}}) ao semear a cultura principal"}, "summary": {"title": "O seu plano", "yield": "Colheita esperada {{low}}–{{high}} t/ha", "detail": "Ver detalhe", "regimeNotSaved": "O plano foi guardado, mas não foi possível lembrar sequeiro/regadio na parcela; voltará a ser perguntado", "continue": "Continuar"}, "change": "Alterar"},
     "lock": { "campaign_unknown": "Esta campanha tem uma cultura de origem ou estado desconhecido: revê-a nas operações de campo" },
     "simulation": { "open": "Simulação da campanha em curso", "temporary": "Vista provisória: passará para Saúde da cultura." },
     "widget": { "title": "Plano da parcela", "undecided": "Por decidir", "plan": "Planear" },

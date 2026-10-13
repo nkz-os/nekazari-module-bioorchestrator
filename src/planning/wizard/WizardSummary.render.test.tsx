@@ -21,4 +21,10 @@ describe('WizardSummary (es)', () => {
       error={null} regimeNotice onSave={() => {}} />);
     expect(html).toContain('no se pudo recordar secano/regadío');
   });
+  it('after a regime notice the plan is already saved: Continuar replaces Guardar', () => {
+    const html = renderToStaticMarkup(<WizardSummary lines={[]} yieldLine={null} detail={null} replacing={false} saving={false}
+      error={null} regimeNotice onSave={() => {}} onContinue={() => {}} />);
+    expect(html).toContain('Continuar');
+    expect(html).not.toContain('Guardar plan');
+  });
 });
