@@ -13,11 +13,13 @@ from app.core.knowledge import KnowledgeSource, get_knowledge_sources
 from app.graph.dao import GraphDAO
 from app.planning.farm import default_target_campaign, farm_payload
 from app.planning.farm_source import load_farm
+from app.planning.in_season import parcel_in_season
 from app.planning.models import (
     AquacropResponse,
     EstimatesResponse,
     FarmResponse,
     FitResponse,
+    InSeasonResponse,
     Management,
     PlanIn,
     PlanWriteResponse,
@@ -126,6 +128,24 @@ async def estimates_aquacrop(request: Request, parcel_id: str, sources: SourcesD
                                      retry=retry, job_id=job_id, sowing_method=sowing_method)
     except UnknownCrop as e:
         raise HTTPException(status_code=422, detail=str(e)) from e
+    except ParcelNotFound as e:
+        raise HTTPException(status_code=404, detail=str(e)) from e
+
+
+@router.get("/parcels/{parcel_id:path}/estimates/in-season", response_model=InSeasonResponse)
+async def estimates_in_season(request: Request, parcel_id: str, sources: SourcesDep,
+                              retry: bool = Query(False), job_id: str | None = Query(None, max_length=64)):
+    """In-season AquaCrop forecast of a sown parcel (F5, contract 2.1); poll until it settles.
+
+    Crop, sowing (a fact, never a plan) and regime come from the parcel's current cycle.
+    ``job_id`` is accepted for symmetry with ``/estimates/aquacrop``; the job is always found
+    from the resolved inputs. ``retry=true`` relaunches a failed job.
+    """
+    tenant = _require_tenant_id(request)
+    parcel_id = _checked_parcel_urn(parcel_id)
+    try:
+        return await parcel_in_season(dao=GraphDAO(sources[0].driver), jobs=shared_sim_jobs(),
+                                      tenant_id=tenant, parcel_id=parcel_id, retry=retry)
     except ParcelNotFound as e:
         raise HTTPException(status_code=404, detail=str(e)) from e
 
