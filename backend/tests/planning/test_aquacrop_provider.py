@@ -102,3 +102,35 @@ def test_disagreement_needs_same_basis_and_same_moisture():
 def test_range_only_estimates_do_not_take_part_in_disagreement():
     rng = {"basis": "gap_corrected", "percentiles": None, "moisture": C13}
     assert disagreement([rng, rng, _e("gap_corrected", 5.0, C13)]) is False
+
+
+from app.planning.aquacrop_provider import IN_SEASON_SCOPE, map_in_season
+
+IN_SEASON = {"status": "in_season", "yield_basis": {"moisture": "commercial", "grain_moisture_pct": 13.0},
+             "yield_t_ha": {"p10": 3.0, "p50": 4.0, "p90": 5.0}, "ensemble": {"n_years": 14},
+             "expected_yield": {"status": "ok", "range_t_ha": {"low": 2.4, "high": 3.9}, "coverage": 0.8}}
+
+
+def test_in_season_expected_yield_is_experimental():
+    est, unav = map_in_season(IN_SEASON, "v")
+    gap = next(e for e in est if e["basis"] == "gap_corrected")
+    assert gap["validation"] == {"status": "experimental", "metric": None, "scope": IN_SEASON_SCOPE}
+    assert gap["n"] == 14 and unav == []
+    ceiling = next(e for e in est if e["basis"] == "water_limited")
+    assert ceiling["validation"] == {"status": "not_applicable"}
+
+
+def test_a_complete_season_is_validated_with_its_single_ceiling():
+    done = {**IN_SEASON, "status": "complete", "yield_t_ha": 4.2, "ensemble": None}
+    est, unav = map_in_season(done, "v")
+    gap = next(e for e in est if e["basis"] == "gap_corrected")
+    assert gap["validation"]["status"] == "validated" and gap["n"] == 1
+    ceiling = next(e for e in est if e["basis"] == "water_limited")
+    assert ceiling["percentiles"] == {"p10": 4.2, "p50": 4.2, "p90": 4.2} and unav == []
+
+
+def test_in_season_without_expected_yield_says_why():
+    est, unav = map_in_season({**IN_SEASON, "expected_yield": {"status": "unavailable",
+                                                               "reason": "region_not_calibrated"}}, "v")
+    assert [e["basis"] for e in est] == ["water_limited"]
+    assert unav == [{"provider_id": "aquacrop", "reason": "expected_region_not_calibrated"}]
