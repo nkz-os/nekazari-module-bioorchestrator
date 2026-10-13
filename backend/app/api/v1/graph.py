@@ -58,33 +58,6 @@ def _phenology_agronomic(params: dict) -> dict:
     return out
 
 
-_WATER_FIELDS = ("irrigation_required_mm", "etc_weekly_mm", "kc")
-_WATER_BOILERPLATE = "All data sources available"
-
-
-def _water_budget_agronomic(result: dict) -> dict:
-    """Build the additive `agronomic` map for water-budget (P1 contract).
-
-    Reuses the dao's aggregate confidence (already weakest-link over AWC/ET0/
-    Kc inputs). The human reason rides in `notes` — it never blocks the
-    irrigation suggestion.
-    """
-    conf = result.get("confidence") or "low"
-    raw_note = result.get("confidence_notes") or ""
-    notes = (
-        [] if not raw_note or raw_note == _WATER_BOILERPLATE
-        else [n.strip() for n in raw_note.split(";") if n.strip()]
-    )
-    source = Source(short="FAO-56 water balance")
-    out: dict[str, dict] = {}
-    for field in _WATER_FIELDS:
-        out[field] = AgronomicValue(
-            value=result.get(field), source=source,
-            confidence=conf, notes=list(notes),
-        ).model_dump()
-    return out
-
-
 def _get_tenant_id(request: Request) -> str:
     """Tenant of the verified caller, as set by NKZAuthMiddleware.
 
@@ -364,20 +337,6 @@ async def rotation_constraints(
     return await dao.get_rotation_constraints(crop)
 
 
-# ── Recommendations ───────────────────────────────────────────────────────────
-
-
-@router.get("/recommendations/next-crop")
-async def recommend_next_crop(
-    driver: DriverDep,
-    previous_crop: str = Query(..., description="Previous crop grown on the parcel"),
-):
-    """Suggest next crop based on rotation rules, excluding constrained crops."""
-    dao = GraphDAO(driver)
-    crops = await dao.recommend_next_crop(previous_crop)
-    return {"previous_crop": previous_crop, "suggested_crops": crops}
-
-
 # ── Protected Area Check (Natura 2000 proxy) ─────────────────────────────────
 
 
@@ -449,22 +408,6 @@ async def crop_name(
     return {"eppo": eppo.strip().upper(), "slug": slug, "name": name}
 
 
-@router.get("/agriculture/advisories")
-async def list_advisories(request: Request, parcel_id: str = Query(...)):
-    """CropAdvisory recommendations for a parcel (bioorch-owned, read from the broker)."""
-    tenant_id = _require_tenant_id(request)
-    client = OrionClient(tenant_id)
-    try:
-        rows = await client.query_entities(
-            type="CropAdvisory",
-            q=f'hasAgriParcel=="{parcel_id}"',
-            limit=100, options="keyValues",
-        )
-    finally:
-        await client.close()
-    return {"parcel_id": parcel_id, "advisories": rows}
-
-
 @router.get("/pollinators")
 async def pollinator_occurrences(lat: float = Query(...), lon: float = Query(...)):
     """Return pollinator species near a location from GBIF."""
@@ -506,46 +449,6 @@ async def climate_reference(lat: float = Query(...), lon: float = Query(...)):
         return {"error": "ERA5 connector not available"}
     except Exception as e:  # noqa: BLE001
         return {"error": str(e)}
-
-
-@router.get("/recommendations/simulate")
-async def simulate_scenario(
-    driver: DriverDep,
-    baseline_crop: str = Query(..., description="Current crop"),
-    scenario_crop: str = Query(..., description="Proposed alternative crop"),
-):
-    """Compare two agronomic scenarios: rotation, soil, fertilizer delta."""
-    dao = GraphDAO(driver)
-    result = await dao.simulate_scenario(baseline_crop, scenario_crop)
-    result["baseline_data_gaps"] = await _compute_data_gaps(dao, baseline_crop)
-    result["scenario_data_gaps"] = await _compute_data_gaps(dao, scenario_crop)
-    return result
-
-
-async def _compute_data_gaps(dao: GraphDAO, crop_name: str) -> list[str]:
-    """Return list of missing data types for a crop."""
-    gaps = []
-    async with dao._driver.session() as session:
-        result = await session.run("""
-            MATCH (c:AgriCrop)
-            WHERE toLower(c.name) CONTAINS toLower($name)
-               OR toLower(c.scientificName) CONTAINS toLower($name)
-            OPTIONAL MATCH (c)-[:HAS_PARAMETER]->(p:PhenologyParams)
-            OPTIONAL MATCH (c)-[:HAS_HEAT_TOLERANCE]->(ht:CropHeatTolerance)
-            OPTIONAL MATCH (c)-[:HAS_NUTRIENT_PROFILE]->(np:CropNutrientProfile)
-            RETURN count(DISTINCT p) > 0 as has_phenology,
-                   count(DISTINCT ht) > 0 as has_thermal,
-                   count(DISTINCT np) > 0 as has_npk
-        """, name=crop_name)
-        record = await result.single()
-        if record:
-            if not record["has_phenology"]:
-                gaps.extend(["d1", "d2", "mds"])
-            if not record["has_thermal"]:
-                gaps.append("thermal")
-            if not record["has_npk"]:
-                gaps.append("npk")
-    return gaps
 
 
 @router.get("/recommendations/fertilizer")
@@ -654,206 +557,6 @@ async def agriculture_variety_trials(
     }, rows_source_ids(trials))
 
 
-@router.get("/agriculture/similar-sites")
-async def agriculture_similar_sites(
-    driver: DriverDep,
-    reference_site: str | None = Query(
-        default=None,
-        description="Name of a known TrialSite to use as environmental reference (e.g. 'Cadreita')",
-    ),
-    climate_class: str | None = Query(
-        default=None,
-        description="Köppen climate class (used if no reference_site given)",
-    ),
-    soil_type: str | None = Query(
-        default=None,
-        description="WRB soil type (used if no reference_site given)",
-    ),
-    rainfall_min: float | None = Query(
-        default=None,
-        description="Minimum annual rainfall in mm",
-    ),
-    rainfall_max: float | None = Query(
-        default=None,
-        description="Maximum annual rainfall in mm",
-    ),
-    limit: int = Query(default=20, le=50, description="Max results"),
-):
-    """Find TrialSites with similar environmental conditions.
-
-    If reference_site is provided, its climate/soil/rainfall are used as filters.
-    Otherwise, explicit filters must be given.
-
-    This is the building block for environmental extrapolation:
-      "Which trial locations have similar conditions to my farm?"
-    """
-    dao = GraphDAO(driver)
-    sites = await dao.get_similar_sites(
-        reference_site=reference_site,
-        climate_class=climate_class,
-        soil_type=soil_type,
-        rainfall_min=rainfall_min,
-        rainfall_max=rainfall_max,
-        limit=limit,
-    )
-    site_sources = await dao.get_site_source_ids([s["name"] for s in sites])
-    sites = [{**s, "source_ids": site_sources.get(s["name"], [])} for s in sites]
-    return attach_attributions({
-        "sites": sites,
-        "total": len(sites),
-        "reference": reference_site or {
-            "climate_class": climate_class,
-            "soil_type": soil_type,
-            "rainfall_range_mm": f"{rainfall_min}-{rainfall_max}",
-        },
-    }, (sid for s in sites for sid in s["source_ids"]))
-
-
-@router.get("/agriculture/extrapolate")
-async def agriculture_extrapolate(
-    driver: DriverDep,
-    crop: str = Query(
-        ...,
-        description="Crop to extrapolate: EPPO code (e.g. 'TRZAX'), scientific name, or common name",
-    ),
-    reference_site: str | None = Query(
-        default=None,
-        description="TrialSite name to use as target environment (e.g. 'Cadreita'). "
-                    "Cannot be combined with lat/lon.",
-    ),
-    lat: float | None = Query(
-        default=None, ge=-90, le=90,
-        description="Latitude of target location (WGS84). Auto-resolves climate/soil via ERA5 + SoilGrids.",
-    ),
-    lon: float | None = Query(
-        default=None, ge=-180, le=180,
-        description="Longitude of target location (WGS84). Must be paired with lat.",
-    ),
-    climate_class: str | None = Query(
-        default=None,
-        description="Köppen climate class of the target environment (manual override)",
-    ),
-    soil_type: str | None = Query(
-        default=None,
-        description="WRB soil type of the target environment (manual override)",
-    ),
-    irrigation_regime: str | None = Query(
-        default=None,
-        description="Irrigation regime: 'secano' or 'regadío'",
-    ),
-    rainfall_min: float | None = Query(
-        default=None,
-        description="Minimum annual rainfall of the target environment (mm)",
-    ),
-    rainfall_max: float | None = Query(
-        default=None,
-        description="Maximum annual rainfall of the target environment (mm)",
-    ),
-    top_n: int = Query(default=10, le=30, description="Number of top varieties to return"),
-    filter_soil_suitability: bool = Query(
-        default=False,
-        description="Filter out varieties incompatible with target soil (pH, texture)",
-    ),
-    parcel_id: str | None = Query(
-        default=None,
-        description=(
-            "AgriParcel URN (e.g. 'urn:ngsi-ld:AgriParcel:XXX') for weather-adjusted "
-            "recommendations. When provided, reads weatherStats from Orion-LD and "
-            "adjusts variety scores for drought, heat, and frost stress."
-        ),
-    ),
-    management: Literal["any", "conventional", "organic"] = Query(
-        default="any",
-        description="Production system: organic trials are never pooled with conventional ones. "
-                    "'organic' ranks only organic trials; 'any' and 'conventional' leave them out.",
-    ),
-    request: Request = None,
-):
-    """Extrapolate best crop varieties for a target environment.
-
-    Three ways to specify the target environment:
-
-    1. **By known TrialSite name** (fastest):
-       ?crop=TRZAX&reference_site=Cadreita
-       → Uses pre-enriched Cadreita data (BSk, Fluvisol calcáreo, ~400mm)
-
-    2. **By GPS coordinates** (dynamic — works anywhere on Earth):
-       ?crop=TRZAX&lat=38.88&lon=-6.97
-       → Resolves climate (ERA5), soil (SoilGrids), elevation (Copernicus DEM)
-         and photoperiod (astronomical) on-the-fly, then finds similar TrialSites
-
-    3. **By explicit environmental filters** (manual):
-       ?crop=TRZAX&climate_class=BSk&soil_type=Calcisol&rainfall_min=300&rainfall_max=500
-
-    Returns:
-      - target_environment: resolved environmental profile
-      - similar_sites: TrialSites with matching conditions
-      - ranked_varieties: best varieties by mean yield with stats
-    """
-    dao = GraphDAO(driver)
-
-    # ── Dynamic geolocation path ────────────────────────────────────────
-    if lat is not None and lon is not None:
-        if reference_site:
-            raise HTTPException(
-                status_code=400,
-                detail="Cannot specify both lat/lon and reference_site. Choose one.",
-            )
-
-        from app.services.environment import resolve_environment
-        env = await resolve_environment(lat, lon, use_ikers=True)
-
-        # Convert resolved environment to filters for the DAO
-        climate_class = env.get("climate_class")
-        soil_type = env.get("soil_type")
-
-        rainfall = env.get("annual_rainfall_mm")
-        if rainfall is not None:
-            rainfall_min = rainfall_min or (rainfall - 200)
-            rainfall_max = rainfall_max or (rainfall + 200)
-
-        # Store resolved env for response
-        resolved_env = env
-    elif reference_site:
-        resolved_env = None  # DAO will look it up
-    else:
-        resolved_env = None  # Explicit filters only
-
-    # Tenant only from the verified identity; required when a parcel is read.
-    tenant_id = ""
-    if request is not None:
-        tenant_id = _require_tenant_id(request) if parcel_id else _get_tenant_id(request)
-
-    result = await dao.extrapolate_varieties(
-        crop=crop,
-        reference_site=reference_site,
-        climate_class=climate_class,
-        soil_type=soil_type,
-        irrigation_regime=irrigation_regime,
-        rainfall_min=rainfall_min,
-        rainfall_max=rainfall_max,
-        top_n=top_n,
-        filter_soil_suitability=filter_soil_suitability,
-        parcel_id=parcel_id,
-        tenant_id=tenant_id,
-        management=management,
-    )
-
-    if "error" in result:
-        raise HTTPException(status_code=404, detail=result["error"])
-
-    # Inject resolved environment if dynamic path was used
-    if resolved_env:
-        result["resolved_environment"] = resolved_env
-
-    # Credit only the sources behind the ranked varieties' numbers. The analog sites are selected by
-    # climate, whatever the crop, so their sources (e.g. a maize-only source for a wheat query) are
-    # not credited here.
-    return attach_attributions(result, (
-        sid for v in result.get("ranked_varieties") or [] for sid in v.get("source_ids") or []
-    ))
-
-
 @router.get("/agriculture/trial-sites")
 async def agriculture_trial_sites(
     driver: DriverDep,
@@ -915,79 +618,6 @@ async def agriculture_backtest_report(
     return await Backtester(dao).run()
 
 
-@router.get("/agriculture/regenerative-sequence")
-async def agriculture_regenerative_sequence(
-    driver: DriverDep,
-    climate_class: str = Query(
-        ...,
-        description="Köppen climate class (e.g. 'Csa', 'BSk', 'Cfb')",
-    ),
-    target_protein: str = Query(
-        default="VICFX",
-        description="EPPO code of target protein crop: VICFX (faba), PIBAR (pea), CIEAR (chickpea), LENCU (lentil), GLXMA (soy)",
-    ),
-    soil_type: str | None = Query(
-        default=None,
-        description="WRB soil type (e.g. 'Calcisol', 'Luvisol')",
-    ),
-    management: str = Query(
-        default="any",
-        description="Management context: 'organic', 'conventional', or 'any'",
-    ),
-    parcel_id: str | None = Query(
-        default=None,
-        description="Optional AgriParcel URN for real soil AWC data from Soil module",
-    ),
-):
-    """Plan a regenerative cover-crop-to-protein-crop sequence.
-
-    Given a climate zone and target protein crop, returns the best cover crop
-    for roller-crimper termination with expected biomass, nitrogen dynamics,
-    GDD timeline, estimated dates, water balance risk, and protein crop
-    variety ranking from European trial data.
-
-    Uses European agronomic data from INTIA Navarra, JRC MARS Bulletins,
-    and Legumes Translated (H2020).
-
-    Calculation methodology follows FAO-56 (Allen et al. 1998) for water
-    balance, Clark (2007) for cover crop N dynamics, and Peoples et al.
-    (2021) for legume N fixation rates. Full audit trail in response.
-
-    Example:
-      /agriculture/regenerative-sequence?climate_class=Csa&target_protein=VICFX
-      /agriculture/regenerative-sequence?climate_class=Csa&target_protein=VICFX&parcel_id=urn:ngsi-ld:AgriParcel:123
-      /agriculture/regenerative-sequence?climate_class=BSk&target_protein=CIEAR&management=organic
-
-    Management modes:
-      - 'organic': Only organic + low_input params. If variety data is conventional,
-        applies 20% yield reduction estimate (Seufert et al. 2012).
-      - 'conventional': Conventional + integrated params.
-      - 'any': All data sources merged (default).
-    """
-    if management not in ("organic", "conventional", "any"):
-        raise HTTPException(
-            status_code=400,
-            detail=f"Invalid management mode: '{management}'. Use 'organic', 'conventional', or 'any'.",
-        )
-
-    dao = GraphDAO(driver)
-    result = await dao.get_regenerative_sequence(
-        climate_class=climate_class,
-        target_protein=target_protein,
-        soil_type=soil_type,
-        management=management,
-        parcel_id=parcel_id,
-    )
-
-    if "error" in result:
-        raise HTTPException(status_code=404, detail=result["error"])
-
-    # The protein-crop variety ranking (`variety_trials`) comes from the trial sources.
-    return attach_attributions(result, (
-        sid for v in result.get("variety_trials") or [] for sid in v.get("source_ids") or []
-    ))
-
-
 @router.get("/agriculture/parcel-environment")
 async def agriculture_parcel_environment(
     driver: DriverDep,
@@ -1038,86 +668,6 @@ async def agriculture_crop_context(
     if "error" in result:
         raise HTTPException(status_code=404, detail=result["error"])
     return result
-
-
-@router.get("/agriculture/yield-potential")
-async def agriculture_yield_potential(
-    driver: DriverDep,
-    request: Request,
-    variety: str = Query(..., description="Variety name (e.g. 'LG_AURUS')"),
-    crop: str = Query(..., description="EPPO code or species (e.g. 'TRZAX')"),
-    climate_class: str | None = Query(default=None, description="Köppen climate class"),
-    soil_type: str | None = Query(default=None, description="WRB soil type"),
-    parcel_id: str | None = Query(default=None, description="Optional parcel URN for yield gap"),
-    management: Literal["any", "conventional", "organic"] = Query(
-        default="any",
-        description="Production system: organic trials are never pooled with conventional ones.",
-    ),
-):
-    """Compute expected yield and yield gap for a variety."""
-    tenant_id = _require_tenant_id(request) if parcel_id else _get_tenant_id(request)
-    dao = GraphDAO(driver)
-    result = await dao.get_yield_potential(
-        variety=variety,
-        crop=crop,
-        climate_class=climate_class,
-        soil_type=soil_type,
-        parcel_id=parcel_id,
-        tenant_id=tenant_id,
-        management=management,
-    )
-    if "error" in result:
-        raise HTTPException(status_code=404, detail=result["error"])
-    return attach_attributions(result, result.get("source_ids") or [])
-
-
-@router.get("/agriculture/water-budget")
-async def agriculture_water_budget(
-    driver: DriverDep,
-    request: Request,
-    parcel_id: str = Query(..., description="AgriParcel URN"),
-    week_start: str | None = Query(default=None, description="ISO date for week start (default: today)"),
-):
-    """Calculate weekly irrigation requirement for a parcel."""
-    tenant_id = _require_tenant_id(request)
-    dao = GraphDAO(driver)
-    result = await dao.get_water_budget(
-        parcel_id=parcel_id, tenant_id=tenant_id, week_start=week_start,
-    )
-    if "error" in result:
-        raise HTTPException(status_code=404, detail=result["error"])
-    result["agronomic"] = _water_budget_agronomic(result)
-    return result
-
-
-@router.get("/agriculture/yield-projection")
-async def agriculture_yield_projection(
-    driver: DriverDep,
-    request: Request,
-    parcel_id: str = Query(..., description="AgriParcel URN"),
-    initial_yield_kg_ha: float | None = Query(
-        default=None,
-        description="Override initial yield estimate (kg/ha). If omitted, derived from variety trials.",
-    ),
-):
-    """Project current-season yield with FAO-33 water stress correction.
-
-    Combines the initial yield estimate from variety trials (Phase A)
-    with accumulated water stress per growth stage using the FAO-33
-    methodology: Y = Y_potential × Π(1 - Ky × (1 - ETa/ETc)).
-
-    Returns the projected yield, cumulative stress factor, and per-stage
-    breakdown of water stress contributions.
-    """
-    tenant_id = _require_tenant_id(request)
-    dao = GraphDAO(driver)
-    result = await dao.get_yield_projection(
-        parcel_id=parcel_id, tenant_id=tenant_id,
-        initial_yield_kg_ha=initial_yield_kg_ha,
-    )
-    if "error" in result:
-        raise HTTPException(status_code=404, detail=result["error"])
-    return attach_attributions(result, result.get("source_ids") or [])
 
 
 @router.post("/agriculture/crop-simulation")
@@ -1226,123 +776,9 @@ async def agriculture_crop_simulation_job_status(request: Request, job_id: str):
     return SimJobs.view(job)
 
 
-@router.get("/agriculture/compare-crops")
-async def agriculture_compare_crops(
-    driver: DriverDep, request: Request,
-    parcel_id: str = Query(..., description="AgriParcel URN"),
-    crops: str = Query(..., description="Comma-separated EPPO codes (e.g. TRZAX,HORVX)"),
-    seed_price: float = Query(1, description="Seed cost €/ha"),
-    harvest_price: float = Query(1, description="Harvest price €/t"),
-    operation_cost: float = Query(1, description="Cost per field operation €"),
-):
-    """Compare multiple crops on a parcel — agronomic, environmental, economic."""
-    crop_list = [c.strip() for c in crops.split(",") if c.strip()]
-    if not crop_list:
-        raise HTTPException(status_code=400, detail="At least one crop required")
-    dao = GraphDAO(driver)
-    result = await dao.compare_crops(
-        parcel_id=parcel_id, crops=crop_list,
-        seed_price=seed_price, harvest_price=harvest_price, operation_cost=operation_cost,
-        tenant_id=_require_tenant_id(request),
-    )
-    return attach_attributions(result, (
-        sid for entry in result.get("comparisons") or [] for sid in entry.get("source_ids") or []
-    ))
-
-
-@router.get("/agriculture/rotation-plan")
-async def agriculture_rotation_plan(
-    driver: DriverDep, request: Request,
-    parcel_id: str = Query(..., description="AgriParcel URN"),
-    years: int = Query(4, ge=2, le=6, description="Planning horizon in years"),
-    seed_price: float = Query(1, description="Seed cost €/ha"),
-    harvest_price: float = Query(1, description="Harvest price €/t"),
-    operation_cost: float = Query(1, description="Cost per field operation €"),
-    starting_crop: str | None = Query(None, description="EPPO code for year 1 crop"),
-    management: str = Query("any", description="organic | conventional | any"),
-):
-    """Generate multi-year rotation plan with carbon, N, pest, and PAC tracking."""
-    dao = GraphDAO(driver)
-    result = await dao.rotation_plan(
-        parcel_id=parcel_id, years=years,
-        seed_price=seed_price, harvest_price=harvest_price, operation_cost=operation_cost,
-        tenant_id=_require_tenant_id(request),
-        starting_crop=starting_crop,
-        management=management,
-    )
-    if "error" in result:
-        raise HTTPException(status_code=400, detail=result["error"])
-    return attach_attributions(result, (
-        sid for entry in result.get("plan") or [] for sid in entry.get("source_ids") or []
-    ))
-
-
 # ═══════════════════════════════════════════════════════════════════════════════
 # F4: Crop-Health Integration — Endpoints
 # ═══════════════════════════════════════════════════════════════════════════════
-
-
-@router.post("/agriculture/assign-crop")
-async def agriculture_assign_crop(
-    driver: DriverDep,
-    request: Request,
-):
-    """Assign a crop variety to a parcel. Writes to Orion-LD.
-
-    Request body (JSON):
-    {
-      "parcel_id": "urn:ngsi-ld:AgriParcel:parcela-42",
-      "variety_uri": "urn:ngsi-ld:AgriCropVariety:LG_AURUS",
-      "crop_uri": "urn:ngsi-ld:AgriCrop:TRZAX",
-      "management": "organic",
-      "season_start": "2026-10-15",
-      "season_end": "2027-06-30"
-    }
-
-    To clear assignment, send only parcel_id with no other fields.
-    """
-    body = await request.json()
-    parcel_id = body.get("parcel_id")
-
-    if not parcel_id:
-        raise HTTPException(status_code=400, detail="parcel_id is required")
-
-    # Clear assignment if no crop specified
-    if not body.get("crop_uri"):
-        dao = GraphDAO(driver)
-        result = await dao.clear_crop_assignment(
-            parcel_id=parcel_id,
-            tenant_id=_require_tenant_id(request),
-        )
-        return result
-
-    # Validate required fields
-    required = ["variety_uri", "crop_uri", "management", "season_start", "season_end"]
-    missing = [f for f in required if not body.get(f)]
-    if missing:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Missing required fields: {', '.join(missing)}",
-        )
-
-    management = body["management"]
-    if management not in ("organic", "conventional"):
-        raise HTTPException(
-            status_code=400,
-            detail=f"Invalid management: '{management}'. Use 'organic' or 'conventional'.",
-        )
-
-    dao = GraphDAO(driver)
-    result = await dao.assign_crop_to_parcel(
-        parcel_id=parcel_id,
-        crop_uri=body["crop_uri"],
-        variety_uri=body["variety_uri"],
-        management=management,
-        season_start=body["season_start"],
-        season_end=body["season_end"],
-        tenant_id=_require_tenant_id(request),
-    )
-    return result
 
 
 @router.post("/agriculture/crop-plan")
@@ -1390,18 +826,6 @@ async def agriculture_advance_segment(parcel_id: str, seq: int, driver: DriverDe
         parcel_id=parcel_id, season=season, seq=seq, planting_date=planting_date,
         tenant_id=_require_tenant_id(request),
     )
-
-
-@router.get("/agriculture/alerts")
-async def agriculture_alerts(
-    request: Request,
-    driver: DriverDep,
-    parcel_id: str = Query(..., description="AgriParcel URN"),
-):
-    """Return active alerts for a parcel from the crop:events Redis Stream."""
-    dao = GraphDAO(driver)
-    result = await dao.get_alerts(parcel_id=parcel_id)
-    return result
 
 
 @router.get("/agriculture/organic-inputs")

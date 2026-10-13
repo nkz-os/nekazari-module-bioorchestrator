@@ -2,28 +2,22 @@
 
 from __future__ import annotations
 
-import re
 from typing import Annotated, Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 
 from app.api.v1.attribution import (
     attach_attributions,
-    recommendation_source_ids,
     rows_source_ids,
 )
-from app.api.v1.graph import DriverDep, _require_tenant_id
+from app.api.v1.graph import DriverDep
 from app.graph import zone_match
 from app.graph.dao import GraphDAO
 from app.graph.evidence_sites import evidence_sites
-from app.graph.parcel_conditions import CLIMATE_KEYS, conditions_from_environment
 
 router = APIRouter()
 
 _TENANT_PARAMS = ("parcel_id", "tenant_id")
-_CLIMATE_KEYS = CLIMATE_KEYS
-_MAX_CROPS = 4
-_EPPO_RE = re.compile(r"^[A-Z0-9]{2,6}$")
 _EPPO_PATTERN = r"^[A-Za-z0-9]{2,6}$"
 _KOPPEN_PATTERN = r"^[A-Z][A-Za-z]{0,2}$"
 _COUNTRY_PATTERN = r"^[A-Z]{2}$"
@@ -36,39 +30,14 @@ Similarity = Literal["koppen", "vector_v2_fallback"]
 Purpose = Literal["main", "forage"]
 Tier = Literal["field", "regional"]
 
-_MANAGEMENT_DOC = (
-    "management: organic and conventional trials are never pooled. `organic` reads only organic "
-    "trials; `any` and `conventional` leave organic trials out (gap `organic_units_excluded`). "
-    "purpose: `main` (default) ranks each crop's main harvested product (grain, fruit, kernel, "
-    "tuber) and leaves forage records out; `forage` ranks forage records only, in kg dry matter/ha."
-)
-
-
 def _reject_tenant_params(request: Request) -> None:
     """Conditions endpoints are tenant-free; a parcel/tenant selector is a client mistake."""
     for name in _TENANT_PARAMS:
         if name in request.query_params:
             raise HTTPException(
                 status_code=422,
-                detail=f"{name} is not accepted here; use /api/graph/recommend/parcel/{{id}}",
+                detail=f"{name} is not accepted here",
             )
-
-
-def _parse_crops(raw: str | None) -> list[str] | None:
-    if raw is None or not raw.strip():
-        return None
-    out: list[str] = []
-    for part in raw.split(","):
-        code = part.strip().upper()
-        if not code:
-            continue
-        if not _EPPO_RE.match(code):
-            raise HTTPException(status_code=422, detail=f"invalid crop code: {code[:16]}")
-        if code not in out:
-            out.append(code)
-            if len(out) > _MAX_CROPS:
-                raise HTTPException(status_code=422, detail=f"at most {_MAX_CROPS} crops")
-    return out or None
 
 
 class _Conditions:
@@ -111,26 +80,6 @@ class _Conditions:
 
 
 CondDep = Annotated[_Conditions, Depends()]
-
-
-@router.get("/agriculture/recommend", description=_MANAGEMENT_DOC)
-async def recommend_for_conditions(
-    driver: DriverDep,
-    cond: CondDep,
-    crops: str | None = None,
-    top_n: int = Query(10, ge=1, le=30),
-    country: str | None = Query(
-        None, pattern=_COUNTRY_PATTERN,
-        description="ISO 3166 alpha-2; scopes country-specific sowing windows",
-    ),
-):
-    # No parcel point travels in this query string (access logs): without a parcel the answer is country level.
-    conditions = cond.as_dict()
-    conditions["country"] = country
-    conditions["crops"] = _parse_crops(crops)
-    conditions["top_n"] = top_n
-    result = await GraphDAO(driver).recommend_for_conditions(conditions)
-    return attach_attributions(result, recommendation_source_ids(result))
 
 
 @router.get(
@@ -196,52 +145,3 @@ async def recommend_evidence(
     )
     return attach_attributions(evidence, rows_source_ids(evidence.get("items")))
 
-
-@router.get("/recommend/parcel/{parcel_id:path}", description=_MANAGEMENT_DOC)
-async def recommend_for_parcel(
-    request: Request,
-    parcel_id: str,
-    driver: DriverDep,
-    climate_class: str | None = Query(None, pattern=_KOPPEN_PATTERN, max_length=_MAX_TEXT),
-    soil_type: str | None = Query(None, max_length=_MAX_TEXT),
-    irrigation_regime: Irrigation | None = None,
-    management: Management = "any",
-    season: Season = "all",
-    purpose: Purpose = "main",
-    crops: str | None = None,
-    top_n: int = Query(10, ge=1, le=30),
-    frost_margin_c: float | None = Query(None, ge=0, le=15),
-):
-    tenant = _require_tenant_id(request)
-    dao = GraphDAO(driver)
-    env = await dao.get_parcel_environment(parcel_id, tenant)
-    if "error" in env:
-        raise HTTPException(status_code=404, detail=env["error"])
-
-    overrides = {
-        "climate_class": climate_class,
-        "soil_type": soil_type,
-        "irrigation_regime": irrigation_regime,
-    }
-    used = [k for k, v in overrides.items() if v]
-    inputs_used = dict(env.get("inputs_used") or {})
-    inputs_used["user_override"] = used
-    detail = env.get("climate_detail") or {}
-    if climate_class and any(detail.get(k) is not None for k in _CLIMATE_KEYS):
-        # Overridden class but the parcel's own numbers are still sent: show the mix.
-        inputs_used["climate_numbers_from_parcel"] = True
-    env = {**env, "inputs_used": inputs_used}
-
-    resolved_climate = climate_class or env.get("climate_class")
-    if not resolved_climate:
-        return {"status": "needs_climate", "parcel_environment": env}
-
-    conditions = conditions_from_environment(
-        env, climate_class=resolved_climate, soil_type=soil_type,
-        irrigation_regime=irrigation_regime, management=management, season=season, purpose=purpose,
-        crops=_parse_crops(crops), top_n=top_n, frost_margin_c=frost_margin_c,
-    )
-    result = await dao.recommend_for_conditions(conditions)
-    return attach_attributions(
-        {**result, "parcel_environment": env}, recommendation_source_ids(result)
-    )

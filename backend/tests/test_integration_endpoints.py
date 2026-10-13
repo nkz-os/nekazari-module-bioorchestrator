@@ -169,14 +169,6 @@ def test_trial_sites_public(client):
     )
 
 
-def test_extrapolate_public(client):
-    """Extrapolate endpoint must be public."""
-    resp = client.get("/api/graph/agriculture/extrapolate", params={"crop": "TRZAX", "climate_class": "Csa", "top_n": "3"})
-    assert resp.status_code in (200, 422, 500), (
-        f"Expected 200/422/500, got {resp.status_code}"
-    )
-
-
 def test_graph_stats_public(client):
     """Quality-stats endpoint (Task 0.1) must be public and routable."""
     resp = client.get("/api/graph/agriculture/graph-stats")

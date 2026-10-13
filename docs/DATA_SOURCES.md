@@ -205,8 +205,6 @@ into Neo4j via the `init_graph.py` n10s ingestion pipeline.
 | `GET /heat-tolerance` | Tmin, Tmax, Topt per species | CropHeatTolerance |
 | `GET /nutrient-profile` | NPK uptake per stage | CropNutrientProfile |
 | `GET /soil-suitability` | pH, texture, drainage, depth reqs | CropSoilSuitability |
-| `GET /recommendations/next-crop` | Rotation successor recommendation | RotationConstraint |
-| `GET /recommendations/simulate` | What-if crop scenario simulation | RotationConstraint, SoilSuitability, NutrientProfile |
 | `GET /varieties` | Variety list for a species | `AgriCropVariety` — **returns empty**: the label has 0 nodes (see CPVO above) |
 | `GET /pesticides` | Approved/withdrawn pesticides for crop | DG SANTE, EU Pesticides |
 | `GET /pollinators` | Pollinator presence near coordinates | GBIF Pollinators |
