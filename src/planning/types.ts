@@ -1,7 +1,7 @@
-/** Mirror of backend/app/planning/models.py — contract version 2.0. Change both together. */
+/** Mirror of backend/app/planning/models.py — contract version 2.1. Change both together. */
 import type { SourceAttributionItem } from '../types/attribution';
 
-export const CONTRACT_VERSION = '2.0';
+export const CONTRACT_VERSION = '2.1';
 export type Verdict = 'fits' | 'caveats' | 'no_fit';
 /** Owner decision (2026-10-13): one vocabulary everywhere; the words shown are translated. */
 export type Regime = 'rainfed' | 'irrigated';
@@ -57,6 +57,18 @@ export interface AquacropResponse {
   contract_version: string; provider_id: 'aquacrop'; state: AquacropState; done: number; total: number | null;
   estimates: Estimate[]; unavailable: Unavailable[]; job_id: string | null;
   sowing_method?: SowingMethod | null; sowing_method_source?: 'request' | 'field_operations' | 'default' | null;
+}
+export interface SeasonInfo {
+  status: 'in_season' | 'complete'; as_of: string | null; crop: string; regime: Regime;
+  sowing: { date: string; source: 'crop_cycle'; provenance: 'actual' | 'declared' };
+  sowing_method: 'direct' | 'conventional' | null; sowing_method_source: 'request' | 'field_operations' | 'default' | null;
+  harvest_date: string | null; n_years: number; weather_source: string | null;
+  computed_at: string | null; provider_version: string;
+}
+export interface InSeasonResponse {
+  contract_version: string; provider_id: 'aquacrop'; state: 'unavailable' | 'queued' | 'running' | 'done' | 'failed';
+  done: number; total: number | null; estimates: Estimate[]; unavailable: Unavailable[]; job_id: string | null;
+  season: SeasonInfo | null;
 }
 export interface CycleCell {
   crop_id: string | null; species: string | null; species_raw: string | null; names: Names; variety: string | null;

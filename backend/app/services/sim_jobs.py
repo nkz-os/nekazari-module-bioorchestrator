@@ -48,6 +48,7 @@ class Job:
     total: int | None = None  # scenarios, once known
     result: dict | None = None
     error: dict | None = None
+    finished_at: datetime | None = None  # UTC, once done or failed
     task: asyncio.Task | None = field(default=None, repr=False)
 
 
@@ -107,6 +108,8 @@ class SimJobs:
                              "status_code": 500}
                 job.state = "failed"
             finally:
+                if job.state in FINISHED:
+                    job.finished_at = datetime.now(UTC)
                 job.task = None
 
     def get(self, job_id: str, tenant_id: str) -> Job | None:

@@ -155,3 +155,26 @@ def test_version_is_public_and_the_shared_store_is_one(monkeypatch):
     monkeypatch.setattr(sj, "_SHARED", None)
     monkeypatch.setattr(sj, "crop_simulation_version", lambda: "v-shared")
     assert sj.shared_sim_jobs() is sj.shared_sim_jobs() and sj.shared_sim_jobs().version == "v-shared"
+
+
+async def test_a_finished_job_records_when_it_finished():
+    import asyncio
+    from datetime import UTC, date, datetime
+
+    from app.services.sim_jobs import SimJobs
+
+    jobs = SimJobs(version="v")
+    release = asyncio.Event()
+
+    async def run(progress):
+        await release.wait()
+        return {"ok": True}
+
+    job = await jobs.start("t", {"a": 1}, run, date(2026, 10, 13))
+    assert job.finished_at is None
+    before = datetime.now(UTC)
+    release.set()
+    while job.state not in ("done", "failed"):
+        await asyncio.sleep(0)
+    assert job.state == "done"
+    assert before <= job.finished_at <= datetime.now(UTC)

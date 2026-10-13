@@ -97,3 +97,27 @@ def map_result(result: dict, provider_version: str) -> tuple[list[dict], list[di
     else:
         unavailable.append({"provider_id": PROVIDER_ID, "reason": "water_limited_missing"})
     return estimates, unavailable
+
+
+IN_SEASON_SCOPE = "in-season forecast; skill by forecast date not yet measured"
+
+
+def map_in_season(result: dict, provider_version: str) -> tuple[list[dict], list[dict]]:
+    """A finished in-season simulation -> (estimates, unavailable).
+
+    The expected yield is ``experimental`` while the season runs: it was validated on complete
+    seasons, and the skill by forecast date is not measured yet (owner, 2026-10-13). A complete
+    season (observed weather only) keeps the validated status; its single water-limited ceiling
+    is reported as P10 = P50 = P90 and ``n`` is one season.
+    """
+    complete = result.get("status") == "complete"
+    ceiling = result.get("yield_t_ha")
+    if isinstance(ceiling, (int, float)) and not isinstance(ceiling, bool):
+        result = {**result, "yield_t_ha": {"p10": ceiling, "p50": ceiling, "p90": ceiling}}
+    estimates, unavailable = map_result(result, provider_version)
+    for e in estimates:
+        if complete:
+            e["n"] = 1
+        elif e["basis"] == "gap_corrected":
+            e["validation"] = {"status": "experimental", "metric": None, "scope": IN_SEASON_SCOPE}
+    return estimates, unavailable

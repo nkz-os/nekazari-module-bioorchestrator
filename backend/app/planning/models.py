@@ -6,12 +6,12 @@ version). Reason ``code`` values are i18n keys of the UI (``planning.reason.<cod
 """
 from __future__ import annotations
 
-from datetime import date
+from datetime import date, datetime
 from typing import Annotated, Any, Literal
 
 from pydantic import BaseModel, BeforeValidator, Field
 
-CONTRACT_VERSION = "2.0"
+CONTRACT_VERSION = "2.1"
 
 Verdict = Literal["fits", "caveats", "no_fit"]
 # Owner decision (2026-10-13): the regime vocabulary is rainfed | irrigated. The Spanish words that
@@ -186,6 +186,41 @@ class AquacropResponse(BaseModel):
     # How the crop was sown in this simulation and where that came from (set once done).
     sowing_method: SowingMethod | None = None
     sowing_method_source: Literal["request", "field_operations", "default"] | None = None
+
+
+class SeasonSowing(BaseModel):
+    date: date
+    source: Literal["crop_cycle"]
+    provenance: Literal["actual", "declared"]
+
+
+class SeasonInfo(BaseModel):
+    """The season behind an in-season forecast (2.1)."""
+    status: Literal["in_season", "complete"]
+    as_of: date | None  # last day of observed weather
+    crop: str  # EPPO
+    regime: Regime
+    sowing: SeasonSowing
+    sowing_method: SowingMethod | None = None
+    sowing_method_source: Literal["request", "field_operations", "default"] | None = None
+    harvest_date: date | None = None  # median member in season; the simulated one when complete
+    n_years: int = 0  # analog years; 0 when complete
+    weather_source: str | None = None
+    computed_at: datetime | None = None  # when the job finished (UTC)
+    provider_version: str
+
+
+class InSeasonResponse(BaseModel):
+    """In-season AquaCrop forecast (2.1): the job states of AquacropResponse, plus the season."""
+    contract_version: str = CONTRACT_VERSION
+    provider_id: Literal["aquacrop"] = "aquacrop"
+    state: Literal["unavailable", "queued", "running", "done", "failed"]
+    done: int = 0
+    total: int | None = None
+    estimates: list[Estimate] = Field(default_factory=list)
+    unavailable: list[Unavailable] = Field(default_factory=list)
+    job_id: str | None = None
+    season: SeasonInfo | None = None
 
 
 class CycleCell(BaseModel):
