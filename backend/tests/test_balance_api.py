@@ -236,3 +236,32 @@ def test_warm_nuts_reference_logs_error_and_does_not_raise(caplog):
             caplog.at_level("ERROR"):
         balance.warm_nuts_reference()
     assert any("boom" in r.getMessage() for r in caplog.records)
+
+
+def test_nuts_region_of_a_point(client):
+    body = client.get("/api/graph/agriculture/nuts-region?lat=42.8125&lon=-1.6458").json()
+    assert body == {"lat": 42.8125, "lon": -1.6458, "country": "ES", "nuts": "ES22",
+                    "name": "Comunidad Foral de Navarra", "nuts_version": 2024,
+                    "method": "natural_earth_province"}
+    assert client.get("/api/graph/agriculture/nuts-region?lat=43.263&lon=-2.935"
+                      ).json()["nuts"] == "ES21"
+
+
+def test_nuts_region_of_a_point_outside_spain(client):
+    resp = client.get("/api/graph/agriculture/nuts-region?lat=48.85&lon=2.35")
+    assert resp.status_code == 404
+    assert resp.json() == {"detail": "No NUTS 2 region for this point"}
+
+
+def test_nuts_region_needs_exactly_one_locator(client):
+    base = "/api/graph/agriculture/nuts-region"
+    assert client.get(f"{base}?municipality=01059&lat=42.8&lon=-1.6").status_code == 422
+    assert client.get(base).status_code == 422
+    assert client.get(f"{base}?lat=42.8").status_code == 422
+    assert client.get(f"{base}?lon=-1.6").status_code == 422
+
+
+def test_nuts_region_point_out_of_range(client):
+    base = "/api/graph/agriculture/nuts-region"
+    assert client.get(f"{base}?lat=95&lon=0").status_code == 422
+    assert client.get(f"{base}?lat=0&lon=181").status_code == 422
