@@ -397,7 +397,7 @@ def previous_crop(cycles: dict | None, campaign: int, *, maturity_for) -> Previo
 
 
 async def parcel_calendar(*, dao, parcel_id: str, tenant_id: str, campaign: int, crop: str,
-                          cover: str | None, main_sowing: date | None) -> dict:
+                          cover: str | None, main_sowing: date | None, regime: str | None = None) -> dict:
     """Fortnights for a plan: the main sowing window and a cover coherent with it (spec W6)."""
     eppo = crop_code(crop)
     slug = resolve_species(crop)
@@ -405,7 +405,8 @@ async def parcel_calendar(*, dao, parcel_id: str, tenant_id: str, campaign: int,
     fns = campaign_fortnights(campaign)
     if main_sowing is not None and not (fns[0].start <= main_sowing <= fns[-1].end):
         raise CalendarInputError("main_sowing_outside_campaign")
-    regime, _ = resolve_regime(None, env)
+    # The plan's regime (the wizard header) first, else the parcel's; never a guess.
+    regime, _ = resolve_regime(regime, env)
     rows = load_rows()
     centroid = env.get("centroid") or {}
 

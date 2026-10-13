@@ -157,13 +157,14 @@ async def estimates_in_season(request: Request, parcel_id: str, sources: Sources
 async def calendar(request: Request, parcel_id: str, sources: SourcesDep, campaign: int = CampaignQ,
                    crop: str = Query(..., min_length=2, max_length=64),
                    cover: str | None = Query(None, min_length=2, max_length=64),
-                   main_sowing: date | None = None):
+                   main_sowing: date | None = None, regime: Regime | None = None):
     """Fortnights for a plan: the main sowing window and a cover coherent with it (spec W6)."""
     tenant = _require_tenant_id(request)
     parcel_id = _checked_parcel_urn(parcel_id)
     try:
         return await parcel_calendar(dao=GraphDAO(sources[0].driver), parcel_id=parcel_id, tenant_id=tenant,
-                                     campaign=campaign, crop=crop, cover=cover, main_sowing=main_sowing)
+                                     campaign=campaign, crop=crop, cover=cover, main_sowing=main_sowing,
+                                     regime=regime)
     except UnknownCrop as e:
         raise HTTPException(status_code=422, detail=str(e)) from e
     except CalendarInputError as e:
