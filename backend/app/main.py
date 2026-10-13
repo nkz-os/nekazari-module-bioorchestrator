@@ -357,11 +357,15 @@ from app.api.v1.catalog import router as catalog_router
 from app.api.v1.notify import router as notify_router
 from app.api.v1.parcel_data import router as parcel_data_router
 from app.api.v1.phenology_notify import router as phenology_notify_router
+from app.services.tenant_subscriptions import lifecycle_router
 
 app.include_router(catalog_router, prefix="/api/crop")
 app.include_router(notify_router, prefix="/api/ngsi-ld")
 app.include_router(parcel_data_router, prefix="/api")
 app.include_router(phenology_notify_router, prefix="/api/graph/internal")
+# Module enabled or disabled in a tenant: reconcile its subscriptions now (path under /api/graph/internal/,
+# exempt from user auth; the SDK verifies the notification token).
+app.include_router(lifecycle_router())
 
 # Register IkerKeta API routes directly on the main app
 # (don't use app.mount() — it double-prefixes and / mount kills healthz)
