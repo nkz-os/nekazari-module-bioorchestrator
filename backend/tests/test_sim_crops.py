@@ -1,4 +1,4 @@
-"""Species slug -> AquaCrop built-in crop mapping."""
+"""Species slug -> AquaCrop crop (built-in or sourced cultivar) mapping."""
 from __future__ import annotations
 
 import pytest
@@ -10,7 +10,7 @@ from app.services.sim_errors import SimulationError
 
 def test_table_matches_spec_and_names_exist_in_aquacrop():
     assert AQUACROP_CROPS == {
-        "wheat": "WheatGDD", "durum_wheat": "WheatGDD", "barley": "BarleyGDD",
+        "wheat": "WheatGDD", "durum_wheat": "WheatGDD", "barley": "BarleyPonente",
         "maize": "MaizeGDD", "rice": "PaddyRiceGDD", "soybean": "SoybeanGDD",
         "sunflower": "SunflowerGDD", "sugar_beet": "SugarBeetGDD", "potato": "PotatoGDD",
         "tomato": "TomatoGDD", "bean": "DryBeanGDD",
@@ -21,7 +21,7 @@ def test_table_matches_spec_and_names_exist_in_aquacrop():
 @pytest.mark.parametrize("ident,slug,crop", [
     ("wheat", "wheat", "WheatGDD"),
     ("TRZAX", "wheat", "WheatGDD"),
-    ("HORVX", "barley", "BarleyGDD"),
+    ("HORVX", "barley", "BarleyPonente"),
     ("Zea mays", "maize", "MaizeGDD"),
 ])
 def test_resolves_via_species_registry(ident, slug, crop):

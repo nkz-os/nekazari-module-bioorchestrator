@@ -70,5 +70,8 @@ RULES: dict[str, SowingRule] = {
 
 
 def rule_for(crop: str) -> SowingRule:
-    """The sowing rule of an AquaCrop crop; KeyError when it has none."""
-    return RULES[crop]
+    """The sowing rule of an AquaCrop crop (a sourced cultivar: its base crop's); KeyError
+    when it has none."""
+    from .engines.aquacrop_engine import CULTIVARS
+
+    return RULES[CULTIVARS[crop]["base"] if crop in CULTIVARS else crop]

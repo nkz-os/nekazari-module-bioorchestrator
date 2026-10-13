@@ -123,3 +123,7 @@ def test_forced_sowing_on_29_february_moves_to_the_28th():
     days = series(start - timedelta(days=10), 80, lambda i: 12.0)
     dec = decide_sowing(days, start, date(2020, 2, 29), WHEAT)
     assert dec.how == "forced" and dec.sowing_date == date(2020, 2, 28)
+
+
+def test_a_sourced_cultivar_sows_by_its_base_crop_rule():
+    assert rule_for("BarleyPonente") is rule_for("BarleyGDD")

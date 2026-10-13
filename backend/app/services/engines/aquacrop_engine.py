@@ -5,7 +5,8 @@ Design rules
 * Every input is validated up front; anything missing or invalid raises
   ``EngineInputError`` (never filled with a default). AquaCrop itself swallows
   several bad inputs silently (gaps, NaN ET0, empty results), hence the checks.
-* Only AquaCrop built-in crops and parameters are used (``supported_crops()``).
+* Only AquaCrop built-in crops and parameters are used, plus the sourced cultivars of
+  ``CULTIVARS`` (a built-in crop with one published cultivar's values; ``supported_crops()``).
 * Soil is built as an AquaCrop ``custom`` soil from the supplied layers. The
   curve number (61) and readily evaporable water (9 mm) are AquaCrop's own
   ``custom`` defaults: ASSUMPTION: library defaults until the owner fixes a
@@ -71,6 +72,27 @@ PHENOLOGY_PARAMS = ("Senescence", "Maturity", "HIstart", "Flowering", "YldForm")
 # Soil evaporation reduction of organic mulches (unincorporated plant residues, straw): "about
 # 50 %" (FAO AquaCrop Reference Manual, ch. 2, 2009, 2.12.2); applied in season and fallow (2.16.1).
 MULCH_F_ORGANIC = 0.5
+# Sourced cultivars: a built-in crop plus one published cultivar's own values. Degree days
+# count from sowing (AquaCrop-OSPy), i.e. the source's times from emergence plus Emergence.
+CULTIVARS: dict[str, dict] = {
+    "BarleyPonente": {
+        "base": "BarleyGDD",  # = cultivar Birguda of the same source, whose table 6 it shares
+        "source": ("Abrha B. et al., Experimental Agriculture 48(2) (2012) 252-271, tables 5-6: "
+                   "winter barley Ponente, Bari (Italy), sown 24 Nov - 7 Dec, Tbase 2 / Tupper 28 C"),
+        "params": {
+            "Tbase": 2.0, "Tupp": 28.0,
+            "Emergence": 226.0,  # 100 (2006) and 226 (2007, 2008): median of the three seasons
+            "HIstart": 1166.0, "Flowering": 180.0, "Senescence": 1289.0, "Maturity": 1746.0,
+            # ASSUMPTION: "between maximum canopy and senescence" (source); placed as Birguda's
+            # BarleyGDD value, (756 - 680) / (826 - 680) of the way: 226 + 893 + 0.521 * 170.
+            "MaxRooting": 1208.0,
+            # ASSUMPTION: not in the source; Birguda's ratio 351 / (1198 - 769) on 1520 - 940.
+            "YldForm": 475.0,
+            "CCx": 0.95, "CGC": 0.0087, "CDC": 0.006, "HI0": 0.44,
+            "PlantPop": 2_000_000.0,  # CC0 3 % = PlantPop x SeedSize (1.5 cm2)
+        },
+    },
+}
 
 
 class EngineInputError(ValueError):
@@ -108,10 +130,10 @@ class SoilLayer:
 
 
 def supported_crops() -> list[str]:
-    """AquaCrop built-in crop names (templates excluded)."""
+    """AquaCrop built-in crop names (templates excluded) and the sourced ``CULTIVARS``."""
     from aquacrop.entities.crops.crop_params import crop_params
 
-    return sorted(k for k in crop_params if k not in _NON_CROPS)
+    return sorted([k for k in crop_params if k not in _NON_CROPS] + list(CULTIVARS))
 
 
 # ------------------------------------------------------------- validation
@@ -187,12 +209,24 @@ def _validate_soil(soil: list[SoilLayer]) -> None:
 
 
 def crop_defaults(crop: str) -> dict:
-    """Built-in AquaCrop parameters of ``crop`` (a copy)."""
+    """AquaCrop parameters of ``crop`` (a copy): built-in, or a cultivar over its base."""
     from aquacrop.entities.crops.crop_params import crop_params
 
+    if crop in CULTIVARS:
+        return {**crop_params[CULTIVARS[crop]["base"]], **CULTIVARS[crop]["params"]}
     if crop in _NON_CROPS or crop not in crop_params:
         raise UnsupportedCropError(f"crop {crop!r} is not an AquaCrop built-in")
     return dict(crop_params[crop])
+
+
+def _aquacrop_crop(crop: str, planting_date: date, params: dict):
+    """AquaCrop ``Crop``: a cultivar is its base crop with the cultivar values, then ``params``."""
+    from aquacrop import Crop
+
+    cultivar = CULTIVARS.get(crop)
+    name = cultivar["base"] if cultivar else crop
+    values = {**(cultivar["params"] if cultivar else {}), **params}
+    return Crop(name, planting_date=planting_date.strftime("%m/%d"), **values)
 
 
 def _validate_crop_params(crop: str, crop_params) -> dict[str, float]:
@@ -370,7 +404,6 @@ def run_aquacrop(
     import pandas as pd
     from aquacrop import (
         AquaCropModel,
-        Crop,
         FieldMngt,
         InitialWaterContent,
         IrrigationManagement,
@@ -393,7 +426,7 @@ def run_aquacrop(
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
         soil_model = _build_soil(soil)
-        crop_model = Crop(crop, planting_date=planting_date.strftime("%m/%d"), **params)
+        crop_model = _aquacrop_crop(crop, planting_date, params)
         data_depth = round(sum(l.thickness_m for l in soil), 2)
         depth = _aquacrop_soil_depth(soil_model, crop_model.Zmax)
         if depth is None:
