@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { buildQuery, fetchAquacrop, fetchEstimates, fetchFit, PlanningApiError, putPlan } from './api';
+import { buildQuery, fetchAquacrop, fetchCalendar, fetchEstimates, fetchFit, PlanningApiError, putPlan, saveParcelRegime } from './api';
 
 afterEach(() => vi.unstubAllGlobals());
 
@@ -75,5 +75,25 @@ describe('planning api client', () => {
     const err = new PlanningApiError(500, null);
     expect(err.name).toBe('PlanningApiError');
     expect(err).toBeInstanceOf(PlanningApiError);
+  });
+  it('asks the calendar for campaign, crop, cover and a moved main sowing', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, status: 200, json: async () => ({ contract_version: '2.2' }) });
+    vi.stubGlobal('fetch', fetchMock);
+    await fetchCalendar('p1', { campaign: 2027, crop: 'wheat', cover: 'vetch', mainSowing: '2026-11-01' });
+    expect(String(fetchMock.mock.calls[0][0]))
+      .toContain('/api/graph/planning/parcels/p1/calendar?campaign=2027&crop=wheat&cover=vetch&main_sowing=2026-11-01');
+  });
+  it('saves the parcel regime through entity-manager as an NGSI-LD attribute (W10)', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, status: 200, json: async () => ({}) });
+    vi.stubGlobal('fetch', fetchMock);
+    await saveParcelRegime('urn:ngsi-ld:AgriParcel:t:p1', 'rainfed');
+    const [url, init] = fetchMock.mock.calls[0];
+    expect(String(url)).toContain('/api/entities/parcels/urn%3Angsi-ld%3AAgriParcel%3At%3Ap1');
+    expect(init.method).toBe('PATCH');
+    expect(JSON.parse(init.body)).toEqual({ attributes: { irrigationRegime: { type: 'Property', value: 'rainfed' } } });
+  });
+  it('a failed regime save rejects (the caller decides what to show)', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false, status: 503, json: async () => ({}) }));
+    await expect(saveParcelRegime('p1', 'rainfed')).rejects.toMatchObject({ status: 503 });
   });
 });
