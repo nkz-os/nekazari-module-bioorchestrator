@@ -2,9 +2,9 @@ import React from 'react';
 import { useTranslation } from '@nekazari/sdk';
 import { Button, FormField, Inline, Input, Select, Stack } from '@nekazari/ui-kit';
 import FortnightStrip from '../FortnightStrip';
-import { formatRange, type Fortnight } from '../fortnight';
+import { formatRange, weeksBetween, type Fortnight } from '../fortnight';
 import { cropName } from '../format';
-import { COVER_METHODS, NONE, isOtherCover } from '../planModel';
+import { COVER_METHODS, NONE, SHORT_COVER_WEEKS, isOtherCover } from '../planModel';
 import type { CalendarResponse, SpeciesFit, TerminationMethod } from '../types';
 
 const OTHER = '__other__';
@@ -24,6 +24,9 @@ export default function StepCover({ cal, on, species, sowing, method, other: cho
   const listed = coverOptions.map((s) => s.species);
   const other = isOtherCover(species, listed, chosenOther);
   const methodLabel = t(`planning.plan.methods.${method}`);
+  // The cover's time runs from the sowing the farmer chose, not the proposed one (W7).
+  const weeks = sowing && cover?.ends ? weeksBetween(sowing.start, cover.ends) : (cover?.weeks ?? null);
+  const short = weeks !== null && weeks < SHORT_COVER_WEEKS;
   return (
     <Stack gap="stack">
       <h3 className="text-nkz-lg font-semibold text-nkz-text-primary">{t('planning.wizard.cover.title')}</h3>
@@ -53,9 +56,9 @@ export default function StepCover({ cal, on, species, sowing, method, other: cho
             recommended={cover.options} />
           {sowing && cover.ends && (
             <p className="text-nkz-sm text-nkz-text-primary">{t('planning.wizard.cover.grows', {
-              range: formatRange({ start: sowing.start, end: cover.ends }, lang), weeks: cover.weeks ?? 0 })}</p>
+              range: formatRange({ start: sowing.start, end: cover.ends }, lang), weeks: weeks ?? 0 })}</p>
           )}
-          {cover.short && <p className="text-nkz-sm text-nkz-warning">{t('planning.wizard.cover.short', { weeks: cover.weeks ?? 0 })}</p>}
+          {short && <p className="text-nkz-sm text-nkz-warning">{t('planning.wizard.cover.short', { weeks })}</p>}
           <p className="text-nkz-xs text-nkz-text-muted">{t('planning.wizard.cover.ends', { method: methodLabel })}</p>
         </Stack>
       )}

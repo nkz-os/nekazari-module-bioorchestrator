@@ -1,6 +1,6 @@
-import { fortnightOf, type Fortnight } from './fortnight';
+import { fortnightOf, sameFortnight, type Fortnight } from './fortnight';
 import { DEFAULT_PERENNIAL_YEARS, MAX_PERENNIAL_YEARS, RAW_SPECIES_NAME } from './planModel';
-import type { CycleCell, Management, PlanCycleIn, PlanIn, Regime, TerminationMethod } from './types';
+import type { CalendarResponse, CycleCell, Management, ParcelRow, PlanCycleIn, PlanIn, Regime, TerminationMethod } from './types';
 
 /** The wizard's steps, in order (W5). `variety` only exists for a crop with variety trials. */
 export type WizardStep = 'crop' | 'variety' | 'sowing' | 'cover' | 'summary';
@@ -108,4 +108,36 @@ export async function savePlan(put: () => Promise<unknown>, saveRegime: (() => P
   } catch {
     return 'regime_not_saved';
   }
+}
+
+/**
+ * The main sowing sent to the calendar. The sowing step does not need it (the window and its options do
+ * not depend on it), so moving the sowing never reloads that strip; from the cover step on it is sent
+ * when it differs from the proposed one, because the cover ends at it.
+ */
+export function calendarMainParam(s: WizardState, proposed: Fortnight | null): string | null {
+  if (s.step !== 'cover' && s.step !== 'summary') return null;
+  return s.sowing && !sameFortnight(s.sowing, proposed) ? s.sowing.start : null;
+}
+
+/**
+ * What a calendar answer proposes: the main sowing when none is chosen; and, only when the answer was
+ * computed for the chosen main sowing, the cover (off when it does not fit, the default when the chosen
+ * cover sowing no longer fits).
+ */
+export function applyCalendar(s: WizardState, cal: Pick<CalendarResponse, 'main' | 'cover'>): WizardState {
+  let n = s.sowing === null && cal.main.selected ? { ...s, sowing: cal.main.selected } : s;
+  const cover = cal.cover;
+  if (!cover || !sameFortnight(cal.main.selected, n.sowing)) return n;
+  if (!cover.fits) return n.coverOn || n.coverSowing ? { ...n, coverOn: false, coverSowing: null } : n;
+  if (!cover.options.some((o) => sameFortnight(o, n.coverSowing))) n = { ...n, coverSowing: cover.default };
+  return n;
+}
+
+/**
+ * W10: the regime to remember on the parcel, or null. Only when the parcel has none of its own: a regime
+ * read from the campaign's crop is not the parcel's.
+ */
+export function regimeToSave(row: Pick<ParcelRow, 'regime' | 'regime_source'>, regime: Regime): Regime | null {
+  return row.regime_source?.startsWith('parcel:') ? null : regime;
 }

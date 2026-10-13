@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { back, canAdvance, initialState, next, pickCrop, prefillFromCells, savePlan, setSowing, stepsOf, toPlanIn } from './wizardModel';
+import {
+  applyCalendar, back, calendarMainParam, canAdvance, initialState, next, pickCrop, prefillFromCells, regimeToSave, savePlan, setSowing,
+  stepsOf, toPlanIn,
+} from './wizardModel';
 import { vi } from 'vitest';
 import type { CycleCell } from './types';
 
@@ -102,5 +105,42 @@ describe('savePlan (W10)', () => {
   });
   it('a parcel that already has a regime writes only the plan', async () => {
     expect(await savePlan(async () => {}, null)).toBe('saved');
+  });
+});
+
+describe('calendar wiring', () => {
+  const NOV1 = { start: '2026-11-01', end: '2026-11-15' };
+  const SEP1 = { start: '2026-09-01', end: '2026-09-15' };
+  const cal = (selected: typeof OCT2, cover: { fits: boolean; default: typeof AUG1 | null; options: typeof AUG1[] }) =>
+    ({ main: { selected, default: OCT2 }, cover: { ...cover, ends: selected.start, weeks: 8, short: false } }) as never;
+  it('a moved main sowing is only sent from the cover step on: moving it on the strip never reloads the strip', () => {
+    const s = { ...pickCrop(initialState(), 'wheat', false, false, null), sowing: NOV1 };
+    expect(calendarMainParam({ ...s, step: 'sowing' }, OCT2)).toBeNull();
+    expect(calendarMainParam({ ...s, step: 'cover' }, OCT2)).toBe('2026-11-01');
+    expect(calendarMainParam({ ...s, step: 'cover', sowing: OCT2 }, OCT2)).toBeNull();
+  });
+  it('the first answer proposes the main sowing when none is chosen', () => {
+    const s = pickCrop(initialState(), 'wheat', false, false, null);
+    expect(applyCalendar(s, cal(OCT2, { fits: true, default: AUG1, options: [AUG1] })).sowing).toEqual(OCT2);
+  });
+  it('an answer for another main sowing never touches the cover (a pre-filled cover is not dropped)', () => {
+    const s = { ...pickCrop(initialState(), 'wheat', false, false, null), sowing: NOV1, coverOn: true, coverSpecies: 'vetch', coverSowing: SEP1 };
+    expect(applyCalendar(s, cal(OCT2, { fits: false, default: null, options: [] }))).toBe(s);
+  });
+  it('for the chosen main sowing: no room turns the cover off; a cover sowing that no longer fits falls back to the default', () => {
+    const s = { ...pickCrop(initialState(), 'wheat', false, false, null), sowing: OCT2, coverOn: true, coverSpecies: 'vetch', coverSowing: SEP1 };
+    expect(applyCalendar(s, cal(OCT2, { fits: false, default: null, options: [] }))).toMatchObject({ coverOn: false, coverSowing: null });
+    expect(applyCalendar(s, cal(OCT2, { fits: true, default: AUG1, options: [AUG1] })).coverSowing).toEqual(AUG1);
+    expect(applyCalendar(s, cal(OCT2, { fits: true, default: AUG1, options: [AUG1, SEP1] })).coverSowing).toEqual(SEP1);
+  });
+});
+
+describe('regimeToSave (W10)', () => {
+  it('writes the regime on the parcel unless the parcel already has its own', () => {
+    expect(regimeToSave({ regime: null, regime_source: 'unknown' }, 'rainfed')).toBe('rainfed');
+    // A regime read from the campaign's crop is not the parcel's: the parcel still lacks it.
+    expect(regimeToSave({ regime: 'irrigated', regime_source: 'crop' }, 'irrigated')).toBe('irrigated');
+    expect(regimeToSave({ regime: 'rainfed', regime_source: 'parcel:irrigationRegime' }, 'rainfed')).toBeNull();
+    expect(regimeToSave({ regime: 'irrigated', regime_source: 'parcel:irrigationSystemType' }, 'irrigated')).toBeNull();
   });
 });

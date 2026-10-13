@@ -8,7 +8,7 @@ import { loadErrorKey } from '../errors';
 import { aquacropPending, mergeAquacrop, yieldSummary } from '../estimatesModel';
 import EstimatesTable from '../EstimatesTable';
 import { cropName } from '../format';
-import { campaignFortnights, formatRange, middleDay, sameFortnight, type Fortnight } from '../fortnight';
+import { campaignFortnights, formatRange, middleDay, type Fortnight } from '../fortnight';
 import LoadingLine from '../LoadingLine';
 import { DEFAULT_PERENNIAL_YEARS } from '../planModel';
 import Step from '../Step';
@@ -18,7 +18,8 @@ import {
 import { useAquacropEstimate } from '../useAquacropEstimate';
 import { useLoad, type LoadView } from '../useLoad';
 import {
-  back, canAdvance, initialState, next, pickCrop, prefillFromCells, savePlan, setSowing, stepsOf, toPlanIn, type WizardState,
+  applyCalendar, back, calendarMainParam, canAdvance, initialState, next, pickCrop, prefillFromCells, regimeToSave, savePlan, setSowing,
+  stepsOf, toPlanIn, type WizardState,
 } from '../wizardModel';
 import StepCover from './StepCover';
 import StepCrop from './StepCrop';
@@ -66,7 +67,7 @@ export default function PlanWizard({ row, campaign, regime, management, onSaved,
 
   const varieties = useLoad((sig) => fetchVarieties(row.parcel_id, s.crop ?? '', regime, management, sig),
     [row.parcel_id, s.crop, regime, management], Boolean(s.crop && s.hasTrials));
-  const mainParam = s.sowing && !sameFortnight(s.sowing, proposedMain) ? s.sowing.start : null;
+  const mainParam = calendarMainParam(s, proposedMain);
   const cal = useLoad((sig) => fetchCalendar(row.parcel_id, { campaign, crop: s.crop ?? '', cover: ANY_COVER, mainSowing: mainParam }, sig),
     [row.parcel_id, campaign, s.crop, mainParam], Boolean(s.crop));
   const calendar = cal.data ?? (cal.error != null ? fallbackCalendar(row.parcel_id, campaign) : null);
@@ -97,13 +98,7 @@ export default function PlanWizard({ row, campaign, regime, management, onSaved,
   useEffect(() => {
     if (!calData) return;
     setProposedMain(calData.main.default);
-    setS((x) => {
-      let n = x.sowing === null && calData.main.selected ? { ...x, sowing: calData.main.selected } : x;
-      const cover = calData.cover;
-      if (cover && !cover.fits && (n.coverOn || n.coverSowing)) n = { ...n, coverOn: false, coverSowing: null };
-      if (cover && cover.fits && !cover.options.some((o) => sameFortnight(o, n.coverSowing))) n = { ...n, coverSowing: cover.default };
-      return n;
-    });
+    setS((x) => applyCalendar(x, calData));
   }, [calData]);
 
   const steps = stepsOf(s);
@@ -114,6 +109,7 @@ export default function PlanWizard({ row, campaign, regime, management, onSaved,
   };
 
   const pick = (sp: SpeciesFit) => {
+    if (sp.species === s.crop) return; // choosing the crop already chosen keeps everything
     setS((x) => pickCrop(x, sp.species, sp.has_variety_trials, sp.lifecycle === 'perennial', DEFAULT_PERENNIAL_YEARS));
     setProposedMain(null);
     setDirectSowing(false);
@@ -123,9 +119,10 @@ export default function PlanWizard({ row, campaign, regime, management, onSaved,
     setSaving(true);
     setError(null);
     try {
-      // W10: a regime chosen here for a parcel that had none is remembered on the parcel.
+      // W10: the regime of the plan is remembered on a parcel that has none of its own.
+      const toParcel = regimeToSave(row, regime);
       const outcome = await savePlan(() => putPlan(row.parcel_id, toPlanIn(s, campaign, regime, management)),
-        row.regime === null ? () => saveParcelRegime(row.parcel_id, regime) : null);
+        toParcel ? () => saveParcelRegime(row.parcel_id, toParcel) : null);
       if (outcome === 'regime_not_saved') {
         console.warn('planning: plan saved, parcel regime not saved', { parcel: row.parcel_id, campaign, regime });
         setRegimeNotice(true);

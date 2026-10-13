@@ -25,7 +25,7 @@ describe('StepCover (es)', () => {
   it('a short cover is warned about, not refused', () => {
     const cal = { ...base, cover: { fits: true, default: F('2026-08-16', '2026-08-31'), options: [F('2026-08-16', '2026-08-31')],
       ends: '2026-10-01', weeks: 6, short: true } } as unknown as CalendarResponse;
-    expect(renderToStaticMarkup(<StepCover cal={cal} on {...props} />)).toContain('Poco tiempo para una cubierta');
+    expect(renderToStaticMarkup(<StepCover cal={cal} on {...props} sowing={F('2026-08-16', '2026-08-31')} />)).toContain('Poco tiempo para una cubierta');
   });
   it('no room: says so and offers no Sí', () => {
     const cal = { ...base, cover: { fits: false, default: null, options: [], ends: '2026-10-16', weeks: null, short: false } } as unknown as CalendarResponse;
@@ -47,5 +47,12 @@ describe('StepCover (es)', () => {
     expect(html).toContain('Nombre de la especie');
     expect(renderToStaticMarkup(<StepCover cal={cal} on {...props} species="" />))
       .not.toContain('Nombre de la especie');
+  });
+  it('weeks and the short warning follow the cover sowing the farmer chose, not the default', () => {
+    const cal = { ...base, cover: { fits: true, default: F('2026-08-01', '2026-08-15'),
+      options: [F('2026-08-01', '2026-08-15'), F('2026-09-16', '2026-09-30')], ends: '2026-10-16', weeks: 10, short: false } } as unknown as CalendarResponse;
+    const html = renderToStaticMarkup(<StepCover cal={cal} on {...props} sowing={F('2026-09-16', '2026-09-30')} />);
+    expect(html).toContain('unas 4 semanas');
+    expect(html).toContain('Poco tiempo para una cubierta');
   });
 });

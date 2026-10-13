@@ -19,7 +19,7 @@ describe('WizardSummary (es)', () => {
   it('a failed regime save is a non-blocking notice', () => {
     const html = renderToStaticMarkup(<WizardSummary lines={[]} yieldLine={null} detail={null} replacing={false} saving={false}
       error={null} regimeNotice onSave={() => {}} />);
-    expect(html).toContain('no se pudo recordar secano/regadío');
+    expect(html).toContain('no se pudo guardar secano/regadío en la parcela');
   });
   it('after a regime notice the plan is already saved: Continuar replaces Guardar', () => {
     const html = renderToStaticMarkup(<WizardSummary lines={[]} yieldLine={null} detail={null} replacing={false} saving={false}

@@ -11,6 +11,8 @@ export const AUTUMN_FROM_MONTH = 8;
 // Owner decision: a cover crop ends by rolling or by mowing.
 export const COVER_METHODS: TerminationMethod[] = ['roller_crimper', 'mowing'];
 
+/** Owner decision (W7): a cover with less time than this is warned about, and allowed. Same as the backend calendar. */
+export const SHORT_COVER_WEEKS = 8;
 /** Same cap as the backend (plan_write.MAX_PERENNIAL_YEARS). */
 export const MAX_PERENNIAL_YEARS = 10;
 /** ASSUMPTION: the usual stand of an alfalfa field; only a starting value, the user edits it. */
