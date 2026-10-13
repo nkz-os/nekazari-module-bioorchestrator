@@ -9,6 +9,9 @@ answer it touches nothing. Done at startup and every hour.
 One subscription today: crop-health's ``CropHealthAssessment.phenologyStage`` → phenology-update,
 which drives the action rules. Only the legacy assign-crop flow used to create it. The catalog
 subscription (AgriCrop in the shared tenant) is a separate registrar and is not touched here.
+
+entity-manager also posts a hint when the module is enabled or disabled in a tenant, so the
+subscription follows at once instead of at the next hourly pass.
 """
 from __future__ import annotations
 
@@ -16,6 +19,8 @@ import asyncio
 import logging
 import os
 
+from fastapi import APIRouter
+from nkz_platform_sdk.lifecycle import lifecycle_hint_router
 from nkz_platform_sdk.notify_auth import derived_tokens_from_env
 from nkz_platform_sdk.subscriptions import SubscriptionDef, SubscriptionRegistrar
 
@@ -52,9 +57,31 @@ def build_registrar() -> SubscriptionRegistrar | None:
     )
 
 
+LIFECYCLE_PATH = "/api/graph/internal/lifecycle"
+_REGISTRAR: SubscriptionRegistrar | None = None
+
+
+def get_registrar() -> SubscriptionRegistrar | None:
+    """One registrar per process: the startup pass, the hourly heal and the hints share its lock."""
+    global _REGISTRAR
+    if _REGISTRAR is None:
+        _REGISTRAR = build_registrar()
+    return _REGISTRAR
+
+
+async def _reconcile_on_hint() -> object:
+    registrar = get_registrar()
+    return await registrar.reconcile_installations(MODULE_ID) if registrar is not None else None
+
+
+def lifecycle_router() -> APIRouter:
+    """Receiver of entity-manager's module.enabled / module.disabled hint (the SDK checks its token)."""
+    return lifecycle_hint_router(LIFECYCLE_PATH, _reconcile_on_hint)
+
+
 async def run_reconciler() -> None:
     """Reconcile now, then every hour. Never raises (cancellation at shutdown still propagates)."""
-    registrar = build_registrar()
+    registrar = get_registrar()
     if registrar is None:
         return
     try:

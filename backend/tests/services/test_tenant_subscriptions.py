@@ -2,7 +2,15 @@
 import asyncio
 from unittest.mock import AsyncMock, patch
 
+import pytest
+
 from app.services import tenant_subscriptions as ts
+
+
+@pytest.fixture(autouse=True)
+def _fresh_registrar(monkeypatch):
+    # The registrar is cached per process; every test builds its own.
+    monkeypatch.setattr(ts, "_REGISTRAR", None)
 
 
 def test_the_phenology_subscription_watches_the_stage_and_owns_the_receiver_auth(monkeypatch):
@@ -50,3 +58,56 @@ async def test_without_secret_nothing_runs(monkeypatch):
     with patch.object(ts, "SubscriptionRegistrar") as reg:
         await ts.run_reconciler()
     reg.assert_not_called()
+
+
+def _lifecycle_client(monkeypatch, calls):
+    from fastapi import FastAPI
+    from fastapi.testclient import TestClient
+
+    class _Registrar:
+        async def reconcile_installations(self, module_id):
+            calls.append(module_id)
+            return {}
+    monkeypatch.setattr(ts, "get_registrar", lambda: _Registrar())
+    app = FastAPI()
+    app.include_router(ts.lifecycle_router())
+    return TestClient(app)
+
+
+def test_a_signed_lifecycle_hint_reconciles_the_module_at_once(monkeypatch):
+    from nkz_platform_sdk.notify_auth import (
+        notification_token,
+        receiver_host_from_headers,
+    )
+    monkeypatch.setenv("INTERNAL_SERVICE_SECRET", "s3cr3t")
+    calls: list[str] = []
+    client = _lifecycle_client(monkeypatch, calls)
+    host = "bioorchestrator-api-service:8420"
+    token = notification_token("s3cr3t", "montiko", receiver_host_from_headers({"Host": host}))
+    r = client.post(ts.LIFECYCLE_PATH, json={"event": "module.enabled", "tenant_id": "montiko"},
+                    headers={"X-Notification-Token": token, "NGSILD-Tenant": "montiko", "Host": host})
+    assert r.status_code == 202
+    assert calls and calls[0] == "bioorchestrator"
+
+
+def test_an_unsigned_lifecycle_hint_is_refused(monkeypatch):
+    monkeypatch.setenv("INTERNAL_SERVICE_SECRET", "s3cr3t")
+    calls: list[str] = []
+    client = _lifecycle_client(monkeypatch, calls)
+    r = client.post(ts.LIFECYCLE_PATH, json={"event": "module.enabled"}, headers={"NGSILD-Tenant": "montiko"})
+    assert r.status_code in (401, 403) and calls == []
+
+
+def test_the_registrar_is_built_once_per_process(monkeypatch):
+    monkeypatch.setenv("INTERNAL_SERVICE_SECRET", "s")
+    monkeypatch.setattr(ts, "_REGISTRAR", None)
+    assert ts.get_registrar() is ts.get_registrar()
+
+
+def test_the_app_mounts_the_lifecycle_receiver(monkeypatch):
+    # Mounted and past the user-auth middleware: an unsigned hint is the SDK's 401, never a 404.
+    from fastapi.testclient import TestClient
+
+    from app.main import app
+    monkeypatch.setenv("INTERNAL_SERVICE_SECRET", "s3cr3t")
+    assert TestClient(app).post(ts.LIFECYCLE_PATH, json={}).status_code == 401
