@@ -20,10 +20,12 @@ interface Props {
   data: FarmResponse; farmId: string; onOpen: (parcelId: string) => void; editable?: boolean;
   /** Opens the temporary campaign simulation; the link is offered only when the page wires it. */
   onSimulate?: (parcelId: string) => void;
+  /** Opens the crop-health in-season forecast of a sown parcel. */
+  onForecast?: (parcelId: string) => void;
 }
 
 /** `editable` false (a past campaign) keeps the history readable and offers no way into the form. */
-export default function PlanMatrix({ data, farmId, onOpen, editable = true, onSimulate }: Props) {
+export default function PlanMatrix({ data, farmId, onOpen, editable = true, onSimulate, onForecast }: Props) {
   const { t, i18n } = useTranslation('bioorchestrator');
   const lang = i18n.language;
   const rows = rowsForFarm(data.parcels, farmId, lang);
@@ -61,6 +63,7 @@ export default function PlanMatrix({ data, farmId, onOpen, editable = true, onSi
                 const locked = editable && isTarget ? lockReason(row, data.campaign) : null;
                 const plannable = editable && isTarget && locked === null;
                 const simulable = Boolean(onSimulate) && isTarget && simulationAvailable(row, data.campaign);
+                const forecastable = Boolean(onForecast) && isTarget && simulationAvailable(row, data.campaign);
                 return (
                   <td key={c} className="py-2 pr-4">
                     {cells.map((cell, i) => <CycleLine key={cell.crop_id ?? `${c}-${i}`} cell={cell} />)}
@@ -68,7 +71,7 @@ export default function PlanMatrix({ data, farmId, onOpen, editable = true, onSi
                     {locked && locked !== 'cycles_unavailable' && (
                       <span className="block text-nkz-xs text-nkz-text-muted">{lockMessage(locked, data.campaign, t)}</span>
                     )}
-                    {(plannable || simulable) && (
+                    {(plannable || simulable || forecastable) && (
                       <Inline gap="inline" wrap>
                         {plannable && (
                           <Button size="sm" variant="secondary" onClick={() => onOpen(row.parcel_id)}>
@@ -78,6 +81,11 @@ export default function PlanMatrix({ data, farmId, onOpen, editable = true, onSi
                         {simulable && (
                           <Button size="sm" variant="ghost" onClick={() => onSimulate?.(row.parcel_id)}>
                             {t('planning.simulation.open')}
+                          </Button>
+                        )}
+                        {forecastable && (
+                          <Button size="sm" variant="ghost" onClick={() => onForecast?.(row.parcel_id)}>
+                            {t('planning.simulation.forecast')}
                           </Button>
                         )}
                       </Inline>

@@ -1,6 +1,6 @@
 // src/planning/PlanningApp.tsx
 import React, { useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth, useTranslation } from '@nekazari/sdk';
 import { Button, Card, Inline, Select, Stack } from '@nekazari/ui-kit';
 import { Sprout } from 'lucide-react';
@@ -17,7 +17,7 @@ import PlanMatrix from './PlanMatrix';
 import SimulationBridge from './SimulationBridge';
 import SourcesFooter from './SourcesFooter';
 import type { FarmResponse } from './types';
-import { closeParams, openParcelParams, openSimulationParams, readView } from './urlState';
+import { closeParams, forecastHref, openParcelParams, openSimulationParams, readView } from './urlState';
 import { useLoad } from './useLoad';
 
 function SummaryLine({ data }: { data: FarmResponse }) {
@@ -48,6 +48,8 @@ export default function PlanningApp() {
   const openDetail = (parcelId: string) => setParams((p) => openParcelParams(p, parcelId, data?.campaign ?? new Date().getFullYear()));
   const openSimulation = (parcelId: string) => setParams((p) => openSimulationParams(p, parcelId));
   const closeView = () => setParams((p) => closeParams(p));
+  const navigate = useNavigate();
+  const openForecast = (parcelId: string) => navigate(forecastHref(parcelId));
   // A new campaign drops a link that did not resolve (and its "parcel not found" notice) instead of keeping it.
   const changeCampaign = (c: number) => {
     setCampaign(c);
@@ -78,7 +80,7 @@ export default function PlanningApp() {
             )}
             {data && row && (
               <ParcelDetail key={`${row.parcel_id}:${data.campaign}`} row={row} campaign={data.campaign} onClose={closeView}
-                onSaved={() => { closeView(); farm.retry(); }} onSimulate={() => openSimulation(row.parcel_id)} onReload={farm.retry} />
+                onSaved={() => { closeView(); farm.retry(); }} onSimulate={() => openSimulation(row.parcel_id)} onForecast={() => openForecast(row.parcel_id)} onReload={farm.retry} />
             )}
             {data && !row && (
               <Stack gap="stack">
@@ -96,7 +98,7 @@ export default function PlanningApp() {
                 </Inline>
                 {openParcel && <p className="text-nkz-sm text-nkz-text-muted">{t('planning.plan.error.parcel_not_found')}</p>}
                 <SummaryLine data={data} />
-                <PlanMatrix data={data} farmId={farmId} onOpen={openDetail} onSimulate={openSimulation}
+                <PlanMatrix data={data} farmId={farmId} onOpen={openDetail} onSimulate={openSimulation} onForecast={openForecast}
                   editable={data.campaign >= new Date().getFullYear()} />
               </Stack>
             )}

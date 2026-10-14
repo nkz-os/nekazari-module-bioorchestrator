@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { closeParams, openParcelParams, openSimulationParams, readView } from './urlState';
+import { closeParams, forecastHref, openParcelParams, openSimulationParams, readView } from './urlState';
 
 const P = (q: string) => new URLSearchParams(q);
 
@@ -31,5 +31,8 @@ describe('planning URL state', () => {
     expect(readView(P('view=other&parcel=p1'))).toEqual({ parcel: 'p1', simulationFor: null });
     expect(readView(P(''))).toEqual({ parcel: null, simulationFor: null });
     expect(readView(P('parcel='))).toEqual({ parcel: null, simulationFor: null });
+  });
+  it('forecastHref selects the parcel in the viewer', () => {
+    expect(forecastHref('urn:ngsi-ld:AgriParcel:t:p1')).toBe('/viewer?selectedEntity=urn%3Angsi-ld%3AAgriParcel%3At%3Ap1');
   });
 });

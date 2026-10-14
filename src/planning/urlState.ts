@@ -31,3 +31,8 @@ export function readView(params: URLSearchParams): { parcel: string | null; simu
   if (parcel && params.get('view') === 'simulation') return { parcel: null, simulationFor: parcel };
   return { parcel, simulationFor: null };
 }
+
+/** The viewer with the parcel selected: its crop-health panel shows the in-season forecast. */
+export function forecastHref(parcelId: string): string {
+  return `/viewer?selectedEntity=${encodeURIComponent(parcelId)}`;
+}

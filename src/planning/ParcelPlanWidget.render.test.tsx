@@ -37,4 +37,12 @@ describe('ParcelPlanWidget (es)', () => {
     expect(html).not.toContain('● realizado');
     expect(html).not.toContain('Sin decidir');
   });
+  it('links a sown parcel to its crop-health forecast beside the simulation', () => {
+    const sown = { crop_id: 'c1', species: 'wheat', species_raw: 'TRZAX', names: { es: 'trigo' }, variety: null, role: 'main_crop',
+      provenance: 'actual' as const, status: 'active', start: null, end: null, lifecycle: 'annual', first_campaign: 2027 };
+    const html = render(parcel({ cells: { '2026': [], '2027': [sown] } as never }));
+    expect(html).toContain('Simulación de la campaña en curso');
+    expect(html).toContain('Ver previsión en Salud del cultivo');
+    expect(render(parcel({}))).not.toContain('Ver previsión en Salud del cultivo');
+  });
 });

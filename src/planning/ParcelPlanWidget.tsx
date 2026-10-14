@@ -7,6 +7,7 @@ import { CalendarRange } from 'lucide-react';
 import { resolveParcelContext, type ParcelEntityData } from '../utils/entityData';
 import { fetchFarm } from './api';
 import { ACCENT, parcelUrn } from './format';
+import { forecastHref } from './urlState';
 import { canPlan, namesIndex, simulationAvailable, warningText, widgetRows } from './matrixModel';
 import LoadingLine from './LoadingLine';
 import { CycleLine } from './PlanMatrix';
@@ -57,6 +58,9 @@ const ParcelPlanWidget: React.FC<{ entityData?: ParcelEntityData }> = ({ entityD
               <Button size="sm" variant="secondary"
                 onClick={() => navigate(`/bioorchestrator?view=simulation&parcel=${encodeURIComponent(row.parcel_id)}`)}>
                 {t('planning.simulation.open')}
+              </Button>
+              <Button size="sm" variant="ghost" onClick={() => navigate(forecastHref(row.parcel_id))}>
+                {t('planning.simulation.forecast')}
               </Button>
             </div>
           )}

@@ -372,8 +372,8 @@ def previous_crop(cycles: dict | None, campaign: int, *, maturity_for) -> Previo
     ``maturity_for(slug, start)`` gives the typical end of a crop with no end recorded or planned.
     """
     def campaign_of(c: dict) -> int | None:
-        # The sowing decides the campaign (Aug-Jul). The core's label is the end year, or the start
-        # year when there is no end, which puts an autumn sowing without an end one campaign early.
+        # Bioorch's own rule: the sowing date decides the campaign (Aug-Jul). It is kept on purpose,
+        # independent of the SDK's campaign label, so the wizard and this lookup always agree.
         start = iso_date((c.get("start") or {}).get("date"))
         return campaign_of_start(start) if start else first_campaign(c)
 
