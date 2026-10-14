@@ -92,4 +92,12 @@ describe('ParcelDetail (es)', () => {
     expect(html).not.toContain('ya tiene un cultivo sembrado');
     expect(render(row([cell({}), cell({ crop_id: 'c2', provenance: 'actual', status: 'active' })]), true)).toContain('ya tiene un cultivo sembrado');
   });
+  it('links a sown parcel to its crop-health forecast only when the page wires it', () => {
+    const sown = row([cell({}), cell({ crop_id: 'c2', provenance: 'actual', status: 'active' })]);
+    const wired = renderToStaticMarkup(<ParcelDetail row={sown} campaign={2027} onClose={() => {}} onSaved={() => {}} onForecast={() => {}} />);
+    expect(wired).toContain('Ver previsión en Salud del cultivo');
+    expect(render(sown, true)).not.toContain('Ver previsión en Salud del cultivo');
+    const planned = renderToStaticMarkup(<ParcelDetail row={row([cell({})])} campaign={2027} onClose={() => {}} onSaved={() => {}} onForecast={() => {}} />);
+    expect(planned).not.toContain('Ver previsión en Salud del cultivo');
+  });
 });

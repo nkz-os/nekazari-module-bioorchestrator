@@ -12,12 +12,12 @@ import { useLoad } from './useLoad';
 import PlanWizard from './wizard/PlanWizard';
 
 interface Props {
-  row: ParcelRow; campaign: number; onClose: () => void; onSaved: () => void; onSimulate?: () => void;
+  row: ParcelRow; campaign: number; onClose: () => void; onSaved: () => void; onSimulate?: () => void; onForecast?: () => void;
   /** Reloads the farm data: offered next to a lock that a failed history read causes. */
   onReload?: () => void;
 }
 
-export default function ParcelDetail({ row, campaign, onClose, onSaved, onSimulate, onReload }: Props) {
+export default function ParcelDetail({ row, campaign, onClose, onSaved, onSimulate, onForecast, onReload }: Props) {
   const { t, i18n } = useTranslation('bioorchestrator');
   const lang = i18n.language;
   const [regime, setRegime] = useState<Regime | null>(row.regime);
@@ -47,6 +47,9 @@ export default function ParcelDetail({ row, campaign, onClose, onSaved, onSimula
         {prev && <span className="text-nkz-sm text-nkz-text-muted">{t('planning.detail.previous', { crop: cropName(prev.names, prev.species_raw, lang), campaign: campaign - 1 })}</span>}
         {onSimulate && simulationAvailable(row, campaign) && (
           <Button size="sm" variant="secondary" onClick={onSimulate}>{t('planning.simulation.open')}</Button>
+        )}
+        {onForecast && simulationAvailable(row, campaign) && (
+          <Button size="sm" variant="ghost" onClick={onForecast}>{t('planning.simulation.forecast')}</Button>
         )}
       </Inline>
 

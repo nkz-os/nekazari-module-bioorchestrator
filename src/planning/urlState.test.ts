@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { closeParams, openParcelParams, openSimulationParams, readView } from './urlState';
+import { closeParams, forecastHref, openParcelParams, openSimulationParams, readView } from './urlState';
 
 const P = (q: string) => new URLSearchParams(q);
 
@@ -31,5 +31,9 @@ describe('planning URL state', () => {
     expect(readView(P('view=other&parcel=p1'))).toEqual({ parcel: 'p1', simulationFor: null });
     expect(readView(P(''))).toEqual({ parcel: null, simulationFor: null });
     expect(readView(P('parcel='))).toEqual({ parcel: null, simulationFor: null });
+  });
+  it('forecastHref opens the crop-health page on the parcel (its API takes the bare id)', () => {
+    expect(forecastHref('urn:ngsi-ld:AgriParcel:d2e5-11')).toBe('/crop-health?parcel=d2e5-11');
+    expect(forecastHref('d2e5-11')).toBe('/crop-health?parcel=d2e5-11');
   });
 });

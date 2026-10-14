@@ -60,6 +60,18 @@ describe('PlanMatrix (es)', () => {
     expect(renderToStaticMarkup(<PlanMatrix data={inField} farmId="all" onOpen={() => {}} />)).not.toContain('Simulación de la campaña en curso');
     expect(calls).toEqual([]);
   });
+  it('links a sown parcel to its crop-health forecast, beside the simulation, only when the page wires it', () => {
+    const sown = { crop_id: 'c2', species: 'wheat', species_raw: 'TRZAX', names: { es: 'trigo' }, variety: null, role: 'main_crop',
+      provenance: 'actual' as const, status: 'active', start: null, end: null, lifecycle: 'annual', first_campaign: 2027 };
+    const inField: FarmResponse = { ...DATA, parcels: [
+      { ...DATA.parcels[0], parcel_id: 'urn:ngsi-ld:AgriParcel:t:p3', name: 'En campo', cells: { '2024': [], '2025': [], '2026': [], '2027': [sown] } },
+      { ...DATA.parcels[1], cycles_available: true, cells: { '2024': [], '2025': [], '2026': [], '2027': [] } },
+    ] };
+    const html = renderToStaticMarkup(<PlanMatrix data={inField} farmId="all" onOpen={() => {}} onSimulate={() => {}} onForecast={() => {}} />);
+    expect(html.split('Ver previsión en Salud del cultivo').length - 1).toBe(1);
+    expect(html).toContain('Simulación de la campaña en curso');
+    expect(renderToStaticMarkup(<PlanMatrix data={inField} farmId="all" onOpen={() => {}} />)).not.toContain('Ver previsión en Salud del cultivo');
+  });
   it('a locked parcel says why in its target cell instead of offering a button', () => {
     const started = { crop_id: 'c3', species: 'rye', species_raw: 'SECCE', names: { es: 'centeno' }, variety: null, role: 'main_crop',
       provenance: 'planned' as const, status: 'active', start: null, end: null, lifecycle: 'annual', first_campaign: 2027 };
