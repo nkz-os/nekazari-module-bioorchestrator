@@ -51,6 +51,7 @@
     "irrigationFull": "Riego completo",
     "engine": "Motor",
     "run": "Ejecutar simulación",
+    "progress": "Simulando… {{done}}/{{total}} escenarios",
     "running": "Ejecutando...",
     "crop": "Cultivo",
     "status": {
@@ -119,6 +120,8 @@
       "archive_not_configured": "El archivo meteorológico no está configurado en este servidor.",
       "archive_unavailable": "El archivo meteorológico no está disponible temporalmente. Inténtalo más tarde.",
       "parcel_not_found": "No se encontró la parcela.",
+      "too_many_jobs": "Hay otras simulaciones de esta organización en curso; vuelve a intentarlo cuando termine una.",
+      "job_timeout": "La simulación está tardando demasiado; vuelve a intentarlo en unos minutos.",
       "generic": "No se pudo completar la simulación.",
       "sowing_date_too_far": "La fecha de siembra está a más de un año vista: la simulación planifica como mucho a un año."
     },

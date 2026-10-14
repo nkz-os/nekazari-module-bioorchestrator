@@ -34,6 +34,7 @@
     "irrigationFull": "Reg complet",
     "engine": "Motor",
     "run": "Executa la simulació",
+    "progress": "Simulant… {{done}}/{{total}} escenaris",
     "running": "Executant...",
     "crop": "Cultiu",
     "status": {
@@ -102,6 +103,8 @@
       "archive_not_configured": "L'arxiu meteorològic no està configurat en aquest servidor.",
       "archive_unavailable": "L'arxiu meteorològic no està disponible temporalment. Torna-ho a provar més tard.",
       "parcel_not_found": "No s'ha trobat la parcel·la.",
+      "too_many_jobs": "Hi ha altres simulacions d'aquesta organització en curs; torna-ho a provar quan n'acabi una.",
+      "job_timeout": "La simulació està trigant massa; torna-ho a provar d'aquí a uns minuts.",
       "generic": "No s'ha pogut completar la simulació.",
       "sowing_date_too_far": "La data de sembra és a més d'un any vista: la simulació planifica com a màxim a un any."
     },

@@ -67,6 +67,14 @@ export async function apiErrorFrom(resp: Response): Promise<ApiError> {
 }
 
 /** POST that throws ApiError (status, code, message) on failure; 401 returns null like post(). */
+/** GET with the detailed error body; 401 is an error here too (a job poll has no anonymous answer). */
+async function getDetailed(path: string): Promise<any> {
+  const url = path.startsWith('http') ? path : `${BASE}${path}`;
+  const resp = await fetch(url, { headers: authHeaders(), credentials: 'include' });
+  if (!resp.ok) throw await apiErrorFrom(resp);
+  return resp.json();
+}
+
 async function postDetailed(path: string): Promise<any> {
   const headers: Record<string, string> = { 'Content-Type': 'application/json', ...authHeaders() };
   const url = path.startsWith('http') ? path : `${BASE}${path}`;
@@ -82,7 +90,8 @@ export function useBioApi() {
   // eslint-disable-next-line react-hooks/exhaustive-deps -- functions close over module scope only
   return useMemo(() => ({
     getSources: () => get(`${GRAPH}/graph/agriculture/sources`),
-    runCropSimulation: (p: {
+    /** Starts (or joins: same inputs, same day) a simulation job. Same inputs as runCropSimulation. */
+    startCropSimulationJob: async (p: {
       parcelId: string;
       cropSlug?: string;
       sowingDate?: string;
@@ -92,8 +101,12 @@ export function useBioApi() {
       const params = new URLSearchParams({ parcel_id: p.parcelId, irrigation: p.irrigation, engine: p.engine });
       if (p.cropSlug) params.set('crop_slug', p.cropSlug);
       if (p.sowingDate) params.set('sowing_date', p.sowingDate);
-      return postDetailed(`${GRAPH}/graph/agriculture/crop-simulation?${params.toString()}`);
+      const view = await postDetailed(`${GRAPH}/graph/agriculture/crop-simulation/jobs?${params.toString()}`);
+      if (view == null) throw new ApiError(401, null, 'HTTP 401');
+      return view;
     },
+    getCropSimulationJob: (jobId: string) =>
+      getDetailed(`${GRAPH}/graph/agriculture/crop-simulation/jobs/${encodeURIComponent(jobId)}`),
   }), []);
 }
 

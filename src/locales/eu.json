@@ -34,6 +34,7 @@
     "irrigationFull": "Ureztatze osoa",
     "engine": "Motorra",
     "run": "Exekutatu simulazioa",
+    "progress": "Simulatzen… {{done}}/{{total}} agertoki",
     "running": "Exekutatzen...",
     "crop": "Laborantza",
     "status": {
@@ -102,6 +103,8 @@
       "archive_not_configured": "Eguraldi-artxiboa ez dago konfiguratuta zerbitzari honetan.",
       "archive_unavailable": "Eguraldi-artxiboa ez dago eskuragarri une honetan. Saiatu berriro geroago.",
       "parcel_not_found": "Ez da partzela aurkitu.",
+      "too_many_jobs": "Erakunde honen beste simulazio batzuk martxan daude; saiatu berriro bat amaitzen denean.",
+      "job_timeout": "Simulazioak gehiegi irauten du; saiatu berriro minutu batzuk barru.",
       "generic": "Ezin izan da simulazioa osatu.",
       "sowing_date_too_far": "Erein-data urtebete baino urrunago dago: simulazioak gehienez urtebeterako planifikatzen du."
     },
