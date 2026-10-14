@@ -32,7 +32,10 @@ export function readView(params: URLSearchParams): { parcel: string | null; simu
   return { parcel, simulationFor: null };
 }
 
-/** The viewer with the parcel selected: its crop-health panel shows the in-season forecast. */
+/**
+ * Crop-health's page on the parcel, where its yield tab shows the in-season forecast.
+ * Not the viewer: /viewer redirects to /entities and drops the query. Crop-health's API takes the bare id.
+ */
 export function forecastHref(parcelId: string): string {
-  return `/viewer?selectedEntity=${encodeURIComponent(parcelId)}`;
+  return `/crop-health?parcel=${encodeURIComponent(parcelId.replace(/^urn:ngsi-ld:AgriParcel:/, ''))}`;
 }

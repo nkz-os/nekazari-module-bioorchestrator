@@ -32,7 +32,8 @@ describe('planning URL state', () => {
     expect(readView(P(''))).toEqual({ parcel: null, simulationFor: null });
     expect(readView(P('parcel='))).toEqual({ parcel: null, simulationFor: null });
   });
-  it('forecastHref selects the parcel in the viewer', () => {
-    expect(forecastHref('urn:ngsi-ld:AgriParcel:t:p1')).toBe('/viewer?selectedEntity=urn%3Angsi-ld%3AAgriParcel%3At%3Ap1');
+  it('forecastHref opens the crop-health page on the parcel (its API takes the bare id)', () => {
+    expect(forecastHref('urn:ngsi-ld:AgriParcel:d2e5-11')).toBe('/crop-health?parcel=d2e5-11');
+    expect(forecastHref('d2e5-11')).toBe('/crop-health?parcel=d2e5-11');
   });
 });
