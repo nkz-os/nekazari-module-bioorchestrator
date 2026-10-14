@@ -17,7 +17,7 @@ import PlanMatrix from './PlanMatrix';
 import SimulationBridge from './SimulationBridge';
 import SourcesFooter from './SourcesFooter';
 import type { FarmResponse } from './types';
-import { closeParams, forecastHref, openParcelParams, openSimulationParams, readView } from './urlState';
+import { closeParams, forecastHref, openParcelParams, openSimulationParams, readSimulationPrefill, readView } from './urlState';
 import { useLoad } from './useLoad';
 
 function SummaryLine({ data }: { data: FarmResponse }) {
@@ -68,7 +68,7 @@ export default function PlanningApp() {
         </Inline>
 
         {admin ? <LazyBoundary><AdminTools /></LazyBoundary> : simulationFor ? (
-          <SimulationBridge parcelId={simulationFor} onClose={closeView} />
+          <SimulationBridge parcelId={simulationFor} prefill={readSimulationPrefill(params)} onClose={closeView} />
         ) : (
           <>
             {farm.loading && <LoadingLine text={t('planning.loading.farm')} />}

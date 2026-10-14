@@ -9,6 +9,7 @@ import { ArrowLeft } from 'lucide-react';
 import { ParcelProvider, useParcelContext } from '../context/ParcelContext';
 import { PlanningScenarioProvider } from '../context/PlanningScenarioContext';
 import LazyBoundary from './LazyBoundary';
+import type { SimulationPrefill } from '../components/cropSimulationModel';
 
 const CropSimulation = lazy(() => import('../components/CropSimulation'));
 
@@ -24,7 +25,9 @@ function SelectParcel({ parcelId }: { parcelId: string }) {
   return null;
 }
 
-export default function SimulationBridge({ parcelId, onClose }: { parcelId: string; onClose: () => void }) {
+export default function SimulationBridge({ parcelId, prefill, onClose }: {
+  parcelId: string; prefill?: SimulationPrefill; onClose: () => void;
+}) {
   const { t } = useTranslation('bioorchestrator');
   return (
     <ParcelProvider>
@@ -37,7 +40,7 @@ export default function SimulationBridge({ parcelId, onClose }: { parcelId: stri
           <p className="text-nkz-xs text-nkz-text-muted">{t('planning.simulation.temporary')}</p>
           <LazyBoundary>
             <Suspense fallback={<Spinner size="lg" />}>
-              <CropSimulation />
+              <CropSimulation link={{ parcelId, prefill: prefill ?? {} }} />
             </Suspense>
           </LazyBoundary>
         </Stack>

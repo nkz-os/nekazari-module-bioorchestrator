@@ -156,3 +156,22 @@ def test_direct_sowing_is_its_own_job_and_absent_keeps_old_identity(jobs_client)
     _poll(jobs_client, bare)
     _poll(jobs_client, direct)
     assert jobs_client.post(JOBS, params=q, headers=H).json()["job_id"] == bare
+
+
+def test_an_eppo_code_joins_the_job_of_its_species_slug(jobs_client):
+    # Crop-health links send the EPPO code; the in-season forecast keys its job by the species slug.
+    q = {"parcel_id": URN, "sowing_date": "2026-11-01"}
+    by_slug = jobs_client.post(JOBS, params={**q, "crop_slug": "wheat"}, headers=H).json()["job_id"]
+    by_eppo = jobs_client.post(JOBS, params={**q, "crop_slug": "TRZAX"}, headers=H).json()["job_id"]
+    assert by_eppo == by_slug
+    _poll(jobs_client, by_slug)
+
+
+def test_the_simulation_receives_the_species_slug_for_an_eppo_code(client):
+    client.post(URL, params={"parcel_id": URN, "crop_slug": "TRZAX"}, headers=H)
+    assert client.calls[0]["crop_slug"] == "wheat"
+
+
+def test_an_unknown_crop_is_passed_through_for_the_engine_to_refuse(client):
+    client.post(URL, params={"parcel_id": URN, "crop_slug": "not-a-crop"}, headers=H)
+    assert client.calls[0]["crop_slug"] == "not-a-crop"

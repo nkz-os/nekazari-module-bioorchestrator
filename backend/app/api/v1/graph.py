@@ -670,6 +670,16 @@ async def agriculture_crop_context(
     return result
 
 
+def _simulation_crop(crop_slug: str | None) -> str | None:
+    """The species slug of any crop identifier (EPPO code, name), so the same crop is the same job.
+
+    An identifier the registry does not know is passed through: the engine refuses it with its own code.
+    """
+    if not crop_slug:
+        return crop_slug
+    return resolve_species(crop_slug.strip()) or crop_slug
+
+
 @router.post("/agriculture/crop-simulation")
 async def agriculture_crop_simulation(
     driver: DriverDep,
@@ -705,6 +715,7 @@ async def agriculture_crop_simulation(
     422 and upstream outages 503, both as ``{"detail": {"code", "message"}}``.
     """
     tenant_id = _require_tenant_id(request)
+    crop_slug = _simulation_crop(crop_slug)
     dao = GraphDAO(driver)
     try:
         return await dao.run_crop_simulation(
@@ -748,6 +759,7 @@ async def agriculture_crop_simulation_job_start(
         check_sowing_method(sowing_method)
     except SimulationError as e:
         raise HTTPException(status_code=e.status_code, detail=e.detail()) from e
+    crop_slug = _simulation_crop(crop_slug)
     params = {"parcel_id": parcel_id, "crop_slug": crop_slug, "sowing_date": sowing_date,
               "irrigation": irrigation, "engine": engine}
     if sowing_method is not None:  # absent keeps the identity of requests made before the parameter

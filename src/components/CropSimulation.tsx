@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from '@nekazari/sdk';
 import { Button, Card, EmptyState, Skeleton, Stack, Badge, Select } from '@nekazari/ui-kit';
 import { Microscope, AlertTriangle, TrendingUp, CloudRain, Layers } from 'lucide-react';
@@ -7,9 +7,10 @@ import { usePlanningScenario } from '../context/PlanningScenarioContext';
 import { useBioApi, ApiError } from '../services/api';
 import {
   ENGINES, chartLine, depthLabel, errorHintKey, expectedReasonKey, formatRange, formatYield, pct,
-  segmentLabel, sowingSourceKey, waterGapText, weatherSourceKey, type CropSimulationResult, type Engine,
-  type Irrigation,
+  segmentLabel, sowingSourceKey, waterGapText, weatherSourceKey, autoRunFromLink, type CropSimulationResult,
+  type Engine, type Irrigation, type SimulationPrefill,
 } from './cropSimulationModel';
+import { runSimulationJob } from './simulationJob';
 
 type T = (key: string, opts?: Record<string, unknown>) => string;
 
@@ -241,20 +242,71 @@ export function CropSimulationResultView({ result }: { result: CropSimulationRes
 
 interface SimError { message: string; code: string | null }
 
-export default function CropSimulation() {
+/** A link into the simulation (e.g. from the in-season forecast): the parcel it is for and its inputs. */
+export interface SimulationLink { parcelId: string; prefill: SimulationPrefill }
+
+export default function CropSimulation({ link }: { link?: SimulationLink } = {}) {
   const { t: tr } = useTranslation('bioorchestrator');
   const t = tr as T;
   const { selectedParcel, loading: parcelLoading, error: parcelError } = useParcelContext();
   const { enabled: scenarioEnabled } = usePlanningScenario();
   const api = useBioApi();
 
-  const [cropSlug, setCropSlug] = useState('');
-  const [sowingDate, setSowingDate] = useState('');
-  const [irrigation, setIrrigation] = useState<Irrigation>('rainfed');
+  const [cropSlug, setCropSlug] = useState(link?.prefill.cropSlug ?? '');
+  const [sowingDate, setSowingDate] = useState(link?.prefill.sowingDate ?? '');
+  const [irrigation, setIrrigation] = useState<Irrigation>(link?.prefill.irrigation ?? 'rainfed');
   const [engine] = useState<Engine>(ENGINES[0]);
   const [running, setRunning] = useState(false);
+  const [progress, setProgress] = useState<{ done: number; total: number | null } | null>(null);
   const [result, setResult] = useState<CropSimulationResult | null>(null);
   const [error, setError] = useState<SimError | null>(null);
+  const run = useRef<AbortController | null>(null);
+  const autoRan = useRef(false);
+
+  useEffect(() => () => run.current?.abort(), []);
+
+  const handleRun = useCallback(async () => {
+    if (!selectedParcel) return;
+    run.current?.abort();
+    const ctrl = new AbortController();
+    run.current = ctrl;
+    setRunning(true);
+    setError(null);
+    setResult(null);
+    setProgress(null);
+    const inputs = {
+      parcelId: selectedParcel,
+      cropSlug: cropSlug.trim() || undefined,
+      sowingDate: sowingDate || undefined,
+      irrigation,
+      engine,
+    };
+    try {
+      // A job: the same inputs on the same day join the simulation already run (e.g. the in-season forecast's).
+      const data = await runSimulationJob<CropSimulationResult>({
+        start: () => api.startCropSimulationJob(inputs),
+        get: (jobId) => api.getCropSimulationJob(jobId),
+      }, { signal: ctrl.signal, onProgress: (done, total) => setProgress({ done, total }) });
+      if (!ctrl.signal.aborted) setResult(data);
+    } catch (e: unknown) {
+      if (ctrl.signal.aborted) return;
+      const code = e && typeof e === 'object' && 'code' in e ? (e as { code: string | null }).code : null;
+      setError({ message: e instanceof Error ? e.message : String(e), code });
+    } finally {
+      if (run.current === ctrl) {
+        setRunning(false);
+        setProgress(null);
+      }
+    }
+  }, [api, selectedParcel, cropSlug, sowingDate, irrigation, engine]);
+
+  // A link naming the crop and the sowing date runs once, as soon as its parcel is the one selected.
+  useEffect(() => {
+    if (autoRan.current || !link || scenarioEnabled || selectedParcel !== link.parcelId) return;
+    if (!autoRunFromLink(link.prefill)) return;
+    autoRan.current = true;
+    void handleRun();
+  }, [link, scenarioEnabled, selectedParcel, handleRun]);
 
   if (parcelLoading) return <Skeleton variant="rect" height="300px" />;
   if (parcelError) {
@@ -274,28 +326,6 @@ export default function CropSimulation() {
       />
     );
   }
-
-  const handleRun = async () => {
-    setRunning(true);
-    setError(null);
-    setResult(null);
-    try {
-      const data = await api.runCropSimulation({
-        parcelId: selectedParcel,
-        cropSlug: cropSlug.trim() || undefined,
-        sowingDate: sowingDate || undefined,
-        irrigation,
-        engine,
-      });
-      setResult(data);
-    } catch (e: unknown) {
-      setError(e instanceof ApiError
-        ? { message: e.message, code: e.code }
-        : { message: e instanceof Error ? e.message : String(e), code: null });
-    } finally {
-      setRunning(false);
-    }
-  };
 
   return (
     <Stack gap="section">
@@ -359,6 +389,11 @@ export default function CropSimulation() {
           <span className="text-nkz-xs text-nkz-text-muted">{t('cropSimulation.engine')}:</span>
           <Badge intent="default">{engine}</Badge>
         </div>
+        {running && progress?.total ? (
+          <p className="text-nkz-xs text-nkz-text-muted mt-2" role="status">
+            {t('cropSimulation.progress', { done: progress.done, total: progress.total })}
+          </p>
+        ) : null}
       </Card>
 
       {error && (

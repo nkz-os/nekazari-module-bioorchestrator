@@ -51,6 +51,7 @@
     "irrigationFull": "Full irrigation",
     "engine": "Engine",
     "run": "Run simulation",
+    "progress": "Simulating… {{done}}/{{total}} scenarios",
     "running": "Running...",
     "crop": "Crop",
     "status": {
@@ -119,6 +120,8 @@
       "archive_not_configured": "The weather archive is not configured on this server.",
       "archive_unavailable": "The weather archive is temporarily unavailable. Try again later.",
       "parcel_not_found": "The parcel was not found.",
+      "too_many_jobs": "Other simulations of this organisation are running; try again when one finishes.",
+      "job_timeout": "The simulation is taking too long; try again in a few minutes.",
       "generic": "The simulation could not be completed.",
       "sowing_date_too_far": "The sowing date is more than a year ahead: the simulation plans at most one year ahead."
     },

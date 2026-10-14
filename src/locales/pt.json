@@ -34,6 +34,7 @@
     "irrigationFull": "Rega completa",
     "engine": "Motor",
     "run": "Executar simulação",
+    "progress": "A simular… {{done}}/{{total}} cenários",
     "running": "A executar...",
     "crop": "Cultura",
     "status": {
@@ -102,6 +103,8 @@
       "archive_not_configured": "O arquivo meteorológico não está configurado neste servidor.",
       "archive_unavailable": "O arquivo meteorológico está temporariamente indisponível. Tente novamente mais tarde.",
       "parcel_not_found": "Parcela não encontrada.",
+      "too_many_jobs": "Há outras simulações desta organização em curso; tente novamente quando uma terminar.",
+      "job_timeout": "A simulação está a demorar demasiado; tente novamente dentro de alguns minutos.",
       "generic": "Não foi possível concluir a simulação.",
       "sowing_date_too_far": "A data de sementeira está a mais de um ano: a simulação planeia no máximo a um ano."
     },

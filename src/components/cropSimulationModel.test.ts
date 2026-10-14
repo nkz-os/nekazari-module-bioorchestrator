@@ -4,6 +4,7 @@ import {
   sowingSourceKey, waterGapText, weatherSourceKey,
   type DailyPoint,
 } from './cropSimulationModel';
+import { autoRunFromLink } from './cropSimulationModel';
 
 describe('formatYield', () => {
   it('shows P50 as headline and P10-P90 as range', () => {
@@ -84,5 +85,23 @@ describe('expected yield and water gap', () => {
     expect(formatRange({ low: 2.44, high: 4.06 })).toBe('2.4 – 4.1');
     expect(expectedReasonKey('irrigated')).toBe('cropSimulation.expected.reason.irrigated');
     expect(expectedReasonKey('other')).toBe('cropSimulation.expected.reason.unknown');
+  });
+});
+
+describe('autoRunFromLink', () => {
+  it('runs at once when a link brings the crop and the sowing date', () => {
+    expect(autoRunFromLink({ cropSlug: 'TRZAX', sowingDate: '2025-11-05' })).toBe(true);
+  });
+  it('only pre-fills when either is missing', () => {
+    expect(autoRunFromLink({ cropSlug: 'TRZAX' })).toBe(false);
+    expect(autoRunFromLink({ sowingDate: '2025-11-05', irrigation: 'full' })).toBe(false);
+    expect(autoRunFromLink(undefined)).toBe(false);
+  });
+});
+
+describe('job error codes', () => {
+  it('have their own hint', () => {
+    expect(errorHintKey('job_timeout')).toBe('cropSimulation.errors.job_timeout');
+    expect(errorHintKey('too_many_jobs')).toBe('cropSimulation.errors.too_many_jobs');
   });
 });

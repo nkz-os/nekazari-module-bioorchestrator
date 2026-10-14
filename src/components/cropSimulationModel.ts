@@ -63,6 +63,7 @@ export interface CropSimulationResult {
 export const KNOWN_ERROR_CODES = [
   'unsupported_crop', 'weather_gaps', 'soil_incomplete', 'soil_unavailable', 'weather_unavailable',
   'archive_not_configured', 'archive_unavailable', 'sowing_date_too_far', 'parcel_not_found',
+  'too_many_jobs', 'job_timeout',
 ] as const;
 
 /** i18n key of the localized hint for a backend error code (generic when unknown or missing). */
@@ -71,6 +72,13 @@ export function errorHintKey(code: string | null | undefined): string {
     ? `cropSimulation.errors.${code}`
     : 'cropSimulation.errors.generic';
 }
+
+/** Simulation inputs a link pre-fills (crop, sowing date, irrigation). */
+export interface SimulationPrefill { cropSlug?: string; sowingDate?: string; irrigation?: Irrigation }
+
+/** A link that names the crop and the sowing date is a request to see that simulation: run it at once. */
+export const autoRunFromLink = (prefill: SimulationPrefill | undefined): boolean =>
+  !!prefill?.cropSlug && !!prefill?.sowingDate;
 
 export const isPercentiles = (v: unknown): v is Percentiles =>
   !!v && typeof v === 'object' && 'p50' in (v as object);
