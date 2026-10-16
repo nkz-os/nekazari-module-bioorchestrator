@@ -15,7 +15,7 @@ export function openParcelParams(current: URLSearchParams, parcelId: string, cam
   return next;
 }
 
-/** The temporary campaign simulation of a parcel. */
+/** The campaign simulation of a parcel. */
 export function openSimulationParams(current: URLSearchParams, parcelId: string): URLSearchParams {
   const next = new URLSearchParams(current);
   next.set('view', 'simulation');
