@@ -8,21 +8,61 @@
 </p>
 
 <h1 align="center">🧬 BioOrchestrator</h1>
-<p align="center"><strong>Multi-domain biodiversity knowledge graph · Crop agronomy engine · Regenerative planning</strong></p>
+<p align="center"><strong>Crop planning · Agronomic knowledge graph · Campaign simulation</strong></p>
 <p align="center"><em>A <a href="https://nkz-os.org">Nekazari Platform</a> module — powered by 29 scientific data connectors</em></p>
 
 ---
 
 ## What is BioOrchestrator?
 
-BioOrchestrator is the **agronomic intelligence layer** of the Nekazari precision agriculture platform. It combines a Neo4j knowledge graph with 29 federated scientific data sources to deliver:
+BioOrchestrator has two layers:
 
-- **Crop knowledge** — 34k+ variety trials, phenology parameters, thermal limits, NPK profiles, soil requirements, rotation constraints
-- **Parcel intelligence** — crop comparator, rotation planner, multi-segment crop plan, regenerative sequence designer, water budget, alerts
-- **Closed-loop advisories** — when Crop-Health writes a new phenological stage to the broker, BioOrchestrator evaluates agronomist-editable action rules and emits a `CropAdvisory` (e.g. *terminate the cover crop at flowering with a roller crimper*) — the crop-health ⇄ bioorch feedback loop (Contract 2)
-- **Reference data** — crop catalog, climate explorer, phenology browser, organic inputs, DAD-IS livestock breeds
+- **Crop planning** (the module's page, *Planificación de cultivos* in Spanish): decide what to sow on each parcel, with which variety and when, campaign by campaign. Plans are written to the broker as planned `AgriCrop` cycles that every other module can read.
+- **Agronomic knowledge service** (the backend): a Neo4j knowledge graph fed by scientific connectors, plus the crop engines. Other modules use it through the API: Crop Health for phenology parameters and the in-season yield forecast, Field Operations for crop names, Carbon and others for reference data.
+
+What it provides:
+
+- **Crop knowledge**: variety trials, phenology parameters, thermal limits, NPK profiles, soil requirements, rotation constraints
+- **Planning**: crop fit per parcel, variety evidence, sowing calendar, cover crops, rotation checks, multi-year plans
+- **Estimates**: expected yield per source (trial evidence, AquaCrop), never averaged, gated by validation
+- **Campaign simulation**: AquaCrop runs with switchable engines, daily curves and full input provenance; the same engine serves the in-season forecast shown in Crop Health
+- **Closed-loop advisories**: when Crop Health writes a new phenological stage, agronomist-editable rules emit a `CropAdvisory` (Contract 2)
 
 All parameters carry **full scientific provenance** (`sourceType`: global_standard / peer_reviewed_study / extension_advisory, plus DOI, institution, method) so every recommendation is auditable. Trial yields distinguish **measured vs derived** (`yield_provenance`) so approximations are never presented as measurements.
+
+---
+
+## User guide: crop planning
+
+The page lists every parcel of the farm against four campaigns: the three before the one being planned, and that one. From July on, the default campaign is next year's. The campaign selector also offers the previous and the next one.
+
+Cell symbols:
+
+| Symbol | Meaning |
+|--------|---------|
+| ○ planned | decided here, not sown yet |
+| ◐ declared | someone stated it happened |
+| ● actual | a completed field operation records it |
+
+To plan a campaign:
+
+1. Press **Choose** (or **Change**) in the parcel's cell for that campaign.
+2. Answer **Rainfed or irrigated?**. Evidence and simulations never mix the two, so planning waits for it. Pick the management (conventional or organic).
+3. Walk the wizard:
+   - **crop**: each crop shows a verdict (fits, with caveats, does not fit) and its reasons;
+   - **variety**: relative yield, stability and number of trials, only for crops with trials (optional);
+   - **sowing fortnight**: the recommended window for the area is shaded; perennials ask for the number of years;
+   - **cover crop**: optional, with its termination method;
+   - **summary**: the expected harvest and the estimates table.
+4. **Save plan** writes the planned cycles. The cell shows ○.
+
+Sowing and harvest are recorded in **Field Operations** (*Record sowing*, *Record harvest*), with their real date. A recorded sowing turns the cell into ●, locks it ("changed from field operations") and enables two links: **Simulation of the current campaign** and **View forecast in Crop Health**.
+
+The **estimates table** shows one row per source with its range, its basis and its validation label. Sources are never averaged; a warning appears when they disagree. A figure is shown only for validated crops and regions (today, rainfed wheat in Spain); other rows explain why there is no figure. The first AquaCrop run in a new area takes a few minutes while 15 years of weather are fetched.
+
+The **campaign simulation** runs AquaCrop for a parcel and shows yield, potential, water gap, harvest date, daily canopy and water-stress curves, and every input with its source. It opens pre-filled from Crop Health (`crop_slug`, `sowing_date`, `irrigation` in the URL) and then joins the day's in-season run instead of computing it again.
+
+In the 3D viewer, a selected parcel shows a **Parcel plan** panel with the previous and target campaigns and the same links.
 
 ---
 
@@ -37,12 +77,10 @@ All parameters carry **full scientific provenance** (`sourceType`: global_standa
                     ┌──────────────▼───────────────────────────┐
                     │         BioOrchestrator Frontend         │
                     │  ┌─────────────────────────────────────┐ │
-                    │  │ 18 tabs · 29 source badges · 6 i18n│ │
-                    │  │ Parcel: Variety · Compare · Rotate  │ │
-                    │  │  Health · Water · Regen · Alerts    │ │
-                    │  │ Ref: Catalog · Climate · Phenology  │ │
-                    │  │  Thermal · NPK · Soil · Rotation    │ │
-                    │  │  Organic · Pipeline · DAD-IS · Src  │ │
+                    │  │ Crop planning · 6 i18n              │ │
+                    │  │ Farm matrix · Parcel wizard         │ │
+                    │  │ Estimates · Campaign simulation     │ │
+                    │  │ Viewer widget: parcel plan          │ │
                     │  └─────────────────────────────────────┘ │
                     └──────────────┬───────────────────────────┘
                                    │ HTTP (cookie auth)
@@ -76,7 +114,9 @@ All parameters carry **full scientific provenance** (`sourceType`: global_standa
 
 ---
 
-## Features
+## Knowledge service capabilities
+
+The former multi-tab interface was replaced by crop planning. The capabilities below remain available through the API to other modules and to administrators.
 
 ### 🌾 Parcel Tools
 
@@ -175,6 +215,19 @@ Full i18n support in **6 languages**: English, Spanish, Basque, French, Portugue
 
 ## API Reference
 
+### Planning (`/api/graph/planning/*`, contract 2.2)
+
+| Endpoint | Description |
+|----------|-------------|
+| `GET /farm` | Parcels × campaigns matrix with cycles, provenance, regime and rotation warnings |
+| `GET /parcels/{id}/fit` | Crop fit verdicts for a parcel (soil, pH, frost, water deficit, rotation) |
+| `GET /parcels/{id}/varieties` | Variety evidence: relative yield, stability, trials and years |
+| `GET /parcels/{id}/calendar` | Sowing fortnights, recommended window and a coherent cover crop |
+| `GET /parcels/{id}/estimates` | Comparison of expected yield per source (trial evidence, AquaCrop) |
+| `GET /parcels/{id}/estimates/aquacrop` | Asynchronous AquaCrop estimate (poll with `job_id`) |
+| `GET /parcels/{id}/estimates/in-season` | In-season forecast of a sown parcel, read by Crop Health |
+| `PUT /parcels/{id}/plan` | Write the planned cycles of a campaign |
+
 ### Agriculture (`/api/graph/agriculture/*`)
 
 | Endpoint | Description |
@@ -187,6 +240,7 @@ Full i18n support in **6 languages**: English, Spanish, Basque, French, Portugue
 | `POST /crop-plan` · `GET /crop-plan` | Multi-segment crop plan (cover/main/catch) as a dated `AgriCrop` set |
 | `POST /crop-plan/{parcel}/segments/{seq}/advance` | Mark a segment sown — planned → active → harvested transition |
 | `GET /organic-inputs` | FiBL authorized inputs per crop pest |
+| `POST /crop-simulation/jobs` · `GET /crop-simulation/jobs/{id}` | Campaign simulation (AquaCrop), asynchronous; identical inputs share the day's job |
 
 ### Graph (`/api/graph/*`)
 
@@ -358,7 +412,8 @@ Both are exempt from K8s probe rate limiting (`@limiter.exempt`).
 |--------|-------------|
 | [Nekazari Platform](https://github.com/nkz-os/nkz) | Main monorepo — host shell, API gateway, Keycloak |
 | [IkerKeta](https://github.com/nkz-os/ikerketa) | ETL pipeline — 29 connectors feeding the knowledge graph |
-| [Crop Health Engine](https://github.com/nkz-os/nekazari-module-crop-health) | Real-time CWSI/MDS inference — consumes BioOrchestrator phenology |
+| [Crop Health Engine](https://github.com/nkz-os/nekazari-module-crop-health) | Crop state, risks and the in-season yield forecast; consumes BioOrchestrator phenology and the in-season estimate |
+| [Field Operations](https://github.com/nkz-os/nkz-module-field-operations) | Records sowings and harvests; turns planned cycles into actual ones |
 | [Soil Module](https://github.com/nkz-os/nekazari-module-soil) | Soil horizons, AWC — consumed by water budget & regenerative sequence |
 | [Vegetation Health](https://github.com/nkz-os/nekazari-module-vegetation-health) | Sentinel-2 NDVI — parcel vegetation indices |
 | [Timeseries Reader](https://github.com/nkz-os/nekazari-module-timeseries-reader) | ET0 + weather time-series — consumed by water budget |
