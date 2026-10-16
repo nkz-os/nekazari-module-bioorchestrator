@@ -1,6 +1,6 @@
 /**
- * TEMPORARY (owner decision 2026-10-11): entry point to the agronomic-models campaign simulation
- * until it moves to crop-health (F5). Remove this file and its two links when that happens.
+ * Entry point to the campaign simulation (switchable engines, "what if" runs). It stays in planning:
+ * crop-health shows the in-season forecast and links here for the detail, pre-filled from the URL.
  */
 import React, { Suspense, lazy, useEffect } from 'react';
 import { useTranslation } from '@nekazari/sdk';
@@ -37,7 +37,7 @@ export default function SimulationBridge({ parcelId, prefill, onClose }: {
           <div>
             <Button variant="ghost" onClick={onClose} leadingIcon={<ArrowLeft className="w-4 h-4" />}>{t('planning.detail.back')}</Button>
           </div>
-          <p className="text-nkz-xs text-nkz-text-muted">{t('planning.simulation.temporary')}</p>
+          <p className="text-nkz-xs text-nkz-text-muted">{t('planning.simulation.forecastNote')}</p>
           <LazyBoundary>
             <Suspense fallback={<Spinner size="lg" />}>
               <CropSimulation link={{ parcelId, prefill: prefill ?? {} }} />

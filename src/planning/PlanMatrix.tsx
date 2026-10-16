@@ -18,7 +18,7 @@ export function CycleLine({ cell }: { cell: CycleCell }) {
 
 interface Props {
   data: FarmResponse; farmId: string; onOpen: (parcelId: string) => void; editable?: boolean;
-  /** Opens the temporary campaign simulation; the link is offered only when the page wires it. */
+  /** Opens the campaign simulation; the link is offered only when the page wires it. */
   onSimulate?: (parcelId: string) => void;
   /** Opens the crop-health in-season forecast of a sown parcel. */
   onForecast?: (parcelId: string) => void;
