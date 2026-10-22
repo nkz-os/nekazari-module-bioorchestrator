@@ -1,0 +1,7786 @@
+stage_detection:
+  wheat:
+    base_temp_c: 0
+    upper_cutoff_c: 30
+    gdd_method: simple_avg_capped
+    source:
+      doi: 10.1016/j.agrformet.2015.04.012
+      short: McMaster & Wilhelm 1997
+      author: McMaster, G.S.
+      year: 1997
+    stages:
+      emergence:
+        gdd_min: 0
+        gdd_max: 143
+      tillering:
+        gdd_min: 143
+        gdd_max: 500
+      stem_elongation:
+        gdd_min: 500
+        gdd_max: 800
+      heading:
+        gdd_min: 800
+        gdd_max: 1100
+      maturity:
+        gdd_min: 1100
+        gdd_max: 1550
+    varieties:
+      winter:
+        stages:
+          emergence:
+            gdd_min: 0
+            gdd_max: 150
+          tillering:
+            gdd_min: 150
+            gdd_max: 650
+          stem_elongation:
+            gdd_min: 650
+            gdd_max: 1000
+          heading:
+            gdd_min: 1000
+            gdd_max: 1400
+          maturity:
+            gdd_min: 1400
+            gdd_max: 1900
+      spring:
+        stages:
+          emergence:
+            gdd_min: 0
+            gdd_max: 130
+          tillering:
+            gdd_min: 130
+            gdd_max: 400
+          stem_elongation:
+            gdd_min: 400
+            gdd_max: 650
+          heading:
+            gdd_min: 650
+            gdd_max: 950
+          maturity:
+            gdd_min: 950
+            gdd_max: 1300
+  barley:
+    base_temp_c: 0
+    upper_cutoff_c: 30
+    gdd_method: simple_avg_capped
+    source:
+      doi: 10.1016/j.eja.2004.02.001
+      short: Jamieson et al. 1998
+      author: Jamieson, P.D.
+      year: 1998
+    stages:
+      emergence:
+        gdd_min: 0
+        gdd_max: 130
+      tillering:
+        gdd_min: 130
+        gdd_max: 450
+      stem_elongation:
+        gdd_min: 450
+        gdd_max: 750
+      heading:
+        gdd_min: 750
+        gdd_max: 1050
+      maturity:
+        gdd_min: 1050
+        gdd_max: 1400
+    varieties:
+      winter:
+        stages:
+          emergence:
+            gdd_min: 0
+            gdd_max: 140
+          tillering:
+            gdd_min: 140
+            gdd_max: 550
+          stem_elongation:
+            gdd_min: 550
+            gdd_max: 950
+          heading:
+            gdd_min: 950
+            gdd_max: 1300
+          maturity:
+            gdd_min: 1300
+            gdd_max: 1750
+      spring:
+        stages:
+          emergence:
+            gdd_min: 0
+            gdd_max: 120
+          tillering:
+            gdd_min: 120
+            gdd_max: 400
+          stem_elongation:
+            gdd_min: 400
+            gdd_max: 650
+          heading:
+            gdd_min: 650
+            gdd_max: 900
+          maturity:
+            gdd_min: 900
+            gdd_max: 1250
+  maize:
+    base_temp_c: 10
+    upper_cutoff_c: 30
+    gdd_method: simple_avg_capped
+    source:
+      short: FAO-56
+      author: Allen et al.
+      year: 1998
+    stages:
+      emergence:
+        gdd_min: 0
+        gdd_max: 60
+      vegetative_v6:
+        gdd_min: 60
+        gdd_max: 350
+      silking:
+        gdd_min: 350
+        gdd_max: 750
+      dough:
+        gdd_min: 750
+        gdd_max: 1100
+      maturity:
+        gdd_min: 1100
+        gdd_max: 1450
+  rice:
+    base_temp_c: 10
+    upper_cutoff_c: 35
+    gdd_method: simple_avg_capped
+    source:
+      short: Gao et al. 1992
+      author: Gao, L.
+      year: 1992
+    stages:
+      emergence:
+        gdd_min: 0
+        gdd_max: 150
+      tillering:
+        gdd_min: 150
+        gdd_max: 600
+      panicle_initiation:
+        gdd_min: 600
+        gdd_max: 900
+      flowering:
+        gdd_min: 900
+        gdd_max: 1200
+      maturity:
+        gdd_min: 1200
+        gdd_max: 1800
+  oat:
+    base_temp_c: 0
+    upper_cutoff_c: 30
+    gdd_method: simple_avg_capped
+    source:
+      short: Keating et al. 2003
+      author: Keating, B.A.
+      year: 2003
+    stages:
+      emergence:
+        gdd_min: 0
+        gdd_max: 140
+      tillering:
+        gdd_min: 140
+        gdd_max: 480
+      stem_elongation:
+        gdd_min: 480
+        gdd_max: 780
+      heading:
+        gdd_min: 780
+        gdd_max: 1080
+      maturity:
+        gdd_min: 1080
+        gdd_max: 1450
+    varieties:
+      winter:
+        stages:
+          emergence:
+            gdd_min: 0
+            gdd_max: 150
+          tillering:
+            gdd_min: 150
+            gdd_max: 550
+          stem_elongation:
+            gdd_min: 550
+            gdd_max: 900
+          heading:
+            gdd_min: 900
+            gdd_max: 1250
+          maturity:
+            gdd_min: 1250
+            gdd_max: 1700
+      spring:
+        stages:
+          emergence:
+            gdd_min: 0
+            gdd_max: 130
+          tillering:
+            gdd_min: 130
+            gdd_max: 420
+          stem_elongation:
+            gdd_min: 420
+            gdd_max: 680
+          heading:
+            gdd_min: 680
+            gdd_max: 950
+          maturity:
+            gdd_min: 950
+            gdd_max: 1300
+  rye:
+    base_temp_c: 0
+    upper_cutoff_c: 30
+    gdd_method: simple_avg_capped
+    source:
+      short: Keating et al. 2003
+      author: Keating, B.A.
+      year: 2003
+    stages:
+      emergence:
+        gdd_min: 0
+        gdd_max: 135
+      tillering:
+        gdd_min: 135
+        gdd_max: 460
+      stem_elongation:
+        gdd_min: 460
+        gdd_max: 760
+      heading:
+        gdd_min: 760
+        gdd_max: 1050
+      maturity:
+        gdd_min: 1050
+        gdd_max: 1420
+  buckwheat:
+    base_temp_c: 5
+    upper_cutoff_c: 30
+    gdd_method: simple_avg_capped
+    source:
+      short: Michiyama et al. 2003
+      author: Michiyama, H.
+      year: 2003
+    stages:
+      emergence:
+        gdd_min: 0
+        gdd_max: 100
+      vegetative:
+        gdd_min: 100
+        gdd_max: 400
+      flowering:
+        gdd_min: 400
+        gdd_max: 700
+      maturity:
+        gdd_min: 700
+        gdd_max: 1100
+  chickpea:
+    base_temp_c: 5
+    upper_cutoff_c: 30
+    gdd_method: simple_avg_capped
+    source:
+      short: Soltani et al. 2006
+      doi: 10.1016/j.fcr.2005.09.014
+      author: Soltani, A.
+      year: 2006
+    stages:
+      emergence:
+        gdd_min: 0
+        gdd_max: 120
+      vegetative:
+        gdd_min: 120
+        gdd_max: 600
+      flowering:
+        gdd_min: 600
+        gdd_max: 950
+      pod_development:
+        gdd_min: 950
+        gdd_max: 1300
+      maturity:
+        gdd_min: 1300
+        gdd_max: 1700
+  lentil:
+    base_temp_c: 5
+    upper_cutoff_c: 30
+    gdd_method: simple_avg_capped
+    source:
+      short: Ellis et al. 1990
+      author: Ellis, R.H.
+      year: 1990
+    stages:
+      emergence:
+        gdd_min: 0
+        gdd_max: 110
+      vegetative:
+        gdd_min: 110
+        gdd_max: 550
+      flowering:
+        gdd_min: 550
+        gdd_max: 850
+      pod_development:
+        gdd_min: 850
+        gdd_max: 1150
+      maturity:
+        gdd_min: 1150
+        gdd_max: 1500
+  bean:
+    base_temp_c: 10
+    upper_cutoff_c: 30
+    gdd_method: simple_avg_capped
+    source:
+      short: White et al. 1992
+      author: White, J.W.
+      year: 1992
+    stages:
+      emergence:
+        gdd_min: 0
+        gdd_max: 80
+      vegetative:
+        gdd_min: 80
+        gdd_max: 350
+      flowering:
+        gdd_min: 350
+        gdd_max: 600
+      pod_development:
+        gdd_min: 600
+        gdd_max: 900
+      maturity:
+        gdd_min: 900
+        gdd_max: 1150
+  pea:
+    base_temp_c: 1
+    upper_cutoff_c: 25
+    gdd_method: simple_avg_capped
+    source:
+      short: Ney & Turc 1993
+      author: Ney, B.
+      year: 1993
+    stages:
+      emergence:
+        gdd_min: 0
+        gdd_max: 120
+      vegetative:
+        gdd_min: 120
+        gdd_max: 600
+      flowering:
+        gdd_min: 600
+        gdd_max: 900
+      pod_development:
+        gdd_min: 900
+        gdd_max: 1200
+      maturity:
+        gdd_min: 1200
+        gdd_max: 1550
+  grass_pea:
+    base_temp_c: 2
+    upper_cutoff_c: 28
+    gdd_method: simple_avg_capped
+    source:
+      short: Polignano et al. 2009
+      author: Polignano, G.B.
+      year: 2009
+    stages:
+      emergence:
+        gdd_min: 0
+        gdd_max: 130
+      vegetative:
+        gdd_min: 130
+        gdd_max: 650
+      flowering:
+        gdd_min: 650
+        gdd_max: 950
+      pod_development:
+        gdd_min: 950
+        gdd_max: 1250
+      maturity:
+        gdd_min: 1250
+        gdd_max: 1600
+  alfalfa:
+    base_temp_c: 5
+    upper_cutoff_c: 30
+    gdd_method: simple_avg_capped
+    source:
+      short: Confalonieri et al. 2001
+      author: Confalonieri, R.
+      year: 2001
+    stages:
+      spring_growth:
+        gdd_min: 0
+        gdd_max: 300
+      bud_development:
+        gdd_min: 300
+        gdd_max: 500
+      flowering:
+        gdd_min: 500
+        gdd_max: 800
+      seed_maturity:
+        gdd_min: 800
+        gdd_max: 1200
+  vetch:
+    base_temp_c: 2
+    upper_cutoff_c: 25
+    gdd_method: simple_avg_capped
+    source:
+      short: Mihailovic et al. 2007
+      author: Mihailovic, V.
+      year: 2007
+    stages:
+      emergence:
+        gdd_min: 0
+        gdd_max: 120
+      vegetative:
+        gdd_min: 120
+        gdd_max: 550
+      flowering:
+        gdd_min: 550
+        gdd_max: 850
+      pod_development:
+        gdd_min: 850
+        gdd_max: 1100
+      maturity:
+        gdd_min: 1100
+        gdd_max: 1400
+  sunflower:
+    base_temp_c: 6
+    upper_cutoff_c: 30
+    gdd_method: simple_avg_capped
+    source:
+      short: Sadras & Trápani 1999
+      author: Sadras, V.O.
+      year: 1999
+    stages:
+      emergence:
+        gdd_min: 0
+        gdd_max: 100
+      vegetative:
+        gdd_min: 100
+        gdd_max: 500
+      star_bud:
+        gdd_min: 500
+        gdd_max: 800
+      flowering:
+        gdd_min: 800
+        gdd_max: 1200
+      maturity:
+        gdd_min: 1200
+        gdd_max: 1600
+  rapeseed:
+    base_temp_c: 5
+    upper_cutoff_c: 30
+    gdd_method: simple_avg_capped
+    source:
+      short: Morrison et al. 1989
+      author: Morrison, M.J.
+      year: 1989
+    stages:
+      emergence:
+        gdd_min: 0
+        gdd_max: 120
+      rosette:
+        gdd_min: 120
+        gdd_max: 600
+      stem_elongation:
+        gdd_min: 600
+        gdd_max: 900
+      flowering:
+        gdd_min: 900
+        gdd_max: 1250
+      pod_fill:
+        gdd_min: 1250
+        gdd_max: 1700
+  sugar_beet:
+    base_temp_c: 3
+    upper_cutoff_c: 30
+    gdd_method: simple_avg_capped
+    source:
+      short: Milford et al. 1985
+      author: Milford, G.F.J.
+      year: 1985
+    stages:
+      emergence:
+        gdd_min: 0
+        gdd_max: 150
+      rosette:
+        gdd_min: 150
+        gdd_max: 700
+      root_expansion:
+        gdd_min: 700
+        gdd_max: 1800
+      harvest_ready:
+        gdd_min: 1800
+        gdd_max: 2500
+  hemp:
+    base_temp_c: 1
+    upper_cutoff_c: 28
+    gdd_method: simple_avg_capped
+    source:
+      short: Amaducci et al. 2008
+      author: Amaducci, S.
+      year: 2008
+    stages:
+      emergence:
+        gdd_min: 0
+        gdd_max: 100
+      vegetative:
+        gdd_min: 100
+        gdd_max: 600
+      flowering:
+        gdd_min: 600
+        gdd_max: 900
+      seed_maturity:
+        gdd_min: 900
+        gdd_max: 1300
+  flax:
+    base_temp_c: 5
+    upper_cutoff_c: 30
+    gdd_method: simple_avg_capped
+    source:
+      short: Cross et al. 2003
+      author: Cross, R.H.
+      year: 2003
+    stages:
+      emergence:
+        gdd_min: 0
+        gdd_max: 120
+      vegetative:
+        gdd_min: 120
+        gdd_max: 550
+      flowering:
+        gdd_min: 550
+        gdd_max: 850
+      boll_development:
+        gdd_min: 850
+        gdd_max: 1200
+      maturity:
+        gdd_min: 1200
+        gdd_max: 1500
+  potato:
+    base_temp_c: 2
+    upper_cutoff_c: 30
+    gdd_method: simple_avg_capped
+    source:
+      short: Sands et al. 1979
+      author: Sands, P.J.
+      year: 1979
+    stages:
+      emergence:
+        gdd_min: 0
+        gdd_max: 250
+      vegetative:
+        gdd_min: 250
+        gdd_max: 600
+      tuber_initiation:
+        gdd_min: 600
+        gdd_max: 900
+      tuber_bulking:
+        gdd_min: 900
+        gdd_max: 1800
+      maturation:
+        gdd_min: 1800
+        gdd_max: 2200
+    varieties:
+      early:
+        stages:
+          emergence:
+            gdd_min: 0
+            gdd_max: 200
+          vegetative:
+            gdd_min: 200
+            gdd_max: 500
+          tuber_initiation:
+            gdd_min: 500
+            gdd_max: 750
+          tuber_bulking:
+            gdd_min: 750
+            gdd_max: 1400
+          maturation:
+            gdd_min: 1400
+            gdd_max: 1700
+      late:
+        stages:
+          emergence:
+            gdd_min: 0
+            gdd_max: 280
+          vegetative:
+            gdd_min: 280
+            gdd_max: 700
+          tuber_initiation:
+            gdd_min: 700
+            gdd_max: 1050
+          tuber_bulking:
+            gdd_min: 1050
+            gdd_max: 2100
+          maturation:
+            gdd_min: 2100
+            gdd_max: 2500
+  tomato:
+    base_temp_c: 10
+    upper_cutoff_c: 30
+    gdd_method: simple_avg_capped
+    source:
+      short: Wolf et al. 1986
+      author: Wolf, S.
+      year: 1986
+    stages:
+      transplant_recovery:
+        gdd_min: 0
+        gdd_max: 100
+      vegetative:
+        gdd_min: 100
+        gdd_max: 400
+      flowering:
+        gdd_min: 400
+        gdd_max: 800
+      fruit_development:
+        gdd_min: 800
+        gdd_max: 1300
+      ripening:
+        gdd_min: 1300
+        gdd_max: 1700
+  broccoli:
+    base_temp_c: 5
+    upper_cutoff_c: 25
+    gdd_method: simple_avg_capped
+    source:
+      short: Greaves et al. 1998
+      author: Greaves, A.J.
+      year: 1998
+    stages:
+      emergence:
+        gdd_min: 0
+        gdd_max: 100
+      vegetative:
+        gdd_min: 100
+        gdd_max: 600
+      buttoning:
+        gdd_min: 600
+        gdd_max: 850
+      head_development:
+        gdd_min: 850
+        gdd_max: 1200
+      harvest:
+        gdd_min: 1200
+        gdd_max: 1350
+  garlic:
+    base_temp_c: 0
+    upper_cutoff_c: 25
+    gdd_method: simple_avg_capped
+    source:
+      short: Hwang et al. 2004
+      author: Hwang, J.M.
+      year: 2004
+    stages:
+      emergence:
+        gdd_min: 0
+        gdd_max: 150
+      vegetative:
+        gdd_min: 150
+        gdd_max: 800
+      clove_initiation:
+        gdd_min: 800
+        gdd_max: 1200
+      bulb_development:
+        gdd_min: 1200
+        gdd_max: 2000
+      harvest:
+        gdd_min: 2000
+        gdd_max: 2300
+  onion:
+    base_temp_c: 1
+    upper_cutoff_c: 27
+    gdd_method: simple_avg_capped
+    source:
+      short: Brewster 2008
+      author: Brewster, J.L.
+      year: 2008
+    stages:
+      emergence:
+        gdd_min: 0
+        gdd_max: 150
+      vegetative:
+        gdd_min: 150
+        gdd_max: 900
+      bulb_initiation:
+        gdd_min: 900
+        gdd_max: 1400
+      bulb_development:
+        gdd_min: 1400
+        gdd_max: 2200
+      harvest:
+        gdd_min: 2200
+        gdd_max: 2500
+  leek:
+    base_temp_c: 2
+    upper_cutoff_c: 25
+    gdd_method: simple_avg_capped
+    source:
+      short: Smit et al. 1996
+      author: Smit, A.L.
+      year: 1996
+    stages:
+      emergence:
+        gdd_min: 0
+        gdd_max: 150
+      vegetative_early:
+        gdd_min: 150
+        gdd_max: 800
+      stem_thickening:
+        gdd_min: 800
+        gdd_max: 1800
+      harvest_ready:
+        gdd_min: 1800
+        gdd_max: 2500
+  artichoke:
+    base_temp_c: 5
+    upper_cutoff_c: 30
+    gdd_method: simple_avg_capped
+    source:
+      short: Macua et al. 2005
+      author: Macua, J.I.
+      year: 2005
+    stages:
+      sprouting:
+        gdd_min: 0
+        gdd_max: 300
+      rosette:
+        gdd_min: 300
+        gdd_max: 900
+      head_initiation:
+        gdd_min: 900
+        gdd_max: 1300
+      harvest:
+        gdd_min: 1300
+        gdd_max: 1800
+  cardoon:
+    base_temp_c: 5
+    upper_cutoff_c: 30
+    gdd_method: simple_avg_capped
+    source:
+      short: Fernández et al. 2006
+      author: Fernández, J.
+      year: 2006
+    stages:
+      sprouting:
+        gdd_min: 0
+        gdd_max: 300
+      vegetative_growth:
+        gdd_min: 300
+        gdd_max: 1200
+      blanching:
+        gdd_min: 1200
+        gdd_max: 1500
+      harvest:
+        gdd_min: 1500
+        gdd_max: 1800
+  asparagus:
+    base_temp_c: 5
+    upper_cutoff_c: 30
+    gdd_method: simple_avg_capped
+    source:
+      short: Wilson et al. 1999
+      author: Wilson, D.R.
+      year: 1999
+    stages:
+      spear_emergence:
+        gdd_min: 0
+        gdd_max: 150
+      harvest_period:
+        gdd_min: 150
+        gdd_max: 600
+      fern_growth:
+        gdd_min: 600
+        gdd_max: 1800
+      senescence:
+        gdd_min: 1800
+        gdd_max: 2200
+  olive:
+    base_temp_c: 10
+    upper_cutoff_c: 35
+    gdd_method: simple_avg_capped
+    source:
+      short: Pérez-López et al. 2008
+      author: Pérez-López, D.
+      year: 2008
+    stages:
+      vegetative:
+        gdd_min: 0
+        gdd_max: 800
+      pit_hardening:
+        gdd_min: 800
+        gdd_max: 1600
+      fruit_growth:
+        gdd_min: 1600
+        gdd_max: 2600
+      maturity:
+        gdd_min: 2600
+        gdd_max: 3200
+  grapevine:
+    base_temp_c: 10
+    upper_cutoff_c: 35
+    gdd_method: simple_avg_capped
+    source:
+      short: Winkler et al. 1974
+      author: Winkler, A.J.
+      year: 1974
+    stages:
+      vegetative:
+        gdd_min: 0
+        gdd_max: 700
+      veraison:
+        gdd_min: 700
+        gdd_max: 1700
+      maturity:
+        gdd_min: 1700
+        gdd_max: 2200
+      post_harvest:
+        gdd_min: 2200
+        gdd_max: 2600
+    varieties:
+      early:
+        stages:
+          vegetative:
+            gdd_min: 0
+            gdd_max: 600
+          veraison:
+            gdd_min: 600
+            gdd_max: 1400
+          maturity:
+            gdd_min: 1400
+            gdd_max: 1800
+          post_harvest:
+            gdd_min: 1800
+            gdd_max: 2300
+      late:
+        stages:
+          vegetative:
+            gdd_min: 0
+            gdd_max: 800
+          veraison:
+            gdd_min: 800
+            gdd_max: 1900
+          maturity:
+            gdd_min: 1900
+            gdd_max: 2500
+          post_harvest:
+            gdd_min: 2500
+            gdd_max: 2900
+  almond:
+    base_temp_c: 7
+    upper_cutoff_c: 35
+    gdd_method: simple_avg_capped
+    source:
+      short: Egea et al. 2011
+      author: Egea, G.
+      year: 2011
+    stages:
+      vegetative:
+        gdd_min: 0
+        gdd_max: 600
+      kernel_fill:
+        gdd_min: 600
+        gdd_max: 1800
+      hull_split:
+        gdd_min: 1800
+        gdd_max: 2200
+      maturity:
+        gdd_min: 2200
+        gdd_max: 2500
+  pistachio:
+    base_temp_c: 7
+    upper_cutoff_c: 35
+    gdd_method: simple_avg_capped
+    source:
+      short: Spano et al. 2020
+      author: Spano, D.
+      year: 2020
+    stages:
+      bud_break:
+        gdd_min: 0
+        gdd_max: 250
+      shell_hardening:
+        gdd_min: 250
+        gdd_max: 1200
+      kernel_fill:
+        gdd_min: 1200
+        gdd_max: 2100
+      maturity:
+        gdd_min: 2100
+        gdd_max: 2600
+  apple:
+    base_temp_c: 4
+    upper_cutoff_c: 25
+    gdd_method: simple_avg_capped
+    source:
+      short: Baskerville & Emin 1969
+      author: Baskerville, G.L.
+      year: 1969
+    stages:
+      bud_break:
+        gdd_min: 0
+        gdd_max: 200
+      flowering:
+        gdd_min: 200
+        gdd_max: 450
+      fruit_growth:
+        gdd_min: 450
+        gdd_max: 1800
+      harvest:
+        gdd_min: 1800
+        gdd_max: 2200
+    varieties:
+      early:
+        stages:
+          bud_break:
+            gdd_min: 0
+            gdd_max: 180
+          flowering:
+            gdd_min: 180
+            gdd_max: 400
+          fruit_growth:
+            gdd_min: 400
+            gdd_max: 1500
+          harvest:
+            gdd_min: 1500
+            gdd_max: 1800
+      late:
+        stages:
+          bud_break:
+            gdd_min: 0
+            gdd_max: 220
+          flowering:
+            gdd_min: 220
+            gdd_max: 500
+          fruit_growth:
+            gdd_min: 500
+            gdd_max: 2100
+          harvest:
+            gdd_min: 2100
+            gdd_max: 2500
+  pear:
+    base_temp_c: 4
+    upper_cutoff_c: 25
+    gdd_method: simple_avg_capped
+    source:
+      short: Luedeling 2012
+      author: Luedeling, E.
+      year: 2012
+    stages:
+      bud_break:
+        gdd_min: 0
+        gdd_max: 190
+      flowering:
+        gdd_min: 190
+        gdd_max: 420
+      fruit_growth:
+        gdd_min: 420
+        gdd_max: 1600
+      harvest:
+        gdd_min: 1600
+        gdd_max: 1900
+    varieties:
+      conference:
+        stages:
+          bud_break:
+            gdd_min: 0
+            gdd_max: 180
+          flowering:
+            gdd_min: 180
+            gdd_max: 420
+          fruit_growth:
+            gdd_min: 420
+            gdd_max: 1700
+          harvest:
+            gdd_min: 1700
+            gdd_max: 1900
+      ercolini:
+        stages:
+          bud_break:
+            gdd_min: 0
+            gdd_max: 170
+          flowering:
+            gdd_min: 170
+            gdd_max: 380
+          fruit_growth:
+            gdd_min: 380
+            gdd_max: 1300
+          harvest:
+            gdd_min: 1300
+            gdd_max: 1550
+      blanquilla:
+        stages:
+          bud_break:
+            gdd_min: 0
+            gdd_max: 200
+          flowering:
+            gdd_min: 200
+            gdd_max: 450
+          fruit_growth:
+            gdd_min: 450
+            gdd_max: 2100
+          harvest:
+            gdd_min: 2100
+            gdd_max: 2400
+  peach:
+    base_temp_c: 4
+    upper_cutoff_c: 25
+    gdd_method: simple_avg_capped
+    source:
+      short: DeJong & Goudriaan 1989
+      author: DeJong, T.M.
+      year: 1989
+    stages:
+      bud_break:
+        gdd_min: 0
+        gdd_max: 250
+      flowering:
+        gdd_min: 250
+        gdd_max: 450
+      fruit_growth:
+        gdd_min: 450
+        gdd_max: 1600
+      harvest:
+        gdd_min: 1600
+        gdd_max: 1900
+    varieties:
+      early:
+        stages:
+          bud_break:
+            gdd_min: 0
+            gdd_max: 220
+          flowering:
+            gdd_min: 220
+            gdd_max: 400
+          fruit_growth:
+            gdd_min: 400
+            gdd_max: 1200
+          harvest:
+            gdd_min: 1200
+            gdd_max: 1500
+      late:
+        stages:
+          bud_break:
+            gdd_min: 0
+            gdd_max: 280
+          flowering:
+            gdd_min: 280
+            gdd_max: 500
+          fruit_growth:
+            gdd_min: 500
+            gdd_max: 1900
+          harvest:
+            gdd_min: 1900
+            gdd_max: 2200
+  apricot:
+    base_temp_c: 4
+    upper_cutoff_c: 25
+    gdd_method: simple_avg_capped
+    source:
+      short: Campoy et al. 2011
+      author: Campoy, J.A.
+      year: 2011
+    stages:
+      bud_break:
+        gdd_min: 0
+        gdd_max: 200
+      flowering:
+        gdd_min: 200
+        gdd_max: 400
+      fruit_growth:
+        gdd_min: 400
+        gdd_max: 1400
+      harvest:
+        gdd_min: 1400
+        gdd_max: 1700
+  plum:
+    base_temp_c: 4
+    upper_cutoff_c: 25
+    gdd_method: simple_avg_capped
+    source:
+      short: Tabuenca 1994
+      author: Tabuenca, M.C.
+      year: 1994
+    stages:
+      bud_break:
+        gdd_min: 0
+        gdd_max: 220
+      flowering:
+        gdd_min: 220
+        gdd_max: 450
+      fruit_growth:
+        gdd_min: 450
+        gdd_max: 1600
+      harvest:
+        gdd_min: 1600
+        gdd_max: 1900
+    varieties:
+      early:
+        stages:
+          bud_break:
+            gdd_min: 0
+            gdd_max: 200
+          flowering:
+            gdd_min: 200
+            gdd_max: 400
+          fruit_growth:
+            gdd_min: 400
+            gdd_max: 1300
+          harvest:
+            gdd_min: 1300
+            gdd_max: 1600
+      late:
+        stages:
+          bud_break:
+            gdd_min: 0
+            gdd_max: 250
+          flowering:
+            gdd_min: 250
+            gdd_max: 500
+          fruit_growth:
+            gdd_min: 500
+            gdd_max: 1900
+          harvest:
+            gdd_min: 1900
+            gdd_max: 2200
+  cherry:
+    base_temp_c: 4
+    upper_cutoff_c: 25
+    gdd_method: simple_avg_capped
+    source:
+      short: Zavalloni et al. 2006
+      author: Zavalloni, C.
+      year: 2006
+    stages:
+      bud_break:
+        gdd_min: 0
+        gdd_max: 200
+      flowering:
+        gdd_min: 200
+        gdd_max: 350
+      fruit_growth:
+        gdd_min: 350
+        gdd_max: 1000
+      harvest:
+        gdd_min: 1000
+        gdd_max: 1300
+    varieties:
+      early:
+        stages:
+          bud_break:
+            gdd_min: 0
+            gdd_max: 180
+          flowering:
+            gdd_min: 180
+            gdd_max: 300
+          fruit_growth:
+            gdd_min: 300
+            gdd_max: 800
+          harvest:
+            gdd_min: 800
+            gdd_max: 1000
+      late:
+        stages:
+          bud_break:
+            gdd_min: 0
+            gdd_max: 220
+          flowering:
+            gdd_min: 220
+            gdd_max: 400
+          fruit_growth:
+            gdd_min: 400
+            gdd_max: 1200
+          harvest:
+            gdd_min: 1200
+            gdd_max: 1500
+  faba_bean:
+    base_temp_c: 2
+    upper_cutoff_c: 35
+    gdd_method: simple_avg_capped
+    source:
+      doi: 10.1016/j.eja.2004.02.001
+      short: Jamieson et al. 1998
+      author: Jamieson, P.D.
+      year: 1998
+    stages:
+      emergence:
+        gdd_min: 0
+        gdd_max: 140
+      vegetative:
+        gdd_min: 140
+        gdd_max: 500
+      flowering:
+        gdd_min: 500
+        gdd_max: 900
+      maturity:
+        gdd_min: 900
+        gdd_max: 1300
+  pepper:
+    base_temp_c: 10
+    upper_cutoff_c: 35
+    gdd_method: simple_avg_capped
+    source:
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+      short: FAO-56
+      author: Allen et al.
+      year: 1998
+    stages:
+      emergence:
+        gdd_min: 0
+        gdd_max: 400
+      vegetative:
+        gdd_min: 400
+        gdd_max: 1000
+      flowering:
+        gdd_min: 1000
+        gdd_max: 1500
+      fruiting:
+        gdd_min: 1500
+        gdd_max: 2100
+  eggplant:
+    base_temp_c: 10
+    upper_cutoff_c: 35
+    gdd_method: simple_avg_capped
+    source:
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+      short: FAO-56
+      author: Allen et al.
+      year: 1998
+    stages:
+      emergence:
+        gdd_min: 0
+        gdd_max: 400
+      vegetative:
+        gdd_min: 400
+        gdd_max: 1000
+      flowering:
+        gdd_min: 1000
+        gdd_max: 1500
+      fruiting:
+        gdd_min: 1500
+        gdd_max: 2200
+  strawberry:
+    base_temp_c: 3
+    upper_cutoff_c: 35
+    gdd_method: simple_avg_capped
+    source:
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+      short: FAO-56
+      author: Allen et al.
+      year: 1998
+    stages:
+      dormancy_break:
+        gdd_min: 0
+        gdd_max: 300
+      vegetative:
+        gdd_min: 300
+        gdd_max: 800
+      flowering:
+        gdd_min: 800
+        gdd_max: 1400
+      fruiting:
+        gdd_min: 1400
+        gdd_max: 2200
+  melon:
+    base_temp_c: 10
+    upper_cutoff_c: 35
+    gdd_method: simple_avg_capped
+    source:
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+      short: FAO-56
+      author: Allen et al.
+      year: 1998
+    stages:
+      emergence:
+        gdd_min: 0
+        gdd_max: 350
+      vegetative:
+        gdd_min: 350
+        gdd_max: 850
+      flowering:
+        gdd_min: 850
+        gdd_max: 1300
+      fruiting:
+        gdd_min: 1300
+        gdd_max: 1800
+  bitter_vetch:
+    base_temp_c: 2
+    upper_cutoff_c: 35
+    gdd_method: simple_avg_capped
+    source:
+      doi: 10.1016/j.eja.2004.02.001
+      short: Jamieson et al. 1998
+      author: Jamieson, P.D.
+      year: 1998
+    stages:
+      emergence:
+        gdd_min: 0
+        gdd_max: 150
+      vegetative:
+        gdd_min: 150
+        gdd_max: 500
+      flowering:
+        gdd_min: 500
+        gdd_max: 900
+      maturity:
+        gdd_min: 900
+        gdd_max: 1200
+  soybean:
+    base_temp_c: 8
+    upper_cutoff_c: 35
+    gdd_method: simple_avg_capped
+    source:
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+      short: FAO-56
+      author: Allen et al.
+      year: 1998
+    stages:
+      emergence:
+        gdd_min: 0
+        gdd_max: 180
+      vegetative:
+        gdd_min: 180
+        gdd_max: 700
+      flowering:
+        gdd_min: 700
+        gdd_max: 1300
+      pod_fill:
+        gdd_min: 1300
+        gdd_max: 1800
+      maturity:
+        gdd_min: 1800
+        gdd_max: 2100
+  durum_wheat:
+    base_temp_c: 0
+    upper_cutoff_c: 30
+    gdd_method: simple_avg_capped
+    source:
+      doi: 10.1016/j.agrformet.2015.04.012
+      short: McMaster & Wilhelm 1997
+      author: McMaster, G.S.
+      year: 1997
+    stages:
+      emergence:
+        gdd_min: 0
+        gdd_max: 143
+      tillering:
+        gdd_min: 143
+        gdd_max: 500
+      stem_elongation:
+        gdd_min: 500
+        gdd_max: 800
+      heading:
+        gdd_min: 800
+        gdd_max: 1100
+      maturity:
+        gdd_min: 1100
+        gdd_max: 1550
+    varieties:
+      winter:
+        stages:
+          emergence:
+            gdd_min: 0
+            gdd_max: 150
+          tillering:
+            gdd_min: 150
+            gdd_max: 650
+          stem_elongation:
+            gdd_min: 650
+            gdd_max: 1000
+          heading:
+            gdd_min: 1000
+            gdd_max: 1400
+          maturity:
+            gdd_min: 1400
+            gdd_max: 1900
+      spring:
+        stages:
+          emergence:
+            gdd_min: 0
+            gdd_max: 130
+          tillering:
+            gdd_min: 130
+            gdd_max: 400
+          stem_elongation:
+            gdd_min: 400
+            gdd_max: 650
+          heading:
+            gdd_min: 650
+            gdd_max: 950
+          maturity:
+            gdd_min: 950
+            gdd_max: 1300
+crop_heat_tolerance:
+  almond:
+    heat_damage_threshold_c: 38
+    frost_damage_threshold_c: -12
+    heat_accum_hours: 48
+    source:
+      short: EcoCrop
+      author: FAO
+      year: 2020
+  apple:
+    heat_damage_threshold_c: 35
+    frost_damage_threshold_c: -25
+    heat_accum_hours: 48
+    source:
+      short: EcoCrop
+      author: FAO
+      year: 2020
+  apricot:
+    heat_damage_threshold_c: 38
+    frost_damage_threshold_c: -20
+    heat_accum_hours: 48
+    source:
+      short: EcoCrop
+      author: FAO
+      year: 2020
+  artichoke:
+    heat_damage_threshold_c: 35
+    frost_damage_threshold_c: -5
+    heat_accum_hours: 48
+    source:
+      short: EcoCrop
+      author: FAO
+      year: 2020
+  asparagus:
+    heat_damage_threshold_c: 35
+    frost_damage_threshold_c: -15
+    heat_accum_hours: 48
+    source:
+      short: EcoCrop
+      author: FAO
+      year: 2020
+  barley:
+    heat_damage_threshold_c: 35
+    frost_damage_threshold_c: -15
+    heat_accum_hours: 48
+    source:
+      short: EcoCrop
+      author: FAO
+      year: 2020
+  bean:
+    heat_damage_threshold_c: 35
+    frost_damage_threshold_c: 0
+    heat_accum_hours: 48
+    source:
+      short: EcoCrop
+      author: FAO
+      year: 2020
+  broccoli:
+    heat_damage_threshold_c: 30
+    frost_damage_threshold_c: -5
+    heat_accum_hours: 48
+    source:
+      short: EcoCrop
+      author: FAO
+      year: 2020
+  buckwheat:
+    heat_damage_threshold_c: 30
+    frost_damage_threshold_c: -2
+    heat_accum_hours: 48
+    source:
+      short: EcoCrop
+      author: FAO
+      year: 2020
+  cardoon:
+    heat_damage_threshold_c: 38
+    frost_damage_threshold_c: -5
+    heat_accum_hours: 48
+    source:
+      short: EcoCrop
+      author: FAO
+      year: 2020
+  cherry:
+    heat_damage_threshold_c: 33
+    frost_damage_threshold_c: -20
+    heat_accum_hours: 48
+    source:
+      short: EcoCrop
+      author: FAO
+      year: 2020
+  chickpea:
+    heat_damage_threshold_c: 38
+    frost_damage_threshold_c: -5
+    heat_accum_hours: 48
+    source:
+      short: EcoCrop
+      author: FAO
+      year: 2020
+  flax:
+    heat_damage_threshold_c: 35
+    frost_damage_threshold_c: -5
+    heat_accum_hours: 48
+    source:
+      short: EcoCrop
+      author: FAO
+      year: 2020
+  garlic:
+    heat_damage_threshold_c: 35
+    frost_damage_threshold_c: -10
+    heat_accum_hours: 48
+    source:
+      short: EcoCrop
+      author: FAO
+      year: 2020
+  grass_pea:
+    heat_damage_threshold_c: 38
+    frost_damage_threshold_c: -5
+    heat_accum_hours: 48
+    source:
+      short: EcoCrop
+      author: FAO
+      year: 2020
+  hemp:
+    heat_damage_threshold_c: 38
+    frost_damage_threshold_c: -2
+    heat_accum_hours: 48
+    source:
+      short: EcoCrop
+      author: FAO
+      year: 2020
+  leek:
+    heat_damage_threshold_c: 30
+    frost_damage_threshold_c: -8
+    heat_accum_hours: 48
+    source:
+      short: EcoCrop
+      author: FAO
+      year: 2020
+  lentil:
+    heat_damage_threshold_c: 35
+    frost_damage_threshold_c: -5
+    heat_accum_hours: 48
+    source:
+      short: EcoCrop
+      author: FAO
+      year: 2020
+  oat:
+    heat_damage_threshold_c: 32
+    frost_damage_threshold_c: -15
+    heat_accum_hours: 48
+    source:
+      short: EcoCrop
+      author: FAO
+      year: 2020
+  onion:
+    heat_damage_threshold_c: 35
+    frost_damage_threshold_c: -8
+    heat_accum_hours: 48
+    source:
+      short: EcoCrop
+      author: FAO
+      year: 2020
+  pea:
+    heat_damage_threshold_c: 30
+    frost_damage_threshold_c: -5
+    heat_accum_hours: 48
+    source:
+      short: EcoCrop
+      author: FAO
+      year: 2020
+  peach:
+    heat_damage_threshold_c: 38
+    frost_damage_threshold_c: -18
+    heat_accum_hours: 48
+    source:
+      short: EcoCrop
+      author: FAO
+      year: 2020
+  pear:
+    heat_damage_threshold_c: 35
+    frost_damage_threshold_c: -20
+    heat_accum_hours: 48
+    source:
+      short: EcoCrop
+      author: FAO
+      year: 2020
+  pistachio:
+    heat_damage_threshold_c: 42
+    frost_damage_threshold_c: -15
+    heat_accum_hours: 48
+    source:
+      short: EcoCrop
+      author: FAO
+      year: 2020
+  plum:
+    heat_damage_threshold_c: 35
+    frost_damage_threshold_c: -22
+    heat_accum_hours: 48
+    source:
+      short: EcoCrop
+      author: FAO
+      year: 2020
+  rapeseed:
+    heat_damage_threshold_c: 32
+    frost_damage_threshold_c: -12
+    heat_accum_hours: 48
+    source:
+      short: EcoCrop
+      author: FAO
+      year: 2020
+  rye:
+    heat_damage_threshold_c: 30
+    frost_damage_threshold_c: -25
+    heat_accum_hours: 48
+    source:
+      short: EcoCrop
+      author: FAO
+      year: 2020
+  sugar_beet:
+    heat_damage_threshold_c: 35
+    frost_damage_threshold_c: -8
+    heat_accum_hours: 48
+    source:
+      short: EcoCrop
+      author: FAO
+      year: 2020
+  tomato:
+    heat_damage_threshold_c: 35
+    frost_damage_threshold_c: 2
+    heat_accum_hours: 48
+    source:
+      short: EcoCrop
+      author: FAO
+      year: 2020
+  vetch:
+    heat_damage_threshold_c: 32
+    frost_damage_threshold_c: -10
+    heat_accum_hours: 48
+    source:
+      short: EcoCrop
+      author: FAO
+      year: 2020
+  wheat:
+    heat_damage_threshold_c: 35
+    frost_damage_threshold_c: -5
+    heat_accum_hours: 48
+    source:
+      short: EcoCrop
+      author: FAO
+      year: 2020
+  maize:
+    heat_damage_threshold_c: 40
+    frost_damage_threshold_c: -2
+    heat_accum_hours: 36
+    source:
+      short: EcoCrop
+      author: FAO
+      year: 2020
+  rice:
+    heat_damage_threshold_c: 40
+    frost_damage_threshold_c: 5
+    heat_accum_hours: 36
+    source:
+      short: EcoCrop
+      author: FAO
+      year: 2020
+  soybean:
+    heat_damage_threshold_c: 38
+    frost_damage_threshold_c: -2
+    heat_accum_hours: 48
+    source:
+      short: EcoCrop
+      author: FAO
+      year: 2020
+  sunflower:
+    heat_damage_threshold_c: 42
+    frost_damage_threshold_c: -3
+    heat_accum_hours: 36
+    source:
+      short: EcoCrop
+      author: FAO
+      year: 2020
+  potato:
+    heat_damage_threshold_c: 30
+    frost_damage_threshold_c: -2
+    heat_accum_hours: 24
+    source:
+      short: EcoCrop
+      author: FAO
+      year: 2020
+  alfalfa:
+    heat_damage_threshold_c: 38
+    frost_damage_threshold_c: -15
+    heat_accum_hours: 48
+    source:
+      short: EcoCrop
+      author: FAO
+      year: 2020
+  grapevine:
+    heat_damage_threshold_c: 38
+    frost_damage_threshold_c: -15
+    heat_accum_hours: 24
+    source:
+      short: Connor & Fereres 2005
+      doi: 10.1016/j.scienta.2005.03.008
+      author: Connor, D.J.
+      year: 2005
+  olive:
+    heat_damage_threshold_c: 35
+    frost_damage_threshold_c: -5
+    heat_accum_hours: 6
+    source:
+      short: Connor & Fereres 2005
+      doi: 10.1016/j.scienta.2005.03.008
+      author: Connor, D.J.
+      year: 2005
+  pepper:
+    heat_damage_threshold_c: 38
+    frost_damage_threshold_c: 2
+    heat_accum_hours: 48
+    source:
+      short: EcoCrop
+      author: FAO
+      year: 2020
+  eggplant:
+    heat_damage_threshold_c: 35
+    frost_damage_threshold_c: 5
+    heat_accum_hours: 48
+    source:
+      short: EcoCrop
+      author: FAO
+      year: 2020
+  strawberry:
+    heat_damage_threshold_c: 30
+    frost_damage_threshold_c: -10
+    heat_accum_hours: 24
+    source:
+      short: EcoCrop
+      author: FAO
+      year: 2020
+  melon:
+    heat_damage_threshold_c: 38
+    frost_damage_threshold_c: 5
+    heat_accum_hours: 36
+    source:
+      short: EcoCrop
+      author: FAO
+      year: 2020
+  bitter_vetch:
+    heat_damage_threshold_c: 35
+    frost_damage_threshold_c: -5
+    heat_accum_hours: 48
+    source:
+      short: EcoCrop
+      author: FAO
+      year: 2020
+  faba_bean:
+    heat_damage_threshold_c: 35
+    frost_damage_threshold_c: -3
+    heat_accum_hours: 48
+    source:
+      short: EcoCrop
+      author: FAO
+      year: 2020
+  durum_wheat:
+    heat_damage_threshold_c: 35
+    frost_damage_threshold_c: -5
+    heat_accum_hours: 48
+    source:
+      short: EcoCrop
+      author: FAO
+      year: 2020
+crop_nutrient_profiles:
+  alfalfa:
+    source:
+      short: IPNI/FAO
+      author: IPNI
+      year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+    nitrogen:
+      initial:
+        uptake_kg_ha_day: 0.56
+        total_kg_ha: 5
+      development:
+        uptake_kg_ha_day: 0.56
+        total_kg_ha: 15
+      mid-season:
+        uptake_kg_ha_day: 0.56
+        total_kg_ha: 20
+      late-season:
+        uptake_kg_ha_day: 0.56
+        total_kg_ha: 10
+    phosphorus:
+      initial:
+        uptake_kg_ha_day: 0.33
+        total_kg_ha: 3
+      development:
+        uptake_kg_ha_day: 0.33
+        total_kg_ha: 9
+      mid-season:
+        uptake_kg_ha_day: 0.33
+        total_kg_ha: 12
+      late-season:
+        uptake_kg_ha_day: 0.33
+        total_kg_ha: 6
+    potassium:
+      initial:
+        uptake_kg_ha_day: 2.22
+        total_kg_ha: 20
+      development:
+        uptake_kg_ha_day: 2.22
+        total_kg_ha: 60
+      mid-season:
+        uptake_kg_ha_day: 2.22
+        total_kg_ha: 80
+      late-season:
+        uptake_kg_ha_day: 2.22
+        total_kg_ha: 40
+  almond:
+    nitrogen:
+      initial:
+        uptake_kg_ha_day: 2.0
+        total_kg_ha: 18
+      development:
+        uptake_kg_ha_day: 2.0
+        total_kg_ha: 54
+      mid-season:
+        uptake_kg_ha_day: 2.0
+        total_kg_ha: 72
+      late-season:
+        uptake_kg_ha_day: 2.0
+        total_kg_ha: 36
+    phosphorus:
+      initial:
+        uptake_kg_ha_day: 0.44
+        total_kg_ha: 4
+      development:
+        uptake_kg_ha_day: 0.44
+        total_kg_ha: 12
+      mid-season:
+        uptake_kg_ha_day: 0.44
+        total_kg_ha: 16
+      late-season:
+        uptake_kg_ha_day: 0.44
+        total_kg_ha: 8
+    potassium:
+      initial:
+        uptake_kg_ha_day: 2.22
+        total_kg_ha: 20
+      development:
+        uptake_kg_ha_day: 2.22
+        total_kg_ha: 60
+      mid-season:
+        uptake_kg_ha_day: 2.22
+        total_kg_ha: 80
+      late-season:
+        uptake_kg_ha_day: 2.22
+        total_kg_ha: 40
+    source:
+      short: IPNI/FAO
+      author: IPNI
+      year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+  apple:
+    nitrogen:
+      initial:
+        uptake_kg_ha_day: 1.33
+        total_kg_ha: 12
+      development:
+        uptake_kg_ha_day: 1.33
+        total_kg_ha: 36
+      mid-season:
+        uptake_kg_ha_day: 1.33
+        total_kg_ha: 48
+      late-season:
+        uptake_kg_ha_day: 1.33
+        total_kg_ha: 24
+    phosphorus:
+      initial:
+        uptake_kg_ha_day: 0.33
+        total_kg_ha: 3
+      development:
+        uptake_kg_ha_day: 0.33
+        total_kg_ha: 9
+      mid-season:
+        uptake_kg_ha_day: 0.33
+        total_kg_ha: 12
+      late-season:
+        uptake_kg_ha_day: 0.33
+        total_kg_ha: 6
+    potassium:
+      initial:
+        uptake_kg_ha_day: 1.67
+        total_kg_ha: 15
+      development:
+        uptake_kg_ha_day: 1.67
+        total_kg_ha: 45
+      mid-season:
+        uptake_kg_ha_day: 1.67
+        total_kg_ha: 60
+      late-season:
+        uptake_kg_ha_day: 1.67
+        total_kg_ha: 30
+    source:
+      short: IPNI/FAO
+      author: IPNI
+      year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+  apricot:
+    nitrogen:
+      initial:
+        uptake_kg_ha_day: 1.0
+        total_kg_ha: 9
+      development:
+        uptake_kg_ha_day: 1.0
+        total_kg_ha: 27
+      mid-season:
+        uptake_kg_ha_day: 1.0
+        total_kg_ha: 36
+      late-season:
+        uptake_kg_ha_day: 1.0
+        total_kg_ha: 18
+    phosphorus:
+      initial:
+        uptake_kg_ha_day: 0.28
+        total_kg_ha: 2
+      development:
+        uptake_kg_ha_day: 0.28
+        total_kg_ha: 8
+      mid-season:
+        uptake_kg_ha_day: 0.28
+        total_kg_ha: 10
+      late-season:
+        uptake_kg_ha_day: 0.28
+        total_kg_ha: 5
+    potassium:
+      initial:
+        uptake_kg_ha_day: 1.33
+        total_kg_ha: 12
+      development:
+        uptake_kg_ha_day: 1.33
+        total_kg_ha: 36
+      mid-season:
+        uptake_kg_ha_day: 1.33
+        total_kg_ha: 48
+      late-season:
+        uptake_kg_ha_day: 1.33
+        total_kg_ha: 24
+    source:
+      short: IPNI/FAO
+      author: IPNI
+      year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+  artichoke:
+    nitrogen:
+      initial:
+        uptake_kg_ha_day: 2.0
+        total_kg_ha: 18
+      development:
+        uptake_kg_ha_day: 2.0
+        total_kg_ha: 54
+      mid-season:
+        uptake_kg_ha_day: 2.0
+        total_kg_ha: 72
+      late-season:
+        uptake_kg_ha_day: 2.0
+        total_kg_ha: 36
+    phosphorus:
+      initial:
+        uptake_kg_ha_day: 0.44
+        total_kg_ha: 4
+      development:
+        uptake_kg_ha_day: 0.44
+        total_kg_ha: 12
+      mid-season:
+        uptake_kg_ha_day: 0.44
+        total_kg_ha: 16
+      late-season:
+        uptake_kg_ha_day: 0.44
+        total_kg_ha: 8
+    potassium:
+      initial:
+        uptake_kg_ha_day: 2.78
+        total_kg_ha: 25
+      development:
+        uptake_kg_ha_day: 2.78
+        total_kg_ha: 75
+      mid-season:
+        uptake_kg_ha_day: 2.78
+        total_kg_ha: 100
+      late-season:
+        uptake_kg_ha_day: 2.78
+        total_kg_ha: 50
+    source:
+      short: IPNI/FAO
+      author: IPNI
+      year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+  asparagus:
+    nitrogen:
+      initial:
+        uptake_kg_ha_day: 1.33
+        total_kg_ha: 12
+      development:
+        uptake_kg_ha_day: 1.33
+        total_kg_ha: 36
+      mid-season:
+        uptake_kg_ha_day: 1.33
+        total_kg_ha: 48
+      late-season:
+        uptake_kg_ha_day: 1.33
+        total_kg_ha: 24
+    phosphorus:
+      initial:
+        uptake_kg_ha_day: 0.33
+        total_kg_ha: 3
+      development:
+        uptake_kg_ha_day: 0.33
+        total_kg_ha: 9
+      mid-season:
+        uptake_kg_ha_day: 0.33
+        total_kg_ha: 12
+      late-season:
+        uptake_kg_ha_day: 0.33
+        total_kg_ha: 6
+    potassium:
+      initial:
+        uptake_kg_ha_day: 1.67
+        total_kg_ha: 15
+      development:
+        uptake_kg_ha_day: 1.67
+        total_kg_ha: 45
+      mid-season:
+        uptake_kg_ha_day: 1.67
+        total_kg_ha: 60
+      late-season:
+        uptake_kg_ha_day: 1.67
+        total_kg_ha: 30
+    source:
+      short: IPNI/FAO
+      author: IPNI
+      year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+  barley:
+    nitrogen:
+      initial:
+        uptake_kg_ha_day: 1.56
+        total_kg_ha: 14
+      development:
+        uptake_kg_ha_day: 1.56
+        total_kg_ha: 42
+      mid-season:
+        uptake_kg_ha_day: 1.56
+        total_kg_ha: 56
+      late-season:
+        uptake_kg_ha_day: 1.56
+        total_kg_ha: 28
+    phosphorus:
+      initial:
+        uptake_kg_ha_day: 0.56
+        total_kg_ha: 5
+      development:
+        uptake_kg_ha_day: 0.56
+        total_kg_ha: 15
+      mid-season:
+        uptake_kg_ha_day: 0.56
+        total_kg_ha: 20
+      late-season:
+        uptake_kg_ha_day: 0.56
+        total_kg_ha: 10
+    potassium:
+      initial:
+        uptake_kg_ha_day: 1.67
+        total_kg_ha: 15
+      development:
+        uptake_kg_ha_day: 1.67
+        total_kg_ha: 45
+      mid-season:
+        uptake_kg_ha_day: 1.67
+        total_kg_ha: 60
+      late-season:
+        uptake_kg_ha_day: 1.67
+        total_kg_ha: 30
+    source:
+      short: IPNI/FAO
+      author: IPNI
+      year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+  bean:
+    nitrogen:
+      initial:
+        uptake_kg_ha_day: 1.11
+        total_kg_ha: 10
+      development:
+        uptake_kg_ha_day: 1.11
+        total_kg_ha: 30
+      mid-season:
+        uptake_kg_ha_day: 1.11
+        total_kg_ha: 40
+      late-season:
+        uptake_kg_ha_day: 1.11
+        total_kg_ha: 20
+    phosphorus:
+      initial:
+        uptake_kg_ha_day: 0.33
+        total_kg_ha: 3
+      development:
+        uptake_kg_ha_day: 0.33
+        total_kg_ha: 9
+      mid-season:
+        uptake_kg_ha_day: 0.33
+        total_kg_ha: 12
+      late-season:
+        uptake_kg_ha_day: 0.33
+        total_kg_ha: 6
+    potassium:
+      initial:
+        uptake_kg_ha_day: 1.33
+        total_kg_ha: 12
+      development:
+        uptake_kg_ha_day: 1.33
+        total_kg_ha: 36
+      mid-season:
+        uptake_kg_ha_day: 1.33
+        total_kg_ha: 48
+      late-season:
+        uptake_kg_ha_day: 1.33
+        total_kg_ha: 24
+    source:
+      short: IPNI/FAO
+      author: IPNI
+      year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+  broccoli:
+    nitrogen:
+      initial:
+        uptake_kg_ha_day: 2.22
+        total_kg_ha: 20
+      development:
+        uptake_kg_ha_day: 2.22
+        total_kg_ha: 60
+      mid-season:
+        uptake_kg_ha_day: 2.22
+        total_kg_ha: 80
+      late-season:
+        uptake_kg_ha_day: 2.22
+        total_kg_ha: 40
+    phosphorus:
+      initial:
+        uptake_kg_ha_day: 0.56
+        total_kg_ha: 5
+      development:
+        uptake_kg_ha_day: 0.56
+        total_kg_ha: 15
+      mid-season:
+        uptake_kg_ha_day: 0.56
+        total_kg_ha: 20
+      late-season:
+        uptake_kg_ha_day: 0.56
+        total_kg_ha: 10
+    potassium:
+      initial:
+        uptake_kg_ha_day: 2.78
+        total_kg_ha: 25
+      development:
+        uptake_kg_ha_day: 2.78
+        total_kg_ha: 75
+      mid-season:
+        uptake_kg_ha_day: 2.78
+        total_kg_ha: 100
+      late-season:
+        uptake_kg_ha_day: 2.78
+        total_kg_ha: 50
+    source:
+      short: IPNI/FAO
+      author: IPNI
+      year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+  buckwheat:
+    nitrogen:
+      initial:
+        uptake_kg_ha_day: 0.67
+        total_kg_ha: 6
+      development:
+        uptake_kg_ha_day: 0.67
+        total_kg_ha: 18
+      mid-season:
+        uptake_kg_ha_day: 0.67
+        total_kg_ha: 24
+      late-season:
+        uptake_kg_ha_day: 0.67
+        total_kg_ha: 12
+    phosphorus:
+      initial:
+        uptake_kg_ha_day: 0.22
+        total_kg_ha: 2
+      development:
+        uptake_kg_ha_day: 0.22
+        total_kg_ha: 6
+      mid-season:
+        uptake_kg_ha_day: 0.22
+        total_kg_ha: 8
+      late-season:
+        uptake_kg_ha_day: 0.22
+        total_kg_ha: 4
+    potassium:
+      initial:
+        uptake_kg_ha_day: 0.89
+        total_kg_ha: 8
+      development:
+        uptake_kg_ha_day: 0.89
+        total_kg_ha: 24
+      mid-season:
+        uptake_kg_ha_day: 0.89
+        total_kg_ha: 32
+      late-season:
+        uptake_kg_ha_day: 0.89
+        total_kg_ha: 16
+    source:
+      short: IPNI/FAO
+      author: IPNI
+      year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+  cardoon:
+    nitrogen:
+      initial:
+        uptake_kg_ha_day: 1.67
+        total_kg_ha: 15
+      development:
+        uptake_kg_ha_day: 1.67
+        total_kg_ha: 45
+      mid-season:
+        uptake_kg_ha_day: 1.67
+        total_kg_ha: 60
+      late-season:
+        uptake_kg_ha_day: 1.67
+        total_kg_ha: 30
+    phosphorus:
+      initial:
+        uptake_kg_ha_day: 0.39
+        total_kg_ha: 4
+      development:
+        uptake_kg_ha_day: 0.39
+        total_kg_ha: 10
+      mid-season:
+        uptake_kg_ha_day: 0.39
+        total_kg_ha: 14
+      late-season:
+        uptake_kg_ha_day: 0.39
+        total_kg_ha: 7
+    potassium:
+      initial:
+        uptake_kg_ha_day: 2.44
+        total_kg_ha: 22
+      development:
+        uptake_kg_ha_day: 2.44
+        total_kg_ha: 66
+      mid-season:
+        uptake_kg_ha_day: 2.44
+        total_kg_ha: 88
+      late-season:
+        uptake_kg_ha_day: 2.44
+        total_kg_ha: 44
+    source:
+      short: IPNI/FAO
+      author: IPNI
+      year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+  cherry:
+    nitrogen:
+      initial:
+        uptake_kg_ha_day: 1.11
+        total_kg_ha: 10
+      development:
+        uptake_kg_ha_day: 1.11
+        total_kg_ha: 30
+      mid-season:
+        uptake_kg_ha_day: 1.11
+        total_kg_ha: 40
+      late-season:
+        uptake_kg_ha_day: 1.11
+        total_kg_ha: 20
+    phosphorus:
+      initial:
+        uptake_kg_ha_day: 0.28
+        total_kg_ha: 2
+      development:
+        uptake_kg_ha_day: 0.28
+        total_kg_ha: 8
+      mid-season:
+        uptake_kg_ha_day: 0.28
+        total_kg_ha: 10
+      late-season:
+        uptake_kg_ha_day: 0.28
+        total_kg_ha: 5
+    potassium:
+      initial:
+        uptake_kg_ha_day: 1.56
+        total_kg_ha: 14
+      development:
+        uptake_kg_ha_day: 1.56
+        total_kg_ha: 42
+      mid-season:
+        uptake_kg_ha_day: 1.56
+        total_kg_ha: 56
+      late-season:
+        uptake_kg_ha_day: 1.56
+        total_kg_ha: 28
+    source:
+      short: IPNI/FAO
+      author: IPNI
+      year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+  chickpea:
+    nitrogen:
+      initial:
+        uptake_kg_ha_day: 0.89
+        total_kg_ha: 8
+      development:
+        uptake_kg_ha_day: 0.89
+        total_kg_ha: 24
+      mid-season:
+        uptake_kg_ha_day: 0.89
+        total_kg_ha: 32
+      late-season:
+        uptake_kg_ha_day: 0.89
+        total_kg_ha: 16
+    phosphorus:
+      initial:
+        uptake_kg_ha_day: 0.28
+        total_kg_ha: 2
+      development:
+        uptake_kg_ha_day: 0.28
+        total_kg_ha: 8
+      mid-season:
+        uptake_kg_ha_day: 0.28
+        total_kg_ha: 10
+      late-season:
+        uptake_kg_ha_day: 0.28
+        total_kg_ha: 5
+    potassium:
+      initial:
+        uptake_kg_ha_day: 1.11
+        total_kg_ha: 10
+      development:
+        uptake_kg_ha_day: 1.11
+        total_kg_ha: 30
+      mid-season:
+        uptake_kg_ha_day: 1.11
+        total_kg_ha: 40
+      late-season:
+        uptake_kg_ha_day: 1.11
+        total_kg_ha: 20
+    source:
+      short: IPNI/FAO
+      author: IPNI
+      year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+  flax:
+    nitrogen:
+      initial:
+        uptake_kg_ha_day: 0.89
+        total_kg_ha: 8
+      development:
+        uptake_kg_ha_day: 0.89
+        total_kg_ha: 24
+      mid-season:
+        uptake_kg_ha_day: 0.89
+        total_kg_ha: 32
+      late-season:
+        uptake_kg_ha_day: 0.89
+        total_kg_ha: 16
+    phosphorus:
+      initial:
+        uptake_kg_ha_day: 0.28
+        total_kg_ha: 2
+      development:
+        uptake_kg_ha_day: 0.28
+        total_kg_ha: 8
+      mid-season:
+        uptake_kg_ha_day: 0.28
+        total_kg_ha: 10
+      late-season:
+        uptake_kg_ha_day: 0.28
+        total_kg_ha: 5
+    potassium:
+      initial:
+        uptake_kg_ha_day: 1.11
+        total_kg_ha: 10
+      development:
+        uptake_kg_ha_day: 1.11
+        total_kg_ha: 30
+      mid-season:
+        uptake_kg_ha_day: 1.11
+        total_kg_ha: 40
+      late-season:
+        uptake_kg_ha_day: 1.11
+        total_kg_ha: 20
+    source:
+      short: IPNI/FAO
+      author: IPNI
+      year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+  garlic:
+    nitrogen:
+      initial:
+        uptake_kg_ha_day: 1.67
+        total_kg_ha: 15
+      development:
+        uptake_kg_ha_day: 1.67
+        total_kg_ha: 45
+      mid-season:
+        uptake_kg_ha_day: 1.67
+        total_kg_ha: 60
+      late-season:
+        uptake_kg_ha_day: 1.67
+        total_kg_ha: 30
+    phosphorus:
+      initial:
+        uptake_kg_ha_day: 0.44
+        total_kg_ha: 4
+      development:
+        uptake_kg_ha_day: 0.44
+        total_kg_ha: 12
+      mid-season:
+        uptake_kg_ha_day: 0.44
+        total_kg_ha: 16
+      late-season:
+        uptake_kg_ha_day: 0.44
+        total_kg_ha: 8
+    potassium:
+      initial:
+        uptake_kg_ha_day: 2.0
+        total_kg_ha: 18
+      development:
+        uptake_kg_ha_day: 2.0
+        total_kg_ha: 54
+      mid-season:
+        uptake_kg_ha_day: 2.0
+        total_kg_ha: 72
+      late-season:
+        uptake_kg_ha_day: 2.0
+        total_kg_ha: 36
+    source:
+      short: IPNI/FAO
+      author: IPNI
+      year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+  grapevine:
+    source:
+      short: IPNI/FAO
+      author: IPNI
+      year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+    nitrogen:
+      initial:
+        uptake_kg_ha_day: 0.89
+        total_kg_ha: 8
+      development:
+        uptake_kg_ha_day: 0.89
+        total_kg_ha: 24
+      mid-season:
+        uptake_kg_ha_day: 0.89
+        total_kg_ha: 32
+      late-season:
+        uptake_kg_ha_day: 0.89
+        total_kg_ha: 16
+    phosphorus:
+      initial:
+        uptake_kg_ha_day: 0.22
+        total_kg_ha: 2
+      development:
+        uptake_kg_ha_day: 0.22
+        total_kg_ha: 6
+      mid-season:
+        uptake_kg_ha_day: 0.22
+        total_kg_ha: 8
+      late-season:
+        uptake_kg_ha_day: 0.22
+        total_kg_ha: 4
+    potassium:
+      initial:
+        uptake_kg_ha_day: 1.33
+        total_kg_ha: 12
+      development:
+        uptake_kg_ha_day: 1.33
+        total_kg_ha: 36
+      mid-season:
+        uptake_kg_ha_day: 1.33
+        total_kg_ha: 48
+      late-season:
+        uptake_kg_ha_day: 1.33
+        total_kg_ha: 24
+  grass_pea:
+    nitrogen:
+      initial:
+        uptake_kg_ha_day: 0.67
+        total_kg_ha: 6
+      development:
+        uptake_kg_ha_day: 0.67
+        total_kg_ha: 18
+      mid-season:
+        uptake_kg_ha_day: 0.67
+        total_kg_ha: 24
+      late-season:
+        uptake_kg_ha_day: 0.67
+        total_kg_ha: 12
+    phosphorus:
+      initial:
+        uptake_kg_ha_day: 0.22
+        total_kg_ha: 2
+      development:
+        uptake_kg_ha_day: 0.22
+        total_kg_ha: 6
+      mid-season:
+        uptake_kg_ha_day: 0.22
+        total_kg_ha: 8
+      late-season:
+        uptake_kg_ha_day: 0.22
+        total_kg_ha: 4
+    potassium:
+      initial:
+        uptake_kg_ha_day: 0.89
+        total_kg_ha: 8
+      development:
+        uptake_kg_ha_day: 0.89
+        total_kg_ha: 24
+      mid-season:
+        uptake_kg_ha_day: 0.89
+        total_kg_ha: 32
+      late-season:
+        uptake_kg_ha_day: 0.89
+        total_kg_ha: 16
+    source:
+      short: IPNI/FAO
+      author: IPNI
+      year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+  hemp:
+    nitrogen:
+      initial:
+        uptake_kg_ha_day: 1.33
+        total_kg_ha: 12
+      development:
+        uptake_kg_ha_day: 1.33
+        total_kg_ha: 36
+      mid-season:
+        uptake_kg_ha_day: 1.33
+        total_kg_ha: 48
+      late-season:
+        uptake_kg_ha_day: 1.33
+        total_kg_ha: 24
+    phosphorus:
+      initial:
+        uptake_kg_ha_day: 0.39
+        total_kg_ha: 4
+      development:
+        uptake_kg_ha_day: 0.39
+        total_kg_ha: 10
+      mid-season:
+        uptake_kg_ha_day: 0.39
+        total_kg_ha: 14
+      late-season:
+        uptake_kg_ha_day: 0.39
+        total_kg_ha: 7
+    potassium:
+      initial:
+        uptake_kg_ha_day: 1.78
+        total_kg_ha: 16
+      development:
+        uptake_kg_ha_day: 1.78
+        total_kg_ha: 48
+      mid-season:
+        uptake_kg_ha_day: 1.78
+        total_kg_ha: 64
+      late-season:
+        uptake_kg_ha_day: 1.78
+        total_kg_ha: 32
+    source:
+      short: IPNI/FAO
+      author: IPNI
+      year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+  leek:
+    nitrogen:
+      initial:
+        uptake_kg_ha_day: 2.0
+        total_kg_ha: 18
+      development:
+        uptake_kg_ha_day: 2.0
+        total_kg_ha: 54
+      mid-season:
+        uptake_kg_ha_day: 2.0
+        total_kg_ha: 72
+      late-season:
+        uptake_kg_ha_day: 2.0
+        total_kg_ha: 36
+    phosphorus:
+      initial:
+        uptake_kg_ha_day: 0.44
+        total_kg_ha: 4
+      development:
+        uptake_kg_ha_day: 0.44
+        total_kg_ha: 12
+      mid-season:
+        uptake_kg_ha_day: 0.44
+        total_kg_ha: 16
+      late-season:
+        uptake_kg_ha_day: 0.44
+        total_kg_ha: 8
+    potassium:
+      initial:
+        uptake_kg_ha_day: 2.22
+        total_kg_ha: 20
+      development:
+        uptake_kg_ha_day: 2.22
+        total_kg_ha: 60
+      mid-season:
+        uptake_kg_ha_day: 2.22
+        total_kg_ha: 80
+      late-season:
+        uptake_kg_ha_day: 2.22
+        total_kg_ha: 40
+    source:
+      short: IPNI/FAO
+      author: IPNI
+      year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+  lentil:
+    nitrogen:
+      initial:
+        uptake_kg_ha_day: 0.78
+        total_kg_ha: 7
+      development:
+        uptake_kg_ha_day: 0.78
+        total_kg_ha: 21
+      mid-season:
+        uptake_kg_ha_day: 0.78
+        total_kg_ha: 28
+      late-season:
+        uptake_kg_ha_day: 0.78
+        total_kg_ha: 14
+    phosphorus:
+      initial:
+        uptake_kg_ha_day: 0.22
+        total_kg_ha: 2
+      development:
+        uptake_kg_ha_day: 0.22
+        total_kg_ha: 6
+      mid-season:
+        uptake_kg_ha_day: 0.22
+        total_kg_ha: 8
+      late-season:
+        uptake_kg_ha_day: 0.22
+        total_kg_ha: 4
+    potassium:
+      initial:
+        uptake_kg_ha_day: 1.0
+        total_kg_ha: 9
+      development:
+        uptake_kg_ha_day: 1.0
+        total_kg_ha: 27
+      mid-season:
+        uptake_kg_ha_day: 1.0
+        total_kg_ha: 36
+      late-season:
+        uptake_kg_ha_day: 1.0
+        total_kg_ha: 18
+    source:
+      short: IPNI/FAO
+      author: IPNI
+      year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+  oat:
+    nitrogen:
+      initial:
+        uptake_kg_ha_day: 1.22
+        total_kg_ha: 11
+      development:
+        uptake_kg_ha_day: 1.22
+        total_kg_ha: 33
+      mid-season:
+        uptake_kg_ha_day: 1.22
+        total_kg_ha: 44
+      late-season:
+        uptake_kg_ha_day: 1.22
+        total_kg_ha: 22
+    phosphorus:
+      initial:
+        uptake_kg_ha_day: 0.44
+        total_kg_ha: 4
+      development:
+        uptake_kg_ha_day: 0.44
+        total_kg_ha: 12
+      mid-season:
+        uptake_kg_ha_day: 0.44
+        total_kg_ha: 16
+      late-season:
+        uptake_kg_ha_day: 0.44
+        total_kg_ha: 8
+    potassium:
+      initial:
+        uptake_kg_ha_day: 1.44
+        total_kg_ha: 13
+      development:
+        uptake_kg_ha_day: 1.44
+        total_kg_ha: 39
+      mid-season:
+        uptake_kg_ha_day: 1.44
+        total_kg_ha: 52
+      late-season:
+        uptake_kg_ha_day: 1.44
+        total_kg_ha: 26
+    source:
+      short: IPNI/FAO
+      author: IPNI
+      year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+  onion:
+    nitrogen:
+      initial:
+        uptake_kg_ha_day: 1.78
+        total_kg_ha: 16
+      development:
+        uptake_kg_ha_day: 1.78
+        total_kg_ha: 48
+      mid-season:
+        uptake_kg_ha_day: 1.78
+        total_kg_ha: 64
+      late-season:
+        uptake_kg_ha_day: 1.78
+        total_kg_ha: 32
+    phosphorus:
+      initial:
+        uptake_kg_ha_day: 0.44
+        total_kg_ha: 4
+      development:
+        uptake_kg_ha_day: 0.44
+        total_kg_ha: 12
+      mid-season:
+        uptake_kg_ha_day: 0.44
+        total_kg_ha: 16
+      late-season:
+        uptake_kg_ha_day: 0.44
+        total_kg_ha: 8
+    potassium:
+      initial:
+        uptake_kg_ha_day: 2.0
+        total_kg_ha: 18
+      development:
+        uptake_kg_ha_day: 2.0
+        total_kg_ha: 54
+      mid-season:
+        uptake_kg_ha_day: 2.0
+        total_kg_ha: 72
+      late-season:
+        uptake_kg_ha_day: 2.0
+        total_kg_ha: 36
+    source:
+      short: IPNI/FAO
+      author: IPNI
+      year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+  pea:
+    nitrogen:
+      initial:
+        uptake_kg_ha_day: 0.89
+        total_kg_ha: 8
+      development:
+        uptake_kg_ha_day: 0.89
+        total_kg_ha: 24
+      mid-season:
+        uptake_kg_ha_day: 0.89
+        total_kg_ha: 32
+      late-season:
+        uptake_kg_ha_day: 0.89
+        total_kg_ha: 16
+    phosphorus:
+      initial:
+        uptake_kg_ha_day: 0.28
+        total_kg_ha: 2
+      development:
+        uptake_kg_ha_day: 0.28
+        total_kg_ha: 8
+      mid-season:
+        uptake_kg_ha_day: 0.28
+        total_kg_ha: 10
+      late-season:
+        uptake_kg_ha_day: 0.28
+        total_kg_ha: 5
+    potassium:
+      initial:
+        uptake_kg_ha_day: 1.11
+        total_kg_ha: 10
+      development:
+        uptake_kg_ha_day: 1.11
+        total_kg_ha: 30
+      mid-season:
+        uptake_kg_ha_day: 1.11
+        total_kg_ha: 40
+      late-season:
+        uptake_kg_ha_day: 1.11
+        total_kg_ha: 20
+    source:
+      short: IPNI/FAO
+      author: IPNI
+      year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+  peach:
+    nitrogen:
+      initial:
+        uptake_kg_ha_day: 1.0
+        total_kg_ha: 9
+      development:
+        uptake_kg_ha_day: 1.0
+        total_kg_ha: 27
+      mid-season:
+        uptake_kg_ha_day: 1.0
+        total_kg_ha: 36
+      late-season:
+        uptake_kg_ha_day: 1.0
+        total_kg_ha: 18
+    phosphorus:
+      initial:
+        uptake_kg_ha_day: 0.28
+        total_kg_ha: 2
+      development:
+        uptake_kg_ha_day: 0.28
+        total_kg_ha: 8
+      mid-season:
+        uptake_kg_ha_day: 0.28
+        total_kg_ha: 10
+      late-season:
+        uptake_kg_ha_day: 0.28
+        total_kg_ha: 5
+    potassium:
+      initial:
+        uptake_kg_ha_day: 1.44
+        total_kg_ha: 13
+      development:
+        uptake_kg_ha_day: 1.44
+        total_kg_ha: 39
+      mid-season:
+        uptake_kg_ha_day: 1.44
+        total_kg_ha: 52
+      late-season:
+        uptake_kg_ha_day: 1.44
+        total_kg_ha: 26
+    source:
+      short: IPNI/FAO
+      author: IPNI
+      year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+  pear:
+    nitrogen:
+      initial:
+        uptake_kg_ha_day: 1.11
+        total_kg_ha: 10
+      development:
+        uptake_kg_ha_day: 1.11
+        total_kg_ha: 30
+      mid-season:
+        uptake_kg_ha_day: 1.11
+        total_kg_ha: 40
+      late-season:
+        uptake_kg_ha_day: 1.11
+        total_kg_ha: 20
+    phosphorus:
+      initial:
+        uptake_kg_ha_day: 0.28
+        total_kg_ha: 2
+      development:
+        uptake_kg_ha_day: 0.28
+        total_kg_ha: 8
+      mid-season:
+        uptake_kg_ha_day: 0.28
+        total_kg_ha: 10
+      late-season:
+        uptake_kg_ha_day: 0.28
+        total_kg_ha: 5
+    potassium:
+      initial:
+        uptake_kg_ha_day: 1.56
+        total_kg_ha: 14
+      development:
+        uptake_kg_ha_day: 1.56
+        total_kg_ha: 42
+      mid-season:
+        uptake_kg_ha_day: 1.56
+        total_kg_ha: 56
+      late-season:
+        uptake_kg_ha_day: 1.56
+        total_kg_ha: 28
+    source:
+      short: IPNI/FAO
+      author: IPNI
+      year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+  pistachio:
+    nitrogen:
+      initial:
+        uptake_kg_ha_day: 1.67
+        total_kg_ha: 15
+      development:
+        uptake_kg_ha_day: 1.67
+        total_kg_ha: 45
+      mid-season:
+        uptake_kg_ha_day: 1.67
+        total_kg_ha: 60
+      late-season:
+        uptake_kg_ha_day: 1.67
+        total_kg_ha: 30
+    phosphorus:
+      initial:
+        uptake_kg_ha_day: 0.39
+        total_kg_ha: 4
+      development:
+        uptake_kg_ha_day: 0.39
+        total_kg_ha: 10
+      mid-season:
+        uptake_kg_ha_day: 0.39
+        total_kg_ha: 14
+      late-season:
+        uptake_kg_ha_day: 0.39
+        total_kg_ha: 7
+    potassium:
+      initial:
+        uptake_kg_ha_day: 2.0
+        total_kg_ha: 18
+      development:
+        uptake_kg_ha_day: 2.0
+        total_kg_ha: 54
+      mid-season:
+        uptake_kg_ha_day: 2.0
+        total_kg_ha: 72
+      late-season:
+        uptake_kg_ha_day: 2.0
+        total_kg_ha: 36
+    source:
+      short: IPNI/FAO
+      author: IPNI
+      year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+  plum:
+    nitrogen:
+      initial:
+        uptake_kg_ha_day: 0.89
+        total_kg_ha: 8
+      development:
+        uptake_kg_ha_day: 0.89
+        total_kg_ha: 24
+      mid-season:
+        uptake_kg_ha_day: 0.89
+        total_kg_ha: 32
+      late-season:
+        uptake_kg_ha_day: 0.89
+        total_kg_ha: 16
+    phosphorus:
+      initial:
+        uptake_kg_ha_day: 0.24
+        total_kg_ha: 2
+      development:
+        uptake_kg_ha_day: 0.24
+        total_kg_ha: 7
+      mid-season:
+        uptake_kg_ha_day: 0.24
+        total_kg_ha: 9
+      late-season:
+        uptake_kg_ha_day: 0.24
+        total_kg_ha: 4
+    potassium:
+      initial:
+        uptake_kg_ha_day: 1.33
+        total_kg_ha: 12
+      development:
+        uptake_kg_ha_day: 1.33
+        total_kg_ha: 36
+      mid-season:
+        uptake_kg_ha_day: 1.33
+        total_kg_ha: 48
+      late-season:
+        uptake_kg_ha_day: 1.33
+        total_kg_ha: 24
+    source:
+      short: IPNI/FAO
+      author: IPNI
+      year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+  potato:
+    source:
+      short: IPNI/FAO
+      author: IPNI
+      year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+    nitrogen:
+      initial:
+        uptake_kg_ha_day: 2.0
+        total_kg_ha: 18
+      development:
+        uptake_kg_ha_day: 2.0
+        total_kg_ha: 54
+      mid-season:
+        uptake_kg_ha_day: 2.0
+        total_kg_ha: 72
+      late-season:
+        uptake_kg_ha_day: 2.0
+        total_kg_ha: 36
+    phosphorus:
+      initial:
+        uptake_kg_ha_day: 0.56
+        total_kg_ha: 5
+      development:
+        uptake_kg_ha_day: 0.56
+        total_kg_ha: 15
+      mid-season:
+        uptake_kg_ha_day: 0.56
+        total_kg_ha: 20
+      late-season:
+        uptake_kg_ha_day: 0.56
+        total_kg_ha: 10
+    potassium:
+      initial:
+        uptake_kg_ha_day: 3.11
+        total_kg_ha: 28
+      development:
+        uptake_kg_ha_day: 3.11
+        total_kg_ha: 84
+      mid-season:
+        uptake_kg_ha_day: 3.11
+        total_kg_ha: 112
+      late-season:
+        uptake_kg_ha_day: 3.11
+        total_kg_ha: 56
+  rapeseed:
+    nitrogen:
+      initial:
+        uptake_kg_ha_day: 1.78
+        total_kg_ha: 16
+      development:
+        uptake_kg_ha_day: 1.78
+        total_kg_ha: 48
+      mid-season:
+        uptake_kg_ha_day: 1.78
+        total_kg_ha: 64
+      late-season:
+        uptake_kg_ha_day: 1.78
+        total_kg_ha: 32
+    phosphorus:
+      initial:
+        uptake_kg_ha_day: 0.61
+        total_kg_ha: 6
+      development:
+        uptake_kg_ha_day: 0.61
+        total_kg_ha: 16
+      mid-season:
+        uptake_kg_ha_day: 0.61
+        total_kg_ha: 22
+      late-season:
+        uptake_kg_ha_day: 0.61
+        total_kg_ha: 11
+    potassium:
+      initial:
+        uptake_kg_ha_day: 2.0
+        total_kg_ha: 18
+      development:
+        uptake_kg_ha_day: 2.0
+        total_kg_ha: 54
+      mid-season:
+        uptake_kg_ha_day: 2.0
+        total_kg_ha: 72
+      late-season:
+        uptake_kg_ha_day: 2.0
+        total_kg_ha: 36
+    source:
+      short: IPNI/FAO
+      author: IPNI
+      year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+  rice:
+    source:
+      short: IPNI/FAO
+      author: IPNI
+      year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+    nitrogen:
+      initial:
+        uptake_kg_ha_day: 1.33
+        total_kg_ha: 12
+      development:
+        uptake_kg_ha_day: 1.33
+        total_kg_ha: 36
+      mid-season:
+        uptake_kg_ha_day: 1.33
+        total_kg_ha: 48
+      late-season:
+        uptake_kg_ha_day: 1.33
+        total_kg_ha: 24
+    phosphorus:
+      initial:
+        uptake_kg_ha_day: 0.44
+        total_kg_ha: 4
+      development:
+        uptake_kg_ha_day: 0.44
+        total_kg_ha: 12
+      mid-season:
+        uptake_kg_ha_day: 0.44
+        total_kg_ha: 16
+      late-season:
+        uptake_kg_ha_day: 0.44
+        total_kg_ha: 8
+    potassium:
+      initial:
+        uptake_kg_ha_day: 1.56
+        total_kg_ha: 14
+      development:
+        uptake_kg_ha_day: 1.56
+        total_kg_ha: 42
+      mid-season:
+        uptake_kg_ha_day: 1.56
+        total_kg_ha: 56
+      late-season:
+        uptake_kg_ha_day: 1.56
+        total_kg_ha: 28
+  rye:
+    nitrogen:
+      initial:
+        uptake_kg_ha_day: 1.11
+        total_kg_ha: 10
+      development:
+        uptake_kg_ha_day: 1.11
+        total_kg_ha: 30
+      mid-season:
+        uptake_kg_ha_day: 1.11
+        total_kg_ha: 40
+      late-season:
+        uptake_kg_ha_day: 1.11
+        total_kg_ha: 20
+    phosphorus:
+      initial:
+        uptake_kg_ha_day: 0.39
+        total_kg_ha: 4
+      development:
+        uptake_kg_ha_day: 0.39
+        total_kg_ha: 10
+      mid-season:
+        uptake_kg_ha_day: 0.39
+        total_kg_ha: 14
+      late-season:
+        uptake_kg_ha_day: 0.39
+        total_kg_ha: 7
+    potassium:
+      initial:
+        uptake_kg_ha_day: 1.44
+        total_kg_ha: 13
+      development:
+        uptake_kg_ha_day: 1.44
+        total_kg_ha: 39
+      mid-season:
+        uptake_kg_ha_day: 1.44
+        total_kg_ha: 52
+      late-season:
+        uptake_kg_ha_day: 1.44
+        total_kg_ha: 26
+    source:
+      short: IPNI/FAO
+      author: IPNI
+      year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+  soybean:
+    source:
+      short: IPNI/FAO
+      author: IPNI
+      year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+    nitrogen:
+      initial:
+        uptake_kg_ha_day: 0.89
+        total_kg_ha: 8
+      development:
+        uptake_kg_ha_day: 0.89
+        total_kg_ha: 24
+      mid-season:
+        uptake_kg_ha_day: 0.89
+        total_kg_ha: 32
+      late-season:
+        uptake_kg_ha_day: 0.89
+        total_kg_ha: 16
+    phosphorus:
+      initial:
+        uptake_kg_ha_day: 0.33
+        total_kg_ha: 3
+      development:
+        uptake_kg_ha_day: 0.33
+        total_kg_ha: 9
+      mid-season:
+        uptake_kg_ha_day: 0.33
+        total_kg_ha: 12
+      late-season:
+        uptake_kg_ha_day: 0.33
+        total_kg_ha: 6
+    potassium:
+      initial:
+        uptake_kg_ha_day: 1.11
+        total_kg_ha: 10
+      development:
+        uptake_kg_ha_day: 1.11
+        total_kg_ha: 30
+      mid-season:
+        uptake_kg_ha_day: 1.11
+        total_kg_ha: 40
+      late-season:
+        uptake_kg_ha_day: 1.11
+        total_kg_ha: 20
+  sugar_beet:
+    nitrogen:
+      initial:
+        uptake_kg_ha_day: 2.22
+        total_kg_ha: 20
+      development:
+        uptake_kg_ha_day: 2.22
+        total_kg_ha: 60
+      mid-season:
+        uptake_kg_ha_day: 2.22
+        total_kg_ha: 80
+      late-season:
+        uptake_kg_ha_day: 2.22
+        total_kg_ha: 40
+    phosphorus:
+      initial:
+        uptake_kg_ha_day: 0.56
+        total_kg_ha: 5
+      development:
+        uptake_kg_ha_day: 0.56
+        total_kg_ha: 15
+      mid-season:
+        uptake_kg_ha_day: 0.56
+        total_kg_ha: 20
+      late-season:
+        uptake_kg_ha_day: 0.56
+        total_kg_ha: 10
+    potassium:
+      initial:
+        uptake_kg_ha_day: 3.33
+        total_kg_ha: 30
+      development:
+        uptake_kg_ha_day: 3.33
+        total_kg_ha: 90
+      mid-season:
+        uptake_kg_ha_day: 3.33
+        total_kg_ha: 120
+      late-season:
+        uptake_kg_ha_day: 3.33
+        total_kg_ha: 60
+    source:
+      short: IPNI/FAO
+      author: IPNI
+      year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+  sunflower:
+    source:
+      short: IPNI/FAO
+      author: IPNI
+      year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+    nitrogen:
+      initial:
+        uptake_kg_ha_day: 1.11
+        total_kg_ha: 10
+      development:
+        uptake_kg_ha_day: 1.11
+        total_kg_ha: 30
+      mid-season:
+        uptake_kg_ha_day: 1.11
+        total_kg_ha: 40
+      late-season:
+        uptake_kg_ha_day: 1.11
+        total_kg_ha: 20
+    phosphorus:
+      initial:
+        uptake_kg_ha_day: 0.39
+        total_kg_ha: 4
+      development:
+        uptake_kg_ha_day: 0.39
+        total_kg_ha: 10
+      mid-season:
+        uptake_kg_ha_day: 0.39
+        total_kg_ha: 14
+      late-season:
+        uptake_kg_ha_day: 0.39
+        total_kg_ha: 7
+    potassium:
+      initial:
+        uptake_kg_ha_day: 1.78
+        total_kg_ha: 16
+      development:
+        uptake_kg_ha_day: 1.78
+        total_kg_ha: 48
+      mid-season:
+        uptake_kg_ha_day: 1.78
+        total_kg_ha: 64
+      late-season:
+        uptake_kg_ha_day: 1.78
+        total_kg_ha: 32
+  tomato:
+    nitrogen:
+      initial:
+        uptake_kg_ha_day: 2.22
+        total_kg_ha: 20
+      development:
+        uptake_kg_ha_day: 2.22
+        total_kg_ha: 60
+      mid-season:
+        uptake_kg_ha_day: 2.22
+        total_kg_ha: 80
+      late-season:
+        uptake_kg_ha_day: 2.22
+        total_kg_ha: 40
+    phosphorus:
+      initial:
+        uptake_kg_ha_day: 0.56
+        total_kg_ha: 5
+      development:
+        uptake_kg_ha_day: 0.56
+        total_kg_ha: 15
+      mid-season:
+        uptake_kg_ha_day: 0.56
+        total_kg_ha: 20
+      late-season:
+        uptake_kg_ha_day: 0.56
+        total_kg_ha: 10
+    potassium:
+      initial:
+        uptake_kg_ha_day: 3.33
+        total_kg_ha: 30
+      development:
+        uptake_kg_ha_day: 3.33
+        total_kg_ha: 90
+      mid-season:
+        uptake_kg_ha_day: 3.33
+        total_kg_ha: 120
+      late-season:
+        uptake_kg_ha_day: 3.33
+        total_kg_ha: 60
+    source:
+      short: IPNI/FAO
+      author: IPNI
+      year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+  vetch:
+    nitrogen:
+      initial:
+        uptake_kg_ha_day: 0.78
+        total_kg_ha: 7
+      development:
+        uptake_kg_ha_day: 0.78
+        total_kg_ha: 21
+      mid-season:
+        uptake_kg_ha_day: 0.78
+        total_kg_ha: 28
+      late-season:
+        uptake_kg_ha_day: 0.78
+        total_kg_ha: 14
+    phosphorus:
+      initial:
+        uptake_kg_ha_day: 0.22
+        total_kg_ha: 2
+      development:
+        uptake_kg_ha_day: 0.22
+        total_kg_ha: 6
+      mid-season:
+        uptake_kg_ha_day: 0.22
+        total_kg_ha: 8
+      late-season:
+        uptake_kg_ha_day: 0.22
+        total_kg_ha: 4
+    potassium:
+      initial:
+        uptake_kg_ha_day: 1.0
+        total_kg_ha: 9
+      development:
+        uptake_kg_ha_day: 1.0
+        total_kg_ha: 27
+      mid-season:
+        uptake_kg_ha_day: 1.0
+        total_kg_ha: 36
+      late-season:
+        uptake_kg_ha_day: 1.0
+        total_kg_ha: 18
+    source:
+      short: IPNI/FAO
+      author: IPNI
+      year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+  wheat:
+    source:
+      short: IPNI/FAO
+      author: IPNI
+      year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+    nitrogen:
+      initial:
+        uptake_kg_ha_day: 1.56
+        total_kg_ha: 14
+      development:
+        uptake_kg_ha_day: 1.56
+        total_kg_ha: 42
+      mid-season:
+        uptake_kg_ha_day: 1.56
+        total_kg_ha: 56
+      late-season:
+        uptake_kg_ha_day: 1.56
+        total_kg_ha: 28
+    phosphorus:
+      initial:
+        uptake_kg_ha_day: 0.56
+        total_kg_ha: 5
+      development:
+        uptake_kg_ha_day: 0.56
+        total_kg_ha: 15
+      mid-season:
+        uptake_kg_ha_day: 0.56
+        total_kg_ha: 20
+      late-season:
+        uptake_kg_ha_day: 0.56
+        total_kg_ha: 10
+    potassium:
+      initial:
+        uptake_kg_ha_day: 1.67
+        total_kg_ha: 15
+      development:
+        uptake_kg_ha_day: 1.67
+        total_kg_ha: 45
+      mid-season:
+        uptake_kg_ha_day: 1.67
+        total_kg_ha: 60
+      late-season:
+        uptake_kg_ha_day: 1.67
+        total_kg_ha: 30
+  maize:
+    source:
+      short: IPNI/FAO
+      author: IPNI
+      year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+    nitrogen:
+      initial:
+        uptake_kg_ha_day: 2.22
+        total_kg_ha: 20
+      development:
+        uptake_kg_ha_day: 2.22
+        total_kg_ha: 60
+      mid-season:
+        uptake_kg_ha_day: 2.22
+        total_kg_ha: 80
+      late-season:
+        uptake_kg_ha_day: 2.22
+        total_kg_ha: 40
+    phosphorus:
+      initial:
+        uptake_kg_ha_day: 0.61
+        total_kg_ha: 6
+      development:
+        uptake_kg_ha_day: 0.61
+        total_kg_ha: 16
+      mid-season:
+        uptake_kg_ha_day: 0.61
+        total_kg_ha: 22
+      late-season:
+        uptake_kg_ha_day: 0.61
+        total_kg_ha: 11
+    potassium:
+      initial:
+        uptake_kg_ha_day: 2.44
+        total_kg_ha: 22
+      development:
+        uptake_kg_ha_day: 2.44
+        total_kg_ha: 66
+      mid-season:
+        uptake_kg_ha_day: 2.44
+        total_kg_ha: 88
+      late-season:
+        uptake_kg_ha_day: 2.44
+        total_kg_ha: 44
+  olive:
+    source:
+      short: IPNI/FAO
+      author: IPNI
+      year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+    nitrogen:
+      initial:
+        uptake_kg_ha_day: 1.0
+        total_kg_ha: 9
+      development:
+        uptake_kg_ha_day: 1.0
+        total_kg_ha: 27
+      mid-season:
+        uptake_kg_ha_day: 1.0
+        total_kg_ha: 36
+      late-season:
+        uptake_kg_ha_day: 1.0
+        total_kg_ha: 18
+    phosphorus:
+      initial:
+        uptake_kg_ha_day: 0.28
+        total_kg_ha: 2
+      development:
+        uptake_kg_ha_day: 0.28
+        total_kg_ha: 8
+      mid-season:
+        uptake_kg_ha_day: 0.28
+        total_kg_ha: 10
+      late-season:
+        uptake_kg_ha_day: 0.28
+        total_kg_ha: 5
+    potassium:
+      initial:
+        uptake_kg_ha_day: 1.56
+        total_kg_ha: 14
+      development:
+        uptake_kg_ha_day: 1.56
+        total_kg_ha: 42
+      mid-season:
+        uptake_kg_ha_day: 1.56
+        total_kg_ha: 56
+      late-season:
+        uptake_kg_ha_day: 1.56
+        total_kg_ha: 28
+  pepper:
+    source:
+      short: IPNI/FAO
+      author: IPNI
+      year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+    nitrogen:
+      initial:
+        uptake_kg_ha_day: 2.22
+        total_kg_ha: 20
+      development:
+        uptake_kg_ha_day: 2.22
+        total_kg_ha: 60
+      mid-season:
+        uptake_kg_ha_day: 2.22
+        total_kg_ha: 80
+      late-season:
+        uptake_kg_ha_day: 2.22
+        total_kg_ha: 40
+    phosphorus:
+      initial:
+        uptake_kg_ha_day: 0.56
+        total_kg_ha: 5
+      development:
+        uptake_kg_ha_day: 0.56
+        total_kg_ha: 15
+      mid-season:
+        uptake_kg_ha_day: 0.56
+        total_kg_ha: 20
+      late-season:
+        uptake_kg_ha_day: 0.56
+        total_kg_ha: 10
+    potassium:
+      initial:
+        uptake_kg_ha_day: 3.33
+        total_kg_ha: 30
+      development:
+        uptake_kg_ha_day: 3.33
+        total_kg_ha: 90
+      mid-season:
+        uptake_kg_ha_day: 3.33
+        total_kg_ha: 120
+      late-season:
+        uptake_kg_ha_day: 3.33
+        total_kg_ha: 60
+  eggplant:
+    source:
+      short: IPNI/FAO
+      author: IPNI
+      year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+    nitrogen:
+      initial:
+        uptake_kg_ha_day: 2.0
+        total_kg_ha: 18
+      development:
+        uptake_kg_ha_day: 2.0
+        total_kg_ha: 54
+      mid-season:
+        uptake_kg_ha_day: 2.0
+        total_kg_ha: 72
+      late-season:
+        uptake_kg_ha_day: 2.0
+        total_kg_ha: 36
+    phosphorus:
+      initial:
+        uptake_kg_ha_day: 0.5
+        total_kg_ha: 4
+      development:
+        uptake_kg_ha_day: 0.5
+        total_kg_ha: 14
+      mid-season:
+        uptake_kg_ha_day: 0.5
+        total_kg_ha: 18
+      late-season:
+        uptake_kg_ha_day: 0.5
+        total_kg_ha: 9
+    potassium:
+      initial:
+        uptake_kg_ha_day: 2.78
+        total_kg_ha: 25
+      development:
+        uptake_kg_ha_day: 2.78
+        total_kg_ha: 75
+      mid-season:
+        uptake_kg_ha_day: 2.78
+        total_kg_ha: 100
+      late-season:
+        uptake_kg_ha_day: 2.78
+        total_kg_ha: 50
+  strawberry:
+    source:
+      short: IPNI/FAO
+      author: IPNI
+      year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+    nitrogen:
+      initial:
+        uptake_kg_ha_day: 1.33
+        total_kg_ha: 12
+      development:
+        uptake_kg_ha_day: 1.33
+        total_kg_ha: 36
+      mid-season:
+        uptake_kg_ha_day: 1.33
+        total_kg_ha: 48
+      late-season:
+        uptake_kg_ha_day: 1.33
+        total_kg_ha: 24
+    phosphorus:
+      initial:
+        uptake_kg_ha_day: 0.39
+        total_kg_ha: 4
+      development:
+        uptake_kg_ha_day: 0.39
+        total_kg_ha: 10
+      mid-season:
+        uptake_kg_ha_day: 0.39
+        total_kg_ha: 14
+      late-season:
+        uptake_kg_ha_day: 0.39
+        total_kg_ha: 7
+    potassium:
+      initial:
+        uptake_kg_ha_day: 2.0
+        total_kg_ha: 18
+      development:
+        uptake_kg_ha_day: 2.0
+        total_kg_ha: 54
+      mid-season:
+        uptake_kg_ha_day: 2.0
+        total_kg_ha: 72
+      late-season:
+        uptake_kg_ha_day: 2.0
+        total_kg_ha: 36
+  melon:
+    source:
+      short: IPNI/FAO
+      author: IPNI
+      year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+    nitrogen:
+      initial:
+        uptake_kg_ha_day: 1.56
+        total_kg_ha: 14
+      development:
+        uptake_kg_ha_day: 1.56
+        total_kg_ha: 42
+      mid-season:
+        uptake_kg_ha_day: 1.56
+        total_kg_ha: 56
+      late-season:
+        uptake_kg_ha_day: 1.56
+        total_kg_ha: 28
+    phosphorus:
+      initial:
+        uptake_kg_ha_day: 0.44
+        total_kg_ha: 4
+      development:
+        uptake_kg_ha_day: 0.44
+        total_kg_ha: 12
+      mid-season:
+        uptake_kg_ha_day: 0.44
+        total_kg_ha: 16
+      late-season:
+        uptake_kg_ha_day: 0.44
+        total_kg_ha: 8
+    potassium:
+      initial:
+        uptake_kg_ha_day: 2.22
+        total_kg_ha: 20
+      development:
+        uptake_kg_ha_day: 2.22
+        total_kg_ha: 60
+      mid-season:
+        uptake_kg_ha_day: 2.22
+        total_kg_ha: 80
+      late-season:
+        uptake_kg_ha_day: 2.22
+        total_kg_ha: 40
+  bitter_vetch:
+    source:
+      short: IPNI/FAO
+      author: IPNI
+      year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+    nitrogen:
+      initial:
+        uptake_kg_ha_day: 0.67
+        total_kg_ha: 6
+      development:
+        uptake_kg_ha_day: 0.67
+        total_kg_ha: 18
+      mid-season:
+        uptake_kg_ha_day: 0.67
+        total_kg_ha: 24
+      late-season:
+        uptake_kg_ha_day: 0.67
+        total_kg_ha: 12
+    phosphorus:
+      initial:
+        uptake_kg_ha_day: 0.22
+        total_kg_ha: 2
+      development:
+        uptake_kg_ha_day: 0.22
+        total_kg_ha: 6
+      mid-season:
+        uptake_kg_ha_day: 0.22
+        total_kg_ha: 8
+      late-season:
+        uptake_kg_ha_day: 0.22
+        total_kg_ha: 4
+    potassium:
+      initial:
+        uptake_kg_ha_day: 0.89
+        total_kg_ha: 8
+      development:
+        uptake_kg_ha_day: 0.89
+        total_kg_ha: 24
+      mid-season:
+        uptake_kg_ha_day: 0.89
+        total_kg_ha: 32
+      late-season:
+        uptake_kg_ha_day: 0.89
+        total_kg_ha: 16
+  faba_bean:
+    source:
+      short: IPNI/FAO
+      author: IPNI
+      year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+    nitrogen:
+      initial:
+        uptake_kg_ha_day: 1.11
+        total_kg_ha: 10
+      development:
+        uptake_kg_ha_day: 1.11
+        total_kg_ha: 30
+      mid-season:
+        uptake_kg_ha_day: 1.11
+        total_kg_ha: 40
+      late-season:
+        uptake_kg_ha_day: 1.11
+        total_kg_ha: 20
+    phosphorus:
+      initial:
+        uptake_kg_ha_day: 0.33
+        total_kg_ha: 3
+      development:
+        uptake_kg_ha_day: 0.33
+        total_kg_ha: 9
+      mid-season:
+        uptake_kg_ha_day: 0.33
+        total_kg_ha: 12
+      late-season:
+        uptake_kg_ha_day: 0.33
+        total_kg_ha: 6
+    potassium:
+      initial:
+        uptake_kg_ha_day: 1.44
+        total_kg_ha: 13
+      development:
+        uptake_kg_ha_day: 1.44
+        total_kg_ha: 39
+      mid-season:
+        uptake_kg_ha_day: 1.44
+        total_kg_ha: 52
+      late-season:
+        uptake_kg_ha_day: 1.44
+        total_kg_ha: 26
+  durum_wheat:
+    source:
+      short: IPNI/FAO
+      author: IPNI
+      year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+    nitrogen:
+      initial:
+        uptake_kg_ha_day: 1.56
+        total_kg_ha: 14
+      development:
+        uptake_kg_ha_day: 1.56
+        total_kg_ha: 42
+      mid-season:
+        uptake_kg_ha_day: 1.56
+        total_kg_ha: 56
+      late-season:
+        uptake_kg_ha_day: 1.56
+        total_kg_ha: 28
+    phosphorus:
+      initial:
+        uptake_kg_ha_day: 0.56
+        total_kg_ha: 5
+      development:
+        uptake_kg_ha_day: 0.56
+        total_kg_ha: 15
+      mid-season:
+        uptake_kg_ha_day: 0.56
+        total_kg_ha: 20
+      late-season:
+        uptake_kg_ha_day: 0.56
+        total_kg_ha: 10
+    potassium:
+      initial:
+        uptake_kg_ha_day: 1.67
+        total_kg_ha: 15
+      development:
+        uptake_kg_ha_day: 1.67
+        total_kg_ha: 45
+      mid-season:
+        uptake_kg_ha_day: 1.67
+        total_kg_ha: 60
+      late-season:
+        uptake_kg_ha_day: 1.67
+        total_kg_ha: 30
+crop_soil_suitability:
+  alfalfa:
+    salinity_tolerance_ds_m: 3.0
+    source:
+      short: FAO/ECOCROP
+      author: FAO
+      year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+    ph_min: 6.5
+    ph_max: 8.0
+    textures:
+    - loam
+    drainage:
+    - well_drained
+    depth_min_cm: 60
+  almond:
+    salinity_tolerance_ds_m: 2.5
+    source:
+      short: FAO/ECOCROP
+      author: FAO
+      year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+    ph_min: 6.0
+    ph_max: 8.0
+    textures:
+    - sandy_loam
+    drainage:
+    - well_drained
+    depth_min_cm: 60
+  apple:
+    salinity_tolerance_ds_m: 1.5
+    source:
+      short: FAO/ECOCROP
+      author: FAO
+      year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+    ph_min: 5.5
+    ph_max: 7.5
+    textures:
+    - loam
+    drainage:
+    - well_drained
+    depth_min_cm: 60
+  apricot:
+    salinity_tolerance_ds_m: 2.5
+    source:
+      short: FAO/ECOCROP
+      author: FAO
+      year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+    ph_min: 6.0
+    ph_max: 8.0
+    textures:
+    - sandy_loam
+    drainage:
+    - well_drained
+    depth_min_cm: 60
+  artichoke:
+    salinity_tolerance_ds_m: 4.0
+    source:
+      short: FAO/ECOCROP
+      author: FAO
+      year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+    ph_min: 6.0
+    ph_max: 8.0
+    textures:
+    - loam
+    drainage:
+    - well_drained
+    depth_min_cm: 60
+  asparagus:
+    salinity_tolerance_ds_m: 3.0
+    source:
+      short: FAO/ECOCROP
+      author: FAO
+      year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+    ph_min: 6.0
+    ph_max: 7.5
+    textures:
+    - sandy_loam
+    drainage:
+    - well_drained
+    depth_min_cm: 60
+  barley:
+    salinity_tolerance_ds_m: 8.0
+    source:
+      short: FAO/ECOCROP
+      author: FAO
+      year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+    ph_min: 6.0
+    ph_max: 8.5
+    textures:
+    - loam
+    drainage:
+    - moderate
+    depth_min_cm: 60
+  bean:
+    salinity_tolerance_ds_m: 1.5
+    source:
+      short: FAO/ECOCROP
+      author: FAO
+      year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+    ph_min: 5.5
+    ph_max: 7.5
+    textures:
+    - loam
+    drainage:
+    - well_drained
+    depth_min_cm: 60
+  broccoli:
+    salinity_tolerance_ds_m: 3.0
+    source:
+      short: FAO/ECOCROP
+      author: FAO
+      year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+    ph_min: 6.0
+    ph_max: 7.5
+    textures:
+    - loam
+    drainage:
+    - well_drained
+    depth_min_cm: 60
+  buckwheat:
+    salinity_tolerance_ds_m: 1.0
+    source:
+      short: FAO/ECOCROP
+      author: FAO
+      year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+    ph_min: 5.0
+    ph_max: 7.0
+    textures:
+    - sandy_loam
+    drainage:
+    - well_drained
+    depth_min_cm: 60
+  cardoon:
+    salinity_tolerance_ds_m: 4.0
+    source:
+      short: FAO/ECOCROP
+      author: FAO
+      year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+    ph_min: 6.0
+    ph_max: 8.0
+    textures:
+    - loam
+    drainage:
+    - well_drained
+    depth_min_cm: 60
+  cherry:
+    salinity_tolerance_ds_m: 1.5
+    source:
+      short: FAO/ECOCROP
+      author: FAO
+      year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+    ph_min: 5.5
+    ph_max: 7.5
+    textures:
+    - loam
+    drainage:
+    - well_drained
+    depth_min_cm: 60
+  chickpea:
+    salinity_tolerance_ds_m: 3.0
+    source:
+      short: FAO/ECOCROP
+      author: FAO
+      year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+    ph_min: 6.0
+    ph_max: 8.0
+    textures:
+    - sandy_loam
+    drainage:
+    - well_drained
+    depth_min_cm: 60
+  flax:
+    salinity_tolerance_ds_m: 2.0
+    source:
+      short: FAO/ECOCROP
+      author: FAO
+      year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+    ph_min: 5.5
+    ph_max: 7.5
+    textures:
+    - loam
+    drainage:
+    - well_drained
+    depth_min_cm: 60
+  garlic:
+    salinity_tolerance_ds_m: 2.5
+    source:
+      short: FAO/ECOCROP
+      author: FAO
+      year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+    ph_min: 6.0
+    ph_max: 7.5
+    textures:
+    - sandy_loam
+    drainage:
+    - well_drained
+    depth_min_cm: 60
+  grapevine:
+    salinity_tolerance_ds_m: 2.5
+    source:
+      short: FAO/ECOCROP
+      author: FAO
+      year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+    ph_min: 5.5
+    ph_max: 8.0
+    textures:
+    - sandy_loam
+    drainage:
+    - well_drained
+    depth_min_cm: 60
+  grass_pea:
+    salinity_tolerance_ds_m: 3.0
+    source:
+      short: FAO/ECOCROP
+      author: FAO
+      year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+    ph_min: 5.5
+    ph_max: 8.0
+    textures:
+    - loam
+    drainage:
+    - moderate
+    depth_min_cm: 60
+  hemp:
+    salinity_tolerance_ds_m: 1.5
+    source:
+      short: FAO/ECOCROP
+      author: FAO
+      year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+    ph_min: 6.0
+    ph_max: 7.5
+    textures:
+    - loam
+    drainage:
+    - well_drained
+    depth_min_cm: 60
+  leek:
+    salinity_tolerance_ds_m: 2.5
+    source:
+      short: FAO/ECOCROP
+      author: FAO
+      year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+    ph_min: 6.0
+    ph_max: 7.5
+    textures:
+    - loam
+    drainage:
+    - well_drained
+    depth_min_cm: 60
+  lentil:
+    salinity_tolerance_ds_m: 2.5
+    source:
+      short: FAO/ECOCROP
+      author: FAO
+      year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+    ph_min: 6.0
+    ph_max: 8.0
+    textures:
+    - loam
+    drainage:
+    - well_drained
+    depth_min_cm: 60
+  oat:
+    salinity_tolerance_ds_m: 4.0
+    source:
+      short: FAO/ECOCROP
+      author: FAO
+      year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+    ph_min: 5.5
+    ph_max: 7.5
+    textures:
+    - loam
+    drainage:
+    - moderate
+    depth_min_cm: 60
+  onion:
+    salinity_tolerance_ds_m: 2.0
+    source:
+      short: FAO/ECOCROP
+      author: FAO
+      year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+    ph_min: 6.0
+    ph_max: 7.5
+    textures:
+    - sandy_loam
+    drainage:
+    - well_drained
+    depth_min_cm: 60
+  pea:
+    salinity_tolerance_ds_m: 2.0
+    source:
+      short: FAO/ECOCROP
+      author: FAO
+      year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+    ph_min: 5.5
+    ph_max: 7.5
+    textures:
+    - loam
+    drainage:
+    - well_drained
+    depth_min_cm: 60
+  peach:
+    salinity_tolerance_ds_m: 2.0
+    source:
+      short: FAO/ECOCROP
+      author: FAO
+      year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+    ph_min: 6.0
+    ph_max: 7.5
+    textures:
+    - sandy_loam
+    drainage:
+    - well_drained
+    depth_min_cm: 60
+  pear:
+    salinity_tolerance_ds_m: 1.5
+    source:
+      short: FAO/ECOCROP
+      author: FAO
+      year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+    ph_min: 5.5
+    ph_max: 7.5
+    textures:
+    - loam
+    drainage:
+    - well_drained
+    depth_min_cm: 60
+  pistachio:
+    salinity_tolerance_ds_m: 6.0
+    source:
+      short: FAO/ECOCROP
+      author: FAO
+      year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+    ph_min: 7.0
+    ph_max: 8.5
+    textures:
+    - sandy_loam
+    drainage:
+    - well_drained
+    depth_min_cm: 60
+  plum:
+    salinity_tolerance_ds_m: 2.0
+    source:
+      short: FAO/ECOCROP
+      author: FAO
+      year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+    ph_min: 5.5
+    ph_max: 7.5
+    textures:
+    - loam
+    drainage:
+    - well_drained
+    depth_min_cm: 60
+  potato:
+    salinity_tolerance_ds_m: 2.0
+    source:
+      short: FAO/ECOCROP
+      author: FAO
+      year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+    ph_min: 5.0
+    ph_max: 7.0
+    textures:
+    - sandy_loam
+    drainage:
+    - well_drained
+    depth_min_cm: 60
+  rapeseed:
+    salinity_tolerance_ds_m: 4.0
+    source:
+      short: FAO/ECOCROP
+      author: FAO
+      year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+    ph_min: 5.5
+    ph_max: 8.0
+    textures:
+    - loam
+    drainage:
+    - moderate
+    depth_min_cm: 60
+  rice:
+    salinity_tolerance_ds_m: 3.0
+    source:
+      short: FAO/ECOCROP
+      author: FAO
+      year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+    ph_min: 5.0
+    ph_max: 7.5
+    textures:
+    - clay
+    drainage:
+    - poor
+    depth_min_cm: 60
+  rye:
+    salinity_tolerance_ds_m: 6.0
+    source:
+      short: FAO/ECOCROP
+      author: FAO
+      year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+    ph_min: 4.5
+    ph_max: 7.5
+    textures:
+    - sandy_loam
+    drainage:
+    - moderate
+    depth_min_cm: 60
+  soybean:
+    salinity_tolerance_ds_m: 3.0
+    source:
+      short: FAO/ECOCROP
+      author: FAO
+      year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+    ph_min: 6.0
+    ph_max: 7.5
+    textures:
+    - loam
+    drainage:
+    - well_drained
+    depth_min_cm: 60
+  sugar_beet:
+    salinity_tolerance_ds_m: 5.0
+    source:
+      short: FAO/ECOCROP
+      author: FAO
+      year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+    ph_min: 6.5
+    ph_max: 8.0
+    textures:
+    - loam
+    drainage:
+    - well_drained
+    depth_min_cm: 60
+  sunflower:
+    salinity_tolerance_ds_m: 5.0
+    source:
+      short: FAO/ECOCROP
+      author: FAO
+      year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+    ph_min: 6.0
+    ph_max: 8.0
+    textures:
+    - loam
+    drainage:
+    - well_drained
+    depth_min_cm: 60
+  tomato:
+    salinity_tolerance_ds_m: 3.0
+    source:
+      short: FAO/ECOCROP
+      author: FAO
+      year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+    ph_min: 5.5
+    ph_max: 7.5
+    textures:
+    - loam
+    drainage:
+    - well_drained
+    depth_min_cm: 60
+  vetch:
+    salinity_tolerance_ds_m: 2.5
+    source:
+      short: FAO/ECOCROP
+      author: FAO
+      year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+    ph_min: 5.5
+    ph_max: 7.5
+    textures:
+    - loam
+    drainage:
+    - moderate
+    depth_min_cm: 60
+  wheat:
+    salinity_tolerance_ds_m: 6.0
+    source:
+      short: FAO
+      author: FAO
+      year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+    ph_min: 5.5
+    ph_max: 8.5
+    textures:
+    - loam
+    drainage:
+    - well_drained
+    depth_min_cm: 60
+  maize:
+    salinity_tolerance_ds_m: 2.5
+    source:
+      short: FAO
+      author: FAO
+      year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+    ph_min: 5.0
+    ph_max: 8.0
+    textures:
+    - loam
+    drainage:
+    - well_drained
+    depth_min_cm: 60
+  olive:
+    salinity_tolerance_ds_m: 4.0
+    source:
+      short: FAO
+      author: FAO
+      year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+    ph_min: 5.5
+    ph_max: 8.5
+    textures:
+    - sandy_loam
+    drainage:
+    - well_drained
+    depth_min_cm: 60
+  pepper:
+    salinity_tolerance_ds_m: 2.0
+    source:
+      short: FAO/ECOCROP
+      author: FAO
+      year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+    ph_min: 5.5
+    ph_max: 7.0
+    textures:
+    - sandy_loam
+    drainage:
+    - well_drained
+    depth_min_cm: 60
+  eggplant:
+    salinity_tolerance_ds_m: 2.5
+    source:
+      short: FAO/ECOCROP
+      author: FAO
+      year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+    ph_min: 5.5
+    ph_max: 7.0
+    textures:
+    - loam
+    drainage:
+    - well_drained
+    depth_min_cm: 60
+  strawberry:
+    salinity_tolerance_ds_m: 1.0
+    source:
+      short: FAO/ECOCROP
+      author: FAO
+      year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+    ph_min: 5.0
+    ph_max: 7.0
+    textures:
+    - sandy_loam
+    drainage:
+    - well_drained
+    depth_min_cm: 60
+  melon:
+    salinity_tolerance_ds_m: 2.5
+    source:
+      short: FAO/ECOCROP
+      author: FAO
+      year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+    ph_min: 6.0
+    ph_max: 7.5
+    textures:
+    - sandy_loam
+    drainage:
+    - well_drained
+    depth_min_cm: 60
+  bitter_vetch:
+    salinity_tolerance_ds_m: 3.0
+    source:
+      short: FAO/ECOCROP
+      author: FAO
+      year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+    ph_min: 6.0
+    ph_max: 8.0
+    textures:
+    - loam
+    drainage:
+    - moderate
+    depth_min_cm: 60
+  faba_bean:
+    salinity_tolerance_ds_m: 2.0
+    source:
+      short: FAO/ECOCROP
+      author: FAO
+      year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+    ph_min: 6.0
+    ph_max: 8.0
+    textures:
+    - loam
+    drainage:
+    - well_drained
+    depth_min_cm: 60
+  durum_wheat:
+    salinity_tolerance_ds_m: 6.0
+    source:
+      short: FAO
+      author: FAO
+      year: 2020
+      doi: 10.1016/B978-0-12-813995-6.00008-X
+    ph_min: 5.5
+    ph_max: 8.5
+    textures:
+    - loam
+    drainage:
+    - well_drained
+    depth_min_cm: 60
+rotation_constraints:
+- crop_a: chickpea
+  crop_b: wheat
+  interval_years: 1
+  reason: N fixation benefit for following cereal
+  source_short: FAO rotation guidelines
+  effect: benefit
+- crop_a: lentil
+  crop_b: wheat
+  interval_years: 1
+  reason: N fixation benefit for following cereal
+  source_short: FAO rotation guidelines
+  effect: benefit
+- crop_a: pea
+  crop_b: wheat
+  interval_years: 1
+  reason: N fixation benefit for following cereal
+  source_short: FAO rotation guidelines
+  effect: benefit
+- crop_a: bean
+  crop_b: maize
+  interval_years: 1
+  reason: N fixation benefit for following cereal
+  source_short: FAO rotation guidelines
+  effect: benefit
+- crop_a: vetch
+  crop_b: wheat
+  interval_years: 1
+  reason: N fixation benefit for following cereal
+  source_short: FAO rotation guidelines
+  effect: benefit
+- crop_a: grass_pea
+  crop_b: wheat
+  interval_years: 1
+  reason: N fixation benefit for following cereal
+  source_short: FAO rotation guidelines
+  effect: benefit
+- crop_a: alfalfa
+  crop_b: maize
+  interval_years: 1
+  reason: Deep N fixation, soil structure improvement
+  source_short: FAO rotation guidelines
+  effect: benefit
+- crop_a: soybean
+  crop_b: maize
+  interval_years: 1
+  reason: N fixation benefit for following cereal
+  source_short: FAO rotation guidelines
+  effect: benefit
+- crop_a: wheat
+  crop_b: chickpea
+  interval_years: 1
+  reason: Cereal residue benefits legume establishment
+  source_short: FAO rotation guidelines
+  effect: benefit
+- crop_a: wheat
+  crop_b: lentil
+  interval_years: 1
+  reason: Cereal residue benefits legume establishment
+  source_short: FAO rotation guidelines
+  effect: benefit
+- crop_a: wheat
+  crop_b: pea
+  interval_years: 1
+  reason: Cereal residue benefits legume establishment
+  source_short: FAO rotation guidelines
+  effect: benefit
+- crop_a: maize
+  crop_b: bean
+  interval_years: 1
+  reason: Cereal residue benefits legume establishment
+  source_short: FAO rotation guidelines
+  effect: benefit
+- crop_a: maize
+  crop_b: soybean
+  interval_years: 1
+  reason: Standard US Corn Belt rotation
+  source_short: FAO rotation guidelines
+  effect: benefit
+- crop_a: rapeseed
+  crop_b: rapeseed
+  interval_years: 3
+  reason: Clubroot, sclerotinia pressure
+  source_short: FAO/ICARDA
+  effect: restriction
+- crop_a: rapeseed
+  crop_b: broccoli
+  interval_years: 3
+  reason: Shared brassica pathogens
+  source_short: FAO
+  effect: restriction
+- crop_a: broccoli
+  crop_b: rapeseed
+  interval_years: 3
+  reason: Shared brassica pathogens
+  source_short: FAO
+  effect: restriction
+- crop_a: broccoli
+  crop_b: broccoli
+  interval_years: 2
+  reason: Clubroot and nematode buildup
+  source_short: FAO
+  effect: restriction
+- crop_a: potato
+  crop_b: potato
+  interval_years: 3
+  reason: Late blight, cyst nematode, verticillium
+  source_short: CIP/FAO
+  effect: restriction
+- crop_a: potato
+  crop_b: tomato
+  interval_years: 3
+  reason: Shared Solanaceae pathogens
+  source_short: FAO
+  effect: restriction
+- crop_a: tomato
+  crop_b: potato
+  interval_years: 3
+  reason: Shared Solanaceae pathogens
+  source_short: FAO
+  effect: restriction
+- crop_a: tomato
+  crop_b: tomato
+  interval_years: 2
+  reason: Nematode and fusarium buildup
+  source_short: FAO
+  effect: restriction
+- crop_a: sunflower
+  crop_b: sunflower
+  interval_years: 3
+  reason: Sclerotinia, phoma, orobanche
+  source_short: FAO
+  effect: restriction
+- crop_a: sunflower
+  crop_b: rapeseed
+  interval_years: 2
+  reason: Shared sclerotinia risk
+  source_short: FAO
+  effect: restriction
+- crop_a: sugar_beet
+  crop_b: sugar_beet
+  interval_years: 3
+  reason: Cyst nematode (Heterodera schachtii)
+  source_short: FAO
+  effect: restriction
+- crop_a: flax
+  crop_b: flax
+  interval_years: 5
+  reason: Fusarium wilt and pasmo buildup
+  source_short: FAO
+  effect: restriction
+- crop_a: rice
+  crop_b: rice
+  interval_years: 1
+  reason: Continuous rice is common in paddies
+  source_short: IRRI/FAO
+  effect: restriction
+- crop_a: apple
+  crop_b: apple
+  interval_years: 15
+  reason: Replant disease complex
+  source_short: FAO
+  effect: restriction
+- crop_a: pear
+  crop_b: pear
+  interval_years: 15
+  reason: Replant disease complex
+  source_short: FAO
+  effect: restriction
+- crop_a: peach
+  crop_b: peach
+  interval_years: 10
+  reason: Replant disease, nematodes
+  source_short: FAO
+  effect: restriction
+- crop_a: apricot
+  crop_b: apricot
+  interval_years: 10
+  reason: Replant disease
+  source_short: FAO
+  effect: restriction
+- crop_a: plum
+  crop_b: plum
+  interval_years: 10
+  reason: Replant disease
+  source_short: FAO
+  effect: restriction
+- crop_a: cherry
+  crop_b: cherry
+  interval_years: 10
+  reason: Replant disease
+  source_short: FAO
+  effect: restriction
+- crop_a: almond
+  crop_b: almond
+  interval_years: 12
+  reason: Replant disease, nematodes
+  source_short: FAO
+  effect: restriction
+- crop_a: pistachio
+  crop_b: pistachio
+  interval_years: 12
+  reason: Verticillium wilt, nematodes
+  source_short: FAO
+  effect: restriction
+- crop_a: olive
+  crop_b: olive
+  interval_years: 15
+  reason: Replant disease, verticillium
+  source_short: FAO
+  effect: restriction
+- crop_a: grapevine
+  crop_b: grapevine
+  interval_years: 15
+  reason: Replant disease, phylloxera
+  source_short: OIV/FAO
+  effect: restriction
+- crop_a: onion
+  crop_b: onion
+  interval_years: 3
+  reason: White rot (Sclerotium cepivorum)
+  source_short: FAO
+  effect: restriction
+- crop_a: garlic
+  crop_b: garlic
+  interval_years: 3
+  reason: White rot, nematodes
+  source_short: FAO
+  effect: restriction
+- crop_a: leek
+  crop_b: leek
+  interval_years: 3
+  reason: White rot, rust
+  source_short: FAO
+  effect: restriction
+- crop_a: onion
+  crop_b: garlic
+  interval_years: 3
+  reason: Shared Allium pathogens
+  source_short: FAO
+  effect: restriction
+- crop_a: garlic
+  crop_b: onion
+  interval_years: 3
+  reason: Shared Allium pathogens
+  source_short: FAO
+  effect: restriction
+- crop_a: asparagus
+  crop_b: asparagus
+  interval_years: 8
+  reason: Replant disease, fusarium crown rot
+  source_short: FAO
+  effect: restriction
+- crop_a: wheat
+  crop_b: wheat
+  interval_years: 2
+  reason: Common root pathogens (Gaeumannomyces graminis — take-all)
+  source_short: FAO Crop Rotation Guidelines
+  effect: restriction
+- crop_a: wheat
+  crop_b: sunflower
+  interval_years: 3
+  reason: Shared soil-borne pathogens (Sclerotinia sclerotiorum)
+  source_short: FAO Crop Rotation Guidelines
+  effect: restriction
+- crop_a: wheat
+  crop_b: legume
+  interval_years: 0
+  reason: 'Beneficial: wheat consumes N, legume fixes N — complementary'
+  source_short: FAO Crop Rotation Guidelines
+  effect: benefit
+- crop_a: wheat
+  crop_b: maize
+  interval_years: 1
+  reason: Same pest family (Fusarium spp.)
+  source_short: JRC MARS
+  effect: restriction
+- crop_a: wheat
+  crop_b: barley
+  interval_years: 1
+  reason: Shared take-all disease (Gaeumannomyces graminis)
+  source_short: JRC MARS
+  effect: restriction
+- crop_a: maize
+  crop_b: maize
+  interval_years: 1
+  reason: European corn borer pressure
+  source_short: JRC MARS
+  effect: restriction
+species:
+- name: wheat
+  scientific_name: Triticum aestivum
+  agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_7951
+  stages:
+  - name: initial
+    description: From planting to 10% ground cover
+    parameters:
+    - kc: 0.3
+      d1: 15
+      d2: 45
+      mds_ref: 80
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Semi-arid, no stress
+  - name: development
+    description: From 10% ground cover to effective full cover
+    parameters:
+    - kc: 0.7
+      d1: 45
+      d2: 105
+      mds_ref: 120
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Semi-arid, no stress
+  - name: mid-season
+    description: From effective full cover to start of maturity
+    parameters:
+    - kc: 1.15
+      d1: 105
+      d2: 180
+      mds_ref: 150
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Semi-arid, no stress
+  - name: late-season
+    description: From start of maturity to harvest or full senescence
+    parameters:
+    - kc: 0.4
+      d1: 180
+      d2: 230
+      mds_ref: 100
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Semi-arid, no stress
+  - name: stem_elongation
+    description: Stem elongation to heading
+    parameters:
+    - cultivar: null
+      management: deficit_irrigation
+      climate_zone: semi_arid
+      kc: 0.9
+      kc_ci:
+      - 0.8
+      - 1.0
+      d1: 2.0
+      d2: 7.0
+      mds_ref: null
+      source:
+        source_type: peer_reviewed_study
+        doi: null
+        short: Kang et al. 2003
+        author: Kang, Zhang, Liang
+        year: 2003
+        institution: China Agricultural University
+        method: CWSI field trial, North China Plain
+        conditions: Winter wheat, deficit irrigation, North China Plain
+  eppo_code: TRZAX
+- name: durum_wheat
+  scientific_name: Triticum durum
+  agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_7955
+  stages:
+  - name: initial
+    description: From planting to 10% ground cover
+    parameters:
+    - kc: 0.3
+      d1: 15
+      d2: 45
+      mds_ref: 80
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Semi-arid, no stress
+  - name: development
+    description: From 10% ground cover to effective full cover
+    parameters:
+    - kc: 0.7
+      d1: 45
+      d2: 105
+      mds_ref: 120
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Semi-arid, no stress
+  - name: mid-season
+    description: From effective full cover to start of maturity
+    parameters:
+    - kc: 1.15
+      d1: 105
+      d2: 180
+      mds_ref: 150
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Semi-arid, no stress
+  - name: late-season
+    description: From start of maturity to harvest or full senescence
+    parameters:
+    - kc: 0.4
+      d1: 180
+      d2: 230
+      mds_ref: 100
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Semi-arid, no stress
+  - name: stem_elongation
+    description: Stem elongation to heading
+    parameters:
+    - cultivar: null
+      management: deficit_irrigation
+      climate_zone: semi_arid
+      kc: 0.9
+      kc_ci:
+      - 0.8
+      - 1.0
+      d1: 2.0
+      d2: 7.0
+      mds_ref: null
+      source:
+        source_type: peer_reviewed_study
+        doi: null
+        short: Kang et al. 2003
+        author: Kang, Zhang, Liang
+        year: 2003
+        institution: China Agricultural University
+        method: CWSI field trial, North China Plain
+        conditions: Winter wheat, deficit irrigation, North China Plain
+  eppo_code: TRZDU
+- name: maize
+  scientific_name: Zea mays
+  agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_8504
+  stages:
+  - name: initial
+    parameters:
+    - kc: 0.3
+      d1: 15
+      d2: 50
+      mds_ref: 90
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+  - name: development
+    parameters:
+    - kc: 0.7
+      d1: 50
+      d2: 120
+      mds_ref: 130
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+  - name: mid-season
+    parameters:
+    - kc: 1.2
+      d1: 120
+      d2: 210
+      mds_ref: 180
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+  - name: late-season
+    parameters:
+    - kc: 0.6
+      d1: 210
+      d2: 260
+      mds_ref: 110
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+  eppo_code: ZEAMX
+- name: rice
+  scientific_name: Oryza sativa
+  agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_5438
+  stages:
+  - name: initial
+    parameters:
+    - kc: 1.05
+      d1: 10
+      d2: 40
+      mds_ref: 70
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+  - name: development
+    parameters:
+    - kc: 1.1
+      d1: 40
+      d2: 100
+      mds_ref: 110
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+  - name: mid-season
+    parameters:
+    - kc: 1.2
+      d1: 100
+      d2: 200
+      mds_ref: 160
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+  - name: late-season
+    parameters:
+    - kc: 0.8
+      d1: 200
+      d2: 250
+      mds_ref: 90
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+  eppo_code: ORYSA
+- name: soybean
+  scientific_name: Glycine max
+  agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_3301
+  stages:
+  - name: initial
+    parameters:
+    - kc: 0.4
+      d1: 15
+      d2: 45
+      mds_ref: 85
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+  - name: development
+    parameters:
+    - kc: 0.75
+      d1: 45
+      d2: 110
+      mds_ref: 125
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+  - name: mid-season
+    parameters:
+    - kc: 1.15
+      d1: 110
+      d2: 190
+      mds_ref: 170
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+  - name: late-season
+    parameters:
+    - kc: 0.5
+      d1: 190
+      d2: 240
+      mds_ref: 100
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+  eppo_code: GLXMA
+- name: sunflower
+  scientific_name: Helianthus annuus
+  agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_3539
+  stages:
+  - name: initial
+    parameters:
+    - kc: 0.35
+      d1: 10
+      d2: 40
+      mds_ref: 75
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+  - name: development
+    parameters:
+    - kc: 0.7
+      d1: 40
+      d2: 100
+      mds_ref: 120
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+  - name: mid-season
+    parameters:
+    - kc: 1.15
+      d1: 100
+      d2: 185
+      mds_ref: 165
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+  - name: late-season
+    parameters:
+    - kc: 0.35
+      d1: 185
+      d2: 235
+      mds_ref: 100
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+  eppo_code: HELAN
+- name: potato
+  scientific_name: Solanum tuberosum
+  agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_7221
+  stages:
+  - name: initial
+    parameters:
+    - kc: 0.5
+      d1: 15
+      d2: 50
+      mds_ref: 80
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+  - name: development
+    parameters:
+    - kc: 0.75
+      d1: 50
+      d2: 115
+      mds_ref: 130
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+  - name: mid-season
+    parameters:
+    - kc: 1.15
+      d1: 115
+      d2: 195
+      mds_ref: 160
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+  - name: late-season
+    parameters:
+    - kc: 0.75
+      d1: 195
+      d2: 245
+      mds_ref: 100
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+  eppo_code: SOLTU
+- name: alfalfa
+  scientific_name: Medicago sativa
+  agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_4693
+  stages:
+  - name: initial
+    parameters:
+    - kc: 0.4
+      d1: 5
+      d2: 20
+      mds_ref: 60
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+  - name: development
+    parameters:
+    - kc: 0.8
+      d1: 20
+      d2: 55
+      mds_ref: 100
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+  - name: mid-season
+    parameters:
+    - kc: 1.15
+      d1: 55
+      d2: 110
+      mds_ref: 150
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+  - name: late-season
+    parameters:
+    - kc: 0.9
+      d1: 110
+      d2: 140
+      mds_ref: 90
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+  eppo_code: MEDSA
+- name: grapevine
+  scientific_name: Vitis vinifera
+  agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_8283
+  stages:
+  - name: initial
+    parameters:
+    - kc: 0.3
+      d1: 10
+      d2: 40
+      mds_ref: 70
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+    - cultivar: Tempranillo
+      management: deficit_irrigation
+      climate_zone: mediterranean
+      kc: 0.25
+      kc_ci:
+      - 0.15
+      - 0.35
+      d1: 1.3
+      d2: 5.5
+      mds_ref: 90.0
+      mds_ref_ci:
+      - 70.0
+      - 110.0
+      source:
+        source_type: peer_reviewed_study
+        doi: 10.1007/s00271-005-0005-9
+        short: Intrigliolo & Castel 2006
+        author: Intrigliolo, Castel
+        year: 2006
+        institution: IVIA, Valencia
+        method: Dendrometer + lysimeter, RDI trial
+        conditions: Tempranillo, Valencia, RDI pre-veraison
+  - name: development
+    parameters:
+    - kc: 0.7
+      d1: 40
+      d2: 100
+      mds_ref: 110
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+  - name: mid-season
+    parameters:
+    - kc: 0.85
+      d1: 100
+      d2: 170
+      mds_ref: 140
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+  - name: late-season
+    parameters:
+    - kc: 0.5
+      d1: 170
+      d2: 220
+      mds_ref: 90
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+  eppo_code: VITVI
+- name: olive
+  scientific_name: Olea europaea
+  agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_5339
+  stages:
+  - name: initial
+    parameters:
+    - kc: 0.65
+      d1: 15
+      d2: 50
+      mds_ref: 90
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+    - cultivar: Picual
+      management: deficit_irrigation
+      climate_zone: mediterranean
+      kc: 0.5
+      kc_ci:
+      - 0.45
+      - 0.55
+      d1: 1.8
+      d2: 7.5
+      mds_ref: 130.0
+      mds_ref_ci:
+      - 100.0
+      - 160.0
+      source:
+        source_type: peer_reviewed_study
+        doi: 10.1016/j.agwat.2004.12.005
+        short: Orgaz et al. 2005
+        author: Orgaz, Testi, Villalobos, Fereres
+        year: 2005
+        institution: IAS-CSIC, Universidad de Córdoba
+        method: Eddy covariance + sap flow, 3-year field trial
+        conditions: Olive, cv. Picual, Córdoba, deficit irrigation 30% ETc, 4×6m
+  - name: development
+    parameters:
+    - kc: 0.7
+      d1: 50
+      d2: 110
+      mds_ref: 130
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+  - name: mid-season
+    parameters:
+    - kc: 0.7
+      d1: 110
+      d2: 185
+      mds_ref: 150
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+  - name: late-season
+    parameters:
+    - kc: 0.65
+      d1: 185
+      d2: 230
+      mds_ref: 100
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+  - name: pit_hardening
+    description: Endocarp hardening — critical period for water stress sensitivity
+    parameters:
+    - cultivar: Picual
+      management: regulated_deficit_irrigation
+      climate_zone: mediterranean
+      kc: 0.45
+      kc_ci:
+      - 0.4
+      - 0.5
+      d1: 2.0
+      d2: 8.0
+      mds_ref: 190.0
+      mds_ref_ci:
+      - 160.0
+      - 220.0
+      source:
+        source_type: peer_reviewed_study
+        doi: 10.21273/JASHS.128.3.0425
+        short: Moriana et al. 2003
+        author: Moriana, Orgaz, Pastor, Fereres
+        year: 2003
+        institution: Universidad de Sevilla, IAS-CSIC
+        method: Dendrometer + water balance, RDI trial, 5-year
+        conditions: Olive, cv. Picual, Seville, RDI (30% ETc at pit hardening)
+  eppo_code: OLVEU
+- name: almond
+  scientific_name: Prunus dulcis
+  agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_6278
+  stages:
+  - name: initial
+    description: FAO-56 initial stage for almond
+    parameters:
+    - kc: 0.4
+      d1: 30
+      d2: 90
+      mds_ref: 120
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Mediterranean, no ground cover
+    - cultivar: Nonpareil
+      management: deficit_irrigation
+      climate_zone: mediterranean
+      kc: 0.65
+      kc_ci:
+      - 0.55
+      - 0.75
+      d1: 2.3
+      d2: 8.5
+      mds_ref: 140.0
+      mds_ref_ci:
+      - 110.0
+      - 170.0
+      source:
+        source_type: peer_reviewed_study
+        doi: null
+        short: Goldhamer & Fereres 2001
+        author: Goldhamer, Fereres
+        year: 2001
+        institution: UC Davis, IAS-CSIC
+        method: RDI field trial, dendrometer + water balance
+        conditions: Almond, cv. Nonpareil, California, RDI
+  - name: development
+    description: FAO-56 development stage for almond
+    parameters:
+    - kc: 0.6
+      d1: 90
+      d2: 160
+      mds_ref: 200
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Mediterranean, no ground cover
+  - name: mid-season
+    description: FAO-56 mid-season stage for almond
+    parameters:
+    - kc: 0.9
+      d1: 160
+      d2: 240
+      mds_ref: 250
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Mediterranean, no ground cover
+  - name: late-season
+    description: FAO-56 late-season stage for almond
+    parameters:
+    - kc: 0.65
+      d1: 240
+      d2: 300
+      mds_ref: 220
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Mediterranean, no ground cover
+  eppo_code: PRNDU
+- name: apple
+  scientific_name: Malus domestica
+  agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_4555
+  stages:
+  - name: initial
+    description: FAO-56 initial stage for apple
+    parameters:
+    - kc: 0.5
+      d1: 30
+      d2: 80
+      mds_ref: 115
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Temperate, no ground cover, no frost
+  - name: development
+    description: FAO-56 development stage for apple
+    parameters:
+    - kc: 0.75
+      d1: 80
+      d2: 160
+      mds_ref: 200
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Temperate, no ground cover, no frost
+  - name: mid-season
+    description: FAO-56 mid-season stage for apple
+    parameters:
+    - kc: 1.0
+      d1: 160
+      d2: 240
+      mds_ref: 250
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Temperate, no ground cover, no frost
+  - name: late-season
+    description: FAO-56 late-season stage for apple
+    parameters:
+    - kc: 0.7
+      d1: 240
+      d2: 300
+      mds_ref: 220
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Temperate, no ground cover, no frost
+  eppo_code: MABSD
+- name: apricot
+  scientific_name: Prunus armeniaca
+  agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_6280
+  stages:
+  - name: initial
+    description: FAO-56 initial stage for apricot
+    parameters:
+    - kc: 0.5
+      d1: 30
+      d2: 80
+      mds_ref: 115
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Mediterranean, no ground cover
+  - name: development
+    description: FAO-56 development stage for apricot
+    parameters:
+    - kc: 0.7
+      d1: 80
+      d2: 150
+      mds_ref: 195
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Mediterranean, no ground cover
+  - name: mid-season
+    description: FAO-56 mid-season stage for apricot
+    parameters:
+    - kc: 0.9
+      d1: 150
+      d2: 220
+      mds_ref: 230
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Mediterranean, no ground cover
+  - name: late-season
+    description: FAO-56 late-season stage for apricot
+    parameters:
+    - kc: 0.6
+      d1: 220
+      d2: 270
+      mds_ref: 205
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Mediterranean, no ground cover
+  eppo_code: PRNAR
+- name: artichoke
+  scientific_name: Cynara cardunculus var. scolymus
+  agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_2066
+  stages:
+  - name: initial
+    description: FAO-56 initial stage for artichoke
+    parameters:
+    - kc: 0.5
+      d1: 30
+      d2: 90
+      mds_ref: 120
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Mediterranean, no stress
+  - name: development
+    description: FAO-56 development stage for artichoke
+    parameters:
+    - kc: 0.8
+      d1: 90
+      d2: 180
+      mds_ref: 175
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Mediterranean, no stress
+  - name: mid-season
+    description: FAO-56 mid-season stage for artichoke
+    parameters:
+    - kc: 1.05
+      d1: 180
+      d2: 300
+      mds_ref: 240
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Mediterranean, no stress
+  - name: late-season
+    description: FAO-56 late-season stage for artichoke
+    parameters:
+    - kc: 0.65
+      d1: 300
+      d2: 360
+      mds_ref: 200
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Mediterranean, no stress
+  eppo_code: CYNSC
+- name: asparagus
+  scientific_name: Asparagus officinalis
+  agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_26366
+  stages:
+  - name: initial
+    description: FAO-56 initial stage for asparagus
+    parameters:
+    - kc: 0.5
+      d1: 30
+      d2: 90
+      mds_ref: 120
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Temperate, perennial, no stress
+  - name: development
+    description: FAO-56 development stage for asparagus
+    parameters:
+    - kc: 0.8
+      d1: 90
+      d2: 180
+      mds_ref: 175
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Temperate, perennial, no stress
+  - name: mid-season
+    description: FAO-56 mid-season stage for asparagus
+    parameters:
+    - kc: 1.0
+      d1: 180
+      d2: 270
+      mds_ref: 230
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Temperate, perennial, no stress
+  - name: late-season
+    description: FAO-56 late-season stage for asparagus
+    parameters:
+    - kc: 0.6
+      d1: 270
+      d2: 330
+      mds_ref: 190
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Temperate, perennial, no stress
+  eppo_code: ASPOF
+- name: barley
+  scientific_name: Hordeum vulgare
+  agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_3662
+  stages:
+  - name: initial
+    description: FAO-56 initial stage for barley
+    parameters:
+    - kc: 0.3
+      d1: 15
+      d2: 45
+      mds_ref: 80
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Semi-arid, no stress
+  - name: development
+    description: FAO-56 development stage for barley
+    parameters:
+    - kc: 0.7
+      d1: 45
+      d2: 105
+      mds_ref: 120
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Semi-arid, no stress
+  - name: mid-season
+    description: FAO-56 mid-season stage for barley
+    parameters:
+    - kc: 1.15
+      d1: 105
+      d2: 170
+      mds_ref: 150
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Semi-arid, no stress
+  - name: late-season
+    description: FAO-56 late-season stage for barley
+    parameters:
+    - kc: 0.4
+      d1: 170
+      d2: 220
+      mds_ref: 100
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Semi-arid, no stress
+  eppo_code: HORVX
+- name: bean
+  scientific_name: Phaseolus vulgaris
+  agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_5767
+  stages:
+  - name: initial
+    description: FAO-56 initial stage for bean
+    parameters:
+    - kc: 0.4
+      d1: 15
+      d2: 40
+      mds_ref: 75
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Semi-arid, no stress
+  - name: development
+    description: FAO-56 development stage for bean
+    parameters:
+    - kc: 0.75
+      d1: 40
+      d2: 80
+      mds_ref: 115
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Semi-arid, no stress
+  - name: mid-season
+    description: FAO-56 mid-season stage for bean
+    parameters:
+    - kc: 1.1
+      d1: 80
+      d2: 130
+      mds_ref: 145
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Semi-arid, no stress
+  - name: late-season
+    description: FAO-56 late-season stage for bean
+    parameters:
+    - kc: 0.5
+      d1: 130
+      d2: 170
+      mds_ref: 95
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Semi-arid, no stress
+  eppo_code: PHSVX
+- name: broccoli
+  scientific_name: Brassica oleracea var. italica
+  agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_9407
+  stages:
+  - name: initial
+    description: FAO-56 initial stage for broccoli
+    parameters:
+    - kc: 0.7
+      d1: 20
+      d2: 50
+      mds_ref: 90
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Temperate, no stress
+  - name: development
+    description: FAO-56 development stage for broccoli
+    parameters:
+    - kc: 0.8
+      d1: 50
+      d2: 80
+      mds_ref: 120
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Temperate, no stress
+  - name: mid-season
+    description: FAO-56 mid-season stage for broccoli
+    parameters:
+    - kc: 1.05
+      d1: 80
+      d2: 115
+      mds_ref: 145
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Temperate, no stress
+  - name: late-season
+    description: FAO-56 late-season stage for broccoli
+    parameters:
+    - kc: 0.85
+      d1: 115
+      d2: 140
+      mds_ref: 110
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Temperate, no stress
+  eppo_code: BROOL
+- name: buckwheat
+  scientific_name: Fagopyrum esculentum
+  agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_2777
+  stages:
+  - name: initial
+    description: FAO-56 initial stage for buckwheat
+    parameters:
+    - kc: 0.35
+      d1: 10
+      d2: 30
+      mds_ref: 60
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Temperate, no stress
+  - name: development
+    description: FAO-56 development stage for buckwheat
+    parameters:
+    - kc: 0.7
+      d1: 30
+      d2: 60
+      mds_ref: 100
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Temperate, no stress
+  - name: mid-season
+    description: FAO-56 mid-season stage for buckwheat
+    parameters:
+    - kc: 1.0
+      d1: 60
+      d2: 90
+      mds_ref: 130
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Temperate, no stress
+  - name: late-season
+    description: FAO-56 late-season stage for buckwheat
+    parameters:
+    - kc: 0.45
+      d1: 90
+      d2: 120
+      mds_ref: 80
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Temperate, no stress
+  eppo_code: FAGES
+- name: cardoon
+  scientific_name: Cynara cardunculus
+  agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_2065
+  stages:
+  - name: initial
+    description: FAO-56 initial stage for cardoon
+    parameters:
+    - kc: 0.5
+      d1: 30
+      d2: 90
+      mds_ref: 120
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Mediterranean, no stress
+  - name: development
+    description: FAO-56 development stage for cardoon
+    parameters:
+    - kc: 0.8
+      d1: 90
+      d2: 180
+      mds_ref: 175
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Mediterranean, no stress
+  - name: mid-season
+    description: FAO-56 mid-season stage for cardoon
+    parameters:
+    - kc: 1.05
+      d1: 180
+      d2: 300
+      mds_ref: 240
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Mediterranean, no stress
+  - name: late-season
+    description: FAO-56 late-season stage for cardoon
+    parameters:
+    - kc: 0.65
+      d1: 300
+      d2: 360
+      mds_ref: 200
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Mediterranean, no stress
+  eppo_code: CYNCA
+- name: cherry
+  scientific_name: Prunus avium
+  agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_6281
+  stages:
+  - name: initial
+    description: FAO-56 initial stage for cherry
+    parameters:
+    - kc: 0.5
+      d1: 25
+      d2: 75
+      mds_ref: 110
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Temperate, no ground cover
+  - name: development
+    description: FAO-56 development stage for cherry
+    parameters:
+    - kc: 0.7
+      d1: 75
+      d2: 135
+      mds_ref: 185
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Temperate, no ground cover
+  - name: mid-season
+    description: FAO-56 mid-season stage for cherry
+    parameters:
+    - kc: 0.9
+      d1: 135
+      d2: 205
+      mds_ref: 225
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Temperate, no ground cover
+  - name: late-season
+    description: FAO-56 late-season stage for cherry
+    parameters:
+    - kc: 0.6
+      d1: 205
+      d2: 255
+      mds_ref: 200
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Temperate, no ground cover
+  eppo_code: PRNAV
+- name: chickpea
+  scientific_name: Cicer arietinum
+  agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_1612
+  stages:
+  - name: initial
+    description: FAO-56 initial stage for chickpea
+    parameters:
+    - kc: 0.4
+      d1: 15
+      d2: 40
+      mds_ref: 70
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Semi-arid, no stress
+  - name: development
+    description: FAO-56 development stage for chickpea
+    parameters:
+    - kc: 0.7
+      d1: 40
+      d2: 80
+      mds_ref: 110
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Semi-arid, no stress
+  - name: mid-season
+    description: FAO-56 mid-season stage for chickpea
+    parameters:
+    - kc: 1.05
+      d1: 80
+      d2: 130
+      mds_ref: 140
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Semi-arid, no stress
+  - name: late-season
+    description: FAO-56 late-season stage for chickpea
+    parameters:
+    - kc: 0.45
+      d1: 130
+      d2: 170
+      mds_ref: 90
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Semi-arid, no stress
+  eppo_code: CIEAR
+- name: flax
+  scientific_name: Linum usitatissimum
+  agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_4355
+  stages:
+  - name: initial
+    description: FAO-56 initial stage for flax
+    parameters:
+    - kc: 0.35
+      d1: 15
+      d2: 40
+      mds_ref: 75
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Temperate, no stress
+  - name: development
+    description: FAO-56 development stage for flax
+    parameters:
+    - kc: 0.75
+      d1: 40
+      d2: 90
+      mds_ref: 120
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Temperate, no stress
+  - name: mid-season
+    description: FAO-56 mid-season stage for flax
+    parameters:
+    - kc: 1.1
+      d1: 90
+      d2: 140
+      mds_ref: 145
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Temperate, no stress
+  - name: late-season
+    description: FAO-56 late-season stage for flax
+    parameters:
+    - kc: 0.45
+      d1: 140
+      d2: 185
+      mds_ref: 100
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Temperate, no stress
+  eppo_code: LINUS
+- name: garlic
+  scientific_name: Allium sativum
+  agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_290
+  stages:
+  - name: initial
+    description: FAO-56 initial stage for garlic
+    parameters:
+    - kc: 0.7
+      d1: 20
+      d2: 60
+      mds_ref: 95
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Temperate, no stress
+  - name: development
+    description: FAO-56 development stage for garlic
+    parameters:
+    - kc: 0.8
+      d1: 60
+      d2: 110
+      mds_ref: 130
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Temperate, no stress
+  - name: mid-season
+    description: FAO-56 mid-season stage for garlic
+    parameters:
+    - kc: 1.0
+      d1: 110
+      d2: 170
+      mds_ref: 155
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Temperate, no stress
+  - name: late-season
+    description: FAO-56 late-season stage for garlic
+    parameters:
+    - kc: 0.7
+      d1: 170
+      d2: 210
+      mds_ref: 120
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Temperate, no stress
+  eppo_code: ALLSA
+- name: grass_pea
+  scientific_name: Lathyrus sativus
+  agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_4218
+  stages:
+  - name: initial
+    description: FAO-56 initial stage for grass_pea
+    parameters:
+    - kc: 0.4
+      d1: 15
+      d2: 40
+      mds_ref: 70
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Semi-arid, no stress
+  - name: development
+    description: FAO-56 development stage for grass_pea
+    parameters:
+    - kc: 0.7
+      d1: 40
+      d2: 80
+      mds_ref: 110
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Semi-arid, no stress
+  - name: mid-season
+    description: FAO-56 mid-season stage for grass_pea
+    parameters:
+    - kc: 1.05
+      d1: 80
+      d2: 120
+      mds_ref: 130
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Semi-arid, no stress
+  - name: late-season
+    description: FAO-56 late-season stage for grass_pea
+    parameters:
+    - kc: 0.4
+      d1: 120
+      d2: 160
+      mds_ref: 85
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Semi-arid, no stress
+  eppo_code: LTHSA
+- name: hemp
+  scientific_name: Cannabis sativa
+  agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_1257
+  stages:
+  - name: initial
+    description: FAO-56 initial stage for hemp
+    parameters:
+    - kc: 0.35
+      d1: 15
+      d2: 40
+      mds_ref: 75
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Temperate, no stress
+  - name: development
+    description: FAO-56 development stage for hemp
+    parameters:
+    - kc: 0.75
+      d1: 40
+      d2: 90
+      mds_ref: 120
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Temperate, no stress
+  - name: mid-season
+    description: FAO-56 mid-season stage for hemp
+    parameters:
+    - kc: 1.1
+      d1: 90
+      d2: 150
+      mds_ref: 145
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Temperate, no stress
+  - name: late-season
+    description: FAO-56 late-season stage for hemp
+    parameters:
+    - kc: 0.5
+      d1: 150
+      d2: 200
+      mds_ref: 105
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Temperate, no stress
+  eppo_code: CNUSA
+- name: leek
+  scientific_name: Allium porrum
+  agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_278
+  stages:
+  - name: initial
+    description: FAO-56 initial stage for leek
+    parameters:
+    - kc: 0.7
+      d1: 20
+      d2: 60
+      mds_ref: 95
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Temperate, no stress
+  - name: development
+    description: FAO-56 development stage for leek
+    parameters:
+    - kc: 0.8
+      d1: 60
+      d2: 110
+      mds_ref: 130
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Temperate, no stress
+  - name: mid-season
+    description: FAO-56 mid-season stage for leek
+    parameters:
+    - kc: 1.0
+      d1: 110
+      d2: 180
+      mds_ref: 155
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Temperate, no stress
+  - name: late-season
+    description: FAO-56 late-season stage for leek
+    parameters:
+    - kc: 0.7
+      d1: 180
+      d2: 220
+      mds_ref: 120
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Temperate, no stress
+  eppo_code: ALLPO
+- name: lentil
+  scientific_name: Lens culinaris
+  agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_4261
+  stages:
+  - name: initial
+    description: FAO-56 initial stage for lentil
+    parameters:
+    - kc: 0.4
+      d1: 15
+      d2: 40
+      mds_ref: 70
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Semi-arid, no stress
+  - name: development
+    description: FAO-56 development stage for lentil
+    parameters:
+    - kc: 0.7
+      d1: 40
+      d2: 80
+      mds_ref: 110
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Semi-arid, no stress
+  - name: mid-season
+    description: FAO-56 mid-season stage for lentil
+    parameters:
+    - kc: 1.05
+      d1: 80
+      d2: 120
+      mds_ref: 130
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Semi-arid, no stress
+  - name: late-season
+    description: FAO-56 late-season stage for lentil
+    parameters:
+    - kc: 0.4
+      d1: 120
+      d2: 160
+      mds_ref: 85
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Semi-arid, no stress
+  eppo_code: LENCU
+- name: oat
+  scientific_name: Avena sativa
+  agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_731
+  stages:
+  - name: initial
+    description: FAO-56 initial stage for oat
+    parameters:
+    - kc: 0.3
+      d1: 15
+      d2: 45
+      mds_ref: 75
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Semi-arid, no stress
+  - name: development
+    description: FAO-56 development stage for oat
+    parameters:
+    - kc: 0.7
+      d1: 45
+      d2: 105
+      mds_ref: 120
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Semi-arid, no stress
+  - name: mid-season
+    description: FAO-56 mid-season stage for oat
+    parameters:
+    - kc: 1.15
+      d1: 105
+      d2: 170
+      mds_ref: 150
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Semi-arid, no stress
+  - name: late-season
+    description: FAO-56 late-season stage for oat
+    parameters:
+    - kc: 0.4
+      d1: 170
+      d2: 220
+      mds_ref: 100
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Semi-arid, no stress
+  eppo_code: AVESA
+- name: onion
+  scientific_name: Allium cepa
+  agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_281
+  stages:
+  - name: initial
+    description: FAO-56 initial stage for onion
+    parameters:
+    - kc: 0.7
+      d1: 15
+      d2: 45
+      mds_ref: 85
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Semi-arid, no stress, dry
+  - name: development
+    description: FAO-56 development stage for onion
+    parameters:
+    - kc: 0.8
+      d1: 45
+      d2: 95
+      mds_ref: 125
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Semi-arid, no stress, dry
+  - name: mid-season
+    description: FAO-56 mid-season stage for onion
+    parameters:
+    - kc: 1.05
+      d1: 95
+      d2: 155
+      mds_ref: 160
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Semi-arid, no stress, dry
+  - name: late-season
+    description: FAO-56 late-season stage for onion
+    parameters:
+    - kc: 0.75
+      d1: 155
+      d2: 195
+      mds_ref: 115
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Semi-arid, no stress, dry
+  eppo_code: ALLCE
+- name: pea
+  scientific_name: Pisum sativum
+  agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_5933
+  stages:
+  - name: initial
+    description: FAO-56 initial stage for pea
+    parameters:
+    - kc: 0.4
+      d1: 15
+      d2: 40
+      mds_ref: 75
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Semi-arid, no stress
+  - name: development
+    description: FAO-56 development stage for pea
+    parameters:
+    - kc: 0.75
+      d1: 40
+      d2: 85
+      mds_ref: 115
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Semi-arid, no stress
+  - name: mid-season
+    description: FAO-56 mid-season stage for pea
+    parameters:
+    - kc: 1.1
+      d1: 85
+      d2: 130
+      mds_ref: 145
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Semi-arid, no stress
+  - name: late-season
+    description: FAO-56 late-season stage for pea
+    parameters:
+    - kc: 0.45
+      d1: 130
+      d2: 170
+      mds_ref: 90
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Semi-arid, no stress
+  eppo_code: PIBSX
+- name: peach
+  scientific_name: Prunus persica
+  agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_6289
+  stages:
+  - name: initial
+    description: FAO-56 initial stage for peach
+    parameters:
+    - kc: 0.5
+      d1: 30
+      d2: 80
+      mds_ref: 115
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Mediterranean, no ground cover
+  - name: development
+    description: FAO-56 development stage for peach
+    parameters:
+    - kc: 0.7
+      d1: 80
+      d2: 150
+      mds_ref: 195
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Mediterranean, no ground cover
+  - name: mid-season
+    description: FAO-56 mid-season stage for peach
+    parameters:
+    - kc: 0.95
+      d1: 150
+      d2: 230
+      mds_ref: 240
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Mediterranean, no ground cover
+  - name: late-season
+    description: FAO-56 late-season stage for peach
+    parameters:
+    - kc: 0.65
+      d1: 230
+      d2: 280
+      mds_ref: 210
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Mediterranean, no ground cover
+  eppo_code: PRNPS
+- name: pear
+  scientific_name: Pyrus communis
+  agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_6391
+  stages:
+  - name: initial
+    description: FAO-56 initial stage for pear
+    parameters:
+    - kc: 0.5
+      d1: 30
+      d2: 80
+      mds_ref: 115
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Temperate, no ground cover
+  - name: development
+    description: FAO-56 development stage for pear
+    parameters:
+    - kc: 0.75
+      d1: 80
+      d2: 160
+      mds_ref: 200
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Temperate, no ground cover
+  - name: mid-season
+    description: FAO-56 mid-season stage for pear
+    parameters:
+    - kc: 0.95
+      d1: 160
+      d2: 240
+      mds_ref: 245
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Temperate, no ground cover
+  - name: late-season
+    description: FAO-56 late-season stage for pear
+    parameters:
+    - kc: 0.65
+      d1: 240
+      d2: 300
+      mds_ref: 215
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Temperate, no ground cover
+  eppo_code: PYUCO
+- name: pistachio
+  scientific_name: Pistacia vera
+  agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_5930
+  stages:
+  - name: initial
+    description: FAO-56 initial stage for pistachio
+    parameters:
+    - kc: 0.4
+      d1: 30
+      d2: 100
+      mds_ref: 130
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Mediterranean, no ground cover
+  - name: development
+    description: FAO-56 development stage for pistachio
+    parameters:
+    - kc: 0.55
+      d1: 100
+      d2: 170
+      mds_ref: 210
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Mediterranean, no ground cover
+  - name: mid-season
+    description: FAO-56 mid-season stage for pistachio
+    parameters:
+    - kc: 0.85
+      d1: 170
+      d2: 260
+      mds_ref: 260
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Mediterranean, no ground cover
+  - name: late-season
+    description: FAO-56 late-season stage for pistachio
+    parameters:
+    - kc: 0.6
+      d1: 260
+      d2: 320
+      mds_ref: 230
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Mediterranean, no ground cover
+  eppo_code: PIAVE
+- name: plum
+  scientific_name: Prunus domestica
+  agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_6285
+  stages:
+  - name: initial
+    description: FAO-56 initial stage for plum
+    parameters:
+    - kc: 0.5
+      d1: 30
+      d2: 80
+      mds_ref: 115
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Temperate, no ground cover
+  - name: development
+    description: FAO-56 development stage for plum
+    parameters:
+    - kc: 0.7
+      d1: 80
+      d2: 150
+      mds_ref: 195
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Temperate, no ground cover
+  - name: mid-season
+    description: FAO-56 mid-season stage for plum
+    parameters:
+    - kc: 0.9
+      d1: 150
+      d2: 230
+      mds_ref: 235
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Temperate, no ground cover
+  - name: late-season
+    description: FAO-56 late-season stage for plum
+    parameters:
+    - kc: 0.6
+      d1: 230
+      d2: 280
+      mds_ref: 205
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Temperate, no ground cover
+  eppo_code: PRNDO
+- name: rapeseed
+  scientific_name: Brassica napus
+  agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_1066
+  stages:
+  - name: initial
+    description: FAO-56 initial stage for rapeseed
+    parameters:
+    - kc: 0.35
+      d1: 15
+      d2: 50
+      mds_ref: 80
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Temperate, no stress
+  - name: development
+    description: FAO-56 development stage for rapeseed
+    parameters:
+    - kc: 0.75
+      d1: 50
+      d2: 140
+      mds_ref: 130
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Temperate, no stress
+  - name: mid-season
+    description: FAO-56 mid-season stage for rapeseed
+    parameters:
+    - kc: 1.1
+      d1: 140
+      d2: 220
+      mds_ref: 165
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Temperate, no stress
+  - name: late-season
+    description: FAO-56 late-season stage for rapeseed
+    parameters:
+    - kc: 0.45
+      d1: 220
+      d2: 270
+      mds_ref: 110
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Temperate, no stress
+  eppo_code: BRSNN
+- name: rye
+  scientific_name: Secale cereale
+  agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_6919
+  stages:
+  - name: initial
+    description: FAO-56 initial stage for rye
+    parameters:
+    - kc: 0.3
+      d1: 15
+      d2: 40
+      mds_ref: 70
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Semi-arid, no stress
+  - name: development
+    description: FAO-56 development stage for rye
+    parameters:
+    - kc: 0.7
+      d1: 40
+      d2: 100
+      mds_ref: 110
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Semi-arid, no stress
+  - name: mid-season
+    description: FAO-56 mid-season stage for rye
+    parameters:
+    - kc: 1.1
+      d1: 100
+      d2: 160
+      mds_ref: 140
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Semi-arid, no stress
+  - name: late-season
+    description: FAO-56 late-season stage for rye
+    parameters:
+    - kc: 0.35
+      d1: 160
+      d2: 210
+      mds_ref: 90
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Semi-arid, no stress
+  eppo_code: SECCE
+- name: sugar_beet
+  scientific_name: Beta vulgaris
+  agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_890
+  stages:
+  - name: initial
+    description: FAO-56 initial stage for sugar_beet
+    parameters:
+    - kc: 0.35
+      d1: 20
+      d2: 60
+      mds_ref: 90
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Temperate, no stress
+  - name: development
+    description: FAO-56 development stage for sugar_beet
+    parameters:
+    - kc: 0.8
+      d1: 60
+      d2: 130
+      mds_ref: 140
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Temperate, no stress
+  - name: mid-season
+    description: FAO-56 mid-season stage for sugar_beet
+    parameters:
+    - kc: 1.2
+      d1: 130
+      d2: 230
+      mds_ref: 190
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Temperate, no stress
+  - name: late-season
+    description: FAO-56 late-season stage for sugar_beet
+    parameters:
+    - kc: 0.7
+      d1: 230
+      d2: 280
+      mds_ref: 130
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Temperate, no stress
+  eppo_code: BEAVX
+- name: tomato
+  scientific_name: Solanum lycopersicum
+  agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_4475
+  stages:
+  - name: initial
+    description: FAO-56 initial stage for tomato
+    parameters:
+    - kc: 0.6
+      d1: 25
+      d2: 50
+      mds_ref: 90
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Semi-arid, no stress, field
+  - name: development
+    description: FAO-56 development stage for tomato
+    parameters:
+    - kc: 0.9
+      d1: 50
+      d2: 95
+      mds_ref: 140
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Semi-arid, no stress, field
+  - name: mid-season
+    description: FAO-56 mid-season stage for tomato
+    parameters:
+    - kc: 1.15
+      d1: 95
+      d2: 155
+      mds_ref: 180
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Semi-arid, no stress, field
+  - name: late-season
+    description: FAO-56 late-season stage for tomato
+    parameters:
+    - kc: 0.8
+      d1: 155
+      d2: 200
+      mds_ref: 135
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Semi-arid, no stress, field
+  eppo_code: LYPES
+- name: vetch
+  scientific_name: Vicia sativa
+  agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_8222
+  stages:
+  - name: initial
+    description: FAO-56 initial stage for vetch
+    parameters:
+    - kc: 0.4
+      d1: 10
+      d2: 35
+      mds_ref: 70
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Temperate, no stress
+  - name: development
+    description: FAO-56 development stage for vetch
+    parameters:
+    - kc: 0.7
+      d1: 35
+      d2: 75
+      mds_ref: 110
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Temperate, no stress
+  - name: mid-season
+    description: FAO-56 mid-season stage for vetch
+    parameters:
+    - kc: 1.0
+      d1: 75
+      d2: 115
+      mds_ref: 135
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Temperate, no stress
+  - name: late-season
+    description: FAO-56 late-season stage for vetch
+    parameters:
+    - kc: 0.45
+      d1: 115
+      d2: 150
+      mds_ref: 90
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Temperate, no stress
+  eppo_code: VICSA
+- name: faba_bean
+  scientific_name: Vicia faba
+  agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_8220
+  stages:
+  - name: initial
+    description: FAO-56 initial stage for faba_bean
+    parameters:
+    - kc: 0.4
+      d1: 15
+      d2: 40
+      mds_ref: 75
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Temperate, no stress
+  - name: development
+    description: FAO-56 development stage for faba_bean
+    parameters:
+    - kc: 0.75
+      d1: 40
+      d2: 85
+      mds_ref: 115
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Temperate, no stress
+  - name: mid-season
+    description: FAO-56 mid-season stage for faba_bean
+    parameters:
+    - kc: 1.1
+      d1: 85
+      d2: 135
+      mds_ref: 145
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Temperate, no stress
+  - name: late-season
+    description: FAO-56 late-season stage for faba_bean
+    parameters:
+    - kc: 0.45
+      d1: 135
+      d2: 175
+      mds_ref: 90
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Temperate, no stress
+  eppo_code: VICFX
+- name: pepper
+  scientific_name: Capsicum annuum
+  agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_1288
+  stages:
+  - name: initial
+    description: FAO-56 initial stage for pepper
+    parameters:
+    - kc: 0.6
+      d1: 25
+      d2: 55
+      mds_ref: 90
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Semi-arid, field, no stress
+  - name: development
+    description: FAO-56 development stage for pepper
+    parameters:
+    - kc: 0.85
+      d1: 55
+      d2: 110
+      mds_ref: 140
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Semi-arid, field, no stress
+  - name: mid-season
+    description: FAO-56 mid-season stage for pepper
+    parameters:
+    - kc: 1.05
+      d1: 110
+      d2: 170
+      mds_ref: 170
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Semi-arid, field, no stress
+  - name: late-season
+    description: FAO-56 late-season stage for pepper
+    parameters:
+    - kc: 0.75
+      d1: 170
+      d2: 210
+      mds_ref: 125
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Semi-arid, field, no stress
+  eppo_code: CPSAN
+- name: eggplant
+  scientific_name: Solanum melongena
+  agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_7218
+  stages:
+  - name: initial
+    description: FAO-56 initial stage for eggplant
+    parameters:
+    - kc: 0.6
+      d1: 25
+      d2: 55
+      mds_ref: 90
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Semi-arid, no stress
+  - name: development
+    description: FAO-56 development stage for eggplant
+    parameters:
+    - kc: 0.85
+      d1: 55
+      d2: 110
+      mds_ref: 140
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Semi-arid, no stress
+  - name: mid-season
+    description: FAO-56 mid-season stage for eggplant
+    parameters:
+    - kc: 1.05
+      d1: 110
+      d2: 170
+      mds_ref: 170
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Semi-arid, no stress
+  - name: late-season
+    description: FAO-56 late-season stage for eggplant
+    parameters:
+    - kc: 0.75
+      d1: 170
+      d2: 210
+      mds_ref: 125
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Semi-arid, no stress
+  eppo_code: SOLME
+- name: strawberry
+  scientific_name: Fragaria x ananassa
+  agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_33356
+  stages:
+  - name: initial
+    description: FAO-56 initial stage for strawberry
+    parameters:
+    - kc: 0.5
+      d1: 30
+      d2: 90
+      mds_ref: 120
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Temperate, perennial, no stress
+  - name: development
+    description: FAO-56 development stage for strawberry
+    parameters:
+    - kc: 0.75
+      d1: 90
+      d2: 180
+      mds_ref: 185
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Temperate, perennial, no stress
+  - name: mid-season
+    description: FAO-56 mid-season stage for strawberry
+    parameters:
+    - kc: 0.9
+      d1: 180
+      d2: 300
+      mds_ref: 255
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Temperate, perennial, no stress
+  - name: late-season
+    description: FAO-56 late-season stage for strawberry
+    parameters:
+    - kc: 0.65
+      d1: 300
+      d2: 365
+      mds_ref: 215
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Temperate, perennial, no stress
+  eppo_code: FRAAN
+- name: melon
+  scientific_name: Cucumis melo
+  agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_2003
+  stages:
+  - name: initial
+    description: FAO-56 initial stage for melon
+    parameters:
+    - kc: 0.5
+      d1: 20
+      d2: 50
+      mds_ref: 85
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Semi-arid, no stress
+  - name: development
+    description: FAO-56 development stage for melon
+    parameters:
+    - kc: 0.8
+      d1: 50
+      d2: 90
+      mds_ref: 125
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Semi-arid, no stress
+  - name: mid-season
+    description: FAO-56 mid-season stage for melon
+    parameters:
+    - kc: 1.05
+      d1: 90
+      d2: 140
+      mds_ref: 155
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Semi-arid, no stress
+  - name: late-season
+    description: FAO-56 late-season stage for melon
+    parameters:
+    - kc: 0.65
+      d1: 140
+      d2: 180
+      mds_ref: 115
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Semi-arid, no stress
+  eppo_code: CUMME
+- name: bitter_vetch
+  scientific_name: Vicia ervilia
+  agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_8219
+  stages:
+  - name: initial
+    description: FAO-56 initial stage for bitter_vetch
+    parameters:
+    - kc: 0.4
+      d1: 10
+      d2: 35
+      mds_ref: 70
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Semi-arid, no stress
+  - name: development
+    description: FAO-56 development stage for bitter_vetch
+    parameters:
+    - kc: 0.7
+      d1: 35
+      d2: 75
+      mds_ref: 110
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Semi-arid, no stress
+  - name: mid-season
+    description: FAO-56 mid-season stage for bitter_vetch
+    parameters:
+    - kc: 1.0
+      d1: 75
+      d2: 115
+      mds_ref: 135
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Semi-arid, no stress
+  - name: late-season
+    description: FAO-56 late-season stage for bitter_vetch
+    parameters:
+    - kc: 0.4
+      d1: 115
+      d2: 150
+      mds_ref: 85
+      source:
+        doi: 10.1016/B978-0-12-813995-6.00008-X
+        short: FAO-56
+        author: Allen et al.
+        year: 1998
+        institution: FAO
+        method: FAO-56 Table 12
+        conditions: Semi-arid, no stress
+  eppo_code: VICER

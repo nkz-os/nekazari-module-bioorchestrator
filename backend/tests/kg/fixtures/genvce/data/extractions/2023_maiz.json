@@ -1,0 +1,102 @@
+{
+ "metadata": {
+  "source": "GENVCE",
+  "issue_number": 0,
+  "issue_period": "2022/2023",
+  "article_title": "GENVCE Maíz — Campaña 2022/2023",
+  "article_author": "GENVCE Consortium",
+  "article_topic": "maiz",
+  "year": 2023,
+  "page_in_issue": null,
+  "extraction_model": "deepseek-chat",
+  "extraction_date": "2026-06-15",
+  "confidence": "high"
+ },
+ "variety_trials": [
+  {
+   "crop": "Maíz",
+   "crop_scientific": "Zea mays",
+   "variety": "ZAPOTEK YG",
+   "agroclimatic_zone": null,
+   "year": 2023,
+   "yield_kg_ha": 15557.0,
+   "yield_relative_pct": 110.6,
+   "quality_params": {
+    "densidad_plantas_m2": 8.83,
+    "floracion_femenina_dias_respecto_P1921": "-2",
+    "humedad_pct": 19.6,
+    "altura_planta_cm": 260,
+    "altura_insercion_mazorca_cm": 107,
+    "peso_especifico_kg_hl": 77.0
+   },
+   "disease_scores": {
+    "plantas_rotas_pct": 1.7,
+    "podredumbre_tallo_pct": 1.0,
+    "stay_green_escala_0_5": 4.0
+   },
+   "agronomic_traits": {
+    "ciclo_fao": 700
+   },
+   "yield_notes": {},
+   "special_status": "transgénico",
+   "irrigation_regime": "regadío",
+   "trial_location": null,
+   "page_in_issue": 7,
+   "table_number": 5,
+   "confidence": "high"
+  },
+  {
+   "crop": "Maíz",
+   "crop_scientific": "Zea mays",
+   "variety": "DKC6980",
+   "agroclimatic_zone": null,
+   "year": 2023,
+   "yield_kg_ha": 15165.0,
+   "yield_relative_pct": 107.8,
+   "quality_params": {
+    "densidad_plantas_m2": 8.87,
+    "floracion_femenina_dias_respecto_P1921": "-1",
+    "humedad_pct": 18.4,
+    "altura_planta_cm": 268,
+    "altura_insercion_mazorca_cm": 103,
+    "peso_especifico_kg_hl": 76.8
+   },
+   "disease_scores": {
+    "plantas_rotas_pct": 2.4,
+    "podredumbre_tallo_pct": 6.6,
+    "stay_green_escala_0_5": 3.3
+   },
+   "agronomic_traits": {
+    "ciclo_fao": 700
+   },
+   "yield_notes": {},
+   "special_status": null,
+   "irrigation_regime": "regadío",
+   "trial_location": null,
+   "page_in_issue": 7,
+   "table_number": 5,
+   "confidence": "high"
+  },
+  {
+   "crop": "Maíz",
+   "crop_scientific": "Zea mays",
+   "variety": "DKC6980",
+   "agroclimatic_zone": null,
+   "year": 2023,
+   "yield_kg_ha": 15420.0,
+   "yield_relative_pct": 105.8,
+   "quality_params": {},
+   "disease_scores": {},
+   "agronomic_traits": {
+    "ciclo_fao": 700
+   },
+   "yield_notes": {},
+   "special_status": null,
+   "irrigation_regime": "regadío",
+   "trial_location": null,
+   "page_in_issue": 6,
+   "table_number": 4,
+   "confidence": "high"
+  }
+ ]
+}

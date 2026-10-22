@@ -1,0 +1,628 @@
+# =============================================================================
+# Phenology Parameters — Curated Dataset with Scientific Provenance
+# =============================================================================
+# Each parameter includes:
+#   - value + confidence_interval (when available)
+#   - source provenance (DOI, author, year, institution, conditions, method)
+#   - applicability context (cultivar, climate, management, geo bounds)
+#
+# Sources:
+#   FAO-56 (Allen et al., 1998) — global crop coefficients
+#   Orgaz et al. (2005) — olive Kc, Córdoba, doi:10.1016/j.agwat.2004.12.005
+#   Testi et al. (2004) — olive orchard ET, Córdoba
+#   Moriana et al. (2003) — olive RDI, Seville, doi:10.21273/JASHS.128.3.0425
+#   Goldhamer & Fereres (2001) — almond RDI, California
+#   Williams et al. (2003) — grapevine water stress, California
+#   Intrigliolo & Castel (2006) — grapevine MDS, Valencia, doi:10.1007/s00271-005-0005-9
+#   Kang et al. (2003) — wheat CWSI, China
+# =============================================================================
+
+species:
+
+  # ── Olive (Olea europaea) ──────────────────────────────────────────────
+
+  - name: olive
+    scientific_name: Olea europaea
+    agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_5336
+
+    stages:
+
+      - name: vegetative
+        description: "Early vegetative growth, before flowering"
+        parameters:
+
+          - cultivar: null  # applies to all cultivars
+            management: null  # applies to all management types
+            climate_zone: mediterranean
+            kc: 0.65
+            kc_ci: [0.55, 0.75]
+            d1: 2.0
+            d1_ci: [1.5, 2.5]
+            d2: 8.0
+            d2_ci: [7.0, 9.0]
+            mds_ref: 150.0
+            mds_ref_ci: [120.0, 180.0]
+            source:
+              doi: null
+              short: "FAO-56 generic olive"
+              author: "Allen et al."
+              year: 1998
+              institution: "FAO"
+              method: "FAO-56 dual crop coefficient method"
+              conditions: "Olive, 50% ground cover, Mediterranean, no water stress"
+            alternatives:
+              - kc: 0.55
+                source_short: "Orgaz et al. 2005"
+                source_doi: "10.1016/j.agwat.2004.12.005"
+                conditions: "Olive, cv. Picual, Córdoba, rainfed, 30% cover"
+
+          - cultivar: "Picual"
+            management: deficit_irrigation
+            climate_zone: mediterranean
+            kc: 0.50
+            kc_ci: [0.45, 0.55]
+            d1: 1.8
+            d1_ci: [1.3, 2.3]
+            d2: 7.5
+            d2_ci: [6.5, 8.5]
+            mds_ref: 130.0
+            mds_ref_ci: [100.0, 160.0]
+            source:
+              doi: "10.1016/j.agwat.2004.12.005"
+              short: "Orgaz et al. 2005"
+              author: "Orgaz, Testi, Villalobos, Fereres"
+              year: 2005
+              institution: "IAS-CSIC, Universidad de Córdoba"
+              method: "Eddy covariance + sap flow, 3-year field trial"
+              conditions: "Olive, cv. Picual, Córdoba, deficit irrigation 30% ETc, 4×6m"
+
+      - name: pit_hardening
+        description: "Endocarp hardening — critical period for water stress sensitivity"
+        parameters:
+
+          - cultivar: null
+            management: null
+            climate_zone: mediterranean
+            kc: 0.60
+            kc_ci: [0.50, 0.70]
+            d1: 2.2
+            d1_ci: [1.7, 2.7]
+            d2: 8.5
+            d2_ci: [7.5, 9.5]
+            mds_ref: 180.0
+            mds_ref_ci: [150.0, 210.0]
+            source:
+              doi: null
+              short: "FAO-56 olive mid-season"
+              author: "Allen et al."
+              year: 1998
+              institution: "FAO"
+              method: "FAO-56 adjusted for critical period"
+              conditions: "Olive, pit hardening stage, Mediterranean"
+
+          - cultivar: "Picual"
+            management: regulated_deficit_irrigation
+            climate_zone: mediterranean
+            kc: 0.45
+            kc_ci: [0.40, 0.50]
+            d1: 2.0
+            d1_ci: [1.5, 2.5]
+            d2: 8.0
+            d2_ci: [7.0, 9.0]
+            mds_ref: 190.0
+            mds_ref_ci: [160.0, 220.0]
+            source:
+              doi: "10.21273/JASHS.128.3.0425"
+              short: "Moriana et al. 2003"
+              author: "Moriana, Orgaz, Pastor, Fereres"
+              year: 2003
+              institution: "Universidad de Sevilla, IAS-CSIC"
+              method: "Dendrometer + water balance, RDI trial, 5-year"
+              conditions: "Olive, cv. Picual, Seville, RDI (30% ETc at pit hardening)"
+
+      - name: fruit_growth
+        description: "Fruit development and oil accumulation"
+        parameters:
+
+          - cultivar: null
+            management: null
+            climate_zone: mediterranean
+            kc: 0.70
+            kc_ci: [0.60, 0.80]
+            d1: 1.5
+            d1_ci: [1.0, 2.0]
+            d2: 7.0
+            d2_ci: [6.0, 8.0]
+            mds_ref: 200.0
+            mds_ref_ci: [170.0, 230.0]
+            source:
+              doi: null
+              short: "FAO-56 olive full canopy"
+              author: "Allen et al."
+              year: 1998
+              institution: "FAO"
+              method: "FAO-56 full canopy Kc"
+              conditions: "Olive, full canopy, fruit growth, Mediterranean"
+
+  # ── Almond (Prunus dulcis) ─────────────────────────────────────────────
+
+  - name: almond
+    scientific_name: Prunus dulcis
+    agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_334
+
+    stages:
+
+      - name: vegetative
+        description: "Leaf-out to flowering"
+        parameters:
+
+          - cultivar: null
+            management: null
+            climate_zone: mediterranean
+            kc: 0.75
+            kc_ci: [0.65, 0.85]
+            d1: 2.5
+            d1_ci: [2.0, 3.0]
+            d2: 9.0
+            d2_ci: [8.0, 10.0]
+            mds_ref: 160.0
+            mds_ref_ci: [130.0, 190.0]
+            source:
+              doi: null
+              short: "FAO-56 almond"
+              author: "Allen et al."
+              year: 1998
+              institution: "FAO"
+              method: "FAO-56 crop coefficient"
+              conditions: "Almond, no ground cover, Mediterranean"
+
+          - cultivar: "Nonpareil"
+            management: deficit_irrigation
+            climate_zone: mediterranean
+            kc: 0.65
+            kc_ci: [0.55, 0.75]
+            d1: 2.3
+            d1_ci: [1.8, 2.8]
+            d2: 8.5
+            d2_ci: [7.5, 9.5]
+            mds_ref: 140.0
+            mds_ref_ci: [110.0, 170.0]
+            source:
+              doi: null
+              short: "Goldhamer & Fereres 2001"
+              author: "Goldhamer, Fereres"
+              year: 2001
+              institution: "UC Davis, IAS-CSIC"
+              method: "RDI field trial, dendrometer + water balance"
+              conditions: "Almond, cv. Nonpareil, California, RDI"
+
+      - name: kernel_fill
+        description: "Kernel development post-hull split"
+        parameters:
+
+          - cultivar: null
+            management: null
+            climate_zone: mediterranean
+            kc: 0.90
+            kc_ci: [0.80, 1.00]
+            d1: 2.0
+            d1_ci: [1.5, 2.5]
+            d2: 7.5
+            d2_ci: [6.5, 8.5]
+            mds_ref: 200.0
+            mds_ref_ci: [170.0, 230.0]
+            source:
+              doi: null
+              short: "FAO-56 almond mid-season"
+              author: "Allen et al."
+              year: 1998
+              institution: "FAO"
+              method: "FAO-56 full canopy"
+              conditions: "Almond, full canopy, kernel fill, Mediterranean"
+
+  # ── Grapevine (Vitis vinifera) ──────────────────────────────────────────
+
+  - name: grapevine
+    scientific_name: Vitis vinifera
+    agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_8283
+
+    stages:
+
+      - name: vegetative
+        description: "Bud break to flowering"
+        parameters:
+
+          - cultivar: null
+            management: null
+            climate_zone: mediterranean
+            kc: 0.30
+            kc_ci: [0.20, 0.40]
+            d1: 1.5
+            d1_ci: [1.0, 2.0]
+            d2: 6.0
+            d2_ci: [5.0, 7.0]
+            mds_ref: 100.0
+            mds_ref_ci: [80.0, 120.0]
+            source:
+              doi: null
+              short: "FAO-56 wine grapes initial"
+              author: "Allen et al."
+              year: 1998
+              institution: "FAO"
+              method: "FAO-56 crop coefficient"
+              conditions: "Wine grapes, bud break to flowering, Mediterranean"
+
+          - cultivar: "Tempranillo"
+            management: deficit_irrigation
+            climate_zone: mediterranean
+            kc: 0.25
+            kc_ci: [0.15, 0.35]
+            d1: 1.3
+            d1_ci: [0.8, 1.8]
+            d2: 5.5
+            d2_ci: [4.5, 6.5]
+            mds_ref: 90.0
+            mds_ref_ci: [70.0, 110.0]
+            source:
+              doi: null
+              short: "Intrigliolo & Castel 2006"
+              author: "Intrigliolo, Castel"
+              year: 2006
+              institution: "IVIA, Valencia"
+              method: "Dendrometer + lysimeter, RDI trial"
+              conditions: "Tempranillo, Valencia, RDI pre-veraison"
+
+      - name: veraison
+        description: "Veraison to harvest"
+        parameters:
+
+          - cultivar: null
+            management: null
+            climate_zone: mediterranean
+            kc: 0.70
+            kc_ci: [0.60, 0.80]
+            d1: 2.0
+            d1_ci: [1.5, 2.5]
+            d2: 7.0
+            d2_ci: [6.0, 8.0]
+            mds_ref: 180.0
+            mds_ref_ci: [150.0, 210.0]
+            source:
+              doi: null
+              short: "FAO-56 wine grapes mid-season"
+              author: "Allen et al."
+              year: 1998
+              institution: "FAO"
+              method: "FAO-56 wine grapes Kc mid"
+              conditions: "Wine grapes, veraison to harvest, Mediterranean, 2.5m trellis"
+
+  # ── Wheat (Triticum aestivum) ──────────────────────────────────────────
+
+  - name: wheat
+    scientific_name: Triticum aestivum
+    agrovoc_uri: http://aims.fao.org/aos/agrovoc/c_7951
+
+    stages:
+
+      - name: vegetative
+        description: "Emergence to stem elongation"
+        parameters:
+
+          - cultivar: null
+            management: null
+            climate_zone: semi_arid
+            kc: 0.30
+            kc_ci: [0.20, 0.40]
+            d1: 1.0
+            d1_ci: [0.5, 1.5]
+            d2: 5.0
+            d2_ci: [4.0, 6.0]
+            mds_ref: null  # Herbaceous — MDS not applicable
+            source:
+              doi: null
+              short: "FAO-56 wheat initial"
+              author: "Allen et al."
+              year: 1998
+              institution: "FAO"
+              method: "FAO-56 crop coefficient"
+              conditions: "Winter wheat, emergence, semi-arid"
+
+      - name: stem_elongation
+        description: "Stem elongation to heading"
+        parameters:
+
+          - cultivar: null
+            management: null
+            climate_zone: semi_arid
+            kc: 1.15
+            kc_ci: [1.05, 1.25]
+            d1: 1.5
+            d1_ci: [1.0, 2.0]
+            d2: 6.0
+            d2_ci: [5.0, 7.0]
+            mds_ref: null
+            source:
+              doi: null
+              short: "FAO-56 wheat mid-season"
+              author: "Allen et al."
+              year: 1998
+              institution: "FAO"
+              method: "FAO-56 wheat Kc mid"
+              conditions: "Winter wheat, full canopy, heading"
+
+          - cultivar: null
+            management: deficit_irrigation
+            climate_zone: semi_arid
+            kc: 0.90
+            kc_ci: [0.80, 1.00]
+            d1: 2.0
+            d1_ci: [1.5, 2.5]
+            d2: 7.0
+            d2_ci: [6.0, 8.0]
+            mds_ref: null
+            source:
+              doi: null
+              short: "Kang et al. 2003"
+              author: "Kang, Zhang, Liang"
+              year: 2003
+              institution: "China Agricultural University"
+              method: "CWSI field trial, North China Plain"
+              conditions: "Winter wheat, deficit irrigation, North China Plain"
+
+# =============================================================================
+# Stage detection reference (GDD thresholds, approximate)
+# =============================================================================
+
+stage_detection:
+  olive:
+    base_temp_c: 10.0
+    stages:
+      - name: vegetative
+        gdd_from_budbreak: [0, 800]
+      - name: pit_hardening
+        gdd_from_budbreak: [800, 1600]
+      - name: fruit_growth
+        gdd_from_budbreak: [1600, 2600]
+  almond:
+    base_temp_c: 7.0
+    stages:
+      - name: vegetative
+        gdd_from_budbreak: [0, 600]
+      - name: kernel_fill
+        gdd_from_budbreak: [600, 1800]
+  grapevine:
+    base_temp_c: 10.0
+    stages:
+      - name: vegetative
+        gdd_from_budbreak: [0, 700]
+      - name: veraison
+        gdd_from_budbreak: [700, 1700]
+  wheat:
+    base_temp_c: 0.0
+    stages:
+      - name: vegetative
+        gdd_from_emergence: [0, 700]
+      - name: stem_elongation
+        gdd_from_emergence: [700, 1400]
+
+# =============================================================================
+# Crop Heat Tolerance — damage thresholds per species
+# =============================================================================
+
+crop_heat_tolerance:
+
+  olive:
+    heat_damage_threshold_c: 35.0
+    frost_damage_threshold_c: -5.0
+    heat_accum_hours: 6
+    source:
+      short: "Connor & Fereres 2005"
+      doi: "10.1016/j.scienta.2005.03.008"
+      author: "Connor, Fereres"
+      year: 2005
+      conditions: "Olea europaea, Mediterranean, field conditions"
+
+  almond:
+    heat_damage_threshold_c: 33.0
+    frost_damage_threshold_c: -2.0
+    heat_accum_hours: 4
+    source:
+      short: "Egea et al. 2011"
+      doi: "10.1016/j.agwat.2010.10.002"
+      author: "Egea, Nortes, González-Real, Baille"
+      year: 2011
+      conditions: "Prunus dulcis, SE Spain, RDI trial"
+
+  grapevine:
+    heat_damage_threshold_c: 32.0
+    frost_damage_threshold_c: -1.5
+    heat_accum_hours: 3
+    source:
+      short: "Schultz & Lebon 2005"
+      doi: "10.1111/j.1755-0238.2005.tb00016.x"
+      author: "Schultz, Lebon"
+      year: 2005
+      conditions: "Vitis vinifera, Bordeaux, field measurements"
+
+  wheat:
+    heat_damage_threshold_c: 30.0
+    frost_damage_threshold_c: -4.0
+    heat_accum_hours: 5
+    source:
+      short: "Porter & Gawith 1999"
+      doi: "10.1016/S1161-0301(98)00034-3"
+      author: "Porter, Gawith"
+      year: 1999
+      conditions: "Triticum aestivum, review of thresholds"
+
+# =============================================================================
+# Crop Nutrient Profiles — NPK uptake per phenological stage (kg/ha/day)
+# =============================================================================
+
+crop_nutrient_profiles:
+
+  olive:
+    nitrogen:
+      vegetative:    { uptake_kg_ha_day: 0.8,  total_kg_ha: 80  }
+      pit_hardening: { uptake_kg_ha_day: 0.5,  total_kg_ha: 50  }
+      fruit_growth:  { uptake_kg_ha_day: 0.3,  total_kg_ha: 30  }
+    phosphorus:
+      vegetative:    { uptake_kg_ha_day: 0.15, total_kg_ha: 15  }
+      pit_hardening: { uptake_kg_ha_day: 0.10, total_kg_ha: 10  }
+      fruit_growth:  { uptake_kg_ha_day: 0.08, total_kg_ha: 8   }
+    potassium:
+      vegetative:    { uptake_kg_ha_day: 1.0,  total_kg_ha: 100 }
+      pit_hardening: { uptake_kg_ha_day: 0.7,  total_kg_ha: 70  }
+      fruit_growth:  { uptake_kg_ha_day: 0.5,  total_kg_ha: 50  }
+    source:
+      short: "Fernández-Escobar et al. 2012"
+      doi: "10.1007/978-94-007-3473-3_8"
+      author: "Fernández-Escobar, García-Novelo, Restrepo-Díaz"
+      year: 2012
+      conditions: "Olea europaea, Córdoba, adult orchard"
+
+  almond:
+    nitrogen:
+      vegetative:    { uptake_kg_ha_day: 1.0,  total_kg_ha: 100 }
+      kernel_fill:   { uptake_kg_ha_day: 0.7,  total_kg_ha: 70  }
+    phosphorus:
+      vegetative:    { uptake_kg_ha_day: 0.20, total_kg_ha: 20  }
+      kernel_fill:   { uptake_kg_ha_day: 0.12, total_kg_ha: 12  }
+    potassium:
+      vegetative:    { uptake_kg_ha_day: 1.2,  total_kg_ha: 120 }
+      kernel_fill:   { uptake_kg_ha_day: 0.9,  total_kg_ha: 90  }
+    source:
+      short: "Muhammad et al. 2015"
+      author: "Muhammad, Sanden, Lampinen, Brown"
+      year: 2015
+      conditions: "Prunus dulcis, California, mature orchard"
+
+  grapevine:
+    nitrogen:
+      vegetative:    { uptake_kg_ha_day: 0.5,  total_kg_ha: 40  }
+      veraison:      { uptake_kg_ha_day: 0.3,  total_kg_ha: 20  }
+    phosphorus:
+      vegetative:    { uptake_kg_ha_day: 0.10, total_kg_ha: 8   }
+      veraison:      { uptake_kg_ha_day: 0.05, total_kg_ha: 4   }
+    potassium:
+      vegetative:    { uptake_kg_ha_day: 0.8,  total_kg_ha: 60  }
+      veraison:      { uptake_kg_ha_day: 0.6,  total_kg_ha: 40  }
+    source:
+      short: "Schreiner et al. 2006"
+      doi: "10.5344/ajev.2006.57.2.158"
+      author: "Schreiner, Scagel, Baham"
+      year: 2006
+      conditions: "Vitis vinifera, Oregon, Pinot Noir"
+
+  wheat:
+    nitrogen:
+      vegetative:       { uptake_kg_ha_day: 1.5,  total_kg_ha: 60  }
+      stem_elongation:  { uptake_kg_ha_day: 2.5,  total_kg_ha: 120 }
+    phosphorus:
+      vegetative:       { uptake_kg_ha_day: 0.3,  total_kg_ha: 12  }
+      stem_elongation:  { uptake_kg_ha_day: 0.4,  total_kg_ha: 20  }
+    potassium:
+      vegetative:       { uptake_kg_ha_day: 2.0,  total_kg_ha: 80  }
+      stem_elongation:  { uptake_kg_ha_day: 3.0,  total_kg_ha: 150 }
+    source:
+      short: "Zörb et al. 2014"
+      author: "Zörb, Senbayram, Peiter"
+      year: 2014
+      conditions: "Triticum aestivum, review of nutrient uptake"
+
+# =============================================================================
+# Crop Soil Suitability — requirements per species
+# =============================================================================
+
+crop_soil_suitability:
+
+  olive:
+    ph_min: 6.0
+    ph_max: 8.5
+    textures: [loam, sandy_loam, clay_loam]
+    drainage: [well, moderate]
+    depth_min_cm: 80
+    salinity_max_ds_m: 4.0
+    source:
+      short: "EcoCrop / FAO"
+      author: "FAO"
+      year: 1998
+      conditions: "Olea europaea, Mediterranean conditions"
+
+  almond:
+    ph_min: 6.0
+    ph_max: 7.8
+    textures: [sandy_loam, loam]
+    drainage: [well]
+    depth_min_cm: 100
+    salinity_max_ds_m: 2.5
+    source:
+      short: "EcoCrop / FAO"
+      author: "FAO"
+      conditions: "Prunus dulcis, temperate/warm conditions"
+
+  grapevine:
+    ph_min: 5.5
+    ph_max: 8.0
+    textures: [sandy_loam, loam, gravelly]
+    drainage: [well, excessive]
+    depth_min_cm: 60
+    salinity_max_ds_m: 2.0
+    source:
+      short: "FAO-56 wine grapes"
+      author: "Allen et al."
+      year: 1998
+
+  wheat:
+    ph_min: 6.0
+    ph_max: 8.0
+    textures: [loam, clay_loam, silt_loam]
+    drainage: [well, moderate]
+    depth_min_cm: 50
+    salinity_max_ds_m: 6.0
+    source:
+      short: "FAO-56 wheat"
+      author: "Allen et al."
+      year: 1998
+
+# =============================================================================
+# Rotation Constraints — crop rotation minimum intervals and reasons
+# =============================================================================
+
+rotation_constraints:
+
+  - crop_a: wheat
+    crop_b: wheat
+    interval_years: 2
+    reason: "Common root pathogens (Gaeumannomyces graminis — take-all)"
+    source_short: "FAO Crop Rotation Guidelines"
+
+  - crop_a: wheat
+    crop_b: sunflower
+    interval_years: 3
+    reason: "Shared soil-borne pathogens (Sclerotinia sclerotiorum)"
+    source_short: "FAO Crop Rotation Guidelines"
+
+  - crop_a: wheat
+    crop_b: legume
+    interval_years: 0
+    reason: "Beneficial: wheat consumes N, legume fixes N — complementary"
+    source_short: "FAO Crop Rotation Guidelines"
+
+  - crop_a: almond
+    crop_b: almond
+    interval_years: 0
+    reason: "Perennial tree crop — no rotation constraint"
+    source_short: "Standard practice"
+
+  - crop_a: olive
+    crop_b: olive
+    interval_years: 0
+    reason: "Perennial tree crop — no rotation constraint"
+    source_short: "Standard practice"
+
+  - crop_a: grapevine
+    crop_b: grapevine
+    interval_years: 0
+    reason: "Perennial vine — no rotation constraint"
+    source_short: "Standard practice"

@@ -1,0 +1,111 @@
+{
+    "id": "bioorchestrator",
+    "name": "nekazari-module-bioorchestrator",
+    "display_name": "Planificación de cultivos",
+    "version": "0.1.0",
+    "description": "Crop planning: crop fit, varieties, rotation and campaign plan — Nekazari Platform Module",
+    "description_i18n": {
+        "es": "Planificación de cultivos — qué sembrar en cada parcela, con qué variedad y en qué orden: aptitud del cultivo, variedades según ensayos, rotación y plan de campaña.",
+        "en": "Crop planning — what to sow on each parcel, which variety and in what order: crop fit, varieties from trial evidence, rotation and campaign plan.",
+        "eu": "Laboreen planifikazioa — zer erein partzela bakoitzean, zein barietaterekin eta zer ordenatan: laborearen egokitasuna, saiakuntzetan oinarritutako barietateak, txandakatzea eta kanpainaren plana.",
+        "fr": "Planification des cultures — quoi semer sur chaque parcelle, avec quelle variété et dans quel ordre : aptitude de la culture, variétés selon les essais, rotation et plan de campagne.",
+        "pt": "Planeamento de culturas — o que semear em cada parcela, com que variedade e por que ordem: aptidão da cultura, variedades segundo os ensaios, rotação e plano de campanha.",
+        "ca": "Planificació de cultius — què sembrar a cada parcel·la, amb quina varietat i en quin ordre: aptitud del cultiu, varietats segons els assaigs, rotació i pla de campanya."
+    },
+    "short_description": "Crop planning: crop fit, varieties and rotation",
+    "icon": "sprout",
+    "author": {
+        "name": "nekazari-module-bioorchestrator",
+        "email": "",
+        "organization": "Nekazari"
+    },
+    "category": "analytics",
+    "module_type": "ADDON_FREE",
+    "required_plan_type": "basic",
+    "pricing_tier": "FREE",
+    "route_path": "/bioorchestrator",
+    "label": "Planificación de cultivos",
+    "required_roles": [
+        "Farmer",
+        "TechnicalConsultant",
+        "TenantAdmin",
+        "PlatformAdmin"
+    ],
+    "navigation": {
+        "enabled": true,
+        "priority": 35,
+        "section": "modules"
+    },
+    "dependencies": {
+        "sdk_version": "^1.0.3",
+        "react_version": "^18.3.1",
+        "platform_version": "^2.0.0"
+    },
+    "permissions": {
+        "api_access": [
+            "/api/bioorchestrator/*"
+        ],
+        "storage_access": true,
+        "external_requests": [
+            "https://agrovoc.fao.org",
+            "https://api.eppo.int",
+            "https://api.iucnredlist.org",
+            "https://www.globallometree.org",
+            "https://dad.fao.org",
+            "https://us-central1-fao-dadis-dev.cloudfunctions.net"
+        ]
+    },
+    "build_config": {
+        "type": "iife",
+        "remote_entry_url": "/modules/bioorchestrator/nekazari-module.js"
+    },
+    "accent": {
+        "base": "#10B981",
+        "soft": "#D1FAE5",
+        "strong": "#047857"
+    },
+    "backend_config": {
+        "enabled": true,
+        "image": "ghcr.io/nkz-os/bioorchestrator-backend:0.1.0",
+        "port": 8420,
+        "health_check": "/healthz",
+        "env_secrets": [
+            "bioorchestrator-secrets"
+        ]
+    },
+    "slots": {
+        "context-panel": [
+            {
+                "id": "bioorchestrator-parcel-plan",
+                "component": "ParcelPlanWidget",
+                "priority": 15
+            }
+        ],
+        "bottom-panel": []
+    },
+    "surfaces": {
+        "web": {
+            "slots": {
+                "context-panel": [
+                    {
+                        "id": "bioorchestrator-parcel-plan",
+                        "component": "ParcelPlanWidget",
+                        "priority": 15
+                    }
+                ],
+                "bottom-panel": []
+            }
+        }
+    },
+    "metadata": {
+        "icon": "🌿",
+        "color": "#059669",
+        "features": [
+            "Farm plan matrix: parcels by campaign with their planned crop cycles",
+            "Crop fit per parcel from climate, soil and rotation",
+            "Varieties from field trial evidence",
+            "Comparison of agronomic model estimates"
+        ],
+        "screenshots": []
+    }
+}

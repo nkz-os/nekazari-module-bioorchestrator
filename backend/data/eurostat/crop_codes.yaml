@@ -1,0 +1,14 @@
+# Eurostat apro_cpshr `crops` codes → EPPO. Codes and labels read from the dataset's codelist
+# (dissemination API, 2026-10-11); the EPPO side must resolve in data/species_registry.yaml.
+dataset: apro_cpshr
+crops:
+  C1110: TRZAX   # Common wheat and spelt
+  C1120: TRZDU   # Durum wheat
+  C1300: HORVX   # Barley
+  C1500: ZEAMX   # Grain maize and corn-cob-mix
+  I1110: BRSNN   # Rape and turnip rape seeds
+  I1120: HELAN   # Sunflower seed
+  P1100: PIBSX   # Field peas
+  P1200: VICFX   # Broad and field beans
+  R1000: SOLTU   # Potatoes (including seed potatoes)
+  R2000: BEAVX   # Sugar beet (excluding seed)

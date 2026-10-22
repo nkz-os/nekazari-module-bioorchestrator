@@ -1,0 +1,380 @@
+"""Crop reference data — carbon, operations, nutrient requirements.
+
+Multi-layer resolver:
+1. Neo4j AgriKnowledge → n_fixation_kg_ha (real measurements from INTIA/IFAPA/ITACyL)
+2. EPPO API → family → auto-detect Fabaceae (legume) vs Poaceae (cereal)
+3. EcoCrop CSV → growing_season_days (FAO GAEZ)
+4. Static IPCC 2019 Tier 1 table (fallback)
+
+Used by compare-crops and rotation-plan endpoints.
+"""
+
+from __future__ import annotations
+
+import logging
+import os
+
+from cachetools import TTLCache
+
+from app.services.ecocrop_loader import get_growing_season_days
+
+logger = logging.getLogger(__name__)
+
+# ── Static IPCC reference table (fallback) ──────────────────────────────────
+
+CROP_REFERENCE: dict[str, dict] = {
+    # Cereals
+    "TRZAX": {"carbon_fixed_tco2e_ha": 2.8, "operations_count": 7, "n_requirement_kg_ha": 180, "n_fixation_kg_ha": 0, "growing_season_days": 210},
+    "TRZDU": {"carbon_fixed_tco2e_ha": 2.5, "operations_count": 6, "n_requirement_kg_ha": 160, "n_fixation_kg_ha": 0, "growing_season_days": 200},
+    "TRZAS": {"carbon_fixed_tco2e_ha": 2.3, "operations_count": 6, "n_requirement_kg_ha": 140, "n_fixation_kg_ha": 0, "growing_season_days": 210},
+    "HORVX": {"carbon_fixed_tco2e_ha": 2.3, "operations_count": 6, "n_requirement_kg_ha": 140, "n_fixation_kg_ha": 0, "growing_season_days": 190},
+    "HORVW": {"carbon_fixed_tco2e_ha": 2.2, "operations_count": 5, "n_requirement_kg_ha": 130, "n_fixation_kg_ha": 0, "growing_season_days": 180},
+    "AVESA": {"carbon_fixed_tco2e_ha": 2.0, "operations_count": 5, "n_requirement_kg_ha": 120, "n_fixation_kg_ha": 0, "growing_season_days": 180},
+    "SECCE": {"carbon_fixed_tco2e_ha": 2.1, "operations_count": 5, "n_requirement_kg_ha": 110, "n_fixation_kg_ha": 0, "growing_season_days": 200},
+    "ZEAXX": {"carbon_fixed_tco2e_ha": 4.0, "operations_count": 8, "n_requirement_kg_ha": 250, "n_fixation_kg_ha": 0, "growing_season_days": 180},
+    "ZEAMX": {"carbon_fixed_tco2e_ha": 4.2, "operations_count": 8, "n_requirement_kg_ha": 260, "n_fixation_kg_ha": 0, "growing_season_days": 180},
+    "SORVU": {"carbon_fixed_tco2e_ha": 3.5, "operations_count": 6, "n_requirement_kg_ha": 150, "n_fixation_kg_ha": 0, "growing_season_days": 170},
+    "ORYSA": {"carbon_fixed_tco2e_ha": 2.8, "operations_count": 9, "n_requirement_kg_ha": 160, "n_fixation_kg_ha": 0, "growing_season_days": 180},
+    # Oilseeds
+    "BRSNW": {"carbon_fixed_tco2e_ha": 2.2, "operations_count": 6, "n_requirement_kg_ha": 180, "n_fixation_kg_ha": 0, "growing_season_days": 280},
+    "BRSNN": {"carbon_fixed_tco2e_ha": 2.0, "operations_count": 5, "n_requirement_kg_ha": 170, "n_fixation_kg_ha": 0, "growing_season_days": 260},
+    "HELAN": {"carbon_fixed_tco2e_ha": 1.8, "operations_count": 5, "n_requirement_kg_ha": 100, "n_fixation_kg_ha": 0, "growing_season_days": 150},
+    # Root & tuber crops
+    "SOLTU": {"carbon_fixed_tco2e_ha": 1.8, "operations_count": 9, "n_requirement_kg_ha": 200, "n_fixation_kg_ha": 0, "growing_season_days": 160},
+    "BETVU": {"carbon_fixed_tco2e_ha": 2.5, "operations_count": 8, "n_requirement_kg_ha": 180, "n_fixation_kg_ha": 0, "growing_season_days": 210},
+    # Legumes
+    "CIEAR": {"carbon_fixed_tco2e_ha": 0.9, "operations_count": 4, "n_requirement_kg_ha": 30, "n_fixation_kg_ha": 80, "growing_season_days": 150},
+    "PIBSX": {"carbon_fixed_tco2e_ha": 1.2, "operations_count": 4, "n_requirement_kg_ha": 20, "n_fixation_kg_ha": 100, "growing_season_days": 140},
+    "PIBAR": {"carbon_fixed_tco2e_ha": 1.1, "operations_count": 4, "n_requirement_kg_ha": 15, "n_fixation_kg_ha": 110, "growing_season_days": 140},
+    "VICFX": {"carbon_fixed_tco2e_ha": 1.5, "operations_count": 4, "n_requirement_kg_ha": 20, "n_fixation_kg_ha": 130, "growing_season_days": 160},
+    "LENCU": {"carbon_fixed_tco2e_ha": 0.7, "operations_count": 3, "n_requirement_kg_ha": 15, "n_fixation_kg_ha": 60, "growing_season_days": 130},
+    "GLXMA": {"carbon_fixed_tco2e_ha": 2.5, "operations_count": 5, "n_requirement_kg_ha": 30, "n_fixation_kg_ha": 180, "growing_season_days": 160},
+    "VICSA": {"carbon_fixed_tco2e_ha": 1.0, "operations_count": 3, "n_requirement_kg_ha": 10, "n_fixation_kg_ha": 110, "growing_season_days": 150},
+    "VICVI": {"carbon_fixed_tco2e_ha": 1.2, "operations_count": 3, "n_requirement_kg_ha": 10, "n_fixation_kg_ha": 120, "growing_season_days": 160},
+    "VICER": {"carbon_fixed_tco2e_ha": 0.9, "operations_count": 3, "n_requirement_kg_ha": 15, "n_fixation_kg_ha": 100, "growing_season_days": 140},
+    "LTHSA": {"carbon_fixed_tco2e_ha": 0.8, "operations_count": 3, "n_requirement_kg_ha": 10, "n_fixation_kg_ha": 90, "growing_season_days": 130},
+    "LUPAL": {"carbon_fixed_tco2e_ha": 1.3, "operations_count": 3, "n_requirement_kg_ha": 10, "n_fixation_kg_ha": 100, "growing_season_days": 160},
+    "LUPAN": {"carbon_fixed_tco2e_ha": 1.4, "operations_count": 3, "n_requirement_kg_ha": 10, "n_fixation_kg_ha": 120, "growing_season_days": 170},
+    "PHVUX": {"carbon_fixed_tco2e_ha": 1.0, "operations_count": 5, "n_requirement_kg_ha": 20, "n_fixation_kg_ha": 50, "growing_season_days": 140},
+    # Forage
+    "MEDSA": {"carbon_fixed_tco2e_ha": 3.0, "operations_count": 5, "n_requirement_kg_ha": 10, "n_fixation_kg_ha": 200, "growing_season_days": 250},
+    "MEDLU": {"carbon_fixed_tco2e_ha": 2.5, "operations_count": 4, "n_requirement_kg_ha": 10, "n_fixation_kg_ha": 170, "growing_season_days": 220},
+    "TRFPR": {"carbon_fixed_tco2e_ha": 2.8, "operations_count": 4, "n_requirement_kg_ha": 10, "n_fixation_kg_ha": 150, "growing_season_days": 240},
+    # Vegetables
+    "SOLLC": {"carbon_fixed_tco2e_ha": 0.8, "operations_count": 10, "n_requirement_kg_ha": 180, "n_fixation_kg_ha": 0, "growing_season_days": 150},
+    "CAPAN": {"carbon_fixed_tco2e_ha": 0.6, "operations_count": 8, "n_requirement_kg_ha": 140, "n_fixation_kg_ha": 0, "growing_season_days": 160},
+    "CUMSA": {"carbon_fixed_tco2e_ha": 0.5, "operations_count": 7, "n_requirement_kg_ha": 100, "n_fixation_kg_ha": 0, "growing_season_days": 120},
+    "CUCUM": {"carbon_fixed_tco2e_ha": 0.4, "operations_count": 7, "n_requirement_kg_ha": 90, "n_fixation_kg_ha": 0, "growing_season_days": 110},
+    "ALLCE": {"carbon_fixed_tco2e_ha": 0.7, "operations_count": 7, "n_requirement_kg_ha": 150, "n_fixation_kg_ha": 0, "growing_season_days": 180},
+    # Perennial / fruits / nuts
+    "BRUn":  {"carbon_fixed_tco2e_ha": 5.2, "operations_count": 6, "n_requirement_kg_ha": 200, "n_fixation_kg_ha": 0, "growing_season_days": 250},
+    "OLEU":  {"carbon_fixed_tco2e_ha": 3.5, "operations_count": 5, "n_requirement_kg_ha": 100, "n_fixation_kg_ha": 0, "growing_season_days": 365},
+    "VITIS": {"carbon_fixed_tco2e_ha": 3.0, "operations_count": 10, "n_requirement_kg_ha": 80, "n_fixation_kg_ha": 0, "growing_season_days": 240},
+    "PRMDO": {"carbon_fixed_tco2e_ha": 4.0, "operations_count": 8, "n_requirement_kg_ha": 90, "n_fixation_kg_ha": 0, "growing_season_days": 210},
+    "PRNAR": {"carbon_fixed_tco2e_ha": 3.8, "operations_count": 6, "n_requirement_kg_ha": 120, "n_fixation_kg_ha": 0, "growing_season_days": 220},
+    "CITRU": {"carbon_fixed_tco2e_ha": 3.2, "operations_count": 7, "n_requirement_kg_ha": 150, "n_fixation_kg_ha": 0, "growing_season_days": 365},
+    "PRMPE": {"carbon_fixed_tco2e_ha": 2.8, "operations_count": 7, "n_requirement_kg_ha": 80, "n_fixation_kg_ha": 0, "growing_season_days": 200},
+}
+
+DEFAULT_REFERENCE = {"carbon_fixed_tco2e_ha": 1.5, "operations_count": 5, "n_requirement_kg_ha": 100, "n_fixation_kg_ha": 0, "growing_season_days": 180}
+
+# ── Season slot classification (EcoCrop sowing windows) ────────────────────
+# Maps EPPO codes to winter/summer/both. Winter crops are sown in autumn,
+# summer crops in spring. Perennials and multi-cut forages are both.
+# Source: EcoCrop CycleLow/CycleHigh + Mediterranean agronomic practice.
+
+CROP_SEASON_SLOT: dict[str, set[str]] = {
+    # Winter cereals (autumn sowing)
+    "TRZAX": {"winter"}, "TRZDU": {"winter"}, "TRZAW": {"winter"},
+    "HORVX": {"winter"}, "HORVW": {"winter"}, "AVESA": {"winter"},
+    "SECCE": {"winter"}, "TTLSS": {"winter"},
+    # Winter legumes
+    "CIEAR": {"winter"}, "VICFX": {"winter"}, "VICSA": {"winter"},
+    "VICER": {"winter"}, "LENCU": {"winter"}, "LTHSA": {"winter"},
+    "PISSA": {"winter"}, "PIBSX": {"winter"}, "LUPAL": {"winter"},
+    "LUPAN": {"winter"}, "PHVUX": {"winter"},
+    # Winter oilseeds
+    "BRSNW": {"winter"}, "BRSNN": {"winter"}, "BRPNA": {"winter"},
+    # Summer cereals (spring sowing)
+    "ZEAXX": {"summer"}, "ZEAMX": {"summer"},
+    "SORVU": {"summer"}, "ORYSA": {"summer"},
+    # Summer legumes
+    "GLXMA": {"summer"},
+    # Summer oilseeds
+    "HELAN": {"summer"},
+    # Summer vegetables / tubers
+    "SOLTU": {"summer"}, "BETVU": {"summer"},
+    "SOLLC": {"summer"}, "SOLME": {"summer"},
+    "CAPAN": {"summer"}, "CPSAN": {"summer"},
+    "CUMSA": {"summer"}, "CUCUM": {"summer"},
+    "ALLCE": {"summer"}, "ALLPO": {"summer"},
+    "LYPES": {"summer"}, "CUMME": {"summer"},
+    "FRAAN": {"summer"},
+    # Perennials / fruits (both seasons)
+    "OLEU": {"winter", "summer"},
+    "VITIS": {"winter", "summer"},
+    "PRMDO": {"winter", "summer"},
+    "PRNAR": {"winter", "summer"},
+    "PRNDU": {"winter", "summer"},
+    "MABSD": {"winter", "summer"},
+    "BRUn": {"winter", "summer"},
+    "CITRU": {"winter", "summer"},
+    "PRMPE": {"winter", "summer"},
+    # Multi-cut forage (both)
+    "MEDSA": {"winter", "summer"},
+    "MEDLU": {"winter", "summer"},
+    "TRFPR": {"winter", "summer"},
+}
+
+
+def get_season_slots(eppo: str) -> set[str]:
+    """Return {"winter"}, {"summer"}, or {"winter", "summer"} for a crop.
+
+    Falls back to {"winter", "summer"} when unknown (conservative — show all).
+    """
+    return CROP_SEASON_SLOT.get(eppo.upper(), {"winter", "summer"})
+
+# ── Gluten-free crop classification (botanical, static) ─────────────────────
+# Source: celiac disease medical guidelines. Oats marked with caveat
+# (botanically gluten-free but high cross-contamination risk in supply chains).
+
+GLUTEN_FREE_CROPS: dict[str, str] = {
+    # Gluten-containing cereals (Triticeae tribe)
+    "TRZAX": "contains_gluten", "TRZDU": "contains_gluten", "TRZAW": "contains_gluten",
+    "HORVX": "contains_gluten", "HORVW": "contains_gluten",
+    "SECCE": "contains_gluten",
+    "TTLSS": "contains_gluten",  # triticale (wheat × rye hybrid)
+    # Oats — botanically GF but cross-contamination risk
+    "AVESA": "gluten_free_caveat",
+    # Naturally gluten-free
+    "ZEAXX": "gluten_free", "ZEAMX": "gluten_free",  # maize
+    "SORVU": "gluten_free",  # sorghum
+    "ORYSA": "gluten_free",  # rice
+    # Legumes (all GF)
+    "CIEAR": "gluten_free", "PIBSX": "gluten_free", "PISSA": "gluten_free",
+    "VICFX": "gluten_free", "VICSA": "gluten_free", "VICER": "gluten_free",
+    "LENCU": "gluten_free", "LTHSA": "gluten_free",
+    "GLXMA": "gluten_free",  # soybean
+    "LUPAL": "gluten_free", "LUPAN": "gluten_free",
+    "PHVUX": "gluten_free",  # common bean
+    # Oilseeds
+    "BRSNW": "gluten_free", "BRSNN": "gluten_free", "BRPNA": "gluten_free",
+    "HELAN": "gluten_free",
+    # Vegetables & tubers
+    "SOLTU": "gluten_free", "BETVU": "gluten_free",
+    "SOLLC": "gluten_free", "SOLME": "gluten_free",
+    "CAPAN": "gluten_free", "CPSAN": "gluten_free",
+    "CUMSA": "gluten_free", "CUCUM": "gluten_free",
+    "ALLCE": "gluten_free", "ALLPO": "gluten_free",
+    "LYPES": "gluten_free", "CUMME": "gluten_free",
+    "FRAAN": "gluten_free",
+    # Perennials
+    "OLEU": "gluten_free", "VITIS": "gluten_free",
+    "PRMDO": "gluten_free", "PRNAR": "gluten_free", "PRNDU": "gluten_free",
+    "MABSD": "gluten_free", "BRUn": "gluten_free",
+    "CITRU": "gluten_free", "PRMPE": "gluten_free",
+    # Forage
+    "MEDSA": "gluten_free", "MEDLU": "gluten_free", "TRFPR": "gluten_free",
+}
+
+
+def is_gluten_free(eppo: str) -> bool | None:
+    """Return True if gluten-free, False if contains gluten, None if unknown."""
+    status = GLUTEN_FREE_CROPS.get(eppo.upper())
+    if status is None:
+        return None
+    return status in ("gluten_free", "gluten_free_caveat")
+
+
+def get_gluten_status(eppo: str) -> str:
+    """Return 'gluten_free', 'contains_gluten', 'gluten_free_caveat', or 'unknown'."""
+    return GLUTEN_FREE_CROPS.get(eppo.upper(), "unknown")
+
+
+HARVEST_INDEX_DEFAULT = 0.45
+GENERIC_GRAIN_PROTEIN_PCT = 12.0
+
+
+def compute_grain_protein_kg_ha(yield_kg_ha: float, variety: dict | None = None) -> tuple[float, str]:
+    """Grain protein from trial crude_protein_pct or 12% generic fallback."""
+    variety = variety or {}
+    crude = variety.get("crude_protein_pct")
+    if crude is not None and float(crude) > 0:
+        protein = yield_kg_ha * HARVEST_INDEX_DEFAULT * float(crude) / 100
+        return round(protein, 1), "variety_trials"
+    return round(yield_kg_ha * GENERIC_GRAIN_PROTEIN_PCT / 100, 1), "generic_12pct"
+
+
+def is_legume_cash_crop(eppo: str, crop_ref: dict | None = None) -> bool:
+    """True when cash crop is a protein legume (Fabaceae / PROTEIN_CROPS catalog)."""
+    from app.services.cover_crops import PROTEIN_CROPS
+
+    code = eppo.upper()
+    if code in PROTEIN_CROPS and PROTEIN_CROPS[code].get("type") == "legume":
+        return True
+    ref = crop_ref or CROP_REFERENCE.get(code, {})
+    return ref.get("n_fixation_kg_ha", 0) >= 40
+
+# ── Caches ──────────────────────────────────────────────────────────────────
+
+_eppo_taxonomy_cache: TTLCache[str, dict | None] = TTLCache(maxsize=200, ttl=86400 * 7)
+_agriknowledge_cache: TTLCache[str, float | None] = TTLCache(maxsize=200, ttl=86400)
+
+EPPO_API_KEY = os.getenv("EPPO_API_TOKEN") or os.getenv("EPPO_API_KEY", "")
+EPPO_BASE = "https://api.eppo.int/gd/v2"
+
+
+# ── Live data fetchers ──────────────────────────────────────────────────────
+
+def _parse_eppo_taxonomy(data: object, eppo_code: str) -> dict | None:
+    """Parse the EPPO v2 taxonomy payload: a JSON array with one object per rank
+    (``eppocode``, ``prefname``, ``level``, ``type``), ordered Kingdom to the taxon itself.
+    Returns None when the payload is not that shape or carries neither family nor name.
+    """
+    if not isinstance(data, list):
+        return None
+    ranks = [r for r in data if isinstance(r, dict)]
+    family = next((r.get("prefname", "") for r in ranks if r.get("type") == "Family"), "")
+    # The taxon itself is the lineage entry carrying the requested code (else the deepest rank).
+    own = next((r for r in ranks if r.get("eppocode") == eppo_code), ranks[-1] if ranks else {})
+    scientific_name = own.get("prefname", "")
+    if not (family or scientific_name):
+        return None
+    # The lineage endpoint carries no life cycle; the key stays for the cached shape.
+    return {"family": family, "scientific_name": scientific_name, "life_cycle": ""}
+
+
+async def _fetch_eppo_taxonomy(eppo_code: str) -> dict | None:
+    """Fetch taxonomy from EPPO API v2. Returns {family, scientific_name, life_cycle} or None."""
+    cached = _eppo_taxonomy_cache.get(eppo_code)
+    if cached is not None:
+        return cached if cached else None
+
+    if not EPPO_API_KEY:
+        logger.debug("EPPO_API_KEY not set — skipping taxonomy lookup")
+        return None
+
+    try:
+        import httpx
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            resp = await client.get(
+                f"{EPPO_BASE}/taxons/taxon/{eppo_code}/taxonomy",
+                headers={"X-Api-Key": EPPO_API_KEY},
+            )
+            if resp.status_code == 200:
+                result = _parse_eppo_taxonomy(resp.json(), eppo_code)
+                if result is None:
+                    logger.warning("EPPO taxonomy has unexpected shape for %s", eppo_code)
+                else:
+                    _eppo_taxonomy_cache[eppo_code] = result
+                    return result
+            elif resp.status_code == 404:
+                _eppo_taxonomy_cache[eppo_code] = {}
+                return None
+            else:
+                logger.warning("EPPO taxonomy returned %d for %s", resp.status_code, eppo_code)
+    except Exception as e:  # noqa: BLE001
+        logger.warning("EPPO taxonomy lookup failed for %s: %s", eppo_code, e)
+
+    _eppo_taxonomy_cache[eppo_code] = {}
+    return None
+
+
+async def _fetch_agriknowledge_n_fixation(eppo_code: str) -> float | None:
+    """Query Neo4j :AgriKnowledge nodes for measured N fixation. Returns kg/ha or None."""
+    cached = _agriknowledge_cache.get(eppo_code)
+    if cached is not None:
+        return cached if cached else None
+
+    try:
+        from neo4j import AsyncGraphDatabase
+
+        neo4j_uri = os.getenv("NEO4J_URI", "bolt://bioorchestrator-neo4j:7687")
+        neo4j_user = os.getenv("NEO4J_USER", "neo4j")
+        neo4j_password = os.getenv("NEO4J_PASSWORD", "bioorchestrator")
+
+        driver = AsyncGraphDatabase.driver(neo4j_uri, auth=(neo4j_user, neo4j_password))
+        async with driver.session() as session:
+            result = await session.run(
+                """
+                MATCH (ak:AgriKnowledge {speciesEppo: $eppo, parameter: 'n_fixation_kg_ha'})
+                RETURN avg(ak.value) AS avg_n, count(ak) AS cnt
+                """,
+                eppo=eppo_code,
+            )
+            record = await result.single()
+            await driver.close()
+            if record and record["cnt"] > 0:
+                val = float(record["avg_n"])
+                _agriknowledge_cache[eppo_code] = val
+                return val
+    except Exception as e:  # noqa: BLE001
+        logger.warning("AgriKnowledge N fixation query failed for %s: %s", eppo_code, e)
+
+    _agriknowledge_cache[eppo_code] = None
+    return None
+
+
+# ── Main resolver ───────────────────────────────────────────────────────────
+
+async def get_crop_ref(eppo: str) -> dict:
+    """Get reference data for a crop EPPO code, resolving from live sources.
+
+    Resolution order:
+    1. Neo4j AgriKnowledge → n_fixation_kg_ha (real measurements)
+    2. EPPO API → family → auto-detect Fabaceae (legume) vs Poaceae (cereal)
+    3. EcoCrop CSV → growing_season_days (FAO GAEZ)
+    4. Static IPCC 2019 Tier 1 table or DEFAULT_REFERENCE (fallback)
+
+    Returns dict with keys: carbon_fixed_tco2e_ha, operations_count,
+    n_requirement_kg_ha, n_fixation_kg_ha, growing_season_days.
+    May include extra diagnostic keys: n_fixation_source, growing_season_source.
+    """
+    base = CROP_REFERENCE.get(eppo, dict(DEFAULT_REFERENCE))
+    result = dict(base)
+    source_info: dict[str, str] = {}
+
+    # Layer 1: AgriKnowledge N fixation (real measurements)
+    n_fix = await _fetch_agriknowledge_n_fixation(eppo)
+    if n_fix is not None:
+        result["n_fixation_kg_ha"] = round(n_fix, 1)
+        source_info["n_fixation"] = "AgriKnowledge (measured)"
+
+    # Layer 2: EPPO taxonomy → auto-detect legume/cereal
+    tax = await _fetch_eppo_taxonomy(eppo)
+    if tax:
+        family = tax.get("family", "").lower()
+        sci_name = tax.get("scientific_name", "")
+
+        # Auto-detect N fixation for Fabaceae if not already set by AgriKnowledge
+        if "fabaceae" in family and "n_fixation" not in source_info:
+            result["n_fixation_kg_ha"] = max(result.get("n_fixation_kg_ha", 0), 60)
+            result["n_requirement_kg_ha"] = 15
+            source_info["n_fixation"] = "EPPO taxonomy (Fabaceae)"
+
+        if "poaceae" in family and "n_fixation" not in source_info:
+            result["n_fixation_kg_ha"] = 0
+            source_info["n_fixation"] = "EPPO taxonomy (Poaceae)"
+
+        # Layer 3: EcoCrop growing season from scientific name
+        if sci_name:
+            gsd = get_growing_season_days(sci_name)
+            if gsd:
+                result["growing_season_days"] = gsd
+                source_info["growing_season"] = "EcoCrop (FAO)"
+
+    # Ensure all required keys exist
+    required_keys = (
+        "carbon_fixed_tco2e_ha", "operations_count",
+        "n_requirement_kg_ha", "n_fixation_kg_ha", "growing_season_days",
+    )
+    for key in required_keys:
+        if key not in result:
+            result[key] = DEFAULT_REFERENCE[key]
+
+    return result
+
+
+def get_crop_ref_sync(eppo: str) -> dict:
+    """Synchronous fallback — returns static IPCC data without live sources."""
+    return CROP_REFERENCE.get(eppo, dict(DEFAULT_REFERENCE))

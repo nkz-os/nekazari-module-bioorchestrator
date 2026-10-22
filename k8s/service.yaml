@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: bioorchestrator-api-service
+  namespace: nekazari
+  labels:
+    app.kubernetes.io/name: bioorchestrator
+    app.kubernetes.io/component: backend
+    app.kubernetes.io/part-of: nekazari
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8420
+      targetPort: 8420
+      protocol: TCP
+      name: http
+  selector:
+    app.kubernetes.io/name: bioorchestrator
+    app.kubernetes.io/component: backend

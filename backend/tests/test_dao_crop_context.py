@@ -1,0 +1,343 @@
+"""TDD: get_crop_context must use SDK OrionClient, thread tenant correctly, and
+unwrap normalized NGSI-LD (not keyValues) for the CropHealthAssessment block."""
+from __future__ import annotations
+
+import asyncio
+from unittest.mock import AsyncMock, MagicMock, patch
+
+import httpx
+import pytest
+
+from app.graph.dao import GraphDAO
+
+# ---------------------------------------------------------------------------
+# Stub data — all in NORMALIZED NGSI-LD form (not keyValues)
+# ---------------------------------------------------------------------------
+
+PARCEL_ID = "urn:ngsi-ld:AgriParcel:test-parcel-001"
+CROP_URI = "urn:ngsi-ld:AgriCrop:TRZAW"
+TENANT = "test-tenant"
+
+NORMALIZED_PARCEL = {
+    "id": PARCEL_ID,
+    "type": "AgriParcel",
+    "hasAgriCrop": {"type": "Relationship", "object": CROP_URI},
+    "hasAgriCropVariety": {"type": "Relationship", "object": "urn:ngsi-ld:AgriCropVariety:WinterWheat"},
+    "management": {"type": "Property", "value": "conventional"},
+    "cropSeasonStart": {"type": "Property", "value": "2025-10-01"},
+    "cropSeasonEnd": {"type": "Property", "value": "2026-07-01"},
+}
+
+NORMALIZED_CROP = {
+    "id": CROP_URI,
+    "type": "AgriCrop",
+    "name": {"type": "Property", "value": "Wheat"},
+    "scientificName": {"type": "Property", "value": "Triticum aestivum"},
+}
+
+NORMALIZED_ASSESSMENT = {
+    "id": "urn:ngsi-ld:CropHealthAssessment:001",
+    "type": "CropHealthAssessment",
+    "hasAgriParcel": {"type": "Relationship", "object": PARCEL_ID},
+    "assessedAt": {"type": "Property", "value": "2026-06-01T00:00:00Z"},
+    "soilPh": {"type": "Property", "value": 6.8},
+    "soilEC": {"type": "Property", "value": 0.42},
+    "soilMoisturePct": {"type": "Property", "value": 32.5},
+    "soilTemperatureC": {"type": "Property", "value": 18.2},
+}
+
+
+# ---------------------------------------------------------------------------
+# Stub OrionClient
+# ---------------------------------------------------------------------------
+
+class _FakeOrionClient:
+    """Stub that records tenant and returns normalized entities."""
+
+    _instances: list[str] = []  # noqa: RUF012
+
+    def __init__(self, tenant_id: str) -> None:
+        _FakeOrionClient._instances.append(tenant_id)
+        self._tenant = tenant_id
+
+    async def get_entity(self, entity_id: str) -> dict:
+        if entity_id == PARCEL_ID:
+            return NORMALIZED_PARCEL
+        if entity_id == CROP_URI:
+            return NORMALIZED_CROP
+        # Simulate 404 → raise_for_status raises HTTPStatusError
+        request = MagicMock()
+        response = MagicMock()
+        response.status_code = 404
+        raise httpx.HTTPStatusError("Not Found", request=request, response=response)
+
+    async def query_entities(self, *, type: str, q: str | None = None, limit: int = 100) -> list:
+        if type == "CropHealthAssessment":
+            return [NORMALIZED_ASSESSMENT]
+        return []
+
+    async def close(self) -> None:
+        pass
+
+
+class _FakeOrionClient404Parcel:
+    """Returns 404 for the parcel entity."""
+
+    _instances: list[str] = []  # noqa: RUF012
+
+    def __init__(self, tenant_id: str) -> None:
+        _FakeOrionClient404Parcel._instances.append(tenant_id)
+
+    async def get_entity(self, entity_id: str) -> dict:
+        request = MagicMock()
+        response = MagicMock()
+        response.status_code = 404
+        raise httpx.HTTPStatusError("Not Found", request=request, response=response)
+
+    async def query_entities(self, **kwargs) -> list:
+        return []
+
+    async def close(self) -> None:
+        pass
+
+
+# ---------------------------------------------------------------------------
+# Fixtures
+# ---------------------------------------------------------------------------
+
+@pytest.fixture(autouse=True)
+def _reset():
+    _FakeOrionClient._instances = []
+    _FakeOrionClient404Parcel._instances = []
+    yield
+
+
+# ---------------------------------------------------------------------------
+# Tests
+# ---------------------------------------------------------------------------
+
+def test_get_crop_context_uses_sdk_and_correct_tenant(mock_driver):
+    """OrionClient must be constructed with the passed tenant_id."""
+    dao = GraphDAO(mock_driver)
+
+    with patch("app.graph.dao.OrionClient", _FakeOrionClient), \
+         patch.object(GraphDAO, "get_phenology_params", AsyncMock(return_value=None)), \
+         patch.object(GraphDAO, "get_heat_tolerance", AsyncMock(return_value=None)), \
+         patch.object(GraphDAO, "get_soil_suitability", AsyncMock(return_value=None)), \
+         patch("app.services.soil_client.get_parcel_soil_properties", AsyncMock(return_value={"data_available": False})):
+        result = asyncio.run(dao.get_crop_context(PARCEL_ID, tenant_id=TENANT))
+
+    assert _FakeOrionClient._instances == [TENANT], (
+        f"OrionClient constructed with wrong tenant: {_FakeOrionClient._instances}"
+    )
+    assert "error" not in result
+
+
+def test_get_crop_context_reads_crop_name_from_normalized_entity(mock_driver):
+    """crop.name must come from unwrapped normalized NGSI-LD Property, not keyValues."""
+    dao = GraphDAO(mock_driver)
+
+    with patch("app.graph.dao.OrionClient", _FakeOrionClient), \
+         patch.object(GraphDAO, "get_phenology_params", AsyncMock(return_value=None)), \
+         patch.object(GraphDAO, "get_heat_tolerance", AsyncMock(return_value=None)), \
+         patch.object(GraphDAO, "get_soil_suitability", AsyncMock(return_value=None)), \
+         patch("app.services.soil_client.get_parcel_soil_properties", AsyncMock(return_value={"data_available": False})):
+        result = asyncio.run(dao.get_crop_context(PARCEL_ID, tenant_id=TENANT))
+
+    assert result["crop"]["name"] == "Wheat", f"Expected 'Wheat', got: {result['crop']}"
+    assert result["crop"]["scientific_name"] == "Triticum aestivum"
+    assert result["crop"]["eppo"] == "TRZAW"
+
+
+def test_get_crop_context_unwraps_soil_sensors_from_normalized(mock_driver):
+    """soil_sensors block must unwrap normalized Property values, not read flat keyValues."""
+    dao = GraphDAO(mock_driver)
+
+    with patch("app.graph.dao.OrionClient", _FakeOrionClient), \
+         patch.object(GraphDAO, "get_phenology_params", AsyncMock(return_value=None)), \
+         patch.object(GraphDAO, "get_heat_tolerance", AsyncMock(return_value=None)), \
+         patch.object(GraphDAO, "get_soil_suitability", AsyncMock(return_value=None)), \
+         patch("app.services.soil_client.get_parcel_soil_properties", AsyncMock(return_value={"data_available": False})):
+        result = asyncio.run(dao.get_crop_context(PARCEL_ID, tenant_id=TENANT))
+
+    ss = result["soil_sensors"]
+    assert ss["available"] is True, f"soil_sensors.available must be True: {ss}"
+    assert ss["ph"] == 6.8, f"Expected ph=6.8, got: {ss}"
+    assert ss["ec_ds_m"] == 0.42
+    assert ss["moisture_pct"] == 32.5
+    assert ss["temperature_c"] == 18.2
+    assert ss["last_reading"] == "2026-06-01T00:00:00Z"
+
+
+def test_get_crop_context_404_parcel_returns_error(mock_driver):
+    """404 on the parcel entity must return the canonical error dict (no HTTPException)."""
+    dao = GraphDAO(mock_driver)
+
+    with patch("app.graph.dao.OrionClient", _FakeOrionClient404Parcel):
+        result = asyncio.run(dao.get_crop_context(PARCEL_ID, tenant_id=TENANT))
+
+    assert "error" in result
+    assert "Parcel not found" in result["error"], f"Unexpected error: {result['error']}"
+
+
+def test_get_crop_context_no_assessment_available(mock_driver):
+    """When query_entities returns [] for CropHealthAssessment, soil_sensors.available=False."""
+
+    class _NoAssessmentClient(_FakeOrionClient):
+        async def query_entities(self, *, type: str, q: str | None = None, limit: int = 100) -> list:
+            return []
+
+    dao = GraphDAO(mock_driver)
+
+    with patch("app.graph.dao.OrionClient", _NoAssessmentClient), \
+         patch.object(GraphDAO, "get_phenology_params", AsyncMock(return_value=None)), \
+         patch.object(GraphDAO, "get_heat_tolerance", AsyncMock(return_value=None)), \
+         patch.object(GraphDAO, "get_soil_suitability", AsyncMock(return_value=None)), \
+         patch("app.services.soil_client.get_parcel_soil_properties", AsyncMock(return_value={"data_available": False})):
+        result = asyncio.run(dao.get_crop_context(PARCEL_ID, tenant_id=TENANT))
+
+    assert result["soil_sensors"] == {"available": False}
+
+
+def test_crop_context_soil_suitability_is_graded_verdict(monkeypatch):
+    # assess (not compute) → the `soil.suitability` carries a graded `verdict`.
+    from app.services import soil_client
+    assert not hasattr(soil_client, "compute_soil_suitability"), \
+        "compute_soil_suitability must be removed (0 callers after swap)"
+    # unavailable parcel soil → honest 'unknown' (guard-drop is safe)
+    verdict = soil_client.assess_soil_suitability(
+        {"ph_min": 6.0, "ph_max": 7.5, "textures": ["loam"]},
+        {"data_available": False, "source": "unavailable"},
+    )
+    assert verdict["verdict"] == "unknown"
+
+
+NORMALIZED_CROP_TRIGO = {
+    "id": "urn:ngsi-ld:AgriCrop:TRZAX",
+    "type": "AgriCrop",
+    "name": {"type": "Property", "value": "trigo"},
+    "scientificName": {"type": "Property", "value": "Triticum aestivum"},
+}
+
+NORMALIZED_PARCEL_TRIGO = {
+    "id": PARCEL_ID,
+    "type": "AgriParcel",
+    "hasAgriCrop": {"type": "Relationship", "object": "urn:ngsi-ld:AgriCrop:TRZAX"},
+}
+
+
+class _FakeOrionClientTrigo(_FakeOrionClient):
+    async def get_entity(self, entity_id: str) -> dict:
+        if entity_id == PARCEL_ID:
+            return NORMALIZED_PARCEL_TRIGO
+        if entity_id == "urn:ngsi-ld:AgriCrop:TRZAX":
+            return NORMALIZED_CROP_TRIGO
+        return await super().get_entity(entity_id)
+
+
+def test_get_crop_context_resolves_species_slug_for_soil_lookup(mock_driver):
+    """Spanish crop name must resolve to canonical slug before Neo4j tolerance lookup."""
+    dao = GraphDAO(mock_driver)
+    soil_mock = AsyncMock(return_value={"ph_min": 5.5, "ph_max": 7.5, "textures": ["Loam"]})
+    parcel_soil = {
+        "data_available": True,
+        "ph": 6.5,
+        "texture": "Loam",
+        "source": "soilgrids",
+        "depth_cm": "0-30",
+    }
+
+    with patch("app.graph.dao.OrionClient", _FakeOrionClientTrigo), \
+         patch.object(GraphDAO, "get_phenology_params", AsyncMock(return_value=None)), \
+         patch.object(GraphDAO, "get_heat_tolerance", AsyncMock(return_value=None)), \
+         patch.object(GraphDAO, "get_soil_suitability", soil_mock), \
+         patch("app.services.soil_client.get_parcel_soil_properties", AsyncMock(return_value=parcel_soil)):
+        result = asyncio.run(
+            dao.get_crop_context(PARCEL_ID, tenant_id=TENANT)
+        )
+
+    soil_mock.assert_awaited_once_with("wheat")
+    assert result["soil"]["suitability"]["verdict"] in ("suitable", "marginal", "unsuitable", "unknown")
+
+
+def test_get_crop_context_soil_suitability_uses_c5_verdict_envelope(mock_driver):
+    """crop-context must expose assess_soil_suitability verdict (not legacy compute overall)."""
+    dao = GraphDAO(mock_driver)
+    tolerance = {"ph_min": 5.5, "ph_max": 7.5, "textures": ["Loam"]}
+    parcel_soil = {
+        "data_available": True,
+        "ph": 6.5,
+        "texture": "Loam",
+        "source": "soilgrids",
+    }
+
+    with patch("app.graph.dao.OrionClient", _FakeOrionClient), \
+         patch.object(GraphDAO, "get_phenology_params", AsyncMock(return_value=None)), \
+         patch.object(GraphDAO, "get_heat_tolerance", AsyncMock(return_value=None)), \
+         patch.object(GraphDAO, "get_soil_suitability", AsyncMock(return_value=tolerance)), \
+         patch("app.services.soil_client.get_parcel_soil_properties", AsyncMock(return_value=parcel_soil)):
+        result = asyncio.run(dao.get_crop_context(PARCEL_ID, tenant_id=TENANT))
+
+    suit = result["soil"]["suitability"]
+    assert "verdict" in suit
+    assert "confidence" in suit
+    assert "overall" not in suit or suit.get("overall") is None
+
+
+# ---------------------------------------------------------------------------
+# Season window: the platform's crop cycle wins; the parcel's legacy copy is the fallback
+# ---------------------------------------------------------------------------
+
+def _context(mock_driver, cycles):
+    dao = GraphDAO(mock_driver)
+    with patch("app.graph.dao.OrionClient", _FakeOrionClient), \
+         patch("app.graph.dao.fetch_crop_cycles", AsyncMock(return_value=cycles)) as fetch, \
+         patch.object(GraphDAO, "get_phenology_params", AsyncMock(return_value=None)), \
+         patch.object(GraphDAO, "get_heat_tolerance", AsyncMock(return_value=None)), \
+         patch.object(GraphDAO, "get_soil_suitability", AsyncMock(return_value=None)), \
+         patch("app.services.soil_client.get_parcel_soil_properties", AsyncMock(return_value={"data_available": False})):
+        result = asyncio.run(dao.get_crop_context(PARCEL_ID, tenant_id=TENANT))
+    return result, fetch
+
+
+def test_crop_context_season_from_platform_cycle(mock_driver):
+    cycles = {"current": {
+        "start": {"date": "2026-03-12", "provenance": "actual"},
+        "end": {"date": "2026-11-30", "provenance": "planned"},
+    }}
+
+    ctx, fetch = _context(mock_driver, cycles)
+
+    assert ctx["season"]["start"] == "2026-03-12"
+    assert ctx["season"]["end"] == "2026-11-30"
+    assert ctx["season"]["start_provenance"] == "actual"
+    fetch.assert_awaited_once_with(PARCEL_ID, TENANT)
+
+
+def test_crop_context_season_falls_back_to_parcel_copy(mock_driver):
+    ctx, _ = _context(mock_driver, None)
+
+    assert ctx["season"]["start"] == "2025-10-01"
+    assert ctx["season"]["end"] == "2026-07-01"
+    assert ctx["season"]["start_provenance"] is None
+
+
+def test_crop_context_platform_answered_without_current_uses_next_cycle_as_planned(mock_driver):
+    cycles = {"current": None, "previous": None, "next": {
+        "start": {"date": "2027-03-10", "provenance": "planned"},
+        "end": {"date": "2027-09-30", "provenance": "planned"},
+    }}
+
+    ctx, _ = _context(mock_driver, cycles)
+
+    assert ctx["season"]["start"] == "2027-03-10"
+    assert ctx["season"]["end"] == "2027-09-30"
+    assert ctx["season"]["start_provenance"] == "planned"
+
+
+def test_crop_context_platform_answered_with_no_cycle_does_not_fall_back_to_parcel_copy(mock_driver):
+    ctx, _ = _context(mock_driver, {"current": None, "previous": None, "next": None})
+
+    assert ctx["season"]["start"] is None
+    assert ctx["season"]["end"] is None
+    assert ctx["season"]["start_provenance"] is None

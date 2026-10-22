@@ -1,0 +1,552 @@
+{
+ "version": "2026-10-13",
+ "crop": "wheat",
+ "regime": "secano",
+ "region_scheme": "es_province",
+ "grain_moisture_pct": 13.0,
+ "coverage": 0.8,
+ "range": {
+  "edges": [
+   603.1067378178636,
+   1857.3402151041505,
+   2990.4627705960165,
+   4287.41102539032
+  ],
+  "r10": [
+   588.0794668133535,
+   -320.84513156601327,
+   -1101.7216685773433,
+   -1818.5175238548654,
+   -4311.609106232608
+  ],
+  "r90": [
+   2587.851393561528,
+   2269.726095958545,
+   1504.4876215509971,
+   584.215636970901,
+   198.70933723095368
+  ],
+  "unit": "kg/ha at commercial moisture",
+  "coverage_by_block": [
+   0.776255707762557,
+   0.7579908675799086,
+   0.8127853881278538
+  ]
+ },
+ "provinces": {
+  "01": {
+   "name": "Araba/Alava",
+   "gap_factor": 0.5293,
+   "phenology": {
+    "Senescence": 1972.0,
+    "Maturity": 2794.8,
+    "HIstart": 1443.0,
+    "Flowering": 235.1,
+    "YldForm": 1293.0
+   }
+  },
+  "02": {
+   "name": "Albacete",
+   "gap_factor": 0.8178,
+   "phenology": {
+    "Senescence": 1895.0,
+    "Maturity": 2683.1,
+    "HIstart": 1388.4,
+    "Flowering": 225.2,
+    "YldForm": 1238.4
+   }
+  },
+  "03": {
+   "name": "Alicante",
+   "gap_factor": 0.4439,
+   "phenology": {
+    "Senescence": 1680.7,
+    "Maturity": 2371.9,
+    "HIstart": 1236.3,
+    "Flowering": 197.5,
+    "YldForm": 1086.3
+   }
+  },
+  "04": {
+   "name": "Almeria",
+   "gap_factor": 1.0,
+   "phenology": {
+    "Senescence": 1852.9,
+    "Maturity": 2622.0,
+    "HIstart": 1358.5,
+    "Flowering": 219.7,
+    "YldForm": 1208.5
+   }
+  },
+  "05": {
+   "name": "Avila",
+   "gap_factor": 0.4408,
+   "phenology": {
+    "Senescence": 1688.5,
+    "Maturity": 2383.3,
+    "HIstart": 1241.8,
+    "Flowering": 198.5,
+    "YldForm": 1091.8
+   }
+  },
+  "06": {
+   "name": "Badajoz",
+   "gap_factor": 0.3678,
+   "phenology": {
+    "Senescence": 1981.8,
+    "Maturity": 2809.1,
+    "HIstart": 1450.0,
+    "Flowering": 236.4,
+    "YldForm": 1300.0
+   }
+  },
+  "07": {
+   "name": "Illes Balears",
+   "gap_factor": 0.3723,
+   "phenology": {
+    "Senescence": 1981.8,
+    "Maturity": 2809.1,
+    "HIstart": 1450.0,
+    "Flowering": 236.4,
+    "YldForm": 1300.0
+   }
+  },
+  "08": {
+   "name": "Barcelona",
+   "gap_factor": 0.3809,
+   "phenology": {
+    "Senescence": 1934.4,
+    "Maturity": 2740.2,
+    "HIstart": 1416.3,
+    "Flowering": 230.2,
+    "YldForm": 1266.3
+   }
+  },
+  "09": {
+   "name": "Burgos",
+   "gap_factor": 0.5837,
+   "phenology": {
+    "Senescence": 1689.6,
+    "Maturity": 2385.0,
+    "HIstart": 1242.7,
+    "Flowering": 198.7,
+    "YldForm": 1092.7
+   }
+  },
+  "10": {
+   "name": "Caceres",
+   "gap_factor": 0.1746,
+   "phenology": {
+    "Senescence": 1957.7,
+    "Maturity": 2774.0,
+    "HIstart": 1432.9,
+    "Flowering": 233.2,
+    "YldForm": 1282.9
+   }
+  },
+  "11": {
+   "name": "Cadiz",
+   "gap_factor": 0.5315,
+   "phenology": {
+    "Senescence": 1971.7,
+    "Maturity": 2794.4,
+    "HIstart": 1442.8,
+    "Flowering": 235.1,
+    "YldForm": 1292.8
+   }
+  },
+  "12": {
+   "name": "Castellon",
+   "gap_factor": 0.2014,
+   "phenology": {
+    "Senescence": 1697.0,
+    "Maturity": 2395.6,
+    "HIstart": 1247.9,
+    "Flowering": 199.6,
+    "YldForm": 1097.9
+   }
+  },
+  "13": {
+   "name": "Ciudad Real",
+   "gap_factor": 0.2696,
+   "phenology": {
+    "Senescence": 1789.4,
+    "Maturity": 2529.8,
+    "HIstart": 1313.5,
+    "Flowering": 211.5,
+    "YldForm": 1163.5
+   }
+  },
+  "14": {
+   "name": "Cordoba",
+   "gap_factor": 0.3772,
+   "phenology": {
+    "Senescence": 1827.4,
+    "Maturity": 2585.0,
+    "HIstart": 1340.4,
+    "Flowering": 216.4,
+    "YldForm": 1190.4
+   }
+  },
+  "16": {
+   "name": "Cuenca",
+   "gap_factor": 0.6076,
+   "phenology": {
+    "Senescence": 1906.2,
+    "Maturity": 2699.4,
+    "HIstart": 1396.4,
+    "Flowering": 226.6,
+    "YldForm": 1246.4
+   }
+  },
+  "17": {
+   "name": "Girona",
+   "gap_factor": 0.3359,
+   "phenology": {
+    "Senescence": 1963.3,
+    "Maturity": 2782.3,
+    "HIstart": 1436.9,
+    "Flowering": 234.0,
+    "YldForm": 1286.9
+   }
+  },
+  "18": {
+   "name": "Granada",
+   "gap_factor": 1.0,
+   "phenology": {
+    "Senescence": 1726.0,
+    "Maturity": 2437.7,
+    "HIstart": 1268.4,
+    "Flowering": 203.4,
+    "YldForm": 1118.4
+   }
+  },
+  "19": {
+   "name": "Guadalajara",
+   "gap_factor": 0.5199,
+   "phenology": {
+    "Senescence": 1559.1,
+    "Maturity": 2195.5,
+    "HIstart": 1150.0,
+    "Flowering": 181.8,
+    "YldForm": 1000.0
+   }
+  },
+  "21": {
+   "name": "Huelva",
+   "gap_factor": 0.73,
+   "phenology": {
+    "Senescence": 1981.8,
+    "Maturity": 2809.1,
+    "HIstart": 1450.0,
+    "Flowering": 236.4,
+    "YldForm": 1300.0
+   }
+  },
+  "22": {
+   "name": "Huesca",
+   "gap_factor": 0.8931,
+   "phenology": {
+    "Senescence": 1912.5,
+    "Maturity": 2708.4,
+    "HIstart": 1400.8,
+    "Flowering": 227.4,
+    "YldForm": 1250.8
+   }
+  },
+  "23": {
+   "name": "Jaen",
+   "gap_factor": 0.3732,
+   "phenology": {
+    "Senescence": 1981.8,
+    "Maturity": 2809.1,
+    "HIstart": 1450.0,
+    "Flowering": 236.4,
+    "YldForm": 1300.0
+   }
+  },
+  "24": {
+   "name": "Leon",
+   "gap_factor": 0.4383,
+   "phenology": {
+    "Senescence": 1787.7,
+    "Maturity": 2527.2,
+    "HIstart": 1312.2,
+    "Flowering": 211.3,
+    "YldForm": 1162.2
+   }
+  },
+  "25": {
+   "name": "Lleida",
+   "gap_factor": 0.4296,
+   "phenology": {
+    "Senescence": 1703.8,
+    "Maturity": 2405.5,
+    "HIstart": 1252.7,
+    "Flowering": 200.5,
+    "YldForm": 1102.7
+   }
+  },
+  "26": {
+   "name": "La Rioja",
+   "gap_factor": 0.4631,
+   "phenology": {
+    "Senescence": 1607.9,
+    "Maturity": 2266.3,
+    "HIstart": 1184.7,
+    "Flowering": 188.1,
+    "YldForm": 1034.7
+   }
+  },
+  "28": {
+   "name": "Madrid",
+   "gap_factor": 0.6754,
+   "phenology": {
+    "Senescence": 1793.1,
+    "Maturity": 2535.2,
+    "HIstart": 1316.1,
+    "Flowering": 212.0,
+    "YldForm": 1166.1
+   }
+  },
+  "29": {
+   "name": "Malaga",
+   "gap_factor": 1.0,
+   "phenology": {
+    "Senescence": 1981.8,
+    "Maturity": 2809.1,
+    "HIstart": 1450.0,
+    "Flowering": 236.4,
+    "YldForm": 1300.0
+   }
+  },
+  "30": {
+   "name": "Murcia",
+   "gap_factor": 0.9557,
+   "phenology": {
+    "Senescence": 1981.8,
+    "Maturity": 2809.1,
+    "HIstart": 1450.0,
+    "Flowering": 236.4,
+    "YldForm": 1300.0
+   }
+  },
+  "31": {
+   "name": "Navarra",
+   "gap_factor": 0.5135,
+   "phenology": {
+    "Senescence": 1981.8,
+    "Maturity": 2809.1,
+    "HIstart": 1450.0,
+    "Flowering": 236.4,
+    "YldForm": 1300.0
+   }
+  },
+  "33": {
+   "name": "Asturias",
+   "gap_factor": 0.098,
+   "phenology": {
+    "Senescence": 1981.8,
+    "Maturity": 2809.1,
+    "HIstart": 1450.0,
+    "Flowering": 236.4,
+    "YldForm": 1300.0
+   }
+  },
+  "34": {
+   "name": "Palencia",
+   "gap_factor": 0.939,
+   "phenology": {
+    "Senescence": 1981.8,
+    "Maturity": 2809.1,
+    "HIstart": 1450.0,
+    "Flowering": 236.4,
+    "YldForm": 1300.0
+   }
+  },
+  "35": {
+   "name": "Las Palmas",
+   "gap_factor": 0.4911,
+   "phenology": {
+    "Senescence": 1981.8,
+    "Maturity": 2809.1,
+    "HIstart": 1450.0,
+    "Flowering": 236.4,
+    "YldForm": 1300.0
+   }
+  },
+  "37": {
+   "name": "Salamanca",
+   "gap_factor": 0.5861,
+   "phenology": {
+    "Senescence": 1836.4,
+    "Maturity": 2598.1,
+    "HIstart": 1346.8,
+    "Flowering": 217.6,
+    "YldForm": 1196.8
+   }
+  },
+  "38": {
+   "name": "Santa Cruz de Tenerife",
+   "gap_factor": 1.0,
+   "phenology": {
+    "Senescence": 1981.8,
+    "Maturity": 2809.1,
+    "HIstart": 1450.0,
+    "Flowering": 236.4,
+    "YldForm": 1300.0
+   }
+  },
+  "39": {
+   "name": "Cantabria",
+   "gap_factor": 0.2723,
+   "phenology": {
+    "Senescence": 1981.8,
+    "Maturity": 2809.1,
+    "HIstart": 1450.0,
+    "Flowering": 236.4,
+    "YldForm": 1300.0
+   }
+  },
+  "40": {
+   "name": "Segovia",
+   "gap_factor": 0.7265,
+   "phenology": {
+    "Senescence": 1679.1,
+    "Maturity": 2369.7,
+    "HIstart": 1235.2,
+    "Flowering": 197.3,
+    "YldForm": 1085.2
+   }
+  },
+  "41": {
+   "name": "Sevilla",
+   "gap_factor": 0.7066,
+   "phenology": {
+    "Senescence": 1875.7,
+    "Maturity": 2655.0,
+    "HIstart": 1374.7,
+    "Flowering": 222.7,
+    "YldForm": 1224.7
+   }
+  },
+  "42": {
+   "name": "Soria",
+   "gap_factor": 0.5811,
+   "phenology": {
+    "Senescence": 1562.2,
+    "Maturity": 2199.9,
+    "HIstart": 1152.2,
+    "Flowering": 182.2,
+    "YldForm": 1002.2
+   }
+  },
+  "43": {
+   "name": "Tarragona",
+   "gap_factor": 0.3982,
+   "phenology": {
+    "Senescence": 1860.6,
+    "Maturity": 2633.2,
+    "HIstart": 1364.0,
+    "Flowering": 220.7,
+    "YldForm": 1214.0
+   }
+  },
+  "44": {
+   "name": "Teruel",
+   "gap_factor": 1.0,
+   "phenology": {
+    "Senescence": 1647.9,
+    "Maturity": 2324.3,
+    "HIstart": 1213.0,
+    "Flowering": 193.3,
+    "YldForm": 1063.0
+   }
+  },
+  "45": {
+   "name": "Toledo",
+   "gap_factor": 0.3243,
+   "phenology": {
+    "Senescence": 1780.5,
+    "Maturity": 2516.9,
+    "HIstart": 1307.2,
+    "Flowering": 210.4,
+    "YldForm": 1157.2
+   }
+  },
+  "46": {
+   "name": "Valencia",
+   "gap_factor": 0.3981,
+   "phenology": {
+    "Senescence": 1981.8,
+    "Maturity": 2809.1,
+    "HIstart": 1450.0,
+    "Flowering": 236.4,
+    "YldForm": 1300.0
+   }
+  },
+  "47": {
+   "name": "Valladolid",
+   "gap_factor": 0.6867,
+   "phenology": {
+    "Senescence": 1775.9,
+    "Maturity": 2510.1,
+    "HIstart": 1303.9,
+    "Flowering": 209.8,
+    "YldForm": 1153.9
+   }
+  },
+  "49": {
+   "name": "Zamora",
+   "gap_factor": 0.5623,
+   "phenology": {
+    "Senescence": 1981.8,
+    "Maturity": 2809.1,
+    "HIstart": 1450.0,
+    "Flowering": 236.4,
+    "YldForm": 1300.0
+   }
+  },
+  "50": {
+   "name": "Zaragoza",
+   "gap_factor": 1.0,
+   "phenology": {
+    "Senescence": 1981.8,
+    "Maturity": 2809.1,
+    "HIstart": 1450.0,
+    "Flowering": 236.4,
+    "YldForm": 1300.0
+   }
+  }
+ },
+ "validation": {
+  "rmse_kg_ha": 1645.2397855334973,
+  "anomaly_r_median": 0.47755610489190875,
+  "province_years": 657,
+  "years": [
+   2008,
+   2009,
+   2010,
+   2011,
+   2012,
+   2013,
+   2014,
+   2015,
+   2016,
+   2017,
+   2018,
+   2019,
+   2020,
+   2021,
+   2022
+  ]
+ },
+ "soil_evaporation_depth_m": 0.15,
+ "sources": {
+  "yields": "MAPA, Anuario de Estadistica, capitulo Superficies y producciones de cultivos (provincial rainfed wheat yields)",
+  "harvest_calendar": "MAPA, Calendario de siembra, recoleccion y comercializacion 2014-2016, cereales",
+  "drydown_and_moisture": "Lloveras J., Petit X., Yakoub A., Vida Rural 433 (2017) 42-47: ~7 days from physiological maturity to 13 % grain moisture (commercial wheat and barley)",
+  "phenology_ranges": "FAO AquaCrop 7.3 Reference Manual, Annex I, wheat",
+  "soil_evaporation": "FAO-56 (Allen et al. 1998) eq. 73: Ze, the depth of the surface layer dried by evaporation, 0.10-0.15 m; AquaCrop's default lets it reach 0.30 m (Reference Manual ch. 2, 2.12.4)"
+ }
+}

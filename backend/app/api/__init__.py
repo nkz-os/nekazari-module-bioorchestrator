@@ -1,0 +1,21 @@
+from fastapi import APIRouter
+
+from app.api.dadis import router as dadis_router
+from app.api.v1.balance import router as balance_router
+from app.api.v1.capability import router as capability_router
+from app.api.v1.graph import router as graph_router
+from app.api.v1.planning import router as planning_router
+from app.api.v1.recommend import router as recommend_router
+
+# IUCN router removed: IUCN Red List API license prohibits commercial use.
+# NKZ-OS operates as SaaS multi-tenant under paid plans → commercial use.
+# See: https://www.iucnredlist.org/terms/terms-of-use (Section 4)
+# Alternatives: GBIF with CC0+CC-BY filter, iNaturalist via GBIF.
+
+router = APIRouter()
+router.include_router(graph_router, prefix="/graph", tags=["graph"])
+router.include_router(recommend_router, prefix="/graph", tags=["recommend"])
+router.include_router(planning_router, prefix="/graph")
+router.include_router(balance_router, prefix="/graph", tags=["balance"])
+router.include_router(capability_router, prefix="/capability", tags=["capability"])
+router.include_router(dadis_router, prefix="/dadis", tags=["dadis"])

@@ -1,0 +1,119 @@
+{
+ "year": 2024,
+ "section_key": "mais",
+ "crop": "Mais",
+ "eppo": "ZEAMX",
+ "variety_trials": [
+  {
+   "crop": "Mais",
+   "crop_scientific": "Zea mays",
+   "variety": "DM5312",
+   "agroclimatic_zone": "Pianura Padana",
+   "year": 2024,
+   "yield_kg_ha": 13700.0,
+   "yield_relative_pct": 105.0,
+   "quality_params": {
+    "umidita_pct": 20.5,
+    "peso_ettolitrico_kg_hl": 70.0
+   },
+   "disease_scores": null,
+   "agronomic_traits": {
+    "piante_spezzate_pct": 4,
+    "piante_allettate_pct": 0,
+    "piante_m2": 7.6,
+    "altezza_pianta_cm": 259,
+    "altezza_spiga_cm": 125
+   },
+   "yield_notes": null,
+   "special_status": null,
+   "irrigation_regime": "irrigato",
+   "trial_location": "Media 13 Località",
+   "page_in_issue": 7,
+   "table_number": 1,
+   "confidence": "high"
+  },
+  {
+   "crop": "Mais",
+   "crop_scientific": "Zea mays",
+   "variety": "P1096",
+   "agroclimatic_zone": "Pianura Padana",
+   "year": 2024,
+   "yield_kg_ha": 13550.0,
+   "yield_relative_pct": 105.0,
+   "quality_params": {
+    "umidita_pct": 21.9,
+    "peso_ettolitrico_kg_hl": 69.2
+   },
+   "disease_scores": null,
+   "agronomic_traits": {
+    "piante_spezzate_pct": 3,
+    "piante_allettate_pct": 0,
+    "piante_m2": 7.6,
+    "altezza_pianta_cm": 264,
+    "altezza_spiga_cm": 114
+   },
+   "yield_notes": null,
+   "special_status": null,
+   "irrigation_regime": "irrigato",
+   "trial_location": "Media 13 Località",
+   "page_in_issue": 7,
+   "table_number": 1,
+   "confidence": "high"
+  },
+  {
+   "crop": "Mais",
+   "crop_scientific": "Zea mays",
+   "variety": "KWS ALCANTO",
+   "agroclimatic_zone": "Pianura Padana",
+   "year": 2024,
+   "yield_kg_ha": 19160.0,
+   "yield_relative_pct": null,
+   "quality_params": {
+    "umidita_pct": 27.1,
+    "peso_ettolitrico_kg_hl": 67
+   },
+   "disease_scores": null,
+   "agronomic_traits": {
+    "piante_spezzate_pct": 0,
+    "piante_allettate_pct": 1,
+    "altezza_pianta_cm": 316,
+    "altezza_spiga_cm": 150
+   },
+   "yield_notes": null,
+   "special_status": null,
+   "irrigation_regime": "irrigato",
+   "trial_location": "Villafranca Piemonte (TO)",
+   "page_in_issue": 12,
+   "table_number": 2,
+   "confidence": "high"
+  },
+  {
+   "crop": "Mais",
+   "crop_scientific": "Zea mays",
+   "variety": "R_500_1",
+   "agroclimatic_zone": "Pianura Padana",
+   "year": 2024,
+   "yield_kg_ha": 11370.0,
+   "yield_relative_pct": 89.0,
+   "quality_params": {
+    "umidita_pct": 22.1,
+    "peso_ettolitrico_kg_hl": 70.7
+   },
+   "disease_scores": null,
+   "agronomic_traits": {
+    "piante_spezzate_pct": 4,
+    "piante_allettate_pct": 1,
+    "piante_m2": 7.4,
+    "altezza_pianta_cm": 267,
+    "altezza_spiga_cm": 127
+   },
+   "yield_notes": null,
+   "special_status": "testimone",
+   "irrigation_regime": "irrigato",
+   "trial_location": "Media 13 Località",
+   "page_in_issue": 7,
+   "table_number": 1,
+   "confidence": "high"
+  }
+ ]
+}

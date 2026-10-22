@@ -1,0 +1,324 @@
+{
+  "scenarioMode": {
+    "enabled": "Exploration crop (what-if)",
+    "cropPlaceholder": "Select crop to explore…",
+    "pickCrop": "Choose a crop for exploration mode",
+    "bannerTitle": "EXPLORATION MODE — not the real campaign",
+    "bannerBody": "Planning tools use the hypothetical crop below. Nothing is written to the parcel assignment.",
+    "bannerCampaignHint": "Campaign tools are disabled until you turn off exploration mode.",
+    "campaignBlocked": "Campaign tools unavailable in exploration mode",
+    "campaignBlockedDetail": "Turn off exploration mode in the parcel bar to view the real in-season campaign.",
+    "campaignCardsBlocked": "Campaign tools are paused while exploration mode is active."
+  },
+  "sources": {
+    "loading": "Loading sources...",
+    "errorPrefix": "Error",
+    "summary": {
+      "total": "Total sources",
+      "ready": "Ready",
+      "unavailable": "Unavailable"
+    },
+    "status": {
+      "ready": "Ready",
+      "unavailable": "Unavailable"
+    },
+    "warnings": {
+      "keyMissing": "Key missing",
+      "noDataFile": "No data file"
+    },
+    "title": "Data Sources"
+  },
+  "disclaimer": {
+    "text": "Recommendations are based on agronomic models and third-party scientific data. They do not replace professional judgment. Consult your local agricultural technician before making crop decisions."
+  },
+  "sourceAttribution": {
+    "title": "Data sources",
+    "source": "Source",
+    "licence": "Licence",
+    "calculations": "Estimates and averages are Nekazari calculations based on these data; they are not data published by the sources."
+  },
+  "cropSimulation": {
+    "title": "Crop simulation",
+    "subtitle": "Daily canopy and water stress, and yield with its uncertainty, for the selected parcel.",
+    "intro": "Simulates the season with soil, weather and sowing date resolved from your parcel.",
+    "selectParcel": "Select a parcel to simulate",
+    "cropSlug": "Crop",
+    "cropPlaceholder": "e.g. wheat",
+    "cropHint": "Detected automatically from the parcel crop if left empty.",
+    "sowingDate": "Sowing date",
+    "irrigation": "Irrigation",
+    "irrigationRainfed": "Rainfed",
+    "irrigationFull": "Full irrigation",
+    "engine": "Engine",
+    "run": "Run simulation",
+    "progress": "Simulating… {{done}}/{{total}} scenarios",
+    "running": "Running...",
+    "crop": "Crop",
+    "status": {
+      "complete": "Complete season",
+      "in_season": "Season in progress",
+      "preseason": "Before sowing"
+    },
+    "yield": "Yield",
+    "potentialYield": "Potential yield",
+    "waterGap": "Water gap",
+    "harvestDate": "Harvest date",
+    "harvestMedian": "Median harvest date",
+    "ensembleBasis": "Based on {{n}} past seasons ({{years}}).",
+    "initialWater": {
+      "spinup": "Soil water at start: spin-up of {{days}} days from {{start}}.",
+      "assumed_fc": "Soil water at start: assumed at field capacity (no spin-up available)."
+    },
+    "dailyOutput": "Daily output",
+    "chartLabel": "Canopy cover and water stress",
+    "daysSinceSowing": "Days since sowing",
+    "canopyCover": "Canopy cover",
+    "waterStress": "Water stress",
+    "projectedNote": "Dashed lines are projected with past-season weather.",
+    "inputs": {
+      "weather": "Weather",
+      "soil": "Soil layers",
+      "sowing": "Sowing",
+      "sowingMethod": "Sowing method"
+    },
+    "soil": {
+      "depth": "Depth",
+      "wp": "WP",
+      "fc": "FC",
+      "sat": "SAT",
+      "ksat": "Ksat (mm/d)"
+    },
+    "weatherSource": {
+      "archive": "Archive",
+      "parcel_daily": "Parcel data",
+      "model_analysis": "Model analysis",
+      "reanalysis": "Reanalysis"
+    },
+    "sowingSource": {
+      "request": "request",
+      "field_operations": "field operations",
+      "crop_cycle": "crop cycle",
+      "legacy_parcel_season": "season recorded on the parcel"
+    },
+    "sowingMethod": {
+      "direct": "direct",
+      "conventional": "conventional"
+    },
+    "sowingMethodSource": {
+      "request": "request",
+      "field_operations": "field operations",
+      "default": "no data: bare soil"
+    },
+    "mulch": "stubble as a {{pct}} % mulch",
+    "warnings": "Notes",
+    "errors": {
+      "unsupported_crop": "This crop cannot be simulated yet.",
+      "weather_gaps": "Weather has gaps; the simulation was not run.",
+      "soil_incomplete": "The parcel soil data is incomplete.",
+      "soil_unavailable": "Soil data is temporarily unavailable. Try again later.",
+      "weather_unavailable": "Weather data is temporarily unavailable. Try again later.",
+      "archive_not_configured": "The weather archive is not configured on this server.",
+      "archive_unavailable": "The weather archive is temporarily unavailable. Try again later.",
+      "parcel_not_found": "The parcel was not found.",
+      "too_many_jobs": "Other simulations of this organisation are running; try again when one finishes.",
+      "job_timeout": "The simulation is taking too long; try again in a few minutes.",
+      "generic": "The simulation could not be completed.",
+      "sowing_date_too_far": "The sowing date is more than a year ahead: the simulation plans at most one year ahead."
+    },
+    "ceiling": "Ceiling with this year's water",
+    "basis": {
+      "commercial": "Yields at commercial moisture ({{pct}}%).",
+      "dry_matter": "Yields as dry matter."
+    },
+    "expected": {
+      "title": "Expected in your area ({{region}})",
+      "coverage": "In years not used for calibration, {{pct}}% of actual harvests fell within such a range.",
+      "source": "Calibrated against {{source}}; mean error {{rmse}} t/ha.",
+      "unavailable": "Expected in your area: not available — {{reason}}.",
+      "reason": {
+        "crop_not_calibrated": "this crop is not calibrated yet",
+        "irrigated": "only rainfed crops are calibrated",
+        "outside_calibrated_regions": "the calibration only covers Spanish provinces",
+        "region_not_calibrated": "not enough data for this province",
+        "unknown": "no calibration applies"
+      }
+    },
+    "phenology": {
+      "calibrated": "Phenology: calibrated for {{region}}.",
+      "builtin": "Phenology: AquaCrop's default."
+    }
+  },
+  "planning": {
+    "loading": {"generic": "Loading…", "farm": "Loading your parcels…", "fit": "Checking which crops fit this parcel…", "varieties": "Looking for varieties in the trials of your area; this can take a few seconds…", "estimates": "Estimating the expected harvest…"},
+    "title": "Crop planning",
+    "subtitle": "What to sow on each parcel, which variety, and in what order",
+    "campaign": "Campaign", "farm": "Farm", "farmAll": "All parcels", "retry": "Retry",
+    "errorLoad": "Could not load. Please try again.",
+    "reload": "Reload the page",
+    "error": { "session": "Your session has expired: sign in again." },
+    "empty": { "noParcels": "No parcels", "noParcelsHint": "Create parcels in the viewer to plan their campaigns." },
+    "summary": {
+      "area": "{{crop}} {{ha}} ha",
+      "undecided_one": "{{count}} parcel undecided", "undecided_other": "{{count}} parcels undecided",
+      "rotation_one": "{{count}} rotation warning", "rotation_other": "{{count}} rotation warnings"
+    },
+    "matrix": { "parcel": "Parcel", "area": "ha", "regime": "Regime", "choose": "Choose", "change": "Change", "legend": "● done · ◐ declared · ○ planned" },
+    "provenance": { "actual": "done", "declared": "declared", "planned": "planned", "unknown": "no data" },
+    "role": { "main_crop": "main crop", "cover_crop": "cover crop", "catch_crop": "catch crop" },
+    "regime": { "rainfed": "Rainfed", "irrigated": "Irrigated", "unknown": "Not declared" },
+    "management": { "conventional": "Conventional", "organic": "Organic" },
+    "warning": {
+      "cycles_unavailable": "Could not read this parcel's history",
+      "regime_missing": "Rainfed or irrigated not declared",
+      "rotation_restriction": "{{species}} after {{previous}} ({{previous_campaign}}): possible from {{allowed_from}}",
+      "rotation_unknown": "Rotation not checked: incomplete history or no rules"
+    },
+    "detail": {
+      "currentPlan": "Current plan",
+      "back": "Back to the plan", "previous": "Previous: {{crop}} ({{campaign}})", "known": "What we know",
+      "climate": "Climate", "soil": "Soil", "noData": "no data", "regimeQuestion": "Rainfed or irrigated?",
+      "regimeHint": "Needed to plan: evidence and simulations never mix rainfed and irrigated.",
+      "managementLabel": "Management", "historyDown": "Could not read the history: rotation was not checked."
+    },
+    "fit": {
+      "fits": "Fits", "caveats": "With caveats", "no_fit": "Does not fit",
+      "sowing": "sowing {{from}}–{{to}}"
+    },
+    "reason": {
+      "soil_unsuitable": "Soil unsuitable for this crop",
+      "soil_marginal": "Soil marginal for this crop",
+      "soil_ph_unsuitable": "pH {{value}} outside its range ({{min}}–{{max}})",
+      "soil_ph_marginal": "pH {{value}} at the edge of its range ({{min}}–{{max}})",
+      "soil_texture_unsuitable": "{{value}} texture: unsuitable",
+      "soil_texture_marginal": "{{value}} texture: marginal",
+      "soil_drainage_unsuitable": "Drainage {{value}} unsuitable",
+      "soil_drainage_marginal": "Drainage {{value}} marginal",
+      "soil_unknown_no_tolerance": "No soil tolerance data for this crop",
+      "soil_unknown_no_parcel_soil": "Parcel soil missing",
+      "soil_unknown_not_comparable": "Soil cannot be compared with its requirements",
+      "frost_risk": "Frost risk: minimum {{coldest_min_c}} °C; with the {{margin_c}} °C safety margin it reaches its threshold of {{threshold_c}} °C",
+      "frost_unknown_no_climate": "No parcel climate to assess frost",
+      "frost_unknown_no_tolerance": "No frost threshold for this crop",
+      "frost_unknown_season_unknown": "No sowing calendar: frost not assessed",
+      "water_deficit_high": "High rainfed water deficit (about {{deficit_mm}} mm)",
+      "water_unknown": "No climate to assess rainfed water",
+      "rotation_restriction": "After {{previous}} ({{previous_campaign}}): rotation restricted, possible from {{allowed_from}}",
+      "rotation_benefit": "Good rotation after {{previous}}",
+      "rotation_unknown": "Rotation not checked: incomplete history or no rules",
+      "regime_missing": "Rainfed or irrigated not declared",
+      "multi_year": "Multi-year: occupies several campaigns",
+      "climate_unknown": "No parcel climate: fit not fully checked"
+    },
+    "texture": {
+      "sand": "sand", "loamy-sand": "loamy sand", "sandy-loam": "sandy loam", "loam": "loam",
+      "silt-loam": "silt loam", "silt": "silt", "sandy-clay-loam": "sandy clay loam", "clay-loam": "clay loam",
+      "silty-clay-loam": "silty clay loam", "sandy-clay": "sandy clay", "silty-clay": "silty clay", "clay": "clay"
+    },
+    "variety": {
+      "noTrials": "No variety trials for this crop in your area. You can plan it without a variety.",
+      "needsClimate": "Without the parcel climate no evidence can be searched.",
+      "variety": "Variety", "relative": "Relative yield", "stability": "Stability", "environments": "Trials / years",
+      "relativeHint": "Yield against each trial's mean: 100 % = same as the mean.",
+      "stable": "stable", "average": "average", "responsive": "responsive to the environment", "few": "few trials",
+      "tier": { "field": "field trials", "regional": "regional means" },
+      "choose": "Choose", "chosen": "Chosen"
+    },
+    "gap": {
+      "no_expected_yield": "No expected yield",
+      "reference_too_small": "Reference too small",
+      "reference_zero": "Reference is zero",
+      "cv_undefined": "CV undefined",
+      "low_trial_count": "Few trials",
+      "sowing_window_unavailable": "No sowing window",
+      "conventional_only_trials": "Conventional trials only",
+      "soil_unavailable": "No soil data",
+      "climate_detail_unavailable": "No climate detail",
+      "frost_tolerance_unavailable": "No frost tolerance data",
+      "sources_unavailable": "No data sources listed",
+      "no_measured_yield": "No measured yield",
+      "regional_evidence_only": "Regional/national evidence only, no field trials",
+      "regional_not_comparable": "Not comparable with the local average",
+      "forage_basis_unknown": "Forage with no known dry or fresh matter basis",
+      "regional_zone_matched": "Regional evidence from the parcel's GENVCE climatic zone",
+      "zone_match_climatology_basis": "Zone estimated from the parcel's 1981-2010 climatology; GENVCE classifies each trial by its campaign weather",
+      "regional_country_level": "Regional evidence matched by country, not by zone",
+      "irrigation_regime_unknown": "Some trials do not state their irrigation regime",
+      "irrigation_regime_unknown_all": "None of the trials state their irrigation regime; the yield may be for a different regime",
+      "organic_units_excluded": "Organic trials were left out; the figure is for conventional production",
+      "evidence_truncated": "There are more trials than were analysed; the most recent were used",
+      "insufficient_environments": "No trial has enough varieties to compare"
+    },
+    "estimate": {
+      "inputs": "Same inputs for all: {{regime}} · {{management}} · sowing {{sowing}}",
+      "noSowing": "no date", "source": "Source", "median": "P50", "range": "Range (t/ha)", "basisCol": "Basis",
+      "basis": { "trial_evidence": "trial plot, optimal management", "water_limited": "water-limited potential", "gap_corrected": "with the area's yield gap", "potential": "potential without water limitation" },
+      "provider": { "trial_evidence": "Trials in the area", "aquacrop": "AquaCrop" },
+      "experimental": "experimental",
+      "directSowing": "Direct sowing on the stubble",
+      "directSowingHint": "AquaCrop simulates the stubble as a mulch covering 30 % of the soil, which cuts its evaporation.",
+      "directSowingFromOperations": "Simulated with direct sowing, as recorded in the sowing in Field Operations.",
+      "directSowingNotApplied": "The simulation did not apply direct sowing: this result is for bare soil.",
+      "validatedAs": "Validated: {{metric}}",
+      "ceiling": "ceiling with the available water, not a forecast", "coverage": "hits {{pct}} % of the years",
+      "simulating": "Simulating… {{done}}/{{total}} years", "simulatingStart": "Simulating…",
+      "firstRunNote": "The first simulation in a new area takes a few minutes: we download 15 years of the area's weather. Later ones take about a minute.",
+      "moisture": { "commercial": "at {{pct}} % moisture", "commercialNoPct": "at commercial moisture", "dry_matter": "dry matter", "as_reported": "at the moisture each source publishes" },
+      "unavailable": { "preseason_not_supported": "Pre-sowing simulation: not available yet", "engine_not_deployed": "pending",
+        "no_trials": "no trials for this crop", "no_trials_for_variety": "no trials of this variety in your area",
+        "variety_not_in_evidence_sample": "this variety is not among the analysed trials (there are too many; the most recent were used)",
+        "not_validated": "pending: not validated for this crop yet",
+        "needs_sowing_date": "enter the sowing date to simulate",
+        "sowing_date_out_of_range": "the sowing date must be between today and one year ahead",
+        "engine_error": "The simulation failed",
+        "timeout": "the simulation is taking too long; try again later",
+        "still_queued": "The simulation is still queued",
+        "request_failed": "The simulation could not be checked",
+        "busy": "you have other simulations in progress; try again in a minute",
+        "unknown": "not available",
+        "async": "simulating…",
+        "expected_crop_not_calibrated": "no harvest forecast: crop not calibrated",
+        "expected_irrigated": "no harvest forecast: only rainfed is calibrated",
+        "expected_outside_calibrated_regions": "no harvest forecast: the parcel is outside the calibrated provinces",
+        "expected_region_not_calibrated": "no harvest forecast: province not calibrated",
+        "expected_missing": "no harvest forecast: the engine did not return it",
+        "expected_unknown": "No expected yield for this area",
+        "water_limited_missing": "no harvest ceiling: the engine did not return it" },
+      "disagreement": "The models disagree: high uncertainty.",
+      "trials_one": "{{count}} trial", "trials_other": "{{count}} trials", "years_one": "{{count}} year", "years_other": "{{count}} years",
+      "none": "No estimates for this crop yet."
+    },
+    "plan": {
+      "replaces": "Saving replaces this campaign's current plan: check the management and the cover crop.",
+      "years": "Planned years",
+      "cover": "Cover crop",
+      "method": "How it ends",
+      "methods": { "roller_crimper": "Roller crimper", "mowing": "Mowing", "incorporate": "Incorporation", "grazing": "Grazing", "harvest": "Harvest" },
+      "otherSpecies": "Other species…", "speciesName": "Species name",
+      "error": {
+        "species_name_invalid": "Enter a valid species name (letters only, at least 2)",
+        "missing_species": "Choose the species", "missing_dates": "Dates missing",
+        "termination_outside_campaign": "Harvest or end must fall in campaign {{campaign}}",
+        "dates_inconsistent": "Dates are inconsistent", "cycles_overlap": "The dates overlap another crop on the parcel",
+        "campaign_past": "A past campaign cannot be planned",
+        "campaign_started": "This campaign already has a sown crop: change it from field operations",
+        "unknown_crop": "Unknown crop", "generic": "Could not save the plan",
+        "perennial_start_outside_campaign": "A multi-year crop must be sown in campaign {{campaign}}",
+        "perennial_too_long": "A multi-year crop must end between {{campaign}} and ten years later",
+        "missing_duration": "Say how many years the crop will stand",
+        "sowing_outside_campaign": "Sowing must fall in the {{campaign}} campaign",
+        "perennial_occupies": "The parcel has a multi-year crop still in this campaign: change it from its sowing campaign",
+        "perennial_overlaps_plans": "The multi-year crop overlaps crops already planned in later campaigns",
+        "parcel_not_found": "Parcel not found",
+        "woody_not_campaign_crop": "A woody crop is not planned by campaign",
+        "contract_mismatch": "The server version does not match this screen; reload the page.",
+        "invalid_response": "The server sent an unexpected answer; try again."
+      }
+    },
+    "wizard": {"step": "Step {{n}} of {{total}}", "next": "Next", "back": "Back", "save": "Save plan", "crop": {"title": "What will you sow?", "recommended": "Recommended for this parcel", "search": "Search another crop", "noResults": "No crop with that name"}, "variety": {"title": "Which variety?", "none": "No variety / decide later", "all": "See all varieties", "why": {"productive": "The most productive in your area", "stable": "The most stable across years", "balanced": "Good yield and stable"}}, "sowing": {"title": "When will you sow?", "chosen": "{{crop}} sowing: {{range}}", "recommended": "Recommended in your area: {{range}}", "noWindow": "We don't know this crop's sowing window in your area: pick a fortnight", "years": "How many years?"}, "cover": {"title": "A cover crop first?", "no": "No", "yes": "Yes", "grows": "The cover grows {{range}}, about {{weeks}} weeks", "short": "Short time for a cover: about {{weeks}} weeks", "noFit": "No room for a cover before this sowing", "ends": "Ended ({{method}}) when the main crop is sown"}, "summary": {"title": "Your plan", "yield": "Expected harvest {{low}}–{{high}} t/ha", "detail": "See details", "regimeNotSaved": "The plan was saved, but rainfed/irrigated could not be saved on the parcel; it will be tried again with the next plan", "continue": "Continue"}, "change": "Change"},
+    "lock": { "campaign_unknown": "This campaign has a crop of unknown origin or status: check it in field operations" },
+    "simulation": { "forecast": "View forecast in Crop Health", "open": "Simulation of the current campaign", "forecastNote": "The season forecast is also in Crop Health." },
+    "widget": { "title": "Parcel plan", "undecided": "Undecided", "plan": "Plan" },
+    "sources": { "open": "Data sources", "close": "Hide sources" },
+    "admin": { "open": "Administration", "close": "Close administration" }
+  }
+}

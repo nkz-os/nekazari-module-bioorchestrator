@@ -1,0 +1,185 @@
+# GENVCE-TRIALS source contract (reads the raw rows of app.kg.adapters.genvce_trials).
+#
+# Raw layer: the per-locality sheets of the GENVCE "Mapa de resultados" (open data under the GENVCE reuse
+# notice), one extraction file per sheet (locality x crop x campaign, 2023-2026), parsed deterministically
+# from the sheet's XLSX (checked against its PDF) or from the PDF alone, at the pinned commit of the private
+# raw-data repository. One sheet is one trial at a located site: one Study and one document per sheet, one
+# unit per variety.
+#
+# Season: the campaign term of the map is the harvest year (a winter cereal sheet of 2026 was sown in
+# autumn 2025). Irrigation: only what the printed zone label states ("Regadíos ..." / "Secanos ..."); no
+# regime is derived from the yield. Production system: organic only when the crop label says so.
+# Yield: the sheets print kg/ha at a standard moisture named in the column head ("RENDIMIENTO 13% (kg/ha)",
+# 14 % for maize); the harvested yield, when printed, is a separate variable. The maize FAO group and the
+# winter/spring cycle sit in the crop label, which the study scope carries.
+source_id: GENVCE-TRIALS
+raw:
+  repo: nkz-data-sources
+  paths: ["genvce/data/results_map/extractions/*.json"]
+  extraction_version: "nkz-data-sources@5a1827c02928438260f8c7c1612a894900f762a8; results map index downloaded 2026-10-19 (84 localities, 523 sheets, 505 extracted), deterministic XLSX/PDF parse, sheet dates checked against the campaign year"
+adapter: app.kg.adapters.genvce_trials
+document:
+  title: {from: doc.title}
+  issue: {from: doc.issue}
+  year: {from: doc.year}
+  url: {from: sheet.url_pdf}
+  file_name: {from: doc.file_name}
+  raw_sha256: {from: doc.raw_sha256}
+  locator:
+    - {label: sheet, from: sheet.id}
+study:
+  type: variety
+  design: {from: sheet.design}
+  # one Study per sheet (its id); the crop label and the map entry's title (which states a second sowing,
+  # a pre-GENVCE network or a regime when the map does) travel in the scope
+  group_by: [sheet.id, sheet.crop_label, sheet.post_title]
+  sowing_date: {from: sheet.sowing_date}
+  harvest_date: {from: sheet.harvest_date}
+  executing_entity: {from: sheet.executing_entity}
+  zone_label_printed: {from: sheet.zone_label}
+  trial_mean_yield_kg_ha: {from: sheet.trial_mean_kg_ha}
+  check_mean_yield_kg_ha: {from: sheet.check_mean_kg_ha}
+  sd_kg_ha: {from: sheet.sd_kg_ha}
+  cv_pct: {from: sheet.cv_pct}
+unit:
+  fields:
+    crop: {from: crop}
+    variety: {from: variety}
+    site: {from: site}
+    season: {from: season}
+    irrigation: {from: irrigation, vocab: irrigation}
+    production_system: {from: production_system, vocab: production_system}
+    is_check: {from: is_check}
+  factors:
+    - {factor: fungicide_treatment, from: sheet.fungicide}
+  purpose:
+    default: grain
+    justification: >-
+      Every sheet's first column is "RENDIMIENTO <n>% (kg/ha)": the grain (or seed) yield of a variety trial
+      of the GENVCE network
+  yield:
+    from: yield_std_kg_ha
+    unit: kg/ha
+    metric:
+      by_crop:
+        HELAN:
+          default: seed
+          justification: >-
+            sunflower and rapeseed sheets; the harvested product is seed (achene / seed yield)
+        BRSNN:
+          default: seed
+          justification: >-
+            sunflower and rapeseed sheets; the harvested product is seed (achene / seed yield)
+        TRZAX:
+          default: grain
+          justification: >-
+            cereal and maize sheets print the grain yield
+        TRZDU:
+          default: grain
+          justification: >-
+            cereal and maize sheets print the grain yield
+        HORVX:
+          default: grain
+          justification: >-
+            cereal and maize sheets print the grain yield
+        AVESA:
+          default: grain
+          justification: >-
+            cereal and maize sheets print the grain yield
+        SECCE:
+          default: grain
+          justification: >-
+            cereal and maize sheets print the grain yield
+        TTLSS:
+          default: grain
+          justification: >-
+            cereal and maize sheets print the grain yield
+        ZEAMX:
+          default: grain
+          justification: >-
+            cereal and maize sheets print the grain yield
+    basis:
+      default: standard_moisture
+      justification: >-
+        column head "RENDIMIENTO 13% (kg/ha)" / "RENDIMIENTO 14% (kg/ha)" on every sheet
+    moisture_pct: {from: yield_moisture_pct}
+observations:
+  - {from: relative_yield_pct, variable: relative_yield_pct, unit: '%'}
+  - {from: statistical_group, variable: statistical_group}
+  - {from: yield_raw_kg_ha, variable: crop_yield_as_harvested, unit: kg/ha}
+  - {from: cycle_class, variable: cycle_class}
+  - {from: traits.flowering_female_date, variable: flowering_start_date}
+  - {from: traits.jointing_date, variable: jointing_date}
+  - {from: traits.heading_date, variable: heading_date}
+  - {from: traits.maturity_date, variable: maturity_date}
+  - {from: traits.grain_moisture_pct, variable: grain_moisture_harvest, unit: '%'}
+  - {from: traits.plant_density_m2, variable: plant_density, unit: /m2}
+  - {from: traits.spike_density_m2, variable: spike_density, unit: /m2}
+  - {from: traits.plant_height_cm, variable: plant_height, unit: cm}
+  - {from: traits.ear_height_cm, variable: ear_height, unit: cm}
+  - {from: traits.stalk_breakage_pct, variable: stalk_breakage_pct, unit: '%'}
+  - {from: traits.lodging_pct, variable: lodging_pct, unit: '%'}
+  - {from: traits.thousand_kernel_weight_g, variable: thousand_kernel_weight, unit: g}
+  - {from: traits.test_weight_kg_hl, variable: test_weight, unit: kg/hl}
+  - {from: traits.grain_protein_pct, variable: grain_protein_content, unit: '%'}
+  - {from: traits.powdery_mildew_score_0_9, variable: powdery_mildew_score_0_9}
+  - {from: traits.septoria_score_0_9, variable: septoria_score_0_9}
+  - {from: traits.brown_rust_score_0_9, variable: brown_rust_score_0_9}
+  - {from: traits.yellow_rust_score_0_9, variable: yellow_rust_score_0_9}
+  - {from: traits.emergence_date, variable: emergence_date}
+  - {from: traits.emergence_score_1_5, variable: emergence_score}
+  - {from: traits.flowering_date, variable: flowering_date}
+  - {from: traits.flowering_start_date, variable: flowering_start_date}
+  - {from: traits.flowering_end_date, variable: flowering_end_date}
+  - {from: traits.stay_green_score_0_5, variable: stay_green_score}
+  - {from: traits.cold_damage_pct, variable: cold_damage_pct, unit: '%'}
+  - {from: traits.powdery_mildew_pct, variable: powdery_mildew_pct, unit: '%'}
+  - {from: traits.septoria_pct, variable: septoria_pct, unit: '%'}
+  - {from: traits.brown_rust_pct, variable: brown_rust_pct, unit: '%'}
+  - {from: traits.yellow_rust_pct, variable: yellow_rust_pct, unit: '%'}
+  - {from: traits.stem_rust_pct, variable: stem_rust_pct, unit: '%'}
+  - {from: traits.crown_rust_pct, variable: crown_rust_pct, unit: '%'}
+  - {from: traits.crown_rust_score_0_9, variable: crown_rust_score_0_9}
+  - {from: traits.helminthosporium_pct, variable: helminthosporium_pct, unit: '%'}
+  - {from: traits.helminthosporium_score_0_9, variable: helminthosporium_score_0_9}
+  - {from: traits.scald_pct, variable: scald_pct, unit: '%'}
+  - {from: traits.scald_score_0_9, variable: scald_score_0_9}
+  - {from: traits.ramularia_score_0_9, variable: ramularia_score_0_9}
+  - {from: traits.mrdv_virus_pct, variable: mrdv_virus_pct, unit: '%'}
+  - {from: traits.mdmv_virus_pct, variable: mdmv_virus_pct, unit: '%'}
+  - {from: traits.stalk_rot_pct, variable: stalk_rot_pct, unit: '%'}
+  - {from: traits.corn_borer_larvae_per_plant, variable: corn_borer_larvae_per_plant, unit: /plant}
+  - {from: traits.broomrape_pct, variable: broomrape_pct, unit: '%'}
+  - {from: traits.necrosis_pct, variable: necrosis_pct, unit: '%'}
+  - {from: traits.seed_oil_pct, variable: seed_oil_content, unit: '%'}
+  - {from: traits.vitreousness_pct, variable: vitreousness_pct, unit: '%'}
+  - {from: traits.falling_number_s, variable: falling_number, unit: s}
+  - {from: traits.semolina_yellow_index, variable: semolina_yellow_index, unit: '1'}
+  - {from: traits.alveograph_w, variable: alveograph_w, unit: 10-4 J}
+  - {from: traits.alveograph_p, variable: alveograph_p, unit: mmH2O}
+  - {from: traits.alveograph_l, variable: alveograph_l, unit: mm}
+  - {from: traits.alveograph_pl, variable: alveograph_pl, unit: '1'}
+ignore:
+  - field: is_pre_evaluation
+    reason: >-
+      the sheet marks GENVCE pre-evaluation entries ("PG"); no registered variable models the status of a
+      variety entry (same as the CREA check marker), so it is kept in the raw rows only
+  - field: sheet.slug
+    reason: the map entry's slug; read by the adapter to derive the fungicide factor, not an observation
+  - field: sheet.title
+    reason: the printed sheet title, read as the document title through doc.title
+  - field: sheet.any
+    reason: the harvest year, read as the season through season and as the document year through doc.year
+  - field: sheet.locality
+    reason: the locality name, read as the unit's site through site
+  - field: sheet.url_xlsx
+    reason: the same document in its spreadsheet form; the PDF URL is the document's URL
+  - field: sheet.warnings
+    reason: >-
+      what the parsers tolerated on the sheet (a mean that is not the mean of the printed yields, a value dropped as
+      not a number, ...); recorded in the raw-data repository's extraction, not an observation
+sites: {}
+expected:
+  units: 6593
+  observations: 84873
+  sites: 79

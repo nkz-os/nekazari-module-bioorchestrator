@@ -1,0 +1,530 @@
+{
+ "metadata": {
+  "source": "CREA",
+  "issue_number": 0,
+  "issue_period": "1992/1993",
+  "article_title": "Fascicolo risultati Mais 1993",
+  "article_author": "",
+  "article_topic": "mais",
+  "year": 1993,
+  "extraction_model": "",
+  "extraction_date": "2026-07-06",
+  "confidence": "high"
+ },
+ "variety_trials": [
+  {
+   "crop": "Grano tenero",
+   "crop_scientific": "Triticum aestivum",
+   "variety": "FDL Columna",
+   "agroclimatic_zone": "Pianura Româna",
+   "year": 2024,
+   "yield_kg_ha": 5868.0,
+   "yield_relative_pct": null,
+   "quality_params": {
+    "proteina_pct": 14.8,
+    "peso_mille_semi_g": 37,
+    "peso_ettolitrico_kg_hl": null,
+    "tari_aluat_w": 240
+   },
+   "disease_scores": {},
+   "agronomic_traits": {},
+   "yield_notes": {
+    "producție_fertilizat_tratat_kg_ha": 5776,
+    "producție_nefertilizat_kg_ha": 5960
+   },
+   "special_status": null,
+   "irrigation_regime": "asciutto",
+   "trial_location": "Fundulea",
+   "page_in_issue": 5,
+   "table_number": 2,
+   "confidence": "high"
+  },
+  {
+   "crop": "Grano tenero",
+   "crop_scientific": "Triticum aestivum",
+   "variety": "Avenue",
+   "agroclimatic_zone": "Pianura Româna",
+   "year": 2024,
+   "yield_kg_ha": 5639.0,
+   "yield_relative_pct": null,
+   "quality_params": {
+    "proteina_pct": 13.5,
+    "peso_mille_semi_g": null,
+    "peso_ettolitrico_kg_hl": null,
+    "tari_aluat_w": 164
+   },
+   "disease_scores": {},
+   "agronomic_traits": {},
+   "yield_notes": {
+    "producție_fertilizat_tratat_kg_ha": 5282,
+    "producție_nefertilizat_kg_ha": 5996
+   },
+   "special_status": null,
+   "irrigation_regime": "asciutto",
+   "trial_location": "Fundulea",
+   "page_in_issue": 5,
+   "table_number": 2,
+   "confidence": "high"
+  },
+  {
+   "crop": "Grano tenero",
+   "crop_scientific": "Triticum aestivum",
+   "variety": "Voinic",
+   "agroclimatic_zone": "Pianura Româna",
+   "year": 2024,
+   "yield_kg_ha": 5540.0,
+   "yield_relative_pct": null,
+   "quality_params": {
+    "proteina_pct": 14.6,
+    "peso_mille_semi_g": null,
+    "peso_ettolitrico_kg_hl": null,
+    "tari_aluat_w": 263
+   },
+   "disease_scores": {},
+   "agronomic_traits": {},
+   "yield_notes": {
+    "producție_fertilizat_tratat_kg_ha": 5482,
+    "producție_nefertilizat_kg_ha": 5599
+   },
+   "special_status": null,
+   "irrigation_regime": "asciutto",
+   "trial_location": "Fundulea",
+   "page_in_issue": 5,
+   "table_number": 2,
+   "confidence": "high"
+  },
+  {
+   "crop": "Grano tenero",
+   "crop_scientific": "Triticum aestivum",
+   "variety": "Glosa",
+   "agroclimatic_zone": "Pianura Româna",
+   "year": 2024,
+   "yield_kg_ha": 5522.0,
+   "yield_relative_pct": null,
+   "quality_params": {
+    "proteina_pct": 14.1,
+    "peso_mille_semi_g": null,
+    "peso_ettolitrico_kg_hl": null,
+    "tari_aluat_w": 199
+   },
+   "disease_scores": {},
+   "agronomic_traits": {},
+   "yield_notes": {
+    "producție_fertilizat_tratat_kg_ha": 5180,
+    "producție_nefertilizat_kg_ha": 5864
+   },
+   "special_status": null,
+   "irrigation_regime": "asciutto",
+   "trial_location": "Fundulea",
+   "page_in_issue": 5,
+   "table_number": 2,
+   "confidence": "high"
+  },
+  {
+   "crop": "Grano tenero",
+   "crop_scientific": "Triticum aestivum",
+   "variety": "FDL Consecvent",
+   "agroclimatic_zone": "Pianura Româna",
+   "year": 2024,
+   "yield_kg_ha": 5507.0,
+   "yield_relative_pct": null,
+   "quality_params": {
+    "proteina_pct": 14.9,
+    "peso_mille_semi_g": null,
+    "peso_ettolitrico_kg_hl": null,
+    "tari_aluat_w": 314
+   },
+   "disease_scores": {},
+   "agronomic_traits": {},
+   "yield_notes": {
+    "producție_fertilizat_tratat_kg_ha": 5219,
+    "producție_nefertilizat_kg_ha": 5795
+   },
+   "special_status": null,
+   "irrigation_regime": "asciutto",
+   "trial_location": "Fundulea",
+   "page_in_issue": 5,
+   "table_number": 2,
+   "confidence": "high"
+  },
+  {
+   "crop": "Grano tenero",
+   "crop_scientific": "Triticum aestivum",
+   "variety": "Ursita",
+   "agroclimatic_zone": "Pianura Româna",
+   "year": 2024,
+   "yield_kg_ha": 5475.0,
+   "yield_relative_pct": null,
+   "quality_params": {
+    "proteina_pct": 14.3,
+    "peso_mille_semi_g": null,
+    "peso_ettolitrico_kg_hl": 78.8,
+    "tari_aluat_w": 252
+   },
+   "disease_scores": {},
+   "agronomic_traits": {},
+   "yield_notes": {
+    "producție_fertilizat_tratat_kg_ha": 5226,
+    "producție_nefertilizat_kg_ha": 5724
+   },
+   "special_status": null,
+   "irrigation_regime": "asciutto",
+   "trial_location": "Fundulea",
+   "page_in_issue": 5,
+   "table_number": 2,
+   "confidence": "high"
+  },
+  {
+   "crop": "Grano tenero",
+   "crop_scientific": "Triticum aestivum",
+   "variety": "Otilia",
+   "agroclimatic_zone": "Pianura Româna",
+   "year": 2024,
+   "yield_kg_ha": 5445.0,
+   "yield_relative_pct": null,
+   "quality_params": {
+    "proteina_pct": 14.3,
+    "peso_mille_semi_g": null,
+    "peso_ettolitrico_kg_hl": null,
+    "tari_aluat_w": 191
+   },
+   "disease_scores": {},
+   "agronomic_traits": {},
+   "yield_notes": {
+    "producție_fertilizat_tratat_kg_ha": 5260,
+    "producție_nefertilizat_kg_ha": 5631
+   },
+   "special_status": null,
+   "irrigation_regime": "asciutto",
+   "trial_location": "Fundulea",
+   "page_in_issue": 5,
+   "table_number": 2,
+   "confidence": "high"
+  },
+  {
+   "crop": "Grano tenero",
+   "crop_scientific": "Triticum aestivum",
+   "variety": "PG 102",
+   "agroclimatic_zone": "Pianura Româna",
+   "year": 2024,
+   "yield_kg_ha": 5427.0,
+   "yield_relative_pct": null,
+   "quality_params": {
+    "proteina_pct": 13.8,
+    "peso_mille_semi_g": null,
+    "peso_ettolitrico_kg_hl": null,
+    "tari_aluat_w": 189
+   },
+   "disease_scores": {},
+   "agronomic_traits": {},
+   "yield_notes": {
+    "producție_fertilizat_tratat_kg_ha": 5133,
+    "producție_nefertilizat_kg_ha": 5721
+   },
+   "special_status": null,
+   "irrigation_regime": "asciutto",
+   "trial_location": "Fundulea",
+   "page_in_issue": 5,
+   "table_number": 2,
+   "confidence": "high"
+  },
+  {
+   "crop": "Grano tenero",
+   "crop_scientific": "Triticum aestivum",
+   "variety": "Obiwan",
+   "agroclimatic_zone": "Pianura Româna",
+   "year": 2024,
+   "yield_kg_ha": 5415.0,
+   "yield_relative_pct": null,
+   "quality_params": {
+    "proteina_pct": 13.9,
+    "peso_mille_semi_g": null,
+    "peso_ettolitrico_kg_hl": null,
+    "tari_aluat_w": 157
+   },
+   "disease_scores": {},
+   "agronomic_traits": {},
+   "yield_notes": {
+    "producție_fertilizat_tratat_kg_ha": 4955,
+    "producție_nefertilizat_kg_ha": 5875
+   },
+   "special_status": null,
+   "irrigation_regime": "asciutto",
+   "trial_location": "Fundulea",
+   "page_in_issue": 5,
+   "table_number": 2,
+   "confidence": "high"
+  },
+  {
+   "crop": "Grano tenero",
+   "crop_scientific": "Triticum aestivum",
+   "variety": "Solehio",
+   "agroclimatic_zone": "Pianura Româna",
+   "year": 2024,
+   "yield_kg_ha": 5406.0,
+   "yield_relative_pct": null,
+   "quality_params": {
+    "proteina_pct": 13.3,
+    "peso_mille_semi_g": 37,
+    "peso_ettolitrico_kg_hl": null,
+    "tari_aluat_w": 128
+   },
+   "disease_scores": {},
+   "agronomic_traits": {},
+   "yield_notes": {
+    "producție_fertilizat_tratat_kg_ha": 5221,
+    "producție_nefertilizat_kg_ha": 5592
+   },
+   "special_status": null,
+   "irrigation_regime": "asciutto",
+   "trial_location": "Fundulea",
+   "page_in_issue": 5,
+   "table_number": 2,
+   "confidence": "high"
+  },
+  {
+   "crop": "Grano tenero",
+   "crop_scientific": "Triticum aestivum",
+   "variety": "SY Passion",
+   "agroclimatic_zone": "Pianura Româna",
+   "year": 2024,
+   "yield_kg_ha": 5405.0,
+   "yield_relative_pct": null,
+   "quality_params": {
+    "proteina_pct": 14.4,
+    "peso_mille_semi_g": null,
+    "peso_ettolitrico_kg_hl": null,
+    "tari_aluat_w": 208
+   },
+   "disease_scores": {},
+   "agronomic_traits": {},
+   "yield_notes": {
+    "producție_fertilizat_tratat_kg_ha": 5056,
+    "producție_nefertilizat_kg_ha": 5754
+   },
+   "special_status": null,
+   "irrigation_regime": "asciutto",
+   "trial_location": "Fundulea",
+   "page_in_issue": 5,
+   "table_number": 2,
+   "confidence": "high"
+  },
+  {
+   "crop": "Grano tenero",
+   "crop_scientific": "Triticum aestivum",
+   "variety": "FDL Abund",
+   "agroclimatic_zone": "Pianura Româna",
+   "year": 2024,
+   "yield_kg_ha": 5356.0,
+   "yield_relative_pct": null,
+   "quality_params": {
+    "proteina_pct": 15.1,
+    "peso_mille_semi_g": null,
+    "peso_ettolitrico_kg_hl": null,
+    "tari_aluat_w": 289
+   },
+   "disease_scores": {},
+   "agronomic_traits": {},
+   "yield_notes": {
+    "producție_fertilizat_tratat_kg_ha": 5024,
+    "producție_nefertilizat_kg_ha": 5687
+   },
+   "special_status": null,
+   "irrigation_regime": "asciutto",
+   "trial_location": "Fundulea",
+   "page_in_issue": 5,
+   "table_number": 2,
+   "confidence": "high"
+  },
+  {
+   "crop": "Grano tenero",
+   "crop_scientific": "Triticum aestivum",
+   "variety": "FDL Miranda",
+   "agroclimatic_zone": "Pianura Româna",
+   "year": 2024,
+   "yield_kg_ha": 5334.0,
+   "yield_relative_pct": null,
+   "quality_params": {
+    "proteina_pct": 14.2,
+    "peso_mille_semi_g": null,
+    "peso_ettolitrico_kg_hl": null,
+    "tari_aluat_w": 213
+   },
+   "disease_scores": {},
+   "agronomic_traits": {},
+   "yield_notes": {
+    "producție_fertilizat_tratat_kg_ha": 5102,
+    "producție_nefertilizat_kg_ha": 5566
+   },
+   "special_status": null,
+   "irrigation_regime": "asciutto",
+   "trial_location": "Fundulea",
+   "page_in_issue": 5,
+   "table_number": 2,
+   "confidence": "high"
+  },
+  {
+   "crop": "Grano tenero",
+   "crop_scientific": "Triticum aestivum",
+   "variety": "Montecristo",
+   "agroclimatic_zone": "Pianura Româna",
+   "year": 2024,
+   "yield_kg_ha": 5299.0,
+   "yield_relative_pct": null,
+   "quality_params": {
+    "proteina_pct": 12.7,
+    "peso_mille_semi_g": 28,
+    "peso_ettolitrico_kg_hl": null,
+    "tari_aluat_w": 149
+   },
+   "disease_scores": {},
+   "agronomic_traits": {},
+   "yield_notes": {
+    "producție_fertilizat_tratat_kg_ha": 4824,
+    "producție_nefertilizat_kg_ha": 5774
+   },
+   "special_status": null,
+   "irrigation_regime": "asciutto",
+   "trial_location": "Fundulea",
+   "page_in_issue": 5,
+   "table_number": 2,
+   "confidence": "high"
+  },
+  {
+   "crop": "Grano tenero",
+   "crop_scientific": "Triticum aestivum",
+   "variety": "Sothys",
+   "agroclimatic_zone": "Pianura Româna",
+   "year": 2024,
+   "yield_kg_ha": 5292.0,
+   "yield_relative_pct": null,
+   "quality_params": {
+    "proteina_pct": 13.8,
+    "peso_mille_semi_g": null,
+    "peso_ettolitrico_kg_hl": null,
+    "tari_aluat_w": 164
+   },
+   "disease_scores": {},
+   "agronomic_traits": {},
+   "yield_notes": {
+    "producție_fertilizat_tratat_kg_ha": 5087,
+    "producție_nefertilizat_kg_ha": 5498
+   },
+   "special_status": null,
+   "irrigation_regime": "asciutto",
+   "trial_location": "Fundulea",
+   "page_in_issue": 5,
+   "table_number": 2,
+   "confidence": "high"
+  },
+  {
+   "crop": "Grano tenero",
+   "crop_scientific": "Triticum aestivum",
+   "variety": "Alcantara",
+   "agroclimatic_zone": "Pianura Româna",
+   "year": 2024,
+   "yield_kg_ha": 5273.0,
+   "yield_relative_pct": null,
+   "quality_params": {
+    "proteina_pct": 14.2,
+    "peso_mille_semi_g": null,
+    "peso_ettolitrico_kg_hl": null,
+    "tari_aluat_w": 229
+   },
+   "disease_scores": {},
+   "agronomic_traits": {},
+   "yield_notes": {
+    "producție_fertilizat_tratat_kg_ha": 4952,
+    "producție_nefertilizat_kg_ha": 5594
+   },
+   "special_status": null,
+   "irrigation_regime": "asciutto",
+   "trial_location": "Fundulea",
+   "page_in_issue": 5,
+   "table_number": 2,
+   "confidence": "high"
+  },
+  {
+   "crop": "Grano tenero",
+   "crop_scientific": "Triticum aestivum",
+   "variety": "Pitar",
+   "agroclimatic_zone": "Pianura Româna",
+   "year": 2024,
+   "yield_kg_ha": 5263.0,
+   "yield_relative_pct": null,
+   "quality_params": {
+    "proteina_pct": 14.9,
+    "peso_mille_semi_g": null,
+    "peso_ettolitrico_kg_hl": null,
+    "tari_aluat_w": 311
+   },
+   "disease_scores": {},
+   "agronomic_traits": {},
+   "yield_notes": {
+    "producție_fertilizat_tratat_kg_ha": 5128,
+    "producție_nefertilizat_kg_ha": 5398
+   },
+   "special_status": null,
+   "irrigation_regime": "asciutto",
+   "trial_location": "Fundulea",
+   "page_in_issue": 5,
+   "table_number": 2,
+   "confidence": "high"
+  },
+  {
+   "crop": "Grano tenero",
+   "crop_scientific": "Triticum aestivum",
+   "variety": "Anapurna",
+   "agroclimatic_zone": "Pianura Româna",
+   "year": 2024,
+   "yield_kg_ha": 5228.0,
+   "yield_relative_pct": null,
+   "quality_params": {
+    "proteina_pct": 13.9,
+    "peso_mille_semi_g": null,
+    "peso_ettolitrico_kg_hl": null,
+    "tari_aluat_w": 154
+   },
+   "disease_scores": {},
+   "agronomic_traits": {},
+   "yield_notes": {
+    "producție_fertilizat_tratat_kg_ha": 5049,
+    "producție_nefertilizat_kg_ha": 5407
+   },
+   "special_status": null,
+   "irrigation_regime": "asciutto",
+   "trial_location": "Fundulea",
+   "page_in_issue": 5,
+   "table_number": 2,
+   "confidence": "high"
+  },
+  {
+   "crop": "Grano tenero",
+   "crop_scientific": "Triticum aestivum",
+   "variety": "Rubisko",
+   "agroclimatic_zone": "Pianura Româna",
+   "year": 2024,
+   "yield_kg_ha": 5102.0,
+   "yield_relative_pct": null,
+   "quality_params": {
+    "proteina_pct": 13.7,
+    "peso_mille_semi_g": null,
+    "peso_ettolitrico_kg_hl": 72.9,
+    "tari_aluat_w": 134
+   },
+   "disease_scores": {},
+   "agronomic_traits": {},
+   "yield_notes": {
+    "producție_fertilizat_tratat_kg_ha": 4846,
+    "producție_nefertilizat_kg_ha": 5359
+   },
+   "special_status": null,
+   "irrigation_regime": "asciutto",
+   "trial_location": "Fundulea",
+   "page_in_issue": 5,
+   "table_number": 2,
+   "confidence": "high"
+  }
+ ],
+ "extraction_notes": "Extracted 19 trials"
+}

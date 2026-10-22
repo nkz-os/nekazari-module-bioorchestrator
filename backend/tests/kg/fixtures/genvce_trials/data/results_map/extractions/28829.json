@@ -1,0 +1,276 @@
+{
+ "any": 2025,
+ "check_mean_kg_ha": 16231.5,
+ "columns": [
+  "RENDIMIENTO 14% (kg/ha)",
+  "ÍNDICE PRODUCTIVO (%)",
+  "GRUPO",
+  "FECHA FLORACIÓN FEMENINA",
+  "HUMEDAD (%)",
+  "DENSIDAD PLANTAS (plantas/m²)",
+  "ALTURA (cm)",
+  "ALTURA INSERCIÓN MAZORCA (cm)",
+  "PLANTAS ROTAS (%)",
+  "RENDIMIENTO (kg/ha)"
+ ],
+ "crop_label": "Maíz FAO 600-700",
+ "cv_pct": 9.74,
+ "design": "Bloques Completos al Azar",
+ "executing_entity": "Instituto Navarro de Tecnologías e Infraestructuras Agroalimentarias (INTIA)",
+ "harvest_date": "2025-11-24",
+ "locality": "Cadreita",
+ "pdf_sha256": "92e49e5c2f5d16a8ce3ec0c20660f7e95aee08843dad3c7a259a059533a7467b",
+ "post_title": "Maíz 600-700",
+ "rows": [
+  {
+   "is_check": false,
+   "is_pre_evaluation": false,
+   "relative_yield_pct": 104.81,
+   "statistical_group": "a",
+   "traits": {
+    "ear_height_cm": 107.3,
+    "flowering_female_date": "2025-08-02",
+    "grain_moisture_pct": 22.1,
+    "plant_density_m2": 9.7,
+    "plant_height_cm": 254.3,
+    "stalk_breakage_pct": 0.3
+   },
+   "variety": "P1441",
+   "yield_raw_kg_ha": 18767.0,
+   "yield_std_kg_ha": 17012.0
+  },
+  {
+   "is_check": true,
+   "is_pre_evaluation": false,
+   "relative_yield_pct": 101.6,
+   "statistical_group": "a",
+   "traits": {
+    "ear_height_cm": 126.7,
+    "flowering_female_date": "2025-08-03",
+    "grain_moisture_pct": 24.3,
+    "plant_density_m2": 9.5,
+    "plant_height_cm": 277.0,
+    "stalk_breakage_pct": 0.7
+   },
+   "variety": "DKC6351YG",
+   "yield_raw_kg_ha": 18742.0,
+   "yield_std_kg_ha": 16492.0
+  },
+  {
+   "is_check": true,
+   "is_pre_evaluation": false,
+   "relative_yield_pct": 101.59,
+   "statistical_group": "a",
+   "traits": {
+    "ear_height_cm": 113.3,
+    "flowering_female_date": "2025-08-04",
+    "grain_moisture_pct": 27.4,
+    "plant_density_m2": 9.0,
+    "plant_height_cm": 242.7,
+    "stalk_breakage_pct": 2.0
+   },
+   "variety": "ZAPOTEK",
+   "yield_raw_kg_ha": 19538.0,
+   "yield_std_kg_ha": 16490.0
+  },
+  {
+   "is_check": false,
+   "is_pre_evaluation": false,
+   "relative_yield_pct": 99.41,
+   "statistical_group": "a",
+   "traits": {
+    "ear_height_cm": 109.0,
+    "flowering_female_date": "2025-08-03",
+    "grain_moisture_pct": 27.9,
+    "plant_density_m2": 10.0,
+    "plant_height_cm": 241.0,
+    "stalk_breakage_pct": 0.3
+   },
+   "variety": "ZAPOTEK YG",
+   "yield_raw_kg_ha": 19227.0,
+   "yield_std_kg_ha": 16135.0
+  },
+  {
+   "is_check": true,
+   "is_pre_evaluation": false,
+   "relative_yield_pct": 96.8,
+   "statistical_group": "a",
+   "traits": {
+    "ear_height_cm": 111.3,
+    "flowering_female_date": "2025-08-04",
+    "grain_moisture_pct": 25.7,
+    "plant_density_m2": 9.6,
+    "plant_height_cm": 262.7,
+    "stalk_breakage_pct": 1.3
+   },
+   "variety": "P1921",
+   "yield_raw_kg_ha": 18172.0,
+   "yield_std_kg_ha": 15713.0
+  },
+  {
+   "is_check": false,
+   "is_pre_evaluation": false,
+   "relative_yield_pct": 96.45,
+   "statistical_group": "a",
+   "traits": {
+    "ear_height_cm": 106.0,
+    "flowering_female_date": "2025-08-02",
+    "grain_moisture_pct": 20.8,
+    "plant_density_m2": 9.6,
+    "plant_height_cm": 246.3,
+    "stalk_breakage_pct": 1.0
+   },
+   "variety": "529D",
+   "yield_raw_kg_ha": 16991.0,
+   "yield_std_kg_ha": 15655.0
+  },
+  {
+   "is_check": false,
+   "is_pre_evaluation": false,
+   "relative_yield_pct": 95.74,
+   "statistical_group": "a",
+   "traits": {
+    "ear_height_cm": 118.3,
+    "flowering_female_date": "2025-08-03",
+    "grain_moisture_pct": 25.1,
+    "plant_density_m2": 8.3,
+    "plant_height_cm": 267.3,
+    "stalk_breakage_pct": 2.0
+   },
+   "variety": "DKC6812",
+   "yield_raw_kg_ha": 17802.0,
+   "yield_std_kg_ha": 15540.0
+  },
+  {
+   "is_check": false,
+   "is_pre_evaluation": false,
+   "relative_yield_pct": 92.76,
+   "statistical_group": "a",
+   "traits": {
+    "ear_height_cm": 109.3,
+    "flowering_female_date": "2025-08-06",
+    "grain_moisture_pct": 24.3,
+    "plant_density_m2": 9.4,
+    "plant_height_cm": 255.0,
+    "stalk_breakage_pct": 0.0
+   },
+   "variety": "P15268",
+   "yield_raw_kg_ha": 17105.0,
+   "yield_std_kg_ha": 15056.0
+  },
+  {
+   "is_check": false,
+   "is_pre_evaluation": false,
+   "relative_yield_pct": 88.3,
+   "statistical_group": "a",
+   "traits": {
+    "ear_height_cm": 104.3,
+    "flowering_female_date": "2025-08-04",
+    "grain_moisture_pct": 24.7,
+    "plant_density_m2": 8.9,
+    "plant_height_cm": 237.3,
+    "stalk_breakage_pct": 1.3
+   },
+   "variety": "SY ULTIMATE",
+   "yield_raw_kg_ha": 16378.0,
+   "yield_std_kg_ha": 14333.0
+  },
+  {
+   "is_check": false,
+   "is_pre_evaluation": false,
+   "relative_yield_pct": 87.64,
+   "statistical_group": "a",
+   "traits": {
+    "ear_height_cm": 102.0,
+    "flowering_female_date": "2025-08-06",
+    "grain_moisture_pct": 25.0,
+    "plant_density_m2": 9.1,
+    "plant_height_cm": 236.0,
+    "stalk_breakage_pct": 1.7
+   },
+   "variety": "SY CADMIUM",
+   "yield_raw_kg_ha": 16304.0,
+   "yield_std_kg_ha": 14225.0
+  },
+  {
+   "is_check": false,
+   "is_pre_evaluation": false,
+   "relative_yield_pct": 87.56,
+   "statistical_group": "a",
+   "traits": {
+    "ear_height_cm": 115.7,
+    "flowering_female_date": "2025-08-06",
+    "grain_moisture_pct": 24.3,
+    "plant_density_m2": 7.0,
+    "plant_height_cm": 252.3,
+    "stalk_breakage_pct": 0.7
+   },
+   "variety": "DKC6715",
+   "yield_raw_kg_ha": 16199.0,
+   "yield_std_kg_ha": 14212.0
+  },
+  {
+   "is_check": false,
+   "is_pre_evaluation": false,
+   "relative_yield_pct": 87.29,
+   "statistical_group": "a",
+   "traits": {
+    "ear_height_cm": 110.3,
+    "flowering_female_date": "2025-08-06",
+    "grain_moisture_pct": 27.4,
+    "plant_density_m2": 9.1,
+    "plant_height_cm": 244.3,
+    "stalk_breakage_pct": 1.7
+   },
+   "variety": "7585C",
+   "yield_raw_kg_ha": 16835.0,
+   "yield_std_kg_ha": 14169.0
+  },
+  {
+   "is_check": false,
+   "is_pre_evaluation": false,
+   "relative_yield_pct": 82.35,
+   "statistical_group": "a",
+   "traits": {
+    "ear_height_cm": 105.7,
+    "flowering_female_date": "2025-07-31",
+    "grain_moisture_pct": 21.8,
+    "plant_density_m2": 9.4,
+    "plant_height_cm": 233.3,
+    "stalk_breakage_pct": 0.7
+   },
+   "variety": "SY UNITRON",
+   "yield_raw_kg_ha": 14709.0,
+   "yield_std_kg_ha": 13366.0
+  },
+  {
+   "is_check": false,
+   "is_pre_evaluation": false,
+   "relative_yield_pct": 80.02,
+   "statistical_group": "a",
+   "traits": {
+    "ear_height_cm": 105.3,
+    "flowering_female_date": "2025-08-05",
+    "grain_moisture_pct": 24.1,
+    "plant_density_m2": 8.7,
+    "plant_height_cm": 251.0,
+    "stalk_breakage_pct": 2.3
+   },
+   "variety": "LG31688",
+   "yield_raw_kg_ha": 14734.0,
+   "yield_std_kg_ha": 12988.0
+  }
+ ],
+ "sd_kg_ha": 1471.02,
+ "sheet_id": 28829,
+ "slug": "maiz-600-700-17",
+ "source_format": "xlsx",
+ "sowing_date": "2025-05-29",
+ "title": "Ensayo Maíz ciclo 600-700, Cadreita, 2025",
+ "trial_mean_kg_ha": 15099.0,
+ "url_pdf": "https://genvce.org/wp-content/uploads/2026/01/Cadreita-Maiz-2025-600-700-1.pdf",
+ "url_xlsx": "https://genvce.org/wp-content/uploads/2026/05/28829_Ma__z_600-700_nou.xlsx",
+ "xlsx_sha256": "756fbf3ec6aa7261df60a3e98551bc124536df7613cb1a7a27bd3e4c7c609b84",
+ "yield_moisture_pct": 14.0,
+ "zone_label": "Regadíos templados"
+}

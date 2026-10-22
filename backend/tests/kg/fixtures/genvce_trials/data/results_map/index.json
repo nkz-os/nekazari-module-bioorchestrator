@@ -1,0 +1,594 @@
+{
+ "downloaded_at": "2026-10-19",
+ "localities": [
+  {
+   "id": 180,
+   "name": "Alicante",
+   "latitude": 38.34531839592462,
+   "longitude": -0.48519453747151126,
+   "count": 0
+  },
+  {
+   "id": 181,
+   "name": "Biota - Ejea de los Caballeros",
+   "latitude": 42.21638888888889,
+   "longitude": -1.2066666666666666,
+   "count": 10
+  },
+  {
+   "id": 184,
+   "name": "Alcañiz",
+   "latitude": 41.045716694673956,
+   "longitude": -0.195691801782516,
+   "count": 0
+  },
+  {
+   "id": 185,
+   "name": "Sádaba",
+   "latitude": 42.26035301544667,
+   "longitude": -1.2606109486637198,
+   "count": 17
+  },
+  {
+   "id": 186,
+   "name": "Valsalada",
+   "latitude": 42.05889528146872,
+   "longitude": -0.642939575826182,
+   "count": 5
+  },
+  {
+   "id": 187,
+   "name": "Used",
+   "latitude": 41.012318689506515,
+   "longitude": -1.6075706232562386,
+   "count": 7
+  },
+  {
+   "id": 188,
+   "name": "Espuéndolas",
+   "latitude": 42.5570140545489,
+   "longitude": -0.4306654903669096,
+   "count": 5
+  },
+  {
+   "id": 189,
+   "name": "Lupiñén",
+   "latitude": 42.162670478105,
+   "longitude": -0.6006145140406272,
+   "count": 12
+  },
+  {
+   "id": 190,
+   "name": "Sariñena",
+   "latitude": 41.73787495417616,
+   "longitude": -0.11880678254813049,
+   "count": 7
+  },
+  {
+   "id": 191,
+   "name": "Argente",
+   "latitude": 40.70056844793881,
+   "longitude": -1.164206537913774,
+   "count": 9
+  },
+  {
+   "id": 192,
+   "name": "Azpa",
+   "latitude": 42.8054077799388,
+   "longitude": -1.5159567454478804,
+   "count": 7
+  },
+  {
+   "id": 193,
+   "name": "Tafalla",
+   "latitude": 42.53724095261154,
+   "longitude": -1.7702560736793274,
+   "count": 5
+  },
+  {
+   "id": 194,
+   "name": "Mélida",
+   "latitude": 42.356049751276316,
+   "longitude": -1.5290788161068873,
+   "count": 0
+  },
+  {
+   "id": 195,
+   "name": "Espinosa de Henares",
+   "latitude": 40.907777777777774,
+   "longitude": -3.0811111111111114,
+   "count": 2
+  },
+  {
+   "id": 196,
+   "name": "Albaladejito",
+   "latitude": 40.06277775781454,
+   "longitude": -2.1994086540818394,
+   "count": 1
+  },
+  {
+   "id": 197,
+   "name": "Montalbo",
+   "latitude": 39.90007482883147,
+   "longitude": -2.659737825966417,
+   "count": 4
+  },
+  {
+   "id": 198,
+   "name": "Ciudad Real",
+   "latitude": 39.019304,
+   "longitude": -3.96786,
+   "count": 22
+  },
+  {
+   "id": 199,
+   "name": "Vilobí d'Onyar",
+   "latitude": 41.87847252181558,
+   "longitude": 2.7497608986422932,
+   "count": 7
+  },
+  {
+   "id": 200,
+   "name": "Taradell",
+   "latitude": 41.86547231954775,
+   "longitude": 2.250879817686354,
+   "count": 3
+  },
+  {
+   "id": 201,
+   "name": "La Tallada d'Empordà - Verges",
+   "latitude": 42.06108937679407,
+   "longitude": 3.0629292114696853,
+   "count": 22
+  },
+  {
+   "id": 202,
+   "name": "San Pelayo",
+   "latitude": 41.70444444444445,
+   "longitude": -5.0275,
+   "count": 7
+  },
+  {
+   "id": 203,
+   "name": "Cerratón de Juarros",
+   "latitude": 42.427499999999995,
+   "longitude": -3.3794444444444447,
+   "count": 6
+  },
+  {
+   "id": 204,
+   "name": "Zael",
+   "latitude": 42.11027777777778,
+   "longitude": -3.7963888888888886,
+   "count": 10
+  },
+  {
+   "id": 205,
+   "name": "Esteras de Lubia",
+   "latitude": 41.70055555555556,
+   "longitude": -2.176388888888889,
+   "count": 5
+  },
+  {
+   "id": 206,
+   "name": "Villatoquite",
+   "latitude": 42.213055555555556,
+   "longitude": -4.790555555555556,
+   "count": 3
+  },
+  {
+   "id": 207,
+   "name": "Las Tiesas",
+   "latitude": 39.04411755177726,
+   "longitude": -2.0849235674890916,
+   "count": 11
+  },
+  {
+   "id": 208,
+   "name": "Horna",
+   "latitude": 38.927219738113656,
+   "longitude": -1.6291452716206802,
+   "count": 4
+  },
+  {
+   "id": 209,
+   "name": "Valdeganga",
+   "latitude": 39.08952623734744,
+   "longitude": -1.6573540020189799,
+   "count": 9
+  },
+  {
+   "id": 210,
+   "name": "Gauna",
+   "latitude": 42.830000000000005,
+   "longitude": -2.51,
+   "count": 17
+  },
+  {
+   "id": 211,
+   "name": "Olivenza",
+   "latitude": 38.74283,
+   "longitude": -7.050318,
+   "count": 8
+  },
+  {
+   "id": 212,
+   "name": "Verdú",
+   "latitude": 41.569722222222225,
+   "longitude": 1.1233333333333333,
+   "count": 2
+  },
+  {
+   "id": 213,
+   "name": "Artesa de Segre",
+   "latitude": 41.85194444444445,
+   "longitude": 1.0925,
+   "count": 8
+  },
+  {
+   "id": 214,
+   "name": "Olius",
+   "latitude": 41.98916666666667,
+   "longitude": 1.561388888888889,
+   "count": 4
+  },
+  {
+   "id": 215,
+   "name": "Sucs",
+   "latitude": 41.708333333333336,
+   "longitude": 0.45305555555555554,
+   "count": 13
+  },
+  {
+   "id": 216,
+   "name": "Magaz de Pisuerga",
+   "latitude": 41.98838,
+   "longitude": -4.433785,
+   "count": 13
+  },
+  {
+   "id": 217,
+   "name": "Huelma",
+   "latitude": 37.63333333333333,
+   "longitude": -3.45,
+   "count": 2
+  },
+  {
+   "id": 218,
+   "name": "Ronda",
+   "latitude": 36.85,
+   "longitude": -5.25,
+   "count": 3
+  },
+  {
+   "id": 219,
+   "name": "Lebrija",
+   "latitude": 36.916666666666664,
+   "longitude": -6.066666666666666,
+   "count": 6
+  },
+  {
+   "id": 220,
+   "name": "Carmona",
+   "latitude": 37.4,
+   "longitude": -5.583333333333333,
+   "count": 15
+  },
+  {
+   "id": 221,
+   "name": "Jerez de la Frontera",
+   "latitude": 36.71666666666667,
+   "longitude": -6.15,
+   "count": 24
+  },
+  {
+   "id": 222,
+   "name": "Santaella",
+   "latitude": 37.55,
+   "longitude": -4.833333333333333,
+   "count": 10
+  },
+  {
+   "id": 223,
+   "name": "Santa Cruz",
+   "latitude": 37.733333333333334,
+   "longitude": -4.633333333333333,
+   "count": 7
+  },
+  {
+   "id": 224,
+   "name": "Xinzo de Limia",
+   "latitude": 42.06668447965337,
+   "longitude": -7.745301914474729,
+   "count": 4
+  },
+  {
+   "id": 236,
+   "name": "Aranjuez",
+   "latitude": 40.06663430238987,
+   "longitude": -3.548249315641188,
+   "count": 25
+  },
+  {
+   "id": 237,
+   "name": "Cadreita",
+   "latitude": 42.216475166237494,
+   "longitude": -1.703214204718701,
+   "count": 6
+  },
+  {
+   "id": 238,
+   "name": "El Poal",
+   "latitude": 41.67472222222222,
+   "longitude": 0.8663888888888889,
+   "count": 3
+  },
+  {
+   "id": 239,
+   "name": "Fresno de la Ribera",
+   "latitude": 41.52916666666667,
+   "longitude": -5.565555555555555,
+   "count": 1
+  },
+  {
+   "id": 240,
+   "name": "Arabayona de Mógica",
+   "latitude": 41.05340251740564,
+   "longitude": -5.4002511979968455,
+   "count": 2
+  },
+  {
+   "id": 241,
+   "name": "San Juan de Torres",
+   "latitude": 42.230034506438386,
+   "longitude": -5.836819706080232,
+   "count": 3
+  },
+  {
+   "id": 242,
+   "name": "Orkoien",
+   "latitude": 42.830555555555556,
+   "longitude": -1.7144444444444444,
+   "count": 4
+  },
+  {
+   "id": 243,
+   "name": "Marchamalo",
+   "latitude": 40.67722222222222,
+   "longitude": -3.2058333333333335,
+   "count": 15
+  },
+  {
+   "id": 244,
+   "name": "Martin Muñoz de la Dehesa",
+   "latitude": 41.06527777777777,
+   "longitude": -4.700555555555556,
+   "count": 2
+  },
+  {
+   "id": 245,
+   "name": "Cuenca",
+   "latitude": 40.062993645462036,
+   "longitude": -2.199359224167706,
+   "count": 18
+  },
+  {
+   "id": 246,
+   "name": "Verges",
+   "latitude": 42.0613922196391,
+   "longitude": 3.0543885713171943,
+   "count": 0
+  },
+  {
+   "id": 247,
+   "name": "Zamadueñas",
+   "latitude": 41.713055555555556,
+   "longitude": -4.697500000000001,
+   "count": 13
+  },
+  {
+   "id": 248,
+   "name": "Zuera",
+   "latitude": 41.92625582867482,
+   "longitude": -0.7421112385052036,
+   "count": 1
+  },
+  {
+   "id": 249,
+   "name": "La Bóveda de Toro",
+   "latitude": 41.4152778,
+   "longitude": -5.436388888888889,
+   "count": 2
+  },
+  {
+   "id": 250,
+   "name": "Fresnillo de las Dueñas",
+   "latitude": 41.6466667,
+   "longitude": -3.6444444444444444,
+   "count": 6
+  },
+  {
+   "id": 251,
+   "name": "Fornells de la Selva",
+   "latitude": 41.9128278,
+   "longitude": 2.8104527777777775,
+   "count": 3
+  },
+  {
+   "id": 252,
+   "name": "Ejea de los Caballeros",
+   "latitude": 42.2105556,
+   "longitude": -1.1969444444444444,
+   "count": 1
+  },
+  {
+   "id": 255,
+   "name": "Cervià de Ter",
+   "latitude": 42.07262920301446,
+   "longitude": 2.923966144446325,
+   "count": 4
+  },
+  {
+   "id": 256,
+   "name": "Larraga",
+   "latitude": 42.5713889,
+   "longitude": -1.8186111111111112,
+   "count": 1
+  },
+  {
+   "id": 257,
+   "name": "Palomares del Campo",
+   "latitude": 39.9397222,
+   "longitude": -2.581111111111111,
+   "count": 2
+  },
+  {
+   "id": 261,
+   "name": "Arazuri",
+   "latitude": 42.81111111111111,
+   "longitude": -1.7319444444444445,
+   "count": 4
+  },
+  {
+   "id": 262,
+   "name": "Torrecilla de la Abadesa",
+   "latitude": 41.486666666666665,
+   "longitude": -5.089444444444444,
+   "count": 3
+  },
+  {
+   "id": 263,
+   "name": "Grijota",
+   "latitude": 42.05977941756637,
+   "longitude": -4.6142736973596445,
+   "count": 1
+  },
+  {
+   "id": 264,
+   "name": "Maguilla",
+   "latitude": 38.35872908145647,
+   "longitude": -5.85754610488952,
+   "count": 9
+  },
+  {
+   "id": 265,
+   "name": "Bardenas",
+   "latitude": 42.179311713352284,
+   "longitude": -1.2119532818421201,
+   "count": 0
+  },
+  {
+   "id": 269,
+   "name": "Unciti",
+   "latitude": 42.74616,
+   "longitude": -1.499924,
+   "count": 1
+  },
+  {
+   "id": 272,
+   "name": "Albacete",
+   "latitude": 38.940281,
+   "longitude": -1.915262,
+   "count": 12
+  },
+  {
+   "id": 275,
+   "name": "Belmontejo",
+   "latitude": 39.82175689707233,
+   "longitude": -2.339579944061121,
+   "count": 4
+  },
+  {
+   "id": 276,
+   "name": "Villanueva del Rebollar",
+   "latitude": 42.238709920921984,
+   "longitude": -4.746598261053226,
+   "count": 7
+  },
+  {
+   "id": 277,
+   "name": "Chinchilla",
+   "latitude": 38.91118821564788,
+   "longitude": -1.7263351314897355,
+   "count": 8
+  },
+  {
+   "id": 278,
+   "name": "El Temple",
+   "latitude": 41.97575884370903,
+   "longitude": -0.7611357226345747,
+   "count": 5
+  },
+  {
+   "id": 279,
+   "name": "Olite",
+   "latitude": 42.48092459632555,
+   "longitude": -1.6669171616194176,
+   "count": 6
+  },
+  {
+   "id": 280,
+   "name": "Montejícar",
+   "latitude": 37.57806841548438,
+   "longitude": -3.5161559612925437,
+   "count": 1
+  },
+  {
+   "id": 281,
+   "name": "Pitillas",
+   "latitude": 42.42183297810619,
+   "longitude": -1.629616865446335,
+   "count": 1
+  },
+  {
+   "id": 285,
+   "name": "Viladasens",
+   "latitude": 42.07613954664888,
+   "longitude": 2.931646279130115,
+   "count": 2
+  },
+  {
+   "id": 288,
+   "name": "Arcos de la Polvorosa",
+   "latitude": 41.94375999403889,
+   "longitude": -5.706370749505435,
+   "count": 1
+  },
+  {
+   "id": 292,
+   "name": "Clariana de Cardener",
+   "latitude": 41.9436783918,
+   "longitude": 1.5896391809,
+   "count": 1
+  },
+  {
+   "id": 293,
+   "name": "Mendióroz",
+   "latitude": 42.816006,
+   "longitude": -1.491552,
+   "count": 3
+  },
+  {
+   "id": 294,
+   "name": "Ontinar del Salz",
+   "latitude": 41.937748,
+   "longitude": -0.754185,
+   "count": 4
+  },
+  {
+   "id": 295,
+   "name": "Arkaute",
+   "latitude": 42.851331,
+   "longitude": -2.633708,
+   "count": 1
+  },
+  {
+   "id": 296,
+   "name": "Vitoria-Gasteiz",
+   "latitude": 42.878709,
+   "longitude": -2.637947,
+   "count": 1
+  }
+ ],
+ "sheets": []
+}

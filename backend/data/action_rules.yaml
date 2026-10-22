@@ -1,0 +1,83 @@
+rules:
+  - id: cover_crop_termination_flowering
+    name: "Terminar cubierta al alcanzar floración"
+    category: termination
+    priority: 10
+    active: true
+    species_links: ["Vicia sativa", "Avena sativa", "Secale cereale"]
+    conditions:
+      all:
+        - {field: crop.role, op: eq, value: cover_crop}
+        - {field: crop.status, op: eq, value: active}
+        - {field: crop.termination_method, op: eq, value: roller_crimper}
+        - {field: phenology.current_stage, op: eq, value: flowering}
+    action:
+      operation_type: tillage
+      description_template: "Tumbar la cubierta de {crop.species} con roller crimper — ha alcanzado floración"
+      urgency: high
+      window_days: 7
+    source_doi: "10.1016/j.fcr.2020.107789"
+    source_short: "INTIA Navarra - Cubiertas vegetales"
+  - id: main_crop_sowing_window_open
+    name: "Sembrar cultivo principal en ventana"
+    category: sowing
+    priority: 8
+    active: true
+    conditions:
+      all:
+        - {field: crop.status, op: eq, value: planned}
+        - {field: crop.days_until_sowing_window, op: lte, value: 7}
+    action:
+      operation_type: sowing
+      description_template: "Sembrar {crop.species} — ventana de siembra abierta"
+      urgency: medium
+      window_days: 14
+    source_short: "SP1 plan (ventana de siembra)"
+
+  - id: riego_deficit_severo
+    name: "Riego por déficit hídrico severo"
+    category: irrigation
+    priority: 80
+    active: true
+    conditions:
+      all:
+        - {field: water_deficit_mm, op: gt, value: 30}
+        - {field: phenology.current_stage, op: nin, value: ["maturity", "dormant"]}
+    action:
+      operation_type: irrigation
+      description_template: "Riego: déficit de {water_deficit_mm} mm — aplicar inmediatamente"
+      urgency: high
+    source_doi: "FAO-56"
+    source_short: "FAO"
+
+  - id: cobertera_nitrogenada
+    name: "Cobertura nitrogenada"
+    category: fertilization
+    priority: 70
+    active: true
+    conditions:
+      all:
+        - {field: n_requirement_kg_ha, op: gt, value: 1.0}
+        - {field: phenology.current_stage, op: in, value: ["tillering", "stem_elongation", "vegetative"]}
+    action:
+      operation_type: fertilization
+      description_template: "Aplicar {n_requirement_kg_ha} kg N/ha — cobertera nitrogenada"
+      urgency: medium
+    source_doi: "MITECO-GUIA-2024"
+    source_short: "MITECO"
+
+  - id: fosforo_presiembra
+    name: "Fósforo en presiembra"
+    category: fertilization
+    priority: 60
+    active: true
+    conditions:
+      all:
+        - {field: phenology.current_stage, op: eq, value: pre_sowing}
+        - {field: p_requirement_kg_ha, op: gt, value: 1.0}
+    action:
+      operation_type: fertilization
+      description_template: "Aplicar {p_requirement_kg_ha} kg P2O5/ha en fondo (presiembra)"
+      urgency: medium
+    source_doi: "MITECO-GUIA-2024"
+    source_short: "MITECO"

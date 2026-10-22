@@ -1,0 +1,81 @@
+{
+ "metadata": {
+  "source": "GENVCE",
+  "issue_number": 0,
+  "issue_period": "2010/2011",
+  "article_title": "GENVCE Oleaginosas (girasol, colza) — Campaña 2010/2011",
+  "article_author": "GENVCE Consortium",
+  "article_topic": "oleaginosas",
+  "year": 2011,
+  "page_in_issue": null,
+  "extraction_model": "deepseek-chat",
+  "extraction_date": "2026-06-15",
+  "confidence": "high"
+ },
+ "variety_trials": [
+  {
+   "crop": "Colza de otoño",
+   "crop_scientific": "Brassica napus",
+   "variety": "ALBATROS",
+   "agroclimatic_zone": null,
+   "year": 2011,
+   "yield_kg_ha": 4823.0,
+   "yield_relative_pct": 117.4,
+   "quality_params": {
+    "altura_cm": 162,
+    "humedad_grano_pct": 9.2,
+    "peso_especifico_kg_hl": 63.6
+   },
+   "disease_scores": {},
+   "agronomic_traits": {
+    "nascencia": 3,
+    "fecha_inicio_floracion": "1-abr",
+    "fecha_fin_floracion": "29-abr",
+    "duracion_floracion_dias": 28,
+    "encamado_pct": 0
+   },
+   "yield_notes": {
+    "produccion_tabla9_kg_ha": 3410,
+    "indice_tabla9_pct": 111.2
+   },
+   "special_status": "Híbrida",
+   "irrigation_regime": null,
+   "trial_location": null,
+   "page_in_issue": 5,
+   "table_number": "Tabla 7",
+   "confidence": "high"
+  },
+  {
+   "crop": "Colza de otoño",
+   "crop_scientific": "Brassica napus",
+   "variety": "NK AVIATOR",
+   "agroclimatic_zone": null,
+   "year": 2011,
+   "yield_kg_ha": 4540.0,
+   "yield_relative_pct": 110.5,
+   "quality_params": {
+    "altura_cm": 164,
+    "humedad_grano_pct": 8.9,
+    "peso_especifico_kg_hl": 62.5
+   },
+   "disease_scores": {},
+   "agronomic_traits": {
+    "nascencia": 3,
+    "fecha_inicio_floracion": "5-abr",
+    "fecha_fin_floracion": "6-may",
+    "duracion_floracion_dias": 31,
+    "encamado_pct": 0
+   },
+   "yield_notes": {
+    "produccion_tabla9_kg_ha": 3464,
+    "indice_tabla9_pct": 112.9
+   },
+   "special_status": "Híbrida",
+   "irrigation_regime": null,
+   "trial_location": null,
+   "page_in_issue": 5,
+   "table_number": "Tabla 7",
+   "confidence": "high"
+  }
+ ]
+}

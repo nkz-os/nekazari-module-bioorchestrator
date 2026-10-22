@@ -1,0 +1,107 @@
+import { describe, expect, it } from 'vitest';
+import {
+  chartLine, depthLabel, errorHintKey, expectedReasonKey, formatRange, formatYield, pct, segmentLabel,
+  sowingSourceKey, waterGapText, weatherSourceKey,
+  type DailyPoint,
+} from './cropSimulationModel';
+import { autoRunFromLink } from './cropSimulationModel';
+
+describe('formatYield', () => {
+  it('shows P50 as headline and P10-P90 as range', () => {
+    expect(formatYield({ p10: 2.04, p50: 3.46, p90: 4.9 })).toEqual({ main: '3.5', range: '2.0 – 4.9' });
+  });
+  it('shows a single value without range', () => {
+    expect(formatYield(5.234)).toEqual({ main: '5.2', range: null });
+  });
+  it('handles missing', () => {
+    expect(formatYield(null)).toEqual({ main: '—', range: null });
+  });
+});
+
+describe('segmentLabel', () => {
+  it('formats a range and a single day', () => {
+    expect(segmentLabel({ source: 'archive', start: '2025-10-01', end: '2026-05-31', days: 242 }, 'Archive'))
+      .toBe('Archive · 2025-10-01 → 2026-05-31 (242)');
+    expect(segmentLabel({ source: 'archive', start: '2026-01-01', end: '2026-01-01', days: 1 }, 'A'))
+      .toBe('A · 2026-01-01 (1)');
+  });
+  it('maps known sources to keys', () => {
+    expect(weatherSourceKey('model_analysis')).toBe('cropSimulation.weatherSource.model_analysis');
+    expect(weatherSourceKey('reanalysis')).toBe('cropSimulation.weatherSource.reanalysis');
+    expect(weatherSourceKey('parcel_daily')).toBe('cropSimulation.weatherSource.parcel_daily');
+    expect(weatherSourceKey('other')).toBeNull();
+    expect(sowingSourceKey('field_operations')).toBe('cropSimulation.sowingSource.field_operations');
+    expect(sowingSourceKey('crop_cycle')).toBe('cropSimulation.sowingSource.crop_cycle');
+    expect(sowingSourceKey('legacy_parcel_season')).toBe('cropSimulation.sowingSource.legacy_parcel_season');
+    expect(sowingSourceKey('x')).toBeNull();
+  });
+});
+
+describe('errorHintKey', () => {
+  it('maps known codes and falls back', () => {
+    expect(errorHintKey('weather_gaps')).toBe('cropSimulation.errors.weather_gaps');
+    expect(errorHintKey('parcel_not_found')).toBe('cropSimulation.errors.parcel_not_found');
+    expect(errorHintKey('nope')).toBe('cropSimulation.errors.generic');
+    expect(errorHintKey(null)).toBe('cropSimulation.errors.generic');
+  });
+});
+
+describe('misc formatting', () => {
+  it('formats percent and depth', () => {
+    expect(pct(0.256)).toBe('26%');
+    expect(pct(null)).toBe('—');
+    expect(depthLabel({ top_cm: 0, bottom_cm: 30 })).toBe('0–30 cm');
+  });
+});
+
+describe('chartLine', () => {
+  const d = (day: string, v: number | null, projected: boolean): DailyPoint =>
+    ({ day, canopy_cover: v, water_stress: v, projected });
+  it('splits observed/projected, joined at the last observed point, skipping nulls', () => {
+    const daily = [d('2026-04-01', 0.1, false), d('2026-04-02', null, false), d('2026-04-03', 0.3, false),
+      d('2026-04-04', 0.4, true), d('2026-04-05', 0.5, true)];
+    const l = chartLine(daily, 'canopy_cover');
+    expect(l.observed).toEqual([[0, 0.1], [2, 0.3]]);
+    expect(l.projected).toEqual([[2, 0.3], [3, 0.4], [4, 0.5]]);
+  });
+  it('is empty for no data', () => {
+    expect(chartLine([], 'water_stress')).toEqual({ observed: [], projected: [] });
+  });
+});
+
+describe('error hints', () => {
+  it('knows the too-far sowing date', () => {
+    expect(errorHintKey('sowing_date_too_far')).toBe('cropSimulation.errors.sowing_date_too_far');
+  });
+});
+
+describe('expected yield and water gap', () => {
+  it('never shows a negative water gap (water does not limit that season)', () => {
+    expect(waterGapText(33.2)).toBe('33%');
+    expect(waterGapText(-1.4)).toBe('0%');
+    expect(waterGapText(null)).toBe('—');
+  });
+  it('formats the expected range and maps unavailable reasons', () => {
+    expect(formatRange({ low: 2.44, high: 4.06 })).toBe('2.4 – 4.1');
+    expect(expectedReasonKey('irrigated')).toBe('cropSimulation.expected.reason.irrigated');
+    expect(expectedReasonKey('other')).toBe('cropSimulation.expected.reason.unknown');
+  });
+});
+
+describe('autoRunFromLink', () => {
+  it('runs at once when a link brings the crop and the sowing date', () => {
+    expect(autoRunFromLink({ cropSlug: 'TRZAX', sowingDate: '2025-11-05' })).toBe(true);
+  });
+  it('only pre-fills when either is missing', () => {
+    expect(autoRunFromLink({ cropSlug: 'TRZAX' })).toBe(false);
+    expect(autoRunFromLink({ sowingDate: '2025-11-05', irrigation: 'full' })).toBe(false);
+    expect(autoRunFromLink(undefined)).toBe(false);
+  });
+});
+
+describe('job error codes', () => {
+  it('have their own hint', () => {
+    expect(errorHintKey('job_timeout')).toBe('cropSimulation.errors.job_timeout');
+    expect(errorHintKey('too_many_jobs')).toBe('cropSimulation.errors.too_many_jobs');
+  });
+});

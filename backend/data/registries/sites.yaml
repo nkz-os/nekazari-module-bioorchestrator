@@ -1,0 +1,1853 @@
+# Site registry: canonical sites with aliases, kind, country and published coordinates. `id` is the
+# stable site key units link to. Coordinates are as published or a municipality-level geocode, never
+# a farm coordinate; they stay null when no registry has them. Aggregates and regions carry none.
+#
+# Scope: the sites of the licensed sources (GENVCE, CREA). Sites of other sources are added with their
+# contract. GENVCE prints no trial location: its rows are means of a zone, a yield stratum, a
+# geographic group or all trials, so every GENVCE site here is an aggregate (ES-GENVCE-*, no
+# coordinates). The four reference cities below (Valladolid, Lleida, Cordoba, Lugo) are what the
+# legacy adequacy step assigned to those means; no contract uses them any more. NOT registered, on purpose:
+#   - Fundulea (Romania): the 19 rows stored under CREA are Romanian wheat from an unlicensed paper,
+#     not CREA data, and are out of scope.
+#   - Foggia: its three rows come from a placeholder test file, not from a trial report.
+#
+# status: reviewed = confirmed by a person; assumption = recorded with the reason in `note`.
+version: 1
+sites:
+  - id: ES-VALLADOLID
+    name: Valladolid
+    site_kind: field
+    country: ES
+    sources: []
+    status: assumption
+    note: >-
+      ASSUMPTION: kept as a field site only because the legacy graph links GENVCE trials to it. The GENVCE
+      raw rows carry NO trial location; they are means of zones, strata and groups, and the legacy
+      adequacy step assigned this reference city to them. No contract uses this site any more: the GENVCE
+      contract puts the observed zone or stratum label in the unit's site, registered as an aggregate
+      (ES-GENVCE-*). Valladolid (GENVCE) and Zamadueñas (ITACyL farm) are NOT merged: nothing in the
+      licensed data says they are the same place.
+  - id: ES-LLEIDA
+    name: Lleida
+    site_kind: field
+    country: ES
+    sources: []
+    status: assumption
+    note: "ASSUMPTION: a reference city the legacy adequacy step assigned to GENVCE zone means; no contract uses it (see ES-VALLADOLID)."
+  - id: ES-CORDOBA
+    name: Córdoba
+    site_kind: field
+    country: ES
+    latitude: 37.88
+    longitude: -4.77
+    coordinate_source: municipality-level entry of trial_site_geo_registry.json
+    sources: []
+    status: assumption
+    note: "ASSUMPTION: a reference city the legacy adequacy step assigned to GENVCE zone means; no contract uses it (see ES-VALLADOLID)."
+  - id: ES-LUGO
+    name: Lugo
+    site_kind: field
+    country: ES
+    sources: []
+    status: assumption
+    note: "ASSUMPTION: a reference city the legacy adequacy step assigned to GENVCE zone means; no contract uses it (see ES-VALLADOLID)."
+  - id: ES-ZAMADUENAS
+    name: Zamadueñas
+    site_kind: field
+    country: ES
+    aliases: [Zamadueñas (Valladolid)]
+    latitude: 41.71306
+    longitude: -4.6975
+    coordinate_source: GENVCE results map, localidad record id 247 (download 2026-10-19), rounded to 5 decimals
+    sources: [GENVCE-TRIALS]
+    status: assumption
+    note: >-
+      ASSUMPTION: a separate site, not an alias of Valladolid (see ES-VALLADOLID). trial_site_geo_registry.json
+      holds two entries for it about 45 km apart, which cannot both be right; the coordinates registered here
+      are the ones the GENVCE results map publishes for its locality (field or municipality unconfirmed).
+      Reused by GENVCE-TRIALS because the site index refuses a second entry with this name.
+  - id: IT-VILLAFRANCA-PIEMONTE
+    name: Villafranca Piemonte (TO)
+    site_kind: field
+    country: IT
+    aliases: [Villafranca Piemonte]
+    latitude: 44.78824
+    longitude: 7.50788
+    coordinate_source: municipality geocode in trial_site_geo_registry.json
+    elevation_m: 253.0
+    municipality: Villafranca Piemonte
+    attribute_sources:
+      elevation_m: >-
+        trial_site_geo_registry.json, entry "villafranca piemonte (to)" (elevationM 253.0, geoSource "open-meteo
+        geocoding: Villafranca Piemonte, IT")
+      municipality: >-
+        trial_site_geo_registry.json, entry "villafranca piemonte (to)" (resolvedName "Villafranca Piemonte",
+        geoSource "open-meteo geocoding: Villafranca Piemonte, IT")
+    sources: [CREA]
+    status: assumption
+    note: Named as published in the CREA booklets (Piedmont trial of the national maize network).
+  - id: IT-CREA-AVG-8
+    name: Media 8 Località
+    site_kind: aggregate
+    country: IT
+    sources: [CREA]
+    status: assumption
+    note: Average over the 8 locations of that year's CREA network; the location set differs per year.
+  - id: IT-CREA-AVG-10
+    name: Media 10 Località
+    site_kind: aggregate
+    country: IT
+    sources: [CREA]
+    status: assumption
+    note: Average over the 10 locations of that year's CREA network; the location set differs per year.
+  - id: IT-CREA-AVG-13
+    name: Media 13 Località
+    site_kind: aggregate
+    country: IT
+    sources: [CREA]
+    status: assumption
+    note: Average over the 13 locations of that year's CREA network; the location set differs per year.
+  - id: IT-CREA-AVG-14
+    name: Media 14 Località
+    site_kind: aggregate
+    country: IT
+    sources: [CREA]
+    status: assumption
+    note: Average over the 14 locations of that year's CREA network; the location set differs per year.
+
+  # ── GENVCE zones, strata and groups (aggregates, never coordinates) ───────────────────────────
+  # A GENVCE report prints the mean of a GROUP of trials (an agroclimatic zone, a yield stratum, a
+  # geographic group, or all trials): no trial location is printed. Each label below is one such
+  # group, exactly as the extraction wrote it; a label that differs only in case or spacing is the
+  # same entry (lookups fold them), any other difference is a different entry: no label is merged
+  # with another by similarity. The composition of a group differs per report and year.
+  - id: ES-GENVCE-CENTRO
+    name: Centro
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: &genvce_geo_note >-
+      ASSUMPTION: a geographic group of trials as the GENVCE maize tables print it ("zona Norte / Centro /
+      Sur"); the trials it covers differ per report (for example Ebro valley and Catalonia in one report,
+      Aragon, Castilla y Leon and Navarra in another). An aggregate, no coordinates.
+  - id: ES-GENVCE-CONJUNTO-FRIAS-Y-TEMPLADAS
+    name: Conjunto Frías y Templadas
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: &genvce_group_note >-
+      ASSUMPTION: this label names a group of trials whose mean a GENVCE table prints (zone, yield stratum,
+      geographic group or all trials); it is not a place. It is registered as an aggregate with no
+      coordinates, as the extraction wrote it. Where the extraction relabelled the group printed in the
+      report, the printed group is lost and this is its relabel.
+  - id: ES-GENVCE-CONJUNTO-FRIAS-TEMPLADAS-Y-CALIDAS
+    name: 'Conjunto Frías, Templadas y Cálidas'
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_group_note
+  - id: ES-GENVCE-CONJUNTO-NACIONAL
+    name: Conjunto Nacional
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_group_note
+  - id: ES-GENVCE-GENERAL
+    name: General
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_group_note
+  - id: ES-GENVCE-GLOBAL
+    name: Global
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_group_note
+  - id: ES-GENVCE-GLOBAL-2010-2012
+    name: 'Global (2010-2012)'
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_group_note
+  - id: ES-GENVCE-GLOBAL-2011-2012
+    name: 'Global (2011-2012)'
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_group_note
+  - id: ES-GENVCE-NACIONAL
+    name: Nacional
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_group_note
+  - id: ES-GENVCE-NORTE
+    name: Norte
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_geo_note
+  - id: ES-GENVCE-PRODUCTIVIDAD-ALTA
+    name: Productividad Alta
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_group_note
+  - id: ES-GENVCE-PRODUCTIVIDAD-BAJA
+    name: Productividad Baja
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_group_note
+  - id: ES-GENVCE-PRODUCTIVIDAD-MEDIA
+    name: Productividad Media
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_group_note
+  - id: ES-GENVCE-REGADIO
+    name: Regadío
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_group_note
+  - id: ES-GENVCE-REGADIOS
+    name: Regadíos
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_group_note
+  - id: ES-GENVCE-REGADIOS-FRIOS
+    name: Regadíos fríos
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_group_note
+  - id: ES-GENVCE-REGADIOS-FRIOS-Y-TEMPLADOS
+    name: Regadíos fríos y templados
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_group_note
+  - id: ES-GENVCE-REGADIOS-TEMPLADOS
+    name: Regadíos templados
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_group_note
+  - id: ES-GENVCE-RENDIMIENTO-ALTO
+    name: Rendimiento Alto
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_group_note
+  - id: ES-GENVCE-RENDIMIENTO-BAJO
+    name: Rendimiento bajo
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_group_note
+  - id: ES-GENVCE-RENDIMIENTO-MEDIO
+    name: Rendimiento medio
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_group_note
+  - id: ES-GENVCE-SECANO
+    name: Secano
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_group_note
+  - id: ES-GENVCE-SECANOS-HUMEDOS-Y-DE-ALTO-POTENCIAL-FRIOS
+    name: Secanos húmedos y de alto potencial fríos
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_group_note
+  - id: ES-GENVCE-SECANOS-HUMEDOS-Y-DE-ALTO-POTENCIAL-FRIOS-Y-TEMPLADOS
+    name: Secanos húmedos y de alto potencial fríos y templados
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_group_note
+  - id: ES-GENVCE-SECANOS-TEMPLADOS
+    name: Secanos templados
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_group_note
+  - id: ES-GENVCE-SECANOS-Y-REGADIOS-TEMPLADOS
+    name: Secanos y regadíos templados
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_group_note
+  - id: ES-GENVCE-SECANOS-ARIDOS-Y-SEMIARIDOS-FRIOS
+    name: Secanos áridos y semiáridos fríos
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_group_note
+  - id: ES-GENVCE-SECANOS-ARIDOS-Y-SEMIARIDOS-FRIOS-Y-TEMPLADOS
+    name: Secanos áridos y semiáridos fríos y templados
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_group_note
+  - id: ES-GENVCE-SUR
+    name: Sur
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_geo_note
+  - id: ES-GENVCE-TEMPLADA
+    name: Templada
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_group_note
+  - id: ES-GENVCE-TEMPLADA-Y-FRIA
+    name: Templada y Fría
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_group_note
+  - id: ES-GENVCE-ZONA-CALIDA
+    name: Zona Cálida
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_group_note
+  - id: ES-GENVCE-ZONA-CALIDA-SEMIARIDA
+    name: Zona Cálida Semiárida
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_group_note
+  - id: ES-GENVCE-ZONA-FRIA
+    name: Zona Fría
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_group_note
+  - id: ES-GENVCE-ZONA-FRIA-SEMIARIDA
+    name: Zona Fría Semiárida
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_group_note
+  - id: ES-GENVCE-ZONA-FRIA-SEMIARIDA-Y-ZONA-TEMPLADA
+    name: Zona Fría Semiárida y Zona Templada
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_group_note
+  - id: ES-GENVCE-ZONA-FRIA-Y-TEMPLADA-PREGENVCE
+    name: 'Zona Fría y Templada (preGENVCE)'
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_group_note
+  - id: ES-GENVCE-ZONA-HUMEDA-ATLANTICA
+    name: Zona Húmeda Atlántica
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_group_note
+  - id: ES-GENVCE-ZONA-SUBHUMEDA-INTERIOR
+    name: Zona Subhúmeda Interior
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_group_note
+  - id: ES-GENVCE-ZONA-TEMPLADA
+    name: Zona Templada
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_group_note
+  - id: ES-GENVCE-ZONAS-CALIDAS
+    name: Zonas cálidas
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_group_note
+  - id: ES-GENVCE-ZONAS-FRIAS
+    name: Zonas frías
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_group_note
+  - id: ES-GENVCE-ZONAS-FRIAS-Y-TEMPLADAS
+    name: Zonas frías y templadas
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_group_note
+  - id: ES-GENVCE-ZONAS-TEMPLADAS
+    name: Zonas templadas
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_group_note
+  - id: ES-GENVCE-ZONAS-TEMPLADAS-Y-FRIAS
+    name: Zonas templadas y frías
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_group_note
+  - id: ES-GENVCE-UNLABELLED
+    name: GENVCE table without zone label (ES)
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: >-
+      ASSUMPTION: the group a GENVCE table averages is not stated in the extraction (no zone, stratum or
+      group label). Such a mean is kept at country level only so it is reachable by the regional tier; the
+      trials it covers are unknown. An aggregate, no coordinates, never climate-enriched.
+  - id: ES-GENVCE-ZONA-NORTE
+    name: zona Norte
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: &genvce_durum_network_note >-
+      ASSUMPTION: a group of trials of one of the two GENVCE durum-wheat networks ("zona Norte", "zona Sur"),
+      optionally split by the agroclimatic or yield-stratum label its table prints ("<network> / <label>"). Not a
+      place: an aggregate with no coordinates, as the report prints it.
+  - id: ES-GENVCE-ZONA-NORTE-PRODUCCION-ALTA
+    name: zona Norte / producción alta
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_durum_network_note
+  - id: ES-GENVCE-ZONA-NORTE-PRODUCCION-BAJA
+    name: zona Norte / producción baja
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_durum_network_note
+  - id: ES-GENVCE-ZONA-NORTE-REGADIOS-FRIOS-Y-TEMPLADOS
+    name: zona Norte / regadíos fríos y templados
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_durum_network_note
+  - id: ES-GENVCE-ZONA-NORTE-RENDIMIENTO-ALTO
+    name: zona Norte / Rendimiento alto
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_durum_network_note
+  - id: ES-GENVCE-ZONA-NORTE-RENDIMIENTO-BAJO
+    name: zona Norte / Rendimiento bajo
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_durum_network_note
+  - id: ES-GENVCE-ZONA-NORTE-RENDIMIENTO-MEDIO
+    name: zona Norte / Rendimiento medio
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_durum_network_note
+  - id: ES-GENVCE-ZONA-NORTE-SECANOS-HUMEDOS-Y-DE-ALTO-POTENCIAL-FRIOS
+    name: zona Norte / secanos húmedos y de alto potencial fríos
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_durum_network_note
+  - id: ES-GENVCE-ZONA-NORTE-SECANOS-HUMEDOS-Y-DE-ALTO-POTENCIAL-FRIOS-Y-TEMPLADOS
+    name: zona Norte / secanos húmedos y de alto potencial fríos y templados
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_durum_network_note
+  - id: ES-GENVCE-ZONA-NORTE-SECANOS-HUMEDOS-Y-DE-ALTO-POTENCIAL-Y-REGADIOS-FRIOS
+    name: zona Norte / secanos húmedos y de alto potencial y regadíos fríos
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_durum_network_note
+  - id: ES-GENVCE-ZONA-NORTE-SECANOS-HUMEDOS-Y-DE-ALTO-POTENCIAL-Y-REGADIOS-FRIOS-Y-TEMPLADOS
+    name: zona Norte / secanos húmedos y de alto potencial y regadíos fríos y templados
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_durum_network_note
+  - id: ES-GENVCE-ZONA-NORTE-SECANOS-TEMPLADOS
+    name: zona Norte / secanos templados
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_durum_network_note
+  - id: ES-GENVCE-ZONA-NORTE-SECANOS-Y-REGADIOS-TEMPLADOS
+    name: zona Norte / secanos y regadíos templados
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_durum_network_note
+  - id: ES-GENVCE-ZONA-NORTE-SECANOS-ARIDOS-Y-SEMIARIDOS-FRIOS
+    name: zona Norte / secanos áridos y semiáridos fríos
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_durum_network_note
+  - id: ES-GENVCE-ZONA-NORTE-SECANOS-ARIDOS-Y-SEMIARIDOS-FRIOS-Y-TEMPLADOS
+    name: zona Norte / secanos áridos y semiáridos fríos y templados
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_durum_network_note
+  - id: ES-GENVCE-ZONA-NORTE-ZONAS-FRIAS
+    name: zona Norte / zonas frías
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_durum_network_note
+  - id: ES-GENVCE-ZONA-NORTE-ZONAS-TEMPLADAS
+    name: zona Norte / zonas templadas
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_durum_network_note
+  - id: ES-GENVCE-ZONA-SUR
+    name: zona Sur
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_durum_network_note
+  - id: ES-GENVCE-ZONA-SUR-RENDIMIENTO-ALTO
+    name: zona Sur / Rendimiento alto
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_durum_network_note
+  - id: ES-GENVCE-ZONA-SUR-RENDIMIENTO-BAJO
+    name: zona Sur / Rendimiento bajo
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_durum_network_note
+  - id: ES-GENVCE-ZONA-SUR-RENDIMIENTO-MEDIO
+    name: zona Sur / Rendimiento medio
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_durum_network_note
+  - id: ES-GENVCE-ZONA-SUR-SECANOS-HUMEDOS-Y-DE-ALTO-POTENCIAL
+    name: zona Sur / secanos húmedos y de alto potencial
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_durum_network_note
+  - id: ES-GENVCE-ZONA-SUR-SECANOS-HUMEDOS-Y-DE-ALTO-POTENCIAL-FRIOS-Y-TEMPLADOS
+    name: zona Sur / secanos húmedos y de alto potencial fríos y templados
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_durum_network_note
+  - id: ES-GENVCE-ZONA-SUR-SECANOS-HUMEDOS-Y-DE-ALTO-POTENCIAL-TEMPLADOS
+    name: zona Sur / secanos húmedos y de alto potencial templados
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_durum_network_note
+  - id: ES-GENVCE-ZONA-SUR-SECANOS-ARIDOS-Y-SEMIARIDOS
+    name: zona Sur / secanos áridos y semiáridos
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_durum_network_note
+  - id: ES-GENVCE-ZONA-SUR-SECANOS-ARIDOS-Y-SEMIARIDOS-TEMPLADOS
+    name: zona Sur / secanos áridos y semiáridos templados
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_durum_network_note
+  - id: ES-GENVCE-REGADIOS-Y-ZONAS-TEMPLADAS-SUBHUMEDAS
+    name: regadíos y zonas templadas subhúmedas
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_group_note
+  - id: ES-GENVCE-SECANOS-HUMEDOS-Y-DE-ALTO-POTENCIAL
+    name: secanos húmedos y de alto potencial
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_group_note
+  - id: ES-GENVCE-SECANOS-HUMEDOS-Y-DE-ALTO-POTENCIAL-TEMPLADOS
+    name: secanos húmedos y de alto potencial templados
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_group_note
+  - id: ES-GENVCE-SECANOS-HUMEDOS-Y-DE-ALTO-POTENCIAL-Y-REGADIOS-FRIOS-Y-TEMPLADOS
+    name: secanos húmedos y de alto potencial y regadíos fríos y templados
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_group_note
+  - id: ES-GENVCE-SECANOS-ARIDOS
+    name: secanos áridos
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_group_note
+  - id: ES-GENVCE-SECANOS-ARIDOS-Y-SEMIARIDOS
+    name: secanos áridos y semiáridos
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_group_note
+  - id: ES-GENVCE-SECANOS-ARIDOS-Y-SEMIARIDOS-TEMPLADOS
+    name: secanos áridos y semiáridos templados
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_group_note
+  - id: ES-GENVCE-ZONAS-CALIDAS-Y-TEMPLADAS
+    name: zonas cálidas y templadas
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_group_note
+  - id: ES-GENVCE-ZONAS-DE-REGADIO
+    name: zonas de regadío
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_group_note
+  - id: ES-GENVCE-ZONAS-FRIAS-HUMEDAS-Y-SUBHUMEDAS
+    name: zonas frías húmedas y subhúmedas
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_group_note
+  - id: ES-GENVCE-ZONAS-FRIAS-SEMIARIDAS
+    name: zonas frías semiáridas
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_group_note
+  - id: ES-GENVCE-ZONAS-FRIAS-SUBHUMEDAS
+    name: ZONAS FRÍAS SUBHÚMEDAS
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_group_note
+  - id: ES-GENVCE-ZONAS-FRIAS-Y-SEMIARIDAS
+    name: zonas frías y semiáridas
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_group_note
+  - id: ES-GENVCE-ZONAS-FRIAS-Y-SUBHUMEDAS
+    name: zonas frías y subhúmedas
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_group_note
+  - id: ES-GENVCE-ZONAS-SUBHUMEDAS-CALIDAS
+    name: zonas subhúmedas cálidas
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_group_note
+  - id: ES-GENVCE-ZONAS-TEMPLADAS-Y-CALIDAS
+    name: zonas templadas y cálidas
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_group_note
+  - id: ES-GENVCE-ZONAS-TEMPLADAS-CALIDAS
+    name: zonas templadas-cálidas
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_group_note
+  - id: ES-GENVCE-ZONAS-TEMPLADAS-FRIAS
+    name: zonas templadas-frías
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_group_note
+  - id: ES-GENVCE-ZONAS-ARIDAS-TEMPLADAS
+    name: zonas áridas templadas
+    site_kind: aggregate
+    country: ES
+    sources: [GENVCE]
+    status: assumption
+    note: *genvce_group_note
+  # ── GENVCE-TRIALS: localities of the GENVCE results map (generated by scripts/genvce_trials_sites.py; append-only) ──
+  - id: ES-GENVCE-TRIALS-ALBACETE
+    name: Albacete
+    site_kind: field
+    country: ES
+    aliases: []
+    latitude: 38.94028
+    longitude: -1.91526
+    coordinate_source: GENVCE results map, localidad record id 272 (download 2026-10-19), rounded to 5 decimals
+    sources:
+    - GENVCE-TRIALS
+    status: assumption
+    note: 'ASSUMPTION: coordinates as published by the GENVCE results map; whether they mark the trial field or the
+      municipality is unconfirmed (0.9-5.8 km from town centres where compared).'
+  - id: ES-GENVCE-TRIALS-ALBALADEJITO
+    name: Albaladejito
+    site_kind: field
+    country: ES
+    aliases: []
+    latitude: 40.06278
+    longitude: -2.19941
+    coordinate_source: GENVCE results map, localidad record id 196 (download 2026-10-19), rounded to 5 decimals
+    sources:
+    - GENVCE-TRIALS
+    status: assumption
+    note: 'ASSUMPTION: coordinates as published by the GENVCE results map; whether they mark the trial field or the
+      municipality is unconfirmed (0.9-5.8 km from town centres where compared).'
+  - id: ES-GENVCE-TRIALS-ALCANIZ
+    name: Alcañiz
+    site_kind: field
+    country: ES
+    aliases: []
+    latitude: 41.04572
+    longitude: -0.19569
+    coordinate_source: GENVCE results map, localidad record id 184 (download 2026-10-19), rounded to 5 decimals
+    sources:
+    - GENVCE-TRIALS
+    status: assumption
+    note: 'ASSUMPTION: coordinates as published by the GENVCE results map; whether they mark the trial field or the
+      municipality is unconfirmed (0.9-5.8 km from town centres where compared).'
+  - id: ES-GENVCE-TRIALS-ALICANTE
+    name: Alicante
+    site_kind: field
+    country: ES
+    aliases: []
+    latitude: 38.34532
+    longitude: -0.48519
+    coordinate_source: GENVCE results map, localidad record id 180 (download 2026-10-19), rounded to 5 decimals
+    sources:
+    - GENVCE-TRIALS
+    status: assumption
+    note: 'ASSUMPTION: coordinates as published by the GENVCE results map; whether they mark the trial field or the
+      municipality is unconfirmed (0.9-5.8 km from town centres where compared).'
+  - id: ES-GENVCE-TRIALS-ARABAYONA-DE-MOGICA
+    name: Arabayona de Mógica
+    site_kind: field
+    country: ES
+    aliases: []
+    latitude: 41.0534
+    longitude: -5.40025
+    coordinate_source: GENVCE results map, localidad record id 240 (download 2026-10-19), rounded to 5 decimals
+    sources:
+    - GENVCE-TRIALS
+    status: assumption
+    note: 'ASSUMPTION: coordinates as published by the GENVCE results map; whether they mark the trial field or the
+      municipality is unconfirmed (0.9-5.8 km from town centres where compared).'
+  - id: ES-GENVCE-TRIALS-ARANJUEZ
+    name: Aranjuez
+    site_kind: field
+    country: ES
+    aliases: []
+    latitude: 40.06663
+    longitude: -3.54825
+    coordinate_source: GENVCE results map, localidad record id 236 (download 2026-10-19), rounded to 5 decimals
+    sources:
+    - GENVCE-TRIALS
+    status: assumption
+    note: 'ASSUMPTION: coordinates as published by the GENVCE results map; whether they mark the trial field or the
+      municipality is unconfirmed (0.9-5.8 km from town centres where compared).'
+  - id: ES-GENVCE-TRIALS-ARAZURI
+    name: Arazuri
+    site_kind: field
+    country: ES
+    aliases: []
+    latitude: 42.81111
+    longitude: -1.73194
+    coordinate_source: GENVCE results map, localidad record id 261 (download 2026-10-19), rounded to 5 decimals
+    sources:
+    - GENVCE-TRIALS
+    status: assumption
+    note: 'ASSUMPTION: coordinates as published by the GENVCE results map; whether they mark the trial field or the
+      municipality is unconfirmed (0.9-5.8 km from town centres where compared).'
+  - id: ES-GENVCE-TRIALS-ARCOS-DE-LA-POLVOROSA
+    name: Arcos de la Polvorosa
+    site_kind: field
+    country: ES
+    aliases: []
+    latitude: 41.94376
+    longitude: -5.70637
+    coordinate_source: GENVCE results map, localidad record id 288 (download 2026-10-19), rounded to 5 decimals
+    sources:
+    - GENVCE-TRIALS
+    status: assumption
+    note: 'ASSUMPTION: coordinates as published by the GENVCE results map; whether they mark the trial field or the
+      municipality is unconfirmed (0.9-5.8 km from town centres where compared).'
+  - id: ES-GENVCE-TRIALS-ARGENTE
+    name: Argente
+    site_kind: field
+    country: ES
+    aliases: []
+    latitude: 40.70057
+    longitude: -1.16421
+    coordinate_source: GENVCE results map, localidad record id 191 (download 2026-10-19), rounded to 5 decimals
+    sources:
+    - GENVCE-TRIALS
+    status: assumption
+    note: 'ASSUMPTION: coordinates as published by the GENVCE results map; whether they mark the trial field or the
+      municipality is unconfirmed (0.9-5.8 km from town centres where compared).'
+  - id: ES-GENVCE-TRIALS-ARKAUTE
+    name: Arkaute
+    site_kind: field
+    country: ES
+    aliases: []
+    latitude: 42.85133
+    longitude: -2.63371
+    coordinate_source: GENVCE results map, localidad record id 295 (download 2026-10-19), rounded to 5 decimals
+    sources:
+    - GENVCE-TRIALS
+    status: assumption
+    note: 'ASSUMPTION: coordinates as published by the GENVCE results map; whether they mark the trial field or the
+      municipality is unconfirmed (0.9-5.8 km from town centres where compared).'
+  - id: ES-GENVCE-TRIALS-ARTESA-DE-SEGRE
+    name: Artesa de Segre
+    site_kind: field
+    country: ES
+    aliases: []
+    latitude: 41.85194
+    longitude: 1.0925
+    coordinate_source: GENVCE results map, localidad record id 213 (download 2026-10-19), rounded to 5 decimals
+    sources:
+    - GENVCE-TRIALS
+    status: assumption
+    note: 'ASSUMPTION: coordinates as published by the GENVCE results map; whether they mark the trial field or the
+      municipality is unconfirmed (0.9-5.8 km from town centres where compared).'
+  - id: ES-GENVCE-TRIALS-AZPA
+    name: Azpa
+    site_kind: field
+    country: ES
+    aliases: []
+    latitude: 42.80541
+    longitude: -1.51596
+    coordinate_source: GENVCE results map, localidad record id 192 (download 2026-10-19), rounded to 5 decimals
+    sources:
+    - GENVCE-TRIALS
+    status: assumption
+    note: 'ASSUMPTION: coordinates as published by the GENVCE results map; whether they mark the trial field or the
+      municipality is unconfirmed (0.9-5.8 km from town centres where compared).'
+  - id: ES-GENVCE-TRIALS-BARDENAS
+    name: Bardenas
+    site_kind: field
+    country: ES
+    aliases: []
+    latitude: 42.17931
+    longitude: -1.21195
+    coordinate_source: GENVCE results map, localidad record id 265 (download 2026-10-19), rounded to 5 decimals
+    sources:
+    - GENVCE-TRIALS
+    status: assumption
+    note: 'ASSUMPTION: coordinates as published by the GENVCE results map; whether they mark the trial field or the
+      municipality is unconfirmed (0.9-5.8 km from town centres where compared).'
+  - id: ES-GENVCE-TRIALS-BELMONTEJO
+    name: Belmontejo
+    site_kind: field
+    country: ES
+    aliases: []
+    latitude: 39.82176
+    longitude: -2.33958
+    coordinate_source: GENVCE results map, localidad record id 275 (download 2026-10-19), rounded to 5 decimals
+    sources:
+    - GENVCE-TRIALS
+    status: assumption
+    note: 'ASSUMPTION: coordinates as published by the GENVCE results map; whether they mark the trial field or the
+      municipality is unconfirmed (0.9-5.8 km from town centres where compared).'
+  - id: ES-GENVCE-TRIALS-BIOTA-EJEA-DE-LOS-CABALLEROS
+    name: Biota - Ejea de los Caballeros
+    site_kind: field
+    country: ES
+    aliases: []
+    latitude: 42.21639
+    longitude: -1.20667
+    coordinate_source: GENVCE results map, localidad record id 181 (download 2026-10-19), rounded to 5 decimals
+    sources:
+    - GENVCE-TRIALS
+    status: assumption
+    note: 'ASSUMPTION: coordinates as published by the GENVCE results map; whether they mark the trial field or the
+      municipality is unconfirmed (0.9-5.8 km from town centres where compared).'
+  - id: ES-GENVCE-TRIALS-CADREITA
+    name: Cadreita
+    site_kind: field
+    country: ES
+    aliases: []
+    latitude: 42.21648
+    longitude: -1.70321
+    coordinate_source: GENVCE results map, localidad record id 237 (download 2026-10-19), rounded to 5 decimals
+    sources:
+    - GENVCE-TRIALS
+    status: assumption
+    note: 'ASSUMPTION: coordinates as published by the GENVCE results map; whether they mark the trial field or the
+      municipality is unconfirmed (0.9-5.8 km from town centres where compared).'
+  - id: ES-GENVCE-TRIALS-CARMONA
+    name: Carmona
+    site_kind: field
+    country: ES
+    aliases: []
+    latitude: 37.4
+    longitude: -5.58333
+    coordinate_source: GENVCE results map, localidad record id 220 (download 2026-10-19), rounded to 5 decimals
+    sources:
+    - GENVCE-TRIALS
+    status: assumption
+    note: 'ASSUMPTION: coordinates as published by the GENVCE results map; whether they mark the trial field or the
+      municipality is unconfirmed (0.9-5.8 km from town centres where compared).'
+  - id: ES-GENVCE-TRIALS-CERRATON-DE-JUARROS
+    name: Cerratón de Juarros
+    site_kind: field
+    country: ES
+    aliases: []
+    latitude: 42.4275
+    longitude: -3.37944
+    coordinate_source: GENVCE results map, localidad record id 203 (download 2026-10-19), rounded to 5 decimals
+    sources:
+    - GENVCE-TRIALS
+    status: assumption
+    note: 'ASSUMPTION: coordinates as published by the GENVCE results map; whether they mark the trial field or the
+      municipality is unconfirmed (0.9-5.8 km from town centres where compared).'
+  - id: ES-GENVCE-TRIALS-CERVIA-DE-TER
+    name: Cervià de Ter
+    site_kind: field
+    country: ES
+    aliases: []
+    latitude: 42.07263
+    longitude: 2.92397
+    coordinate_source: GENVCE results map, localidad record id 255 (download 2026-10-19), rounded to 5 decimals
+    sources:
+    - GENVCE-TRIALS
+    status: assumption
+    note: 'ASSUMPTION: coordinates as published by the GENVCE results map; whether they mark the trial field or the
+      municipality is unconfirmed (0.9-5.8 km from town centres where compared).'
+  - id: ES-GENVCE-TRIALS-CHINCHILLA
+    name: Chinchilla
+    site_kind: field
+    country: ES
+    aliases: []
+    latitude: 38.91119
+    longitude: -1.72634
+    coordinate_source: GENVCE results map, localidad record id 277 (download 2026-10-19), rounded to 5 decimals
+    sources:
+    - GENVCE-TRIALS
+    status: assumption
+    note: 'ASSUMPTION: coordinates as published by the GENVCE results map; whether they mark the trial field or the
+      municipality is unconfirmed (0.9-5.8 km from town centres where compared).'
+  - id: ES-GENVCE-TRIALS-CIUDAD-REAL
+    name: Ciudad Real
+    site_kind: field
+    country: ES
+    aliases: []
+    latitude: 39.0193
+    longitude: -3.96786
+    coordinate_source: GENVCE results map, localidad record id 198 (download 2026-10-19), rounded to 5 decimals
+    sources:
+    - GENVCE-TRIALS
+    status: assumption
+    note: 'ASSUMPTION: coordinates as published by the GENVCE results map; whether they mark the trial field or the
+      municipality is unconfirmed (0.9-5.8 km from town centres where compared).'
+  - id: ES-GENVCE-TRIALS-CLARIANA-DE-CARDENER
+    name: Clariana de Cardener
+    site_kind: field
+    country: ES
+    aliases: []
+    latitude: 41.94368
+    longitude: 1.58964
+    coordinate_source: GENVCE results map, localidad record id 292 (download 2026-10-19), rounded to 5 decimals
+    sources:
+    - GENVCE-TRIALS
+    status: assumption
+    note: 'ASSUMPTION: coordinates as published by the GENVCE results map; whether they mark the trial field or the
+      municipality is unconfirmed (0.9-5.8 km from town centres where compared).'
+  - id: ES-GENVCE-TRIALS-CUENCA
+    name: Cuenca
+    site_kind: field
+    country: ES
+    aliases: []
+    latitude: 40.06299
+    longitude: -2.19936
+    coordinate_source: GENVCE results map, localidad record id 245 (download 2026-10-19), rounded to 5 decimals
+    sources:
+    - GENVCE-TRIALS
+    status: assumption
+    note: 'ASSUMPTION: coordinates as published by the GENVCE results map; whether they mark the trial field or the
+      municipality is unconfirmed (0.9-5.8 km from town centres where compared).'
+  - id: ES-GENVCE-TRIALS-EJEA-DE-LOS-CABALLEROS
+    name: Ejea de los Caballeros
+    site_kind: field
+    country: ES
+    aliases: []
+    latitude: 42.21056
+    longitude: -1.19694
+    coordinate_source: GENVCE results map, localidad record id 252 (download 2026-10-19), rounded to 5 decimals
+    sources:
+    - GENVCE-TRIALS
+    status: assumption
+    note: 'ASSUMPTION: coordinates as published by the GENVCE results map; whether they mark the trial field or the
+      municipality is unconfirmed (0.9-5.8 km from town centres where compared).'
+  - id: ES-GENVCE-TRIALS-EL-POAL
+    name: El Poal
+    site_kind: field
+    country: ES
+    aliases: []
+    latitude: 41.67472
+    longitude: 0.86639
+    coordinate_source: GENVCE results map, localidad record id 238 (download 2026-10-19), rounded to 5 decimals
+    sources:
+    - GENVCE-TRIALS
+    status: assumption
+    note: 'ASSUMPTION: coordinates as published by the GENVCE results map; whether they mark the trial field or the
+      municipality is unconfirmed (0.9-5.8 km from town centres where compared).'
+  - id: ES-GENVCE-TRIALS-EL-TEMPLE
+    name: El Temple
+    site_kind: field
+    country: ES
+    aliases: []
+    latitude: 41.97576
+    longitude: -0.76114
+    coordinate_source: GENVCE results map, localidad record id 278 (download 2026-10-19), rounded to 5 decimals
+    sources:
+    - GENVCE-TRIALS
+    status: assumption
+    note: 'ASSUMPTION: coordinates as published by the GENVCE results map; whether they mark the trial field or the
+      municipality is unconfirmed (0.9-5.8 km from town centres where compared).'
+  - id: ES-GENVCE-TRIALS-ESPINOSA-DE-HENARES
+    name: Espinosa de Henares
+    site_kind: field
+    country: ES
+    aliases: []
+    latitude: 40.90778
+    longitude: -3.08111
+    coordinate_source: GENVCE results map, localidad record id 195 (download 2026-10-19), rounded to 5 decimals
+    sources:
+    - GENVCE-TRIALS
+    status: assumption
+    note: 'ASSUMPTION: coordinates as published by the GENVCE results map; whether they mark the trial field or the
+      municipality is unconfirmed (0.9-5.8 km from town centres where compared).'
+  - id: ES-GENVCE-TRIALS-ESPUENDOLAS
+    name: Espuéndolas
+    site_kind: field
+    country: ES
+    aliases: []
+    latitude: 42.55701
+    longitude: -0.43067
+    coordinate_source: GENVCE results map, localidad record id 188 (download 2026-10-19), rounded to 5 decimals
+    sources:
+    - GENVCE-TRIALS
+    status: assumption
+    note: 'ASSUMPTION: coordinates as published by the GENVCE results map; whether they mark the trial field or the
+      municipality is unconfirmed (0.9-5.8 km from town centres where compared).'
+  - id: ES-GENVCE-TRIALS-ESTERAS-DE-LUBIA
+    name: Esteras de Lubia
+    site_kind: field
+    country: ES
+    aliases: []
+    latitude: 41.70056
+    longitude: -2.17639
+    coordinate_source: GENVCE results map, localidad record id 205 (download 2026-10-19), rounded to 5 decimals
+    sources:
+    - GENVCE-TRIALS
+    status: assumption
+    note: 'ASSUMPTION: coordinates as published by the GENVCE results map; whether they mark the trial field or the
+      municipality is unconfirmed (0.9-5.8 km from town centres where compared).'
+  - id: ES-GENVCE-TRIALS-FORNELLS-DE-LA-SELVA
+    name: Fornells de la Selva
+    site_kind: field
+    country: ES
+    aliases: []
+    latitude: 41.91283
+    longitude: 2.81045
+    coordinate_source: GENVCE results map, localidad record id 251 (download 2026-10-19), rounded to 5 decimals
+    sources:
+    - GENVCE-TRIALS
+    status: assumption
+    note: 'ASSUMPTION: coordinates as published by the GENVCE results map; whether they mark the trial field or the
+      municipality is unconfirmed (0.9-5.8 km from town centres where compared).'
+  - id: ES-GENVCE-TRIALS-FRESNILLO-DE-LAS-DUENAS
+    name: Fresnillo de las Dueñas
+    site_kind: field
+    country: ES
+    aliases: []
+    latitude: 41.64667
+    longitude: -3.64444
+    coordinate_source: GENVCE results map, localidad record id 250 (download 2026-10-19), rounded to 5 decimals
+    sources:
+    - GENVCE-TRIALS
+    status: assumption
+    note: 'ASSUMPTION: coordinates as published by the GENVCE results map; whether they mark the trial field or the
+      municipality is unconfirmed (0.9-5.8 km from town centres where compared).'
+  - id: ES-GENVCE-TRIALS-FRESNO-DE-LA-RIBERA
+    name: Fresno de la Ribera
+    site_kind: field
+    country: ES
+    aliases: []
+    latitude: 41.52917
+    longitude: -5.56556
+    coordinate_source: GENVCE results map, localidad record id 239 (download 2026-10-19), rounded to 5 decimals
+    sources:
+    - GENVCE-TRIALS
+    status: assumption
+    note: 'ASSUMPTION: coordinates as published by the GENVCE results map; whether they mark the trial field or the
+      municipality is unconfirmed (0.9-5.8 km from town centres where compared).'
+  - id: ES-GENVCE-TRIALS-GAUNA
+    name: Gauna
+    site_kind: field
+    country: ES
+    aliases: []
+    latitude: 42.83
+    longitude: -2.51
+    coordinate_source: GENVCE results map, localidad record id 210 (download 2026-10-19), rounded to 5 decimals
+    sources:
+    - GENVCE-TRIALS
+    status: assumption
+    note: 'ASSUMPTION: coordinates as published by the GENVCE results map; whether they mark the trial field or the
+      municipality is unconfirmed (0.9-5.8 km from town centres where compared).'
+  - id: ES-GENVCE-TRIALS-GRIJOTA
+    name: Grijota
+    site_kind: field
+    country: ES
+    aliases: []
+    latitude: 42.05978
+    longitude: -4.61427
+    coordinate_source: GENVCE results map, localidad record id 263 (download 2026-10-19), rounded to 5 decimals
+    sources:
+    - GENVCE-TRIALS
+    status: assumption
+    note: 'ASSUMPTION: coordinates as published by the GENVCE results map; whether they mark the trial field or the
+      municipality is unconfirmed (0.9-5.8 km from town centres where compared).'
+  - id: ES-GENVCE-TRIALS-HORNA
+    name: Horna
+    site_kind: field
+    country: ES
+    aliases: []
+    latitude: 38.92722
+    longitude: -1.62915
+    coordinate_source: GENVCE results map, localidad record id 208 (download 2026-10-19), rounded to 5 decimals
+    sources:
+    - GENVCE-TRIALS
+    status: assumption
+    note: 'ASSUMPTION: coordinates as published by the GENVCE results map; whether they mark the trial field or the
+      municipality is unconfirmed (0.9-5.8 km from town centres where compared).'
+  - id: ES-GENVCE-TRIALS-HUELMA
+    name: Huelma
+    site_kind: field
+    country: ES
+    aliases: []
+    latitude: 37.63333
+    longitude: -3.45
+    coordinate_source: GENVCE results map, localidad record id 217 (download 2026-10-19), rounded to 5 decimals
+    sources:
+    - GENVCE-TRIALS
+    status: assumption
+    note: 'ASSUMPTION: coordinates as published by the GENVCE results map; whether they mark the trial field or the
+      municipality is unconfirmed (0.9-5.8 km from town centres where compared).'
+  - id: ES-GENVCE-TRIALS-JEREZ-DE-LA-FRONTERA
+    name: Jerez de la Frontera
+    site_kind: field
+    country: ES
+    aliases: []
+    latitude: 36.71667
+    longitude: -6.15
+    coordinate_source: GENVCE results map, localidad record id 221 (download 2026-10-19), rounded to 5 decimals
+    sources:
+    - GENVCE-TRIALS
+    status: assumption
+    note: 'ASSUMPTION: coordinates as published by the GENVCE results map; whether they mark the trial field or the
+      municipality is unconfirmed (0.9-5.8 km from town centres where compared).'
+  - id: ES-GENVCE-TRIALS-LA-BOVEDA-DE-TORO
+    name: La Bóveda de Toro
+    site_kind: field
+    country: ES
+    aliases: []
+    latitude: 41.41528
+    longitude: -5.43639
+    coordinate_source: GENVCE results map, localidad record id 249 (download 2026-10-19), rounded to 5 decimals
+    sources:
+    - GENVCE-TRIALS
+    status: assumption
+    note: 'ASSUMPTION: coordinates as published by the GENVCE results map; whether they mark the trial field or the
+      municipality is unconfirmed (0.9-5.8 km from town centres where compared).'
+  - id: ES-GENVCE-TRIALS-LA-TALLADA-D-EMPORDA-VERGES
+    name: La Tallada d'Empordà - Verges
+    site_kind: field
+    country: ES
+    aliases: []
+    latitude: 42.06109
+    longitude: 3.06293
+    coordinate_source: GENVCE results map, localidad record id 201 (download 2026-10-19), rounded to 5 decimals
+    sources:
+    - GENVCE-TRIALS
+    status: assumption
+    note: 'ASSUMPTION: coordinates as published by the GENVCE results map; whether they mark the trial field or the
+      municipality is unconfirmed (0.9-5.8 km from town centres where compared).'
+  - id: ES-GENVCE-TRIALS-LARRAGA
+    name: Larraga
+    site_kind: field
+    country: ES
+    aliases: []
+    latitude: 42.57139
+    longitude: -1.81861
+    coordinate_source: GENVCE results map, localidad record id 256 (download 2026-10-19), rounded to 5 decimals
+    sources:
+    - GENVCE-TRIALS
+    status: assumption
+    note: 'ASSUMPTION: coordinates as published by the GENVCE results map; whether they mark the trial field or the
+      municipality is unconfirmed (0.9-5.8 km from town centres where compared).'
+  - id: ES-GENVCE-TRIALS-LAS-TIESAS
+    name: Las Tiesas
+    site_kind: field
+    country: ES
+    aliases: []
+    latitude: 39.04412
+    longitude: -2.08492
+    coordinate_source: GENVCE results map, localidad record id 207 (download 2026-10-19), rounded to 5 decimals
+    sources:
+    - GENVCE-TRIALS
+    status: assumption
+    note: 'ASSUMPTION: coordinates as published by the GENVCE results map; whether they mark the trial field or the
+      municipality is unconfirmed (0.9-5.8 km from town centres where compared).'
+  - id: ES-GENVCE-TRIALS-LEBRIJA
+    name: Lebrija
+    site_kind: field
+    country: ES
+    aliases: []
+    latitude: 36.91667
+    longitude: -6.06667
+    coordinate_source: GENVCE results map, localidad record id 219 (download 2026-10-19), rounded to 5 decimals
+    sources:
+    - GENVCE-TRIALS
+    status: assumption
+    note: 'ASSUMPTION: coordinates as published by the GENVCE results map; whether they mark the trial field or the
+      municipality is unconfirmed (0.9-5.8 km from town centres where compared).'
+  - id: ES-GENVCE-TRIALS-LUPINEN
+    name: Lupiñén
+    site_kind: field
+    country: ES
+    aliases: []
+    latitude: 42.16267
+    longitude: -0.60061
+    coordinate_source: GENVCE results map, localidad record id 189 (download 2026-10-19), rounded to 5 decimals
+    sources:
+    - GENVCE-TRIALS
+    status: assumption
+    note: 'ASSUMPTION: coordinates as published by the GENVCE results map; whether they mark the trial field or the
+      municipality is unconfirmed (0.9-5.8 km from town centres where compared).'
+  - id: ES-GENVCE-TRIALS-MAGAZ-DE-PISUERGA
+    name: Magaz de Pisuerga
+    site_kind: field
+    country: ES
+    aliases: []
+    latitude: 41.98838
+    longitude: -4.43379
+    coordinate_source: GENVCE results map, localidad record id 216 (download 2026-10-19), rounded to 5 decimals
+    sources:
+    - GENVCE-TRIALS
+    status: assumption
+    note: 'ASSUMPTION: coordinates as published by the GENVCE results map; whether they mark the trial field or the
+      municipality is unconfirmed (0.9-5.8 km from town centres where compared).'
+  - id: ES-GENVCE-TRIALS-MAGUILLA
+    name: Maguilla
+    site_kind: field
+    country: ES
+    aliases: []
+    latitude: 38.35873
+    longitude: -5.85755
+    coordinate_source: GENVCE results map, localidad record id 264 (download 2026-10-19), rounded to 5 decimals
+    sources:
+    - GENVCE-TRIALS
+    status: assumption
+    note: 'ASSUMPTION: coordinates as published by the GENVCE results map; whether they mark the trial field or the
+      municipality is unconfirmed (0.9-5.8 km from town centres where compared).'
+  - id: ES-GENVCE-TRIALS-MARCHAMALO
+    name: Marchamalo
+    site_kind: field
+    country: ES
+    aliases: []
+    latitude: 40.67722
+    longitude: -3.20583
+    coordinate_source: GENVCE results map, localidad record id 243 (download 2026-10-19), rounded to 5 decimals
+    sources:
+    - GENVCE-TRIALS
+    status: assumption
+    note: 'ASSUMPTION: coordinates as published by the GENVCE results map; whether they mark the trial field or the
+      municipality is unconfirmed (0.9-5.8 km from town centres where compared).'
+  - id: ES-GENVCE-TRIALS-MARTIN-MUNOZ-DE-LA-DEHESA
+    name: Martin Muñoz de la Dehesa
+    site_kind: field
+    country: ES
+    aliases: []
+    latitude: 41.06528
+    longitude: -4.70056
+    coordinate_source: GENVCE results map, localidad record id 244 (download 2026-10-19), rounded to 5 decimals
+    sources:
+    - GENVCE-TRIALS
+    status: assumption
+    note: 'ASSUMPTION: coordinates as published by the GENVCE results map; whether they mark the trial field or the
+      municipality is unconfirmed (0.9-5.8 km from town centres where compared).'
+  - id: ES-GENVCE-TRIALS-MENDIOROZ
+    name: Mendióroz
+    site_kind: field
+    country: ES
+    aliases: []
+    latitude: 42.81601
+    longitude: -1.49155
+    coordinate_source: GENVCE results map, localidad record id 293 (download 2026-10-19), rounded to 5 decimals
+    sources:
+    - GENVCE-TRIALS
+    status: assumption
+    note: 'ASSUMPTION: coordinates as published by the GENVCE results map; whether they mark the trial field or the
+      municipality is unconfirmed (0.9-5.8 km from town centres where compared).'
+  - id: ES-GENVCE-TRIALS-MONTALBO
+    name: Montalbo
+    site_kind: field
+    country: ES
+    aliases: []
+    latitude: 39.90007
+    longitude: -2.65974
+    coordinate_source: GENVCE results map, localidad record id 197 (download 2026-10-19), rounded to 5 decimals
+    sources:
+    - GENVCE-TRIALS
+    status: assumption
+    note: 'ASSUMPTION: coordinates as published by the GENVCE results map; whether they mark the trial field or the
+      municipality is unconfirmed (0.9-5.8 km from town centres where compared).'
+  - id: ES-GENVCE-TRIALS-MONTEJICAR
+    name: Montejícar
+    site_kind: field
+    country: ES
+    aliases: []
+    latitude: 37.57807
+    longitude: -3.51616
+    coordinate_source: GENVCE results map, localidad record id 280 (download 2026-10-19), rounded to 5 decimals
+    sources:
+    - GENVCE-TRIALS
+    status: assumption
+    note: 'ASSUMPTION: coordinates as published by the GENVCE results map; whether they mark the trial field or the
+      municipality is unconfirmed (0.9-5.8 km from town centres where compared).'
+  - id: ES-GENVCE-TRIALS-MELIDA
+    name: Mélida
+    site_kind: field
+    country: ES
+    aliases: []
+    latitude: 42.35605
+    longitude: -1.52908
+    coordinate_source: GENVCE results map, localidad record id 194 (download 2026-10-19), rounded to 5 decimals
+    sources:
+    - GENVCE-TRIALS
+    status: assumption
+    note: 'ASSUMPTION: coordinates as published by the GENVCE results map; whether they mark the trial field or the
+      municipality is unconfirmed (0.9-5.8 km from town centres where compared).'
+  - id: ES-GENVCE-TRIALS-OLITE
+    name: Olite
+    site_kind: field
+    country: ES
+    aliases: []
+    latitude: 42.48092
+    longitude: -1.66692
+    coordinate_source: GENVCE results map, localidad record id 279 (download 2026-10-19), rounded to 5 decimals
+    sources:
+    - GENVCE-TRIALS
+    status: assumption
+    note: 'ASSUMPTION: coordinates as published by the GENVCE results map; whether they mark the trial field or the
+      municipality is unconfirmed (0.9-5.8 km from town centres where compared).'
+  - id: ES-GENVCE-TRIALS-OLIUS
+    name: Olius
+    site_kind: field
+    country: ES
+    aliases: []
+    latitude: 41.98917
+    longitude: 1.56139
+    coordinate_source: GENVCE results map, localidad record id 214 (download 2026-10-19), rounded to 5 decimals
+    sources:
+    - GENVCE-TRIALS
+    status: assumption
+    note: 'ASSUMPTION: coordinates as published by the GENVCE results map; whether they mark the trial field or the
+      municipality is unconfirmed (0.9-5.8 km from town centres where compared).'
+  - id: ES-GENVCE-TRIALS-OLIVENZA
+    name: Olivenza
+    site_kind: field
+    country: ES
+    aliases: []
+    latitude: 38.74283
+    longitude: -7.05032
+    coordinate_source: GENVCE results map, localidad record id 211 (download 2026-10-19), rounded to 5 decimals
+    sources:
+    - GENVCE-TRIALS
+    status: assumption
+    note: 'ASSUMPTION: coordinates as published by the GENVCE results map; whether they mark the trial field or the
+      municipality is unconfirmed (0.9-5.8 km from town centres where compared).'
+  - id: ES-GENVCE-TRIALS-ONTINAR-DEL-SALZ
+    name: Ontinar del Salz
+    site_kind: field
+    country: ES
+    aliases: []
+    latitude: 41.93775
+    longitude: -0.75418
+    coordinate_source: GENVCE results map, localidad record id 294 (download 2026-10-19), rounded to 5 decimals
+    sources:
+    - GENVCE-TRIALS
+    status: assumption
+    note: 'ASSUMPTION: coordinates as published by the GENVCE results map; whether they mark the trial field or the
+      municipality is unconfirmed (0.9-5.8 km from town centres where compared).'
+  - id: ES-GENVCE-TRIALS-ORKOIEN
+    name: Orkoien
+    site_kind: field
+    country: ES
+    aliases: []
+    latitude: 42.83056
+    longitude: -1.71444
+    coordinate_source: GENVCE results map, localidad record id 242 (download 2026-10-19), rounded to 5 decimals
+    sources:
+    - GENVCE-TRIALS
+    status: assumption
+    note: 'ASSUMPTION: coordinates as published by the GENVCE results map; whether they mark the trial field or the
+      municipality is unconfirmed (0.9-5.8 km from town centres where compared).'
+  - id: ES-GENVCE-TRIALS-PALOMARES-DEL-CAMPO
+    name: Palomares del Campo
+    site_kind: field
+    country: ES
+    aliases: []
+    latitude: 39.93972
+    longitude: -2.58111
+    coordinate_source: GENVCE results map, localidad record id 257 (download 2026-10-19), rounded to 5 decimals
+    sources:
+    - GENVCE-TRIALS
+    status: assumption
+    note: 'ASSUMPTION: coordinates as published by the GENVCE results map; whether they mark the trial field or the
+      municipality is unconfirmed (0.9-5.8 km from town centres where compared).'
+  - id: ES-GENVCE-TRIALS-PITILLAS
+    name: Pitillas
+    site_kind: field
+    country: ES
+    aliases: []
+    latitude: 42.42183
+    longitude: -1.62962
+    coordinate_source: GENVCE results map, localidad record id 281 (download 2026-10-19), rounded to 5 decimals
+    sources:
+    - GENVCE-TRIALS
+    status: assumption
+    note: 'ASSUMPTION: coordinates as published by the GENVCE results map; whether they mark the trial field or the
+      municipality is unconfirmed (0.9-5.8 km from town centres where compared).'
+  - id: ES-GENVCE-TRIALS-RONDA
+    name: Ronda
+    site_kind: field
+    country: ES
+    aliases: []
+    latitude: 36.85
+    longitude: -5.25
+    coordinate_source: GENVCE results map, localidad record id 218 (download 2026-10-19), rounded to 5 decimals
+    sources:
+    - GENVCE-TRIALS
+    status: assumption
+    note: 'ASSUMPTION: coordinates as published by the GENVCE results map; whether they mark the trial field or the
+      municipality is unconfirmed (0.9-5.8 km from town centres where compared).'
+  - id: ES-GENVCE-TRIALS-SAN-JUAN-DE-TORRES
+    name: San Juan de Torres
+    site_kind: field
+    country: ES
+    aliases: []
+    latitude: 42.23003
+    longitude: -5.83682
+    coordinate_source: GENVCE results map, localidad record id 241 (download 2026-10-19), rounded to 5 decimals
+    sources:
+    - GENVCE-TRIALS
+    status: assumption
+    note: 'ASSUMPTION: coordinates as published by the GENVCE results map; whether they mark the trial field or the
+      municipality is unconfirmed (0.9-5.8 km from town centres where compared).'
+  - id: ES-GENVCE-TRIALS-SAN-PELAYO
+    name: San Pelayo
+    site_kind: field
+    country: ES
+    aliases: []
+    latitude: 41.70444
+    longitude: -5.0275
+    coordinate_source: GENVCE results map, localidad record id 202 (download 2026-10-19), rounded to 5 decimals
+    sources:
+    - GENVCE-TRIALS
+    status: assumption
+    note: 'ASSUMPTION: coordinates as published by the GENVCE results map; whether they mark the trial field or the
+      municipality is unconfirmed (0.9-5.8 km from town centres where compared).'
+  - id: ES-GENVCE-TRIALS-SANTA-CRUZ
+    name: Santa Cruz
+    site_kind: field
+    country: ES
+    aliases: []
+    latitude: 37.73333
+    longitude: -4.63333
+    coordinate_source: GENVCE results map, localidad record id 223 (download 2026-10-19), rounded to 5 decimals
+    sources:
+    - GENVCE-TRIALS
+    status: assumption
+    note: 'ASSUMPTION: coordinates as published by the GENVCE results map; whether they mark the trial field or the
+      municipality is unconfirmed (0.9-5.8 km from town centres where compared).'
+  - id: ES-GENVCE-TRIALS-SANTAELLA
+    name: Santaella
+    site_kind: field
+    country: ES
+    aliases: []
+    latitude: 37.55
+    longitude: -4.83333
+    coordinate_source: GENVCE results map, localidad record id 222 (download 2026-10-19), rounded to 5 decimals
+    sources:
+    - GENVCE-TRIALS
+    status: assumption
+    note: 'ASSUMPTION: coordinates as published by the GENVCE results map; whether they mark the trial field or the
+      municipality is unconfirmed (0.9-5.8 km from town centres where compared).'
+  - id: ES-GENVCE-TRIALS-SARINENA
+    name: Sariñena
+    site_kind: field
+    country: ES
+    aliases: []
+    latitude: 41.73787
+    longitude: -0.11881
+    coordinate_source: GENVCE results map, localidad record id 190 (download 2026-10-19), rounded to 5 decimals
+    sources:
+    - GENVCE-TRIALS
+    status: assumption
+    note: 'ASSUMPTION: coordinates as published by the GENVCE results map; whether they mark the trial field or the
+      municipality is unconfirmed (0.9-5.8 km from town centres where compared).'
+  - id: ES-GENVCE-TRIALS-SUCS
+    name: Sucs
+    site_kind: field
+    country: ES
+    aliases: []
+    latitude: 41.70833
+    longitude: 0.45306
+    coordinate_source: GENVCE results map, localidad record id 215 (download 2026-10-19), rounded to 5 decimals
+    sources:
+    - GENVCE-TRIALS
+    status: assumption
+    note: 'ASSUMPTION: coordinates as published by the GENVCE results map; whether they mark the trial field or the
+      municipality is unconfirmed (0.9-5.8 km from town centres where compared).'
+  - id: ES-GENVCE-TRIALS-SADABA
+    name: Sádaba
+    site_kind: field
+    country: ES
+    aliases: []
+    latitude: 42.26035
+    longitude: -1.26061
+    coordinate_source: GENVCE results map, localidad record id 185 (download 2026-10-19), rounded to 5 decimals
+    sources:
+    - GENVCE-TRIALS
+    status: assumption
+    note: 'ASSUMPTION: coordinates as published by the GENVCE results map; whether they mark the trial field or the
+      municipality is unconfirmed (0.9-5.8 km from town centres where compared).'
+  - id: ES-GENVCE-TRIALS-TAFALLA
+    name: Tafalla
+    site_kind: field
+    country: ES
+    aliases: []
+    latitude: 42.53724
+    longitude: -1.77026
+    coordinate_source: GENVCE results map, localidad record id 193 (download 2026-10-19), rounded to 5 decimals
+    sources:
+    - GENVCE-TRIALS
+    status: assumption
+    note: 'ASSUMPTION: coordinates as published by the GENVCE results map; whether they mark the trial field or the
+      municipality is unconfirmed (0.9-5.8 km from town centres where compared).'
+  - id: ES-GENVCE-TRIALS-TARADELL
+    name: Taradell
+    site_kind: field
+    country: ES
+    aliases: []
+    latitude: 41.86547
+    longitude: 2.25088
+    coordinate_source: GENVCE results map, localidad record id 200 (download 2026-10-19), rounded to 5 decimals
+    sources:
+    - GENVCE-TRIALS
+    status: assumption
+    note: 'ASSUMPTION: coordinates as published by the GENVCE results map; whether they mark the trial field or the
+      municipality is unconfirmed (0.9-5.8 km from town centres where compared).'
+  - id: ES-GENVCE-TRIALS-TORRECILLA-DE-LA-ABADESA
+    name: Torrecilla de la Abadesa
+    site_kind: field
+    country: ES
+    aliases: []
+    latitude: 41.48667
+    longitude: -5.08944
+    coordinate_source: GENVCE results map, localidad record id 262 (download 2026-10-19), rounded to 5 decimals
+    sources:
+    - GENVCE-TRIALS
+    status: assumption
+    note: 'ASSUMPTION: coordinates as published by the GENVCE results map; whether they mark the trial field or the
+      municipality is unconfirmed (0.9-5.8 km from town centres where compared).'
+  - id: ES-GENVCE-TRIALS-UNCITI
+    name: Unciti
+    site_kind: field
+    country: ES
+    aliases: []
+    latitude: 42.74616
+    longitude: -1.49992
+    coordinate_source: GENVCE results map, localidad record id 269 (download 2026-10-19), rounded to 5 decimals
+    sources:
+    - GENVCE-TRIALS
+    status: assumption
+    note: 'ASSUMPTION: coordinates as published by the GENVCE results map; whether they mark the trial field or the
+      municipality is unconfirmed (0.9-5.8 km from town centres where compared).'
+  - id: ES-GENVCE-TRIALS-USED
+    name: Used
+    site_kind: field
+    country: ES
+    aliases: []
+    latitude: 41.01232
+    longitude: -1.60757
+    coordinate_source: GENVCE results map, localidad record id 187 (download 2026-10-19), rounded to 5 decimals
+    sources:
+    - GENVCE-TRIALS
+    status: assumption
+    note: 'ASSUMPTION: coordinates as published by the GENVCE results map; whether they mark the trial field or the
+      municipality is unconfirmed (0.9-5.8 km from town centres where compared).'
+  - id: ES-GENVCE-TRIALS-VALDEGANGA
+    name: Valdeganga
+    site_kind: field
+    country: ES
+    aliases: []
+    latitude: 39.08953
+    longitude: -1.65735
+    coordinate_source: GENVCE results map, localidad record id 209 (download 2026-10-19), rounded to 5 decimals
+    sources:
+    - GENVCE-TRIALS
+    status: assumption
+    note: 'ASSUMPTION: coordinates as published by the GENVCE results map; whether they mark the trial field or the
+      municipality is unconfirmed (0.9-5.8 km from town centres where compared).'
+  - id: ES-GENVCE-TRIALS-VALSALADA
+    name: Valsalada
+    site_kind: field
+    country: ES
+    aliases: []
+    latitude: 42.0589
+    longitude: -0.64294
+    coordinate_source: GENVCE results map, localidad record id 186 (download 2026-10-19), rounded to 5 decimals
+    sources:
+    - GENVCE-TRIALS
+    status: assumption
+    note: 'ASSUMPTION: coordinates as published by the GENVCE results map; whether they mark the trial field or the
+      municipality is unconfirmed (0.9-5.8 km from town centres where compared).'
+  - id: ES-GENVCE-TRIALS-VERDU
+    name: Verdú
+    site_kind: field
+    country: ES
+    aliases: []
+    latitude: 41.56972
+    longitude: 1.12333
+    coordinate_source: GENVCE results map, localidad record id 212 (download 2026-10-19), rounded to 5 decimals
+    sources:
+    - GENVCE-TRIALS
+    status: assumption
+    note: 'ASSUMPTION: coordinates as published by the GENVCE results map; whether they mark the trial field or the
+      municipality is unconfirmed (0.9-5.8 km from town centres where compared).'
+  - id: ES-GENVCE-TRIALS-VERGES
+    name: Verges
+    site_kind: field
+    country: ES
+    aliases: []
+    latitude: 42.06139
+    longitude: 3.05439
+    coordinate_source: GENVCE results map, localidad record id 246 (download 2026-10-19), rounded to 5 decimals
+    sources:
+    - GENVCE-TRIALS
+    status: assumption
+    note: 'ASSUMPTION: coordinates as published by the GENVCE results map; whether they mark the trial field or the
+      municipality is unconfirmed (0.9-5.8 km from town centres where compared).'
+  - id: ES-GENVCE-TRIALS-VILADASENS
+    name: Viladasens
+    site_kind: field
+    country: ES
+    aliases: []
+    latitude: 42.07614
+    longitude: 2.93165
+    coordinate_source: GENVCE results map, localidad record id 285 (download 2026-10-19), rounded to 5 decimals
+    sources:
+    - GENVCE-TRIALS
+    status: assumption
+    note: 'ASSUMPTION: coordinates as published by the GENVCE results map; whether they mark the trial field or the
+      municipality is unconfirmed (0.9-5.8 km from town centres where compared).'
+  - id: ES-GENVCE-TRIALS-VILLANUEVA-DEL-REBOLLAR
+    name: Villanueva del Rebollar
+    site_kind: field
+    country: ES
+    aliases: []
+    latitude: 42.23871
+    longitude: -4.7466
+    coordinate_source: GENVCE results map, localidad record id 276 (download 2026-10-19), rounded to 5 decimals
+    sources:
+    - GENVCE-TRIALS
+    status: assumption
+    note: 'ASSUMPTION: coordinates as published by the GENVCE results map; whether they mark the trial field or the
+      municipality is unconfirmed (0.9-5.8 km from town centres where compared).'
+  - id: ES-GENVCE-TRIALS-VILLATOQUITE
+    name: Villatoquite
+    site_kind: field
+    country: ES
+    aliases: []
+    latitude: 42.21306
+    longitude: -4.79056
+    coordinate_source: GENVCE results map, localidad record id 206 (download 2026-10-19), rounded to 5 decimals
+    sources:
+    - GENVCE-TRIALS
+    status: assumption
+    note: 'ASSUMPTION: coordinates as published by the GENVCE results map; whether they mark the trial field or the
+      municipality is unconfirmed (0.9-5.8 km from town centres where compared).'
+  - id: ES-GENVCE-TRIALS-VILOBI-D-ONYAR
+    name: Vilobí d'Onyar
+    site_kind: field
+    country: ES
+    aliases: []
+    latitude: 41.87847
+    longitude: 2.74976
+    coordinate_source: GENVCE results map, localidad record id 199 (download 2026-10-19), rounded to 5 decimals
+    sources:
+    - GENVCE-TRIALS
+    status: assumption
+    note: 'ASSUMPTION: coordinates as published by the GENVCE results map; whether they mark the trial field or the
+      municipality is unconfirmed (0.9-5.8 km from town centres where compared).'
+  - id: ES-GENVCE-TRIALS-VITORIA-GASTEIZ
+    name: Vitoria-Gasteiz
+    site_kind: field
+    country: ES
+    aliases: []
+    latitude: 42.87871
+    longitude: -2.63795
+    coordinate_source: GENVCE results map, localidad record id 296 (download 2026-10-19), rounded to 5 decimals
+    sources:
+    - GENVCE-TRIALS
+    status: assumption
+    note: 'ASSUMPTION: coordinates as published by the GENVCE results map; whether they mark the trial field or the
+      municipality is unconfirmed (0.9-5.8 km from town centres where compared).'
+  - id: ES-GENVCE-TRIALS-XINZO-DE-LIMIA
+    name: Xinzo de Limia
+    site_kind: field
+    country: ES
+    aliases: []
+    latitude: 42.06668
+    longitude: -7.7453
+    coordinate_source: GENVCE results map, localidad record id 224 (download 2026-10-19), rounded to 5 decimals
+    sources:
+    - GENVCE-TRIALS
+    status: assumption
+    note: 'ASSUMPTION: coordinates as published by the GENVCE results map; whether they mark the trial field or the
+      municipality is unconfirmed (0.9-5.8 km from town centres where compared).'
+  - id: ES-GENVCE-TRIALS-ZAEL
+    name: Zael
+    site_kind: field
+    country: ES
+    aliases: []
+    latitude: 42.11028
+    longitude: -3.79639
+    coordinate_source: GENVCE results map, localidad record id 204 (download 2026-10-19), rounded to 5 decimals
+    sources:
+    - GENVCE-TRIALS
+    status: assumption
+    note: 'ASSUMPTION: coordinates as published by the GENVCE results map; whether they mark the trial field or the
+      municipality is unconfirmed (0.9-5.8 km from town centres where compared).'
+  - id: ES-GENVCE-TRIALS-ZUERA
+    name: Zuera
+    site_kind: field
+    country: ES
+    aliases: []
+    latitude: 41.92626
+    longitude: -0.74211
+    coordinate_source: GENVCE results map, localidad record id 248 (download 2026-10-19), rounded to 5 decimals
+    sources:
+    - GENVCE-TRIALS
+    status: assumption
+    note: 'ASSUMPTION: coordinates as published by the GENVCE results map; whether they mark the trial field or the
+      municipality is unconfirmed (0.9-5.8 km from town centres where compared).'
