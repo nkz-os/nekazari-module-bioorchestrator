@@ -132,6 +132,7 @@
     }
   },
   "planning": {
+    "whatNow": {"today": "avui", "title": "Què toca ara", "quiet": "Sense sorpreses ni feines pendents", "job": {"irrigate": "Regar avui", "sow": "Sembrar {{crop}}", "treat": "Revisar {{disease}}", "harvest": "Collir", "pending_assessment": "Pendent d'avaluació", "none_until": "Res fins al {{date}}", "none": "Res pendent", "sowOn": "Sembrar {{crop}}: {{date}}", "harvestOn": "Collir: {{date}}"}, "surprise": {"vigor_below_expected": "Vigor per sota del previst", "water_drop": "Caiguda brusca de la reserva d'aigua", "phenology_deviation": "Fenologia desviada", "new_high_alert": "Alerta nova: {{disease}}"}, "open": "Veure a salut del cultiu"},
     "loading": {"generic": "S'està carregant…", "farm": "S'estan carregant les teves parcel·les…", "fit": "S'està analitzant quins cultius encaixen en aquesta parcel·la…", "varieties": "S'estan cercant varietats als assaigs de la teva zona; pot trigar uns segons…", "estimates": "S'està calculant la collita esperada…"},
     "title": "Planificació de cultius",
     "subtitle": "Què sembrar a cada parcel·la, amb quina varietat i en quin ordre",
@@ -142,10 +143,12 @@
     "empty": { "noParcels": "No hi ha parcel·les", "noParcelsHint": "Crea parcel·les al visor per planificar-ne les campanyes." },
     "summary": {
       "area": "{{crop}} {{ha}} ha",
+      "title": "Campanya {{campaign}}", "ha": "{{ha}} ha",
       "undecided_one": "{{count}} parcel·la sense decidir", "undecided_other": "{{count}} parcel·les sense decidir",
       "rotation_one": "{{count}} avís de rotació", "rotation_other": "{{count}} avisos de rotació"
     },
-    "matrix": { "parcel": "Parcel·la", "area": "ha", "regime": "Règim", "choose": "Tria", "change": "Canvia", "legend": "● fet · ◐ declarat · ○ planificat" },
+    "next": { "sowing": "Sembra planificada: {{crop}}{{window}}", "inField": "Al camp: veure la salut del cultiu" },
+    "matrix": { "nextStep": "Següent pas", "parcel": "Parcel·la", "area": "ha", "regime": "Règim", "choose": "Tria", "change": "Canvia", "legend": "● fet · ◐ declarat · ○ planificat" },
     "provenance": { "actual": "fet", "declared": "declarat", "planned": "planificat", "unknown": "sense dades" },
     "role": { "main_crop": "cultiu principal", "cover_crop": "cultiu de cobertura", "catch_crop": "cultiu intermedi" },
     "regime": { "rainfed": "Secà", "irrigated": "Regadiu", "unknown": "Sense declarar" },
@@ -302,6 +305,6 @@
     "simulation": { "forecast": "Veure previsió a Salut del cultiu", "open": "Simulació de la campanya en curs", "forecastNote": "La previsió de la campanya també és a Salut del cultiu." },
     "widget": { "title": "Pla de la parcel·la", "undecided": "Sense decidir", "plan": "Planificar" },
     "sources": { "open": "Fonts de dades", "close": "Amaga les fonts" },
-    "admin": { "open": "Administració", "close": "Tanca l'administració" }
+    "tabs": { "plan": "Pla", "more": "Més" }
   }
 }

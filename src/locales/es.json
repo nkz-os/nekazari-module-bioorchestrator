@@ -149,6 +149,7 @@
     }
   },
   "planning": {
+    "whatNow": {"today": "hoy", "title": "Qué toca ahora", "quiet": "Sin sorpresas ni trabajos pendientes", "job": {"irrigate": "Regar hoy", "sow": "Sembrar {{crop}}", "treat": "Revisar {{disease}}", "harvest": "Cosechar", "pending_assessment": "Pendiente de evaluación", "none_until": "Nada hasta {{date}}", "none": "Nada pendiente", "sowOn": "Sembrar {{crop}}: {{date}}", "harvestOn": "Cosechar: {{date}}"}, "surprise": {"vigor_below_expected": "Vigor por debajo de lo esperado", "water_drop": "Caída brusca de la reserva de agua", "phenology_deviation": "Fenología desviada", "new_high_alert": "Alerta nueva: {{disease}}"}, "open": "Ver en salud del cultivo"},
     "loading": {"generic": "Cargando…", "farm": "Cargando tus parcelas…", "fit": "Analizando qué cultivos encajan en esta parcela…", "varieties": "Buscando variedades en los ensayos de tu zona; puede tardar unos segundos…", "estimates": "Calculando la cosecha esperada…"},
     "title": "Planificación de cultivos",
     "subtitle": "Qué sembrar en cada parcela, con qué variedad y en qué orden",
@@ -162,10 +163,12 @@
     "empty": { "noParcels": "No hay parcelas", "noParcelsHint": "Crea parcelas en el visor para planificar sus campañas." },
     "summary": {
       "area": "{{crop}} {{ha}} ha",
+      "title": "Campaña {{campaign}}", "ha": "{{ha}} ha",
       "undecided_one": "{{count}} parcela sin decidir", "undecided_other": "{{count}} parcelas sin decidir",
       "rotation_one": "{{count}} aviso de rotación", "rotation_other": "{{count}} avisos de rotación"
     },
-    "matrix": { "parcel": "Parcela", "area": "ha", "regime": "Régimen", "choose": "Elegir", "change": "Cambiar", "legend": "● realizado · ◐ declarado · ○ planificado" },
+    "next": { "sowing": "Siembra planificada: {{crop}}{{window}}", "inField": "En campo: ver salud del cultivo" },
+    "matrix": { "nextStep": "Siguiente paso", "parcel": "Parcela", "area": "ha", "regime": "Régimen", "choose": "Elegir", "change": "Cambiar", "legend": "● realizado · ◐ declarado · ○ planificado" },
     "provenance": { "actual": "realizado", "declared": "declarado", "planned": "planificado", "unknown": "sin datos" },
     "role": { "main_crop": "cultivo principal", "cover_crop": "cubierta", "catch_crop": "cultivo intermedio" },
     "regime": { "rainfed": "Secano", "irrigated": "Regadío", "unknown": "Sin declarar" },
@@ -322,6 +325,6 @@
     "simulation": { "forecast": "Ver previsión en Salud del cultivo", "open": "Simulación de la campaña en curso", "forecastNote": "La previsión de la campaña también está en Salud del cultivo." },
     "widget": { "title": "Plan de la parcela", "undecided": "Sin decidir", "plan": "Planificar" },
     "sources": { "open": "Fuentes de datos", "close": "Ocultar fuentes" },
-    "admin": { "open": "Administración", "close": "Cerrar administración" }
+    "tabs": { "plan": "Plan", "more": "Más" }
   }
 }

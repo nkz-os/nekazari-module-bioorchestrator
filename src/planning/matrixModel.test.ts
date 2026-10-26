@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { canPlan, hasSownCrop, lockReason, parseCampaign, previousMain, rowsForFarm, simulationAvailable, warningText, widgetColumns, widgetRows } from './matrixModel';
+import { canPlan, hasSownCrop, lockReason, nextStep, parseCampaign, previousMain, rowsForFarm, simulationAvailable, warningText, widgetColumns, widgetRows } from './matrixModel';
 import type { CycleCell, ParcelRow } from './types';
 
 const cell = (over: Partial<CycleCell>): CycleCell => ({
@@ -129,5 +129,23 @@ describe('matrix model', () => {
     expect(simulationAvailable(row([cell({ provenance: 'planned' })]), 2027)).toBe(false);
     expect(simulationAvailable(plannedBefore, 2027)).toBe(false);
     expect(simulationAvailable(row([]), 2027)).toBe(false);
+  });
+});
+
+describe('nextStep', () => {
+  it('a planned main crop is the planned sowing', () => {
+    const planned = cell({});
+    expect(nextStep(row([planned]), 2027)).toEqual({ kind: 'planned_sowing', cell: planned });
+  });
+  it('a sown crop wins over a planned one', () => {
+    expect(nextStep(row([cell({}), cell({ provenance: 'actual', status: 'active' })]), 2027)).toEqual({ kind: 'in_field' });
+  });
+  it('an empty campaign is undecided; a planned cover crop alone is too', () => {
+    expect(nextStep(row([]), 2027)).toEqual({ kind: 'undecided' });
+    expect(nextStep(row([cell({ role: 'cover_crop' })]), 2027)).toEqual({ kind: 'undecided' });
+  });
+  it('a locked campaign says why, before undecided', () => {
+    expect(nextStep(row([], { cycles_available: false }), 2027)).toEqual({ kind: 'locked', reason: 'cycles_unavailable' });
+    expect(nextStep(row([cell({ provenance: 'unknown', status: 'active', lifecycle: 'perennial', first_campaign: 2025 })]), 2027)).toEqual({ kind: 'locked', reason: 'perennial_occupies' });
   });
 });

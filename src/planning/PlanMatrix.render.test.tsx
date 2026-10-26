@@ -35,10 +35,17 @@ describe('PlanMatrix (es)', () => {
     expect(html).toContain('Sin declarar');
     expect(html).toContain('colza tras colza (2026): posible desde 2030');
     expect(html).toContain('Falta declarar secano o regadío');
-    expect(html).toContain('No se ha podido leer el historial de esta parcela');
+    expect(html.split('No se ha podido leer el historial de esta parcela').length - 1).toBe(1);
     expect(html.split('Elegir').length - 1).toBe(1);
     expect(html.indexOf('El Raso')).toBeLessThan(html.indexOf('Soto Alto'));
   });
+  it('shows no next-step column on a past campaign', () => {
+    const past = renderToStaticMarkup(<PlanMatrix data={DATA} farmId="all" editable={false} onOpen={() => {}} />);
+    expect(past).not.toContain('Siguiente paso');
+    expect(past).not.toContain('Siembra planificada');
+    expect(renderToStaticMarkup(<PlanMatrix data={DATA} farmId="all" onOpen={() => {}} />)).toContain('Siguiente paso');
+  });
+
   it('offers no choose button on a campaign that is not editable', () => {
     const html = renderToStaticMarkup(<PlanMatrix data={DATA} farmId="all" editable={false} onOpen={() => {}} />);
     expect(html).not.toContain('Elegir');
@@ -72,18 +79,43 @@ describe('PlanMatrix (es)', () => {
     expect(html).toContain('Simulación de la campaña en curso');
     expect(renderToStaticMarkup(<PlanMatrix data={inField} farmId="all" onOpen={() => {}} />)).not.toContain('Ver previsión en Salud del cultivo');
   });
-  it('a locked parcel says why in its target cell instead of offering a button', () => {
+  it('a locked parcel says why in its next-step column instead of offering a button', () => {
     const started = { crop_id: 'c3', species: 'rye', species_raw: 'SECCE', names: { es: 'centeno' }, variety: null, role: 'main_crop',
-      provenance: 'planned' as const, status: 'active', start: null, end: null, lifecycle: 'annual', first_campaign: 2027 };
+      provenance: 'unknown' as const, status: null, start: null, end: null, lifecycle: 'annual', first_campaign: 2027 };
     const locked: FarmResponse = { ...DATA, parcels: [{ ...DATA.parcels[0], warnings: [], cells: { '2024': [], '2025': [], '2026': [], '2027': [started] } }] };
     const html = renderToStaticMarkup(<PlanMatrix data={locked} farmId="all" onOpen={() => {}} />);
-    expect(html).toContain('Esta campaña ya tiene un cultivo sembrado');
+    expect(html).toContain('Esta campaña tiene un cultivo de origen o estado desconocido');
     expect(html).not.toContain('Cambiar');
     // a past campaign is only history: no lock text either
-    expect(renderToStaticMarkup(<PlanMatrix data={locked} farmId="all" editable={false} onOpen={() => {}} />)).not.toContain('ya tiene un cultivo');
+    expect(renderToStaticMarkup(<PlanMatrix data={locked} farmId="all" editable={false} onOpen={() => {}} />)).not.toContain('origen o estado desconocido');
   });
   it('unreadable history is said once, as the row warning', () => {
     const html = renderToStaticMarkup(<PlanMatrix data={DATA} farmId="all" onOpen={() => {}} />);
     expect(html.split('No se ha podido leer el historial de esta parcela').length - 1).toBe(1);
+  });
+  it('adds a next-step column: planned sowing with its fortnight, in-field link, undecided choose, lock reason', () => {
+    const planned = { crop_id: 'c9', species: 'durum_wheat', species_raw: 'TRZDU', names: { es: 'trigo duro' }, variety: null, role: 'main_crop',
+      provenance: 'planned' as const, status: 'planned', start: '2026-11-20', end: null, lifecycle: 'annual', first_campaign: 2027 };
+    const sown = { ...planned, crop_id: 'c8', names: { es: 'cebada' }, provenance: 'actual' as const, status: 'active', start: null };
+    const base = DATA.parcels[0];
+    const mk = (id: string, name: string, cells: unknown[]) => ({ ...base, parcel_id: `urn:ngsi-ld:AgriParcel:t:${id}`, name, warnings: [],
+      cells: { '2024': [], '2025': [], '2026': [], '2027': cells } }) as FarmResponse['parcels'][number];
+    const data: FarmResponse = { ...DATA, parcels: [
+      mk('a', 'Plan', [planned]), mk('b', 'Campo', [sown]), mk('c', 'Libre', []),
+      { ...mk('d', 'Cerrada', []), cycles_available: false },
+      mk('e', 'Plurianual', [{ ...planned, crop_id: 'c7', provenance: 'unknown' as const, lifecycle: 'perennial', first_campaign: 2025 }]),
+    ] };
+    const html = renderToStaticMarkup(<PlanMatrix data={data} farmId="all" onOpen={() => {}} onForecast={() => {}} />);
+    expect(html).toContain('Siguiente paso');
+    expect(html).toMatch(/Siembra planificada: trigo duro · 16–30 de noviembre de 2026/);
+    expect(html).toContain('En campo: ver salud del cultivo');
+    expect(html.split('No se ha podido leer el historial de esta parcela').length - 1).toBe(0);
+    expect(html.split('Elegir').length - 1).toBe(1);
+    const lockText = 'La parcela tiene un cultivo plurianual que sigue en esta campaña';
+    expect(html.split(lockText).length - 1).toBe(1);
+    const past = renderToStaticMarkup(<PlanMatrix data={data} farmId="all" editable={false} onOpen={() => {}} />);
+    expect(past).not.toContain(lockText);
+    const noStart = renderToStaticMarkup(<PlanMatrix data={{ ...data, parcels: [mk('a', 'Plan', [{ ...planned, start: null }])] }} farmId="all" onOpen={() => {}} />);
+    expect(noStart).toContain('Siembra planificada: trigo duro<');
   });
 });

@@ -132,6 +132,7 @@
     }
   },
   "planning": {
+    "whatNow": {"today": "hoje", "title": "O que fazer agora", "quiet": "Sem surpresas nem tarefas pendentes", "job": {"irrigate": "Regar hoje", "sow": "Semear {{crop}}", "treat": "Verificar {{disease}}", "harvest": "Colher", "pending_assessment": "Avaliação pendente", "none_until": "Nada até {{date}}", "none": "Nada pendente", "sowOn": "Semear {{crop}}: {{date}}", "harvestOn": "Colher: {{date}}"}, "surprise": {"vigor_below_expected": "Vigor abaixo do esperado", "water_drop": "Queda brusca da reserva de água", "phenology_deviation": "Fenologia desviada", "new_high_alert": "Alerta nova: {{disease}}"}, "open": "Abrir em saúde da cultura"},
     "loading": {"generic": "A carregar…", "farm": "A carregar as suas parcelas…", "fit": "A analisar que culturas se adaptam a esta parcela…", "varieties": "A procurar variedades nos ensaios da sua zona; pode demorar alguns segundos…", "estimates": "A calcular a colheita esperada…"},
     "title": "Planeamento de culturas",
     "subtitle": "O que semear em cada parcela, com que variedade e por que ordem",
@@ -142,10 +143,12 @@
     "empty": { "noParcels": "Sem parcelas", "noParcelsHint": "Crie parcelas no visualizador para planear as respetivas campanhas." },
     "summary": {
       "area": "{{crop}} {{ha}} ha",
+      "title": "Campanha {{campaign}}", "ha": "{{ha}} ha",
       "undecided_one": "{{count}} parcela por decidir", "undecided_other": "{{count}} parcelas por decidir",
       "rotation_one": "{{count}} aviso de rotação", "rotation_other": "{{count}} avisos de rotação"
     },
-    "matrix": { "parcel": "Parcela", "area": "ha", "regime": "Regime", "choose": "Escolher", "change": "Alterar", "legend": "● realizado · ◐ declarado · ○ planeado" },
+    "next": { "sowing": "Sementeira planeada: {{crop}}{{window}}", "inField": "No campo: ver a saúde da cultura" },
+    "matrix": { "nextStep": "Próximo passo", "parcel": "Parcela", "area": "ha", "regime": "Regime", "choose": "Escolher", "change": "Alterar", "legend": "● realizado · ◐ declarado · ○ planeado" },
     "provenance": { "actual": "realizado", "declared": "declarado", "planned": "planeado", "unknown": "sem dados" },
     "role": { "main_crop": "cultura principal", "cover_crop": "cultura de cobertura", "catch_crop": "cultura intercalar" },
     "regime": { "rainfed": "Sequeiro", "irrigated": "Regadio", "unknown": "Por declarar" },
@@ -302,6 +305,6 @@
     "simulation": { "forecast": "Ver previsão em Saúde da cultura", "open": "Simulação da campanha em curso", "forecastNote": "A previsão da campanha também está em Saúde da cultura." },
     "widget": { "title": "Plano da parcela", "undecided": "Por decidir", "plan": "Planear" },
     "sources": { "open": "Fontes de dados", "close": "Ocultar fontes" },
-    "admin": { "open": "Administração", "close": "Fechar administração" }
+    "tabs": { "plan": "Plano", "more": "Mais" }
   }
 }

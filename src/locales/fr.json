@@ -132,6 +132,7 @@
     }
   },
   "planning": {
+    "whatNow": {"today": "aujourd'hui", "title": "À faire maintenant", "quiet": "Aucune surprise ni tâche en attente", "job": {"irrigate": "Irriguer aujourd'hui", "sow": "Semer {{crop}}", "treat": "Vérifier {{disease}}", "harvest": "Récolter", "pending_assessment": "Évaluation en attente", "none_until": "Rien avant le {{date}}", "none": "Rien en attente", "sowOn": "Semer {{crop}} : {{date}}", "harvestOn": "Récolter : {{date}}"}, "surprise": {"vigor_below_expected": "Vigueur inférieure aux attentes", "water_drop": "Forte baisse de la réserve en eau", "phenology_deviation": "Phénologie décalée", "new_high_alert": "Nouvelle alerte : {{disease}}"}, "open": "Ouvrir dans santé de la culture"},
     "loading": {"generic": "Chargement…", "farm": "Chargement de vos parcelles…", "fit": "Analyse des cultures adaptées à cette parcelle…", "varieties": "Recherche de variétés dans les essais de votre zone ; cela peut prendre quelques secondes…", "estimates": "Calcul de la récolte attendue…"},
     "title": "Planification des cultures",
     "subtitle": "Quoi semer sur chaque parcelle, avec quelle variété et dans quel ordre",
@@ -142,10 +143,12 @@
     "empty": { "noParcels": "Aucune parcelle", "noParcelsHint": "Créez des parcelles dans la visionneuse pour planifier leurs campagnes." },
     "summary": {
       "area": "{{crop}} {{ha}} ha",
+      "title": "Campagne {{campaign}}", "ha": "{{ha}} ha",
       "undecided_one": "{{count}} parcelle sans décision", "undecided_other": "{{count}} parcelles sans décision",
       "rotation_one": "{{count}} avertissement de rotation", "rotation_other": "{{count}} avertissements de rotation"
     },
-    "matrix": { "parcel": "Parcelle", "area": "ha", "regime": "Régime", "choose": "Choisir", "change": "Changer", "legend": "● réalisé · ◐ déclaré · ○ planifié" },
+    "next": { "sowing": "Semis planifié : {{crop}}{{window}}", "inField": "Aux champs : voir la santé de la culture" },
+    "matrix": { "nextStep": "Étape suivante", "parcel": "Parcelle", "area": "ha", "regime": "Régime", "choose": "Choisir", "change": "Changer", "legend": "● réalisé · ◐ déclaré · ○ planifié" },
     "provenance": { "actual": "réalisé", "declared": "déclaré", "planned": "planifié", "unknown": "sans données" },
     "role": { "main_crop": "culture principale", "cover_crop": "couvert végétal", "catch_crop": "culture intermédiaire" },
     "regime": { "rainfed": "Sec", "irrigated": "Irrigué", "unknown": "Non déclaré" },
@@ -302,6 +305,6 @@
     "simulation": { "forecast": "Voir la prévision dans Santé des cultures", "open": "Simulation de la campagne en cours", "forecastNote": "La prévision de la campagne est aussi dans Santé des cultures." },
     "widget": { "title": "Plan de la parcelle", "undecided": "Sans décision", "plan": "Planifier" },
     "sources": { "open": "Sources de données", "close": "Masquer les sources" },
-    "admin": { "open": "Administration", "close": "Fermer l'administration" }
+    "tabs": { "plan": "Plan", "more": "Plus" }
   }
 }

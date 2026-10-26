@@ -2,13 +2,14 @@
 import React, { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth, useTranslation } from '@nekazari/sdk';
-import { Button, Card, Inline, Select, Stack } from '@nekazari/ui-kit';
+import { Button, Card, Inline, Select, Stack, Tabs } from '@nekazari/ui-kit';
 import { Sprout } from 'lucide-react';
 import DisclaimerFooter from '../components/DisclaimerFooter';
 import AdminTools from './AdminTools';
 import { fetchFarm } from './api';
+import CampaignSummary from './CampaignSummary';
+import { fetchWorklist } from './cropHealthClient';
 import { loadErrorKey } from './errors';
-import { cropName, formatHa } from './format';
 import LazyBoundary from './LazyBoundary';
 import LoadingLine from './LoadingLine';
 import { parseCampaign } from './matrixModel';
@@ -16,20 +17,9 @@ import ParcelDetail from './ParcelDetail';
 import PlanMatrix from './PlanMatrix';
 import SimulationBridge from './SimulationBridge';
 import SourcesFooter from './SourcesFooter';
-import type { FarmResponse } from './types';
+import WhatNow from './WhatNow';
 import { closeParams, forecastHref, openParcelParams, openSimulationParams, readSimulationPrefill, readView } from './urlState';
 import { useLoad } from './useLoad';
-
-function SummaryLine({ data }: { data: FarmResponse }) {
-  const { t, i18n } = useTranslation('bioorchestrator');
-  const lang = i18n.language;
-  const parts = data.summary.area_by_crop.map((a) => t('planning.summary.area', {
-    crop: cropName(a.names, a.species, lang), ha: formatHa(a.area_ha, lang),
-  }));
-  parts.push(t('planning.summary.undecided', { count: data.summary.undecided }));
-  if (data.summary.rotation_warnings > 0) parts.push(t('planning.summary.rotation', { count: data.summary.rotation_warnings }));
-  return <p className="text-nkz-sm text-nkz-text-muted">{`${data.campaign}: ${parts.join(' · ')}`}</p>;
-}
 
 export default function PlanningApp() {
   const { t } = useTranslation('bioorchestrator');
@@ -40,15 +30,19 @@ export default function PlanningApp() {
   const [campaign, setCampaign] = useState<number | undefined>(() => parseCampaign(params.get('campaign')));
   const [farmId, setFarmId] = useState('all');
   const { parcel: openParcel, simulationFor } = readView(params);
-  const [admin, setAdmin] = useState(false);
   const farm = useLoad((s) => fetchFarm(campaign, undefined, s), [campaign]);
   const data = farm.data;
   const row = data && openParcel ? data.parcels.find((p) => p.parcel_id === openParcel || p.parcel_id.endsWith(`:${openParcel}`)) : undefined;
+  // The work list is tenant-wide; show only the parcels the farm filter shows.
+  const shownIds = new Set(
+    (data?.parcels ?? []).filter((p) => farmId === 'all' || p.farm_id === farmId).map((p) => p.parcel_id.split('urn:ngsi-ld:AgriParcel:').pop() ?? p.parcel_id),
+  );
   const linkedFarms = (data?.farms ?? []).filter((f) => f.farm_id);
   const openDetail = (parcelId: string) => setParams((p) => openParcelParams(p, parcelId, data?.campaign ?? new Date().getFullYear()));
   const openSimulation = (parcelId: string) => setParams((p) => openSimulationParams(p, parcelId));
   const closeView = () => setParams((p) => closeParams(p));
   const navigate = useNavigate();
+  const worklist = useLoad((signal) => fetchWorklist(signal), []);
   const openForecast = (parcelId: string) => navigate(forecastHref(parcelId));
   // A new campaign drops a link that did not resolve (and its "parcel not found" notice) instead of keeping it.
   const changeCampaign = (c: number) => {
@@ -67,7 +61,13 @@ export default function PlanningApp() {
           </div>
         </Inline>
 
-        {admin ? <LazyBoundary><AdminTools /></LazyBoundary> : simulationFor ? (
+        <Tabs defaultValue="plan">
+          <Tabs.List>
+            <Tabs.Trigger value="plan">{t('planning.tabs.plan')}</Tabs.Trigger>
+            <Tabs.Trigger value="more">{t('planning.tabs.more')}</Tabs.Trigger>
+          </Tabs.List>
+          <Tabs.Content value="plan">
+        {simulationFor ? (
           <SimulationBridge parcelId={simulationFor} prefill={readSimulationPrefill(params)} onClose={closeView} />
         ) : (
           <>
@@ -97,20 +97,24 @@ export default function PlanningApp() {
                   )}
                 </Inline>
                 {openParcel && <p className="text-nkz-sm text-nkz-text-muted">{t('planning.plan.error.parcel_not_found')}</p>}
-                <SummaryLine data={data} />
+                <CampaignSummary data={data} />
                 <PlanMatrix data={data} farmId={farmId} onOpen={openDetail} onSimulate={openSimulation} onForecast={openForecast}
                   editable={data.campaign >= new Date().getFullYear()} />
+                {Array.isArray(worklist.data) && <WhatNow rows={worklist.data.filter((w) => shownIds.has(w.parcelId))} />}
               </Stack>
             )}
           </>
         )}
 
-        <SourcesFooter />
-        {hasRole('PlatformAdmin') && (
-          <Inline gap="inline" wrap align="center">
-            <Button size="sm" variant="ghost" onClick={() => setAdmin((a) => !a)}>{t(admin ? 'planning.admin.close' : 'planning.admin.open')}</Button>
-          </Inline>
-        )}
+          </Tabs.Content>
+          <Tabs.Content value="more">
+            <Stack gap="section">
+              <SourcesFooter defaultOpen />
+              {hasRole('PlatformAdmin') && <LazyBoundary><AdminTools /></LazyBoundary>}
+            </Stack>
+          </Tabs.Content>
+        </Tabs>
+
         <DisclaimerFooter />
       </Stack>
     </Card>

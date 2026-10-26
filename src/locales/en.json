@@ -149,6 +149,7 @@
     }
   },
   "planning": {
+    "whatNow": {"today": "today", "title": "What is due now", "quiet": "No surprises or pending jobs", "job": {"irrigate": "Irrigate today", "sow": "Sow {{crop}}", "treat": "Check {{disease}}", "harvest": "Harvest", "pending_assessment": "Assessment pending", "none_until": "Nothing until {{date}}", "none": "Nothing pending", "sowOn": "Sow {{crop}}: {{date}}", "harvestOn": "Harvest: {{date}}"}, "surprise": {"vigor_below_expected": "Vigour below expected", "water_drop": "Sharp drop in water reserve", "phenology_deviation": "Phenology off schedule", "new_high_alert": "New alert: {{disease}}"}, "open": "Open in crop health"},
     "loading": {"generic": "Loading…", "farm": "Loading your parcels…", "fit": "Checking which crops fit this parcel…", "varieties": "Looking for varieties in the trials of your area; this can take a few seconds…", "estimates": "Estimating the expected harvest…"},
     "title": "Crop planning",
     "subtitle": "What to sow on each parcel, which variety, and in what order",
@@ -159,10 +160,12 @@
     "empty": { "noParcels": "No parcels", "noParcelsHint": "Create parcels in the viewer to plan their campaigns." },
     "summary": {
       "area": "{{crop}} {{ha}} ha",
+      "title": "Campaign {{campaign}}", "ha": "{{ha}} ha",
       "undecided_one": "{{count}} parcel undecided", "undecided_other": "{{count}} parcels undecided",
       "rotation_one": "{{count}} rotation warning", "rotation_other": "{{count}} rotation warnings"
     },
-    "matrix": { "parcel": "Parcel", "area": "ha", "regime": "Regime", "choose": "Choose", "change": "Change", "legend": "● done · ◐ declared · ○ planned" },
+    "next": { "sowing": "Planned sowing: {{crop}}{{window}}", "inField": "In the field: see crop health" },
+    "matrix": { "nextStep": "Next step", "parcel": "Parcel", "area": "ha", "regime": "Regime", "choose": "Choose", "change": "Change", "legend": "● done · ◐ declared · ○ planned" },
     "provenance": { "actual": "done", "declared": "declared", "planned": "planned", "unknown": "no data" },
     "role": { "main_crop": "main crop", "cover_crop": "cover crop", "catch_crop": "catch crop" },
     "regime": { "rainfed": "Rainfed", "irrigated": "Irrigated", "unknown": "Not declared" },
@@ -319,6 +322,6 @@
     "simulation": { "forecast": "View forecast in Crop Health", "open": "Simulation of the current campaign", "forecastNote": "The season forecast is also in Crop Health." },
     "widget": { "title": "Parcel plan", "undecided": "Undecided", "plan": "Plan" },
     "sources": { "open": "Data sources", "close": "Hide sources" },
-    "admin": { "open": "Administration", "close": "Close administration" }
+    "tabs": { "plan": "Plan", "more": "More" }
   }
 }
