@@ -7,7 +7,7 @@ import type { WorklistRow } from './cropHealthClient';
 import { forecastHref } from './urlState';
 
 export default function WhatNow({ rows }: { rows: WorklistRow[] }) {
-  const { t } = useTranslation();
+  const { t } = useTranslation('bioorchestrator');
   const navigate = useNavigate();
   const due = rows.filter((r) => r.nextJob || r.surprise);
   return (
@@ -17,14 +17,18 @@ export default function WhatNow({ rows }: { rows: WorklistRow[] }) {
       {due.map((r) => {
         const job = r.nextJob;
         const detail = job?.detail ?? {};
-        const jobOpts = job?.kind === 'sow' ? { ...detail, crop: detail.crop ?? detail.species } : detail;
+        const jobOpts = job?.kind === 'sow' ? { ...detail, crop: detail.crop ?? detail.species } : { ...detail, date: detail.date ?? job?.when };
         return (
           <Inline key={r.parcelId} gap="inline" wrap align="center">
             <span className="text-nkz-sm font-medium text-nkz-text-primary">{r.parcelName ?? r.parcelId}</span>
             {job && <span className="text-nkz-sm text-nkz-text-secondary">{t(`planning.whatNow.job.${job.kind}`, jobOpts)}</span>}
             {r.surprise && <span className="text-nkz-sm text-nkz-warning">{t(`planning.whatNow.surprise.${r.surprise.code}`, r.surprise.detail ?? {})}</span>}
             <a href={forecastHref(r.parcelId)} className="text-nkz-sm text-nkz-accent-base underline"
-              onClick={(e) => { e.preventDefault(); navigate(forecastHref(r.parcelId)); }}>{t('planning.whatNow.open')}</a>
+              onClick={(e) => {
+                if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
+                e.preventDefault();
+                navigate(forecastHref(r.parcelId));
+              }}>{t('planning.whatNow.open')}</a>
           </Inline>
         );
       })}

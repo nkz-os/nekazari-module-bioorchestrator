@@ -4,7 +4,10 @@ import { renderToStaticMarkup } from 'react-dom/server';
 
 vi.mock('@nekazari/sdk', async () => {
   const { esT } = await import('./testI18n');
-  return { useTranslation: () => ({ t: esT, i18n: { language: 'es' } }), i18n: {} };
+  return { useTranslation: (ns?: string) => {
+    if (ns !== 'bioorchestrator') throw new Error(`wrong namespace: ${ns}`);
+    return { t: esT, i18n: { language: 'es' } };
+  }, i18n: {} };
 });
 vi.mock('react-router-dom', () => ({ useNavigate: () => vi.fn() }));
 
@@ -28,6 +31,13 @@ describe('WhatNow (es)', () => {
     expect(html).toContain('/crop-health?parcel=p1');
     expect(html).toContain('Ver en salud del cultivo');
     expect(html).not.toContain('Quieta');
+    expect(html).not.toContain('Sin sorpresas');
+  });
+
+  it('renders a row with a surprise but no job', () => {
+    const html = renderToStaticMarkup(<WhatNow rows={[row({ surprise: { code: 'water_drop', detail: {} } })]} />);
+    expect(html).toContain('Soto Alto');
+    expect(html).toContain('Caída brusca de la reserva de agua');
     expect(html).not.toContain('Sin sorpresas');
   });
 
