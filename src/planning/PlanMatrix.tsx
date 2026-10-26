@@ -48,7 +48,12 @@ export default function PlanMatrix({ data, farmId, onOpen, editable = true, onSi
         : null;
     }
     // Unreadable history is already said by the row warning.
-    if (s.kind === 'locked') return s.reason === 'cycles_unavailable' ? null : <span className="text-nkz-xs text-nkz-text-muted">{lockMessage(s.reason, data.campaign, t)}</span>;
+    if (s.kind === 'locked') {
+      // A locked parcel says why, once, in this column; a past campaign is only history, and
+      // unreadable history is already a row warning.
+      if (!editable || s.reason === 'cycles_unavailable') return null;
+      return <span className="text-nkz-xs text-nkz-text-muted">{lockMessage(s.reason, data.campaign, t)}</span>;
+    }
     if (!editable) return null;
     return (
       <Button size="sm" variant="secondary" onClick={() => onOpen(row.parcel_id)}>
@@ -93,10 +98,6 @@ export default function PlanMatrix({ data, farmId, onOpen, editable = true, onSi
                 return (
                   <td key={c} className="py-2 pr-4">
                     {cells.map((cell, i) => <CycleLine key={cell.crop_id ?? `${c}-${i}`} cell={cell} />)}
-                    {/* A locked parcel says why instead of just missing its button; unreadable history is already a row warning. */}
-                    {locked && locked !== 'cycles_unavailable' && (
-                      <span className="block text-nkz-xs text-nkz-text-muted">{lockMessage(locked, data.campaign, t)}</span>
-                    )}
                     {(cellChoose || simulable || forecastable) && (
                       <Inline gap="inline" wrap>
                         {cellChoose && (
