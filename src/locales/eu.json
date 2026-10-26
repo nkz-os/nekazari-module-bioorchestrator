@@ -132,6 +132,7 @@
     }
   },
   "planning": {
+    "whatNow": {"title": "Orain zer dagokion", "quiet": "Ez dago ezusteko edo lan zain", "job": {"irrigate": "Ureztatu gaur", "sow": "Erein: {{crop}}", "treat": "Berrikusi: {{disease}}", "harvest": "Bildu", "pending_assessment": "Ebaluazioaren zain", "none_until": "Ezer ez {{date}} arte"}, "surprise": {"vigor_below_expected": "Indarra espero baino txikiagoa", "water_drop": "Ur-erreserbaren jaitsiera bortitza", "phenology_deviation": "Fenologia desbideratuta", "new_high_alert": "Alerta berria: {{disease}}"}, "open": "Ikusi laborantzaren osasunean"},
     "loading": {"generic": "Kargatzen…", "farm": "Zure partzelak kargatzen…", "fit": "Partzela honetara egokitzen diren laboreak aztertzen…", "varieties": "Zure eremuko saiakuntzetan barietateak bilatzen; segundo batzuk behar izan ditzake…", "estimates": "Espero den uzta kalkulatzen…"},
     "title": "Laboreen planifikazioa",
     "subtitle": "Zer erein partzela bakoitzean, zein barietaterekin eta zer ordenatan",

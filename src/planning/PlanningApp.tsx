@@ -8,6 +8,7 @@ import DisclaimerFooter from '../components/DisclaimerFooter';
 import AdminTools from './AdminTools';
 import { fetchFarm } from './api';
 import CampaignSummary from './CampaignSummary';
+import { fetchWorklist } from './cropHealthClient';
 import { loadErrorKey } from './errors';
 import LazyBoundary from './LazyBoundary';
 import LoadingLine from './LoadingLine';
@@ -16,6 +17,7 @@ import ParcelDetail from './ParcelDetail';
 import PlanMatrix from './PlanMatrix';
 import SimulationBridge from './SimulationBridge';
 import SourcesFooter from './SourcesFooter';
+import WhatNow from './WhatNow';
 import type { FarmResponse } from './types';
 import { closeParams, forecastHref, openParcelParams, openSimulationParams, readSimulationPrefill, readView } from './urlState';
 import { useLoad } from './useLoad';
@@ -38,6 +40,7 @@ export default function PlanningApp() {
   const openSimulation = (parcelId: string) => setParams((p) => openSimulationParams(p, parcelId));
   const closeView = () => setParams((p) => closeParams(p));
   const navigate = useNavigate();
+  const worklist = useLoad((signal) => fetchWorklist(signal), []);
   const openForecast = (parcelId: string) => navigate(forecastHref(parcelId));
   // A new campaign drops a link that did not resolve (and its "parcel not found" notice) instead of keeping it.
   const changeCampaign = (c: number) => {
@@ -89,6 +92,7 @@ export default function PlanningApp() {
                 <CampaignSummary data={data} />
                 <PlanMatrix data={data} farmId={farmId} onOpen={openDetail} onSimulate={openSimulation} onForecast={openForecast}
                   editable={data.campaign >= new Date().getFullYear()} />
+                {Array.isArray(worklist.data) && <WhatNow rows={worklist.data} />}
               </Stack>
             )}
           </>

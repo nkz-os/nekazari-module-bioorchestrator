@@ -132,6 +132,7 @@
     }
   },
   "planning": {
+    "whatNow": {"title": "O que fazer agora", "quiet": "Sem surpresas nem tarefas pendentes", "job": {"irrigate": "Regar hoje", "sow": "Semear {{crop}}", "treat": "Verificar {{disease}}", "harvest": "Colher", "pending_assessment": "Avaliação pendente", "none_until": "Nada até {{date}}"}, "surprise": {"vigor_below_expected": "Vigor abaixo do esperado", "water_drop": "Queda brusca da reserva de água", "phenology_deviation": "Fenologia desviada", "new_high_alert": "Alerta nova: {{disease}}"}, "open": "Abrir em saúde da cultura"},
     "loading": {"generic": "A carregar…", "farm": "A carregar as suas parcelas…", "fit": "A analisar que culturas se adaptam a esta parcela…", "varieties": "A procurar variedades nos ensaios da sua zona; pode demorar alguns segundos…", "estimates": "A calcular a colheita esperada…"},
     "title": "Planeamento de culturas",
     "subtitle": "O que semear em cada parcela, com que variedade e por que ordem",

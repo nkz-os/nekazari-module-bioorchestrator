@@ -132,6 +132,7 @@
     }
   },
   "planning": {
+    "whatNow": {"title": "Què toca ara", "quiet": "Sense sorpreses ni feines pendents", "job": {"irrigate": "Regar avui", "sow": "Sembrar {{crop}}", "treat": "Revisar {{disease}}", "harvest": "Collir", "pending_assessment": "Pendent d'avaluació", "none_until": "Res fins al {{date}}"}, "surprise": {"vigor_below_expected": "Vigor per sota del previst", "water_drop": "Caiguda brusca de la reserva d'aigua", "phenology_deviation": "Fenologia desviada", "new_high_alert": "Alerta nova: {{disease}}"}, "open": "Veure a salut del cultiu"},
     "loading": {"generic": "S'està carregant…", "farm": "S'estan carregant les teves parcel·les…", "fit": "S'està analitzant quins cultius encaixen en aquesta parcel·la…", "varieties": "S'estan cercant varietats als assaigs de la teva zona; pot trigar uns segons…", "estimates": "S'està calculant la collita esperada…"},
     "title": "Planificació de cultius",
     "subtitle": "Què sembrar a cada parcel·la, amb quina varietat i en quin ordre",
