@@ -124,3 +124,18 @@ export function hasSownCrop(row: ParcelRow, campaign: number): boolean {
 export function simulationAvailable(row: ParcelRow, campaign: number): boolean {
   return hasSownCrop(row, campaign) || hasSownCrop(row, campaign - 1);
 }
+
+export type NextStep =
+  | { kind: 'planned_sowing'; cell: CycleCell }
+  | { kind: 'in_field' }
+  | { kind: 'undecided' }
+  | { kind: 'locked'; reason: LockReason };
+
+/** What the parcel needs next in the campaign: sown wins over planned, a lock over undecided. */
+export function nextStep(row: ParcelRow, campaign: number): NextStep {
+  if (hasSownCrop(row, campaign)) return { kind: 'in_field' };
+  const planned = (row.cells[String(campaign)] ?? []).find((c) => c.provenance === 'planned' && c.role === 'main_crop');
+  if (planned) return { kind: 'planned_sowing', cell: planned };
+  const reason = lockReason(row, campaign);
+  return reason ? { kind: 'locked', reason } : { kind: 'undecided' };
+}

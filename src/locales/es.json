@@ -166,7 +166,8 @@
       "undecided_one": "{{count}} parcela sin decidir", "undecided_other": "{{count}} parcelas sin decidir",
       "rotation_one": "{{count}} aviso de rotación", "rotation_other": "{{count}} avisos de rotación"
     },
-    "matrix": { "parcel": "Parcela", "area": "ha", "regime": "Régimen", "choose": "Elegir", "change": "Cambiar", "legend": "● realizado · ◐ declarado · ○ planificado" },
+    "next": { "sowing": "Siembra planificada: {{crop}}{{window}}", "inField": "En campo: ver salud del cultivo" },
+    "matrix": { "nextStep": "Siguiente paso", "parcel": "Parcela", "area": "ha", "regime": "Régimen", "choose": "Elegir", "change": "Cambiar", "legend": "● realizado · ◐ declarado · ○ planificado" },
     "provenance": { "actual": "realizado", "declared": "declarado", "planned": "planificado", "unknown": "sin datos" },
     "role": { "main_crop": "cultivo principal", "cover_crop": "cubierta", "catch_crop": "cultivo intermedio" },
     "regime": { "rainfed": "Secano", "irrigated": "Regadío", "unknown": "Sin declarar" },

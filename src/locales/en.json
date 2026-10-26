@@ -163,7 +163,8 @@
       "undecided_one": "{{count}} parcel undecided", "undecided_other": "{{count}} parcels undecided",
       "rotation_one": "{{count}} rotation warning", "rotation_other": "{{count}} rotation warnings"
     },
-    "matrix": { "parcel": "Parcel", "area": "ha", "regime": "Regime", "choose": "Choose", "change": "Change", "legend": "● done · ◐ declared · ○ planned" },
+    "next": { "sowing": "Planned sowing: {{crop}}{{window}}", "inField": "In the field: see crop health" },
+    "matrix": { "nextStep": "Next step", "parcel": "Parcel", "area": "ha", "regime": "Regime", "choose": "Choose", "change": "Change", "legend": "● done · ◐ declared · ○ planned" },
     "provenance": { "actual": "done", "declared": "declared", "planned": "planned", "unknown": "no data" },
     "role": { "main_crop": "main crop", "cover_crop": "cover crop", "catch_crop": "catch crop" },
     "regime": { "rainfed": "Rainfed", "irrigated": "Irrigated", "unknown": "Not declared" },

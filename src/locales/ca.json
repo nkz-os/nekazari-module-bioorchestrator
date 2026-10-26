@@ -146,7 +146,8 @@
       "undecided_one": "{{count}} parcel·la sense decidir", "undecided_other": "{{count}} parcel·les sense decidir",
       "rotation_one": "{{count}} avís de rotació", "rotation_other": "{{count}} avisos de rotació"
     },
-    "matrix": { "parcel": "Parcel·la", "area": "ha", "regime": "Règim", "choose": "Tria", "change": "Canvia", "legend": "● fet · ◐ declarat · ○ planificat" },
+    "next": { "sowing": "Sembra planificada: {{crop}}{{window}}", "inField": "Al camp: veure la salut del cultiu" },
+    "matrix": { "nextStep": "Següent pas", "parcel": "Parcel·la", "area": "ha", "regime": "Règim", "choose": "Tria", "change": "Canvia", "legend": "● fet · ◐ declarat · ○ planificat" },
     "provenance": { "actual": "fet", "declared": "declarat", "planned": "planificat", "unknown": "sense dades" },
     "role": { "main_crop": "cultiu principal", "cover_crop": "cultiu de cobertura", "catch_crop": "cultiu intermedi" },
     "regime": { "rainfed": "Secà", "irrigated": "Regadiu", "unknown": "Sense declarar" },

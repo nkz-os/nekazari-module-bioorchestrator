@@ -146,7 +146,8 @@
       "undecided_one": "{{count}} partzela erabaki gabe", "undecided_other": "{{count}} partzela erabaki gabe",
       "rotation_one": "{{count}} errotazio-abisu", "rotation_other": "{{count}} errotazio-abisu"
     },
-    "matrix": { "parcel": "Partzela", "area": "ha", "regime": "Erregimena", "choose": "Aukeratu", "change": "Aldatu", "legend": "● eginda · ◐ adierazita · ○ planifikatuta" },
+    "next": { "sowing": "Aurreikusitako hazkuntza: {{crop}}{{window}}", "inField": "Zelaian: ikusi laboreen osasuna" },
+    "matrix": { "nextStep": "Hurrengo urratsa", "parcel": "Partzela", "area": "ha", "regime": "Erregimena", "choose": "Aukeratu", "change": "Aldatu", "legend": "● eginda · ◐ adierazita · ○ planifikatuta" },
     "provenance": { "actual": "eginda", "declared": "adierazita", "planned": "planifikatuta", "unknown": "daturik gabe" },
     "role": { "main_crop": "labore nagusia", "cover_crop": "estaldura-laborea", "catch_crop": "tarteko laborea" },
     "regime": { "rainfed": "Lehorrekoa", "irrigated": "Ureztatua", "unknown": "Adierazi gabe" },

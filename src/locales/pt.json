@@ -146,7 +146,8 @@
       "undecided_one": "{{count}} parcela por decidir", "undecided_other": "{{count}} parcelas por decidir",
       "rotation_one": "{{count}} aviso de rotação", "rotation_other": "{{count}} avisos de rotação"
     },
-    "matrix": { "parcel": "Parcela", "area": "ha", "regime": "Regime", "choose": "Escolher", "change": "Alterar", "legend": "● realizado · ◐ declarado · ○ planeado" },
+    "next": { "sowing": "Sementeira planeada: {{crop}}{{window}}", "inField": "No campo: ver a saúde da cultura" },
+    "matrix": { "nextStep": "Próximo passo", "parcel": "Parcela", "area": "ha", "regime": "Regime", "choose": "Escolher", "change": "Alterar", "legend": "● realizado · ◐ declarado · ○ planeado" },
     "provenance": { "actual": "realizado", "declared": "declarado", "planned": "planeado", "unknown": "sem dados" },
     "role": { "main_crop": "cultura principal", "cover_crop": "cultura de cobertura", "catch_crop": "cultura intercalar" },
     "regime": { "rainfed": "Sequeiro", "irrigated": "Regadio", "unknown": "Por declarar" },

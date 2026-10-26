@@ -146,7 +146,8 @@
       "undecided_one": "{{count}} parcelle sans décision", "undecided_other": "{{count}} parcelles sans décision",
       "rotation_one": "{{count}} avertissement de rotation", "rotation_other": "{{count}} avertissements de rotation"
     },
-    "matrix": { "parcel": "Parcelle", "area": "ha", "regime": "Régime", "choose": "Choisir", "change": "Changer", "legend": "● réalisé · ◐ déclaré · ○ planifié" },
+    "next": { "sowing": "Semis planifié : {{crop}}{{window}}", "inField": "Aux champs : voir la santé de la culture" },
+    "matrix": { "nextStep": "Étape suivante", "parcel": "Parcelle", "area": "ha", "regime": "Régime", "choose": "Choisir", "change": "Changer", "legend": "● réalisé · ◐ déclaré · ○ planifié" },
     "provenance": { "actual": "réalisé", "declared": "déclaré", "planned": "planifié", "unknown": "sans données" },
     "role": { "main_crop": "culture principale", "cover_crop": "couvert végétal", "catch_crop": "culture intermédiaire" },
     "regime": { "rainfed": "Sec", "irrigated": "Irrigué", "unknown": "Non déclaré" },
