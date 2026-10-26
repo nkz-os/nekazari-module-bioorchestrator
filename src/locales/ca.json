@@ -142,6 +142,7 @@
     "empty": { "noParcels": "No hi ha parcel·les", "noParcelsHint": "Crea parcel·les al visor per planificar-ne les campanyes." },
     "summary": {
       "area": "{{crop}} {{ha}} ha",
+      "title": "Campanya {{campaign}}", "ha": "{{ha}} ha",
       "undecided_one": "{{count}} parcel·la sense decidir", "undecided_other": "{{count}} parcel·les sense decidir",
       "rotation_one": "{{count}} avís de rotació", "rotation_other": "{{count}} avisos de rotació"
     },

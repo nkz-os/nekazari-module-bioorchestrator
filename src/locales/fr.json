@@ -142,6 +142,7 @@
     "empty": { "noParcels": "Aucune parcelle", "noParcelsHint": "Créez des parcelles dans la visionneuse pour planifier leurs campagnes." },
     "summary": {
       "area": "{{crop}} {{ha}} ha",
+      "title": "Campagne {{campaign}}", "ha": "{{ha}} ha",
       "undecided_one": "{{count}} parcelle sans décision", "undecided_other": "{{count}} parcelles sans décision",
       "rotation_one": "{{count}} avertissement de rotation", "rotation_other": "{{count}} avertissements de rotation"
     },

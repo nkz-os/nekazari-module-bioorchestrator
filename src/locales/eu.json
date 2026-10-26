@@ -142,6 +142,7 @@
     "empty": { "noParcels": "Ez dago partzelarik", "noParcelsHint": "Sortu partzelak ikusgailuan haien kanpainak planifikatzeko." },
     "summary": {
       "area": "{{crop}} {{ha}} ha",
+      "title": "{{campaign}} kanpaina", "ha": "{{ha}} ha",
       "undecided_one": "{{count}} partzela erabaki gabe", "undecided_other": "{{count}} partzela erabaki gabe",
       "rotation_one": "{{count}} errotazio-abisu", "rotation_other": "{{count}} errotazio-abisu"
     },

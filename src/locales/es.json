@@ -162,6 +162,7 @@
     "empty": { "noParcels": "No hay parcelas", "noParcelsHint": "Crea parcelas en el visor para planificar sus campañas." },
     "summary": {
       "area": "{{crop}} {{ha}} ha",
+      "title": "Campaña {{campaign}}", "ha": "{{ha}} ha",
       "undecided_one": "{{count}} parcela sin decidir", "undecided_other": "{{count}} parcelas sin decidir",
       "rotation_one": "{{count}} aviso de rotación", "rotation_other": "{{count}} avisos de rotación"
     },

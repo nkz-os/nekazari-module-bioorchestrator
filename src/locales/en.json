@@ -159,6 +159,7 @@
     "empty": { "noParcels": "No parcels", "noParcelsHint": "Create parcels in the viewer to plan their campaigns." },
     "summary": {
       "area": "{{crop}} {{ha}} ha",
+      "title": "Campaign {{campaign}}", "ha": "{{ha}} ha",
       "undecided_one": "{{count}} parcel undecided", "undecided_other": "{{count}} parcels undecided",
       "rotation_one": "{{count}} rotation warning", "rotation_other": "{{count}} rotation warnings"
     },

@@ -7,8 +7,8 @@ import { Sprout } from 'lucide-react';
 import DisclaimerFooter from '../components/DisclaimerFooter';
 import AdminTools from './AdminTools';
 import { fetchFarm } from './api';
+import CampaignSummary from './CampaignSummary';
 import { loadErrorKey } from './errors';
-import { cropName, formatHa } from './format';
 import LazyBoundary from './LazyBoundary';
 import LoadingLine from './LoadingLine';
 import { parseCampaign } from './matrixModel';
@@ -19,17 +19,6 @@ import SourcesFooter from './SourcesFooter';
 import type { FarmResponse } from './types';
 import { closeParams, forecastHref, openParcelParams, openSimulationParams, readSimulationPrefill, readView } from './urlState';
 import { useLoad } from './useLoad';
-
-function SummaryLine({ data }: { data: FarmResponse }) {
-  const { t, i18n } = useTranslation('bioorchestrator');
-  const lang = i18n.language;
-  const parts = data.summary.area_by_crop.map((a) => t('planning.summary.area', {
-    crop: cropName(a.names, a.species, lang), ha: formatHa(a.area_ha, lang),
-  }));
-  parts.push(t('planning.summary.undecided', { count: data.summary.undecided }));
-  if (data.summary.rotation_warnings > 0) parts.push(t('planning.summary.rotation', { count: data.summary.rotation_warnings }));
-  return <p className="text-nkz-sm text-nkz-text-muted">{`${data.campaign}: ${parts.join(' · ')}`}</p>;
-}
 
 export default function PlanningApp() {
   const { t } = useTranslation('bioorchestrator');
@@ -97,7 +86,7 @@ export default function PlanningApp() {
                   )}
                 </Inline>
                 {openParcel && <p className="text-nkz-sm text-nkz-text-muted">{t('planning.plan.error.parcel_not_found')}</p>}
-                <SummaryLine data={data} />
+                <CampaignSummary data={data} />
                 <PlanMatrix data={data} farmId={farmId} onOpen={openDetail} onSimulate={openSimulation} onForecast={openForecast}
                   editable={data.campaign >= new Date().getFullYear()} />
               </Stack>
