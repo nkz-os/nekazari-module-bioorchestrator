@@ -322,6 +322,6 @@
     "simulation": { "forecast": "View forecast in Crop Health", "open": "Simulation of the current campaign", "forecastNote": "The season forecast is also in Crop Health." },
     "widget": { "title": "Parcel plan", "undecided": "Undecided", "plan": "Plan" },
     "sources": { "open": "Data sources", "close": "Hide sources" },
-    "admin": { "open": "Administration", "close": "Close administration" }
+    "tabs": { "plan": "Plan", "more": "More" }
   }
 }

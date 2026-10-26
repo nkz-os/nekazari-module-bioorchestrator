@@ -305,6 +305,6 @@
     "simulation": { "forecast": "Veure previsió a Salut del cultiu", "open": "Simulació de la campanya en curs", "forecastNote": "La previsió de la campanya també és a Salut del cultiu." },
     "widget": { "title": "Pla de la parcel·la", "undecided": "Sense decidir", "plan": "Planificar" },
     "sources": { "open": "Fonts de dades", "close": "Amaga les fonts" },
-    "admin": { "open": "Administració", "close": "Tanca l'administració" }
+    "tabs": { "plan": "Pla", "more": "Més" }
   }
 }

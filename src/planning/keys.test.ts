@@ -55,7 +55,6 @@ const FAMILIES = [
   ...['commercial', 'commercialNoPct', 'dry_matter', 'as_reported'].map((k) => `planning.estimate.moisture.${k}`),
   // Keys picked inside a conditional, t(cond ? 'a' : 'b'), which literalKeys() does not see.
   'planning.matrix.choose', 'planning.matrix.change', 'planning.sources.open', 'planning.sources.close',
-  'planning.admin.open', 'planning.admin.close',
   'planning.variety.choose', 'planning.variety.chosen',
   // data_gaps the backend emits (app/graph/recommend.py, dao.py), shown by VarietyTable.
   ...['no_expected_yield', 'reference_too_small', 'reference_zero', 'cv_undefined', 'low_trial_count',

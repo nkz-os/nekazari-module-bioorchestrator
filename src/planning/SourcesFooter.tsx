@@ -7,9 +7,9 @@ import { fetchAttributions } from './api';
 import { useLoad } from './useLoad';
 
 /** "Data sources": the credit lines every source licence requires, available to everyone. */
-export default function SourcesFooter() {
+export default function SourcesFooter({ defaultOpen = false }: { defaultOpen?: boolean }) {
   const { t } = useTranslation('bioorchestrator');
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(defaultOpen);
   const data = useLoad((s) => fetchAttributions(s), [], open);
   return (
     <Stack gap="tight">

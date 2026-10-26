@@ -325,6 +325,6 @@
     "simulation": { "forecast": "Ver previsión en Salud del cultivo", "open": "Simulación de la campaña en curso", "forecastNote": "La previsión de la campaña también está en Salud del cultivo." },
     "widget": { "title": "Plan de la parcela", "undecided": "Sin decidir", "plan": "Planificar" },
     "sources": { "open": "Fuentes de datos", "close": "Ocultar fuentes" },
-    "admin": { "open": "Administración", "close": "Cerrar administración" }
+    "tabs": { "plan": "Plan", "more": "Más" }
   }
 }

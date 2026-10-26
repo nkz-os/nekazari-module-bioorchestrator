@@ -305,6 +305,6 @@
     "simulation": { "forecast": "Ver previsão em Saúde da cultura", "open": "Simulação da campanha em curso", "forecastNote": "A previsão da campanha também está em Saúde da cultura." },
     "widget": { "title": "Plano da parcela", "undecided": "Por decidir", "plan": "Planear" },
     "sources": { "open": "Fontes de dados", "close": "Ocultar fontes" },
-    "admin": { "open": "Administração", "close": "Fechar administração" }
+    "tabs": { "plan": "Plano", "more": "Mais" }
   }
 }

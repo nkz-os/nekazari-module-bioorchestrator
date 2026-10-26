@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth, useTranslation } from '@nekazari/sdk';
-import { Button, Card, Inline, Select, Stack } from '@nekazari/ui-kit';
+import { Button, Card, Inline, Select, Stack, Tabs } from '@nekazari/ui-kit';
 import { Sprout } from 'lucide-react';
 import DisclaimerFooter from '../components/DisclaimerFooter';
 import AdminTools from './AdminTools';
@@ -31,7 +31,6 @@ export default function PlanningApp() {
   const [campaign, setCampaign] = useState<number | undefined>(() => parseCampaign(params.get('campaign')));
   const [farmId, setFarmId] = useState('all');
   const { parcel: openParcel, simulationFor } = readView(params);
-  const [admin, setAdmin] = useState(false);
   const farm = useLoad((s) => fetchFarm(campaign, undefined, s), [campaign]);
   const data = farm.data;
   const row = data && openParcel ? data.parcels.find((p) => p.parcel_id === openParcel || p.parcel_id.endsWith(`:${openParcel}`)) : undefined;
@@ -59,7 +58,13 @@ export default function PlanningApp() {
           </div>
         </Inline>
 
-        {admin ? <LazyBoundary><AdminTools /></LazyBoundary> : simulationFor ? (
+        <Tabs defaultValue="plan">
+          <Tabs.List>
+            <Tabs.Trigger value="plan">{t('planning.tabs.plan')}</Tabs.Trigger>
+            <Tabs.Trigger value="more">{t('planning.tabs.more')}</Tabs.Trigger>
+          </Tabs.List>
+          <Tabs.Content value="plan">
+        {simulationFor ? (
           <SimulationBridge parcelId={simulationFor} prefill={readSimulationPrefill(params)} onClose={closeView} />
         ) : (
           <>
@@ -98,12 +103,15 @@ export default function PlanningApp() {
           </>
         )}
 
-        <SourcesFooter />
-        {hasRole('PlatformAdmin') && (
-          <Inline gap="inline" wrap align="center">
-            <Button size="sm" variant="ghost" onClick={() => setAdmin((a) => !a)}>{t(admin ? 'planning.admin.close' : 'planning.admin.open')}</Button>
-          </Inline>
-        )}
+          </Tabs.Content>
+          <Tabs.Content value="more">
+            <Stack gap="section">
+              <SourcesFooter defaultOpen />
+              {hasRole('PlatformAdmin') && <LazyBoundary><AdminTools /></LazyBoundary>}
+            </Stack>
+          </Tabs.Content>
+        </Tabs>
+
         <DisclaimerFooter />
       </Stack>
     </Card>

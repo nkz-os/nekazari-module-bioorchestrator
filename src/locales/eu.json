@@ -305,6 +305,6 @@
     "simulation": { "forecast": "Ikusi aurreikuspena Laborearen Osasunean", "open": "Martxan dagoen kanpainaren simulazioa", "forecastNote": "Kanpainaren aurreikuspena Laborearen Osasunean ere badago." },
     "widget": { "title": "Partzelaren plana", "undecided": "Erabaki gabe", "plan": "Planifikatu" },
     "sources": { "open": "Datu-iturriak", "close": "Ezkutatu iturriak" },
-    "admin": { "open": "Administrazioa", "close": "Itxi administrazioa" }
+    "tabs": { "plan": "Plana", "more": "Gehiago" }
   }
 }

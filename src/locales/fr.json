@@ -305,6 +305,6 @@
     "simulation": { "forecast": "Voir la prévision dans Santé des cultures", "open": "Simulation de la campagne en cours", "forecastNote": "La prévision de la campagne est aussi dans Santé des cultures." },
     "widget": { "title": "Plan de la parcelle", "undecided": "Sans décision", "plan": "Planifier" },
     "sources": { "open": "Sources de données", "close": "Masquer les sources" },
-    "admin": { "open": "Administration", "close": "Fermer l'administration" }
+    "tabs": { "plan": "Plan", "more": "Plus" }
   }
 }
