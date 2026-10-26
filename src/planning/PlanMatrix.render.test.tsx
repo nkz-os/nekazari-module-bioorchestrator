@@ -39,6 +39,13 @@ describe('PlanMatrix (es)', () => {
     expect(html.split('Elegir').length - 1).toBe(1);
     expect(html.indexOf('El Raso')).toBeLessThan(html.indexOf('Soto Alto'));
   });
+  it('shows no next-step column on a past campaign', () => {
+    const past = renderToStaticMarkup(<PlanMatrix data={DATA} farmId="all" editable={false} onOpen={() => {}} />);
+    expect(past).not.toContain('Siguiente paso');
+    expect(past).not.toContain('Siembra planificada');
+    expect(renderToStaticMarkup(<PlanMatrix data={DATA} farmId="all" onOpen={() => {}} />)).toContain('Siguiente paso');
+  });
+
   it('offers no choose button on a campaign that is not editable', () => {
     const html = renderToStaticMarkup(<PlanMatrix data={DATA} farmId="all" editable={false} onOpen={() => {}} />);
     expect(html).not.toContain('Elegir');

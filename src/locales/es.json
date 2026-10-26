@@ -149,7 +149,7 @@
     }
   },
   "planning": {
-    "whatNow": {"title": "Qué toca ahora", "quiet": "Sin sorpresas ni trabajos pendientes", "job": {"irrigate": "Regar hoy", "sow": "Sembrar {{crop}}", "treat": "Revisar {{disease}}", "harvest": "Cosechar", "pending_assessment": "Pendiente de evaluación", "none_until": "Nada hasta {{date}}"}, "surprise": {"vigor_below_expected": "Vigor por debajo de lo esperado", "water_drop": "Caída brusca de la reserva de agua", "phenology_deviation": "Fenología desviada", "new_high_alert": "Alerta nueva: {{disease}}"}, "open": "Ver en salud del cultivo"},
+    "whatNow": {"today": "hoy", "title": "Qué toca ahora", "quiet": "Sin sorpresas ni trabajos pendientes", "job": {"irrigate": "Regar hoy", "sow": "Sembrar {{crop}}", "treat": "Revisar {{disease}}", "harvest": "Cosechar", "pending_assessment": "Pendiente de evaluación", "none_until": "Nada hasta {{date}}", "none": "Nada pendiente", "sowOn": "Sembrar {{crop}}: {{date}}", "harvestOn": "Cosechar: {{date}}"}, "surprise": {"vigor_below_expected": "Vigor por debajo de lo esperado", "water_drop": "Caída brusca de la reserva de agua", "phenology_deviation": "Fenología desviada", "new_high_alert": "Alerta nueva: {{disease}}"}, "open": "Ver en salud del cultivo"},
     "loading": {"generic": "Cargando…", "farm": "Cargando tus parcelas…", "fit": "Analizando qué cultivos encajan en esta parcela…", "varieties": "Buscando variedades en los ensayos de tu zona; puede tardar unos segundos…", "estimates": "Calculando la cosecha esperada…"},
     "title": "Planificación de cultivos",
     "subtitle": "Qué sembrar en cada parcela, con qué variedad y en qué orden",

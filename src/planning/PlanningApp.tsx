@@ -18,7 +18,6 @@ import PlanMatrix from './PlanMatrix';
 import SimulationBridge from './SimulationBridge';
 import SourcesFooter from './SourcesFooter';
 import WhatNow from './WhatNow';
-import type { FarmResponse } from './types';
 import { closeParams, forecastHref, openParcelParams, openSimulationParams, readSimulationPrefill, readView } from './urlState';
 import { useLoad } from './useLoad';
 
@@ -34,6 +33,10 @@ export default function PlanningApp() {
   const farm = useLoad((s) => fetchFarm(campaign, undefined, s), [campaign]);
   const data = farm.data;
   const row = data && openParcel ? data.parcels.find((p) => p.parcel_id === openParcel || p.parcel_id.endsWith(`:${openParcel}`)) : undefined;
+  // The work list is tenant-wide; show only the parcels the farm filter shows.
+  const shownIds = new Set(
+    (data?.parcels ?? []).filter((p) => farmId === 'all' || p.farm_id === farmId).map((p) => p.parcel_id.split('urn:ngsi-ld:AgriParcel:').pop() ?? p.parcel_id),
+  );
   const linkedFarms = (data?.farms ?? []).filter((f) => f.farm_id);
   const openDetail = (parcelId: string) => setParams((p) => openParcelParams(p, parcelId, data?.campaign ?? new Date().getFullYear()));
   const openSimulation = (parcelId: string) => setParams((p) => openSimulationParams(p, parcelId));
@@ -97,7 +100,7 @@ export default function PlanningApp() {
                 <CampaignSummary data={data} />
                 <PlanMatrix data={data} farmId={farmId} onOpen={openDetail} onSimulate={openSimulation} onForecast={openForecast}
                   editable={data.campaign >= new Date().getFullYear()} />
-                {Array.isArray(worklist.data) && <WhatNow rows={worklist.data} />}
+                {Array.isArray(worklist.data) && <WhatNow rows={worklist.data.filter((w) => shownIds.has(w.parcelId))} />}
               </Stack>
             )}
           </>

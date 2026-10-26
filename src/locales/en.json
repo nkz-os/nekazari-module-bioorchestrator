@@ -149,7 +149,7 @@
     }
   },
   "planning": {
-    "whatNow": {"title": "What is due now", "quiet": "No surprises or pending jobs", "job": {"irrigate": "Irrigate today", "sow": "Sow {{crop}}", "treat": "Check {{disease}}", "harvest": "Harvest", "pending_assessment": "Assessment pending", "none_until": "Nothing until {{date}}"}, "surprise": {"vigor_below_expected": "Vigour below expected", "water_drop": "Sharp drop in water reserve", "phenology_deviation": "Phenology off schedule", "new_high_alert": "New alert: {{disease}}"}, "open": "Open in crop health"},
+    "whatNow": {"today": "today", "title": "What is due now", "quiet": "No surprises or pending jobs", "job": {"irrigate": "Irrigate today", "sow": "Sow {{crop}}", "treat": "Check {{disease}}", "harvest": "Harvest", "pending_assessment": "Assessment pending", "none_until": "Nothing until {{date}}", "none": "Nothing pending", "sowOn": "Sow {{crop}}: {{date}}", "harvestOn": "Harvest: {{date}}"}, "surprise": {"vigor_below_expected": "Vigour below expected", "water_drop": "Sharp drop in water reserve", "phenology_deviation": "Phenology off schedule", "new_high_alert": "New alert: {{disease}}"}, "open": "Open in crop health"},
     "loading": {"generic": "Loading…", "farm": "Loading your parcels…", "fit": "Checking which crops fit this parcel…", "varieties": "Looking for varieties in the trials of your area; this can take a few seconds…", "estimates": "Estimating the expected harvest…"},
     "title": "Crop planning",
     "subtitle": "What to sow on each parcel, which variety, and in what order",

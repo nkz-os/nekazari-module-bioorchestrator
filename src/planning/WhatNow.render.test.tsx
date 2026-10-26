@@ -27,11 +27,37 @@ describe('WhatNow (es)', () => {
     expect(html).toContain('Soto Alto');
     expect(html).toContain('Sembrar cebada');
     expect(html).toContain('Alerta nueva: roya');
-    expect(html).toContain('Nada hasta 2027-03-01');
+    expect(html).toContain(`Nada hasta ${new Date('2027-03-01').toLocaleDateString('es')}`);
+    expect(html).not.toContain('2027-03-01');
     expect(html).toContain('/crop-health?parcel=p1');
     expect(html).toContain('Ver en salud del cultivo');
     expect(html).not.toContain('Quieta');
     expect(html).not.toContain('Sin sorpresas');
+  });
+
+  it('says nothing pending when none_until has no date', () => {
+    const html = renderToStaticMarkup(<WhatNow rows={[row({ nextJob: { kind: 'none_until', when: null, detail: {} } })]} />);
+    expect(html).toContain('Nada pendiente');
+  });
+
+  it('resolves a species code to a name and appends the sowing date', () => {
+    const html = renderToStaticMarkup(<WhatNow rows={[row({
+      plannedCrop: { species: 'HORVX', names: { es: 'cebada' } },
+      nextJob: { kind: 'sow', when: '2026-11-05', detail: { crop: 'HORVX', species: 'HORVX', workability: 'ok' } },
+    })]} />);
+    expect(html).toContain(`Sembrar cebada: ${new Date('2026-11-05').toLocaleDateString('es')}`);
+    expect(html).not.toContain('HORVX');
+  });
+
+  it('skips unknown job kinds and surprise codes, and names a URN parcel by its short id', () => {
+    const html = renderToStaticMarkup(<WhatNow rows={[
+      row({ parcelName: 'Rara', nextJob: { kind: 'teleport', when: null, detail: {} }, surprise: { code: 'mystery', detail: {} } }),
+      row({ parcelId: 'abc123', parcelName: 'urn:ngsi-ld:AgriParcel:abc123', nextJob: { kind: 'irrigate', when: 'today', detail: {} } }),
+    ]} />);
+    expect(html).not.toContain('Rara');
+    expect(html).not.toContain('teleport');
+    expect(html).toContain('abc123');
+    expect(html).not.toContain('urn:ngsi-ld');
   });
 
   it('renders a row with a surprise but no job', () => {

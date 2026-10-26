@@ -5,7 +5,8 @@ export const API_ORIGIN: string = (
 
 export interface WorklistRow {
   parcelId: string;
-  parcelName?: string;
+  parcelName?: string | null;
+  plannedCrop?: { species?: string; names?: Record<string, string>; sowingDate?: string | null } | null;
   nextJob: { kind: string; when: string | null; detail: Record<string, unknown> } | null;
   surprise: { code: string; detail: Record<string, unknown> } | null;
   cropStatus: string;
@@ -17,7 +18,11 @@ export async function fetchWorklist(signal?: AbortSignal): Promise<WorklistRow[]
     const res = await fetch(`${API_ORIGIN}/api/crop-health/parcels`, { credentials: 'include', signal });
     if (!res.ok) return null;
     const body: unknown = await res.json();
-    return Array.isArray(body) ? (body as WorklistRow[]) : null;
+    const rows = (body as { parcels?: unknown } | null)?.parcels;
+    if (!Array.isArray(rows)) return null;
+    // An older crop-health without the work list answers without `nextJob`: treat it as not installed.
+    const hasWorklist = rows.every((r) => r !== null && typeof r === 'object' && 'nextJob' in r);
+    return hasWorklist ? (rows as WorklistRow[]) : null;
   } catch {
     return null;
   }

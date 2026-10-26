@@ -132,7 +132,7 @@
     }
   },
   "planning": {
-    "whatNow": {"title": "À faire maintenant", "quiet": "Aucune surprise ni tâche en attente", "job": {"irrigate": "Irriguer aujourd'hui", "sow": "Semer {{crop}}", "treat": "Vérifier {{disease}}", "harvest": "Récolter", "pending_assessment": "Évaluation en attente", "none_until": "Rien avant le {{date}}"}, "surprise": {"vigor_below_expected": "Vigueur inférieure aux attentes", "water_drop": "Forte baisse de la réserve en eau", "phenology_deviation": "Phénologie décalée", "new_high_alert": "Nouvelle alerte : {{disease}}"}, "open": "Ouvrir dans santé de la culture"},
+    "whatNow": {"today": "aujourd'hui", "title": "À faire maintenant", "quiet": "Aucune surprise ni tâche en attente", "job": {"irrigate": "Irriguer aujourd'hui", "sow": "Semer {{crop}}", "treat": "Vérifier {{disease}}", "harvest": "Récolter", "pending_assessment": "Évaluation en attente", "none_until": "Rien avant le {{date}}", "none": "Rien en attente", "sowOn": "Semer {{crop}} : {{date}}", "harvestOn": "Récolter : {{date}}"}, "surprise": {"vigor_below_expected": "Vigueur inférieure aux attentes", "water_drop": "Forte baisse de la réserve en eau", "phenology_deviation": "Phénologie décalée", "new_high_alert": "Nouvelle alerte : {{disease}}"}, "open": "Ouvrir dans santé de la culture"},
     "loading": {"generic": "Chargement…", "farm": "Chargement de vos parcelles…", "fit": "Analyse des cultures adaptées à cette parcelle…", "varieties": "Recherche de variétés dans les essais de votre zone ; cela peut prendre quelques secondes…", "estimates": "Calcul de la récolte attendue…"},
     "title": "Planification des cultures",
     "subtitle": "Quoi semer sur chaque parcelle, avec quelle variété et dans quel ordre",

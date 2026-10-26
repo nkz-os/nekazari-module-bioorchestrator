@@ -47,7 +47,6 @@ export default function PlanMatrix({ data, farmId, onOpen, editable = true, onSi
         ? <Button size="sm" variant="ghost" onClick={() => onForecast(row.parcel_id)}>{t('planning.next.inField')}</Button>
         : null;
     }
-    // Unreadable history is already said by the row warning.
     if (s.kind === 'locked') {
       // A locked parcel says why, once, in this column; a past campaign is only history, and
       // unreadable history is already a row warning.
@@ -70,7 +69,7 @@ export default function PlanMatrix({ data, farmId, onOpen, editable = true, onSi
             <th className="py-2 pr-4 font-medium">{t('planning.matrix.area')}</th>
             <th className="py-2 pr-4 font-medium">{t('planning.matrix.regime')}</th>
             {data.campaigns.map((c) => <th key={c} className="py-2 pr-4 font-medium">{c}</th>)}
-            <th className="py-2 pr-4 font-medium">{t('planning.matrix.nextStep')}</th>
+            {editable && <th className="py-2 pr-4 font-medium">{t('planning.matrix.nextStep')}</th>}
           </tr>
         </thead>
         <tbody>
@@ -120,7 +119,7 @@ export default function PlanMatrix({ data, farmId, onOpen, editable = true, onSi
                   </td>
                 );
               })}
-              <td className="py-2 pr-4">{renderStep(row)}</td>
+              {editable && <td className="py-2 pr-4">{renderStep(row)}</td>}
             </tr>
           ))}
         </tbody>
