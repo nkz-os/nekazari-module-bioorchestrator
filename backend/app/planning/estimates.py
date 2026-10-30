@@ -14,9 +14,22 @@ import math
 from collections import defaultdict
 from statistics import median, quantiles
 
+from app.planning.aquacrop_provider import VALIDATED
+
 PROVIDER_TRIALS = "trial_evidence"
 PROVIDER_AQUACROP = "aquacrop"
 DISAGREEMENT_RATIO = 1.5  # P50 max/min among same-basis model estimates (owner, 2026-10-13: kept, revisit with use)
+
+
+def estimate_providers(eppo: str | None, *, has_trials: bool, regime: str | None, country: str | None) -> list[str]:
+    """Providers that can answer for this crop on this parcel. AquaCrop only inside its validated scope.
+
+    AquaCrop still needs a sowing date to run: listed here means it is offered, not that it answered.
+    """
+    providers = [PROVIDER_TRIALS] if has_trials else []
+    if eppo and (eppo, regime, country) in VALIDATED:
+        providers.append(PROVIDER_AQUACROP)
+    return providers
 
 
 def percentiles(values: list[float]) -> dict | None:

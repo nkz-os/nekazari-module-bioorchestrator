@@ -214,3 +214,16 @@ async def test_cover_only_species_are_flagged(monkeypatch):
     by_slug = {s["species"]: s for s in out["species"]}
     assert by_slug["hairy_vetch"]["cover_only"] is True and by_slug["crimson_clover"]["cover_only"] is True
     assert by_slug["wheat"]["cover_only"] is False and by_slug["vetch"]["cover_only"] is False
+
+
+async def test_fit_offers_aquacrop_only_in_its_validated_scope(monkeypatch):
+    env = {**BARE_ENV, "country": "ES"}
+    dao = AsyncMock()
+    dao.get_parcel_environment.return_value = env
+    monkeypatch.setattr(service, "fetch_crop_cycles", AsyncMock(return_value=None))
+    monkeypatch.setattr(service, "load_reference", AsyncMock(return_value=EMPTY_REF))
+    out = await service.parcel_fit(dao=dao, source=KnowledgeSource("global", None), parcel_id="p1",
+                                   tenant_id="t", campaign=2027, regime="rainfed")
+    by_slug = {s["species"]: s for s in out["species"]}
+    assert by_slug["wheat"]["estimate_providers"] == ["trial_evidence", "aquacrop"]
+    assert by_slug["barley"]["estimate_providers"] == []

@@ -21,6 +21,7 @@ from app.planning.calendar import (
 from app.planning.estimates import (
     aquacrop_status,
     disagreement,
+    estimate_providers,
     trial_estimate,
     usable_rows,
     visible,
@@ -190,7 +191,8 @@ async def parcel_fit(*, dao, source: KnowledgeSource, parcel_id: str, tenant_id:
         species.append({
             "species": slug, "eppo": eppo, "names": dict(info.get("common_names") or {}), "lifecycle": lifecycle,
             "verdict": verdict_of(reasons), "reasons": reasons, "sowing": _sowing(sowing),
-            "has_variety_trials": trials, "estimate_providers": ["trial_evidence"] if trials else [],
+            "has_variety_trials": trials, "estimate_providers": estimate_providers(
+                catalog_code(eppo) if eppo else None, has_trials=trials, regime=regime_used, country=env.get("country")),
             "cover_only": is_cover_only(slug),
         })
     species.sort(key=lambda s: (VERDICT_ORDER[s["verdict"]], s["species"]))
