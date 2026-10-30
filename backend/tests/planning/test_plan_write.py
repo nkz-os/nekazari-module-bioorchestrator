@@ -346,12 +346,12 @@ def _cover_plan(crop):
 @pytest.mark.parametrize("role", ["cover_crop", "catch_crop"])
 def test_cover_or_catch_crop_outside_the_registry_is_kept_as_written(role):
     plan = PlanIn.model_validate({"campaign": 2027, "regime": "rainfed", "management": "conventional", "cycles": [
-        {"role": role, "crop": "Phacelia tanacetifolia", "sowing_start": "2026-10-01",
+        {"role": role, "crop": "Camelina sativa", "sowing_start": "2026-10-01",
          "expected_termination": "2027-04-20"}]})
     segments = plan_write.segments_from_plan(plan)
-    assert segments[0]["crop"] == "Phacelia tanacetifolia"
+    assert segments[0]["crop"] == "Camelina sativa"
     entity = build_segment_entity("t", URN, "2027", 0, segments[0])
-    assert entity["species"]["value"] == "Phacelia tanacetifolia" and "cropLifecycle" not in entity
+    assert entity["species"]["value"] == "Camelina sativa" and "cropLifecycle" not in entity
 
 
 def test_cover_crop_in_the_registry_still_resolves_to_its_code():
@@ -374,7 +374,7 @@ def test_one_letter_raw_species_is_refused_by_the_name_rule():
 
 def test_unknown_main_crop_is_still_refused():
     plan = _cover_plan("vetch").model_copy(deep=True)
-    plan.cycles[1].crop = "Phacelia tanacetifolia"
+    plan.cycles[1].crop = "Camelina sativa"
     with pytest.raises(plan_write.PlanError) as e:
         plan_write.segments_from_plan(plan)
     assert e.value.code == "unknown_crop"
