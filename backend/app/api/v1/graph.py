@@ -391,9 +391,9 @@ async def recommend_fertilizer(
     driver: DriverDep,
     species: str = Query(..., description="Crop species"),
     stage: str = Query("vegetative", description="Phenological stage"),
-    soil_n: float | None = Query(None, description="Soil nitrogen level (kg/ha); omit when unknown"),
-    soil_p: float | None = Query(None, description="Soil phosphorus level (kg/ha); omit when unknown"),
-    soil_k: float | None = Query(None, description="Soil potassium level (kg/ha); omit when unknown"),
+    soil_n: float = Query(0, description="Soil nitrogen level (kg/ha)"),
+    soil_p: float = Query(0, description="Soil phosphorus level (kg/ha)"),
+    soil_k: float = Query(0, description="Soil potassium level (kg/ha)"),
 ):
     """Return NPK fertilizer recommendations based on crop demand and soil levels."""
     dao = GraphDAO(driver)
