@@ -8,7 +8,7 @@ This avoids dependency on CDS API keys or JRC MARS scraping.
 Data sourced from:
   - WorldClim 2.1 climate normals (1970-2000), CC BY-SA 4.0
   - Kottek et al. (2006) World Map of Köppen-Geiger climate classification
-  - Published phenology parameters per species (FAO, Legumes Translated, INTIA)
+  - Published phenology parameters per species (FAO, JRC MARS)
 
 Method:
   GDD_base4 = Σ max(0, T_daily_mean - 4°C)

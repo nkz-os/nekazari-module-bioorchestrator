@@ -154,9 +154,7 @@ missing kg/ha.
 ### 3.4 Perennial extension (planned — optional fields)
 
 The graph model extends `VarietyTrial` for woody/perennial crops **without a new label**.
-These fields are optional (null for annual crops). Ingester support lands with
-`AlmondIfapaIngester` and related PRs — emit them in JSON-LD now if the source provides
-the data.
+These fields are optional (null for annual crops).
 
 | JSON-LD field | Neo4j property | Notes |
 |---------------|----------------|-------|
@@ -233,25 +231,14 @@ Template: `app/ingestion/crea_ingester.py`.
 
 ---
 
-## 7. Registered sources (ingesters)
+## 7. Registered loadable sources (ingesters)
 
-| `SOURCE_ID` | Ingester module |
-|-------------|-----------------|
-| `BSL` | `bsl_ingester.py` |
-| `GENVCE` | `genvce_ingester.py` |
-| `NAVARRA-AGRARIA` | `navarra_ingester.py` |
-| `INIAV` | `iniav_ingester.py` |
-| `NEBIH` | `nebih_ingester.py` |
-| `CTIFL` | `ctifl_ingester.py` |
-| `IFAPA` | `ifapa_ingester.py` (legumes; `IFAPA_ALMOND` perennial pilot pending) |
-| `ITACYL` | `itacyl_ingester.py` |
-| `LFL` | `lfl_ingester.py` |
-| `AHDB` | `ahdb_ingester.py` |
-| `CREA` | `crea_ingester.py` |
-| `INTIA-EXP` | `intia_exp_ingester.py` |
-| `EU-TRIAL-REPORTS` | `eu_trials_ingester.py` |
+Only sources with `commercial_use: allowed` in `backend/data/registries/sources.yaml` are ingested in production (see [KG_PIPELINE.md](./KG_PIPELINE.md)):
 
-Navarra JSON-LD converter reference: `nkz-navarra-agraria/src/navarra_agraria/jsonld_converter.py`.
+| `SOURCE_ID` | Ingester / Adapter |
+|-------------|--------------------|
+| `GENVCE` / `GENVCE-TRIALS` | `app/kg/adapters/genvce.py`, `app/kg/adapters/genvce_trials.py` |
+| `CREA` | `app/kg/adapters/crea.py` |
 
 ---
 
@@ -259,8 +246,7 @@ Navarra JSON-LD converter reference: `nkz-navarra-agraria/src/navarra_agraria/js
 
 ```bash
 cd nkz-module-bioorchestrator/backend
-PYTHONPATH=. python -m app.ingestion.validate_source NAVARRA-AGRARIA /path/to/trials.jsonld
-PYTHONPATH=. python -m pytest tests/test_base_ingester.py tests/test_navarra_ingester_structure.py -q
+PYTHONPATH=. python -m pytest tests/test_base_ingester.py -q
 ```
 
 Entity-manager / platform tests: see root `AGENTS.md` §2 (run affected suites before claiming green).

@@ -1,7 +1,7 @@
 """Crop reference data — carbon, operations, nutrient requirements.
 
 Multi-layer resolver:
-1. Neo4j AgriKnowledge → n_fixation_kg_ha (real measurements from INTIA/IFAPA/ITACyL)
+1. Neo4j AgriKnowledge → n_fixation_kg_ha (open-licensed reference measurements)
 2. EPPO API → family → auto-detect Fabaceae (legume) vs Poaceae (cereal)
 3. EcoCrop CSV → growing_season_days (FAO GAEZ)
 4. Static IPCC 2019 Tier 1 table (fallback)

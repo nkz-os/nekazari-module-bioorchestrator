@@ -337,28 +337,6 @@ async def rotation_constraints(
     return await dao.get_rotation_constraints(crop)
 
 
-# ── Protected Area Check (Natura 2000 proxy) ─────────────────────────────────
-
-
-@router.get("/protected-area-check")
-async def protected_area_check(
-    lat: float = Query(..., description="Latitude"),
-    lon: float = Query(..., description="Longitude"),
-):
-    """Check if a point is within a Natura 2000 protected area."""
-    try:
-        from ikerketa.connectors.natura2000 import Natura2000Connector
-        connector = Natura2000Connector()
-        result = connector.fetch(lat=lat, lon=lon)
-        if result.entities:
-            return result.entities[0] if len(result.entities) == 1 else result.entities
-        return {"in_protected_area": False}
-    except ImportError:
-        return {"error": "Natura 2000 connector not available"}
-    except Exception as e:  # noqa: BLE001
-        return {"error": str(e)}
-
-
 @router.get("/varieties")
 async def variety_catalogue(
     species: str = Query(..., description="Crop species scientific name"),
@@ -406,49 +384,6 @@ async def crop_name(
     if not name:
         raise HTTPException(status_code=404, detail=f"No '{lang}' name for {slug}")
     return {"eppo": eppo.strip().upper(), "slug": slug, "name": name}
-
-
-@router.get("/pollinators")
-async def pollinator_occurrences(lat: float = Query(...), lon: float = Query(...)):
-    """Return pollinator species near a location from GBIF."""
-    try:
-        from ikerketa.connectors.gbif_pollinators import GBIFPollinatorsConnector
-        connector = GBIFPollinatorsConnector()
-        result = connector.fetch(lat=lat, lon=lon)
-        species = list({e["species"]: e for e in result.entities}.values())
-        return {"pollinators": species[:10]}
-    except ImportError:
-        return {"pollinators": []}
-    except Exception as e:  # noqa: BLE001
-        return {"pollinators": [], "error": str(e)}
-
-
-@router.get("/terrain")
-async def terrain_data(lat: float = Query(...), lon: float = Query(...)):
-    """Fetch elevation and slope from Copernicus DEM for a point."""
-    try:
-        from ikerketa.connectors.copernicus_dem import CopernicusDEMConnector
-        connector = CopernicusDEMConnector()
-        result = connector.fetch(lat=lat, lon=lon)
-        return result.entities[0] if result.entities else {"error": "No DEM data"}
-    except ImportError:
-        return {"error": "Copernicus DEM connector not available", "elevation_m": None}
-    except Exception as e:  # noqa: BLE001
-        return {"error": str(e)}
-
-
-@router.get("/climate-reference")
-async def climate_reference(lat: float = Query(...), lon: float = Query(...)):
-    """Fetch ERA5 climate reanalysis reference for a point."""
-    try:
-        from ikerketa.connectors.era5_climate import ERA5ClimateConnector
-        connector = ERA5ClimateConnector()
-        result = connector.fetch(lat=lat, lon=lon)
-        return result.entities[0] if result.entities else {"error": "No climate data"}
-    except ImportError:
-        return {"error": "ERA5 connector not available"}
-    except Exception as e:  # noqa: BLE001
-        return {"error": str(e)}
 
 
 @router.get("/recommendations/fertilizer")

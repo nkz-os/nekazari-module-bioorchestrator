@@ -104,7 +104,7 @@ In the 3D viewer, a selected parcel shows a **Parcel plan** panel with the previ
               │ TrialSite      │  │  │ERA5 · Copernicus DEM  ││
               │ VarietyTrial   │  │  │Natura2000 · EU Pestic ││
               │ PhenologyParams│  │  │AgriKnowledge · IPCC   ││
-              │ CropHeatTol.   │  │  │Feedipedia · INTIA     ││
+              │ CropHeatTol.   │  │  │MAPA · FertiliCalc     ││
               │ CropNutrientP. │  │  │JRC MARS · FAO GAEZ    ││
               │ RotationConstr.│  │  │DAD-IS · Redis alerts  ││
               │ SoilSuitability│  │  │…and 10 more           ││
@@ -127,7 +127,7 @@ The former multi-tab interface was replaced by crop planning. The capabilities b
 | **Water Budget** | ETc × Kc irrigation demand using real ET0 from timeseries-reader |
 | **Regenerative Sequence** | Cover crop → protein crop design with N fixation, water balance, **carbon projection** (SOC, CO₂e, €) |
 | **Crop Plan & Advisories** | Multi-segment rotation (cover → main → catch) committed as an `AgriCrop` set; **`CropAdvisory`** recommendations auto-triggered when Crop-Health reports a phenology change (Contract 2 action-rule loop) |
-| **Alerts** | Redis-sourced parcel alerts with severity filter, **🐝 eco-warnings** (GBIF pollinators + pesticide safety) |
+| **Alerts** | Redis-sourced parcel alerts with severity filter |
 
 ### 📚 Reference Data
 
@@ -149,7 +149,7 @@ The former multi-tab interface was replaced by crop planning. The capabilities b
 
 Crop N fixation and growing season are resolved from **multiple live sources** (never hardcoded):
 
-1. **AgriKnowledge** (Neo4j) — real measurements from INTIA/IFAPA/ITACyL
+1. **Nutrient & Balance Reference** (`crop_balance_coefficients.yaml`) — open-licensed coefficients from MAPA, Panagos (JRC), ESSD 2024 and FertiliCalc (UCO/CSIC)
 2. **EPPO Taxonomy API** — auto-detect Fabaceae/Poaceae family N fixation
 3. **EcoCrop CSV** (FAO GAEZ) — growing season days per crop
 4. **IPCC 2019 Tier 1** — static fallback for 18 crops
@@ -256,11 +256,7 @@ Full i18n support in **6 languages**: English, Spanish, Basque, French, Portugue
 | `GET /soil-suitability` | Soil requirements per species |
 | `GET /rotation-constraints` | Crop rotation rules |
 | `GET /recommendations/fertilizer` | NPK fertilizer needs |
-| `GET /protected-area-check` | Natura 2000 proximity |
-| `GET /varieties` | CPVO registered varieties |
-| `GET /pollinators` | GBIF pollinator species |
-| `GET /terrain` | Copernicus DEM elevation |
-| `GET /climate-reference` | ERA5-Land climate normals |
+| `GET /varieties` | Registered varieties in catalog |
 
 ### Catalog (`/api/crop/catalog/*`)
 
@@ -283,26 +279,12 @@ Full i18n support in **6 languages**: English, Spanish, Basque, French, Portugue
 | **EPPO Global Database** | Taxonomy + pests | CropReference, PestRisk, OrganicInputs |
 | **EcoCrop (FAO GAEZ)** | Crop requirements | Thermal, Soil, GrowingSeason |
 | **CPVO Variety Finder** | Registered varieties | Comparator, Catalog, MarketMaturity |
-| **AgriKnowledge (Neo4j)** | Research measurements | N fixation (INTIA/IFAPA/ITACyL) |
-| **Feedipedia** | Livestock feed values | Comparator (forage value) |
-| **IPCC 2019 Tier 1** | Emission factors | CropReference fallback |
-| **FiBL Organic Inputs** | Authorized products | OrganicInputs (pest cross-ref) |
-| **SoilGrids 2.0** | Soil properties | Parcel soil data |
-| **LUCAS 2018** | Topsoil data | Soil module enrichment |
-| **Copernicus DEM** | Elevation | Terrain, climate resolution |
-| **ERA5-Land** | Climate reanalysis | Climate reference, ET0 |
-| **Sentinel-2 L2A** | Vegetation indices | NDVI for ParcelHealth |
-| **Natura 2000** | Protected areas | Land-use constraints |
-| **EU Pesticides DB** | Authorized substances | Crop protection |
-| **GBIF** | Species occurrences | Pollinators |
-| **FAO AGRIS** | Agricultural literature | Provenance enrichment |
-| **AGROVOC** | Thesaurus | Entity linking |
-| **JRC MARS Bulletins** | Crop monitoring | Cover crop reference |
-| **INTIA Navarra** | Field trials | Cover crop + N fixation |
-| **EU Trial Reports** | Variety trials (LfL, COBORU, SLU, Arvalis, CSIC, IFAPA, BRESOV…) | Extrapolate, Comparator (real measured yields) |
-| **Legumes Translated** | H2020 practice notes | Cover crop management |
-| **DAD-IS** | Livestock breeds | Breed discovery |
-| **GlobalTreeSearch** | Tree species | Forestry domain |
+| **MAPA Guía Fertilización 2010** | Official fertilization guide | NPK balance, cover crop & legume N fixation |
+| **FertiliCalc (UCO/CSIC)** | Agronomic reference model (GPL-3.0) | Residue C/N, nutrient balance defaults |
+| **ESSD 2024 / Dryad CC0** | Global & EU nutrient dataset | Biological N fixation, dry matter & harvest index |
+| **Panagos et al. 2022 (JRC)** | EU phosphorus removal dataset | Phosphorus balance |
+| **Eurostat (`apro_cpshr`)** | NUTS 2 regional crop statistics | Regional yield baselines |
+| **GENVCE / CREA** | Official variety trial networks | Variety comparison and yield evidence |
 | **Redis Streams** | Real-time events | Parcel alerts |
 | **Timeseries Reader** | Time-series data | ET0, historical weather |
 | **Soil Module** | Parcel soil data | AWC, horizons, organic matter |
