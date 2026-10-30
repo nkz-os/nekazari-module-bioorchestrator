@@ -77,121 +77,27 @@ package README:
 
 ## 2. Variety Trial Sources (Scraped PDF/HTML → JSON-LD → Neo4j)
 
-### Active sources (7 climates covered)
+### Active loadable sources (`commercial_use: allowed`)
 
-Trial counts below are **exact**, from the production graph on 2026-07-18
-(`MATCH (vt:VarietyTrial) RETURN vt.source_id, count(*)`).
+Only sources verified with `commercial_use: allowed` in `backend/data/registries/sources.yaml` are loadable in production:
 
-| # | Source (`source_id`) | Country | Crops | Trials |
-|---|--------|---------|-------|-------:|
-| 1 | **BSL Bundessortenamt** (`BSL`) | Germany | Maize, wheat, barley, rapeseed, rye, oats, triticale, potato | 18,422 |
-| 2 | **GENVCE** (`GENVCE`) | Spain | Wheat, barley, oats, triticale, rye, rapeseed, sunflower, legumes | 7,044 |
-| 3 | **Navarra Agraria / INTIA** (`NAVARRA-AGRARIA`) | Spain | Wheat, barley, oats, triticale, pea, faba bean | 4,834 |
-| 4 | **NÉBIH / VSZT** (`NEBIH`) | Hungary | Winter wheat, maize, rapeseed | 838 |
-| 5 | **EU trial reports** (`EU-TRIAL-REPORTS`) | EU | Cereals | 724 |
-| 6 | **LfL Bayern** (`LFL-BAYERN`) | Germany | Winter/spring wheat, barley, oats, rye, triticale, rapeseed, maize, potato | 694 |
-| 7 | **CREA** (`CREA`) | Italy | Durum wheat, barley | 659 |
-| 8 | **Legacy load** (`LEGACY`) | — | Mixed, pre-dates per-source traceability | 576 |
-| 9 | **ITACyL** (`ITACYL`) | Spain | Wheat, barley, rapeseed | 523 |
-| 10 | **INIAV / CerealTech** (`INIAV-LVR`) | Portugal | Soft wheat, durum wheat, barley | 306 |
-| 11 | **AHDB** (`AHDB`) | UK | Wheat, barley, oats, rapeseed | 247 |
-| 12 | **CTIFL** (`CTIFL`) | France | Strawberry, tomato, peach, apricot, cherry, apple, pear | 133 |
-| 13 | **INTIA experimental** (`INTIA-EXP`) | Spain | Cover crops, legumes | 118 |
-| 14 | **IFAPA** (`IFAPA` + `IFAPA_ALMOND`) | Spain | Wheat, barley, sunflower, legumes, almond | 135 |
-| 15 | **TAGEM** (`TAGEM_TR_2012`) | Turkey | Cereals | 57 |
-| 16 | **INRA Maroc** (`INRAMAROC`) | Morocco | Cereals | 42 |
-| 17 | **EVENA** (`EVENA`) | Spain | Cereals | 5 |
-| 18 | **FAO EcoCrop** | International | 2,500+ species (environmental envelopes) | reference only |
+| # | Source (`source_id`) | Country | Scope |
+|---|--------|---------|-------|
+| 1 | **GENVCE** (`GENVCE` / `GENVCE-TRIALS`) | Spain | Arable crops (wheat, barley, oats, triticale, rye, rapeseed, sunflower, maize) |
+| 2 | **CREA** (`CREA`) | Italy | Maize national variety trials (2021–2025) |
+| 3 | **MAPA Fertilization Guide** (`mapa_guia_2010`) | Spain | NPK balance, legume N fixation, cover crop parameters |
+| 4 | **Panagos et al. 2022 (JRC)** (`panagos_2022`) | EU | Phosphorus plant removal coefficients |
+| 5 | **ESSD 2024 / Ludemann et al.** (`essd_2024_s3` / `ludemann_cc0`) | International | Crop nutrient concentrations, harvest indices, biological N fixation |
+| 6 | **Eurostat (`apro_cpshr`)** (`eurostat_apro_cpshr`) | EU | NUTS 2 regional crop production and yield series |
+| 7 | **FertiliCalc (UCO/CSIC)** (`fertilicalc_script_2024`) | Spain | Residue C/N and nutrient balance reference defaults |
 
 ### Pipeline per source
 
-> GENVCE and CREA no longer use this flow: they are built by the gated pipeline in [KG_PIPELINE.md](./KG_PIPELINE.md)
-> (GENVCE rows are zone/national averages, i.e. regional evidence; CREA rows are maize). The counts in the table
-> above predate it.
-
-```
-PDF/HTML download → PyMuPDF text extraction → LLM structured extraction
-→ Pydantic validation → JSON-LD (NGSI-LD refTrialSite/refArticleSource)
-→ navarra_ingester.py → Neo4j MERGE
-```
-
-### Repositories
-
-| Scraper | Repo path | Status |
-|---------|-----------|--------|
-| Navarra | `nkz-navarra-agraria/` | Production |
-| GENVCE | `nkz-genvce-scraper/` | Production |
-| CTIFL | `nkz-ctifl-scraper/` | Production (Magento scanner added) |
-| LfL | `nkz-lfl-scraper/` | Production (HTML scraper added) |
-| NÉBIH | `nkz-nebih-scraper/` | Production (new) |
-| INIAV | `nkz-iniav-scraper/` | Production (OCR required for CerealTech PDFs) |
+> GENVCE and CREA are built by the gated pipeline in [KG_PIPELINE.md](./KG_PIPELINE.md).
 
 ---
 
-## 3. IkerKeta Ontology Connectors (n10s RDF → Neo4j)
-
-Ikerketa is the agronomic ETL pipeline that enriches the knowledge graph with
-standardized ontologies and external databases. Its 26 connectors feed directly
-into Neo4j via the `init_graph.py` n10s ingestion pipeline.
-
-### Taxonomic & Phytosanitary
-
-| Connector | Source | What it provides | Entity types |
-|-----------|--------|------------------|-------------|
-| **EPPO** | gd.eppo.int (REST API v2) | Plant pest/disease taxonomy, host ranges, geo-distribution | `Pest`, `Pathogen`, `Host` |
-| **AGROVOC** | agrovoc.fao.org (SPARQL) | Multilingual agricultural thesaurus — 40K+ concepts, semantic relations | `Concept`, `SemanticRelation` |
-| **CABI CPC** | cabi.org (fixtures) | Crop protection compendium — pest distribution maps | `Pest`, `Distribution` |
-| **USDA PLANTS** | plants.usda.gov (CSV) | North American plant checklist — taxonomy, native status | `Plant`, `Taxon` |
-| **USPEST** | uspest.org | Degree-day phenology models for pest forecasting | `PhenologyModel`, `GDDParams` |
-
-### Crop Science & Agronomy
-
-| Connector | Source | What it provides | Entity types |
-|-----------|--------|------------------|-------------|
-| **EcoCrop** | FAO GAEZ (CSV) | Crop environmental requirements — 2,500+ species, climate + soil envelopes | `Crop`, `EdaphicProfile`, `ClimaticProfile` |
-| **CPVO Varieties** ⚠️ **NOT OPERATIONAL** | cpvo.europa.eu (API) | Intended: EU registered plant varieties. **The endpoint returns 404** (verified 2026-07-19) and there are **0 `AgriCropVariety` nodes** in the graph. The connector also extracts only name, species, registration year and maintainer — **no growing cycle, no maturity class**: CPVO is a plant-variety-rights registry, not an agronomic one. | — |
-| **FiBL** | fibl.org (CSV) | Organic input products list — fertilizers, biopesticides | `OrganicInput` |
-| **DG SANTE** | ec.europa.eu (API) | EU Pesticides Database — approved/withdrawn active substances | `Pesticide`, `ApprovalStatus` |
-| **EU Pesticides** | ec.europa.eu | Pesticide MRLs, approval status, withdrawal dates | `Pesticide`, `Regulation` |
-
-### Livestock & Forages
-
-| Connector | Source | What it provides | Entity types |
-|-----------|--------|------------------|-------------|
-| **DAD-IS** | fao.org/dad-is (API) | Domestic Animal Diversity — 15K+ breeds across 37 species | `Breed`, `LivestockSpecies` |
-| **Feedipedia** | feedipedia.org (API) | Animal feed resources — nutritional composition for 1,400+ feeds | `FeedResource`, `NutrientProfile` |
-| **Forages** | tropicalforages.info (CSV) | CIAT/ILRI forage species — tropical legume & grass cultivars | `Forage`, `Cultivar` |
-| **WAHIS** | wahis.woah.org (API) | World Animal Health — disease outbreaks, control measures | `AnimalDisease`, `Outbreak` |
-
-### Forestry & Agroforestry
-
-| Connector | Source | What it provides | Entity types |
-|-----------|--------|------------------|-------------|
-| **Agroforestree** | ICRAF (API) | Agroforestry tree species — 600+ species, uses, management | `TreeSpecies`, `EcosystemService` |
-| **GlobAllomeTree** | FAO/CIRAD (API) | Allometric equations — biomass/carbon estimation for 5,000+ trees | `AllometricEquation` |
-| **GlobalTreeSearch** | BGCI (CSV) | Complete global tree checklist — 60K+ species | `TreeSpecies`, `ConservationStatus` |
-| **EUFORGEN** | euforgen.org | European forest genetic resources — distribution maps, gene conservation units | `ForestSpecies`, `GeneticUnit` |
-| **IUCN Trees** | iucnredlist.org (API) | Tree species conservation status — threat categories, population trends | `TreeSpecies`, `ConservationStatus` |
-
-### Geospatial & Climate
-
-| Connector | Source | What it provides | Entity types |
-|-----------|--------|------------------|-------------|
-| **SoilGrids 2.0** | ISRIC (WCS) | Global soil properties — 250m resolution, 7 depths, 18 properties | `SoilProperty`, `SoilProfile` |
-| **ERA5 Climate** | Copernicus CDS (API) | Hourly climate reanalysis — temperature, precipitation, radiation, wind | `ClimateData`, `TimeSeries` |
-| **Copernicus DEM** | Copernicus (COG) | GLO-30 Digital Elevation Model — 30m resolution Europe | `Elevation`, `Terrain` |
-| **Natura 2000** | EEA (API) | European protected areas — 27K+ sites, habitat types, species | `ProtectedArea`, `Habitat` |
-
-### Biodiversity & Pollinators
-
-| Connector | Source | What it provides | Entity types |
-|-----------|--------|------------------|-------------|
-| **GBIF Pollinators** | gbif.org (API) | Global pollinator occurrence records — bees, butterflies, hoverflies | `Pollinator`, `Occurrence` |
-| **Companion Planting** | GitHub (CSV) | Curated companion planting datasets — beneficial crop associations | `CompanionRelation`, `Crop` |
-
----
-
-## 4. API Endpoints (BioOrchestrator Backend)
+## 3. API Endpoints (BioOrchestrator Backend)
 
 ### Graph API (`/api/bioorchestrator/graph/*`)
 
@@ -200,18 +106,12 @@ into Neo4j via the `init_graph.py` n10s ingestion pipeline.
 | `GET /health` | Neo4j connectivity check | Neo4j |
 | `GET /stats` | Node/relationship counts | Neo4j |
 | `GET /species` | Species catalog with variety counts | AgriCrop, VarietyTrial |
-| `GET /phenology-params` | Kc, GDD, rooting depth per species/stage | PhenologyParams, EcoCrop |
+| `GET /phenology-params` | Kc, GDD, rooting depth per species/stage | PhenologyParams |
 | `POST /phenology-params/contribute` | Community contribution of phenology data | User → Neo4j |
 | `GET /heat-tolerance` | Tmin, Tmax, Topt per species | CropHeatTolerance |
 | `GET /nutrient-profile` | NPK uptake per stage | CropNutrientProfile |
 | `GET /soil-suitability` | pH, texture, drainage, depth reqs | CropSoilSuitability |
-| `GET /varieties` | Variety list for a species | `AgriCropVariety` — **returns empty**: the label has 0 nodes (see CPVO above) |
-| `GET /pesticides` | Approved/withdrawn pesticides for crop | DG SANTE, EU Pesticides |
-| `GET /pollinators` | Pollinator presence near coordinates | GBIF Pollinators |
-| `GET /protected-area-check` | Natura 2000 overlap check | Natura 2000 |
-| `GET /soil-data` | SoilGrids properties at coordinates | SoilGrids 2.0 |
-| `GET /terrain` | Elevation/slope at coordinates | Copernicus DEM |
-| `GET /climate-reference` | Climate normals at coordinates | ERA5 Climate |
+| `GET /varieties` | Variety list for a species | Orion-LD `hasSubCrop` |
 
 ### Parcel API (`/api/bioorchestrator/parcel/*`)
 
