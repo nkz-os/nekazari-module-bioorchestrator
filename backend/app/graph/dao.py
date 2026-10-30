@@ -1459,9 +1459,19 @@ class GraphDAO:
             return [dict(r) for r in await result.data()]
 
     async def recommend_fertilizer(
-        self, species: str, stage: str, soil_n: float = 0, soil_p: float = 0, soil_k: float = 0
+        self, species: str, stage: str,
+        soil_n: float | None = None,
+        soil_p: float | None = None,
+        soil_k: float | None = None,
     ) -> dict | None:
-        """Return NPK fertilizer needs based on soil levels and crop demand."""
+        """Return NPK fertilizer needs based on soil levels and crop demand.
+
+        ``soil_*`` are the available mineral stocks in kg/ha (0-30 cm) when a
+        lab analysis exists, or None when it does not. A None level answers the
+        stage demand alone as ``unknown_soil`` — never a fake deficit — and a
+        present level is compared against the 30-day fenologic window demand
+        (``uptake * 30``), not a single day's uptake.
+        """
         async with self._driver.session() as session:
             result = await session.run(
                 """
@@ -1482,13 +1492,18 @@ class GraphDAO:
             for r in records:
                 element = r["element"]
                 uptake = float(r["uptake"] or 0)
-                level = soil.get(element, 0)
-                if level < uptake * 0.5:
-                    status, action = "deficient", f"Increase {element}"
-                elif level < uptake:
-                    status, action = "adequate", f"Maintain {element}"
+                level = soil.get(element)
+                if level is None:
+                    status = "unknown_soil"
+                    action = f"Stage demand: {uptake} kg/ha/day (lab analysis required)"
                 else:
-                    status, action = "sufficient", f"Sufficient {element}"
+                    window_demand = uptake * 30.0
+                    if level < window_demand * 0.5:
+                        status, action = "deficient", f"Increase {element}"
+                    elif level < window_demand:
+                        status, action = "adequate", f"Maintain {element}"
+                    else:
+                        status, action = "sufficient", f"Sufficient {element}"
                 recommendations.append({
                     "element": element, "uptake_kg_ha_day": uptake,
                     "soil_level": level, "status": status, "action": action,
