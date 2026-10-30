@@ -109,3 +109,19 @@ export interface CalendarResponse {
   previous: { crop: string | null; end: string | null; end_source: 'harvest_recorded' | 'planned_end' | 'typical_maturity' | 'campaign_start' };
   cover: { fits: boolean; default: Fortnight | null; options: Fortnight[]; ends: string | null; weeks: number | null; short: boolean } | null;
 }
+
+/** GET /planning/cover-crops/{species}/reference: mean of European trials (INRAE), aerial part, immature stage. */
+export interface CoverStat { mean: number; se: number | null; n: number | null }
+export interface CoverReferenceResponse {
+  species: string;
+  season_requested: 'autumn' | 'spring';
+  season_used: 'autumn' | 'spring' | 'unspecified' | null;
+  status: 'ok' | 'no_data';
+  coverage: string;
+  aerial: {
+    dm_t_ha: CoverStat | null; n_pct: CoverStat | null; c_n: CoverStat | null;
+    /** dry matter x %N, a derived figure (not fixed N, not N available to the next crop). */
+    n_accumulated_kg_ha: number | null;
+  } | null;
+  attributions: SourceAttributionItem[];
+}
