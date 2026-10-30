@@ -78,3 +78,29 @@ def test_derived_token_accepted_once_master_refused(monkeypatch):
     assert ok.status_code == 204
     assert other.status_code == 401
     assert master.status_code == 401
+
+
+def test_dispatches_p2o5_requirement_for_phosphorus_rule():
+    payload = {
+        "data": [{
+            "id": "urn:ngsi-ld:CropHealthAssessment:acmefarm:p1",
+            "type": "CropHealthAssessment",
+            "hasAgriParcel": {"type": "Relationship", "object": "urn:ngsi-ld:AgriParcel:acmefarm:p1"},
+            "phenologyStage": {"type": "Property", "value": "pre_sowing"},
+            "p2o5RequirementKgHa": {"type": "Property", "value": 15.0},
+        }]
+    }
+    with patch.object(phenology_notify, "_dispatch") as disp:
+        c = TestClient(_app())
+        r = c.post(
+            "/api/graph/internal/phenology-update",
+            json=payload,
+            headers={"NGSILD-Tenant": "acmefarm"},
+        )
+        assert r.status_code == 204
+        disp.assert_called_once_with(
+            "acmefarm",
+            "urn:ngsi-ld:AgriParcel:acmefarm:p1",
+            {"phenology.current_stage": "pre_sowing", "p_requirement_kg_ha": 15.0},
+        )
+

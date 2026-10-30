@@ -87,11 +87,16 @@ async def phenology_update(request: Request):
         if _LAST_STAGE.get(key) == stage:
             continue  # dedup: stage unchanged since last notification
         observed = {"phenology.current_stage": stage}
-        for extra in ("waterDeficitMm", "nRequirementKgHa"):
-            if extra in entity:
+        for extra in ("waterDeficitMm", "nRequirementKgHa", "p2o5RequirementKgHa", "pRequirementKgHa"):
+            if extra in entity and _SNAKE[extra] not in observed:
                 observed[_SNAKE[extra]] = _kv(entity[extra])
         _dispatch(tenant_id, parcel_id, observed)
         _LAST_STAGE[key] = stage
 
 
-_SNAKE = {"waterDeficitMm": "water_deficit_mm", "nRequirementKgHa": "n_requirement_kg_ha"}
+_SNAKE = {
+    "waterDeficitMm": "water_deficit_mm",
+    "nRequirementKgHa": "n_requirement_kg_ha",
+    "p2o5RequirementKgHa": "p_requirement_kg_ha",
+    "pRequirementKgHa": "p_requirement_kg_ha",
+}
