@@ -60,6 +60,7 @@ from app.species_registry import (
     catalog_code,
     get_lifecycle,
     get_species_info,
+    is_cover_only,
     is_woody,
     list_species,
     resolve_species,
@@ -190,6 +191,7 @@ async def parcel_fit(*, dao, source: KnowledgeSource, parcel_id: str, tenant_id:
             "species": slug, "eppo": eppo, "names": dict(info.get("common_names") or {}), "lifecycle": lifecycle,
             "verdict": verdict_of(reasons), "reasons": reasons, "sowing": _sowing(sowing),
             "has_variety_trials": trials, "estimate_providers": ["trial_evidence"] if trials else [],
+            "cover_only": is_cover_only(slug),
         })
     species.sort(key=lambda s: (VERDICT_ORDER[s["verdict"]], s["species"]))
     return {

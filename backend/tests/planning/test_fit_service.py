@@ -201,3 +201,16 @@ async def test_crop_cycles_answer_that_is_not_an_object_is_history_unavailable(m
     out = await service.parcel_fit(**{**_fit_args(dao), "regime": "irrigated"})
     assert out["facts"]["history_available"] is False
     assert all("rotation_unknown" in {r["code"] for r in s["reasons"]} for s in out["species"])
+
+
+async def test_cover_only_species_are_flagged(monkeypatch):
+    dao = AsyncMock()
+    dao.get_parcel_environment.return_value = BARE_ENV
+    monkeypatch.setattr(service, "fetch_crop_cycles", AsyncMock(return_value=None))
+    monkeypatch.setattr(service, "load_reference", AsyncMock(return_value=EMPTY_REF))
+    out = await service.parcel_fit(dao=dao, source=KnowledgeSource("global", None), parcel_id="p1",
+                                   tenant_id="t", campaign=2027, regime=None)
+    FitResponse.model_validate(out)
+    by_slug = {s["species"]: s for s in out["species"]}
+    assert by_slug["hairy_vetch"]["cover_only"] is True and by_slug["crimson_clover"]["cover_only"] is True
+    assert by_slug["wheat"]["cover_only"] is False and by_slug["vetch"]["cover_only"] is False

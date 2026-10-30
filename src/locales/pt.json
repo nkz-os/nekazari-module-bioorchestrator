@@ -296,6 +296,7 @@
         "perennial_overlaps_plans": "A cultura plurianual sobrepõe-se a culturas já planeadas em campanhas seguintes",
         "parcel_not_found": "Parcela não encontrada",
         "woody_not_campaign_crop": "Uma cultura lenhosa não se planeia por campanhas",
+        "cover_only_not_main_crop": "Esta espécie só se semeia como cobertura",
         "contract_mismatch": "A versão do servidor não corresponde a este ecrã; recarregue a página.",
         "invalid_response": "O servidor respondeu algo inesperado; tente novamente."
       }

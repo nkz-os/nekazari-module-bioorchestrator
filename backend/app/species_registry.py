@@ -166,3 +166,9 @@ def is_woody(slug: str) -> bool:
     """True for trees, shrubs and vines: a plantation decision, never a campaign choice."""
     info = get_species_info(slug)
     return bool(info and info.get("woody"))
+
+
+def is_cover_only(slug: str) -> bool:
+    """True for species sown only as a cover crop: offered as a cover, never as the main crop."""
+    info = get_species_info(slug)
+    return bool(info and info.get("cover_only"))

@@ -296,6 +296,7 @@
         "perennial_overlaps_plans": "Urte anitzeko laborea geroagoko kanpainetan jada planifikatutako laboreekin gainjartzen da",
         "parcel_not_found": "Ez da partzela aurkitu",
         "woody_not_campaign_crop": "Zurezko laborea ez da kanpainaka planifikatzen",
+        "cover_only_not_main_crop": "Espezie hau estalki-labore gisa bakarrik ereiten da",
         "contract_mismatch": "Zerbitzariaren bertsioak ez du pantaila honekin bat egiten; kargatu berriro orria.",
         "invalid_response": "Zerbitzariak ustekabeko erantzuna eman du; saiatu berriro."
       }

@@ -316,6 +316,7 @@
         "perennial_overlaps_plans": "El cultivo plurianual se solapa con cultivos ya planificados en campañas siguientes",
         "parcel_not_found": "No se encuentra la parcela",
         "woody_not_campaign_crop": "Un cultivo leñoso no se planifica por campañas",
+        "cover_only_not_main_crop": "Esta especie solo se siembra como cubierta",
         "contract_mismatch": "La versión del servidor no coincide con esta pantalla; recarga la página.",
         "invalid_response": "El servidor respondió algo inesperado; inténtalo de nuevo."
       }

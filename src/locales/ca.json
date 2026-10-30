@@ -296,6 +296,7 @@
         "perennial_overlaps_plans": "El cultiu plurianual se superposa amb cultius ja planificats en campanyes posteriors",
         "parcel_not_found": "No es troba la parcel·la",
         "woody_not_campaign_crop": "Un cultiu llenyós no es planifica per campanyes",
+        "cover_only_not_main_crop": "Aquesta espècie només es sembra com a coberta",
         "contract_mismatch": "La versió del servidor no coincideix amb aquesta pantalla; recarrega la pàgina.",
         "invalid_response": "El servidor ha respost una cosa inesperada; torna-ho a provar."
       }

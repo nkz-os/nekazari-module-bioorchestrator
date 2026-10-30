@@ -19,6 +19,8 @@ export interface Sowing { sowing_type: string | null; start_month: number | null
 export interface SpeciesFit {
   species: string; eppo: string | null; names: Names; lifecycle: string | null; verdict: Verdict; reasons: Reason[]; sowing: Sowing;
   has_variety_trials: boolean; estimate_providers: string[];
+  /** Sown only as a cover crop: offered in the cover step, never as the main crop. */
+  cover_only?: boolean;
 }
 export interface ParcelFacts {
   climate_class: string | null; climate_source: string; soil_texture: string | null; soil_ph: number | null;

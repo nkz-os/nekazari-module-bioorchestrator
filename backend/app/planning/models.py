@@ -56,6 +56,7 @@ class SpeciesFit(BaseModel):
     sowing: Sowing
     has_variety_trials: bool
     estimate_providers: list[str]
+    cover_only: bool = False  # offered as a cover crop only, never as the main crop
 
 
 class ParcelFacts(BaseModel):

@@ -313,6 +313,7 @@
         "perennial_overlaps_plans": "The multi-year crop overlaps crops already planned in later campaigns",
         "parcel_not_found": "Parcel not found",
         "woody_not_campaign_crop": "A woody crop is not planned by campaign",
+        "cover_only_not_main_crop": "This species is sown only as a cover crop",
         "contract_mismatch": "The server version does not match this screen; reload the page.",
         "invalid_response": "The server sent an unexpected answer; try again."
       }
