@@ -17,6 +17,8 @@
 # AgriCrop at assignment; the platform's crop-cycle resolver uses it to choose the accumulation start.
 #
 # woody: true — tree, shrub or vine; crop planning never offers it for a campaign.
+#
+# cover_only: true — sown only as a cover crop; crop planning offers it as a cover, never as the main crop.
 # =============================================================================
 
 species:
@@ -154,6 +156,23 @@ species:
     agrovoc_uri: "http://aims.fao.org/aos/agrovoc/c_8222"
     lifecycle: "annual"
     common_names: { es: "veza", en: "vetch", eu: "zalke", fr: "vesce", ca: "veça", pt: "ervilhaca" }
+
+  hairy_vetch:
+    scientific_name: "Vicia villosa"
+    eppo_code: "VICVI"
+    crop_group: "legume"
+    lifecycle: "annual"
+    cover_only: true
+    common_names: { es: "veza vellosa", en: "hairy vetch", eu: "zalke iletsua", fr: "vesce velue", ca: "veça vellosa", pt: "ervilhaca-peluda" }
+
+  crimson_clover:
+    scientific_name: "Trifolium incarnatum"
+    eppo_code: "TRFIN"
+    crop_group: "legume"
+    lifecycle: "annual"
+    cover_only: true
+    # eu "pagotxa" also names other clovers: the scientific name tells this one apart.
+    common_names: { es: "trébol encarnado", en: "crimson clover", eu: "pagotxa (Trifolium incarnatum)", fr: "trèfle incarnat", ca: "trèvol encarnat", pt: "trevo-encarnado" }
 
   bitter_vetch:
     scientific_name: "Vicia ervilia"

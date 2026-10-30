@@ -15,8 +15,11 @@ export const matchesCrop = (name: string, query: string): boolean => fold(name).
 /** A crop that does not fit says every reason; the others say their first one. */
 export const cardReasons = (s: SpeciesFit) => (s.verdict === 'no_fit' ? s.reasons : s.reasons.slice(0, 1));
 
+/** A species sown only as a cover is offered in the cover step, never here. */
+export const mainCrops = (species: SpeciesFit[]): SpeciesFit[] => species.filter((s) => !s.cover_only);
+
 export const recommendedCrops = (species: SpeciesFit[], max = 6): SpeciesFit[] =>
-  species.filter((s) => s.verdict !== 'no_fit').slice(0, max);
+  mainCrops(species).filter((s) => s.verdict !== 'no_fit').slice(0, max);
 
 interface Props { fit: FitResponse; selected: string | null; onPick: (sp: SpeciesFit) => void }
 
@@ -36,7 +39,7 @@ export default function StepCrop({ fit, selected, onPick }: Props) {
     </Button>
   );
   const q = query.trim();
-  const found = q ? fit.species.filter((s) => matchesCrop(cropName(s.names, s.species, lang), q)) : [];
+  const found = q ? mainCrops(fit.species).filter((s) => matchesCrop(cropName(s.names, s.species, lang), q)) : [];
   return (
     <Stack gap="stack">
       <h3 className="text-nkz-lg font-semibold text-nkz-text-primary">{t('planning.wizard.crop.title')}</h3>

@@ -279,7 +279,7 @@ Full i18n support in **6 languages**: English, Spanish, Basque, French, Portugue
 | **EPPO Global Database** | Taxonomy + pests | CropReference, PestRisk, OrganicInputs |
 | **EcoCrop (FAO GAEZ)** | Crop requirements | Thermal, Soil, GrowingSeason |
 | **CPVO Variety Finder** | Registered varieties | Comparator, Catalog, MarketMaturity |
-| **MAPA Guía Fertilización 2010** | Official fertilization guide | NPK balance, cover crop & legume N fixation |
+| **MAPA Guía Fertilización 2010** | Official fertilization guide | NPK balance, legume N fixation |
 | **FertiliCalc (UCO/CSIC)** | Agronomic reference model (GPL-3.0) | Residue C/N, nutrient balance defaults |
 | **ESSD 2024 / Dryad CC0** | Global & EU nutrient dataset | Biological N fixation, dry matter & harvest index |
 | **Panagos et al. 2022 (JRC)** | EU phosphorus removal dataset | Phosphorus balance |

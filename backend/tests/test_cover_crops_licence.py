@@ -2,49 +2,36 @@
 
 from __future__ import annotations
 
-from app.kg.registries import DEFAULT_REGISTRIES_PATH, load_registries
+from pathlib import Path
+
 from app.services import cover_crops
 
 FORBIDDEN_TERMS = ("intia", "ifapa", "itacyl", "navarra agraria")
 
 
-def test_every_cover_and_protein_parameter_uses_a_loadable_source():
-    reg = load_registries(DEFAULT_REGISTRIES_PATH)
-    loadable_ids = {s.source_id for s in reg.loadable_sources()}
+def test_protein_crops_carry_identity_only():
+    # No cited source publishes per-climate cover or legume parameters: the catalogue only says what the crop is.
+    for eppo, entry in cover_crops.PROTEIN_CROPS.items():
+        assert set(entry) == {"scientific", "common_name", "type"}, eppo
+        assert entry["type"] == "legume", eppo
 
-    for catalog_name, catalog in (("COVER_CROPS", cover_crops.COVER_CROPS),
-                                  ("PROTEIN_CROPS", cover_crops.PROTEIN_CROPS)):
-        for eppo, entry in catalog.items():
-            climates = entry.get("climates", {})
-            assert climates, f"{catalog_name}[{eppo}] has no climates"
-            for climate, params in climates.items():
-                for param_name, spec in params.items():
-                    assert isinstance(spec, dict), f"{catalog_name}[{eppo}][{climate}][{param_name}] must be a dict"
-                    sid = spec.get("source_id")
-                    assert sid in loadable_ids, (
-                        f"{catalog_name}[{eppo}][{climate}][{param_name}] uses non-loadable source_id={sid!r}"
-                    )
-                    src_label = (spec.get("source") or "").lower()
-                    for term in FORBIDDEN_TERMS:
-                        assert term not in src_label, (
-                            f"{catalog_name}[{eppo}][{climate}][{param_name}] references forbidden source {term!r}"
-                        )
+
+def test_no_per_climate_cover_parameters():
+    for name in ("COVER_CROPS", "lookup", "select_cover_crops", "estimate_n_fixation", "estimate_dates",
+                 "SOWING_WINDOWS", "TERMINATION_MONTH"):
+        assert not hasattr(cover_crops, name), name
+
+
+def test_module_names_no_restricted_source():
+    text = Path(cover_crops.__file__).read_text(encoding="utf-8").lower()
+    for term in FORBIDDEN_TERMS:
+        assert term not in text, term
 
 
 def test_scraped_enrichment_functions_are_removed():
     assert not hasattr(cover_crops, "_apply_scraped_enrichment")
     assert not hasattr(cover_crops, "get_trial_observations")
     assert not hasattr(cover_crops, "get_scraped_stats")
-
-
-def test_select_cover_crops_returns_ranked_candidates():
-    csa = cover_crops.select_cover_crops("Csa", management="any")
-    bsk = cover_crops.select_cover_crops("BSk", management="organic")
-    assert len(csa) >= 4
-    assert len(bsk) >= 4
-    suitable_csa = [c for c in csa if c["suitable"]]
-    assert len(suitable_csa) >= 2
-    assert suitable_csa[0]["target_biomass_t_ha"] >= suitable_csa[-1]["target_biomass_t_ha"]
 
 
 def test_zombie_ikerketa_routes_are_removed():

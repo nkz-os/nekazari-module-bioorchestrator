@@ -28,7 +28,7 @@ from app.graph.crop_plan import build_segment_entity
 from app.planning.history import AUTUMN_FROM_MONTH, campaign_of_start, iso_date, plain
 from app.planning.models import PlanIn
 from app.planning.service import PARCEL_URN_RE, InvalidParcelId, UnknownCrop, crop_code
-from app.species_registry import get_lifecycle, is_woody, resolve_species
+from app.species_registry import get_lifecycle, is_cover_only, is_woody, resolve_species
 
 _REWRITABLE = {"planned", "cancelled"}
 _CLOSED = {"harvested", "terminated"}
@@ -121,6 +121,8 @@ def validate_plan(plan: PlanIn, today: date) -> None:
         if slug and is_woody(slug):
             # Trees and vines are a plantation decision, never a campaign choice.
             raise PlanError("woody_not_campaign_crop")
+        if slug and cycle.role == "main_crop" and is_cover_only(slug):
+            raise PlanError("cover_only_not_main_crop")
         if _lifecycle(cycle.crop) == "perennial":
             if campaign_of_start(cycle.sowing_start) != plan.campaign:
                 raise PlanError("perennial_start_outside_campaign")

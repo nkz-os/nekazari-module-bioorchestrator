@@ -222,6 +222,7 @@
       "needsClimate": "Without the parcel climate no evidence can be searched.",
       "variety": "Variety", "relative": "Relative yield", "stability": "Stability", "environments": "Trials / years",
       "relativeHint": "Yield against each trial's mean: 100 % = same as the mean.",
+      "lowEnv": "In poor trials", "lowEnvHint": "In poor trials: yield against the mean in the third of trials with the lowest output (dry or bad years).",
       "stable": "stable", "average": "average", "responsive": "responsive to the environment", "few": "few trials",
       "tier": { "field": "field trials", "regional": "regional means" },
       "choose": "Choose", "chosen": "Chosen"
@@ -313,6 +314,7 @@
         "perennial_overlaps_plans": "The multi-year crop overlaps crops already planned in later campaigns",
         "parcel_not_found": "Parcel not found",
         "woody_not_campaign_crop": "A woody crop is not planned by campaign",
+        "cover_only_not_main_crop": "This species is sown only as a cover crop",
         "contract_mismatch": "The server version does not match this screen; reload the page.",
         "invalid_response": "The server sent an unexpected answer; try again."
       }

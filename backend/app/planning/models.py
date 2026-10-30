@@ -56,6 +56,7 @@ class SpeciesFit(BaseModel):
     sowing: Sowing
     has_variety_trials: bool
     estimate_providers: list[str]
+    cover_only: bool = False  # offered as a cover crop only, never as the main crop
 
 
 class ParcelFacts(BaseModel):
@@ -87,6 +88,9 @@ class VarietyStat(BaseModel):
     fw_slope: float | None
     stability: Literal["stable", "average", "responsive"] | None
     few_environments: bool
+    # Mean relative yield in the poor trials (lower tercile of environment means); None below the thresholds.
+    low_env_relative_yield_pct: float | None = None
+    n_low_environments: int = 0
 
 
 class VarietiesResponse(BaseModel):

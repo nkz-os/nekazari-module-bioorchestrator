@@ -225,6 +225,7 @@
       "needsClimate": "Sin clima de la parcela no se puede buscar evidencia.",
       "variety": "Variedad", "relative": "Rend. relativo", "stability": "Estabilidad", "environments": "Ensayos / años",
       "relativeHint": "Rendimiento frente a la media de cada ensayo: 100 % = igual que la media.",
+      "lowEnv": "En ensayos flojos", "lowEnvHint": "En ensayos flojos: rendimiento frente a la media en el tercio de ensayos con menor producción (años secos o malos).",
       "stable": "estable", "average": "media", "responsive": "sensible al ambiente", "few": "pocos ensayos",
       "tier": { "field": "ensayos de campo", "regional": "medias regionales" },
       "choose": "Elegir", "chosen": "Elegida"
@@ -316,6 +317,7 @@
         "perennial_overlaps_plans": "El cultivo plurianual se solapa con cultivos ya planificados en campañas siguientes",
         "parcel_not_found": "No se encuentra la parcela",
         "woody_not_campaign_crop": "Un cultivo leñoso no se planifica por campañas",
+        "cover_only_not_main_crop": "Esta especie solo se siembra como cubierta",
         "contract_mismatch": "La versión del servidor no coincide con esta pantalla; recarga la página.",
         "invalid_response": "El servidor respondió algo inesperado; inténtalo de nuevo."
       }

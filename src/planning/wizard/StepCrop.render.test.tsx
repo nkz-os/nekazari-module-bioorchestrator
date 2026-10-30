@@ -5,7 +5,7 @@ vi.mock('@nekazari/sdk', async () => {
   const { esT } = await import('../testI18n');
   return { useTranslation: () => ({ t: esT, i18n: { language: 'es' } }), i18n: {} };
 });
-import StepCrop, { cardReasons, matchesCrop, recommendedCrops } from './StepCrop';
+import StepCrop, { cardReasons, mainCrops, matchesCrop, recommendedCrops } from './StepCrop';
 import type { FitResponse, SpeciesFit } from '../types';
 
 const sp = (species: string, verdict: SpeciesFit['verdict']): SpeciesFit => ({ species, eppo: null, names: { es: species },
@@ -15,6 +15,14 @@ const FIT = { contract_version: '2.2', parcel_id: 'p', campaign: 2027, graphs: [
   species: [sp('wheat', 'fits'), sp('barley', 'caveats'), sp('rice', 'no_fit'), ...['a', 'b', 'c', 'd', 'e'].map((x) => sp(x, 'fits'))] } as FitResponse;
 
 describe('StepCrop', () => {
+  it('never offers a cover-only species as the main crop, in the cards or the search', () => {
+    const cover = { ...sp('veza vellosa', 'fits'), cover_only: true };
+    const fit = { ...FIT, species: [cover, ...FIT.species] } as FitResponse;
+    expect(recommendedCrops(fit.species).map((s) => s.species)).not.toContain('veza vellosa');
+    expect(mainCrops(fit.species)).toHaveLength(FIT.species.length);
+    const html = renderToStaticMarkup(<StepCrop fit={fit} selected={null} onPick={() => {}} />);
+    expect(html).not.toContain('veza vellosa');
+  });
   it('recommends up to 6 crops that fit or fit with caveats, in fit order, never no_fit', () => {
     const rec = recommendedCrops(FIT.species);
     expect(rec).toHaveLength(6);

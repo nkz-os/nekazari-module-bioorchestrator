@@ -389,6 +389,21 @@ def test_woody_species_are_not_campaign_crops(woody):
     assert (e.value.code, e.value.status) == ("woody_not_campaign_crop", 422)
 
 
+@pytest.mark.parametrize("cover", ["hairy_vetch", "TRFIN"])
+def test_cover_only_species_is_not_a_main_crop(cover):
+    plan = _wheat_plan().model_copy(deep=True)
+    plan.cycles[0].crop = cover
+    with pytest.raises(plan_write.PlanError) as e:
+        plan_write.validate_plan(plan, TODAY)
+    assert (e.value.code, e.value.status) == ("cover_only_not_main_crop", 422)
+
+
+def test_cover_only_species_is_a_valid_cover():
+    plan_write.validate_plan(_cover_plan("hairy_vetch"), TODAY)
+    segments = plan_write.segments_from_plan(_cover_plan("hairy_vetch"))
+    assert segments[0]["crop"] == "VICVI"  # stored under its EPPO code, like every registry species
+
+
 def test_annual_sown_long_before_its_campaign_is_inconsistent():
     with pytest.raises(plan_write.PlanError) as e:
         plan_write.validate_plan(_wheat_plan(start="2025-06-01"), TODAY)

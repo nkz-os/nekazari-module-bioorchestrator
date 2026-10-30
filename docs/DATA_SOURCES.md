@@ -85,7 +85,7 @@ Only sources verified with `commercial_use: allowed` in `backend/data/registries
 |---|--------|---------|-------|
 | 1 | **GENVCE** (`GENVCE` / `GENVCE-TRIALS`) | Spain | Arable crops (wheat, barley, oats, triticale, rye, rapeseed, sunflower, maize) |
 | 2 | **CREA** (`CREA`) | Italy | Maize national variety trials (2021–2025) |
-| 3 | **MAPA Fertilization Guide** (`mapa_guia_2010`) | Spain | NPK balance, legume N fixation, cover crop parameters |
+| 3 | **MAPA Fertilization Guide** (`mapa_guia_2010`) | Spain | NPK balance, legume N fixation |
 | 4 | **Panagos et al. 2022 (JRC)** (`panagos_2022`) | EU | Phosphorus plant removal coefficients |
 | 5 | **ESSD 2024 / Ludemann et al.** (`essd_2024_s3` / `ludemann_cc0`) | International | Crop nutrient concentrations, harvest indices, biological N fixation |
 | 6 | **Eurostat (`apro_cpshr`)** (`eurostat_apro_cpshr`) | EU | NUTS 2 regional crop production and yield series |

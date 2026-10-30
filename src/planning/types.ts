@@ -19,6 +19,8 @@ export interface Sowing { sowing_type: string | null; start_month: number | null
 export interface SpeciesFit {
   species: string; eppo: string | null; names: Names; lifecycle: string | null; verdict: Verdict; reasons: Reason[]; sowing: Sowing;
   has_variety_trials: boolean; estimate_providers: string[];
+  /** Sown only as a cover crop: offered in the cover step, never as the main crop. */
+  cover_only?: boolean;
 }
 export interface ParcelFacts {
   climate_class: string | null; climate_source: string; soil_texture: string | null; soil_ph: number | null;
@@ -28,6 +30,8 @@ export interface FitResponse { contract_version: string; parcel_id: string; camp
 export interface VarietyStat {
   variety: string; relative_yield_pct: number; n_environments: number; years: number[]; mean_kg_ha: number;
   fw_slope: number | null; stability: 'stable' | 'average' | 'responsive' | null; few_environments: boolean;
+  /** Relative yield in the poor trials (lower tercile of trial means); null below the thresholds. */
+  low_env_relative_yield_pct?: number | null; n_low_environments?: number;
 }
 export interface VarietiesResponse {
   contract_version: string; parcel_id: string; crop: string; regime: Regime; management: Management;

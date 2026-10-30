@@ -205,6 +205,7 @@
       "needsClimate": "Sem o clima da parcela não é possível procurar evidência.",
       "variety": "Variedade", "relative": "Rend. relativo", "stability": "Estabilidade", "environments": "Ensaios / anos",
       "relativeHint": "Rendimento face à média de cada ensaio: 100 % = igual à média.",
+      "lowEnv": "Em ensaios fracos", "lowEnvHint": "Em ensaios fracos: rendimento face à média no terço de ensaios com menor produção (anos secos ou maus).",
       "stable": "estável", "average": "média", "responsive": "sensível ao ambiente", "few": "poucos ensaios",
       "tier": { "field": "ensaios de campo", "regional": "médias regionais" },
       "choose": "Escolher", "chosen": "Escolhida"
@@ -296,6 +297,7 @@
         "perennial_overlaps_plans": "A cultura plurianual sobrepõe-se a culturas já planeadas em campanhas seguintes",
         "parcel_not_found": "Parcela não encontrada",
         "woody_not_campaign_crop": "Uma cultura lenhosa não se planeia por campanhas",
+        "cover_only_not_main_crop": "Esta espécie só se semeia como cobertura",
         "contract_mismatch": "A versão do servidor não corresponde a este ecrã; recarregue a página.",
         "invalid_response": "O servidor respondeu algo inesperado; tente novamente."
       }
