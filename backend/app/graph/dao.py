@@ -1461,7 +1461,11 @@ class GraphDAO:
     async def recommend_fertilizer(
         self, species: str, stage: str, soil_n: float = 0, soil_p: float = 0, soil_k: float = 0
     ) -> dict | None:
-        """Return NPK fertilizer needs based on soil levels and crop demand."""
+        """Return crop NPK demand for a stage. Deprecated; demand only.
+
+        ``soil_*`` are accepted for backward compatibility and ignored: the
+        fertilizer evaluation lives in FaST, not here.
+        """
         async with self._driver.session() as session:
             result = await session.run(
                 """
@@ -1469,7 +1473,9 @@ class GraphDAO:
                      -[:HAS_NUTRIENT_PROFILE]->(n:CropNutrientProfile)
                 WHERE toLower(s.name) = toLower($species)
                    OR toLower(s.scientificName) = toLower($species)
-                RETURN n.element AS element, n.uptakeKgHaDay AS uptake
+                RETURN n.element AS element, n.uptakeKgHaDay AS uptake,
+                       n.totalKgHa AS total, n.sourceShort AS source_short,
+                       n.sourceDoi AS source_doi
                 """,
                 species=species, stage=stage,
             )
@@ -1477,23 +1483,17 @@ class GraphDAO:
             if not records:
                 return None
 
-            soil = {"nitrogen": soil_n, "phosphorus": soil_p, "potassium": soil_k}
-            recommendations = []
-            for r in records:
-                element = r["element"]
-                uptake = float(r["uptake"] or 0)
-                level = soil.get(element, 0)
-                if level < uptake * 0.5:
-                    status, action = "deficient", f"Increase {element}"
-                elif level < uptake:
-                    status, action = "adequate", f"Maintain {element}"
-                else:
-                    status, action = "sufficient", f"Sufficient {element}"
-                recommendations.append({
-                    "element": element, "uptake_kg_ha_day": uptake,
-                    "soil_level": level, "status": status, "action": action,
-                })
-
+            recommendations = [
+                {
+                    "element": r["element"],
+                    "status": "demand_only",
+                    "uptake_kg_ha_day": float(r["uptake"] or 0),
+                    "total_kg_ha": r.get("total"),
+                    "source_short": r.get("source_short"),
+                    "source_doi": r.get("source_doi"),
+                }
+                for r in records
+            ]
             return {"species": species, "stage": stage, "recommendations": recommendations}
 
     # ── AgriCrop Catalog (Orion-LD integration) ───────────────────────────────

@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
+import logging
 from typing import Annotated, Literal
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
 from nkz_platform_sdk.agronomy import (
     AgronomicValue,
     Source,
@@ -24,6 +25,8 @@ from app.services.sim_errors import SimulationError
 from app.services.sim_jobs import SimJobs, shared_sim_jobs
 from app.species_registry import get_species_info, resolve_species
 from neo4j import AsyncDriver
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -386,16 +389,28 @@ async def crop_name(
     return {"eppo": eppo.strip().upper(), "slug": slug, "name": name}
 
 
-@router.get("/recommendations/fertilizer")
+@router.get("/recommendations/fertilizer", deprecated=True)
 async def recommend_fertilizer(
+    request: Request,
+    response: Response,
     driver: DriverDep,
     species: str = Query(..., description="Crop species"),
     stage: str = Query("vegetative", description="Phenological stage"),
-    soil_n: float = Query(0, description="Soil nitrogen level (kg/ha)"),
-    soil_p: float = Query(0, description="Soil phosphorus level (kg/ha)"),
-    soil_k: float = Query(0, description="Soil potassium level (kg/ha)"),
+    soil_n: float = Query(0, deprecated=True, description="Ignored"),
+    soil_p: float = Query(0, deprecated=True, description="Ignored"),
+    soil_k: float = Query(0, deprecated=True, description="Ignored"),
 ):
-    """Return NPK fertilizer recommendations based on crop demand and soil levels."""
+    """Deprecated: crop NPK demand per stage (status ``demand_only``). Soil levels are ignored."""
+    response.headers["Deprecation"] = "true"
+    user = getattr(request.state, "user", None)
+    caller = (user or {}).get("sub") if isinstance(user, dict) else None
+    caller = caller or request.headers.get("X-User-ID") or (
+        request.client.host if request.client else "unknown"
+    )
+    logger.warning(
+        "deprecated route /recommendations/fertilizer called: caller=%s species=%s stage=%s",
+        caller, species, stage,
+    )
     dao = GraphDAO(driver)
     data = await dao.recommend_fertilizer(species, stage, soil_n, soil_p, soil_k)
     if data is None:

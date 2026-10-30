@@ -54,7 +54,7 @@ rules:
     name: "Cobertura nitrogenada"
     category: fertilization
     priority: 70
-    active: true
+    active: false
     conditions:
       all:
         - {field: n_requirement_kg_ha, op: gt, value: 1.0}
@@ -70,7 +70,7 @@ rules:
     name: "Fósforo en presiembra"
     category: fertilization
     priority: 60
-    active: true
+    active: false
     conditions:
       all:
         - {field: phenology.current_stage, op: eq, value: pre_sowing}
