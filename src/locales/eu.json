@@ -205,6 +205,7 @@
       "needsClimate": "Partzelaren klimarik gabe ezin da ebidentziarik bilatu.",
       "variety": "Barietatea", "relative": "Etekin erlatiboa", "stability": "Egonkortasuna", "environments": "Saiakuntzak / urteak",
       "relativeHint": "Etekina saiakuntza bakoitzaren batezbestekoarekin alderatuta: % 100 = batezbestekoaren berdina.",
+      "lowEnv": "Saiakuntza ahuletan", "lowEnvHint": "Saiakuntza ahuletan: batez bestekoarekiko etekina, ekoizpen txikieneko saiakuntzen herenean (urte lehorrak edo txarrak).",
       "stable": "egonkorra", "average": "ertaina", "responsive": "ingurunearekiko sentikorra", "few": "saiakuntza gutxi",
       "tier": { "field": "landa-saiakuntzak", "regional": "eskualdeko batezbestekoak" },
       "choose": "Aukeratu", "chosen": "Aukeratuta"

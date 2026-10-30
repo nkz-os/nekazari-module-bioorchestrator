@@ -225,6 +225,7 @@
       "needsClimate": "Sin clima de la parcela no se puede buscar evidencia.",
       "variety": "Variedad", "relative": "Rend. relativo", "stability": "Estabilidad", "environments": "Ensayos / años",
       "relativeHint": "Rendimiento frente a la media de cada ensayo: 100 % = igual que la media.",
+      "lowEnv": "En ensayos flojos", "lowEnvHint": "En ensayos flojos: rendimiento frente a la media en el tercio de ensayos con menor producción (años secos o malos).",
       "stable": "estable", "average": "media", "responsive": "sensible al ambiente", "few": "pocos ensayos",
       "tier": { "field": "ensayos de campo", "regional": "medias regionales" },
       "choose": "Elegir", "chosen": "Elegida"

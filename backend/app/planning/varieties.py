@@ -12,13 +12,14 @@ numbers, not code.
 from __future__ import annotations
 
 from collections import defaultdict
-from statistics import fmean
+from statistics import fmean, quantiles
 
 MIN_ENV_VARIETIES = 3
 MIN_FW_ENVIRONMENTS = 5
 FEW_ENVIRONMENTS = 3
 STABLE_BELOW = 0.85
 RESPONSIVE_ABOVE = 1.15
+MIN_LOW_ENVIRONMENTS = 2  # a variety's observations in low-yield environments needed for its floor
 
 
 def fw_slope(env_means: list[float], yields: list[float]) -> float | None:
@@ -41,6 +42,17 @@ def stability_class(slope: float | None) -> str | None:
     return "average"
 
 
+def low_environments(means: dict[tuple, float]) -> set[tuple]:
+    """Environments in the lower tercile of environment means: the poor trials (dry or bad years).
+
+    Needs three distinct means; with less spread there is no "poor" trial to tell apart.
+    """
+    if len(set(means.values())) < 3:
+        return set()
+    cut = quantiles(list(means.values()), n=3, method="inclusive")[0]
+    return {k for k, m in means.items() if m <= cut}
+
+
 def variety_stats(rows: list[dict]) -> tuple[list[dict], int]:
     cells: dict[tuple, dict[str, list[float]]] = defaultdict(lambda: defaultdict(list))
     for row in rows:
@@ -53,6 +65,7 @@ def variety_stats(rows: list[dict]) -> tuple[list[dict], int]:
             for key, by_variety in cells.items()}
     usable = {k: v for k, v in envs.items() if len(v) >= MIN_ENV_VARIETIES}
     means = {k: fmean(v.values()) for k, v in usable.items()}
+    low = low_environments(means)
     per_variety: dict[str, list[tuple[tuple, float, float]]] = defaultdict(list)
     for key, values in usable.items():
         for variety, value in values.items():
@@ -62,6 +75,9 @@ def variety_stats(rows: list[dict]) -> tuple[list[dict], int]:
         years = sorted({k[1] for k, _, _ in obs if isinstance(k[1], int)})
         slope = fw_slope([m for _, _, m in obs], [y for _, y, _ in obs]) if len(obs) >= MIN_FW_ENVIRONMENTS else None
         shown_slope = None if slope is None else round(slope, 2)
+        low_ratios = [y / m for k, y, m in obs if k in low]
+        floor = (round(fmean(low_ratios) * 100, 1)
+                 if len(obs) >= MIN_FW_ENVIRONMENTS and len(low_ratios) >= MIN_LOW_ENVIRONMENTS else None)
         stats.append({
             "variety": variety,
             "relative_yield_pct": round(fmean(y / m for _, y, m in obs) * 100, 1),
@@ -71,6 +87,8 @@ def variety_stats(rows: list[dict]) -> tuple[list[dict], int]:
             "fw_slope": shown_slope,
             "stability": stability_class(shown_slope),
             "few_environments": len(obs) < FEW_ENVIRONMENTS,
+            "low_env_relative_yield_pct": floor,
+            "n_low_environments": len(low_ratios),
         })
     stats.sort(key=lambda s: (s["few_environments"], -s["relative_yield_pct"], -s["n_environments"], s["variety"]))
     return stats, len(usable)

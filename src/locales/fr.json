@@ -205,6 +205,7 @@
       "needsClimate": "Sans le climat de la parcelle, aucune référence ne peut être recherchée.",
       "variety": "Variété", "relative": "Rdt relatif", "stability": "Stabilité", "environments": "Essais / années",
       "relativeHint": "Rendement par rapport à la moyenne de chaque essai : 100 % = égal à la moyenne.",
+      "lowEnv": "Dans les essais faibles", "lowEnvHint": "Dans les essais faibles : rendement par rapport à la moyenne dans le tiers des essais les moins productifs (années sèches ou mauvaises).",
       "stable": "stable", "average": "moyenne", "responsive": "sensible à l'environnement", "few": "peu d'essais",
       "tier": { "field": "essais au champ", "regional": "moyennes régionales" },
       "choose": "Choisir", "chosen": "Choisie"
