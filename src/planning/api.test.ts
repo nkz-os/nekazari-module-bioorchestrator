@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { buildQuery, fetchAquacrop, fetchCalendar, fetchEstimates, fetchFit, PlanningApiError, putPlan, saveParcelRegime } from './api';
+import { buildQuery, fetchAquacrop, fetchCoverReference, fetchCalendar, fetchEstimates, fetchFit, PlanningApiError, putPlan, saveParcelRegime } from './api';
 
 afterEach(() => vi.unstubAllGlobals());
 
@@ -95,5 +95,14 @@ describe('planning api client', () => {
   it('a failed regime save rejects (the caller decides what to show)', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false, status: 503, json: async () => ({}) }));
     await expect(saveParcelRegime('p1', 'rainfed')).rejects.toMatchObject({ status: 503 });
+  });
+});
+
+describe('cover reference client', () => {
+  it('asks for the species and the season', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, status: 200, json: async () => ({ status: 'ok' }) });
+    vi.stubGlobal('fetch', fetchMock);
+    await fetchCoverReference('hairy_vetch', 'autumn');
+    expect(String(fetchMock.mock.calls[0][0])).toContain('/api/graph/planning/cover-crops/hairy_vetch/reference?season=autumn');
   });
 });

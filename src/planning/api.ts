@@ -3,7 +3,7 @@ import { API_BASE, authHeaders } from '../services/api';
 import type { SourceAttributionItem } from '../types/attribution';
 import { CONTRACT_VERSION } from './types';
 import type {
-  AquacropResponse, CalendarResponse, EstimatesResponse, FarmResponse, FitResponse, Management, PlanIn, PlanWriteResponse, Regime, VarietiesResponse,
+  AquacropResponse, CalendarResponse, CoverReferenceResponse, EstimatesResponse, FarmResponse, FitResponse, Management, PlanIn, PlanWriteResponse, Regime, VarietiesResponse,
 } from './types';
 
 const PLANNING = `${API_BASE}/api/graph/planning`;
@@ -84,6 +84,9 @@ export const fetchAquacrop = (parcelId: string, q: AquacropQuery, signal?: Abort
     crop: q.crop, regime: q.regime, sowing_date: q.sowingDate, sowing_method: q.sowingMethod ?? null,
     retry: opts.retry ? 'true' : null, job_id: opts.jobId,
   })}`, undefined, signal);
+
+export const fetchCoverReference = (species: string, season: 'autumn' | 'spring', signal?: AbortSignal) =>
+  request<CoverReferenceResponse>('GET', `${PLANNING}/cover-crops/${enc(species)}/reference${buildQuery({ season })}`, undefined, signal);
 
 export const putPlan = (parcelId: string, body: PlanIn) =>
   request<PlanWriteResponse>('PUT', `${PLANNING}/parcels/${enc(parcelId)}/plan`, body);

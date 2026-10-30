@@ -67,4 +67,16 @@ describe('StepCover (es)', () => {
     const cal = { ...base, cover: null } as unknown as CalendarResponse;
     expect(renderToStaticMarkup(<StepCover cal={cal} on={false} {...props} />)).not.toContain('>Sí<');
   });
+
+  it('the reference card shows for a listed species and never for free-text "otra especie"', () => {
+    const cal = { ...base, cover: { fits: true, default: F('2026-08-01', '2026-08-15'), options: [F('2026-08-01', '2026-08-15')],
+      ends: '2026-10-16', weeks: 10, short: false } } as unknown as CalendarResponse;
+    const listed = [{ species: 'hairy_vetch', names: { es: 'veza vellosa' } }] as never;
+    const shown = renderToStaticMarkup(<StepCover cal={cal} on {...props} coverOptions={listed} species="hairy_vetch" />);
+    expect(shown).toContain('Referencia agronómica');
+    const other = renderToStaticMarkup(<StepCover cal={cal} on {...props} coverOptions={listed} species="Camelina" other />);
+    expect(other).not.toContain('Referencia agronómica');
+    const none = renderToStaticMarkup(<StepCover cal={cal} on {...props} coverOptions={listed} species="" />);
+    expect(none).not.toContain('Referencia agronómica');
+  });
 });

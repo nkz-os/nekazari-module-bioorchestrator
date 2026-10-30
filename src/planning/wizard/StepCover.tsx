@@ -1,6 +1,7 @@
 import React from 'react';
 import { useTranslation } from '@nekazari/sdk';
 import { Button, FormField, Inline, Input, Select, Stack } from '@nekazari/ui-kit';
+import CoverReference from './CoverReference';
 import FortnightStrip from '../FortnightStrip';
 import { formatRange, weeksBetween, withFortnight, type Fortnight } from '../fortnight';
 import { cropName } from '../format';
@@ -45,6 +46,8 @@ export default function StepCover({ cal, on, species, sowing, method, other: cho
                 { value: OTHER, label: t('planning.plan.otherSpecies') }]}
               onValueChange={(v) => { onOther(v === OTHER); onSpecies(v === NONE || v === OTHER ? '' : v); }} />
           </FormField>
+          {/* Reference means of European trials for a listed species; free text has no reference. */}
+          {!other && species && sowing && <CoverReference species={species} sowingStart={sowing.start} />}
           {other && <FormField label={t('planning.plan.speciesName')}>
             <Input value={species} maxLength={64} onChange={(e) => onSpecies(e.target.value)} /></FormField>}
           <FormField label={t('planning.plan.method')}>

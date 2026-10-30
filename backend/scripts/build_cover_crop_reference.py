@@ -1,0 +1,135 @@
+"""Build data/cover_crop_reference.yaml from the INRAE means table (Etalab 2.0).
+
+Usage (from backend/):  python scripts/build_cover_crop_reference.py <Mean_data_Green_manure_and_Cover_crops_v3.tab>
+
+The raw table (an xlsx file despite its .tab extension) is NOT part of the repository; it is
+read with openpyxl (dev requirement only) and only the columns the reference panel uses are kept:
+aerial dry matter (t/ha), total N (% DM) and C/N, each as {mean, se, n}.
+
+Rows kept: plant part "Aerial DM", harvest stage "Immature". Season comes from the suffix of the
+common name: (AutD) autumn, (SpD) spring, none unspecified. A species is matched by its EXACT Latin
+name through the species registry (no aliases, so a subspecies is never merged into its species);
+rows that do not resolve to a registry species are dropped. Two rows for the same species and
+season are an error (nothing is averaged or picked silently).
+"""
+from __future__ import annotations
+
+import argparse
+import sys
+from pathlib import Path
+from typing import Any
+
+import yaml
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+DEFAULT_OUT = Path(__file__).resolve().parents[1] / "data" / "cover_crop_reference.yaml"
+DATA_START = 6  # first data row (0-based)
+COL_COMMON, COL_LATIN, COL_PART, COL_STAGE = 0, 1, 3, 4
+METRICS = {  # name -> (mean col, se col, n col)
+    "dm_t_ha": (6, 7, 8),
+    "n_pct": (58, 59, 60),
+    "c_n": (63, 64, 65),
+}
+# Header cells the column indices above rely on (row index -> {column: text}).
+EXPECTED_HEADER: dict[int, dict[int, str]] = {
+    3: {0: "Common name", 1: "Latin name", 3: "Plant part", 4: "Harvest stage", 57: "Total N", 62: "C/N"},
+    4: {5: "(ton ha-1)", 57: "(% DM)"},
+    5: {5: "Median", 6: "Mean", 7: "SE", 8: "n", 57: "Median", 58: "Mean", 59: "SE", 60: "n",
+        62: "Median", 63: "Mean", 64: "SE", 65: "n"},
+}
+SOURCE = {
+    "name": "Dataset of biomass and chemical quality of crop residues from European areas (Green manure and cover crops, means table)",
+    "authors": "Thiébeau P., Jensen L.S., Ferchaud F. et al.",
+    "publisher": "Data INRAE",
+    "doi": "10.15454/LBI3U7",
+    "version": "v3",
+    "licence": "etalab-2.0",
+    "licence_url": "https://www.etalab.gouv.fr/licence-ouverte-open-licence/",
+    "download_date": "2026-10-30",
+    "source_id": "thiebeau_inrae_2021",
+}
+
+
+def check_header(rows: dict[int, dict[int, Any]]) -> None:
+    """Fail unless every header cell the column map relies on is where it is expected."""
+    for r, cells in EXPECTED_HEADER.items():
+        for c, text in cells.items():
+            got = str(rows.get(r, {}).get(c, "")).strip()
+            if got != text:
+                raise ValueError(f"header mismatch at row {r} col {c}: expected {text!r}, got {got!r}")
+
+
+def season_of(common_name: str) -> str:
+    name = (common_name or "").strip()
+    if name.endswith("(AutD)"):
+        return "autumn"
+    if name.endswith("(SpD)"):
+        return "spring"
+    return "unspecified"
+
+
+def _num(v: Any) -> float | None:
+    return float(v) if isinstance(v, (int, float)) and not isinstance(v, bool) else None
+
+
+def _metric(row: tuple, cols: tuple[int, int, int]) -> dict[str, Any] | None:
+    mean, se, n = (_num(row[c]) if c < len(row) else None for c in cols)
+    if mean is None:
+        return None
+    return {"mean": round(mean, 2), "se": None if se is None else round(se, 2), "n": None if n is None else int(n)}
+
+
+def build_species(rows: list[tuple]) -> dict[str, dict[str, dict[str, Any]]]:
+    from app.species_registry import get_species_info, resolve_species
+
+    out: dict[str, dict[str, dict[str, Any]]] = {}
+    for row in rows:
+        if row[COL_PART] != "Aerial DM" or row[COL_STAGE] != "Immature" or not row[COL_LATIN]:
+            continue
+        latin = str(row[COL_LATIN]).strip()
+        slug = resolve_species(latin)
+        # Exact scientific name only: a common name or code that happens to resolve is not a match.
+        info = get_species_info(slug) if slug else None
+        if not info or info.get("scientific_name") != latin:
+            continue
+        values = {name: _metric(row, cols) for name, cols in METRICS.items()}
+        if all(v is None for v in values.values()):
+            continue
+        season = season_of(str(row[COL_COMMON] or ""))
+        if season in out.get(slug, {}):
+            raise ValueError(f"duplicate row for {slug} / {season}")
+        out.setdefault(slug, {})[season] = values
+    return dict(sorted(out.items()))
+
+
+def generate(path: Path) -> dict[str, Any]:
+    import openpyxl
+
+    with open(path, "rb") as fh:
+        wb = openpyxl.load_workbook(fh, read_only=True, data_only=True)
+        rows = list(wb[wb.sheetnames[0]].iter_rows(values_only=True))
+    check_header({i: dict(enumerate(rows[i])) for i in EXPECTED_HEADER})
+    return {"source": dict(SOURCE), "species": build_species(rows[DATA_START:])}
+
+
+HEADER_COMMENT = (
+    "# Generated by backend/scripts/build_cover_crop_reference.py - do not edit by hand.\n"
+    "# Means of European trials (aerial dry matter, immature stage). Data converted by Nekazari.\n"
+    "# Thiebeau P., Jensen L.S., Ferchaud F. et al., Data INRAE, v3, doi:10.15454/LBI3U7 (Etalab 2.0).\n"
+)
+
+
+def main(argv: list[str] | None = None) -> int:
+    ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    ap.add_argument("raw", type=Path, help="Mean_data_Green_manure_and_Cover_crops_v3.tab")
+    ap.add_argument("--out", type=Path, default=DEFAULT_OUT)
+    args = ap.parse_args(argv)
+    doc = generate(args.raw)
+    args.out.write_text(HEADER_COMMENT + yaml.safe_dump(doc, sort_keys=False, allow_unicode=True), encoding="utf-8")
+    print(f"wrote {args.out}: {len(doc['species'])} species")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

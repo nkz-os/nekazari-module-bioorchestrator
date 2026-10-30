@@ -3,14 +3,16 @@ from __future__ import annotations
 
 import logging
 from datetime import UTC, date, datetime
-from typing import Annotated
+from typing import Annotated, Literal
 
 import httpx
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 
 from app.api.v1.graph import _require_tenant_id
+from app.common.attribution import attach_attributions
 from app.core.knowledge import KnowledgeSource, get_knowledge_sources
 from app.graph.dao import GraphDAO
+from app.planning.cover_reference import SOURCE_ID, load_reference_data, reference_for
 from app.planning.farm import default_target_campaign, farm_payload
 from app.planning.farm_source import load_farm
 from app.planning.in_season import parcel_in_season
@@ -44,6 +46,7 @@ from app.planning.service import (
     parcel_varieties,
 )
 from app.services.sim_jobs import shared_sim_jobs
+from app.species_registry import resolve_species
 
 logger = logging.getLogger(__name__)
 
@@ -208,3 +211,17 @@ async def put_plan(request: Request, parcel_id: str, body: PlanIn):
         raise HTTPException(status_code=e.status, detail={"code": e.code}) from e
     except httpx.ConnectError as e:
         raise HTTPException(status_code=502, detail="Orion-LD unreachable") from e
+
+
+@router.get("/cover-crops/{species}/reference")
+async def cover_crop_reference(request: Request, species: str, season: Literal["autumn", "spring"]):
+    """Aerial biomass, %N and C/N of a cover species (mean of European trials); ``species`` is a slug or EPPO code.
+
+    An identifier the registry does not know is a 404; a known species without a row for the season is
+    ``status: "no_data"`` (never another season or species).
+    """
+    _require_tenant_id(request)
+    slug = resolve_species(species)
+    if slug is None:
+        raise HTTPException(status_code=404, detail="unknown species")
+    return attach_attributions(reference_for(slug, season, load_reference_data()), [SOURCE_ID])

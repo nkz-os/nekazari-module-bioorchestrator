@@ -406,6 +406,31 @@ sources:
         en: Estimates and averages are Nekazari calculations based on these data; they are not data published by the sources.
         es: Las estimaciones y medias son cálculos de Nekazari a partir de estos datos; no son datos publicados por las fuentes.
       notes: Only the residue defaults hard-coded in the script are used; the crop table of the package (crop_data.csv) is not. The script file carries no licence header; the licence is the gpl-3.0.txt shipped in the same ZIP.
+  - source_id: thiebeau_inrae_2021
+    name: Biomass and chemical quality of crop residues from European areas (green manure and cover crops)
+    institution: INRAE — Thiébeau P., Jensen L.S., Ferchaud F. et al.
+    country: FR
+    url: https://doi.org/10.15454/LBI3U7
+    licence:
+      licence_id: etalab-2.0
+      terms_url: https://www.etalab.gouv.fr/wp-content/uploads/2017/04/ETALAB-Licence-Ouverte-v2.0.pdf
+      quote: 'Le « Concédant » concède au « Réutilisateur » un droit non exclusif et gratuit de libre « Réutilisation »
+        de l’« Information » objet de la présente licence, à des fins commerciales ou non, dans le monde entier et pour
+        une durée illimitée, dans les conditions exprimées ci-dessous.'
+      quote_language: fr
+      checked_at: '2026-10-30'
+      commercial_use: allowed
+      tdm_reserved: null
+      attribution_text: 'Source: Thiébeau P., Jensen L.S., Ferchaud F. et al., Dataset of biomass and chemical quality of crop
+        residues from European areas, Data INRAE, v3, doi:10.15454/LBI3U7, Licence Ouverte Etalab 2.0. Data converted by Nekazari.'
+      attribution_url: https://doi.org/10.15454/LBI3U7
+      download_date: '2026-10-30'
+      conditions:
+      - the source is cited (name of the producer and date of the last update)
+      processing_note:
+        en: Estimates and averages are Nekazari calculations based on these data; they are not data published by the sources.
+        es: Las estimaciones y medias son cálculos de Nekazari a partir de estos datos; no son datos publicados por las fuentes.
+      notes: Only the dataset (Mean_data table, green manure and cover crops, v3) is used; the Data in Brief article is CC BY-NC-ND and its text is not used.
   - source_id: BSL
     name: Bundessortenamt (BSL)
     institution: Bundessortenamt — Federal Plant Variety Office

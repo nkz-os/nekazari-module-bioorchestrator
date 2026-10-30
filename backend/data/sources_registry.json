@@ -1476,5 +1476,50 @@
       "residues",
       "spain"
     ]
+  },
+  {
+    "source_id": "thiebeau_inrae_2021",
+    "name": "Biomass and chemical quality of crop residues from European areas (green manure and cover crops)",
+    "institution": "INRAE \u2014 Thi\u00e9beau P., Jensen L.S., Ferchaud F. et al.",
+    "institution_short": "INRAE",
+    "country": "FR",
+    "country_name": {
+      "en": "France",
+      "es": "Francia",
+      "eu": "Frantzia",
+      "fr": "France",
+      "pt": "Fran\u00e7a"
+    },
+    "url": "https://doi.org/10.15454/LBI3U7",
+    "document_url_template": null,
+    "license_class": "open-licence-etalab",
+    "use_type": "reference-coefficients",
+    "official_status": false,
+    "data_format": "xlsx-converted",
+    "extraction_method": "structured",
+    "confidence_default": "medium",
+    "attribution": {
+      "en": "Biomass and chemical quality of European green manure and cover crops: mean of published trials (Thi\u00e9beau et al., INRAE, v3).",
+      "es": "Biomasa y calidad qu\u00edmica de abonos verdes y cubiertas europeas: media de ensayos publicados (Thi\u00e9beau et al., INRAE, v3)."
+    },
+    "disclaimer": {
+      "en": "Means of trials mostly from northern and central Europe; local results can differ. Nekazari conversions are informational.",
+      "es": "Medias de ensayos mayoritariamente del norte y centro de Europa; el resultado local puede diferir. Las conversiones de Nekazari son informativas."
+    },
+    "attribution_text": "Source: Thi\u00e9beau P., Jensen L.S., Ferchaud F. et al., Dataset of biomass and chemical quality of crop residues from European areas, Data INRAE, v3, doi:10.15454/LBI3U7, Licence Ouverte Etalab 2.0. Data converted by Nekazari.",
+    "attribution_url": "https://doi.org/10.15454/LBI3U7",
+    "licence_id": "etalab-2.0",
+    "licence_url": "https://www.etalab.gouv.fr/licence-ouverte-open-licence/",
+    "download_date": "2026-10-30",
+    "processing_note": {
+      "en": "Estimates and averages are Nekazari calculations based on these data; they are not data published by the sources.",
+      "es": "Las estimaciones y medias son c\u00e1lculos de Nekazari a partir de estos datos; no son datos publicados por las fuentes."
+    },
+    "tags": [
+      "cover-crops",
+      "green-manure",
+      "residues",
+      "europe"
+    ]
   }
 ]
