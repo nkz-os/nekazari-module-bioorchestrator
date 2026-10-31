@@ -265,3 +265,38 @@ def test_nuts_region_point_out_of_range(client):
     base = "/api/graph/agriculture/nuts-region"
     assert client.get(f"{base}?lat=95&lon=0").status_code == 422
     assert client.get(f"{base}?lat=0&lon=181").status_code == 422
+
+
+def test_coefficients_without_eppo_lists_the_registry_crops(client):
+    with patch.object(BalanceDao, "get_crop_coefficients", AsyncMock()) as m:
+        resp = client.get("/api/graph/agriculture/crop-balance-coefficients")
+    assert resp.status_code == 200
+    m.assert_not_awaited()
+    crops = resp.json()["crops"]
+    assert crops and set(resp.json()) == {"crops"}
+    wheat = next(c for c in crops if c["slug"] == "wheat")
+    assert wheat["eppo"] == "TRZAX"
+    assert set(wheat["names"]) == {"es", "en", "eu", "fr", "ca", "pt"}
+    assert wheat["names"]["es"] == "trigo"
+    es = [c["names"]["es"] for c in crops]
+    assert es == sorted(es, key=lambda s: (s.casefold(), s))
+    codes = [c["eppo"] for c in crops]
+    assert len(codes) == len(set(codes))
+    assert "ZEAMA" not in codes and "ZEAMX" in codes
+
+
+def test_crop_list_flags_which_crops_have_coefficients(client):
+    crops = client.get("/api/graph/agriculture/crop-balance-coefficients").json()["crops"]
+    by = {c["eppo"]: c["has_coefficients"] for c in crops}
+    assert by["TRZAX"] is True
+    assert by["CIEAR"] is False
+    assert by["ZEAMX"] is True
+    assert all(isinstance(v, bool) for v in by.values())
+
+
+def test_crop_list_matches_a_sibling_code_through_the_catalog_code():
+    with patch.object(balance_api, "_coefficient_codes", return_value=frozenset({"ZEAMX"})), \
+         patch.object(balance_api, "list_crop_names",
+                      return_value=[{"eppo": "ZEAMA", "slug": "maize", "names": {}}]):
+        body = TestClient(app).get("/api/graph/agriculture/crop-balance-coefficients").json()
+    assert body["crops"][0]["has_coefficients"] is True
