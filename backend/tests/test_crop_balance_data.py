@@ -55,3 +55,20 @@ def test_sources_registry_notices_are_current_and_neutral():
     header = " ".join(line.lstrip("# ") for line in _header(path).splitlines())
     assert "the six nutrient-balance reference sources" in header
     assert "owner decision" not in path.read_text(encoding="utf-8").lower()
+
+
+def test_grain_legumes_carry_only_sourced_values():
+    # Values no registered source publishes for these crops stay absent (no proxies).
+    for eppo in ("CIEAR", "LENCU"):
+        crop = DOC["crops"][eppo]
+        assert (crop["crop_type"], crop["n_fixing"]) == ("grain_legume", True)
+        assert "residue_product" not in crop
+        values = crop["values"]
+        assert {f: v["source_id"] for f, v in values.items()} == {
+            "dm_product_pct": "panagos_2022", "p_product_pct": "panagos_2022",
+            "n_residue_pct": "fertilicalc_script_2024",
+            "p_residue_pct": "fertilicalc_script_2024",
+            "k_residue_pct": "fertilicalc_script_2024"}
+        assert {f: v["value"] for f, v in values.items()} == {
+            "dm_product_pct": 86.0, "p_product_pct": 0.497, "n_residue_pct": 1.0,
+            "p_residue_pct": 0.1, "k_residue_pct": 1.0}

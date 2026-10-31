@@ -2,7 +2,7 @@
 # Every value: source_id (registered), ref (table/page), raw value and transformation.
 # Values with source_id fertilicalc_script_2024 are defaults of a GPL-3.0 program (combined under GPLv3 section 13); see the source registry.
 # Generated from a reviewed table; do not edit by hand.
-dataset_version: 2026-10-11.1
+dataset_version: 2026-10-31.1
 crops:
   BEAVX:
     values:
@@ -155,6 +155,55 @@ crops:
     crop_type: industrial
     harvest_product: grain
     n_fixing: false
+  CIEAR:
+    values:
+      dm_product_pct:
+        value: 86.0
+        source_id: panagos_2022
+        ref: Suppl. Table S1 (not viewed; value read from Dryad Combined_crop_data.csv,
+          rows citing Panagos 2022, variable DM_pc, original_crop "Pulses")
+        raw: 86 % DM (humidity rate Eurostat)
+        transformation: none
+        note: 'Texto de Panagos p. 8: los porcentajes de humedad proceden de estadísticas
+          de Eurostat (tabla suplementaria S1). Fila genérica «legumbres», la misma
+          que en guisante y haba: Panagos no tiene fila propia de este cultivo.'
+      p_product_pct:
+        value: 0.497
+        source_id: panagos_2022
+        ref: Table 1, p. 9 (row "Pulses")
+        raw: 0.497 % P on dry matter yield
+        transformation: none
+        note: Panagos, fila genérica «legumbres» (52 muestras), la misma que en guisante
+          y haba. La Tabla 18.5 de la guía (8 kg P2O5/t, fila «Garbanzos») equivale
+          a 0,406 % (−18 %), pero es extracción del cultivo y no el contenido del
+          grano; no se usa. Contraste con un análisis del grano.
+      n_residue_pct:
+        value: 1.0
+        source_id: fertilicalc_script_2024
+        ref: fertilicalc_script_231124.py, residue defaults (n_res/p_res/k_res)
+        raw: '1.0 % of DM (script literal: n_res[i] = 1./100., i.e. fraction)'
+        transformation: none (default of the reference method)
+        note: 'Valor por defecto de FertiliCalc: no hay dato publicado abierto para
+          los restos de este cultivo; ajústelo si dispone de un análisis o una tabla.'
+      p_residue_pct:
+        value: 0.1
+        source_id: fertilicalc_script_2024
+        ref: fertilicalc_script_231124.py, residue defaults (n_res/p_res/k_res)
+        raw: '0.1 % of DM (script literal: p_res[i] = 0.1/100., i.e. fraction)'
+        transformation: none (default of the reference method)
+        note: 'Valor por defecto de FertiliCalc: no hay dato publicado abierto para
+          los restos de este cultivo; ajústelo si dispone de un análisis o una tabla.'
+      k_residue_pct:
+        value: 1.0
+        source_id: fertilicalc_script_2024
+        ref: fertilicalc_script_231124.py, residue defaults (n_res/p_res/k_res)
+        raw: '1.0 % of DM (script literal: k_res[i] = 1./100., i.e. fraction)'
+        transformation: none (default of the reference method)
+        note: 'Valor por defecto de FertiliCalc: no hay dato publicado abierto para
+          los restos de este cultivo; ajústelo si dispone de un análisis o una tabla.'
+    crop_type: grain_legume
+    harvest_product: dry grain
+    n_fixing: true
   HELAN:
     values:
       dm_product_pct:
@@ -336,6 +385,55 @@ crops:
     harvest_product: grain
     residue_product: straw
     n_fixing: false
+  LENCU:
+    values:
+      dm_product_pct:
+        value: 86.0
+        source_id: panagos_2022
+        ref: Suppl. Table S1 (not viewed; value read from Dryad Combined_crop_data.csv,
+          rows citing Panagos 2022, variable DM_pc, original_crop "Pulses")
+        raw: 86 % DM (humidity rate Eurostat)
+        transformation: none
+        note: 'Texto de Panagos p. 8: los porcentajes de humedad proceden de estadísticas
+          de Eurostat (tabla suplementaria S1). Fila genérica «legumbres», la misma
+          que en guisante y haba: Panagos no tiene fila propia de este cultivo.'
+      p_product_pct:
+        value: 0.497
+        source_id: panagos_2022
+        ref: Table 1, p. 9 (row "Pulses")
+        raw: 0.497 % P on dry matter yield
+        transformation: none
+        note: Panagos, fila genérica «legumbres» (52 muestras), la misma que en guisante
+          y haba. La Tabla 18.5 de la guía (8 kg P2O5/t, fila «Lentejas») equivale
+          a 0,406 % (−18 %), pero es extracción del cultivo y no el contenido del
+          grano; no se usa. Contraste con un análisis del grano.
+      n_residue_pct:
+        value: 1.0
+        source_id: fertilicalc_script_2024
+        ref: fertilicalc_script_231124.py, residue defaults (n_res/p_res/k_res)
+        raw: '1.0 % of DM (script literal: n_res[i] = 1./100., i.e. fraction)'
+        transformation: none (default of the reference method)
+        note: 'Valor por defecto de FertiliCalc: no hay dato publicado abierto para
+          los restos de este cultivo; ajústelo si dispone de un análisis o una tabla.'
+      p_residue_pct:
+        value: 0.1
+        source_id: fertilicalc_script_2024
+        ref: fertilicalc_script_231124.py, residue defaults (n_res/p_res/k_res)
+        raw: '0.1 % of DM (script literal: p_res[i] = 0.1/100., i.e. fraction)'
+        transformation: none (default of the reference method)
+        note: 'Valor por defecto de FertiliCalc: no hay dato publicado abierto para
+          los restos de este cultivo; ajústelo si dispone de un análisis o una tabla.'
+      k_residue_pct:
+        value: 1.0
+        source_id: fertilicalc_script_2024
+        ref: fertilicalc_script_231124.py, residue defaults (n_res/p_res/k_res)
+        raw: '1.0 % of DM (script literal: k_res[i] = 1./100., i.e. fraction)'
+        transformation: none (default of the reference method)
+        note: 'Valor por defecto de FertiliCalc: no hay dato publicado abierto para
+          los restos de este cultivo; ajústelo si dispone de un análisis o una tabla.'
+    crop_type: grain_legume
+    harvest_product: dry grain
+    n_fixing: true
   MEDSA:
     values:
       p_product_pct:
