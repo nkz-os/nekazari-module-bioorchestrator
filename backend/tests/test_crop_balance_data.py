@@ -55,3 +55,31 @@ def test_sources_registry_notices_are_current_and_neutral():
     header = " ".join(line.lstrip("# ") for line in _header(path).splitlines())
     assert "the six nutrient-balance reference sources" in header
     assert "owner decision" not in path.read_text(encoding="utf-8").lower()
+
+
+def test_grain_legumes_carry_only_sourced_values():
+    # Values no registered source publishes stay absent; residue_left is a plan input.
+    for eppo, n, k, hi in (("CIEAR", 3.256, 1.744, 37.0), ("LENCU", 4.186, 1.86, 33.0)):
+        crop = DOC["crops"][eppo]
+        assert (crop["crop_type"], crop["n_fixing"]) == ("grain_legume", True)
+        assert "residue_product" not in crop
+        values = crop["values"]
+        assert {f: (v["source_id"], v["value"]) for f, v in values.items()} == {
+            "dm_product_pct": ("panagos_2022", 86.0),
+            "n_product_pct": ("essd_2024_s3", n),
+            "p_product_pct": ("panagos_2022", 0.497),
+            "k_product_pct": ("essd_2024_s3", k),
+            "n_residue_pct": ("fertilicalc_script_2024", 1.0),
+            "p_residue_pct": ("fertilicalc_script_2024", 0.1),
+            "k_residue_pct": ("fertilicalc_script_2024", 1.0),
+            "balance_harvest_index_pct": ("ludemann_cc0", hi)}
+
+
+def test_grain_legumes_have_a_harvest_index_and_no_residue_share():
+    expected = {"CIEAR": 37.0, "LENCU": 33.0, "VICFX": 44.0, "PIBSX": 36.0}
+    for eppo, hi in expected.items():
+        values = DOC["crops"][eppo]["values"]
+        assert values["balance_harvest_index_pct"]["value"] == hi
+        assert values["balance_harvest_index_pct"]["source_id"] == "ludemann_cc0"
+        assert "residue_left_pct" not in values
+    assert DOC["crops"]["PIBSX"]["values"]["k_product_pct"]["raw"].startswith("9.8 kg K")

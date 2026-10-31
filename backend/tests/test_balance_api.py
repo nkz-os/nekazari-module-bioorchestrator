@@ -1,9 +1,11 @@
 """Public balance reference endpoints (DAO patched; attributions from the real registry)."""
 import logging
+from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+import yaml
 from fastapi.testclient import TestClient
 
 from app.api.v1 import balance as balance_api
@@ -289,7 +291,8 @@ def test_crop_list_flags_which_crops_have_coefficients(client):
     crops = client.get("/api/graph/agriculture/crop-balance-coefficients").json()["crops"]
     by = {c["eppo"]: c["has_coefficients"] for c in crops}
     assert by["TRZAX"] is True
-    assert by["CIEAR"] is False
+    assert by["CIEAR"] is True and by["LENCU"] is True
+    assert by["GLXMA"] is False
     assert by["ZEAMX"] is True
     assert all(isinstance(v, bool) for v in by.values())
 
@@ -300,3 +303,36 @@ def test_crop_list_matches_a_sibling_code_through_the_catalog_code():
                       return_value=[{"eppo": "ZEAMA", "slug": "maize", "names": {}}]):
         body = TestClient(app).get("/api/graph/agriculture/crop-balance-coefficients").json()
     assert body["crops"][0]["has_coefficients"] is True
+
+
+COEFFICIENTS = yaml.safe_load(
+    (Path(__file__).resolve().parents[1] / "data" / "crop_balance_coefficients.yaml")
+    .read_text(encoding="utf-8"))
+
+
+@pytest.mark.parametrize("eppo", ["CIEAR", "LENCU"])
+def test_grain_legume_coefficients_from_the_committed_file(client, eppo):
+    node = to_node_props(eppo, COEFFICIENTS["crops"][eppo], COEFFICIENTS["dataset_version"])
+    with patch.object(BalanceDao, "get_crop_coefficients", AsyncMock(return_value=node)) as m:
+        resp = client.get(f"/api/graph/agriculture/crop-balance-coefficients?eppo={eppo.lower()}")
+    assert resp.status_code == 200
+    m.assert_awaited_once_with(eppo)
+    body = resp.json()
+    assert (body["crop_type"], body["harvest_product"], body["n_fixing"]) == (
+        "grain_legume", "dry grain", True)
+    assert body["residue_product"] is None
+    assert set(body["values"]) == {"dm_product_pct", "n_product_pct", "p_product_pct",
+                                   "k_product_pct", "n_residue_pct", "p_residue_pct",
+                                   "k_residue_pct", "balance_harvest_index_pct"}
+    assert body["values"]["dm_product_pct"]["value"] == 86.0
+    p = body["values"]["p_product_pct"]
+    assert (p["value"], p["unit"], p["source_id"], p["ref"], p["transformation"]) == (
+        0.497, "% DM", "panagos_2022", 'Table 1, p. 9 (row "Pulses")', "none")
+    assert p["note"]
+    assert body["values"]["n_residue_pct"]["source_id"] == "fertilicalc_script_2024"
+    assert body["values"]["n_product_pct"]["source_id"] == "essd_2024_s3"
+    assert body["values"]["balance_harvest_index_pct"]["source_id"] == "ludemann_cc0"
+    # residue management is a plan input, not a coefficient
+    assert set(body["missing"]) == {"dm_residue_pct", "residue_left_pct"}
+    assert [a["source_id"] for a in body["attributions"]] == [
+        "essd_2024_s3", "fertilicalc_script_2024", "ludemann_cc0", "panagos_2022"]
