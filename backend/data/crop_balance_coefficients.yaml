@@ -166,7 +166,18 @@ crops:
         transformation: none
         note: 'Texto de Panagos p. 8: los porcentajes de humedad proceden de estadísticas
           de Eurostat (tabla suplementaria S1). Fila genérica «legumbres», la misma
-          que en guisante y haba: Panagos no tiene fila propia de este cultivo.'
+          que en guisante y haba: Panagos no tiene fila propia de este cultivo ni
+          enumera las especies de la categoría.'
+      n_product_pct:
+        value: 3.256
+        source_id: essd_2024_s3
+        ref: Table S3, p. 8 (PDF) (row "Chick peas")
+        raw: 28 kg N / t fresh commodity (2 s.f.)
+        transformation: N% = 28/(10*0.86) [DM 86 % from dm_product_pct row]
+        note: 'FUENTE MIXTA (materia seca 86 % de Panagos). ESSD: 28 kg N/t de grano.
+          La Tabla 18.5 de la guía (45 kg N/t, fila «Garbanzos») equivale a 5,233
+          % (+61 %), pero es extracción del cultivo, no el contenido del grano; no
+          se usa.'
       p_product_pct:
         value: 0.497
         source_id: panagos_2022
@@ -176,7 +187,19 @@ crops:
         note: Panagos, fila genérica «legumbres» (52 muestras), la misma que en guisante
           y haba. La Tabla 18.5 de la guía (8 kg P2O5/t, fila «Garbanzos») equivale
           a 0,406 % (−18 %), pero es extracción del cultivo y no el contenido del
-          grano; no se usa. Contraste con un análisis del grano.
+          grano; no se usa. ESSD da 5,1 kg P/t = 0,593 % (+19 %); se usa Panagos por
+          el orden de prioridad. Contraste con un análisis del grano.
+      k_product_pct:
+        value: 1.744
+        source_id: essd_2024_s3
+        ref: Table S3, p. 8 (PDF) (row "Chick peas")
+        raw: 15 kg K / t fresh commodity (2 s.f.)
+        transformation: K% = 15/(10*0.86) [DM 86 % from dm_product_pct row]
+        note: 'FUENTE MIXTA (materia seca 86 % de Panagos). ESSD: 15 kg K/t de grano.
+          La Tabla 18.5 de la guía (35 kg K2O/t) equivale a 3,377 % (+94 %), pero
+          es extracción del cultivo, no el contenido del grano; no se usa. El K de
+          15 kg/t coincide con el de otras legumbres de la tabla (haba, caupí, bambara):
+          puede ser un valor de grupo; contraste con un análisis.'
       n_residue_pct:
         value: 1.0
         source_id: fertilicalc_script_2024
@@ -201,6 +224,21 @@ crops:
         transformation: none (default of the reference method)
         note: 'Valor por defecto de FertiliCalc: no hay dato publicado abierto para
           los restos de este cultivo; ajústelo si dispone de un análisis o una tabla.'
+      balance_harvest_index_pct:
+        value: 37.0
+        source_id: ludemann_cc0
+        ref: Dryad Combined_crop_data.csv, row original_crop "Chickpea", item "Chick
+          peas", original_region "Australia", variable HI (data record 4245, 1-based,
+          header excluded); collated from Unkovich et al. (2010), Advances in Agronomy,
+          doi:10.1016/S0065-2113(10)05005-4
+        raw: 0.37 HI (proportion of crop products in above-ground biomass)
+        transformation: HI % = 0.37 * 100
+        note: 'Índice de cosecha de Unkovich et al. (2010), cultivos de Australia:
+          no hay valor europeo en las fuentes registradas. Se usa ludemann_cc0 porque
+          la guía MAPA, Panagos y ESSD no dan índice de cosecha para este cultivo
+          (regla del registro de fuentes). El mismo fichero trae otro valor para el
+          garbanzo, 0,50 (Roy 2016, boletín de la FAO, ámbito mundial); se usa el
+          de Unkovich.'
     crop_type: grain_legume
     harvest_product: dry grain
     n_fixing: true
@@ -396,7 +434,18 @@ crops:
         transformation: none
         note: 'Texto de Panagos p. 8: los porcentajes de humedad proceden de estadísticas
           de Eurostat (tabla suplementaria S1). Fila genérica «legumbres», la misma
-          que en guisante y haba: Panagos no tiene fila propia de este cultivo.'
+          que en guisante y haba: Panagos no tiene fila propia de este cultivo ni
+          enumera las especies de la categoría.'
+      n_product_pct:
+        value: 4.186
+        source_id: essd_2024_s3
+        ref: Table S3, p. 9 (PDF) (row "Lentils")
+        raw: 36 kg N / t fresh commodity (2 s.f.)
+        transformation: N% = 36/(10*0.86) [DM 86 % from dm_product_pct row]
+        note: 'FUENTE MIXTA (materia seca 86 % de Panagos). ESSD: 36 kg N/t de grano.
+          La Tabla 18.5 de la guía (47 kg N/t, fila «Lentejas») equivale a 5,465 %
+          (+31 %), pero es extracción del cultivo, no el contenido del grano; no se
+          usa.'
       p_product_pct:
         value: 0.497
         source_id: panagos_2022
@@ -406,7 +455,17 @@ crops:
         note: Panagos, fila genérica «legumbres» (52 muestras), la misma que en guisante
           y haba. La Tabla 18.5 de la guía (8 kg P2O5/t, fila «Lentejas») equivale
           a 0,406 % (−18 %), pero es extracción del cultivo y no el contenido del
-          grano; no se usa. Contraste con un análisis del grano.
+          grano; no se usa. ESSD da 4,4 kg P/t = 0,512 % (+3 %); se usa Panagos por
+          el orden de prioridad. Contraste con un análisis del grano.
+      k_product_pct:
+        value: 1.86
+        source_id: essd_2024_s3
+        ref: Table S3, p. 9 (PDF) (row "Lentils")
+        raw: 16 kg K / t fresh commodity (2 s.f.)
+        transformation: K% = 16/(10*0.86) [DM 86 % from dm_product_pct row]
+        note: 'FUENTE MIXTA (materia seca 86 % de Panagos). ESSD: 16 kg K/t de grano.
+          La Tabla 18.5 de la guía (12 kg K2O/t) equivale a 1,158 % (−38 %), pero
+          es extracción del cultivo, no el contenido del grano; no se usa.'
       n_residue_pct:
         value: 1.0
         source_id: fertilicalc_script_2024
@@ -431,6 +490,18 @@ crops:
         transformation: none (default of the reference method)
         note: 'Valor por defecto de FertiliCalc: no hay dato publicado abierto para
           los restos de este cultivo; ajústelo si dispone de un análisis o una tabla.'
+      balance_harvest_index_pct:
+        value: 33.0
+        source_id: ludemann_cc0
+        ref: Dryad Combined_crop_data.csv, row original_crop "Lentil", item "Lentils",
+          original_region "Australia", variable HI (data record 6333, 1-based, header
+          excluded); collated from Unkovich et al. (2010), Advances in Agronomy, doi:10.1016/S0065-2113(10)05005-4
+        raw: 0.33 HI (proportion of crop products in above-ground biomass)
+        transformation: HI % = 0.33 * 100
+        note: 'Índice de cosecha de Unkovich et al. (2010), cultivos de Australia:
+          no hay valor europeo en las fuentes registradas. Se usa ludemann_cc0 porque
+          la guía MAPA, Panagos y ESSD no dan índice de cosecha para este cultivo
+          (regla del registro de fuentes).'
     crop_type: grain_legume
     harvest_product: dry grain
     n_fixing: true
@@ -613,6 +684,20 @@ crops:
         transformation: none (default of the reference method)
         note: 'Valor por defecto de FertiliCalc: no hay dato publicado abierto para
           los restos de este cultivo; ajústelo si dispone de un análisis o una tabla.'
+      balance_harvest_index_pct:
+        value: 36.0
+        source_id: ludemann_cc0
+        ref: Dryad Combined_crop_data.csv, row original_crop "Field pea", item "Cow
+          peas, dry", original_region "Australia", variable HI (data record 4882,
+          1-based, header excluded); collated from Unkovich et al. (2010), Advances
+          in Agronomy, doi:10.1016/S0065-2113(10)05005-4
+        raw: 0.36 HI (proportion of crop products in above-ground biomass)
+        transformation: HI % = 0.36 * 100
+        note: 'Índice de cosecha de Unkovich et al. (2010), cultivos de Australia:
+          no hay valor europeo en las fuentes registradas. Se usa ludemann_cc0 porque
+          la guía MAPA, Panagos y ESSD no dan índice de cosecha para este cultivo
+          (regla del registro de fuentes). En el fichero la fila lleva el producto
+          «Cow peas, dry» (caupí), pero el cultivo original es «Field pea» (guisante).'
     crop_type: grain_legume
     harvest_product: dry grain
     n_fixing: true
@@ -984,6 +1069,20 @@ crops:
         transformation: none (default of the reference method)
         note: 'Valor por defecto de FertiliCalc: no hay dato publicado abierto para
           los restos de este cultivo; ajústelo si dispone de un análisis o una tabla.'
+      balance_harvest_index_pct:
+        value: 44.0
+        source_id: ludemann_cc0
+        ref: Dryad Combined_crop_data.csv, row original_crop "Faba bean", item "Vegetables,
+          leguminous nes", original_region "Australia", variable HI (data record 4826,
+          1-based, header excluded); collated from Unkovich et al. (2010), Advances
+          in Agronomy, doi:10.1016/S0065-2113(10)05005-4
+        raw: 0.44 HI (proportion of crop products in above-ground biomass)
+        transformation: HI % = 0.44 * 100
+        note: 'Índice de cosecha de Unkovich et al. (2010), cultivos de Australia:
+          no hay valor europeo en las fuentes registradas. Se usa ludemann_cc0 porque
+          la guía MAPA, Panagos y ESSD no dan índice de cosecha para este cultivo
+          (regla del registro de fuentes). En el fichero la fila lleva el producto
+          «Vegetables, leguminous nes», pero el cultivo original es «Faba bean» (haba).'
     crop_type: grain_legume
     harvest_product: dry grain
     n_fixing: true

@@ -321,15 +321,18 @@ def test_grain_legume_coefficients_from_the_committed_file(client, eppo):
     assert (body["crop_type"], body["harvest_product"], body["n_fixing"]) == (
         "grain_legume", "dry grain", True)
     assert body["residue_product"] is None
-    assert set(body["values"]) == {"dm_product_pct", "p_product_pct", "n_residue_pct",
-                                   "p_residue_pct", "k_residue_pct"}
+    assert set(body["values"]) == {"dm_product_pct", "n_product_pct", "p_product_pct",
+                                   "k_product_pct", "n_residue_pct", "p_residue_pct",
+                                   "k_residue_pct", "balance_harvest_index_pct"}
     assert body["values"]["dm_product_pct"]["value"] == 86.0
     p = body["values"]["p_product_pct"]
     assert (p["value"], p["unit"], p["source_id"], p["ref"], p["transformation"]) == (
         0.497, "% DM", "panagos_2022", 'Table 1, p. 9 (row "Pulses")', "none")
     assert p["note"]
     assert body["values"]["n_residue_pct"]["source_id"] == "fertilicalc_script_2024"
-    assert set(body["missing"]) == {"n_product_pct", "k_product_pct", "dm_residue_pct",
-                                    "balance_harvest_index_pct", "residue_left_pct"}
+    assert body["values"]["n_product_pct"]["source_id"] == "essd_2024_s3"
+    assert body["values"]["balance_harvest_index_pct"]["source_id"] == "ludemann_cc0"
+    # residue management is a plan input, not a coefficient
+    assert set(body["missing"]) == {"dm_residue_pct", "residue_left_pct"}
     assert [a["source_id"] for a in body["attributions"]] == [
-        "fertilicalc_script_2024", "panagos_2022"]
+        "essd_2024_s3", "fertilicalc_script_2024", "ludemann_cc0", "panagos_2022"]
