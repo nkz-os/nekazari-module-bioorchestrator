@@ -138,6 +138,28 @@ def catalog_code(eppo: str) -> str:
     return CATALOG_SIBLING_CODES.get(eppo, eppo)
 
 
+def list_crop_names() -> list[dict[str, Any]]:
+    """Every registry species with an EPPO code, listed once under its catalog code.
+
+    ``[{"eppo", "slug", "names"}]`` with the registry's common names (es, en, eu, fr, ca, pt),
+    sorted by the Spanish name.
+    """
+    global _registry  # noqa: PLW0602
+    if _registry is None:
+        _load()
+    by_code: dict[str, dict[str, Any]] = {}
+    for slug in sorted(k for k in _registry if k != "_eppo_index"):
+        data = _registry[slug]
+        eppo = data.get("eppo_code")
+        if not eppo:
+            continue
+        code = catalog_code(eppo)
+        by_code.setdefault(code, {"eppo": code, "slug": slug,
+                                  "names": dict(data.get("common_names") or {})})
+    return sorted(by_code.values(),
+                  key=lambda c: (c["names"].get("es", c["slug"]).casefold(), c["eppo"]))
+
+
 def get_species_info(slug: str) -> dict[str, Any] | None:
     """Return full registry entry for a canonical slug."""
     global _registry  # noqa: PLW0602

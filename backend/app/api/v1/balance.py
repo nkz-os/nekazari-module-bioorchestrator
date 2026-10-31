@@ -21,7 +21,7 @@ from app.services.nuts_regions import (
     nuts2_for_municipality,
 )
 from app.services.region_lookup import es_province_at
-from app.species_registry import catalog_code
+from app.species_registry import catalog_code, list_crop_names
 from neo4j import AsyncDriver
 
 logger = logging.getLogger(__name__)
@@ -54,8 +54,15 @@ def _plausible_range(eppo: str) -> PlausibleRange | None:
 
 
 @router.get("/agriculture/crop-balance-coefficients")
-async def crop_balance_coefficients(driver: DriverDep, eppo: str = Query(..., pattern=_EPPO)):
-    """N-P-K balance coefficients of a crop, each with its source, reference and transformation."""
+async def crop_balance_coefficients(driver: DriverDep,
+                                    eppo: str | None = Query(None, pattern=_EPPO)):
+    """N-P-K balance coefficients of a crop, each with its source, reference and transformation.
+
+    Without ``eppo``: the crop list (``{"crops": [{eppo, slug, names}]}``) from the species
+    registry, sorted by Spanish name, so clients can pick a crop by name instead of by code.
+    """
+    if eppo is None:
+        return {"crops": list_crop_names()}
     node = await BalanceDao(driver).get_crop_coefficients(catalog_code(eppo.strip().upper()))
     if node is None:
         raise HTTPException(status_code=404, detail="No balance coefficients for this crop")
