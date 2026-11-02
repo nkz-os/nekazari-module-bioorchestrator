@@ -61,6 +61,11 @@ describe('VarietyTable evidence depth (es)', () => {
     expect(html).toContain('evidencia profunda');
     expect(html).toContain('4712 ensayos · 86 sitios · 2006–2026');
   });
+  it('groups the badge numbers by locale', () => {
+    const big = { ...depth, level: 'deep' as const, n_trials: 12345, n_sites: 23456 };
+    const html = renderToStaticMarkup(<VarietyTable data={{ ...base, evidence_depth: big }} selected={null} onSelect={() => {}} />);
+    expect(html).toContain('12.345 ensayos · 23.456 sitios');
+  });
   it('an answer without evidence_depth renders the table as before', () => {
     const html = renderToStaticMarkup(<VarietyTable data={base} selected={null} onSelect={() => {}} />);
     expect(html).toContain('Var A');

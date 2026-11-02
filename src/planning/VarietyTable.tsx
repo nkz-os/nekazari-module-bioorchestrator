@@ -18,7 +18,8 @@ export default function VarietyTable({ data, selected, onSelect }: Props) {
       <Inline gap="inline" wrap align="center">
         {data.tier && <Badge intent={data.tier === 'field' ? 'info' : 'warning'}>{t(`planning.variety.tier.${data.tier}`)}</Badge>}
         {depth && (
-          <span title={t('planning.variety.depthDetail', { n_trials: depth.n_trials, n_sites: depth.n_sites,
+          <span title={t('planning.variety.depthDetail', { n_trials: depth.n_trials.toLocaleString(safeLang(i18n.language)),
+            n_sites: depth.n_sites.toLocaleString(safeLang(i18n.language)),
             years: depth.first_year != null && depth.last_year != null ? `${depth.first_year}–${depth.last_year}` : '—' })}>
             <Badge intent={depth.level === 'pilot' ? 'warning' : 'info'}>{t(`planning.variety.depth.${depth.level}`)}</Badge>
           </span>
