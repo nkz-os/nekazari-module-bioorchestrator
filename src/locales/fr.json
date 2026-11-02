@@ -208,6 +208,13 @@
       "lowEnv": "Dans les essais faibles", "lowEnvHint": "Dans les essais faibles : rendement par rapport à la moyenne dans le tiers des essais les moins productifs (années sèches ou mauvaises).",
       "stable": "stable", "average": "moyenne", "responsive": "sensible à l'environnement", "few": "peu d'essais",
       "tier": { "field": "essais au champ", "regional": "moyennes régionales" },
+      "depth": {
+        "deep": "preuves approfondies",
+        "broad": "preuves étendues",
+        "moderate": "preuves modérées",
+        "pilot": "réseau pilote"
+      },
+      "depthDetail": "{{n_trials}} essais · {{n_sites}} sites · {{years}}",
       "choose": "Choisir", "chosen": "Choisie"
     },
     "gap": {

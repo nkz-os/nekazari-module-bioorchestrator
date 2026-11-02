@@ -27,6 +27,7 @@ from app.planning.estimates import (
     visible,
 )
 from app.planning.evidence import load_crop_evidence
+from app.planning.evidence_depth import evidence_depth
 from app.planning.fit import (
     CLIMATE_UNKNOWN,
     MULTI_YEAR,
@@ -229,7 +230,8 @@ async def parcel_varieties(*, dao, source: KnowledgeSource, parcel_id: str, tena
         # Trials exist, but no trial table has enough varieties to compare them against each other.
         data_gaps.append("insufficient_environments")
     payload = {**base, "status": "ok", "tier": ev["tier"], "zone_match": ev["zone_match"], "country": ev["country"],
-               "n_environments": n_env, "varieties": stats, "data_gaps": data_gaps}
+               "n_environments": n_env, "varieties": stats, "data_gaps": data_gaps,
+               "evidence_depth": evidence_depth(ev["rows"], total=ev.get("total"))}
     return attach_attributions(payload, rows_source_ids(ev["rows"]))
 
 

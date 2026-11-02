@@ -208,6 +208,13 @@
       "lowEnv": "En assajos fluixos", "lowEnvHint": "En assajos fluixos: rendiment respecte a la mitjana en el terç d'assajos amb menys producció (anys secs o dolents).",
       "stable": "estable", "average": "mitjana", "responsive": "sensible a l'entorn", "few": "pocs assaigs",
       "tier": { "field": "assaigs de camp", "regional": "mitjanes regionals" },
+      "depth": {
+        "deep": "evidència profunda",
+        "broad": "evidència àmplia",
+        "moderate": "evidència moderada",
+        "pilot": "xarxa pilot"
+      },
+      "depthDetail": "{{n_trials}} assajos · {{n_sites}} llocs · {{years}}",
       "choose": "Tria", "chosen": "Triada"
     },
     "gap": {

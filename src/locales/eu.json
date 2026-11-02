@@ -208,6 +208,13 @@
       "lowEnv": "Saiakuntza ahuletan", "lowEnvHint": "Saiakuntza ahuletan: batez bestekoarekiko etekina, ekoizpen txikieneko saiakuntzen herenean (urte lehorrak edo txarrak).",
       "stable": "egonkorra", "average": "ertaina", "responsive": "ingurunearekiko sentikorra", "few": "saiakuntza gutxi",
       "tier": { "field": "landa-saiakuntzak", "regional": "eskualdeko batezbestekoak" },
+      "depth": {
+        "deep": "ebidentzia sakona",
+        "broad": "ebidentzia zabala",
+        "moderate": "ebidentzia neurrizkoa",
+        "pilot": "sare pilotua"
+      },
+      "depthDetail": "{{n_trials}} saiakuntza · {{n_sites}} toki · {{years}}",
       "choose": "Aukeratu", "chosen": "Aukeratuta"
     },
     "gap": {

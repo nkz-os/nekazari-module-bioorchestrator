@@ -44,5 +44,5 @@ async def load_crop_evidence(dao, env: dict, *, crop_eppo: str, regime: str, man
         # The page cap cut the trial list: the statistics below rest on part of the evidence.
         data_gaps.append("evidence_truncated")
     return {"status": "ok", "tier": tier, "zone_match": zm, "country": country, "rows": rows,
-            "data_gaps": data_gaps, "crop_eppo": rec["crop"]["eppo"],
+            "total": int(page.get("total") or 0), "data_gaps": data_gaps, "crop_eppo": rec["crop"]["eppo"],
             "policy_version": result.get("evidence_policy")}

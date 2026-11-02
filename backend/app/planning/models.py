@@ -93,6 +93,15 @@ class VarietyStat(BaseModel):
     n_low_environments: int = 0
 
 
+class EvidenceDepth(BaseModel):
+    level: Literal["deep", "broad", "moderate", "pilot"]
+    n_trials: int
+    n_sites: int
+    n_years: int
+    first_year: int | None = None
+    last_year: int | None = None
+
+
 class VarietiesResponse(BaseModel):
     contract_version: str = CONTRACT_VERSION
     parcel_id: str
@@ -108,6 +117,7 @@ class VarietiesResponse(BaseModel):
     data_gaps: list[str] = Field(default_factory=list)
     attributions: list[dict[str, Any]] = Field(default_factory=list)
     graph_id: str
+    evidence_depth: EvidenceDepth | None = None
 
 
 class Percentiles(BaseModel):

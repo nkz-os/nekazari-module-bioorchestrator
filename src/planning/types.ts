@@ -33,11 +33,19 @@ export interface VarietyStat {
   /** Relative yield in the poor trials (lower tercile of trial means); null below the thresholds. */
   low_env_relative_yield_pct?: number | null; n_low_environments?: number;
 }
+export type EvidenceDepthLevel = 'deep' | 'broad' | 'moderate' | 'pilot';
+export interface EvidenceDepth {
+  level: EvidenceDepthLevel; n_trials: number; n_sites: number; n_years: number;
+  first_year: number | null; last_year: number | null;
+}
+
 export interface VarietiesResponse {
   contract_version: string; parcel_id: string; crop: string; regime: Regime; management: Management;
   status: 'ok' | 'no_trials' | 'needs_climate'; tier: 'field' | 'regional' | null;
   zone_match: Record<string, unknown> | null; country: string | null; n_environments: number;
   varieties: VarietyStat[]; data_gaps: string[]; attributions: SourceAttributionItem[]; graph_id: string;
+  /** Depth of the trial evidence behind the table (additive; older answers omit it). */
+  evidence_depth?: EvidenceDepth | null;
 }
 export type Basis = 'trial_evidence' | 'water_limited' | 'gap_corrected' | 'potential';
 export interface Moisture { basis: 'commercial' | 'dry_matter' | 'as_reported'; pct: number | null }
