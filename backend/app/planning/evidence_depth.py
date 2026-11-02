@@ -27,12 +27,21 @@ def depth_level(*, n_trials: int, n_sites: int, n_years: int) -> str:
     return "pilot"
 
 
-def evidence_depth(rows: list[dict], *, total: int | None = None) -> dict:
-    """``{level, n_trials, n_sites, n_years, first_year, last_year}`` of the rows (``total`` overrides
-    the trial count when the page was capped)."""
+def evidence_depth(rows: list[dict], *, total: int | None = None, summary: dict | None = None) -> dict:
+    """``{level, n_trials, n_sites, n_years, first_year, last_year}`` of the evidence.
+
+    ``total`` is the trial count before the page cap; ``summary`` (``n_sites``, ``n_years``,
+    ``first_year``, ``last_year`` over the whole evidence, from the dao's count query) wins over the
+    page when given, so a capped page never shortens the range or drops sites.
+    """
     sites = {r.get("site") for r in rows if r.get("site")}
     years = sorted({r["year"] for r in rows if isinstance(r.get("year"), int)})
     n_trials = max(int(total or 0), len(rows))
-    return {"level": depth_level(n_trials=n_trials, n_sites=len(sites), n_years=len(years)),
-            "n_trials": n_trials, "n_sites": len(sites), "n_years": len(years),
-            "first_year": years[0] if years else None, "last_year": years[-1] if years else None}
+    sm = summary or {}
+    n_sites = max(int(sm.get("n_sites") or 0), len(sites))
+    n_years = max(int(sm.get("n_years") or 0), len(years))
+    first_year = sm.get("first_year") if sm.get("first_year") is not None else (years[0] if years else None)
+    last_year = sm.get("last_year") if sm.get("last_year") is not None else (years[-1] if years else None)
+    return {"level": depth_level(n_trials=n_trials, n_sites=n_sites, n_years=n_years),
+            "n_trials": n_trials, "n_sites": n_sites, "n_years": n_years,
+            "first_year": first_year, "last_year": last_year}

@@ -231,7 +231,7 @@ async def parcel_varieties(*, dao, source: KnowledgeSource, parcel_id: str, tena
         data_gaps.append("insufficient_environments")
     payload = {**base, "status": "ok", "tier": ev["tier"], "zone_match": ev["zone_match"], "country": ev["country"],
                "n_environments": n_env, "varieties": stats, "data_gaps": data_gaps,
-               "evidence_depth": evidence_depth(ev["rows"], total=ev.get("total"))}
+               "evidence_depth": evidence_depth(ev["rows"], total=ev.get("total"), summary=ev.get("summary"))}
     return attach_attributions(payload, rows_source_ids(ev["rows"]))
 
 
