@@ -206,6 +206,16 @@ def test_untruncated_crop_reports_zero_truncated():
     assert rb.aggregate_by_crop(cells)["X"]["n_truncated"] == 0
 
 
+def test_only_scored_cells_are_measurable():
+    cells = [{"crop": "X", "status": "ok", "spearman": 0.2, "baselines": {}} for _ in range(rb.MIN_FOLDS - 1)]
+    cells += [{"crop": "X", "status": "ok", "spearman": None, "baselines": {}} for _ in range(5)]
+    agg = rb.aggregate_by_crop(cells)["X"]
+    assert agg["n_cells"] == rb.MIN_FOLDS - 1 and agg["measurable"] is False
+    cells.append({"crop": "X", "status": "ok", "spearman": 0.1, "baselines": {}})
+    agg = rb.aggregate_by_crop(cells)["X"]
+    assert agg["n_cells"] == rb.MIN_FOLDS and agg["measurable"] is True
+
+
 # --- test years, gate verdict, report ---------------------------------------
 
 def test_test_years_need_enough_earlier_years_with_data():

@@ -266,10 +266,10 @@ def aggregate_by_crop(cells: list[dict]) -> dict[str, dict]:
         paired = {name: [c["deltas"][name] for c in ok if (c.get("deltas") or {}).get(name) is not None]
                   for name in RIVALS}
         out[crop] = {
-            "n_cells": len(ok),
+            "n_cells": len(rhos),
             "skipped": dict(skipped),
             "n_truncated": n_truncated,
-            "measurable": len(ok) >= MIN_FOLDS,
+            "measurable": len(rhos) >= MIN_FOLDS,
             "spearman_median": _median(rhos),
             "spearman_positive_share": (sum(1 for r in rhos if r > 0) / len(rhos)) if rhos else None,
             "spearman_worst": min(rhos) if rhos else None,
