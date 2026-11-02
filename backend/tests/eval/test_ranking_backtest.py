@@ -305,3 +305,19 @@ def test_gate_is_not_measurable_when_a_rival_was_never_paired():
     agg["TRZAX"].update({"measurable": True, "spearman_median": 0.5, "spearman_positive_share": 1.0,
                          "coverage_mean_pct": 80.0})
     assert rb.gate_verdict(agg)["TRZAX"] == "not_measurable"
+
+
+# --- rival: a table built only from the recent campaigns ----------------------------------------
+
+def test_recent_only_rival_uses_only_the_last_campaigns_of_the_training_years():
+    seen = []
+
+    def stats_fn(rows):
+        seen.append(sorted({r["year"] for r in rows}))
+        return variety_stats(rows, ref_year=0)
+
+    rows = _cell_rows(10, 6, years=range(2015, 2024))
+    cell = rb.evaluate_cell(rows, test_year=2024, stats_fn=variety_stats, recent_fn=stats_fn, recent_years=3)
+    assert seen[-1] == [2021, 2022, 2023]
+    assert cell["baselines"]["recent_only"] == pytest.approx(cell["top3_utility_pct"])
+    assert cell["deltas"]["recent_only"] == pytest.approx(0.0)

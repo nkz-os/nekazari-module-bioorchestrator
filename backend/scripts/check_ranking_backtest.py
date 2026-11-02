@@ -86,8 +86,8 @@ def cells_for_group(rows: list[dict], *, crop: str, zone: str, regime: str, tier
     cells = []
     for test_year in rb.test_years_for(rows, first=first, last=last, min_train_years=min_train_years):
         main_fn, flat_fn = stats_functions(table_fn, test_year=test_year)
-        cells.append(rb.evaluate_cell(rows, test_year=test_year, stats_fn=main_fn, flat_fn=flat_fn, seed=seed,
-                                      min_test_environments=min_test_envs,
+        cells.append(rb.evaluate_cell(rows, test_year=test_year, stats_fn=main_fn, flat_fn=flat_fn,
+                                      recent_fn=flat_fn, seed=seed, min_test_environments=min_test_envs,
                                       crop=crop, zone=zone, regime=regime, tier=tier, truncated=truncated))
     return cells
 

@@ -189,12 +189,18 @@ def predicted_order(stats_fn: StatsFn, train: list[dict]) -> list[str]:
     return [s["variety"] for s in stats]
 
 
+RIVALS = ("random", "last_year", "flat", "recent_only")
+RECENT_RIVAL_YEARS = 3  # the "recent_only" rival builds its table from the last N training campaigns
+
+
 def evaluate_cell(rows: list[dict], *, test_year: int, stats_fn: StatsFn, flat_fn: StatsFn | None = None,
-                  seed: int = 0, min_test_environments: int = MIN_TEST_ENVIRONMENTS, **labels: Any) -> dict:
+                  recent_fn: StatsFn | None = None, recent_years: int = RECENT_RIVAL_YEARS, seed: int = 0,
+                  min_test_environments: int = MIN_TEST_ENVIRONMENTS, **labels: Any) -> dict:
     """One cell: train on years < test_year, score on test_year. ``labels`` are copied through.
 
     ``min_test_environments`` is the guard of the cell (the coverage metric keeps its own guard: a
-    P10-P90 share over one environment means nothing).
+    P10-P90 share over one environment means nothing). ``recent_fn`` scores the ``recent_only`` rival:
+    the same kind of table built from the last ``recent_years`` training campaigns only.
     """
     train, test = split_forward(rows, test_year)
     env_ratios = environment_ratios(test)
@@ -211,10 +217,13 @@ def evaluate_cell(rows: list[dict], *, test_year: int, stats_fn: StatsFn, flat_f
     rank_pred = list(range(len(common)))
     rank_obs = [observed[v] for v in common]
     rho = spearman(rank_pred, [-x for x in rank_obs])  # predicted index 0 = best; higher ratio = better
+    recent_train = [r for r in train if isinstance(r.get("year"), int) and r["year"] >= test_year - recent_years]
     baselines = {
         "random": random_top3_utility_pct(env_ratios, seed=seed),
         "last_year": top3_utility_pct(last_year_top3(train, test_year), env_ratios),
         "flat": top3_utility_pct(predicted_order(flat_fn, train), env_ratios) if flat_fn else None,
+        "recent_only": (top3_utility_pct(predicted_order(recent_fn, recent_train), env_ratios)
+                        if recent_fn and recent_train else None),
     }
     present = sum(1 for v in predicted[:TOP_N] if v in observed)
     utility = top3_utility_pct(predicted, env_ratios)
@@ -250,9 +259,9 @@ def aggregate_by_crop(cells: list[dict]) -> dict[str, dict]:
         present = [c["top3_present_share"] for c in ok if c.get("top3_present_share") is not None]
         baselines = {name: _median([c["baselines"][name] for c in ok
                                     if c.get("baselines", {}).get(name) is not None])
-                     for name in ("random", "last_year", "flat")}
+                     for name in RIVALS}
         paired = {name: [c["deltas"][name] for c in ok if (c.get("deltas") or {}).get(name) is not None]
-                  for name in ("random", "last_year", "flat")}
+                  for name in RIVALS}
         out[crop] = {
             "n_cells": len(ok),
             "skipped": dict(skipped),
@@ -317,8 +326,8 @@ def render_markdown(report: dict) -> str:
     for key, value in (report.get("meta") or {}).items():
         lines.append(f"- {key}: {value}")
     header = ("| crop | cells | skipped | measurable | ρ median | ρ>0 share | ρ worst | top-3 % | top-3 present | "
-              "random | last_year | flat | Δ random (n) | Δ last_year (n) | Δ flat (n) | coverage % |")
-    lines += ["", "## Per crop", "", header, "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|"]
+              + " | ".join(RIVALS) + " | " + " | ".join(f"Δ {n} (n)" for n in RIVALS) + " | coverage % |")
+    lines += ["", "## Per crop", "", header, "|" + "---|" * (9 + 2 * len(RIVALS) + 1)]
     for crop, agg in sorted((report.get("summary") or {}).items()):
         b = agg["baselines_median"]
         skipped = ", ".join(f"{k}={v}" for k, v in sorted(agg["skipped"].items())) or "—"
@@ -326,9 +335,9 @@ def render_markdown(report: dict) -> str:
                      f"{_fmt(agg['spearman_median'])} | {_fmt(agg['spearman_positive_share'])} | "
                      f"{_fmt(agg['spearman_worst'])} | {_fmt(agg['top3_utility_median_pct'], 1)} | "
                      f"{_fmt(agg.get('top3_present_share_mean'))} | "
-                     f"{_fmt(b['random'], 1)} | {_fmt(b['last_year'], 1)} | {_fmt(b['flat'], 1)} | "
+                     + " | ".join(_fmt(b.get(n), 1) for n in RIVALS) + " | "
                      + " | ".join(f"{_fmt((agg.get('delta_median') or {}).get(n), 1)} ({(agg.get('delta_n') or {}).get(n, 0)})"
-                                  for n in ("random", "last_year", "flat"))
+                                  for n in RIVALS)
                      + f" | {_fmt(agg['coverage_mean_pct'], 1)} |")
     note = ("Rival columns are unpaired medians (descriptive); Δ columns are the median of the per-cell "
             "difference model − rival over the n cells where both are scored (the gate reads Δ).")
@@ -338,15 +347,14 @@ def render_markdown(report: dict) -> str:
     guards = (f"Thresholds: {THRESHOLDS}; MIN_FOLDS={MIN_FOLDS}; MIN_COMMON_VARIETIES={MIN_COMMON_VARIETIES}; "
               f"MIN_TEST_ENVIRONMENTS={MIN_TEST_ENVIRONMENTS}")
     cell_header = ("| crop | zone | regime | year | status | reason | common | test envs | ρ | top-3 % | top-3 present | "
-                   "random | last_year | flat | coverage % |")
-    lines += ["", guards, "", "## Every cell", "", cell_header,
-              "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|"]
+                   + " | ".join(RIVALS) + " | coverage % |")
+    lines += ["", guards, "", "## Every cell", "", cell_header, "|" + "---|" * (11 + len(RIVALS) + 1)]
     for c in report.get("cells") or []:
         b = c.get("baselines") or {}
         lines.append(f"| {c.get('crop')} | {c.get('zone')} | {c.get('regime')} | {c.get('test_year')} | "
                      f"{c.get('status')} | {c.get('reason', '—')} | {_fmt(c.get('n_common_varieties'))} | "
                      f"{_fmt(c.get('n_test_environments'))} | {_fmt(c.get('spearman'))} | "
                      f"{_fmt(c.get('top3_utility_pct'), 1)} | {_fmt(c.get('top3_present_share'))} | "
-                     f"{_fmt(b.get('random'), 1)} | "
-                     f"{_fmt(b.get('last_year'), 1)} | {_fmt(b.get('flat'), 1)} | {_fmt(c.get('coverage_pct'), 1)} |")
+                     + " | ".join(_fmt(b.get(n), 1) for n in RIVALS)
+                     + f" | {_fmt(c.get('coverage_pct'), 1)} |")
     return "\n".join(lines) + "\n"
