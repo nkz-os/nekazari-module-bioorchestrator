@@ -137,7 +137,11 @@ async def group_rows(dao, *, crop: str, zone: str, regime: str, tier: str,
                      management: str) -> tuple[list[dict], bool, int]:
     """Rows the way ``load_crop_evidence`` fetches them. Field tier: the field sites of the climate
     class (``evidence_sites``, Köppen path). Regional tier: ``zone`` is one aggregate pseudo-site and
-    the rows are its own means (the parcel's zone pool of production, without the fallback pool)."""
+    the rows are its own means (the parcel's zone pool of production, without the fallback pool).
+
+    ASSUMPTION: the field-tier site set ignores ``soil_type`` (``soil_type=None`` below), while
+    production filters the sites by the parcel's soil, so the harness set is wider than any parcel's.
+    """
     if tier == "regional":
         names = [zone]
     else:
