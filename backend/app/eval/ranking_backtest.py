@@ -41,7 +41,7 @@ MIN_FOLDS = 30
 TOP_N = 3
 RANDOM_DRAWS = 2000
 
-# ASSUMPTION (owner fixes them after the baseline; report-only until then).
+# Reference values for the REPORT only (owner, 2026-11-02): the gate reads the paired deltas, see gate_verdict.
 THRESHOLDS: dict[str, float] = {
     "SPEARMAN_MEDIAN_MIN": 0.30,
     "SPEARMAN_POSITIVE_SHARE_MIN": 0.70,
@@ -300,26 +300,25 @@ def years_lacking_history(rows: list[dict], *, first: int = TEST_YEAR_FIRST, las
 
 
 def gate_verdict(summary: dict[str, dict]) -> dict[str, str]:
-    """Report-mode verdict per gated crop: 'pass', 'fail' or 'not_measurable' (never raises)."""
+    """Verdict per gated crop: 'pass', 'fail' or 'not_measurable' (never raises).
+
+    Owner decision (2026-11-02, after two measurements): the gate reads ONLY the paired deltas — the
+    table must beat the random top-3 (median Δ > 0) and must not lose to last year's winners (median
+    Δ ≥ 0), each over at least one paired cell. Spearman, top-3 utility and coverage are reported,
+    not gated; ``THRESHOLDS`` keeps their reference values for the report.
+    """
     verdict = {}
     for crop in GATED_CROPS:
         agg = summary.get(crop)
         if not agg or not agg["measurable"]:
             verdict[crop] = "not_measurable"
             continue
-        t = THRESHOLDS
-        rho, share = agg["spearman_median"], agg["spearman_positive_share"]
-        utility, cover = agg["top3_utility_median_pct"], agg["coverage_mean_pct"]
         deltas, counts = agg.get("delta_median") or {}, agg.get("delta_n") or {}
         # A rival that was never paired with the model is not beaten: the comparison cannot be made.
-        if any(not counts.get(n) for n in ("random", "last_year")):
+        if any(not counts.get(n) or deltas.get(n) is None for n in ("random", "last_year")):
             verdict[crop] = "not_measurable"
             continue
-        ok = (rho is not None and rho >= t["SPEARMAN_MEDIAN_MIN"]
-              and share is not None and share >= t["SPEARMAN_POSITIVE_SHARE_MIN"]
-              and utility is not None and utility >= t["TOP3_UTILITY_MIN_PCT"]
-              and all(deltas[n] is not None and deltas[n] > 0 for n in ("random", "last_year"))
-              and cover is not None and t["COVERAGE_MIN"] * 100 <= cover <= t["COVERAGE_MAX"] * 100)
+        ok = deltas["random"] > 0 and deltas["last_year"] >= 0
         verdict[crop] = "pass" if ok else "fail"
     return verdict
 
@@ -353,7 +352,7 @@ def render_markdown(report: dict) -> str:
                      + f" | {_fmt(agg['coverage_mean_pct'], 1)} |")
     note = ("Rival columns are unpaired medians (descriptive); Δ columns are the median of the per-cell "
             "difference model − rival over the n cells where both are scored (the gate reads Δ).")
-    lines += ["", note, "", "## Verdict (report mode, ASSUMPTION thresholds)", ""]
+    lines += ["", note, "", "## Verdict (gate: median Δ random > 0 and median Δ last_year ≥ 0, paired cells)", ""]
     for crop, status in (report.get("verdict") or {}).items():
         lines.append(f"- {crop}: {status}")
     guards = (f"Thresholds: {THRESHOLDS}; MIN_FOLDS={MIN_FOLDS}; MIN_COMMON_VARIETIES={MIN_COMMON_VARIETIES}; "
