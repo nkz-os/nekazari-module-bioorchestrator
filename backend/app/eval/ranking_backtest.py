@@ -291,6 +291,14 @@ def test_years_for(rows: list[dict], *, first: int = TEST_YEAR_FIRST, last: int 
     return [t for t in years if first <= t <= last and sum(1 for y in years if y < t) >= min_train_years]
 
 
+def years_lacking_history(rows: list[dict], *, first: int = TEST_YEAR_FIRST, last: int = TEST_YEAR_LAST,
+                          min_train_years: int = MIN_TRAIN_YEARS) -> list[int]:
+    """In-window years that have rows but too few earlier years to be a test year (the complement)."""
+    years = sorted({r["year"] for r in rows if isinstance(r.get("year"), int)})
+    eligible = set(test_years_for(rows, first=first, last=last, min_train_years=min_train_years))
+    return [t for t in years if first <= t <= last and t not in eligible]
+
+
 def gate_verdict(summary: dict[str, dict]) -> dict[str, str]:
     """Report-mode verdict per gated crop: 'pass', 'fail' or 'not_measurable' (never raises)."""
     verdict = {}

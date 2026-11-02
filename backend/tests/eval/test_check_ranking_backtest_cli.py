@@ -89,3 +89,22 @@ def test_cells_for_group_relaxes_the_environment_guard():
                               last=2017, table_fn=variety_stats, seed=1, truncated=False, min_test_envs=1)
     assert [c["status"] for c in strict] == ["skipped", "skipped"]
     assert [c["status"] for c in relaxed] == ["ok", "ok"] and relaxed[0]["spearman"] == 1.0
+
+
+def test_years_without_enough_training_history_are_reported_as_skipped():
+    rows = []
+    for year in range(2012, 2019):
+        for site in "ABCDEF":
+            rows += _env(site, year, {f"V{i}": 5000 + 100 * i for i in range(10)})
+    cells = cells_for_group(rows, crop="TRZAX", zone="Csa", regime="rainfed", tier="field", first=2012, last=2018,
+                            table_fn=variety_stats, seed=1, truncated=False)
+    by_year = {c["test_year"]: c for c in cells}
+    assert sorted(by_year) == list(range(2012, 2019))
+    for year in range(2012, 2017):
+        assert by_year[year]["status"] == "skipped" and by_year[year]["reason"] == "train_years"
+        assert (by_year[year]["crop"], by_year[year]["zone"], by_year[year]["regime"], by_year[year]["tier"]) \
+            == ("TRZAX", "Csa", "rainfed", "field")
+    assert by_year[2017]["status"] == "ok"
+    from app.eval import ranking_backtest as rb
+    summary = rb.aggregate_by_crop(cells)["TRZAX"]
+    assert summary["skipped"] == {"train_years": 5}

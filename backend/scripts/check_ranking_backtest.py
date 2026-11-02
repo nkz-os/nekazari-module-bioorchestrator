@@ -89,7 +89,10 @@ def cells_for_group(rows: list[dict], *, crop: str, zone: str, regime: str, tier
         cells.append(rb.evaluate_cell(rows, test_year=test_year, stats_fn=main_fn, flat_fn=flat_fn,
                                       recent_fn=flat_fn, seed=seed, min_test_environments=min_test_envs,
                                       crop=crop, zone=zone, regime=regime, tier=tier, truncated=truncated))
-    return cells
+    for test_year in rb.years_lacking_history(rows, first=first, last=last, min_train_years=min_train_years):
+        cells.append({"status": "skipped", "reason": "train_years", "test_year": test_year,
+                      "crop": crop, "zone": zone, "regime": regime, "tier": tier, "truncated": truncated})
+    return sorted(cells, key=lambda c: c["test_year"])
 
 
 def regional_groups(sites: list[dict], *, country: str) -> list[str]:
