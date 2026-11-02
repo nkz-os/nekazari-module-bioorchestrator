@@ -12,10 +12,17 @@ export default function VarietyTable({ data, selected, onSelect }: Props) {
   const pct = (value: number) => `${value.toLocaleString(safeLang(i18n.language), { maximumFractionDigits: 0 })} %`;
   if (data.status === 'no_trials') return <p className="text-nkz-sm text-nkz-text-muted">{t('planning.variety.noTrials')}</p>;
   if (data.status === 'needs_climate') return <p className="text-nkz-sm text-nkz-text-muted">{t('planning.variety.needsClimate')}</p>;
+  const depth = data.evidence_depth ?? null;
   return (
     <Stack gap="stack">
       <Inline gap="inline" wrap align="center">
         {data.tier && <Badge intent={data.tier === 'field' ? 'info' : 'warning'}>{t(`planning.variety.tier.${data.tier}`)}</Badge>}
+        {depth && (
+          <span title={t('planning.variety.depthDetail', { n_trials: depth.n_trials, n_sites: depth.n_sites,
+            years: depth.first_year != null && depth.last_year != null ? `${depth.first_year}–${depth.last_year}` : '—' })}>
+            <Badge intent={depth.level === 'pilot' ? 'warning' : 'info'}>{t(`planning.variety.depth.${depth.level}`)}</Badge>
+          </span>
+        )}
         {data.data_gaps.map((g) => <Badge key={g} intent="warning">{t(`planning.gap.${g}`, { defaultValue: g })}</Badge>)}
       </Inline>
       {data.varieties.length > 0 && (

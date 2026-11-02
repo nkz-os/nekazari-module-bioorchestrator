@@ -228,6 +228,13 @@
       "lowEnv": "En ensayos flojos", "lowEnvHint": "En ensayos flojos: rendimiento frente a la media en el tercio de ensayos con menor producción (años secos o malos).",
       "stable": "estable", "average": "media", "responsive": "sensible al ambiente", "few": "pocos ensayos",
       "tier": { "field": "ensayos de campo", "regional": "medias regionales" },
+      "depth": {
+        "deep": "evidencia profunda",
+        "broad": "evidencia amplia",
+        "moderate": "evidencia moderada",
+        "pilot": "red piloto"
+      },
+      "depthDetail": "{{n_trials}} ensayos · {{n_sites}} sitios · {{years}}",
       "choose": "Elegir", "chosen": "Elegida"
     },
     "gap": {

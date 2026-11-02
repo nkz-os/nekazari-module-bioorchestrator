@@ -47,3 +47,23 @@ describe('VarietyTable (es)', () => {
     expect(html).toContain('Ningún ensayo tiene variedades suficientes para comparar');
   });
 });
+
+describe('VarietyTable evidence depth (es)', () => {
+  const depth = { level: 'pilot' as const, n_trials: 72, n_sites: 3, n_years: 4, first_year: 2023, last_year: 2026 };
+  it('names the depth of the evidence and details it in the title', () => {
+    const html = renderToStaticMarkup(<VarietyTable data={{ ...base, evidence_depth: depth }} selected={null} onSelect={() => {}} />);
+    expect(html).toContain('red piloto');
+    expect(html).toContain('72 ensayos · 3 sitios · 2023–2026');
+  });
+  it('a deep network reads as such', () => {
+    const deep = { ...depth, level: 'deep' as const, n_trials: 4712, n_sites: 86, first_year: 2006 };
+    const html = renderToStaticMarkup(<VarietyTable data={{ ...base, evidence_depth: deep }} selected={null} onSelect={() => {}} />);
+    expect(html).toContain('evidencia profunda');
+    expect(html).toContain('4712 ensayos · 86 sitios · 2006–2026');
+  });
+  it('an answer without evidence_depth renders the table as before', () => {
+    const html = renderToStaticMarkup(<VarietyTable data={base} selected={null} onSelect={() => {}} />);
+    expect(html).toContain('Var A');
+    expect(html).not.toContain('ensayos ·');
+  });
+});

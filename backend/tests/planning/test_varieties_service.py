@@ -74,3 +74,55 @@ def test_unknown_crop_is_its_own_error_type():
     with pytest.raises(service.UnknownCrop):
         service.crop_code("zzz")
     assert issubclass(service.UnknownCrop, ValueError)
+
+
+# --- evidence depth (additive) ----------------------------------------------------------------
+
+def _rows_grid(n_sites, years, n_varieties=6, source="GENVCE-TRIALS"):
+    rows = []
+    for s in range(n_sites):
+        for y in years:
+            for v in range(n_varieties):
+                rows.append({"variety": f"V{v}", "site": f"S{s}", "year": y, "source_id": source,
+                             "yield_kg_ha": 5000 + 100 * v})
+    return rows
+
+
+async def _depth(rows, total=None):
+    dao = _ok_dao(rows)
+    if total is not None:
+        dao.list_trial_evidence.return_value = {"items": rows, "total": total}
+    out = await service.parcel_varieties(dao=dao, source=KnowledgeSource("global", None), parcel_id="p1",
+                                         tenant_id="t", crop="TRZAX", regime="rainfed", management="conventional")
+    VarietiesResponse.model_validate(out)
+    return out["evidence_depth"]
+
+
+async def test_evidence_depth_is_computed_from_the_rows_behind_the_table():
+    deep = await _depth(_rows_grid(60, range(2006, 2026), n_varieties=2))  # 60 sites x 20 years x 2 = 2400 rows
+    assert deep == {"level": "deep", "n_trials": 2400, "n_sites": 60, "n_years": 20, "first_year": 2006, "last_year": 2025}
+    moderate = await _depth(_rows_grid(5, range(2014, 2026), n_varieties=6))  # 5 x 12 x 6 = 360 rows, 12 years
+    assert moderate["level"] == "moderate" and moderate["n_trials"] == 360
+    pilot = await _depth(_rows_grid(3, range(2023, 2027), n_varieties=6))  # 72 rows, 4 years
+    assert pilot["level"] == "pilot" and (pilot["n_sites"], pilot["n_years"]) == (3, 4)
+
+
+async def test_evidence_depth_broad_needs_years_and_trials_but_not_sites():
+    broad = await _depth(_rows_grid(20, range(2014, 2026), n_varieties=5))  # 20 x 12 x 5 = 1200 rows
+    assert broad["level"] == "broad"
+
+
+async def test_evidence_depth_counts_the_trials_behind_the_page_cap_not_the_page():
+    depth = await _depth(_rows_grid(3, range(2023, 2027), n_varieties=6), total=7200)
+    assert depth["n_trials"] == 7200
+
+
+async def test_evidence_depth_uses_the_summary_behind_the_page_cap_when_the_dao_gives_one():
+    rows = _rows_grid(3, range(2023, 2027), n_varieties=6)
+    dao = _ok_dao(rows)
+    dao.list_trial_evidence.return_value = {"items": rows, "total": 7200,
+                                            "summary": {"n_sites": 86, "n_years": 21, "first_year": 2006, "last_year": 2026}}
+    out = await service.parcel_varieties(dao=dao, source=KnowledgeSource("global", None), parcel_id="p1",
+                                         tenant_id="t", crop="TRZAX", regime="rainfed", management="conventional")
+    assert out["evidence_depth"] == {"level": "deep", "n_trials": 7200, "n_sites": 86, "n_years": 21,
+                                     "first_year": 2006, "last_year": 2026}

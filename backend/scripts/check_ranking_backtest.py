@@ -37,6 +37,7 @@ DEFAULT_CROPS = rb.GATED_CROPS + rb.MEASURED_CROPS
 DEFAULT_REGIMES = ("rainfed", "irrigated")
 DEFAULT_TIERS = ("field", "regional")  # field = production default; regional = the aggregate-source history
 EXIT_OK, EXIT_FAIL, EXIT_NOT_MEASURABLE = 0, 1, 2
+FLAT_REF_YEAR = 0  # no trial is older than year 0, so every recency weight is 1: the table without recency
 
 ZONES_QUERY = """
 MATCH (ts:TrialSite)
@@ -71,10 +72,11 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 
 
 def stats_functions(table_fn: Callable, *, test_year: int) -> tuple[Callable, Callable]:
-    """(main, flat): main passes ``ref_year=test_year`` when the table accepts it; flat never does."""
+    """(main, flat): main passes ``ref_year=test_year`` when the table accepts it; flat passes
+    ``FLAT_REF_YEAR`` so no observation is discounted (``ref_year=None`` would mean "today")."""
     params = inspect.signature(table_fn).parameters
     if "ref_year" in params:
-        return partial(table_fn, ref_year=test_year), partial(table_fn, ref_year=None)
+        return partial(table_fn, ref_year=test_year), partial(table_fn, ref_year=FLAT_REF_YEAR)
     return table_fn, table_fn
 
 

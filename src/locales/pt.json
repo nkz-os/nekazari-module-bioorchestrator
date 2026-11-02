@@ -208,6 +208,13 @@
       "lowEnv": "Em ensaios fracos", "lowEnvHint": "Em ensaios fracos: rendimento face à média no terço de ensaios com menor produção (anos secos ou maus).",
       "stable": "estável", "average": "média", "responsive": "sensível ao ambiente", "few": "poucos ensaios",
       "tier": { "field": "ensaios de campo", "regional": "médias regionais" },
+      "depth": {
+        "deep": "evidência profunda",
+        "broad": "evidência ampla",
+        "moderate": "evidência moderada",
+        "pilot": "rede piloto"
+      },
+      "depthDetail": "{{n_trials}} ensaios · {{n_sites}} locais · {{years}}",
       "choose": "Escolher", "chosen": "Escolhida"
     },
     "gap": {

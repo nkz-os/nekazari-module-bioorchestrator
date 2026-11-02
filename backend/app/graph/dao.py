@@ -2667,13 +2667,15 @@ class GraphDAO:
                 WHERE {where}
                 {ep.cypher_row_policy(purpose)}
                 {gate}
-                WITH DISTINCT vt
-                WITH {ck} AS ck
-                RETURN count(DISTINCT ck) AS total
+                WITH DISTINCT vt, ts
+                WITH {ck} AS ck, vt.year AS year, ts.name AS site
+                RETURN count(DISTINCT ck) AS total, count(DISTINCT site) AS n_sites,
+                       count(DISTINCT year) AS n_years, min(year) AS first_year, max(year) AS last_year
                 """
         zone_pool: str | None = None
         async with self._driver.session() as session:
             total = 0
+            summary: dict[str, Any] = {}
             for pool in ((zone_match.POOL_MATCHED, zone_match.POOL_FALLBACK) if zone_on else (None,)):
                 zone_pool = pool
                 params.update(_zone_params(pool, zone_ctx))
@@ -2681,6 +2683,9 @@ class GraphDAO:
                 count_row = await count_res.single()
                 total = int(count_row["total"]) if count_row and count_row["total"] else 0
                 if total:
+                    # Whole-evidence figures (before the page cap) for the depth badge.
+                    summary = {k: v for k in ("n_sites", "n_years", "first_year", "last_year")
+                               if (v := count_row.get(k)) is not None}
                     break
             items_res = await session.run(
                 f"""
@@ -2718,6 +2723,7 @@ class GraphDAO:
                               "irrigation_status": ep.irrigation_status(
                                   item.get("irrigation_regime"), irrigation_uri)})
         result = {"items": items, "total": total, "page": page, "page_size": page_size,
+                  **({"summary": summary} if summary else {}),
                   "purpose": purpose, "tier": tier}
         if zone_on:  # which pool the list is: the parcel's own zone or the country level
             result["zone_pool"] = zone_pool

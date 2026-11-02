@@ -225,6 +225,13 @@
       "lowEnv": "In poor trials", "lowEnvHint": "In poor trials: yield against the mean in the third of trials with the lowest output (dry or bad years).",
       "stable": "stable", "average": "average", "responsive": "responsive to the environment", "few": "few trials",
       "tier": { "field": "field trials", "regional": "regional means" },
+      "depth": {
+        "deep": "deep evidence",
+        "broad": "broad evidence",
+        "moderate": "moderate evidence",
+        "pilot": "pilot network"
+      },
+      "depthDetail": "{{n_trials}} trials · {{n_sites}} sites · {{years}}",
       "choose": "Choose", "chosen": "Chosen"
     },
     "gap": {
