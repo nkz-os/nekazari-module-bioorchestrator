@@ -223,7 +223,7 @@ def test_test_years_need_enough_earlier_years_with_data():
     for year in (2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017):
         rows += _env("A", year, _flat(["V1", "V2", "V3"]))
     # 2015: five earlier years (2010-2014) → in; 2014: four earlier → out; 2018: no rows → out
-    assert rb.test_years_for(rows, first=2014, last=2018) == [2015, 2016, 2017]
+    assert rb.eligible_test_years(rows, first=2014, last=2018) == [2015, 2016, 2017]
 
 
 def _agg(**over):

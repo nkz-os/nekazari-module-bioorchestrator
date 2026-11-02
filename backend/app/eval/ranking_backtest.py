@@ -284,8 +284,8 @@ def aggregate_by_crop(cells: list[dict]) -> dict[str, dict]:
 
 
 
-def test_years_for(rows: list[dict], *, first: int = TEST_YEAR_FIRST, last: int = TEST_YEAR_LAST,
-                   min_train_years: int = MIN_TRAIN_YEARS) -> list[int]:
+def eligible_test_years(rows: list[dict], *, first: int = TEST_YEAR_FIRST, last: int = TEST_YEAR_LAST,
+                        min_train_years: int = MIN_TRAIN_YEARS) -> list[int]:
     """Test years in [first, last] that have rows and at least ``min_train_years`` earlier years with rows."""
     years = sorted({r["year"] for r in rows if isinstance(r.get("year"), int)})
     return [t for t in years if first <= t <= last and sum(1 for y in years if y < t) >= min_train_years]
@@ -295,7 +295,7 @@ def years_lacking_history(rows: list[dict], *, first: int = TEST_YEAR_FIRST, las
                           min_train_years: int = MIN_TRAIN_YEARS) -> list[int]:
     """In-window years that have rows but too few earlier years to be a test year (the complement)."""
     years = sorted({r["year"] for r in rows if isinstance(r.get("year"), int)})
-    eligible = set(test_years_for(rows, first=first, last=last, min_train_years=min_train_years))
+    eligible = set(eligible_test_years(rows, first=first, last=last, min_train_years=min_train_years))
     return [t for t in years if first <= t <= last and t not in eligible]
 
 
