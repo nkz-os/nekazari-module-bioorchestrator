@@ -189,3 +189,77 @@ def test_aggregate_by_crop_reports_median_positive_share_worst_and_skips():
     assert agg["baselines_median"]["last_year"] == pytest.approx(101.0)
     assert agg["coverage_mean_pct"] == pytest.approx(80.0)
     assert agg["measurable"] is False  # fewer than MIN_FOLDS valid cells
+
+
+# --- test years, gate verdict, report ---------------------------------------
+
+def test_test_years_need_enough_earlier_years_with_data():
+    rows = []
+    for year in (2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017):
+        rows += _env("A", year, _flat(["V1", "V2", "V3"]))
+    # 2015: five earlier years (2010-2014) → in; 2014: four earlier → out; 2018: no rows → out
+    assert rb.test_years_for(rows, first=2014, last=2018) == [2015, 2016, 2017]
+
+
+def _agg(**over):
+    base = {"n_cells": 40, "skipped": {}, "measurable": True, "spearman_median": 0.4,
+            "spearman_positive_share": 0.8, "spearman_worst": -0.1, "top3_utility_median_pct": 104.0,
+            "baselines_median": {"random": 100.0, "last_year": 101.0, "flat": 103.0}, "coverage_mean_pct": 80.0}
+    return {**base, **over}
+
+
+def test_gate_verdict_passes_fails_and_declares_not_measurable():
+    summary = {"TRZAX": _agg(), "HORVX": _agg(spearman_median=0.1), "TRZDU": _agg(n_cells=3, measurable=False),
+               "ZEAMX": _agg(top3_utility_median_pct=100.5), "BRSNN": _agg(coverage_mean_pct=95.0)}
+    verdict = rb.gate_verdict(summary)
+    assert verdict == {"TRZAX": "pass", "HORVX": "fail", "TRZDU": "not_measurable",
+                       "ZEAMX": "fail", "BRSNN": "fail"}
+
+
+def test_gate_verdict_requires_beating_random_and_last_year():
+    verdict = rb.gate_verdict({"TRZAX": _agg(baselines_median={"random": 100.0, "last_year": 105.0, "flat": 103.0})})
+    assert verdict["TRZAX"] == "fail"
+
+
+def test_render_markdown_lists_every_cell_not_only_the_medians():
+    cells = [
+        {"crop": "TRZAX", "zone": "Csa", "regime": "rainfed", "test_year": 2020, "status": "ok", "spearman": 0.5,
+         "n_common_varieties": 9, "n_test_environments": 6, "top3_utility_pct": 104.0, "coverage_pct": 80.0,
+         "baselines": {"random": 100.0, "last_year": 101.0, "flat": 103.0}},
+        {"crop": "TRZAX", "zone": "BSk", "regime": "rainfed", "test_year": 2021, "status": "skipped",
+         "reason": "common_varieties", "n_common_varieties": 4, "n_test_environments": 7},
+    ]
+    report = {"meta": {"base": "x"}, "cells": cells, "summary": rb.aggregate_by_crop(cells),
+              "verdict": rb.gate_verdict(rb.aggregate_by_crop(cells))}
+    md = rb.render_markdown(report)
+    assert "| TRZAX | Csa | rainfed | 2020 | ok |" in md
+    assert "| TRZAX | BSk | rainfed | 2021 | skipped |" in md and "common_varieties" in md
+    assert "not_measurable" in md
+
+
+def test_cell_environment_guard_is_a_parameter():
+    cell = rb.evaluate_cell(_cell_rows(10, 1), test_year=2024, stats_fn=variety_stats, min_test_environments=1)
+    assert cell["status"] == "ok" and cell["n_test_environments"] == 1 and cell["coverage_pct"] is None
+
+
+def test_cell_reports_how_many_predicted_top3_are_still_trialled_in_the_test_year():
+    names = [f"V{i}" for i in range(10)]
+    rows = []
+    for year in range(2018, 2024):
+        for site in "ABC":
+            rows += _env(site, year, {n: 5000 + 100 * i for i, n in enumerate(names)})
+    # test year: the two best historical varieties (V9, V8) are no longer trialled
+    kept = names[:8] + ["N1", "N2"]
+    for j in range(6):
+        rows += _env(f"T{j}", 2024, {n: 5000 + 100 * i for i, n in enumerate(kept)})
+    cell = rb.evaluate_cell(rows, test_year=2024, stats_fn=variety_stats)
+    assert cell["status"] == "ok" and cell["top3_present_share"] == pytest.approx(1 / 3)
+    assert cell["top3_utility_pct"] is None
+
+
+def test_aggregate_reports_the_mean_top3_present_share():
+    cells = [{"crop": "X", "status": "ok", "spearman": 0.1, "top3_utility_pct": None, "coverage_pct": None,
+              "top3_present_share": 1 / 3, "baselines": {"random": 100.0, "last_year": 101.0, "flat": None}},
+             {"crop": "X", "status": "ok", "spearman": 0.2, "top3_utility_pct": 103.0, "coverage_pct": None,
+              "top3_present_share": 1.0, "baselines": {"random": 100.0, "last_year": 101.0, "flat": None}}]
+    assert rb.aggregate_by_crop(cells)["X"]["top3_present_share_mean"] == pytest.approx(2 / 3)

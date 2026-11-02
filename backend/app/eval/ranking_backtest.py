@@ -189,14 +189,18 @@ def predicted_order(stats_fn: StatsFn, train: list[dict]) -> list[str]:
     return [s["variety"] for s in stats]
 
 
-def evaluate_cell(rows: list[dict], *, test_year: int, stats_fn: StatsFn,
-                  flat_fn: StatsFn | None = None, seed: int = 0, **labels: Any) -> dict:
-    """One cell: train on years < test_year, score on test_year. ``labels`` are copied through."""
+def evaluate_cell(rows: list[dict], *, test_year: int, stats_fn: StatsFn, flat_fn: StatsFn | None = None,
+                  seed: int = 0, min_test_environments: int = MIN_TEST_ENVIRONMENTS, **labels: Any) -> dict:
+    """One cell: train on years < test_year, score on test_year. ``labels`` are copied through.
+
+    ``min_test_environments`` is the guard of the cell (the coverage metric keeps its own guard: a
+    P10-P90 share over one environment means nothing).
+    """
     train, test = split_forward(rows, test_year)
     env_ratios = environment_ratios(test)
     cell: dict[str, Any] = {**labels, "test_year": test_year, "n_train_rows": len(train),
                             "n_test_environments": len(env_ratios)}
-    if len(env_ratios) < MIN_TEST_ENVIRONMENTS:
+    if len(env_ratios) < min_test_environments:
         return {**cell, "status": "skipped", "reason": "test_environments"}
     predicted = predicted_order(stats_fn, train)
     observed = observed_order(env_ratios)
@@ -212,8 +216,10 @@ def evaluate_cell(rows: list[dict], *, test_year: int, stats_fn: StatsFn,
         "last_year": top3_utility_pct(last_year_top3(train, test_year), env_ratios),
         "flat": top3_utility_pct(predicted_order(flat_fn, train), env_ratios) if flat_fn else None,
     }
+    present = sum(1 for v in predicted[:TOP_N] if v in observed)
     return {**cell, "status": "ok", "spearman": rho,
             "top3_utility_pct": top3_utility_pct(predicted, env_ratios),
+            "top3_present_share": present / TOP_N,  # predicted top-3 still trialled in the test year
             "top3_predicted": predicted[:TOP_N], "baselines": baselines,
             "coverage_pct": coverage_pct(train, test)}
 
@@ -237,6 +243,7 @@ def aggregate_by_crop(cells: list[dict]) -> dict[str, dict]:
         rhos = [c["spearman"] for c in ok if c.get("spearman") is not None]
         utilities = [c["top3_utility_pct"] for c in ok if c.get("top3_utility_pct") is not None]
         coverages = [c["coverage_pct"] for c in ok if c.get("coverage_pct") is not None]
+        present = [c["top3_present_share"] for c in ok if c.get("top3_present_share") is not None]
         baselines = {name: _median([c["baselines"][name] for c in ok
                                     if c.get("baselines", {}).get(name) is not None])
                      for name in ("random", "last_year", "flat")}
@@ -248,8 +255,82 @@ def aggregate_by_crop(cells: list[dict]) -> dict[str, dict]:
             "spearman_positive_share": (sum(1 for r in rhos if r > 0) / len(rhos)) if rhos else None,
             "spearman_worst": min(rhos) if rhos else None,
             "top3_utility_median_pct": _median(utilities),
+            "top3_present_share_mean": fmean(present) if present else None,
             "baselines_median": baselines,
             "coverage_mean_pct": fmean(coverages) if coverages else None,
         }
     return out
 
+
+
+def test_years_for(rows: list[dict], *, first: int = TEST_YEAR_FIRST, last: int = TEST_YEAR_LAST,
+                   min_train_years: int = MIN_TRAIN_YEARS) -> list[int]:
+    """Test years in [first, last] that have rows and at least ``min_train_years`` earlier years with rows."""
+    years = sorted({r["year"] for r in rows if isinstance(r.get("year"), int)})
+    return [t for t in years if first <= t <= last and sum(1 for y in years if y < t) >= min_train_years]
+
+
+def gate_verdict(summary: dict[str, dict]) -> dict[str, str]:
+    """Report-mode verdict per gated crop: 'pass', 'fail' or 'not_measurable' (never raises)."""
+    verdict = {}
+    for crop in GATED_CROPS:
+        agg = summary.get(crop)
+        if not agg or not agg["measurable"]:
+            verdict[crop] = "not_measurable"
+            continue
+        t = THRESHOLDS
+        rho, share = agg["spearman_median"], agg["spearman_positive_share"]
+        utility, cover = agg["top3_utility_median_pct"], agg["coverage_mean_pct"]
+        rivals = agg["baselines_median"]
+        ok = (rho is not None and rho >= t["SPEARMAN_MEDIAN_MIN"]
+              and share is not None and share >= t["SPEARMAN_POSITIVE_SHARE_MIN"]
+              and utility is not None and utility >= t["TOP3_UTILITY_MIN_PCT"]
+              and all(rivals.get(n) is None or utility > rivals[n] for n in ("random", "last_year"))
+              and cover is not None and t["COVERAGE_MIN"] * 100 <= cover <= t["COVERAGE_MAX"] * 100)
+        verdict[crop] = "pass" if ok else "fail"
+    return verdict
+
+
+def _fmt(value: Any, digits: int = 2) -> str:
+    if value is None:
+        return "—"
+    if isinstance(value, float):
+        return f"{value:.{digits}f}"
+    return str(value)
+
+
+def render_markdown(report: dict) -> str:
+    """Human-readable report: meta, per-crop summary, verdict and EVERY cell."""
+    lines = ["# Ranking backtest (forward-chaining)", ""]
+    for key, value in (report.get("meta") or {}).items():
+        lines.append(f"- {key}: {value}")
+    header = ("| crop | cells | skipped | measurable | ρ median | ρ>0 share | ρ worst | top-3 % | top-3 present | "
+              "random | last_year | flat | coverage % |")
+    lines += ["", "## Per crop", "", header, "|---|---|---|---|---|---|---|---|---|---|---|---|---|"]
+    for crop, agg in sorted((report.get("summary") or {}).items()):
+        b = agg["baselines_median"]
+        skipped = ", ".join(f"{k}={v}" for k, v in sorted(agg["skipped"].items())) or "—"
+        lines.append(f"| {crop} | {agg['n_cells']} | {skipped} | {agg['measurable']} | "
+                     f"{_fmt(agg['spearman_median'])} | {_fmt(agg['spearman_positive_share'])} | "
+                     f"{_fmt(agg['spearman_worst'])} | {_fmt(agg['top3_utility_median_pct'], 1)} | "
+                     f"{_fmt(agg.get('top3_present_share_mean'))} | "
+                     f"{_fmt(b['random'], 1)} | {_fmt(b['last_year'], 1)} | {_fmt(b['flat'], 1)} | "
+                     f"{_fmt(agg['coverage_mean_pct'], 1)} |")
+    lines += ["", "## Verdict (report mode, ASSUMPTION thresholds)", ""]
+    for crop, status in (report.get("verdict") or {}).items():
+        lines.append(f"- {crop}: {status}")
+    guards = (f"Thresholds: {THRESHOLDS}; MIN_FOLDS={MIN_FOLDS}; MIN_COMMON_VARIETIES={MIN_COMMON_VARIETIES}; "
+              f"MIN_TEST_ENVIRONMENTS={MIN_TEST_ENVIRONMENTS}")
+    cell_header = ("| crop | zone | regime | year | status | reason | common | test envs | ρ | top-3 % | top-3 present | "
+                   "random | last_year | flat | coverage % |")
+    lines += ["", guards, "", "## Every cell", "", cell_header,
+              "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|"]
+    for c in report.get("cells") or []:
+        b = c.get("baselines") or {}
+        lines.append(f"| {c.get('crop')} | {c.get('zone')} | {c.get('regime')} | {c.get('test_year')} | "
+                     f"{c.get('status')} | {c.get('reason', '—')} | {_fmt(c.get('n_common_varieties'))} | "
+                     f"{_fmt(c.get('n_test_environments'))} | {_fmt(c.get('spearman'))} | "
+                     f"{_fmt(c.get('top3_utility_pct'), 1)} | {_fmt(c.get('top3_present_share'))} | "
+                     f"{_fmt(b.get('random'), 1)} | "
+                     f"{_fmt(b.get('last_year'), 1)} | {_fmt(b.get('flat'), 1)} | {_fmt(c.get('coverage_pct'), 1)} |")
+    return "\n".join(lines) + "\n"
