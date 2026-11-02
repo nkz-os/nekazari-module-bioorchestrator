@@ -68,7 +68,10 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--out", type=Path, default=None, help="directory for <prefix>.json and <prefix>.md")
     parser.add_argument("--prefix", default="ranking-backtest")
     parser.add_argument("--gate", action="store_true", help="exit 1/2 on the ASSUMPTION thresholds")
-    return parser.parse_args(argv)
+    args = parser.parse_args(argv)
+    if not args.tiers:
+        parser.error("--tiers needs at least one tier")
+    return args
 
 
 def stats_functions(table_fn: Callable, *, test_year: int) -> tuple[Callable, Callable]:
@@ -112,6 +115,16 @@ def exit_code(verdict: dict[str, str], *, gate: bool) -> int:
     if "not_measurable" in statuses:
         return EXIT_NOT_MEASURABLE
     return EXIT_OK
+
+
+def gate_exit(reports: dict[str, dict], *, gate: bool) -> int:
+    """Exit code of the run: the gate reads the production default tier (field) and nothing else."""
+    if not gate:
+        return EXIT_OK
+    if "field" not in reports:
+        print("gate needs the field tier (not in --tiers): not measurable")
+        return EXIT_NOT_MEASURABLE
+    return exit_code(reports["field"]["verdict"], gate=True)
 
 
 async def zones(dao) -> list[str]:
@@ -209,9 +222,8 @@ async def main() -> int:
         write_report(report, args.out, f"{args.prefix}-{tier}")
         print(json.dumps({"tier": tier, "summary": report["summary"], "verdict": report["verdict"]},
                          indent=1, default=str))
-    # The gate reads the production default tier (field); the other tiers are measured, not gated.
-    gated = reports.get("field") or next(iter(reports.values()))
-    return exit_code(gated["verdict"], gate=args.gate)
+    # The other tiers are measured, not gated.
+    return gate_exit(reports, gate=args.gate)
 
 
 if __name__ == "__main__":

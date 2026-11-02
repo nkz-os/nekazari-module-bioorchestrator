@@ -1,5 +1,7 @@
 """CLI and pure plumbing of scripts/check_ranking_backtest.py (no Neo4j)."""
 
+import pytest
+
 from app.planning.varieties import variety_stats
 from scripts.check_ranking_backtest import (
     DEFAULT_CROPS,
@@ -9,6 +11,7 @@ from scripts.check_ranking_backtest import (
     FLAT_REF_YEAR,
     cells_for_group,
     exit_code,
+    gate_exit,
     parse_args,
     stats_functions,
 )
@@ -108,3 +111,23 @@ def test_years_without_enough_training_history_are_reported_as_skipped():
     from app.eval import ranking_backtest as rb
     summary = rb.aggregate_by_crop(cells)["TRZAX"]
     assert summary["skipped"] == {"train_years": 5}
+
+
+def test_gate_reads_only_the_field_tier(capsys):
+    reports = {"regional": {"verdict": {"TRZAX": "fail"}}, "field": {"verdict": {"TRZAX": "pass"}}}
+    assert gate_exit(reports, gate=True) == EXIT_OK
+    assert gate_exit({"field": {"verdict": {"TRZAX": "fail"}}}, gate=True) == EXIT_FAIL
+    assert capsys.readouterr().out == ""
+
+
+def test_gate_without_the_field_tier_is_not_measurable(capsys):
+    reports = {"regional": {"verdict": {"TRZAX": "fail"}}}
+    assert gate_exit(reports, gate=True) == EXIT_NOT_MEASURABLE
+    assert len(capsys.readouterr().out.strip().splitlines()) == 1
+    assert gate_exit(reports, gate=False) == EXIT_OK
+
+
+def test_empty_tiers_are_rejected(capsys):
+    with pytest.raises(SystemExit) as err:
+        parse_args(["--tiers", " , "])
+    assert err.value.code == 2
