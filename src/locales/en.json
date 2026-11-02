@@ -223,7 +223,7 @@
       "variety": "Variety", "relative": "Relative yield", "stability": "Stability", "environments": "Trials / years",
       "relativeHint": "Yield against each trial's mean: 100 % = same as the mean.",
       "lowEnv": "In poor trials", "lowEnvHint": "In poor trials: yield against the mean in the third of trials with the lowest output (dry or bad years).",
-      "stable": "stable", "average": "average", "responsive": "responsive to the environment", "few": "few trials",
+      "stable": "stable", "average": "average", "responsive": "responsive to the environment", "few": "few trials", "stale": "no trials since {{year}}",
       "tier": { "field": "field trials", "regional": "regional means" },
       "depth": {
         "deep": "deep evidence",

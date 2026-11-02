@@ -226,7 +226,7 @@
       "variety": "Variedad", "relative": "Rend. relativo", "stability": "Estabilidad", "environments": "Ensayos / años",
       "relativeHint": "Rendimiento frente a la media de cada ensayo: 100 % = igual que la media.",
       "lowEnv": "En ensayos flojos", "lowEnvHint": "En ensayos flojos: rendimiento frente a la media en el tercio de ensayos con menor producción (años secos o malos).",
-      "stable": "estable", "average": "media", "responsive": "sensible al ambiente", "few": "pocos ensayos",
+      "stable": "estable", "average": "media", "responsive": "sensible al ambiente", "few": "pocos ensayos", "stale": "sin ensayos desde {{year}}",
       "tier": { "field": "ensayos de campo", "regional": "medias regionales" },
       "depth": {
         "deep": "evidencia profunda",

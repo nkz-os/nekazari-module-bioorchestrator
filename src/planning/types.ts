@@ -30,6 +30,8 @@ export interface FitResponse { contract_version: string; parcel_id: string; camp
 export interface VarietyStat {
   variety: string; relative_yield_pct: number; n_environments: number; years: number[]; mean_kg_ha: number;
   fw_slope: number | null; stability: 'stable' | 'average' | 'responsive' | null; few_environments: boolean;
+  /** Actuality (additive): last trial year and whether it falls outside the recent campaigns window. */
+  last_year?: number | null; stale?: boolean;
   /** Relative yield in the poor trials (lower tercile of trial means); null below the thresholds. */
   low_env_relative_yield_pct?: number | null; n_low_environments?: number;
 }

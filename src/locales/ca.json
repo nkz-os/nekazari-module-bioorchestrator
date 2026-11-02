@@ -206,7 +206,7 @@
       "variety": "Varietat", "relative": "Rend. relatiu", "stability": "Estabilitat", "environments": "Assaigs / anys",
       "relativeHint": "Rendiment respecte de la mitjana de cada assaig: 100 % = igual que la mitjana.",
       "lowEnv": "En assajos fluixos", "lowEnvHint": "En assajos fluixos: rendiment respecte a la mitjana en el terç d'assajos amb menys producció (anys secs o dolents).",
-      "stable": "estable", "average": "mitjana", "responsive": "sensible a l'entorn", "few": "pocs assaigs",
+      "stable": "estable", "average": "mitjana", "responsive": "sensible a l'entorn", "few": "pocs assaigs", "stale": "sense assajos des de {{year}}",
       "tier": { "field": "assaigs de camp", "regional": "mitjanes regionals" },
       "depth": {
         "deep": "evidència profunda",
