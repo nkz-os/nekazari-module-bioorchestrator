@@ -72,6 +72,12 @@ describe('VarietyTable evidence depth (es)', () => {
     expect(html).toContain('>bespoke<');
     expect(html).not.toContain('planning.variety.depth.');
   });
+  it('a single-year network shows one year, not a range', () => {
+    const one = { ...depth, first_year: 2025, last_year: 2025 };
+    const html = renderToStaticMarkup(<VarietyTable data={{ ...base, evidence_depth: one }} selected={null} onSelect={() => {}} />);
+    expect(html).toContain('72 ensayos · 3 sitios · 2025"');
+    expect(html).not.toContain('2025–2025');
+  });
   it('an answer without evidence_depth renders the table as before', () => {
     const html = renderToStaticMarkup(<VarietyTable data={base} selected={null} onSelect={() => {}} />);
     expect(html).toContain('Var A');
