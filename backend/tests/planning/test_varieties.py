@@ -1,3 +1,7 @@
+import datetime
+
+import pytest
+
 import app.planning.varieties as varieties_mod
 from app.planning.varieties import fw_slope, stability_class, variety_stats
 
@@ -128,3 +132,38 @@ def test_response_model_keeps_the_floor():
     dumped = VarietyStat.model_validate(stats[0]).model_dump()
     assert dumped["low_env_relative_yield_pct"] == stats[0]["low_env_relative_yield_pct"]
     assert dumped["n_low_environments"] == 2
+
+
+# --- recency weighting (half-life RECENCY_HALF_LIFE_YEARS, relative yield only) --------------
+
+def test_relative_yield_weights_an_observation_eight_years_older_at_half():
+    # V1: 130 % in the old environment, 100 % in the recent one; V2/V3 fill the environments.
+    rows = _rows(("A", 2016), {"V1": 6500, "V2": 5000, "V3": 3500}) + _rows(("B", 2024), {"V1": 5000, "V2": 5000, "V3": 5000})
+    flat, _ = variety_stats(rows, ref_year=2016)  # nothing is older than the reference: every weight is 1
+    weighted, _ = variety_stats(rows, ref_year=2024)
+    v1_flat = next(s for s in flat if s["variety"] == "V1")["relative_yield_pct"]
+    v1_weighted = next(s for s in weighted if s["variety"] == "V1")["relative_yield_pct"]
+    assert v1_flat == pytest.approx(115.0)
+    assert v1_weighted == pytest.approx((0.5 * 1.3 + 1.0 * 1.0) / 1.5 * 100, abs=0.05)  # 110.0
+    assert varieties_mod.RECENCY_HALF_LIFE_YEARS == 8.0
+
+
+def test_ref_year_defaults_to_the_current_year():
+    this_year = datetime.datetime.now(datetime.UTC).year
+    rows = _rows(("A", this_year - 8), {"V1": 6500, "V2": 5000, "V3": 3500}) + _rows(("B", this_year), {"V1": 5000, "V2": 5000, "V3": 5000})
+    default, _ = variety_stats(rows)
+    explicit, _ = variety_stats(rows, ref_year=this_year)
+    assert default[0]["relative_yield_pct"] == explicit[0]["relative_yield_pct"]
+
+
+def test_recency_leaves_the_low_environment_floor_and_the_mean_flat():
+    # Six environments; the only low-yield (dry) ones are old. The floor and mean_kg_ha must not move.
+    rows = []
+    for i, (year, level) in enumerate([(2012, 2000), (2013, 2200), (2018, 5000), (2020, 5200), (2022, 5400), (2024, 5600)]):
+        rows += _rows((f"S{i}", year), {"V1": level * 1.2, "V2": level, "V3": level * 0.8})
+    flat, _ = variety_stats(rows, ref_year=2012)
+    weighted, _ = variety_stats(rows, ref_year=2024)
+    f = next(s for s in flat if s["variety"] == "V1")
+    w = next(s for s in weighted if s["variety"] == "V1")
+    assert w["low_env_relative_yield_pct"] == f["low_env_relative_yield_pct"] == pytest.approx(120.0)
+    assert w["mean_kg_ha"] == f["mean_kg_ha"] and w["fw_slope"] == f["fw_slope"]

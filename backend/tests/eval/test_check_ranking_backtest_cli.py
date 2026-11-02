@@ -6,6 +6,7 @@ from scripts.check_ranking_backtest import (
     EXIT_FAIL,
     EXIT_NOT_MEASURABLE,
     EXIT_OK,
+    FLAT_REF_YEAR,
     cells_for_group,
     exit_code,
     parse_args,
@@ -30,10 +31,13 @@ def test_stats_functions_pass_the_test_year_only_when_the_table_accepts_it():
     def year_aware(rows, *, ref_year=None):
         return [{"ref_year": ref_year}], 0
 
+    def plain(rows):
+        return [], 0
+
     main_fn, flat_fn = stats_functions(year_aware, test_year=2021)
-    assert main_fn([])[0] == [{"ref_year": 2021}] and flat_fn([])[0] == [{"ref_year": None}]
-    main_plain, flat_plain = stats_functions(variety_stats, test_year=2021)
-    assert main_plain is variety_stats and flat_plain is variety_stats
+    assert main_fn([])[0] == [{"ref_year": 2021}] and flat_fn([])[0] == [{"ref_year": FLAT_REF_YEAR}]
+    main_plain, flat_plain = stats_functions(plain, test_year=2021)
+    assert main_plain is plain and flat_plain is plain
 
 
 def _env(site, year, values):

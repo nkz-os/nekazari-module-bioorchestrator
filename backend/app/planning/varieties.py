@@ -8,11 +8,20 @@ a row without site or year cannot define an environment and is left out.
 MIN_ENV_VARIETIES, MIN_FW_ENVIRONMENTS, FEW_ENVIRONMENTS and the slope bands are kept as they
 are (owner, 2026-10-13), to revisit with real use. They are named constants, so a review changes
 numbers, not code.
+
+Recency: the relative yield weighs each observation by ``0.5 ** (age / RECENCY_HALF_LIFE_YEARS)``
+(an observation eight years older than ``ref_year`` counts half), the same half-life as the graph
+recommender. Only the relative yield is weighted: the floor in poor environments and the mean kg/ha
+stay flat, because discounting old dry years would hide the very trials that define "when it goes
+badly".
 """
 from __future__ import annotations
 
+import datetime
 from collections import defaultdict
 from statistics import fmean, quantiles
+
+RECENCY_HALF_LIFE_YEARS = 8.0
 
 MIN_ENV_VARIETIES = 3
 MIN_FW_ENVIRONMENTS = 5
@@ -53,7 +62,16 @@ def low_environments(means: dict[tuple, float]) -> set[tuple]:
     return {k for k, m in means.items() if m <= cut}
 
 
-def variety_stats(rows: list[dict]) -> tuple[list[dict], int]:
+def recency_weight(year: object, ref_year: int) -> float:
+    """Weight of an observation of ``year`` seen from ``ref_year``; unknown or future years weigh 1."""
+    if not isinstance(year, int) or year >= ref_year:
+        return 1.0
+    return 0.5 ** ((ref_year - year) / RECENCY_HALF_LIFE_YEARS)
+
+
+def variety_stats(rows: list[dict], *, ref_year: int | None = None) -> tuple[list[dict], int]:
+    if ref_year is None:
+        ref_year = datetime.datetime.now(datetime.UTC).year
     cells: dict[tuple, dict[str, list[float]]] = defaultdict(lambda: defaultdict(list))
     for row in rows:
         variety, value = row.get("variety"), row.get("yield_kg_ha")
@@ -78,9 +96,11 @@ def variety_stats(rows: list[dict]) -> tuple[list[dict], int]:
         low_ratios = [y / m for k, y, m in obs if k in low]
         floor = (round(fmean(low_ratios) * 100, 1)
                  if len(obs) >= MIN_FW_ENVIRONMENTS and len(low_ratios) >= MIN_LOW_ENVIRONMENTS else None)
+        weights = [recency_weight(k[1], ref_year) for k, _, _ in obs]
+        relative = sum(w * y / m for w, (_, y, m) in zip(weights, obs)) / sum(weights)
         stats.append({
             "variety": variety,
-            "relative_yield_pct": round(fmean(y / m for _, y, m in obs) * 100, 1),
+            "relative_yield_pct": round(relative * 100, 1),
             "n_environments": len(obs),
             "years": [years[0], years[-1]] if years else [],
             "mean_kg_ha": round(fmean(y for _, y, _ in obs)),
