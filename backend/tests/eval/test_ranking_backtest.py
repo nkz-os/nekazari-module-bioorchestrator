@@ -204,7 +204,9 @@ def test_test_years_need_enough_earlier_years_with_data():
 def _agg(**over):
     base = {"n_cells": 40, "skipped": {}, "measurable": True, "spearman_median": 0.4,
             "spearman_positive_share": 0.8, "spearman_worst": -0.1, "top3_utility_median_pct": 104.0,
-            "baselines_median": {"random": 100.0, "last_year": 101.0, "flat": 103.0}, "coverage_mean_pct": 80.0}
+            "baselines_median": {"random": 100.0, "last_year": 101.0, "flat": 103.0},
+            "delta_median": {"random": 4.0, "last_year": 3.0, "flat": 1.0}, "delta_n": {"random": 40, "last_year": 40, "flat": 40},
+            "coverage_mean_pct": 80.0}
     return {**base, **over}
 
 
@@ -216,8 +218,8 @@ def test_gate_verdict_passes_fails_and_declares_not_measurable():
                        "ZEAMX": "fail", "BRSNN": "fail"}
 
 
-def test_gate_verdict_requires_beating_random_and_last_year():
-    verdict = rb.gate_verdict({"TRZAX": _agg(baselines_median={"random": 100.0, "last_year": 105.0, "flat": 103.0})})
+def test_gate_verdict_requires_beating_random_and_last_year_in_the_paired_cells():
+    verdict = rb.gate_verdict({"TRZAX": _agg(delta_median={"random": 4.0, "last_year": -1.0, "flat": 1.0})})
     assert verdict["TRZAX"] == "fail"
 
 
@@ -263,3 +265,43 @@ def test_aggregate_reports_the_mean_top3_present_share():
              {"crop": "X", "status": "ok", "spearman": 0.2, "top3_utility_pct": 103.0, "coverage_pct": None,
               "top3_present_share": 1.0, "baselines": {"random": 100.0, "last_year": 101.0, "flat": None}}]
     assert rb.aggregate_by_crop(cells)["X"]["top3_present_share_mean"] == pytest.approx(2 / 3)
+
+
+# --- paired comparison against the rivals (review fix) ------------------------------------------
+
+def test_cell_pairs_the_model_against_each_rival_only_where_both_are_scored():
+    cell = rb.evaluate_cell(_cell_rows(10, 6), test_year=2024, stats_fn=variety_stats, flat_fn=variety_stats, seed=3)
+    assert cell["deltas"]["flat"] == pytest.approx(0.0)
+    assert cell["deltas"]["last_year"] == pytest.approx(0.0)
+    assert cell["deltas"]["random"] == pytest.approx(cell["top3_utility_pct"] - cell["baselines"]["random"])
+
+
+def _paired(crop, utility, last_year, n):
+    return [{"crop": crop, "status": "ok", "spearman": 0.5, "top3_utility_pct": utility, "coverage_pct": None,
+             "top3_present_share": 1.0, "baselines": {"random": 100.0, "last_year": last_year, "flat": None},
+             "deltas": {"random": None if utility is None else utility - 100.0,
+                        "last_year": None if utility is None or last_year is None else utility - last_year,
+                        "flat": None}} for _ in range(n)]
+
+
+def test_aggregate_reports_the_median_paired_delta_and_its_count():
+    cells = _paired("X", 103.0, 104.0, 12) + _paired("X", None, 90.0, 20)
+    agg = rb.aggregate_by_crop(cells)["X"]
+    assert agg["delta_median"]["last_year"] == pytest.approx(-1.0) and agg["delta_n"]["last_year"] == 12
+    assert agg["delta_median"]["flat"] is None and agg["delta_n"]["flat"] == 0
+
+
+def test_gate_fails_when_the_model_loses_every_paired_cell_even_if_unpaired_medians_look_good():
+    cells = _paired("TRZAX", 103.0, 104.0, 12) + _paired("TRZAX", None, 90.0, 20)
+    agg = rb.aggregate_by_crop(cells)
+    agg["TRZAX"].update({"measurable": True, "spearman_median": 0.5, "spearman_positive_share": 1.0,
+                         "coverage_mean_pct": 80.0})
+    assert rb.gate_verdict(agg)["TRZAX"] == "fail"
+
+
+def test_gate_is_not_measurable_when_a_rival_was_never_paired():
+    cells = _paired("TRZAX", 105.0, None, 31)
+    agg = rb.aggregate_by_crop(cells)
+    agg["TRZAX"].update({"measurable": True, "spearman_median": 0.5, "spearman_positive_share": 1.0,
+                         "coverage_mean_pct": 80.0})
+    assert rb.gate_verdict(agg)["TRZAX"] == "not_measurable"

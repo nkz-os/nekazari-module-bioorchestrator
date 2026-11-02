@@ -217,10 +217,14 @@ def evaluate_cell(rows: list[dict], *, test_year: int, stats_fn: StatsFn, flat_f
         "flat": top3_utility_pct(predicted_order(flat_fn, train), env_ratios) if flat_fn else None,
     }
     present = sum(1 for v in predicted[:TOP_N] if v in observed)
+    utility = top3_utility_pct(predicted, env_ratios)
+    # Paired comparison: the model minus each rival in THIS cell, only where both are scored.
+    deltas = {name: (utility - rival if utility is not None and rival is not None else None)
+              for name, rival in baselines.items()}
     return {**cell, "status": "ok", "spearman": rho,
-            "top3_utility_pct": top3_utility_pct(predicted, env_ratios),
+            "top3_utility_pct": utility,
             "top3_present_share": present / TOP_N,  # predicted top-3 still trialled in the test year
-            "top3_predicted": predicted[:TOP_N], "baselines": baselines,
+            "top3_predicted": predicted[:TOP_N], "baselines": baselines, "deltas": deltas,
             "coverage_pct": coverage_pct(train, test)}
 
 
@@ -247,6 +251,8 @@ def aggregate_by_crop(cells: list[dict]) -> dict[str, dict]:
         baselines = {name: _median([c["baselines"][name] for c in ok
                                     if c.get("baselines", {}).get(name) is not None])
                      for name in ("random", "last_year", "flat")}
+        paired = {name: [c["deltas"][name] for c in ok if (c.get("deltas") or {}).get(name) is not None]
+                  for name in ("random", "last_year", "flat")}
         out[crop] = {
             "n_cells": len(ok),
             "skipped": dict(skipped),
@@ -256,7 +262,9 @@ def aggregate_by_crop(cells: list[dict]) -> dict[str, dict]:
             "spearman_worst": min(rhos) if rhos else None,
             "top3_utility_median_pct": _median(utilities),
             "top3_present_share_mean": fmean(present) if present else None,
-            "baselines_median": baselines,
+            "baselines_median": baselines,  # unpaired, descriptive only
+            "delta_median": {name: _median(v) for name, v in paired.items()},  # paired: model minus rival
+            "delta_n": {name: len(v) for name, v in paired.items()},
             "coverage_mean_pct": fmean(coverages) if coverages else None,
         }
     return out
@@ -281,11 +289,15 @@ def gate_verdict(summary: dict[str, dict]) -> dict[str, str]:
         t = THRESHOLDS
         rho, share = agg["spearman_median"], agg["spearman_positive_share"]
         utility, cover = agg["top3_utility_median_pct"], agg["coverage_mean_pct"]
-        rivals = agg["baselines_median"]
+        deltas, counts = agg.get("delta_median") or {}, agg.get("delta_n") or {}
+        # A rival that was never paired with the model is not beaten: the comparison cannot be made.
+        if any(not counts.get(n) for n in ("random", "last_year")):
+            verdict[crop] = "not_measurable"
+            continue
         ok = (rho is not None and rho >= t["SPEARMAN_MEDIAN_MIN"]
               and share is not None and share >= t["SPEARMAN_POSITIVE_SHARE_MIN"]
               and utility is not None and utility >= t["TOP3_UTILITY_MIN_PCT"]
-              and all(rivals.get(n) is None or utility > rivals[n] for n in ("random", "last_year"))
+              and all(deltas[n] is not None and deltas[n] > 0 for n in ("random", "last_year"))
               and cover is not None and t["COVERAGE_MIN"] * 100 <= cover <= t["COVERAGE_MAX"] * 100)
         verdict[crop] = "pass" if ok else "fail"
     return verdict
@@ -305,8 +317,8 @@ def render_markdown(report: dict) -> str:
     for key, value in (report.get("meta") or {}).items():
         lines.append(f"- {key}: {value}")
     header = ("| crop | cells | skipped | measurable | ρ median | ρ>0 share | ρ worst | top-3 % | top-3 present | "
-              "random | last_year | flat | coverage % |")
-    lines += ["", "## Per crop", "", header, "|---|---|---|---|---|---|---|---|---|---|---|---|---|"]
+              "random | last_year | flat | Δ random (n) | Δ last_year (n) | Δ flat (n) | coverage % |")
+    lines += ["", "## Per crop", "", header, "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|"]
     for crop, agg in sorted((report.get("summary") or {}).items()):
         b = agg["baselines_median"]
         skipped = ", ".join(f"{k}={v}" for k, v in sorted(agg["skipped"].items())) or "—"
@@ -315,8 +327,12 @@ def render_markdown(report: dict) -> str:
                      f"{_fmt(agg['spearman_worst'])} | {_fmt(agg['top3_utility_median_pct'], 1)} | "
                      f"{_fmt(agg.get('top3_present_share_mean'))} | "
                      f"{_fmt(b['random'], 1)} | {_fmt(b['last_year'], 1)} | {_fmt(b['flat'], 1)} | "
-                     f"{_fmt(agg['coverage_mean_pct'], 1)} |")
-    lines += ["", "## Verdict (report mode, ASSUMPTION thresholds)", ""]
+                     + " | ".join(f"{_fmt((agg.get('delta_median') or {}).get(n), 1)} ({(agg.get('delta_n') or {}).get(n, 0)})"
+                                  for n in ("random", "last_year", "flat"))
+                     + f" | {_fmt(agg['coverage_mean_pct'], 1)} |")
+    note = ("Rival columns are unpaired medians (descriptive); Δ columns are the median of the per-cell "
+            "difference model − rival over the n cells where both are scored (the gate reads Δ).")
+    lines += ["", note, "", "## Verdict (report mode, ASSUMPTION thresholds)", ""]
     for crop, status in (report.get("verdict") or {}).items():
         lines.append(f"- {crop}: {status}")
     guards = (f"Thresholds: {THRESHOLDS}; MIN_FOLDS={MIN_FOLDS}; MIN_COMMON_VARIETIES={MIN_COMMON_VARIETIES}; "
