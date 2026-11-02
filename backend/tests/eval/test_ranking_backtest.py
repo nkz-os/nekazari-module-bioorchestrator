@@ -191,6 +191,21 @@ def test_aggregate_by_crop_reports_median_positive_share_worst_and_skips():
     assert agg["measurable"] is False  # fewer than MIN_FOLDS valid cells
 
 
+def test_truncated_cells_stay_out_of_the_aggregates_and_are_counted():
+    ok = {"crop": "TRZAX", "status": "ok", "spearman": 0.5, "top3_utility_pct": 104.0, "coverage_pct": 80.0,
+          "baselines": {"random": 100.0, "last_year": 101.0, "flat": 103.0}}
+    cells = [ok, {**ok, "spearman": -0.9, "truncated": True},
+             {"crop": "TRZAX", "status": "skipped", "reason": "common_varieties", "truncated": True}]
+    agg = rb.aggregate_by_crop(cells)["TRZAX"]
+    assert agg["n_truncated"] == 2 and agg["n_cells"] == 1 and agg["skipped"] == {}
+    assert agg["spearman_worst"] == pytest.approx(0.5)
+
+
+def test_untruncated_crop_reports_zero_truncated():
+    cells = [{"crop": "X", "status": "ok", "spearman": 0.1, "baselines": {}}]
+    assert rb.aggregate_by_crop(cells)["X"]["n_truncated"] == 0
+
+
 # --- test years, gate verdict, report ---------------------------------------
 
 def test_test_years_need_enough_earlier_years_with_data():

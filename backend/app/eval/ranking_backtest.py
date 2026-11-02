@@ -247,7 +247,10 @@ def aggregate_by_crop(cells: list[dict]) -> dict[str, dict]:
     for cell in cells:
         by_crop[cell.get("crop", "?")].append(cell)
     out: dict[str, dict] = {}
-    for crop, items in by_crop.items():
+    for crop, all_items in by_crop.items():
+        # A cell read from a page-capped group is a partial sample: counted, never aggregated.
+        n_truncated = sum(1 for c in all_items if c.get("truncated"))
+        items = [c for c in all_items if not c.get("truncated")]
         ok = [c for c in items if c.get("status") == "ok"]
         skipped: dict[str, int] = defaultdict(int)
         for c in items:
@@ -265,6 +268,7 @@ def aggregate_by_crop(cells: list[dict]) -> dict[str, dict]:
         out[crop] = {
             "n_cells": len(ok),
             "skipped": dict(skipped),
+            "n_truncated": n_truncated,
             "measurable": len(ok) >= MIN_FOLDS,
             "spearman_median": _median(rhos),
             "spearman_positive_share": (sum(1 for r in rhos if r > 0) / len(rhos)) if rhos else None,
