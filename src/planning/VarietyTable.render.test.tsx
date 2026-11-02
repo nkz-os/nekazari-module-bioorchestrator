@@ -66,6 +66,12 @@ describe('VarietyTable evidence depth (es)', () => {
     const html = renderToStaticMarkup(<VarietyTable data={{ ...base, evidence_depth: big }} selected={null} onSelect={() => {}} />);
     expect(html).toContain('12.345 ensayos · 23.456 sitios');
   });
+  it('an unknown depth level renders the raw level, not the key', () => {
+    const odd = { ...depth, level: 'bespoke' as unknown as 'pilot' };
+    const html = renderToStaticMarkup(<VarietyTable data={{ ...base, evidence_depth: odd }} selected={null} onSelect={() => {}} />);
+    expect(html).toContain('>bespoke<');
+    expect(html).not.toContain('planning.variety.depth.');
+  });
   it('an answer without evidence_depth renders the table as before', () => {
     const html = renderToStaticMarkup(<VarietyTable data={base} selected={null} onSelect={() => {}} />);
     expect(html).toContain('Var A');
