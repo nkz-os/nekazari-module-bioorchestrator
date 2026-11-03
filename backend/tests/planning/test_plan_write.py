@@ -294,6 +294,19 @@ async def test_annual_sown_while_the_perennial_still_stands_is_refused(monkeypat
     client.create_entity.assert_not_awaited()
 
 
+async def test_harvested_olive_still_occupies(monkeypatch):
+    # A harvest operation does not close a perennial: the cycle stays open (no end, still active),
+    # so an annual cannot be planned over a living olive grove.
+    olive = _crop("2000", "active", "2000-11-15", lifecycle="perennial", crop="OLVEU")
+    olive["harvests"] = [{"date": "2025-11-20"}]
+    client = _orion(monkeypatch, [olive])
+    with pytest.raises(plan_write.PlanError) as e:
+        await plan_write.write_plan(tenant_id="acme", parcel_urn=URN, plan=_maize_plan(2027, "2027-04-20", "2027-10-01"),
+                                    today=TODAY)
+    assert (e.value.code, e.value.status) == ("perennial_occupies", 409)
+    client.create_entity.assert_not_awaited()
+
+
 async def test_new_perennial_over_an_annual_planned_in_a_later_campaign(monkeypatch):
     later = _crop("2028", "planned", "2027-11-01", "2028-07-01")
     client = _orion(monkeypatch, [later])
