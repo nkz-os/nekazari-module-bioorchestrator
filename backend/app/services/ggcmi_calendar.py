@@ -39,6 +39,7 @@ def citation(dataset: str, rainfed_fallback: bool = False) -> str:
 EPPO_TO_GGCMI = {
     "HORVX": "bar", "ZEAMX": "mai", "HELAN": "sun", "BRSNN": "rap", "BRPNA": "rap",
     "SECCE": "rye", "SOLTU": "pot", "PISSA": "pea", "PIBSX": "pea", "BETVU": "sgb",
+    "BEAVX": "sgb",
     "GLXMA": "soy", "ORYSA": "ri1", "TRZAX": "wwh", "TRZAW": "wwh", "TRZDU": "wwh",
 }
 # Where the winter-wheat cell has no data, spring wheat is the wheat calendar there.

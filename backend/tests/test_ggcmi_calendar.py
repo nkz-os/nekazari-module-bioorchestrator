@@ -86,9 +86,13 @@ def test_mapping_is_the_ruled_one():
     assert g.EPPO_TO_GGCMI == {
         "HORVX": "bar", "ZEAMX": "mai", "HELAN": "sun", "BRSNN": "rap", "BRPNA": "rap",
         "SECCE": "rye", "SOLTU": "pot", "PISSA": "pea", "PIBSX": "pea", "BETVU": "sgb",
-        "GLXMA": "soy", "ORYSA": "ri1", "TRZAX": "wwh", "TRZAW": "wwh", "TRZDU": "wwh",
+        "BEAVX": "sgb", "GLXMA": "soy", "ORYSA": "ri1", "TRZAX": "wwh", "TRZAW": "wwh", "TRZDU": "wwh",
     }
     assert "bea" not in g.EPPO_TO_GGCMI.values()
+
+
+def test_sugar_beet_eppo_code_reads_the_sugar_beet_calendar():
+    assert g.EPPO_TO_GGCMI["BEAVX"] == g.EPPO_TO_GGCMI["BETVU"] == "sgb"
 
 
 # --- synthetic grid: regime choice and wheat fallback -------------------------
