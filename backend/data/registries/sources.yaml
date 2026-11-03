@@ -379,6 +379,60 @@ sources:
         en: Estimates and averages are Nekazari calculations based on these data; they are not data published by the sources.
         es: Las estimaciones y medias son cálculos de Nekazari a partir de estos datos; no son datos publicados por las fuentes.
       notes: Annual series stored per region and year (area, production, humidity basis), not only means.
+  - source_id: open_meteo_historical
+    name: Open-Meteo historical weather archive (ERA5 reanalysis, daily ET0 and precipitation)
+    institution: Open-Meteo.com
+    country: EU
+    url: https://open-meteo.com
+    licence:
+      licence_id: CC-BY-4.0
+      terms_url: https://creativecommons.org/licenses/by/4.0/
+      checked_at: '2026-11-03'
+      commercial_use: allowed
+      tdm_reserved: null
+      attribution_text: 'Weather data by Open-Meteo.com (https://open-meteo.com), CC BY 4.0.'
+      attribution_url: https://open-meteo.com
+      download_date: '2026-11-03'
+      processing_note:
+        en: Estimates and averages are Nekazari calculations based on these data; they are not data published by the sources.
+        es: Las estimaciones y medias son cálculos de Nekazari a partir de estos datos; no son datos publicados por las fuentes.
+      notes: Daily ET0 and precipitation of the ERA5 archive served by Open-Meteo. Licence text not re-read verbatim on this date.
+  - source_id: copernicus_era5
+    name: ERA5 global reanalysis, Copernicus Climate Change Service
+    institution: Copernicus Climate Change Service (C3S), ECMWF
+    country: EU
+    url: https://cds.climate.copernicus.eu
+    licence:
+      licence_id: copernicus-licence-to-use-products
+      terms_url: https://cds.climate.copernicus.eu/api/v2/terms/static/licence-to-use-copernicus-products.pdf
+      checked_at: '2026-11-03'
+      commercial_use: allowed
+      tdm_reserved: null
+      attribution_text: 'Contains modified Copernicus Climate Change Service information. Hersbach et al. (2020), The ERA5 global reanalysis, Q. J. R. Meteorol. Soc., doi:10.1002/qj.3803.'
+      attribution_url: https://cds.climate.copernicus.eu
+      download_date: '2026-11-03'
+      processing_note:
+        en: Estimates and averages are Nekazari calculations based on these data; they are not data published by the sources.
+        es: Las estimaciones y medias son cálculos de Nekazari a partir de estos datos; no son datos publicados por las fuentes.
+      notes: ERA5 underlies the Open-Meteo archive. Licence text not re-read verbatim on this date.
+  - source_id: fao56
+    name: FAO Irrigation and Drainage Paper 56, Crop evapotranspiration (crop coefficients and stage lengths)
+    institution: FAO
+    country: EU
+    url: https://www.fao.org/4/x0490e/x0490e00.htm
+    licence:
+      licence_id: fao-copyright
+      terms_url: https://www.fao.org/contact-us/terms/en/
+      checked_at: '2026-11-03'
+      commercial_use: unknown
+      tdm_reserved: null
+      attribution_text: 'Allen R.G., Pereira L.S., Raes D., Smith M. (1998), Crop evapotranspiration, FAO Irrigation and Drainage Paper 56, FAO, Rome.'
+      attribution_url: https://www.fao.org/4/x0490e/x0490e00.htm
+      download_date: '2026-11-03'
+      processing_note:
+        en: Estimates and averages are Nekazari calculations based on these data; they are not data published by the sources.
+        es: Las estimaciones y medias son cálculos de Nekazari a partir de estos datos; no son datos publicados por las fuentes.
+      notes: Used as published reference parameters (Kc, stage lengths); terms of reuse not audited, hence unknown.
   - source_id: fertilicalc_script_2024
     name: FertiliCalc reference script (fertilicalc_script_231124.py)
     institution: Universidad de Córdoba / IAS-CSIC (F. J. Villalobos)

@@ -1521,5 +1521,147 @@
       "residues",
       "europe"
     ]
+  },
+  {
+    "source_id": "open_meteo_historical",
+    "name": "Open-Meteo historical weather archive (ERA5 reanalysis, daily ET0 and precipitation)",
+    "institution": "Open-Meteo.com",
+    "institution_short": "Open-Meteo",
+    "country": "EU",
+    "country_name": {
+      "en": "European Union",
+      "es": "Uni\u00f3n Europea",
+      "eu": "Europar Batasuna",
+      "fr": "Union europ\u00e9enne",
+      "pt": "Uni\u00e3o Europeia"
+    },
+    "url": "https://open-meteo.com",
+    "document_url_template": null,
+    "license_class": "open-data",
+    "use_type": "weather-reanalysis",
+    "official_status": false,
+    "data_format": "database",
+    "extraction_method": "structured",
+    "confidence_default": "high",
+    "attribution": {
+      "en": "Weather data by Open-Meteo.com.",
+      "es": "Datos meteorol\u00f3gicos de Open-Meteo.com."
+    },
+    "disclaimer": {
+      "en": "Seasonal irrigation need is an NKZ calculation from daily reanalysis values; it is not published by Open-Meteo.",
+      "es": "La necesidad de riego estacional es un c\u00e1lculo de NKZ a partir de valores diarios de rean\u00e1lisis; no la publica Open-Meteo."
+    },
+    "attribution_text": "Weather data by Open-Meteo.com (https://open-meteo.com), CC BY 4.0.",
+    "attribution_url": "https://open-meteo.com",
+    "licence_id": "CC-BY-4.0",
+    "licence_url": "https://creativecommons.org/licenses/by/4.0/",
+    "download_date": "2026-11-03",
+    "processing_note": {
+      "en": "Estimates and averages are Nekazari calculations based on these data; they are not data published by the sources.",
+      "es": "Las estimaciones y medias son c\u00e1lculos de Nekazari a partir de estos datos; no son datos publicados por las fuentes."
+    },
+    "site_urls": [
+      "https://open-meteo.com"
+    ],
+    "tags": [
+      "weather",
+      "et0",
+      "precipitation",
+      "reanalysis"
+    ]
+  },
+  {
+    "source_id": "copernicus_era5",
+    "name": "ERA5 global reanalysis, Copernicus Climate Change Service",
+    "institution": "Copernicus Climate Change Service (C3S), ECMWF",
+    "institution_short": "C3S",
+    "country": "EU",
+    "country_name": {
+      "en": "European Union",
+      "es": "Uni\u00f3n Europea",
+      "eu": "Europar Batasuna",
+      "fr": "Union europ\u00e9enne",
+      "pt": "Uni\u00e3o Europeia"
+    },
+    "url": "https://cds.climate.copernicus.eu",
+    "document_url_template": null,
+    "license_class": "open-data",
+    "use_type": "weather-reanalysis",
+    "official_status": false,
+    "data_format": "database",
+    "extraction_method": "structured",
+    "confidence_default": "high",
+    "attribution": {
+      "en": "Contains modified Copernicus Climate Change Service information.",
+      "es": "Contiene informaci\u00f3n modificada del Servicio de Cambio Clim\u00e1tico de Copernicus."
+    },
+    "disclaimer": {
+      "en": "Neither the European Commission nor ECMWF is responsible for any use that may be made of the Copernicus information or data it contains.",
+      "es": "Ni la Comisi\u00f3n Europea ni el ECMWF son responsables del uso que se haga de la informaci\u00f3n o los datos de Copernicus que contiene."
+    },
+    "attribution_text": "Contains modified Copernicus Climate Change Service information. Hersbach et al. (2020), The ERA5 global reanalysis, Q. J. R. Meteorol. Soc., doi:10.1002/qj.3803.",
+    "attribution_url": "https://cds.climate.copernicus.eu",
+    "licence_id": "copernicus-licence-to-use-products",
+    "licence_url": "https://cds.climate.copernicus.eu/api/v2/terms/static/licence-to-use-copernicus-products.pdf",
+    "download_date": "2026-11-03",
+    "processing_note": {
+      "en": "Estimates and averages are Nekazari calculations based on these data; they are not data published by the sources.",
+      "es": "Las estimaciones y medias son c\u00e1lculos de Nekazari a partir de estos datos; no son datos publicados por las fuentes."
+    },
+    "site_urls": [
+      "https://cds.climate.copernicus.eu"
+    ],
+    "tags": [
+      "weather",
+      "reanalysis",
+      "era5"
+    ]
+  },
+  {
+    "source_id": "fao56",
+    "name": "FAO Irrigation and Drainage Paper 56, Crop evapotranspiration (crop coefficients and stage lengths)",
+    "institution": "FAO",
+    "institution_short": "FAO",
+    "country": "EU",
+    "country_name": {
+      "en": "European Union",
+      "es": "Uni\u00f3n Europea",
+      "eu": "Europar Batasuna",
+      "fr": "Union europ\u00e9enne",
+      "pt": "Uni\u00e3o Europeia"
+    },
+    "url": "https://www.fao.org/4/x0490e/x0490e00.htm",
+    "document_url_template": null,
+    "license_class": "international-organisation",
+    "use_type": "reference-parameters",
+    "official_status": false,
+    "data_format": "database",
+    "extraction_method": "structured",
+    "confidence_default": "high",
+    "attribution": {
+      "en": "Allen, Pereira, Raes & Smith (1998), Crop evapotranspiration, FAO Irrigation and Drainage Paper 56.",
+      "es": "Allen, Pereira, Raes y Smith (1998), Crop evapotranspiration, FAO Irrigation and Drainage Paper 56."
+    },
+    "disclaimer": {
+      "en": "Crop coefficients and stage lengths are FAO-56 reference values; the seasonal need computed from them is an NKZ calculation.",
+      "es": "Los coeficientes de cultivo y la duraci\u00f3n de las fases son valores de referencia de FAO-56; la necesidad estacional calculada con ellos es un c\u00e1lculo de NKZ."
+    },
+    "attribution_text": "Allen R.G., Pereira L.S., Raes D., Smith M. (1998), Crop evapotranspiration, FAO Irrigation and Drainage Paper 56, FAO, Rome.",
+    "attribution_url": "https://www.fao.org/4/x0490e/x0490e00.htm",
+    "licence_id": "fao-copyright",
+    "licence_url": "https://www.fao.org/contact-us/terms/en/",
+    "download_date": "2026-11-03",
+    "processing_note": {
+      "en": "Estimates and averages are Nekazari calculations based on these data; they are not data published by the sources.",
+      "es": "Las estimaciones y medias son c\u00e1lculos de Nekazari a partir de estos datos; no son datos publicados por las fuentes."
+    },
+    "site_urls": [
+      "https://www.fao.org"
+    ],
+    "tags": [
+      "crop-coefficient",
+      "evapotranspiration",
+      "phenology"
+    ]
   }
 ]
