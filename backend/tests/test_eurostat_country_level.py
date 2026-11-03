@@ -9,7 +9,7 @@ import pytest
 
 from app.services.eurostat_yields import (
     AREA, HUMIDITY, PRODUCTION, YIELD_METHOD, build_series, parse_jsonstat, request_url,
-    to_node_props,
+    nuts_level, to_node_props,
 )
 from scripts import seed_regional_yields as seed
 
@@ -89,3 +89,24 @@ def test_seed_merges_country_rows_by_key_and_is_repeatable(tmp_path):
     assert "MERGE (n:RegionalYieldStat {key: row.key})" in seed.MERGE
     assert batches[0] == batches[1]
     assert "apro_cpshr|ES|C1110|2024" in batches[0]
+
+
+def test_country_mode_drops_aggregates(caplog):
+    doc = _country_doc()
+    doc["size"] = [1, 1, 3, 3, 1]
+    doc["dimension"]["geo"]["category"]["index"] = {"ES": 0, "FR": 1, "EU27_2020": 2}
+    doc["value"] = {str(i): v for i, v in enumerate(
+        [1500.0, 4000.0, 99.0, 14.0, 14.0, 14.0, 6000.0, 28000.0, 999.0])}
+    snap = {"jsonstat": doc, "dataset_updated": "u", "retrieved_at": "t", "nuts_version": "v"}
+    with caplog.at_level("INFO", logger="seed_regional_yields"):
+        rows = seed.build_rows(snap, {"C1110": "TRZAX"}, "country")
+    assert sorted(r["nuts"] for r in rows) == ["ES", "FR"]
+    assert {r["nutsLevel"] for r in rows} == {0}
+    assert "EU27_2020" in caplog.text
+
+
+def test_nuts_level_rejects_non_region_shapes():
+    assert (nuts_level("ES"), nuts_level("ES22"), nuts_level("DE1A")) == (0, 2, 2)
+    for bad in ("EU27_2020", "ESP", "es22", "E"):
+        with pytest.raises(ValueError):
+            nuts_level(bad)

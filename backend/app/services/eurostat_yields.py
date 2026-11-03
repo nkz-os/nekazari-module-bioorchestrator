@@ -7,6 +7,7 @@ converted to another moisture.
 """
 from __future__ import annotations
 
+import re
 import statistics
 from dataclasses import dataclass
 from urllib.parse import urlencode
@@ -142,9 +143,27 @@ NUTS_VERSION_NOTE = "as published by Eurostat (version not stated; codes of seve
 GEO_LEVELS = ("nuts2", "country")
 
 
+_COUNTRY_RE = re.compile(r"[A-Z]{2}")
+_NUTS2_RE = re.compile(r"[A-Z]{2}[A-Z0-9]{2}")
+
+
 def nuts_level(geo: str) -> int:
-    """0 for a two-letter country code (e.g. "ES"), 2 for anything else (a NUTS 2 region)."""
-    return 0 if len(geo) == 2 else 2
+    """0 for a two-letter country code (e.g. "ES"), 2 for a NUTS 2 code (e.g. "ES22").
+
+    Any other shape (aggregates such as EU27_2020) is not a region and raises ValueError.
+    """
+    if _COUNTRY_RE.fullmatch(geo):
+        return 0
+    if _NUTS2_RE.fullmatch(geo):
+        return 2
+    raise ValueError(f"not a country or NUTS 2 code: {geo!r}")
+
+
+def keep_countries(cells: list[Cell]) -> tuple[list[Cell], list[str]]:
+    """Cells of two-letter country geos only, plus the sorted dropped geo codes (aggregates)."""
+    kept = [c for c in cells if _COUNTRY_RE.fullmatch(c.geo)]
+    dropped = sorted({c.geo for c in cells if not _COUNTRY_RE.fullmatch(c.geo)})
+    return kept, dropped
 
 
 def request_url(crop_codes: list[str], level: str = "nuts2") -> str:
