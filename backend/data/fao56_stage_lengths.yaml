@@ -12,9 +12,11 @@
 #
 # Stage lengths: the four values of ONE Table 11 row, in days. The initial stage starts on the sowing
 # day (day 0) and the stages follow each other without gaps (FAO-56 eq. 66 Kc curve).
-# Row rule (`rule`): `mediterranean_or_spain` = a row whose region text names the Mediterranean or Spain
-# with a planting period compatible with how the crop is grown in Spain; `first_row` = no such row, so
-# the first row FAO lists for the crop. `region` and `plant_date` are the row's text as printed.
+# Row rule (`rule`), in order: `mediterranean_or_spain` = a row whose region text names the Mediterranean
+# or Spain with a planting period compatible with how the crop is grown in Spain; `planting_period_spain`
+# = no such row, so a row whose planting period matches Spanish practice; `first_row` = neither, so the
+# first row FAO lists for the crop. `region` and `plant_date` are the row's text as printed (an empty
+# `region` is a row whose region cell is blank in the table).
 #
 # Kc: Kc ini, Kc mid and Kc end of the crop's Table 12 row. Where the crop row leaves Kc ini blank, the
 # crop group row gives it (`ini_row`): "For several group types only one value for Kc ini is listed and
@@ -69,19 +71,20 @@ crops:
           Kc end printed 0.25-0.4; footnote 10: "The higher value is for hand-harvested crops", so 0.25
           (mechanised harvest). Same row as common wheat (autumn sowing).
   HORVX:  # barley
-    lengths_days: {initial: 15, development: 25, mid_season: 50, late_season: 30}
+    lengths_days: {initial: 40, development: 60, mid_season: 60, late_season: 40}
     kc: {ini: 0.3, mid: 1.15, end: 0.25}
     source:
       stage_lengths:
         table: 11
         row: "Barley/Oats/Wheat"
-        plant_date: "November"
-        region: "Central India"
-        rule: first_row
+        plant_date: "Nov"
+        region: ""
+        rule: planting_period_spain
         url: https://www.fao.org/4/x0490e/x0490e0b.htm
         note: >-
-          No Barley/Oats/Wheat row names the Mediterranean or Spain (two rows print no region), so the
-          first row applies. Its 120-day season is much shorter than an autumn-sown barley season in Spain.
+          Planting period matching autumn sowing in Spain; no Mediterranean row. The row's region cell is
+          blank in the table. (The first row, November, Central India, 120 days, is far shorter than an
+          autumn-sown barley season in Spain.)
       kc:
         table: 12
         row: "Barley"
@@ -165,20 +168,20 @@ crops:
         ini_row: "Fababean (broad bean) - Dry/Seed"
         url: https://www.fao.org/4/x0490e/x0490e0b.htm
   SOLTU:  # potato
-    lengths_days: {initial: 25, development: 30, mid_season: 30, late_season: 30}
+    lengths_days: {initial: 30, development: 35, mid_season: 50, late_season: 30}
     kc: {ini: 0.5, mid: 1.15, end: 0.75}
     source:
       stage_lengths:
         table: 11
         row: "Potato"
-        plant_date: "Jan/Nov"
-        region: "(Semi) Arid Climate"
-        rule: first_row
+        plant_date: "April"
+        region: "Europe"
+        rule: planting_period_spain
         url: https://www.fao.org/4/x0490e/x0490e0b.htm
         note: >-
-          No Potato row names the Mediterranean or Spain, so the first row applies. It prints Lmid
-          "30/45" and total "115/130". ASSUMPTION: the first alternatives go together (30 days, total
-          115 = 25+30+30+30).
+          No Potato row names the Mediterranean or Spain. The spring (April) planting matches the main
+          potato crop in Spain. The first row (Jan/Nov, (Semi) Arid Climate) prints ambiguous lengths
+          ("30/45", total "115/130").
       kc:
         table: 12
         row: "Potato"

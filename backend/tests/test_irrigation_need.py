@@ -155,12 +155,12 @@ FAO56_URL = "https://www.fao.org/4/x0490e/x0490e0b.htm"
 FAO56_EXPECTED = {
     "TRZAX": ((30, 140, 40, 30), (0.7, 1.15, 0.25)),
     "TRZDU": ((30, 140, 40, 30), (0.7, 1.15, 0.25)),
-    "HORVX": ((15, 25, 50, 30), (0.3, 1.15, 0.25)),
+    "HORVX": ((40, 60, 60, 40), (0.3, 1.15, 0.25)),
     "ZEAMX": ((30, 40, 50, 30), (0.3, 1.20, 0.35)),
     "HELAN": ((25, 35, 45, 25), (0.35, 1.15, 0.35)),
     "PIBSX": ((20, 30, 35, 15), (0.4, 1.15, 0.30)),
     "VICFX": ((20, 30, 35, 15), (0.5, 1.15, 0.30)),
-    "SOLTU": ((25, 30, 30, 30), (0.5, 1.15, 0.75)),
+    "SOLTU": ((30, 35, 50, 30), (0.5, 1.15, 0.75)),
     "BEAVX": ((25, 35, 50, 50), (0.35, 1.20, 0.70)),
     "LYPES": ((30, 40, 45, 30), (0.6, 1.15, 0.70)),
 }
@@ -193,8 +193,10 @@ def test_fao56_yaml_schema_every_crop_cited():
         assert t11["table"] == 11 and t12["table"] == 12, eppo
         for part in (t11, t12):
             assert part["row"].strip() and part["url"] == FAO56_URL, eppo
-        assert t11["region"].strip() and t11["plant_date"].strip(), eppo
-        assert t11["rule"] in ("mediterranean_or_spain", "first_row"), eppo
+        assert isinstance(t11["region"], str) and t11["plant_date"].strip(), eppo
+        assert t11["rule"] in irr.ROW_RULES, eppo
+        if t11["rule"] == "mediterranean_or_spain":
+            assert any(w in t11["region"] for w in ("Mediterranean", "Medit.", "Spain")), eppo
         assert t12["ini_row"].strip(), eppo
 
 
@@ -206,6 +208,7 @@ def test_fao56_yaml_values_and_coverage():
         assert tuple(crops[eppo]["kc"][k] for k in ("ini", "mid", "end")) == kc, eppo
     table = irr.load_stage_table()
     assert len(table) == len(FAO56_EXPECTED) and "maize" in table  # ZEAMX resolves through the registry alias
+    assert table["barley"].kc_source.startswith("FAO-56 Table 11 'Barley/Oats/Wheat' (Nov, no region printed)")
 
 
 def test_fao56_yaml_keeps_the_copyright_and_licence_note():

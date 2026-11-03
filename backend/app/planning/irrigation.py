@@ -75,6 +75,7 @@ def load_pe_method() -> PeMethod:
 # ── Stages ────────────────────────────────────────────────────────────────────
 
 YAML_STAGES = ("initial", "development", "mid_season", "late_season")
+ROW_RULES = ("mediterranean_or_spain", "planting_period_spain", "first_row")  # in order of preference
 
 
 @dataclass(frozen=True)
@@ -127,12 +128,15 @@ def _crop_stages(eppo: str, raw) -> CropStages:
     t11, t12 = src.get("stage_lengths") or {}, src.get("kc") or {}
     if t11.get("table") != 11 or t12.get("table") != 12:
         raise ValueError(f"{eppo}: stage lengths must cite FAO-56 Table 11 and Kc Table 12")
-    for part, fields in ((t11, ("row", "plant_date", "region", "rule", "url")), (t12, ("row", "ini_row", "url"))):
+    for part, fields in ((t11, ("row", "plant_date", "rule", "url")), (t12, ("row", "ini_row", "url"))):
         if not all(_text(part.get(f)) for f in fields):
             raise ValueError(f"{eppo}: source of table {part.get('table')} needs {', '.join(fields)}")
-    if t11["rule"] not in ("mediterranean_or_spain", "first_row"):
+    if "region" not in t11 or not isinstance(t11["region"], str):
+        raise ValueError(f"{eppo}: source of table 11 needs region (empty when the table prints none)")
+    if t11["rule"] not in ROW_RULES:
         raise ValueError(f"{eppo}: unknown row rule {t11['rule']!r}")
-    kc_source = (f"FAO-56 Table 11 '{_text(t11['row'])}' ({_text(t11['plant_date'])}, {_text(t11['region'])}); "
+    region = _text(t11["region"]) or "no region printed"
+    kc_source = (f"FAO-56 Table 11 '{_text(t11['row'])}' ({_text(t11['plant_date'])}, {region}); "
                  f"Table 12 '{_text(t12['row'])}'")
     if _text(t12["ini_row"]) != _text(t12["row"]):
         kc_source += f", Kc ini '{_text(t12['ini_row'])}'"
