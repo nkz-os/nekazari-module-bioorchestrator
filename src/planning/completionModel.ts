@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react';
 import { EPPO_PATTERN, PlanningApiError } from './api';
 import { regimeToSave } from './wizardModel';
-import type { FitResponse, ParcelRow, Reason, SpeciesFit } from './types';
+import type { FitResponse, ParcelRow, Reason, Regime, SpeciesFit } from './types';
 
 /** The data the farmer can still complete from the planning wizard: a control for each, none when it is known. */
 export interface Completion { regime: boolean; soil: boolean; history: number[] }
@@ -77,4 +77,19 @@ export async function attemptWrite(kind: WriteKind, write: () => Promise<unknown
     const known = e instanceof PlanningApiError;
     return { ok: false, errorKey: writeErrorKey(kind, known ? e.status : null, known ? e.code : null) };
   }
+}
+
+export type RegimePickOutcome = { saved: false; errorKey: null } | { saved: true; errorKey: null } | { saved: false; errorKey: string };
+
+/**
+ * A regime picked in the parcel header: saved on the parcel at once when it has none of its own (spec §6).
+ * The pick itself is always kept for the session; a refused save returns the key of its message.
+ */
+export async function saveRegimePick(
+  row: Pick<ParcelRow, 'regime' | 'regime_source'>, regime: Regime, save: (r: Regime) => Promise<unknown>,
+): Promise<RegimePickOutcome> {
+  const toSave = regimeToSave(row, regime);
+  if (toSave === null) return { saved: false, errorKey: null };
+  const outcome = await attemptWrite('regime', () => save(toSave));
+  return outcome.ok ? { saved: true, errorKey: null } : { saved: false, errorKey: outcome.errorKey };
 }
