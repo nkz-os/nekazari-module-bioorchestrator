@@ -156,7 +156,8 @@ async def phenology_params(
 
     404 if species is not in the knowledge graph.
     """
-    species = resolve_species(species.strip()) or species
+    slug = resolve_species(species.strip())
+    species = slug or species
     dao = GraphDAO(driver)
     params = await dao.get_phenology_params(
         species=species,
@@ -182,7 +183,15 @@ async def phenology_params(
     }
 
     params["agronomic"] = _phenology_agronomic(params)
-    return params
+
+    reference = None
+    if slug:
+        try:
+            reference = await dao.get_water_stress_reference(slug)
+        except Exception:  # reference data must never fail the request
+            logger.warning("water stress reference unavailable for species=%s", slug, exc_info=True)
+    params["water_stress_reference"] = reference
+    return attach_attributions(params, reference["sourceIds"] if reference else [])
 
 
 @router.get("/phenology-stages")
