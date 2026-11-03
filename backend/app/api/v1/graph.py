@@ -156,6 +156,7 @@ async def phenology_params(
 
     404 if species is not in the knowledge graph.
     """
+    species = resolve_species(species.strip()) or species
     dao = GraphDAO(driver)
     params = await dao.get_phenology_params(
         species=species,
@@ -198,6 +199,7 @@ async def phenology_stages(
     gddMin. Returns an empty `stages` list (not 404) when the species has
     no stage nodes — the caller falls back to its own default table.
     """
+    species = resolve_species(species.strip()) or species
     dao = GraphDAO(driver)
     stages = await dao.get_phenology_stages(species)
     return {"species": species, "stages": stages}
