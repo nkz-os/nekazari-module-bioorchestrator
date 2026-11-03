@@ -1,0 +1,119 @@
+from array import array
+from unittest.mock import AsyncMock
+
+import pytest
+
+from app.core.knowledge import KnowledgeSource
+from app.planning import irrigation as irr
+from app.planning import service
+from app.planning.climatology import DAYS, Climatology
+from app.planning.fit import BLOCKERS, INFORMATIVE, allotment_reasons, verdict_of
+from app.planning.models import CONTRACT_VERSION, FitResponse
+from app.planning.reference import Reference
+
+REF = Reference(tolerances={}, constraints=(), trial_eppo=frozenset({"TRZAX"}))
+ENV = {"parcel_id": "urn:ngsi-ld:AgriParcel:t:p1", "climate_class": None, "climate_detail": None,
+       "soil": {"data_available": False, "source": "unavailable"}, "irrigation": {"inferred": None, "source": "unknown"},
+       "centroid": {"lat": 42.0, "lon": -1.0}, "country": "ES"}
+KC = {"initial": 0.3, "development": 0.7, "mid-season": 1.15, "late-season": 0.4}
+LEN = {"initial": (15, 45), "development": (45, 105), "mid-season": (105, 180), "late-season": (180, 230)}
+STAGE_ROWS = {"wheat": [{"species": "wheat", "stage": s, "kc": KC[s], "d1": LEN[s][0], "d2": LEN[s][1], "source": "FAO-56"}
+                        for s in irr.STAGES]}
+
+
+def clim(et0=5.0):
+    return Climatology({y: (array("f", [et0] * DAYS), array("f", [0.0] * DAYS)) for y in range(2005, 2020)})
+
+
+def test_contract_version_and_blockers():
+    assert CONTRACT_VERSION == "2.4"
+    assert BLOCKERS == frozenset({"soil_unsuitable", "soil_ph_unsuitable", "soil_texture_unsuitable",
+                                  "soil_drainage_unsuitable", "frost_risk"})
+    assert "irrigation_need_tight" in INFORMATIVE
+
+
+def test_p50_above_allotment_is_a_caveat_not_a_blocker():
+    reasons = allotment_reasons(400, 480, 300)
+    assert [r["code"] for r in reasons] == ["irrigation_need_exceeds_allotment"] and reasons[0]["gate"] == "water"
+    assert verdict_of(reasons) == "caveats"
+
+
+def test_allotment_between_p50_and_p90_is_tight_and_keeps_fits():
+    reasons = allotment_reasons(280, 350, 300)
+    assert [r["code"] for r in reasons] == ["irrigation_need_tight"]
+    assert verdict_of(reasons) == "fits"
+
+
+def test_allotment_above_p90_or_absent_gives_no_reason():
+    assert allotment_reasons(280, 350, 400) == []
+    assert allotment_reasons(280, 350, None) == []
+    assert allotment_reasons(None, None, 300) == []
+    assert allotment_reasons(300, 350, 300) != [] and allotment_reasons(300, 350, 300)[0]["code"] == "irrigation_need_tight"
+
+
+async def _fit(monkeypatch, *, regime="irrigated", raw=None, climatology=None, status="ready", stages=STAGE_ROWS):
+    dao = AsyncMock()
+    dao.get_parcel_environment.return_value = {**ENV, "irrigation_allotment_raw": raw}
+    monkeypatch.setattr(service, "fetch_crop_cycles", AsyncMock(return_value=None))
+    monkeypatch.setattr(service, "load_reference", AsyncMock(return_value=REF))
+    monkeypatch.setattr(service, "load_stage_rows", AsyncMock(return_value=stages))
+    monkeypatch.setattr(service, "schedule_climatology", lambda cell: None)
+    monkeypatch.setattr(service, "get_climatology", lambda cell: climatology)
+    monkeypatch.setattr(service, "climatology_status", lambda cell: status)
+    out = await service.parcel_fit(dao=dao, source=KnowledgeSource("global", None), parcel_id="p1", tenant_id="t",
+                                   campaign=2027, regime=regime)
+    FitResponse.model_validate(out)
+    return out, next(s for s in out["species"] if s["species"] == "wheat")
+
+
+def codes(sp):
+    return {r["code"] for r in sp["reasons"]}
+
+
+async def test_irrigated_fit_carries_need_and_allotment_gate(monkeypatch):
+    _, base = await _fit(monkeypatch, climatology=clim())
+    need = base["irrigation_need"]
+    assert need["unit"] == "mm" and need["n_years"] >= 5 and base["irrigation_need_unavailable"] is None
+    p50, p90 = need["percentiles"]["p50"], need["percentiles"]["p90"]
+    assert need["method"]["pe_method"] == "usda_scs_decadal" and need["method"]["kc_source"] == "FAO-56"
+    assert not codes(base) & {"irrigation_need_exceeds_allotment", "irrigation_need_tight"}
+
+    out, over = await _fit(monkeypatch, climatology=clim(),
+                           raw={"type": "Property", "value": p50 - 100, "unitCode": "MMT"})
+    assert "irrigation_need_exceeds_allotment" in codes(over) and over["verdict"] == "caveats"
+    assert out["facts"]["irrigation_allotment_mm"] == pytest.approx(p50 - 100)
+
+
+async def test_tight_allotment_does_not_change_verdict(monkeypatch):
+    _, base = await _fit(monkeypatch, climatology=clim())
+    _, tight = await _fit(monkeypatch, climatology=clim(),
+                          raw={"type": "Property", "value": base["irrigation_need"]["percentiles"]["p50"], "unitCode": "MMT"})
+    # Constant weather: P50 == P90, so an allotment equal to P50 is not tight (P90 > allotment is false).
+    assert "irrigation_need_tight" not in codes(tight) and tight["verdict"] == base["verdict"]
+
+
+async def test_wrong_unit_allotment_is_ignored(monkeypatch):
+    out, sp = await _fit(monkeypatch, climatology=clim(), raw={"type": "Property", "value": 1, "unitCode": "MTQ"})
+    assert out["facts"]["irrigation_allotment_mm"] is None
+    assert "irrigation_need_exceeds_allotment" not in codes(sp)
+
+
+async def test_rainfed_has_no_need(monkeypatch):
+    _, sp = await _fit(monkeypatch, regime="rainfed", climatology=clim())
+    assert sp["irrigation_need"] is None and sp["irrigation_need_unavailable"] == "regime_not_irrigated"
+
+
+async def test_unavailable_reasons(monkeypatch):
+    _, sp = await _fit(monkeypatch, climatology=None, status="loading")
+    assert sp["irrigation_need_unavailable"] == "pending"
+    _, sp = await _fit(monkeypatch, climatology=None, status="absent")
+    assert sp["irrigation_need_unavailable"] == "pending"
+    _, sp = await _fit(monkeypatch, climatology=None, status="failed")
+    assert sp["irrigation_need_unavailable"] == "weather_unavailable"
+    _, sp = await _fit(monkeypatch, climatology=Climatology({2019: clim().year_series(2005)}))
+    assert sp["irrigation_need_unavailable"] == "weather_unavailable"  # under 5 valid years
+    _, sp = await _fit(monkeypatch, climatology=clim(), stages={})
+    assert sp["irrigation_need_unavailable"] == "no_kc"
+    bad = {"wheat": [{**r, "d2": None} if r["stage"] == "mid-season" else r for r in STAGE_ROWS["wheat"]]}
+    _, sp = await _fit(monkeypatch, climatology=clim(), stages=bad)
+    assert sp["irrigation_need_unavailable"] == "no_stage_lengths"

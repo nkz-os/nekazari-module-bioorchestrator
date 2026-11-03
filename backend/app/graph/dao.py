@@ -3175,6 +3175,12 @@ class GraphDAO:
                 "soil": soil_input,
                 "climate": climate_input,
             },
+            # Raw Property of the declared irrigation allotment, read in its three spellings (the
+            # planner validates the unit and the value). None when the parcel declares none.
+            "irrigation_allotment_raw": next(
+                (parcel[k] for k in ("irrigationAllotment", "nkz:irrigationAllotment",
+                                     "https://nkz-os.org/ns/irrigationAllotment") if parcel.get(k) is not None),
+                None),
         }
 
     async def recommend_for_conditions(self, conditions: dict) -> dict:

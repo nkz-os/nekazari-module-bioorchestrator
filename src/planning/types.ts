@@ -1,8 +1,8 @@
-/** Mirror of backend/app/planning/models.py — contract version 2.3. Change both together. */
+/** Mirror of backend/app/planning/models.py — contract version 2.4. Change both together. */
 import type { SourceAttributionItem } from '../types/attribution';
 import type { Fortnight } from './fortnight';
 
-export const CONTRACT_VERSION = '2.3';
+export const CONTRACT_VERSION = '2.4';
 export type Verdict = 'fits' | 'caveats' | 'no_fit';
 /** Owner decision (2026-10-13): one vocabulary everywhere; the words shown are translated. */
 export type Regime = 'rainfed' | 'irrigated';

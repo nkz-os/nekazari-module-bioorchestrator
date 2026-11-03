@@ -1,0 +1,28 @@
+# Parameters of the seasonal irrigation-need calculation (app/planning/irrigation.py).
+#
+# Stage lengths and Kc come from the knowledge graph (PhenologyParams, FAO-56 Table 12, seeded from
+# phenology_sources.yaml); a species whose generic stage set is incomplete reports `no_stage_lengths`.
+# No species needs a fallback table: the generic (cultivar and management unset) parameter set of all
+# 46 species is complete and contiguous. `stage_lengths` stays empty until one fails; an entry must
+# carry its FAO-56 Table 11 citation and only the main irrigated crops (the Eurostat statistics crops,
+# alfalfa and tomato) may be listed.
+stage_lengths: {}
+
+# Effective rainfall: USDA Soil Conservation Service method, 10-day form used by FAO CROPWAT 8.0.
+#   Pdec <= break_mm : Pe = Pdec * (ref_mm - low_slope * Pdec) / ref_mm
+#   Pdec >  break_mm : Pe = offset_mm + high_slope * Pdec
+# (mm per 10-day period). The two branches meet at break_mm (Pe = 50 mm).
+# ASSUMPTION: the coefficients (0.6, 250/3, 125/3, 0.1) were checked for internal consistency
+# (continuity at 250/3 mm, and equality with the monthly SCS form Pe = P(125 - 0.2P)/125 for P <= 250
+# mm, 125 + 0.1P above, scaled by three), not read from the CROPWAT documentation itself.
+pe_method:
+  id: usda_scs_decadal
+  citation: >-
+    USDA Soil Conservation Service (1970), Irrigation Water Requirements, Technical Release No. 21,
+    as implemented in FAO CROPWAT 8.0 (effective rainfall, USDA SCS method).
+  period_days: 10
+  ref_mm: 125.0
+  low_slope: 0.6
+  break_mm: 83.33333333333333
+  offset_mm: 41.666666666666664
+  high_slope: 0.1

@@ -11,7 +11,7 @@ from typing import Annotated, Any, Literal
 
 from pydantic import BaseModel, BeforeValidator, Field
 
-CONTRACT_VERSION = "2.3"
+CONTRACT_VERSION = "2.4"
 
 Verdict = Literal["fits", "caveats", "no_fit"]
 # Owner decision (2026-10-13): the regime vocabulary is rainfed | irrigated. The Spanish words that
@@ -46,6 +46,30 @@ class Sowing(BaseModel):
     source: str | None = None
 
 
+class IrrigationPercentiles(BaseModel):
+    p10: float
+    p50: float
+    p90: float
+
+
+class IrrigationMethod(BaseModel):
+    kc_source: str
+    pe_method: str
+
+
+class IrrigationNeed(BaseModel):
+    """Seasonal NET irrigation need over the climatology years, in the field (no application efficiency)."""
+    percentiles: IrrigationPercentiles
+    unit: Literal["mm"] = "mm"
+    n_years: int
+    first_year: int
+    last_year: int
+    sowing_doy: int
+    method: IrrigationMethod
+    source: Literal["openmeteo_era5"] = "openmeteo_era5"
+    attributions: list[dict[str, Any]] = Field(default_factory=list)
+
+
 class SpeciesFit(BaseModel):
     species: str
     eppo: str | None
@@ -60,6 +84,10 @@ class SpeciesFit(BaseModel):
     # Regional statistic; orders the crops inside a verdict, never changes it. Not a fit reason.
     regional_yield: RegionalYield | None = None
     regional_yield_unavailable: str | None = None
+    # Irrigated parcels only; informs the water gate, never changes the verdict by itself.
+    irrigation_need: IrrigationNeed | None = None
+    # regime_not_irrigated | no_kc | no_stage_lengths | no_sowing_date | pending | weather_unavailable
+    irrigation_need_unavailable: str | None = None
 
 
 class ParcelFacts(BaseModel):
@@ -71,6 +99,7 @@ class ParcelFacts(BaseModel):
     regime: Regime | None
     regime_source: str
     history_available: bool
+    irrigation_allotment_mm: float | None = None
 
 
 class FitResponse(BaseModel):
