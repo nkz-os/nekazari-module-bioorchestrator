@@ -215,6 +215,10 @@
         "pilot": "réseau pilote"
       },
       "depthDetail": "{{n_trials}} essais · {{n_sites}} sites · {{years}}",
+      "staleShow_one": "Afficher {{count}} variété sans essais récents",
+      "staleShow_other": "Afficher {{count}} variétés sans essais récents",
+      "staleHide": "Masquer les variétés sans essais récents",
+      "staleHint": "Absentes de tout essai des dernières campagnes : le réseau les a retirées ou renouvelées. Elles restent ici si vous les connaissez ou avez de la semence.",
       "choose": "Choisir", "chosen": "Choisie"
     },
     "gap": {

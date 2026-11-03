@@ -101,15 +101,23 @@ async def _depth(rows, total=None):
 async def test_evidence_depth_is_computed_from_the_rows_behind_the_table():
     deep = await _depth(_rows_grid(60, range(2006, 2026), n_varieties=2))  # 60 sites x 20 years x 2 = 2400 rows
     assert deep == {"level": "deep", "n_trials": 2400, "n_sites": 60, "n_years": 20, "first_year": 2006, "last_year": 2025}
-    moderate = await _depth(_rows_grid(5, range(2014, 2026), n_varieties=6))  # 5 x 12 x 6 = 360 rows, 12 years
+    moderate = await _depth(_rows_grid(5, range(2014, 2026), n_varieties=6))  # 5 x 12 x 6 = 360 rows, only 5 sites
     assert moderate["level"] == "moderate" and moderate["n_trials"] == 360
-    pilot = await _depth(_rows_grid(3, range(2023, 2027), n_varieties=6))  # 72 rows, 4 years
-    assert pilot["level"] == "pilot" and (pilot["n_sites"], pilot["n_years"]) == (3, 4)
+    pilot = await _depth(_rows_grid(2, range(2025, 2027), n_varieties=6))  # 24 rows, 2 sites
+    assert pilot["level"] == "pilot" and (pilot["n_sites"], pilot["n_years"]) == (2, 2)
 
 
-async def test_evidence_depth_broad_needs_years_and_trials_but_not_sites():
-    broad = await _depth(_rows_grid(20, range(2014, 2026), n_varieties=5))  # 20 x 12 x 5 = 1200 rows
+async def test_a_multi_site_network_of_a_few_campaigns_is_broad_not_pilot():
+    # The field tier of the production graph (2026-11): 17 sites, 4 campaigns, ~730 trials.
+    broad = await _depth(_rows_grid(17, range(2023, 2027), n_varieties=11))  # 17 x 4 x 11 = 748 rows
     assert broad["level"] == "broad"
+
+
+async def test_every_depth_level_needs_sites_campaigns_and_trials_together():
+    assert (await _depth(_rows_grid(10, range(2024, 2027), n_varieties=12)))["level"] == "broad"  # 10 x 3 x 12
+    assert (await _depth(_rows_grid(10, range(2026, 2027), n_varieties=40)))["level"] == "pilot"  # one campaign
+    assert (await _depth(_rows_grid(3, range(2023, 2027), n_varieties=6)))["level"] == "moderate"  # 3 x 4 x 6 = 72
+    assert (await _depth(_rows_grid(1, range(2006, 2026), n_varieties=10)))["level"] == "pilot"  # one site, 200 rows
 
 
 async def test_evidence_depth_counts_the_trials_behind_the_page_cap_not_the_page():

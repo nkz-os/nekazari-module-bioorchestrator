@@ -215,6 +215,10 @@
         "pilot": "xarxa pilot"
       },
       "depthDetail": "{{n_trials}} assajos · {{n_sites}} llocs · {{years}}",
+      "staleShow_one": "Mostra {{count}} varietat sense assajos recents",
+      "staleShow_other": "Mostra {{count}} varietats sense assajos recents",
+      "staleHide": "Amaga les varietats sense assajos recents",
+      "staleHint": "No han estat en cap assaig de les últimes campanyes: la xarxa les ha retirat o renovat. Continuen aquí per si les coneixes o en tens llavor.",
       "choose": "Tria", "chosen": "Triada"
     },
     "gap": {

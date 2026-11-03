@@ -215,6 +215,10 @@
         "pilot": "rede piloto"
       },
       "depthDetail": "{{n_trials}} ensaios · {{n_sites}} locais · {{years}}",
+      "staleShow_one": "Mostrar {{count}} variedade sem ensaios recentes",
+      "staleShow_other": "Mostrar {{count}} variedades sem ensaios recentes",
+      "staleHide": "Ocultar as variedades sem ensaios recentes",
+      "staleHint": "Não estiveram em nenhum ensaio das últimas campanhas: a rede retirou-as ou renovou-as. Continuam aqui caso as conheça ou tenha semente.",
       "choose": "Escolher", "chosen": "Escolhida"
     },
     "gap": {

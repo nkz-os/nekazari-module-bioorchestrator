@@ -235,6 +235,10 @@
         "pilot": "red piloto"
       },
       "depthDetail": "{{n_trials}} ensayos · {{n_sites}} sitios · {{years}}",
+      "staleShow_one": "Mostrar {{count}} variedad sin ensayos recientes",
+      "staleShow_other": "Mostrar {{count}} variedades sin ensayos recientes",
+      "staleHide": "Ocultar las variedades sin ensayos recientes",
+      "staleHint": "No han estado en ningún ensayo de las últimas campañas: la red las ha retirado o renovado. Siguen aquí por si las conoces o tienes semilla.",
       "choose": "Elegir", "chosen": "Elegida"
     },
     "gap": {
