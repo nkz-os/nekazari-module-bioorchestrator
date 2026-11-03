@@ -23,6 +23,9 @@
 # it is considered to be representative of the whole group" (FAO-56, chapter 6). FAO-56 has no Kc for
 # the development stage: the curve is linear there. Where Table 12 prints a range, `note` says which
 # end is used and why. Footnote markers of the printed values are left out.
+# The Kc are the Table 12 values for the standard sub-humid climate (RHmin ~45 %, u2 ~2 m/s). They are
+# NOT adjusted for the parcel's climate (FAO-56 eq. 62 for Kc mid, eq. 65 for Kc end), so the computed
+# need is indicative.
 #
 # Omitted (FAO-56 gives no usable season, so these report `no_stage_lengths`):
 #   BRSNN rapeseed: Table 11 has no row for rapeseed/canola (Table 12 has its Kc, without lengths).

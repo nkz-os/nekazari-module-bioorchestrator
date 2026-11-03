@@ -27,7 +27,8 @@ def test_wheat_stages_come_from_the_fao56_yaml():
     assert WHEAT.bounds() == {"initial": (0, 30), "development": (30, 170), "mid-season": (170, 210),
                               "late-season": (210, 240)}
     assert WHEAT.kc_source == ("FAO-56 Table 11 'Winter Wheat' (November, Mediterranean); "
-                               "Table 12 'Winter Wheat - with non-frozen soils'")
+                               "Table 12 'Winter Wheat - with non-frozen soils'; " + irr.KC_NOT_ADJUSTED)
+    assert "not adjusted for climate" in WHEAT.kc_source
 
 
 def test_kc_curve_wheat_follows_fao56_eq66():
@@ -109,8 +110,6 @@ def test_result_is_memoized_on_the_climatology():
     assert irr.irrigation_need(kc, 100, c, PE) is first
 
 
-
-
 def test_fewer_than_five_valid_years_is_none():
     kc = wheat_kc()
     assert irr.irrigation_need(kc, 100, Climatology(year(5.0, 0.0, range(2015, 2019))), PE) is None
@@ -127,12 +126,6 @@ def test_effective_rain_scs_decadal():
     assert "USDA" in PE.citation and "CROPWAT" in PE.citation
 
 
-
-
-
-
-
-
 def test_allotment_reading(caplog):
     ok = {"type": "Property", "value": 300, "unitCode": "MMT"}
     assert irr.read_allotment(ok) == 300.0
@@ -145,7 +138,6 @@ def test_allotment_reading(caplog):
     assert "ignored" in caplog.text
     assert irr.read_allotment({"value": 0, "unitCode": "MMT"}) == 0.0
     assert not math.isnan(irr.read_allotment(ok))
-
 
 
 # ── FAO-56 stage table (data/fao56_stage_lengths.yaml) ───────────────────────
@@ -209,6 +201,9 @@ def test_fao56_yaml_values_and_coverage():
     table = irr.load_stage_table()
     assert len(table) == len(FAO56_EXPECTED) and "maize" in table  # ZEAMX resolves through the registry alias
     assert table["barley"].kc_source.startswith("FAO-56 Table 11 'Barley/Oats/Wheat' (Nov, no region printed)")
+    # Kc ini from the crop group row when the crop row leaves it blank.
+    assert table["barley"].kc_source == ("FAO-56 Table 11 'Barley/Oats/Wheat' (Nov, no region printed); "
+                                         "Table 12 'Barley', Kc ini 'i. Cereals'; " + irr.KC_NOT_ADJUSTED)
 
 
 def test_fao56_yaml_keeps_the_copyright_and_licence_note():
@@ -261,3 +256,32 @@ def test_irrigation_never_reads_graph_phenology_params():
     code = inspect.getsource(irr)
     assert not re.search(r"\bd[12]\b", code)
     assert not hasattr(irr, "load_stage_rows") and not hasattr(service, "load_stage_rows")
+
+
+def _load_with(tmp_path, monkeypatch, mutate):
+    import yaml
+    raw = _raw_table()
+    mutate(raw["crops"])
+    (tmp_path / "fao56_stage_lengths.yaml").write_text(yaml.safe_dump(raw), encoding="utf-8")
+    monkeypatch.setenv("DATA_DIR", str(tmp_path))
+    irr.load_stage_table.cache_clear()
+    try:
+        return irr.load_stage_table()
+    finally:
+        irr.load_stage_table.cache_clear()
+
+
+def test_mediterranean_rule_without_mediterranean_region_fails_the_load(tmp_path, monkeypatch):
+    def mutate(crops):
+        crops["ZEAMX"]["source"]["stage_lengths"]["region"] = "East Africa (alt.)"
+    with pytest.raises(ValueError, match="ZEAMX.*mediterranean_or_spain"):
+        _load_with(tmp_path, monkeypatch, mutate)
+
+
+def test_kc_above_sanity_bound_fails_the_load(tmp_path, monkeypatch):
+    def mutate(crops):
+        crops["LYPES"]["kc"]["mid"] = 1.51
+    with pytest.raises(ValueError, match="LYPES: Kc mid"):
+        _load_with(tmp_path, monkeypatch, mutate)
+    assert irr.KC_MAX == 1.5
+    assert len(_load_with(tmp_path, monkeypatch, lambda crops: crops["LYPES"]["kc"].update(mid=1.5))) == 10
