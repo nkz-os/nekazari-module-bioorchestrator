@@ -26,7 +26,7 @@
 | `ArticleSource` | 560 | Bibliographic reference (journal issue, report, PDF) |
 | `ManagementTrial` | 437 | Agronomic management experiment (fertilizer, irrigation, tillage) |
 | `TrialSite` | 232 | Geolocated experimental station with climate + soil metadata |
-| `PhenologyParams` | 197 | Kc, stage duration (d1/d2), reference MDS, with bibliographic provenance |
+| `PhenologyParams` | 197 | Kc, reference MDS and CWSI baselines (d1/d2, °C; null until sourced), with bibliographic provenance |
 | `PhenologyStage` | 189 | Phenological stage per species |
 | `RotationConstraint` | 48 | Pairwise crop rotation compatibility rules |
 | `AgriCrop` | 45 | Crop catalog node (bridge to the NGSI-LD context broker) |

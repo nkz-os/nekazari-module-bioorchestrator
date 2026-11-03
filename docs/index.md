@@ -26,7 +26,7 @@ The user guide for the planning page is in the [README](../README.md#user-guide-
 | GET | `/readyz` | Readiness probe (checks IkerKeta) |
 | GET | `/api/graph/health` | Neo4j connectivity check |
 | GET | `/api/graph/stats` | Node/relationship counts |
-| GET | `/api/graph/phenology-params` | Phenology parameters (D1, D2, Kc, MDS_ref) for Crop Health |
+| GET | `/api/graph/phenology-params` | Phenology parameters (Kc, MDS_ref; D1/D2 CWSI baselines in °C, null until sourced) for Crop Health |
 | GET | `/api/graph/planning/farm` | Parcels × campaigns planning matrix |
 | GET | `/api/graph/planning/parcels/{id}/fit` · `/varieties` · `/calendar` · `/estimates` | Planning wizard data for a parcel |
 | GET | `/api/graph/planning/parcels/{id}/estimates/in-season` | In-season yield forecast of a sown parcel (read by Crop Health) |
