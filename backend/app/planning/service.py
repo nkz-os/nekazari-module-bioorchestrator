@@ -57,9 +57,11 @@ from app.planning.fit import (
 from app.planning.history import (
     campaign_of_start,
     cycles_of,
+    declared_only,
     first_campaign,
     history_complete,
     iso_date,
+    missing_history_campaigns,
     past_crops,
     species_slug,
 )
@@ -147,8 +149,8 @@ def _sowing(sowing: dict) -> dict:
             "source": sowing.get("source")}
 
 
-async def load_environment(dao, parcel_id: str, tenant_id: str) -> dict:
-    env = await dao.get_parcel_environment(parcel_id, tenant_id)
+async def load_environment(dao, parcel_id: str, tenant_id: str, *, fresh_soil: bool = False) -> dict:
+    env = await dao.get_parcel_environment(parcel_id, tenant_id, fresh_soil=fresh_soil)
     if "error" in env:
         raise ParcelNotFound(env["error"])
     return env
@@ -289,8 +291,9 @@ def _rank_key(s: dict) -> tuple:
 
 
 async def parcel_fit(*, dao, source: KnowledgeSource, parcel_id: str, tenant_id: str,
-                     campaign: int, regime: str | None) -> dict:
-    env = await load_environment(dao, parcel_id, tenant_id)
+                     campaign: int, regime: str | None, refresh_soil: bool = False) -> dict:
+    # Only the read right after the farmer declared a soil texture skips the 24 h soil cache.
+    env = await load_environment(dao, parcel_id, tenant_id, fresh_soil=refresh_soil)
     regime_used, regime_source = resolve_regime(regime, env)
     cycles = await fetch_crop_cycles(env["parcel_id"], tenant_id)
     if cycles is not None and not isinstance(cycles, dict):
@@ -385,6 +388,7 @@ async def parcel_fit(*, dao, source: KnowledgeSource, parcel_id: str, tenant_id:
                   "soil_texture": soil.get("texture"), "soil_ph": soil.get("ph"),
                   "soil_source": soil.get("source") or "unavailable", "regime": regime_used,
                   "regime_source": regime_source, "history_available": cycles is not None,
+                  "history_missing_campaigns": missing_history_campaigns(cycles, campaign),
                   "irrigation_allotment_mm": allotment},
     }
 
@@ -570,7 +574,14 @@ def previous_crop(cycles: dict | None, campaign: int, *, maturity_for) -> Previo
              and (campaign_of(c) or campaign) < campaign]
     if not mains:
         return None
-    last = max(mains, key=lambda c: iso_date((c.get("start") or {}).get("date")) or date.min)
+    dated = [c for c in mains if not declared_only(c)]
+    declared = [c for c in mains if declared_only(c)]
+    last = max(dated, key=lambda c: iso_date((c.get("start") or {}).get("date")) or date.min) if dated else None
+    if declared:
+        latest_declared = max(declared, key=lambda c: campaign_of(c))
+        # Facts beat declarations: a declared crop wins only from a strictly later campaign.
+        if last is None or campaign_of(latest_declared) > campaign_of(last):
+            last = latest_declared
     slug = species_slug(last.get("species"))
     end = last.get("end") or {}
     end_date = iso_date(end.get("date"))

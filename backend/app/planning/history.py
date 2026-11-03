@@ -6,13 +6,16 @@ or up to the campaign being looked at while it has no end yet.
 """
 from __future__ import annotations
 
-from datetime import date
+from datetime import UTC, date, datetime
 from typing import Any
 
 from app.planning.rotation import PastCrop
 from app.species_registry import get_species_info, resolve_species
 
 _PROVENANCE = ("actual", "declared", "planned")
+# From this month a campaign of the current year is over and planning moves to the next one. The platform
+# applies the same rollover (SDK crop_cycles, field-operations declared crops): keep the three equal.
+ROLLOVER_MONTH = 7
 AUTUMN_FROM_MONTH = 8  # a sowing from August on opens the next calendar year's campaign
 
 
@@ -68,9 +71,32 @@ def cycle_campaigns(cycle: dict, until: int) -> list[int]:
     return list(range(first, max(first, last) + 1))
 
 
+_CLOSED = frozenset({"harvested", "terminated"})
+
+
+def _history_cycles(payload: dict | None) -> list[dict]:
+    """Cycles that count as history: a declared-only one only once closed, like the platform SDK."""
+    return [c for c in cycles_of(payload) if not declared_only(c) or c.get("status") in _CLOSED]
+
+
+def declared_only(cycle: dict) -> bool:
+    """A crop known only by the campaign a person declared: no dates at all."""
+    return (cycle.get("declared_campaign") is not None
+            and not (cycle.get("start") or {}).get("date") and not (cycle.get("end") or {}).get("date"))
+
+
+def _without_shadowed_declarations(cycles: list[dict]) -> list[dict]:
+    """Facts beat declarations: a declared-only main crop yields to a dated one of the same campaign."""
+    def main(c: dict) -> bool:
+        return (c.get("role") or "main_crop") == "main_crop"
+
+    dated = {first_campaign(c) for c in cycles if main(c) and not declared_only(c)}
+    return [c for c in cycles if not (main(c) and declared_only(c) and first_campaign(c) in dated)]
+
+
 def past_crops(payload: dict | None, before_campaign: int) -> list[PastCrop]:
     out = []
-    for cycle in cycles_of(payload):
+    for cycle in _without_shadowed_declarations(_history_cycles(payload)):
         slug = species_slug(cycle.get("species"))
         if not slug:
             continue
@@ -89,6 +115,31 @@ def history_complete(payload: dict | None) -> bool:
     if payload is None:
         return False
     return all(species_slug(c.get("species")) and first_campaign(c) is not None for c in cycles_of(payload))
+
+
+HISTORY_LOOKBACK = 2  # campaigns before the planned one that rotation looks at
+
+
+def campaign_is_over(campaign: int, today: date) -> bool:
+    """The rule the platform applies to a declared past crop: the planning rollover (July) closes a campaign."""
+    return campaign < today.year or (campaign == today.year and today.month >= ROLLOVER_MONTH)
+
+
+def missing_history_campaigns(payload: dict | None, campaign: int, today: date | None = None) -> list[int] | None:
+    """Of the campaigns just before `campaign`, those with no main crop (dated or declared) placed in them.
+
+    Only campaigns a past crop can be declared for are offered (the platform refuses one that is not over).
+    None when the history could not be read: unknown is not "complete" and not "all missing".
+    """
+    if payload is None:
+        return None
+    today = today or datetime.now(UTC).date()
+    covered: set[int] = set()
+    for cycle in _history_cycles(payload):
+        if (cycle.get("role") or "main_crop") == "main_crop":
+            covered.update(cycle_campaigns(cycle, until=campaign - 1))
+    return [c for c in range(campaign - HISTORY_LOOKBACK, campaign)
+            if c not in covered and campaign_is_over(c, today)]
 
 
 def cell_from_cycle(cycle: dict, crop: dict | None) -> dict:

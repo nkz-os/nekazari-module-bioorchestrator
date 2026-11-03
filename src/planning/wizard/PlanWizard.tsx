@@ -21,6 +21,7 @@ import {
   applyCalendar, back, calendarMainParam, canAdvance, initialState, next, pickCrop, prefillFromCells, regimeToSave, savePlan, setSowing,
   stepsOf, toPlanIn, type WizardState,
 } from '../wizardModel';
+import { useCompletionState } from '../completionModel';
 import StepCover from './StepCover';
 import StepCrop from './StepCrop';
 import StepSowing from './StepSowing';
@@ -30,7 +31,7 @@ import WizardSummary from './WizardSummary';
 interface Props {
   row: ParcelRow; campaign: number; regime: Regime; management: Management; onSaved: () => void;
   /** The parcel's fit, loaded once by the detail (it also shows the parcel facts). */
-  fit: LoadView<FitResponse> & { retry: () => void };
+  fit: LoadView<FitResponse> & { retry: () => void; /** Reads the fit again with the soil module asked afresh (after a soil write). */ retryFreshSoil?: () => void };
 }
 
 /** The calendar sends no species for a cover: its rules do not depend on it (and free text would reload per keystroke). */
@@ -57,6 +58,7 @@ export default function PlanWizard({ row, campaign, regime, management, onSaved,
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [regimeNotice, setRegimeNotice] = useState(false);
+  const completion = useCompletionState();
   // A plan saved here exists now: saving again replaces it.
   const [saved, setSaved] = useState(false);
   // The main fortnight the calendar proposed: asking again with it would return the same answer, so it is not sent.
@@ -164,7 +166,8 @@ export default function PlanWizard({ row, campaign, regime, management, onSaved,
         return (
           <Step title={t('planning.wizard.step', { n, total: steps.length })} loading={fit.loading} error={fit.error}
             onRetry={fit.retry} loadingText={t('planning.loading.fit')}>
-            {fit.data && <StepCrop fit={fit.data} selected={s.crop} onPick={pick} />}
+            {fit.data && <StepCrop fit={fit.data} selected={s.crop} onPick={pick} row={row} completion={completion}
+              onCompleted={(kind) => (kind === 'soil' && fit.retryFreshSoil ? fit.retryFreshSoil() : fit.retry())} />}
           </Step>
         );
       case 'variety':

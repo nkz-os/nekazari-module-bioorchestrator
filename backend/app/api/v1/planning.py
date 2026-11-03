@@ -64,14 +64,14 @@ def _checked_parcel_urn(raw: str) -> str:
 
 @router.get("/parcels/{parcel_id:path}/fit", response_model=FitResponse)
 async def fit(request: Request, parcel_id: str, sources: SourcesDep,
-              campaign: int = CampaignQ, regime: Regime | None = None):
+              campaign: int = CampaignQ, regime: Regime | None = None, refresh_soil: bool = False):
     tenant = _require_tenant_id(request)
     parcel_id = _checked_parcel_urn(parcel_id)
     source = sources[0]
     dao = GraphDAO(source.driver)
     try:
         result = await parcel_fit(dao=dao, source=source, parcel_id=parcel_id, tenant_id=tenant,
-                                  campaign=campaign, regime=regime)
+                                  campaign=campaign, regime=regime, refresh_soil=refresh_soil)
     except ParcelNotFound as e:
         raise HTTPException(status_code=404, detail=str(e)) from e
     # While the farmer reads the list, warm the evidence of the first crops (varieties and estimates).

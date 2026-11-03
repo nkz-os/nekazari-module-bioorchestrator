@@ -2972,7 +2972,7 @@ class GraphDAO:
             await client.close()
 
     async def get_parcel_environment(
-        self, parcel_id: str, tenant_id: str = ""
+        self, parcel_id: str, tenant_id: str = "", *, fresh_soil: bool = False
     ) -> dict:
         """Resolve parcel environmental profile WITHOUT requiring assigned crop.
 
@@ -3048,7 +3048,7 @@ class GraphDAO:
         from app.services.soil_client import get_parcel_soil_properties
         soil_input = "unavailable"
         try:
-            soil_data = await get_parcel_soil_properties(parcel_id, tenant_id)
+            soil_data = await get_parcel_soil_properties(parcel_id, tenant_id, fresh=fresh_soil)
             if soil_data.get("data_available"):
                 soil_input = "soil_module"
                 wrb_type = None

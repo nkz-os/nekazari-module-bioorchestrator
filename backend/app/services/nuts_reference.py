@@ -40,10 +40,19 @@ def province_table() -> dict[str, str]:
     return load_province_table()
 
 
+_names_failure_logged = False
+
+
 def names_or_none() -> dict[str, str] | None:
-    """Region names, or None (logged) when the snapshot cannot be read: names are decoration."""
+    """Region names, or None when the snapshot cannot be read: names are decoration.
+
+    The failure is logged once per process, not per call (a fit asks once per crop).
+    """
+    global _names_failure_logged
     try:
         return load_region_names()
     except Exception as exc:  # noqa: BLE001
-        logger.error("NUTS region names unavailable: %s: %s", type(exc).__name__, exc)
+        if not _names_failure_logged:
+            _names_failure_logged = True
+            logger.error("NUTS region names unavailable: %s: %s", type(exc).__name__, exc)
         return None

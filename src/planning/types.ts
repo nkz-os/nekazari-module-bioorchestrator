@@ -1,8 +1,8 @@
-/** Mirror of backend/app/planning/models.py — contract version 2.4. Change both together. */
+/** Mirror of backend/app/planning/models.py — contract version 2.5. Change both together. */
 import type { SourceAttributionItem } from '../types/attribution';
 import type { Fortnight } from './fortnight';
 
-export const CONTRACT_VERSION = '2.4';
+export const CONTRACT_VERSION = '2.5';
 export type Verdict = 'fits' | 'caveats' | 'no_fit';
 /** Owner decision (2026-10-13): one vocabulary everywhere; the words shown are translated. */
 export type Regime = 'rainfed' | 'irrigated';
@@ -46,6 +46,8 @@ export interface ParcelFacts {
   soil_source: string; regime: Regime | null; regime_source: string; history_available: boolean;
   /** Water the farmer declared for the campaign, in mm (2.4); null when none. */
   irrigation_allotment_mm?: number | null;
+  /** Of the 2 campaigns before the planned one, those with no main crop in the history (2.5); [] when complete, null when unreadable. */
+  history_missing_campaigns?: number[] | null;
 }
 export interface FitResponse { contract_version: string; parcel_id: string; campaign: number; facts: ParcelFacts; species: SpeciesFit[]; graphs: string[] }
 export interface VarietyStat {

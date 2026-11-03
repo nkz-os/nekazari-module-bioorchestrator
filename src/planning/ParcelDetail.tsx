@@ -4,7 +4,8 @@ import { useTranslation } from '@nekazari/sdk';
 import { Badge, Button, FormField, Inline, Select, Stack } from '@nekazari/ui-kit';
 import { ArrowLeft } from 'lucide-react';
 import AllotmentField from './AllotmentField';
-import { fetchFit, saveParcelAllotment } from './api';
+import { fetchFit, saveParcelAllotment, saveParcelRegime } from './api';
+import { saveRegimePick } from './completionModel';
 import { cropName, safeLang, shortId } from './format';
 import { armOneShotRefetch, irrigatedParcel, isPending } from './irrigationNeed';
 import { lockMessage, lockReason, previousMain, simulationAvailable } from './matrixModel';
@@ -26,12 +27,27 @@ export default function ParcelDetail({ row, campaign, onClose, onSaved, onSimula
   const { t, i18n } = useTranslation('bioorchestrator');
   const lang = i18n.language;
   const [regime, setRegime] = useState<Regime | null>(row.regime);
+  // A regime pick is saved on the parcel at once when it has none; a refusal keeps the pick for the session.
+  const [regimeError, setRegimeError] = useState<string | null>(null);
+  const pickRegime = async (v: Regime) => {
+    setRegime(v);
+    setRegimeError(null);
+    const outcome = await saveRegimePick(row, v, (r) => saveParcelRegime(row.parcel_id, r));
+    if (outcome.errorKey) setRegimeError(outcome.errorKey);
+  };
   const [management, setManagement] = useState<Management>('conventional');
   // The two settings show as one line; "Cambiar" opens them, and a parcel without a regime opens them at once.
   const [editing, setEditing] = useState(row.regime === null);
   const targetCells = row.cells[String(campaign)] ?? [];
 
-  const fit = useLoad((s) => fetchFit(row.parcel_id, campaign, regime, s), [row.parcel_id, campaign, regime]);
+  // Set by the retry that follows a soil write and consumed by the next read: ordinary reads use the server's soil cache.
+  const freshSoil = useRef(false);
+  const loaded = useLoad((s) => {
+    const refresh = freshSoil.current;
+    freshSoil.current = false;
+    return fetchFit(row.parcel_id, campaign, regime, s, refresh);
+  }, [row.parcel_id, campaign, regime]);
+  const fit = { ...loaded, retryFreshSoil: () => { freshSoil.current = true; loaded.retry(); } };
   // The allotment just saved shows at once; the fit read that follows confirms it.
   const [savedAllotment, setSavedAllotment] = useState<{ key: string; mm: number | null } | null>(null);
   const allotmentKey = `${row.parcel_id}|${campaign}|${regime}`;
@@ -99,8 +115,9 @@ export default function ParcelDetail({ row, campaign, onClose, onSaved, onSimula
         <Inline gap="inline" wrap align="end">
           <FormField label={t('planning.detail.regimeQuestion')} description={regime ? undefined : t('planning.detail.regimeHint')}>
             <Select value={regime ?? ''} placeholder={t('planning.detail.regimeQuestion')} options={regimeOptions}
-              onValueChange={(v) => setRegime(v as Regime)} error={!regime} />
+              onValueChange={(v) => { void pickRegime(v as Regime); }} error={!regime} />
           </FormField>
+          {regimeError && <p role="alert" className="text-nkz-sm text-nkz-danger">{t(`planning.wizard.crop.complete.error.${regimeError}`)}</p>}
           <FormField label={t('planning.detail.managementLabel')}>
             <Select value={management} options={managementOptions} onValueChange={(v) => setManagement(v as Management)} />
           </FormField>
