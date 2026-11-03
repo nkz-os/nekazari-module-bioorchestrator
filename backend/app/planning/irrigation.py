@@ -10,6 +10,7 @@ The stored Kc of `development` is not a node of the curve. d1/d2 are cumulative 
 """
 from __future__ import annotations
 
+import calendar
 import functools
 import logging
 import math
@@ -19,6 +20,7 @@ from dataclasses import dataclass
 from datetime import date, timedelta
 from pathlib import Path
 
+import numpy as np
 import yaml
 
 from app.core.knowledge import KnowledgeSource
@@ -65,6 +67,11 @@ class PeMethod:
             return rain_mm * (self.ref_mm - self.low_slope * rain_mm) / self.ref_mm
         return self.offset_mm + self.high_slope * rain_mm
 
+    def pe_array(self, rain_mm: np.ndarray) -> np.ndarray:
+        low = rain_mm * (self.ref_mm - self.low_slope * rain_mm) / self.ref_mm
+        high = self.offset_mm + self.high_slope * rain_mm
+        return np.where(rain_mm <= 0, 0.0, np.where(rain_mm <= self.break_mm, low, high))
+
 
 @functools.lru_cache(maxsize=1)
 def load_pe_method() -> PeMethod:
@@ -102,7 +109,7 @@ def stage_set(rows: list[dict]) -> tuple[StageSet | None, str | None]:
     kc: dict[str, float] = {}
     lengths: dict[str, tuple[float, float]] = {}
     for s in STAGES:
-        if len(by_stage[s]) != 1 or _num(by_stage[s][0].get("kc")) is None:
+        if len(by_stage[s]) != 1 or (_num(by_stage[s][0].get("kc")) or 0.0) <= 0:
             return None, "no_kc"
         kc[s] = _num(by_stage[s][0]["kc"])
     prev_end = None
@@ -186,38 +193,43 @@ def percentile(sorted_values: list[float], q: float) -> float:
     return sorted_values[lo] + (sorted_values[hi] - sorted_values[lo]) * (pos - lo)
 
 
-def _season_need(kc: list[float], sow: date, clim: Climatology, harvest_year: int,
-                 pe: PeMethod) -> float | None:
-    """Net need (mm) of the season sown on `sow`, or None when under MIN_COVERAGE of its days have data."""
-    period = pe.period_days
+def _gather(clim: Climatology, sow: date, n_days: int) -> tuple[np.ndarray, np.ndarray]:
+    """ET0 and rain of the n_days from `sow` (NaN where missing), crossing the year boundary if needed."""
+    et_parts, p_parts = [], []
+    year, start, remaining = sow.year, sow.timetuple().tm_yday - 1, n_days
+    while remaining > 0:
+        take = min(remaining, (366 if calendar.isleap(year) else 365) - start)
+        et0, rain = clim.year_series(year)
+        et_parts.append(np.frombuffer(et0, dtype=np.float32)[start:start + take])
+        p_parts.append(np.frombuffer(rain, dtype=np.float32)[start:start + take])
+        remaining -= take
+        year, start = year + 1, 0
+    return np.concatenate(et_parts).astype(np.float64), np.concatenate(p_parts).astype(np.float64)
+
+
+def _season_need(kc: np.ndarray, sow: date, clim: Climatology, pe: PeMethod) -> float | None:
+    """Net need (mm) of the season sown on `sow`, or None when under MIN_COVERAGE of its days have data.
+
+    A missing day is skipped; the sums of a 10-day block are then scaled to the block's EXPECTED days
+    (a full period, or what is left of the season), so a gap does not lower the need.
+    """
     n_days = len(kc)
-    etc = [0.0] * (n_days // period + 1)
-    rain = [0.0] * len(etc)
-    days = [0] * len(etc)
-    valid = 0
-    arrays = {y: clim.year_series(y) for y in {sow.year, harvest_year}}
-    for i in range(n_days):
-        day = sow + timedelta(days=i)
-        et0_arr, p_arr = arrays[day.year]
-        j = day.timetuple().tm_yday - 1
-        et0, p = et0_arr[j], p_arr[j]
-        if et0 != et0 or p != p:  # NaN: a missing day is skipped, never zero
-            continue
-        b = i // period
-        etc[b] += kc[i] * et0
-        rain[b] += p
-        days[b] += 1
-        valid += 1
-    if valid < MIN_COVERAGE * n_days:
+    et0, rain = _gather(clim, sow, n_days)
+    valid = np.isfinite(et0) & np.isfinite(rain)
+    if valid.sum() < MIN_COVERAGE * n_days:
         return None
-    total = 0.0
-    for b, n in enumerate(days):
-        if n == 0:
-            continue
-        # Pe is defined for a full period: scale a short one (season end, missing days) to it and back.
-        f = period / n
-        total += max(0.0, etc[b] * f - pe.pe(rain[b] * f)) / f
-    return total
+    period = pe.period_days
+    block = np.arange(n_days) // period
+    n_blocks = int(block[-1]) + 1
+    etc = np.bincount(block, weights=np.where(valid, kc * et0, 0.0), minlength=n_blocks)
+    prec = np.bincount(block, weights=np.where(valid, rain, 0.0), minlength=n_blocks)
+    got = np.bincount(block, weights=valid.astype(np.float64), minlength=n_blocks)
+    expected = np.minimum(period, n_days - np.arange(n_blocks) * period)
+    use = got > 0
+    # Pe is defined for a full period: scale the valid days to one, apply it, scale back to the expected days.
+    g = np.where(use, period / np.where(use, got, 1.0), 0.0)
+    need = np.maximum(0.0, etc * g - pe.pe_array(prec * g)) * expected / period
+    return float(need[use].sum())
 
 
 def irrigation_need(kc: list[float], sowing_doy: int, clim: Climatology, pe_method: PeMethod) -> NeedResult | None:
@@ -225,28 +237,35 @@ def irrigation_need(kc: list[float], sowing_doy: int, clim: Climatology, pe_meth
 
     A year is the HARVEST year; a season that crosses New Year (autumn sowing) is sown in the year before
     and needs both years in the climatology. The sowing day is a day-of-year of a non-leap year.
+    The result is memoized on the climatology object (it dies with the cache entry).
     """
     n = len(kc)
     if n == 0 or n > MAX_SEASON_DAYS or not 1 <= sowing_doy <= 366:
         return None
     doy = min(sowing_doy, 365)
+    memo = clim.__dict__.setdefault("_need_memo", {})
+    key = (tuple(kc), doy, pe_method.id)
+    if key in memo:
+        return memo[key]
     crosses = doy + n - 1 > 365
     have = set(clim.years)
+    kc_arr = np.asarray(kc, dtype=np.float64)
+    ref = date(2001, 1, 1) + timedelta(days=doy - 1)
     needs: dict[int, float] = {}
     for year in clim.years:
         sow_year = year - 1 if crosses else year
         if sow_year not in have:
             continue
-        sow = date(2001, 1, 1) + timedelta(days=doy - 1)
-        sow = date(sow_year, sow.month, sow.day)
-        value = _season_need(kc, sow, clim, year, pe_method)
+        value = _season_need(kc_arr, date(sow_year, ref.month, ref.day), clim, pe_method)
         if value is not None:
             needs[year] = value
-    if len(needs) < MIN_YEARS:
-        return None
-    ordered = sorted(needs.values())
-    return NeedResult(p10=percentile(ordered, 10), p50=percentile(ordered, 50), p90=percentile(ordered, 90),
-                      n_years=len(needs), first_year=min(needs), last_year=max(needs), sowing_doy=sowing_doy)
+    result = None
+    if len(needs) >= MIN_YEARS:
+        ordered = sorted(needs.values())
+        result = NeedResult(p10=percentile(ordered, 10), p50=percentile(ordered, 50), p90=percentile(ordered, 90),
+                            n_years=len(needs), first_year=min(needs), last_year=max(needs), sowing_doy=sowing_doy)
+    memo[key] = result
+    return result
 
 
 # ── Declared allotment ────────────────────────────────────────────────────────
@@ -254,7 +273,7 @@ def irrigation_need(kc: list[float], sowing_doy: int, clim: Climatology, pe_meth
 ALLOTMENT_UNIT = "MMT"
 
 
-def read_allotment(raw, *, parcel_id: str = "") -> float | None:
+def read_allotment(raw, *, parcel_id: str = "", tenant_id: str = "") -> float | None:
     """Allotment in mm from the parcel's `irrigationAllotment` Property, or None (with a log when it is
     present but unusable: another unit, non-numeric, negative, or without unit)."""
     if raw is None:
@@ -262,9 +281,9 @@ def read_allotment(raw, *, parcel_id: str = "") -> float | None:
     unit = raw.get("unitCode") if isinstance(raw, dict) else None
     value = _num(raw.get("value")) if isinstance(raw, dict) else None
     if unit != ALLOTMENT_UNIT:
-        logger.warning("irrigation allotment ignored: unitCode=%r, expected %s parcel=%s", unit, ALLOTMENT_UNIT, parcel_id)
+        logger.warning("irrigation allotment ignored: unitCode=%r, expected %s tenant=%s parcel=%s", unit, ALLOTMENT_UNIT, tenant_id, parcel_id)
         return None
     if value is None or value < 0:
-        logger.warning("irrigation allotment ignored: value is not a non-negative number parcel=%s", parcel_id)
+        logger.warning("irrigation allotment ignored: value is not a non-negative number tenant=%s parcel=%s", tenant_id, parcel_id)
         return None
     return value

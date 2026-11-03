@@ -224,13 +224,17 @@ def _season_start_doy(sowing: dict, eppo: str | None, lat, lon, regime: str | No
     return doy
 
 
+IRRIGATION_SOURCE_IDS = ("open_meteo_historical", "copernicus_era5", "fao56")
+
+
 class IrrigationContext:
     """What the irrigation need of every species of ONE fit shares: regime, weather cell, stages, method."""
 
     def __init__(self, regime: str | None, lat, lon, stage_rows: dict[str, list[dict]] | None):
         self.regime = regime
         self.lat, self.lon = lat, lon
-        self.stage_rows = stage_rows
+        self.stage_rows = stage_rows  # None: the graph read failed
+        self.attributions = attach_attributions({}, IRRIGATION_SOURCE_IDS)["attributions"]
         self.clim = None
         self.status = "absent"
         self.cell = cell_key(lat, lon) if regime == "irrigated" and lat is not None and lon is not None else None
@@ -242,19 +246,23 @@ class IrrigationContext:
 
 def species_irrigation_need(ctx: IrrigationContext, slug: str, eppo: str | None, sowing: dict) -> tuple[dict | None, str | None]:
     """(irrigation_need dict | None, reason | None). Never a default figure."""
+    if ctx.regime is None:
+        return None, None  # regime_missing already says so
     if ctx.regime != "irrigated":
         return None, "regime_not_irrigated"
-    stages, why = stage_set((ctx.stage_rows or {}).get(slug, []))
+    if ctx.stage_rows is None:
+        return None, "kc_unavailable"
+    stages, why = stage_set(ctx.stage_rows.get(slug, []))
     if stages is None:
         return None, why
     kc = kc_curve(stages.kc, stages.lengths)
     if len(kc) > 365:
         return None, "no_stage_lengths"  # a season longer than a year is not an annual cycle
+    if ctx.cell is None:
+        return None, "weather_unavailable"  # the parcel has no location
     doy = _season_start_doy(sowing, eppo, ctx.lat, ctx.lon, ctx.regime)
     if doy is None:
         return None, "no_sowing_date"
-    if ctx.cell is None:
-        return None, "weather_unavailable"
     if ctx.clim is None:
         return None, "weather_unavailable" if ctx.status == "failed" else "pending"
     pe = load_pe_method()
@@ -265,7 +273,7 @@ def species_irrigation_need(ctx: IrrigationContext, slug: str, eppo: str | None,
         "percentiles": {"p10": round(result.p10, 1), "p50": round(result.p50, 1), "p90": round(result.p90, 1)},
         "unit": "mm", "n_years": result.n_years, "first_year": result.first_year, "last_year": result.last_year,
         "sowing_doy": result.sowing_doy, "method": {"kc_source": stages.kc_source, "pe_method": pe.id},
-        "source": "openmeteo_era5", "attributions": [],
+        "source": "openmeteo_era5", "attributions": list(ctx.attributions),
     }, None
 
 
@@ -303,7 +311,7 @@ async def parcel_fit(*, dao, source: KnowledgeSource, parcel_id: str, tenant_id:
     nuts = parcel_nuts2(centroid.get("lat"), centroid.get("lon"))
     yield_rows, yield_failed = await regional_yields_for(
         source, nuts, tenant_id=tenant_id, parcel_id=env["parcel_id"])
-    allotment = read_allotment(env.get("irrigation_allotment_raw"), parcel_id=env["parcel_id"])
+    allotment = read_allotment(env.get("irrigation_allotment_raw"), parcel_id=env["parcel_id"], tenant_id=tenant_id)
     stage_rows = None
     if regime_used == "irrigated":
         try:
@@ -346,7 +354,11 @@ async def parcel_fit(*, dao, source: KnowledgeSource, parcel_id: str, tenant_id:
             reasons.append(CLIMATE_UNKNOWN)
         if lifecycle == "perennial":
             reasons.append(MULTI_YEAR)
-        need, need_reason = species_irrigation_need(irrigation, slug, eppo, sowing)
+        if irrigation.regime == "irrigated":
+            # numpy over ~15 seasons per species: off the event loop (the answers are memoized per cell).
+            need, need_reason = await asyncio.to_thread(species_irrigation_need, irrigation, slug, eppo, sowing)
+        else:
+            need, need_reason = species_irrigation_need(irrigation, slug, eppo, sowing)
         if need is not None:
             reasons += allotment_reasons(need["percentiles"]["p50"], need["percentiles"]["p90"], allotment)
         trials = has_trials(eppo, ref.trial_eppo)

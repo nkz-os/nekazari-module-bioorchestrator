@@ -86,7 +86,7 @@ class SpeciesFit(BaseModel):
     regional_yield_unavailable: str | None = None
     # Irrigated parcels only; informs the water gate, never changes the verdict by itself.
     irrigation_need: IrrigationNeed | None = None
-    # regime_not_irrigated | no_kc | no_stage_lengths | no_sowing_date | pending | weather_unavailable
+    # regime_not_irrigated | kc_unavailable | no_kc | no_stage_lengths | no_sowing_date | pending | weather_unavailable
     irrigation_need_unavailable: str | None = None
 
 

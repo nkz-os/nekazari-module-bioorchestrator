@@ -75,14 +75,40 @@ def test_season_year_with_a_hole_in_the_sowing_year_is_dropped():
     assert res.n_years == 8  # harvest years 2011-2019 minus 2013
 
 
-def test_missing_days_below_five_percent_are_skipped_not_zeroed():
+def test_gap_filled_year_equals_the_complete_year_when_missing_days_resemble_the_rest():
     kc = irr.kc_curve(WHEAT_KC, WHEAT_LEN)
+    complete = irr.irrigation_need(kc, 100, Climatology(year(5.0, 0.0)), PE).p50
     series = year(5.0, 0.0)
-    for i in range(100, 105):  # 5 of 230 days
+    for i in range(100, 105):  # 5 of 230 days, inside the constant-Kc part
         series[2015][0][i] = NAN
+        series[2015][1][i] = NAN
     res = irr.irrigation_need(kc, 100, Climatology(series), PE)
     assert res.n_years == 10
-    assert res.p10 < res.p50  # the year with a gap sums fewer days
+    assert res.p10 == pytest.approx(complete, rel=0.01)  # skipped, scaled to the block's expected days: no bias
+
+
+def test_gap_in_the_short_last_block_is_scaled_to_its_expected_days():
+    kc = irr.kc_curve(WHEAT_KC, WHEAT_LEN)  # 230 days: 23 full blocks, no short one; use a 235-day curve
+    kc = kc + [0.4] * 5
+    full = irr.irrigation_need(kc, 100, Climatology(year(5.0, 0.0)), PE).p50
+    series = year(5.0, 0.0)
+    series[2015][0][100 + 233] = NAN
+    series[2015][1][100 + 233] = NAN
+    res = irr.irrigation_need(kc, 100, Climatology(series), PE)
+    assert res.p10 == pytest.approx(full, rel=0.01)
+
+
+def test_result_is_memoized_on_the_climatology():
+    kc = irr.kc_curve(WHEAT_KC, WHEAT_LEN)
+    c = Climatology(year(5.0, 0.0))
+    first = irr.irrigation_need(kc, 100, c, PE)
+    assert irr.irrigation_need(kc, 100, c, PE) is first
+
+
+def test_non_positive_kc_is_no_kc():
+    bad = rows_of(kc={**WHEAT_KC, "late-season": 0.0})
+    assert irr.stage_set(bad) == (None, "no_kc")
+    assert irr.stage_set(rows_of(kc={**WHEAT_KC, "initial": -0.3})) == (None, "no_kc")
 
 
 def test_fewer_than_five_valid_years_is_none():
@@ -124,6 +150,8 @@ def test_stage_set_missing_kc_and_bad_lengths():
 def test_allotment_reading(caplog):
     ok = {"type": "Property", "value": 300, "unitCode": "MMT"}
     assert irr.read_allotment(ok) == 300.0
+    irr.read_allotment({"value": 1, "unitCode": "MTQ"}, parcel_id="p9", tenant_id="tenant-a")
+    assert "tenant=tenant-a parcel=p9" in caplog.text
     assert irr.read_allotment(None) is None
     for bad in ({"value": 300, "unitCode": "MTQ"}, {"value": 300}, {"value": -1, "unitCode": "MMT"},
                 {"value": "x", "unitCode": "MMT"}, {"value": True, "unitCode": "MMT"}, "300"):
