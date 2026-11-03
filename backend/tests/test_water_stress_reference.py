@@ -263,7 +263,8 @@ def test_post_maturity_flag_for_cereals():
         sen = block["senescence"]
         assert sen["method"] == "timesat_amplitude" and sen["end_fraction"] == 0.20
         assert sen["source_id"] == "timesat" and "TIMESAT 2.3" in sen["ref"]
-        assert sen["gate_stage"] == ("silking" if slug == "maize" else "heading")
+        assert sen["gate_stage"] == "maturity"
+        assert "gate at maturity stage" in sen["ref"]
         assert sen["gate_stage"] in detection[slug]["stages"]
         assert "post_maturity" not in detection[slug]["stages"]
         p = species_payload(DOC, slug)

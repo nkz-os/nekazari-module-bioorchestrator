@@ -12,8 +12,8 @@
 # upper limit, and secondary rows, are kept as data but are not served (no CWSI without an upper limit).
 #
 # `post_maturity` (under stages) is a reserved key, not a stage_detection name: grain cereals after
-# physiological maturity, set from the NDVI end-of-season rule in `senescence` (gated by gate_stage so
-# the rule cannot fire before heading/silking), never from GDD alone. No stage_detection value is changed.
+# physiological maturity, set from the NDVI end-of-season rule in `senescence` (gated at the maturity stage so
+# drought collapse before it cannot silence the alert; GDD only restricts, never declares), never from GDD alone. No stage_detection value is changed.
 #
 # Licences: FAO papers (fao33, fao66) are used with commercial_use unknown, pending the FAO reply.
 # Other journal sources are registered with commercial_use unknown (numbers and citations only).
@@ -67,9 +67,9 @@ species:
     senescence:
       method: timesat_amplitude
       end_fraction: 0.20
-      gate_stage: heading
+      gate_stage: maturity
       source_id: timesat
-      ref: "TIMESAT 2.3 Users Guide: end of season when the fitted curve falls to base + 20 % of amplitude after the peak"
+      ref: "TIMESAT 2.3 Users Guide: end of season when the fitted curve falls to base + 20 % of amplitude after the peak; gate at maturity stage: drought collapse before it cannot silence the alert"
   durum_wheat:
     baselines:
       - id: idso1982-durum-pre-heading
@@ -105,9 +105,9 @@ species:
     senescence:
       method: timesat_amplitude
       end_fraction: 0.20
-      gate_stage: heading
+      gate_stage: maturity
       source_id: timesat
-      ref: "TIMESAT 2.3 Users Guide: end of season when the fitted curve falls to base + 20 % of amplitude after the peak"
+      ref: "TIMESAT 2.3 Users Guide: end of season when the fitted curve falls to base + 20 % of amplitude after the peak; gate at maturity stage: drought collapse before it cannot silence the alert"
   barley:
     baselines:
       - id: idso1982-barley-pre-heading
@@ -143,9 +143,9 @@ species:
     senescence:
       method: timesat_amplitude
       end_fraction: 0.20
-      gate_stage: heading
+      gate_stage: maturity
       source_id: timesat
-      ref: "TIMESAT 2.3 Users Guide: end of season when the fitted curve falls to base + 20 % of amplitude after the peak"
+      ref: "TIMESAT 2.3 Users Guide: end of season when the fitted curve falls to base + 20 % of amplitude after the peak; gate at maturity stage: drought collapse before it cannot silence the alert"
   maize:
     baselines:
       - id: idso1982-maize-no-tassels
@@ -169,9 +169,9 @@ species:
     senescence:
       method: timesat_amplitude
       end_fraction: 0.20
-      gate_stage: silking
+      gate_stage: maturity
       source_id: timesat
-      ref: "TIMESAT 2.3 Users Guide: end of season when the fitted curve falls to base + 20 % of amplitude after the peak"
+      ref: "TIMESAT 2.3 Users Guide: end of season when the fitted curve falls to base + 20 % of amplitude after the peak; gate at maturity stage: drought collapse before it cannot silence the alert"
   oat:
     baselines: []
     stages:
@@ -183,9 +183,9 @@ species:
     senescence:
       method: timesat_amplitude
       end_fraction: 0.20
-      gate_stage: heading
+      gate_stage: maturity
       source_id: timesat
-      ref: "TIMESAT 2.3 Users Guide: end of season when the fitted curve falls to base + 20 % of amplitude after the peak"
+      ref: "TIMESAT 2.3 Users Guide: end of season when the fitted curve falls to base + 20 % of amplitude after the peak; gate at maturity stage: drought collapse before it cannot silence the alert"
   rye:
     baselines: []
     stages:
@@ -197,9 +197,9 @@ species:
     senescence:
       method: timesat_amplitude
       end_fraction: 0.20
-      gate_stage: heading
+      gate_stage: maturity
       source_id: timesat
-      ref: "TIMESAT 2.3 Users Guide: end of season when the fitted curve falls to base + 20 % of amplitude after the peak"
+      ref: "TIMESAT 2.3 Users Guide: end of season when the fitted curve falls to base + 20 % of amplitude after the peak; gate at maturity stage: drought collapse before it cannot silence the alert"
   alfalfa:
     baselines:
       - id: idso1982-alfalfa
