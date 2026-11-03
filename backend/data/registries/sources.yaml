@@ -947,3 +947,39 @@ sources:
       commercial_use: unknown
       tdm_reserved: null
       notes: Not audited in the 2026-10-04 licence audit (section 4); treated as unknown until a person reads its terms.
+  - source_id: fao66
+    name: FAO Irrigation and Drainage Paper 66, Crop yield response to water
+    institution: FAO
+    country: INT
+    url: https://www.fao.org/3/i2800e/i2800e.pdf
+    licence:
+      licence_id: fao-copyright
+      terms_url: https://www.fao.org/contact-us/terms/en/
+      checked_at: '2026-11-03'
+      commercial_use: unknown
+      tdm_reserved: null
+      attribution_text: 'Steduto P., Hsiao T.C., Fereres E., Raes D. (2012) Crop yield response to water. FAO Irrigation and Drainage Paper 66, FAO, Rome.'
+      attribution_url: https://www.fao.org/3/i2800e/i2800e.pdf
+      download_date: '2026-11-03'
+      processing_note:
+        en: Estimates and averages are Nekazari calculations based on these data; they are not data published by the sources.
+        es: Las estimaciones y medias son cálculos de Nekazari a partir de estos datos; no son datos publicados por las fuentes.
+      notes: FAO licence request pending (FAO-56/33 request 2026-11-03). Cited for a qualitative statement only (p.7); ISBN not read.
+  - source_id: timesat
+    name: Jönsson and Eklundh 2004, TIMESAT, a program for analyzing time-series of satellite sensor data
+    institution: Computers & Geosciences (Elsevier)
+    country: SE
+    url: https://doi.org/10.1016/j.cageo.2004.05.006
+    licence:
+      licence_id: publisher-copyright
+      terms_url: null
+      checked_at: '2026-11-03'
+      commercial_use: unknown
+      tdm_reserved: null
+      attribution_text: 'Jönsson P., Eklundh L. (2004) TIMESAT, a program for analyzing time-series of satellite sensor data. Computers & Geosciences 30, 833-845. doi:10.1016/j.cageo.2004.05.006'
+      attribution_url: https://doi.org/10.1016/j.cageo.2004.05.006
+      download_date: '2026-11-03'
+      processing_note:
+        en: Estimates and averages are Nekazari calculations based on these data; they are not data published by the sources.
+        es: Las estimaciones y medias son cálculos de Nekazari a partir de estos datos; no son datos publicados por las fuentes.
+      notes: End-of-season rule read in the TIMESAT 2.3 Users Guide (authors, open access); the 2004 paper itself was not read. Cited for a method and a threshold only.

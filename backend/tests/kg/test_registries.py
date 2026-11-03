@@ -488,7 +488,7 @@ def test_loadable_sources_today(reg):
 
 WATER_STRESS_SOURCES = {
     "fao33", "idso1982", "egea2017", "berni2009", "gonzalezdugo2014", "gonzalezdugo2019", "bellvert2015",
-    "sanchezpinero2022", "gonzalezdugozarcotejada2022",
+    "sanchezpinero2022", "gonzalezdugozarcotejada2022", "fao66", "timesat",
 }
 
 

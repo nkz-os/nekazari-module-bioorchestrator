@@ -11,7 +11,11 @@
 # Serving: only rows with evidence primary_read AND a non-null upper are served. Rows without an
 # upper limit, and secondary rows, are kept as data but are not served (no CWSI without an upper limit).
 #
-# Licences: FAO papers (fao33) are used with commercial_use unknown, pending the FAO reply.
+# `post_maturity` (under stages) is a reserved key, not a stage_detection name: grain cereals after
+# physiological maturity, set from the NDVI end-of-season rule in `senescence` (gated by gate_stage so
+# the rule cannot fire before heading/silking), never from GDD alone. No stage_detection value is changed.
+#
+# Licences: FAO papers (fao33, fao66) are used with commercial_use unknown, pending the FAO reply.
 # Other journal sources are registered with commercial_use unknown (numbers and citations only).
 #
 # Stage names are those of stage_detection in phenology_sources.yaml.
@@ -54,7 +58,18 @@ species:
         source_id: idso1982
         ref: "Table I p.62"
         assumption: "durum wheat (cv. Produra) baselines applied to soft wheat"
-    stages: {}
+    stages:
+      post_maturity:
+        water_sensitive: false
+        rdi_tolerant: false
+        source_ids: [fao66]
+        ref: "FAO-66 p.7: stress in ripening has limited yield impact; post-maturity confirmed by NDVI end of season (TIMESAT rule), never by GDD alone"
+    senescence:
+      method: timesat_amplitude
+      end_fraction: 0.20
+      gate_stage: heading
+      source_id: timesat
+      ref: "TIMESAT 2.3 Users Guide: end of season when the fitted curve falls to base + 20 % of amplitude after the peak"
   durum_wheat:
     baselines:
       - id: idso1982-durum-pre-heading
@@ -81,7 +96,18 @@ species:
         evidence: primary_read
         source_id: idso1982
         ref: "Table I p.62"
-    stages: {}
+    stages:
+      post_maturity:
+        water_sensitive: false
+        rdi_tolerant: false
+        source_ids: [fao66]
+        ref: "FAO-66 p.7: stress in ripening has limited yield impact; post-maturity confirmed by NDVI end of season (TIMESAT rule), never by GDD alone"
+    senescence:
+      method: timesat_amplitude
+      end_fraction: 0.20
+      gate_stage: heading
+      source_id: timesat
+      ref: "TIMESAT 2.3 Users Guide: end of season when the fitted curve falls to base + 20 % of amplitude after the peak"
   barley:
     baselines:
       - id: idso1982-barley-pre-heading
@@ -108,7 +134,18 @@ species:
         evidence: primary_read
         source_id: idso1982
         ref: "Table I p.62"
-    stages: {}
+    stages:
+      post_maturity:
+        water_sensitive: false
+        rdi_tolerant: false
+        source_ids: [fao66]
+        ref: "FAO-66 p.7: stress in ripening has limited yield impact; post-maturity confirmed by NDVI end of season (TIMESAT rule), never by GDD alone"
+    senescence:
+      method: timesat_amplitude
+      end_fraction: 0.20
+      gate_stage: heading
+      source_id: timesat
+      ref: "TIMESAT 2.3 Users Guide: end of season when the fitted curve falls to base + 20 % of amplitude after the peak"
   maize:
     baselines:
       - id: idso1982-maize-no-tassels
@@ -123,7 +160,46 @@ species:
         evidence: primary_read
         source_id: idso1982
         ref: "Table I p.62"
-    stages: {}
+    stages:
+      post_maturity:
+        water_sensitive: false
+        rdi_tolerant: false
+        source_ids: [fao66]
+        ref: "FAO-66 p.7: stress in ripening has limited yield impact; post-maturity confirmed by NDVI end of season (TIMESAT rule), never by GDD alone"
+    senescence:
+      method: timesat_amplitude
+      end_fraction: 0.20
+      gate_stage: silking
+      source_id: timesat
+      ref: "TIMESAT 2.3 Users Guide: end of season when the fitted curve falls to base + 20 % of amplitude after the peak"
+  oat:
+    baselines: []
+    stages:
+      post_maturity:
+        water_sensitive: false
+        rdi_tolerant: false
+        source_ids: [fao66]
+        ref: "FAO-66 p.7: stress in ripening has limited yield impact; post-maturity confirmed by NDVI end of season (TIMESAT rule), never by GDD alone"
+    senescence:
+      method: timesat_amplitude
+      end_fraction: 0.20
+      gate_stage: heading
+      source_id: timesat
+      ref: "TIMESAT 2.3 Users Guide: end of season when the fitted curve falls to base + 20 % of amplitude after the peak"
+  rye:
+    baselines: []
+    stages:
+      post_maturity:
+        water_sensitive: false
+        rdi_tolerant: false
+        source_ids: [fao66]
+        ref: "FAO-66 p.7: stress in ripening has limited yield impact; post-maturity confirmed by NDVI end of season (TIMESAT rule), never by GDD alone"
+    senescence:
+      method: timesat_amplitude
+      end_fraction: 0.20
+      gate_stage: heading
+      source_id: timesat
+      ref: "TIMESAT 2.3 Users Guide: end of season when the fitted curve falls to base + 20 % of amplitude after the peak"
   alfalfa:
     baselines:
       - id: idso1982-alfalfa

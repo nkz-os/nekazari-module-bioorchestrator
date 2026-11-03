@@ -14,7 +14,7 @@ DATA = Path(__file__).resolve().parents[1] / "data"
 PATH = DATA / "water_stress_reference.yaml"
 DOC = load(PATH)
 KNOWN = {"idso1982": "unknown", "egea2017": "unknown", "bellvert2015": "unknown",
-         "sanchezpinero2022": "unknown", "fao33": "unknown", "allowed1": "allowed"}
+         "sanchezpinero2022": "unknown", "fao33": "unknown", "fao66": "unknown", "timesat": "unknown", "allowed1": "allowed"}
 
 
 def _real_known():
@@ -47,7 +47,7 @@ def test_real_file_species_and_stages_exist():
     for slug, block in DOC["species"].items():
         assert resolve_species(slug) == slug
         names = set(detection.get(slug, {}).get("stages", {}))
-        used = set(block.get("stages") or {})
+        used = set(block.get("stages") or {}) - {"post_maturity"}  # reserved key
         for b in block["baselines"]:
             used |= set(b["stages"] or [])
         assert used <= names, (slug, used - names)
@@ -177,7 +177,7 @@ def test_soft_wheat_marked_assumption():
 
 def test_payload_shape_camel_case():
     p = species_payload(DOC, "olive")
-    assert set(p) == {"baselines", "stages", "sourceIds"}
+    assert set(p) == {"baselines", "stages", "sourceIds", "citations"}
     b = p["baselines"][0]
     assert {"id", "a0C", "a1CPerKpa", "upper", "valid", "evidence", "sourceId", "ref"} <= set(b)
     assert b["upper"] == {"form": "constant", "valueC": 5.0}
@@ -238,3 +238,91 @@ def test_olive_rows_cultivar_null_with_assumption_and_season():
         if b["source_id"] == "egea2017":
             assert b["cultivar"] is None and "Arbequina" in b["assumption"]
             assert "DOY 167-275" in b["ref"]
+
+
+# --- post-maturity flag, senescence rule, citations ---------------------------------------
+
+CEREALS = ("wheat", "durum_wheat", "barley", "oat", "rye", "maize")
+
+
+def _cereal():
+    return {"dataset_version": "t", "species": {"wheat": {"baselines": [], "stages": {
+        "post_maturity": {"water_sensitive": False, "rdi_tolerant": False,
+                          "source_ids": ["fao66"], "ref": "r"}},
+        "senescence": {"method": "timesat_amplitude", "end_fraction": 0.20,
+                       "gate_stage": "heading", "source_id": "timesat", "ref": "r"}}}}
+
+
+def test_post_maturity_flag_for_cereals():
+    detection = yaml.safe_load((DATA / "phenology_sources.yaml").read_text(encoding="utf-8"))["stage_detection"]
+    for slug in CEREALS:
+        block = DOC["species"][slug]
+        pm = block["stages"]["post_maturity"]
+        assert pm["water_sensitive"] is False and pm["rdi_tolerant"] is False
+        assert pm["source_ids"] == ["fao66"] and "FAO-66 p.7" in pm["ref"]
+        sen = block["senescence"]
+        assert sen["method"] == "timesat_amplitude" and sen["end_fraction"] == 0.20
+        assert sen["source_id"] == "timesat" and "TIMESAT 2.3" in sen["ref"]
+        assert sen["gate_stage"] == ("silking" if slug == "maize" else "heading")
+        assert sen["gate_stage"] in detection[slug]["stages"]
+        assert "post_maturity" not in detection[slug]["stages"]
+        p = species_payload(DOC, slug)
+        assert p["stages"]["post_maturity"]["waterSensitive"] is False
+        assert p["senescence"] == {"method": "timesat_amplitude", "endFraction": 0.20,
+                                   "gateStage": sen["gate_stage"], "sourceId": "timesat",
+                                   "ref": sen["ref"]}
+
+
+def test_validator_accepts_post_maturity_and_senescence():
+    assert _errors(_cereal()) == []
+
+
+@pytest.mark.parametrize("change", [
+    {"end_fraction": 0}, {"end_fraction": 1}, {"end_fraction": 1.5}, {"end_fraction": True},
+    {"end_fraction": "0.2"}, {"gate_stage": "nope"}, {"source_id": "unregistered"},
+    {"source_id": None}, {"method": "other"}, {"ref": ""}])
+def test_validator_rejects_bad_senescence(change):
+    d = _cereal()
+    d["species"]["wheat"]["senescence"].update(change)
+    assert _errors_detect(d)
+
+
+def _errors_detect(doc):
+    detection = yaml.safe_load((DATA / "phenology_sources.yaml").read_text(encoding="utf-8"))["stage_detection"]
+    return validate(doc, KNOWN, detection)
+
+
+def test_validator_gate_stage_checked_against_species_stages():
+    d = _cereal()
+    assert _errors_detect(d) == []
+    d["species"]["wheat"]["senescence"]["gate_stage"] = "silking"
+    assert any("gate_stage" in e for e in _errors_detect(d))
+
+
+def test_real_file_validates_with_stage_detection():
+    detection = yaml.safe_load((DATA / "phenology_sources.yaml").read_text(encoding="utf-8"))["stage_detection"]
+    assert validate(DOC, _real_known(), detection) == []
+
+
+def test_payload_has_citations_for_all_source_ids():
+    for slug in ("wheat", "olive", "maize"):
+        p = species_payload(DOC, slug)
+        assert [c["sourceId"] for c in p["citations"]] == p["sourceIds"]
+        for c in p["citations"]:
+            assert c["text"] and c["url"].startswith("https://")
+    ids = species_payload(DOC, "wheat")["sourceIds"]
+    assert set(ids) == {"fao66", "timesat"}
+    # unknown-licence sources are cited too
+    assert _real_known()["fao66"] == "unknown"
+
+
+def test_registry_has_fao66_and_timesat():
+    import json
+    reg = {s.source_id: s for s in load_registries(DEFAULT_REGISTRIES_PATH).sources}
+    legacy = {s["source_id"]: s for s in json.loads((DATA / "sources_registry.json").read_text(encoding="utf-8"))}
+    for sid in ("fao66", "timesat"):
+        assert sid in reg and sid in legacy
+        assert reg[sid].licence.commercial_use == "unknown"
+        assert legacy[sid]["attribution_text"] == reg[sid].licence.attribution_text
+    assert "10.1016/j.cageo.2004.05.006" in legacy["timesat"]["attribution_text"]
+    assert "FAO licence request pending" in reg["fao66"].licence.notes

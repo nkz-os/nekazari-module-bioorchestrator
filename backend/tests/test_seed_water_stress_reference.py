@@ -37,6 +37,7 @@ def test_build_rows_keeps_unserved_rows():
 
 def _cli(monkeypatch, tmp_path, doc, extra=()):
     (tmp_path / "water_stress_reference.yaml").write_text(yaml.safe_dump(doc))
+    (tmp_path / "phenology_sources.yaml").write_text((DATA / "phenology_sources.yaml").read_text())
     monkeypatch.setattr(sys, "argv", ["seed", "--data-dir", str(tmp_path), *extra])
     seed.main()
 

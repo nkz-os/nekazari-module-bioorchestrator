@@ -6,7 +6,9 @@ an upper limit no CWSI can be computed. Other rows stay in the file as data but 
 """
 from __future__ import annotations
 
+import logging
 import math
+from collections.abc import Callable, Mapping
 from pathlib import Path
 
 import yaml
@@ -17,6 +19,11 @@ EVIDENCE = frozenset({"primary_read", "secondary"})
 ACCEPTED_USE = frozenset({"allowed", "permission_granted", "unknown"})
 A0_RANGE = (-10.0, 15.0)
 A1_RANGE = (-5.0, 1.0)
+# `post_maturity` is a reserved key under `stages`: it is not a stage_detection name.
+RESERVED_STAGES = frozenset({"post_maturity"})
+SENESCENCE_METHODS = frozenset({"timesat_amplitude"})
+
+logger = logging.getLogger(__name__)
 
 
 def load(path: Path) -> dict:
@@ -120,8 +127,32 @@ def _check_stage(where: str, flags: object, known: dict[str, str], errors: list[
         errors.append(f"{where}: water_sensitive false needs a source")
 
 
-def validate(doc: dict, known_sources: dict[str, str]) -> list[str]:
-    """Return the errors of the document. `known_sources` maps source_id to commercial_use."""
+def _check_senescence(where: str, sen: object, known: dict[str, str],
+                      stage_names: set[str] | None, errors: list[str]) -> None:
+    if not isinstance(sen, dict):
+        errors.append(f"{where}: must be a mapping")
+        return
+    if sen.get("method") not in SENESCENCE_METHODS:
+        errors.append(f"{where}.method: must be one of {sorted(SENESCENCE_METHODS)}")
+    if not _num(sen.get("end_fraction"), 0.0, 1.0) or sen["end_fraction"] in (0, 1):
+        errors.append(f"{where}.end_fraction: must be a number with 0 < value < 1")
+    gate = sen.get("gate_stage")
+    if not isinstance(gate, str) or not gate:
+        errors.append(f"{where}.gate_stage: missing")
+    elif stage_names is not None and gate not in stage_names:
+        errors.append(f"{where}.gate_stage: {gate!r} is not a stage of the species")
+    _check_source(where, sen.get("source_id"), known, errors)
+    if not sen.get("ref"):
+        errors.append(f"{where}.ref: missing")
+
+
+def validate(doc: dict, known_sources: dict[str, str],
+             stage_detection: Mapping[str, Mapping] | None = None) -> list[str]:
+    """Return the errors of the document. `known_sources` maps source_id to commercial_use.
+
+    `stage_detection` (slug -> block with `stages`) enables the check that a senescence
+    `gate_stage` is a stage name of the species; without it that check is skipped.
+    """
     errors: list[str] = []
     species = doc.get("species") if isinstance(doc, dict) else None
     if not isinstance(species, dict) or not species:
@@ -135,6 +166,11 @@ def validate(doc: dict, known_sources: dict[str, str]) -> list[str]:
             _check_baseline(slug, b, known_sources, seen, errors)
         for name, flags in (block.get("stages") or {}).items():
             _check_stage(f"{slug}.stages.{name}", flags, known_sources, errors)
+        if block.get("senescence") is not None:
+            names = None
+            if stage_detection is not None:
+                names = set((stage_detection.get(slug) or {}).get("stages") or {})
+            _check_senescence(f"{slug}.senescence", block["senescence"], known_sources, names, errors)
     return errors
 
 
@@ -159,11 +195,28 @@ def _baseline_payload(b: dict) -> dict:
     })
 
 
-def species_payload(doc: dict, slug: str) -> dict | None:
+def _registry_citation(source_id: str) -> dict | None:
+    from app.common.source_registry import get_source
+
+    try:
+        src = get_source(source_id)
+    except KeyError:
+        return None
+    text = src.get("attribution_text") or (src.get("attribution") or {}).get("en")
+    url = src.get("attribution_url") or src.get("url")
+    if not text:
+        return None
+    return {"sourceId": source_id, "text": text, "url": url}
+
+
+def species_payload(doc: dict, slug: str,
+                    citation_lookup: Callable[[str], dict | None] = _registry_citation) -> dict | None:
     """API payload for a species, or None when nothing is served for it.
 
     Served: baselines read in their primary source that carry an upper limit. Secondary rows and
     rows without an upper limit stay in the file but are not served.
+    `citations` lists every source id of the payload from the registry's attribution text, whatever
+    its commercial_use: citing is always allowed (the licence attribution list skips unknown ones).
     """
     block = (doc.get("species") or {}).get(slug)
     if not isinstance(block, dict):
@@ -175,9 +228,25 @@ def species_payload(doc: dict, slug: str) -> dict | None:
                "sourceIds": list(f["source_ids"]), "ref": f["ref"]}
         for name, f in (block.get("stages") or {}).items()
     }
-    if not baselines and not stages:
+    sen = block.get("senescence")
+    senescence = None if not isinstance(sen, dict) else {
+        "method": sen["method"], "endFraction": sen["end_fraction"], "gateStage": sen["gate_stage"],
+        "sourceId": sen["source_id"], "ref": sen["ref"]}
+    if not baselines and not stages and senescence is None:
         return None
     ids = {b["sourceId"] for b in baselines}
     for f in stages.values():
         ids.update(f["sourceIds"])
-    return {"baselines": baselines, "stages": stages, "sourceIds": sorted(ids)}
+    if senescence is not None:
+        ids.add(senescence["sourceId"])
+    citations = []
+    for sid in sorted(ids):
+        cite = citation_lookup(sid)
+        if cite is None:
+            logger.warning("water stress reference: no citation for source %s", sid)
+        else:
+            citations.append(cite)
+    out = {"baselines": baselines, "stages": stages, "sourceIds": sorted(ids), "citations": citations}
+    if senescence is not None:
+        out["senescence"] = senescence
+    return out

@@ -13,6 +13,8 @@ import os
 import sys
 from pathlib import Path
 
+import yaml
+
 from neo4j import GraphDatabase
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
@@ -38,6 +40,9 @@ def _source_ids(block: dict) -> list[str]:
             ids.add(b["source_id"])
     for f in (block.get("stages") or {}).values():
         ids.update(f.get("source_ids") or [])
+    sen = block.get("senescence")
+    if isinstance(sen, dict) and sen.get("source_id"):
+        ids.add(sen["source_id"])
     return sorted(ids)
 
 
@@ -78,7 +83,9 @@ def main() -> None:
     args = parser.parse_args()
 
     doc = load(args.data_dir / "water_stress_reference.yaml")
-    errors = validate(doc, known_sources())
+    detection = yaml.safe_load(
+        (args.data_dir / "phenology_sources.yaml").read_text(encoding="utf-8"))["stage_detection"]
+    errors = validate(doc, known_sources(), detection)
     if errors:
         for e in errors:
             print(f"[seed_water_stress] ERROR {e}")
