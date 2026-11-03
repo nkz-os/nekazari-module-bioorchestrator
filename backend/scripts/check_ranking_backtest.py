@@ -68,7 +68,10 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--out", type=Path, default=None, help="directory for <prefix>.json and <prefix>.md")
     parser.add_argument("--prefix", default="ranking-backtest")
     parser.add_argument("--gate", action="store_true", help="exit 1/2 on the ASSUMPTION thresholds")
-    return parser.parse_args(argv)
+    args = parser.parse_args(argv)
+    if not args.tiers:
+        parser.error("--tiers needs at least one tier")
+    return args
 
 
 def stats_functions(table_fn: Callable, *, test_year: int) -> tuple[Callable, Callable]:
@@ -84,12 +87,15 @@ def cells_for_group(rows: list[dict], *, crop: str, zone: str, regime: str, tier
                     table_fn: Callable, seed: int, truncated: bool, min_train_years: int = rb.MIN_TRAIN_YEARS,
                     min_test_envs: int = rb.MIN_TEST_ENVIRONMENTS) -> list[dict]:
     cells = []
-    for test_year in rb.test_years_for(rows, first=first, last=last, min_train_years=min_train_years):
+    for test_year in rb.eligible_test_years(rows, first=first, last=last, min_train_years=min_train_years):
         main_fn, flat_fn = stats_functions(table_fn, test_year=test_year)
         cells.append(rb.evaluate_cell(rows, test_year=test_year, stats_fn=main_fn, flat_fn=flat_fn,
                                       recent_fn=flat_fn, seed=seed, min_test_environments=min_test_envs,
                                       crop=crop, zone=zone, regime=regime, tier=tier, truncated=truncated))
-    return cells
+    for test_year in rb.years_lacking_history(rows, first=first, last=last, min_train_years=min_train_years):
+        cells.append({"status": "skipped", "reason": "train_years", "test_year": test_year,
+                      "crop": crop, "zone": zone, "regime": regime, "tier": tier, "truncated": truncated})
+    return sorted(cells, key=lambda c: c["test_year"])
 
 
 def regional_groups(sites: list[dict], *, country: str) -> list[str]:
@@ -111,6 +117,16 @@ def exit_code(verdict: dict[str, str], *, gate: bool) -> int:
     return EXIT_OK
 
 
+def gate_exit(reports: dict[str, dict], *, gate: bool) -> int:
+    """Exit code of the run: the gate reads the production default tier (field) and nothing else."""
+    if not gate:
+        return EXIT_OK
+    if "field" not in reports:
+        print("gate needs the field tier (not in --tiers): not measurable")
+        return EXIT_NOT_MEASURABLE
+    return exit_code(reports["field"]["verdict"], gate=True)
+
+
 async def zones(dao) -> list[str]:
     async with dao._driver.session() as session:
         result = await session.run(ZONES_QUERY)
@@ -121,7 +137,11 @@ async def group_rows(dao, *, crop: str, zone: str, regime: str, tier: str,
                      management: str) -> tuple[list[dict], bool, int]:
     """Rows the way ``load_crop_evidence`` fetches them. Field tier: the field sites of the climate
     class (``evidence_sites``, Köppen path). Regional tier: ``zone`` is one aggregate pseudo-site and
-    the rows are its own means (the parcel's zone pool of production, without the fallback pool)."""
+    the rows are its own means (the parcel's zone pool of production, without the fallback pool).
+
+    ASSUMPTION: the field-tier site set ignores ``soil_type`` (``soil_type=None`` below), while
+    production filters the sites by the parcel's soil, so the harness set is wider than any parcel's.
+    """
     if tier == "regional":
         names = [zone]
     else:
@@ -206,9 +226,8 @@ async def main() -> int:
         write_report(report, args.out, f"{args.prefix}-{tier}")
         print(json.dumps({"tier": tier, "summary": report["summary"], "verdict": report["verdict"]},
                          indent=1, default=str))
-    # The gate reads the production default tier (field); the other tiers are measured, not gated.
-    gated = reports.get("field") or next(iter(reports.values()))
-    return exit_code(gated["verdict"], gate=args.gate)
+    # The other tiers are measured, not gated.
+    return gate_exit(reports, gate=args.gate)
 
 
 if __name__ == "__main__":

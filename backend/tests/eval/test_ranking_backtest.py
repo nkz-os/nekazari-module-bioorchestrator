@@ -191,6 +191,31 @@ def test_aggregate_by_crop_reports_median_positive_share_worst_and_skips():
     assert agg["measurable"] is False  # fewer than MIN_FOLDS valid cells
 
 
+def test_truncated_cells_stay_out_of_the_aggregates_and_are_counted():
+    ok = {"crop": "TRZAX", "status": "ok", "spearman": 0.5, "top3_utility_pct": 104.0, "coverage_pct": 80.0,
+          "baselines": {"random": 100.0, "last_year": 101.0, "flat": 103.0}}
+    cells = [ok, {**ok, "spearman": -0.9, "truncated": True},
+             {"crop": "TRZAX", "status": "skipped", "reason": "common_varieties", "truncated": True}]
+    agg = rb.aggregate_by_crop(cells)["TRZAX"]
+    assert agg["n_truncated"] == 2 and agg["n_cells"] == 1 and agg["skipped"] == {}
+    assert agg["spearman_worst"] == pytest.approx(0.5)
+
+
+def test_untruncated_crop_reports_zero_truncated():
+    cells = [{"crop": "X", "status": "ok", "spearman": 0.1, "baselines": {}}]
+    assert rb.aggregate_by_crop(cells)["X"]["n_truncated"] == 0
+
+
+def test_only_scored_cells_are_measurable():
+    cells = [{"crop": "X", "status": "ok", "spearman": 0.2, "baselines": {}} for _ in range(rb.MIN_FOLDS - 1)]
+    cells += [{"crop": "X", "status": "ok", "spearman": None, "baselines": {}} for _ in range(5)]
+    agg = rb.aggregate_by_crop(cells)["X"]
+    assert agg["n_cells"] == rb.MIN_FOLDS - 1 and agg["measurable"] is False
+    cells.append({"crop": "X", "status": "ok", "spearman": 0.1, "baselines": {}})
+    agg = rb.aggregate_by_crop(cells)["X"]
+    assert agg["n_cells"] == rb.MIN_FOLDS and agg["measurable"] is True
+
+
 # --- test years, gate verdict, report ---------------------------------------
 
 def test_test_years_need_enough_earlier_years_with_data():
@@ -198,7 +223,7 @@ def test_test_years_need_enough_earlier_years_with_data():
     for year in (2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017):
         rows += _env("A", year, _flat(["V1", "V2", "V3"]))
     # 2015: five earlier years (2010-2014) → in; 2014: four earlier → out; 2018: no rows → out
-    assert rb.test_years_for(rows, first=2014, last=2018) == [2015, 2016, 2017]
+    assert rb.eligible_test_years(rows, first=2014, last=2018) == [2015, 2016, 2017]
 
 
 def _agg(**over):
@@ -210,17 +235,19 @@ def _agg(**over):
     return {**base, **over}
 
 
-def test_gate_verdict_passes_fails_and_declares_not_measurable():
-    summary = {"TRZAX": _agg(), "HORVX": _agg(spearman_median=0.1), "TRZDU": _agg(n_cells=3, measurable=False),
-               "ZEAMX": _agg(top3_utility_median_pct=100.5), "BRSNN": _agg(coverage_mean_pct=95.0)}
-    verdict = rb.gate_verdict(summary)
-    assert verdict == {"TRZAX": "pass", "HORVX": "fail", "TRZDU": "not_measurable",
-                       "ZEAMX": "fail", "BRSNN": "fail"}
+def test_gate_reads_only_the_paired_deltas_beat_random_and_do_not_lose_to_last_year():
+    summary = {"TRZAX": _agg(spearman_median=0.05, coverage_mean_pct=20.0, top3_utility_median_pct=99.0),  # report-only metrics ignored
+               "HORVX": _agg(delta_median={"random": -0.5, "last_year": 3.0, "flat": 0.0, "recent_only": 0.0}),
+               "TRZDU": _agg(n_cells=3, measurable=False),
+               "ZEAMX": _agg(delta_median={"random": 2.0, "last_year": -0.1, "flat": 0.0, "recent_only": 0.0}),
+               "BRSNN": _agg(delta_median={"random": 2.0, "last_year": 0.0, "flat": 0.0, "recent_only": 0.0})}
+    assert rb.gate_verdict(summary) == {"TRZAX": "pass", "HORVX": "fail", "TRZDU": "not_measurable",
+                                        "ZEAMX": "fail", "BRSNN": "pass"}
 
 
-def test_gate_verdict_requires_beating_random_and_last_year_in_the_paired_cells():
-    verdict = rb.gate_verdict({"TRZAX": _agg(delta_median={"random": 4.0, "last_year": -1.0, "flat": 1.0})})
-    assert verdict["TRZAX"] == "fail"
+def test_gate_is_not_measurable_without_paired_cells_for_a_rival():
+    verdict = rb.gate_verdict({"TRZAX": _agg(delta_n={"random": 40, "last_year": 0, "flat": 40, "recent_only": 40})})
+    assert verdict["TRZAX"] == "not_measurable"
 
 
 def test_render_markdown_lists_every_cell_not_only_the_medians():
