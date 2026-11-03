@@ -139,11 +139,21 @@ SOURCE_ID = "eurostat_apro_cpshr"
 NUTS_VERSION_NOTE = "as published by Eurostat (version not stated; codes of several NUTS versions)"
 
 
-def request_url(crop_codes: list[str]) -> str:
-    """API request for every NUTS 2 region, the given crops, and area/production/humidity."""
+GEO_LEVELS = ("nuts2", "country")
+
+
+def nuts_level(geo: str) -> int:
+    """0 for a two-letter country code (e.g. "ES"), 2 for anything else (a NUTS 2 region)."""
+    return 0 if len(geo) == 2 else 2
+
+
+def request_url(crop_codes: list[str], level: str = "nuts2") -> str:
+    """API request for every NUTS 2 region (or country), the given crops, and area/production/humidity."""
     if not crop_codes:
         raise ValueError("no crop codes")
-    params = [("format", "JSON"), ("lang", "EN"), ("geoLevel", "nuts2")]
+    if level not in GEO_LEVELS:
+        raise ValueError(f"unknown geo level {level!r}")
+    params = [("format", "JSON"), ("lang", "EN"), ("geoLevel", level)]
     params += [("crops", c) for c in sorted(crop_codes)]
     params += [("strucpro", s) for s in (AREA, PRODUCTION, HUMIDITY)]
     return f"{API_URL}?{urlencode(params)}"
@@ -157,7 +167,7 @@ def to_node_props(row: YieldRow, *, dataset_updated: str | None, extracted_at: s
         "dataset": DATASET,
         "sourceId": SOURCE_ID,
         "nuts": row.nuts,
-        "nutsLevel": 2,
+        "nutsLevel": nuts_level(row.nuts),
         "nutsVersion": nuts_version,
         "eurostatCrop": row.eurostat_crop,
         "eppo": row.eppo,

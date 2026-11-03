@@ -36,10 +36,12 @@ MERGE = "UNWIND $rows AS row MERGE (n:RegionalYieldStat {key: row.key}) SET n = 
 BATCH = 1000
 
 
-def latest_snapshot(directory: Path) -> Path:
-    found = sorted(directory.glob("apro_cpshr_nuts2_*.json.gz"))
+def latest_snapshot(directory: Path, level: str = "nuts2", required: bool = True) -> Path | None:
+    found = sorted(directory.glob(f"apro_cpshr_{level}_*.json.gz"))
     if not found:
-        raise SystemExit(f"no snapshot in {directory}")
+        if required:
+            raise SystemExit(f"no {level} snapshot in {directory}")
+        return None
     return found[-1]
 
 
@@ -59,14 +61,18 @@ def main() -> None:
     parser.add_argument("--execute", action="store_true", help="write (default: dry run)")
     args = parser.parse_args()
 
-    path = latest_snapshot(args.data_dir / "eurostat")
-    with gzip.open(path, "rt", encoding="utf-8") as f:
-        snapshot = json.load(f)
     crop_map = yaml.safe_load((args.data_dir / "eurostat" / "crop_codes.yaml").read_text())["crops"]
-    rows = build_rows(snapshot, crop_map)
-    per_crop = Counter(r["eppo"] for r in rows)
-    print(f"[seed_regional_yields] {path.name}: {len(rows)} rows, "
-          f"{len({r['nuts'] for r in rows})} regions, per crop {dict(sorted(per_crop.items()))}")
+    # NUTS 2 snapshot is required; the country snapshot is optional (older data dirs lack it).
+    paths = [latest_snapshot(args.data_dir / "eurostat", "nuts2"),
+             latest_snapshot(args.data_dir / "eurostat", "country", required=False)]
+    rows: list[dict] = []
+    for path in (p for p in paths if p is not None):
+        with gzip.open(path, "rt", encoding="utf-8") as f:
+            part = build_rows(json.load(f), crop_map)
+        rows.extend(part)
+        per_crop = Counter(r["eppo"] for r in part)
+        print(f"[seed_regional_yields] {path.name}: {len(part)} rows, "
+              f"{len({r['nuts'] for r in part})} regions, per crop {dict(sorted(per_crop.items()))}")
     if not args.execute:
         print("[seed_regional_yields] dry run, nothing written (use --execute)")
         return
