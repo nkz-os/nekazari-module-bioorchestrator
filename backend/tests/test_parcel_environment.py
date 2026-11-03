@@ -370,3 +370,18 @@ async def test_country_from_centroid(lon, lat, iso2):
 async def test_country_none_without_location():
     env = await _env_for_parcel({"id": "urn:ngsi-ld:AgriParcel:c1", "type": "AgriParcel"})
     assert env["country"] is None
+
+
+@pytest.mark.parametrize("key", ["irrigationAllotment", "nkz:irrigationAllotment",
+                                 "https://nkz-os.org/ns/irrigationAllotment"])
+@pytest.mark.asyncio
+async def test_irrigation_allotment_is_read_in_its_three_spellings(key):
+    prop = {"type": "Property", "value": 320, "unitCode": "MMT"}
+    env = await _env_for_parcel({"id": "urn:ngsi-ld:AgriParcel:c1", "type": "AgriParcel", key: prop})
+    assert env["irrigation_allotment_raw"] == prop
+
+
+@pytest.mark.asyncio
+async def test_no_allotment_is_none():
+    env = await _env_for_parcel({"id": "urn:ngsi-ld:AgriParcel:c1", "type": "AgriParcel"})
+    assert env["irrigation_allotment_raw"] is None

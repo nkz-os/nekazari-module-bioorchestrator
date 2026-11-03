@@ -1,15 +1,20 @@
 // src/planning/ParcelDetail.tsx
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useTranslation } from '@nekazari/sdk';
 import { Badge, Button, FormField, Inline, Select, Stack } from '@nekazari/ui-kit';
 import { ArrowLeft } from 'lucide-react';
-import { fetchFit } from './api';
+import AllotmentField from './AllotmentField';
+import { fetchFit, saveParcelAllotment } from './api';
 import { cropName, safeLang, shortId } from './format';
+import { armOneShotRefetch, irrigatedParcel, isPending } from './irrigationNeed';
 import { lockMessage, lockReason, previousMain, simulationAvailable } from './matrixModel';
 import { CycleLine } from './PlanMatrix';
 import type { Management, ParcelRow, Regime } from './types';
 import { useLoad } from './useLoad';
 import PlanWizard from './wizard/PlanWizard';
+
+/** One automatic refetch of the fit while the irrigation need is still being computed. */
+export const IRRIGATION_REFETCH_MS = 90_000;
 
 interface Props {
   row: ParcelRow; campaign: number; onClose: () => void; onSaved: () => void; onSimulate?: () => void; onForecast?: () => void;
@@ -27,6 +32,25 @@ export default function ParcelDetail({ row, campaign, onClose, onSaved, onSimula
   const targetCells = row.cells[String(campaign)] ?? [];
 
   const fit = useLoad((s) => fetchFit(row.parcel_id, campaign, regime, s), [row.parcel_id, campaign, regime]);
+  // The allotment just saved shows at once; the fit read that follows confirms it.
+  const [savedAllotment, setSavedAllotment] = useState<{ key: string; mm: number | null } | null>(null);
+  const allotmentKey = `${row.parcel_id}|${campaign}|${regime}`;
+  const stored = savedAllotment?.key === allotmentKey ? savedAllotment.mm : fit.data?.facts.irrigation_allotment_mm ?? null;
+  const saveAllotment = async (mm: number | null) => {
+    await saveParcelAllotment(row.parcel_id, mm);
+    setSavedAllotment({ key: allotmentKey, mm });
+    fit.retry();
+  };
+
+  // The need is computed in the background: ask once more after 90 s, never more, and not after leaving.
+  const pending = irrigatedParcel(fit.data?.facts?.regime) && !!fit.data?.species.some(isPending);
+  const refetched = useRef<string | null>(null);
+  const retryFit = useRef(fit.retry);
+  retryFit.current = fit.retry;
+  useEffect(() => {
+    if (!pending) return undefined;
+    return armOneShotRefetch(refetched, allotmentKey, IRRIGATION_REFETCH_MS, () => retryFit.current());
+  }, [pending, allotmentKey]);
   const prev = previousMain(row, campaign);
   // A deep link can open a parcel the matrix would not let you plan; the evidence stays, the wizard does not.
   const locked = lockReason(row, campaign);
@@ -89,6 +113,8 @@ export default function ParcelDetail({ row, campaign, onClose, onSaved, onSimula
           <Button size="sm" variant="ghost" onClick={() => setEditing(true)}>{t('planning.wizard.change')}</Button>
         </Inline>
       )}
+
+      {regime === 'irrigated' && <AllotmentField stored={stored} onSave={saveAllotment} />}
 
       {blocked ? (
         <Inline gap="inline" align="center" wrap>

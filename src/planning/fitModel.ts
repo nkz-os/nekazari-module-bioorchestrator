@@ -2,7 +2,7 @@ import { cropName, monthName, safeLang } from './format';
 import type { Names, ParamValue, Reason, Sowing, SpeciesFit, TFn, Verdict } from './types';
 
 const BLOCKERS = new Set(['soil_unsuitable', 'soil_ph_unsuitable', 'soil_texture_unsuitable', 'soil_drainage_unsuitable', 'frost_risk']);
-const INFORMATIVE = new Set(['rotation_benefit', 'multi_year']);
+const INFORMATIVE = new Set(['rotation_benefit', 'multi_year', 'irrigation_need_tight']);
 
 /**
  * Every reason i18n key the backend can produce (contract 1.0). The locale check arrives with Task 10
@@ -14,6 +14,7 @@ export const REASON_KEYS = [
   'soil_unknown_not_comparable', 'frost_risk', 'frost_unknown_no_climate', 'frost_unknown_no_tolerance',
   'frost_unknown_season_unknown', 'water_deficit_high', 'water_unknown', 'rotation_restriction', 'rotation_benefit',
   'rotation_unknown', 'regime_missing', 'multi_year', 'climate_unknown',
+  'irrigation_need_exceeds_allotment', 'irrigation_need_tight',
 ] as const;
 
 export function groupFit(species: SpeciesFit[], lang: string): Record<Verdict, SpeciesFit[]> {

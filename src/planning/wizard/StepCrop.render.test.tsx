@@ -5,7 +5,7 @@ vi.mock('@nekazari/sdk', async () => {
   const { esT } = await import('../testI18n');
   return { useTranslation: () => ({ t: esT, i18n: { language: 'es' } }), i18n: {} };
 });
-import StepCrop, { RegionalDetail, cardReasons, mainCrops, matchesCrop, recommendedCrops } from './StepCrop';
+import StepCrop, { IrrigationDetail, RegionalDetail, cardReasons, mainCrops, matchesCrop, recommendedCrops } from './StepCrop';
 import { esT } from '../testI18n';
 import type { FitResponse, RegionalYield, SpeciesFit } from '../types';
 
@@ -19,7 +19,7 @@ const regional = (over: Partial<RegionalYield> = {}): RegionalYield => ({
 const sp = (species: string, verdict: SpeciesFit['verdict']): SpeciesFit => ({ species, eppo: null, names: { es: species },
   lifecycle: 'annual', verdict, reasons: [], sowing: { sowing_type: null, start_month: null, end_month: null, typical_sowing_doy: null, source: null },
   has_variety_trials: false, estimate_providers: [] });
-const FIT = { contract_version: '2.3', parcel_id: 'p', campaign: 2027, graphs: [], facts: {} as FitResponse['facts'],
+const FIT = { contract_version: '2.4', parcel_id: 'p', campaign: 2027, graphs: [], facts: {} as FitResponse['facts'],
   species: [sp('wheat', 'fits'), sp('barley', 'caveats'), sp('rice', 'no_fit'), ...['a', 'b', 'c', 'd', 'e'].map((x) => sp(x, 'fits'))] } as FitResponse;
 
 describe('StepCrop', () => {
@@ -87,5 +87,37 @@ describe('StepCrop', () => {
   it('keeps the order the backend sent, whatever the regional index', () => {
     const species = [0.9, 1.3, 1.1].map((i, k) => ({ ...sp(`c${k}`, 'fits'), regional_yield: regional({ relative_index: i }) }));
     expect(recommendedCrops(species).map((s) => s.species)).toEqual(['c0', 'c1', 'c2']);
+  });
+  describe('irrigation need', () => {
+    const need = { percentiles: { p10: 380, p50: 450, p90: 520 }, unit: 'mm' as const, n_years: 20, first_year: 2005, last_year: 2024, sowing_doy: 110,
+      method: { kc_source: 'fao56', pe_method: 'usda_sc' }, source: 'openmeteo_era5' as const,
+      attributions: [{ source_id: 'openmeteo', text: 'Weather data by Open-Meteo.com', url: 'https://example.org/om', licence_id: 'x', licence_url: 'https://example.org/l' }] };
+    const fitWith = (regime: 'irrigated' | 'rainfed' | null, over: Partial<SpeciesFit>) => ({ ...FIT, facts: { regime } as FitResponse['facts'],
+      species: [{ ...sp('maize', 'fits'), ...over }] }) as FitResponse;
+    const html = (f: FitResponse) => renderToStaticMarkup(<StepCrop fit={f} selected={null} onPick={() => {}} />);
+    it('an irrigated parcel shows the median with the P10-P90 range', () => {
+      expect(html(fitWith('irrigated', { irrigation_need: need }))).toContain('Riego: ~450 mm (380–520) en año medio');
+    });
+    it('a need still being computed says so', () => {
+      expect(html(fitWith('irrigated', { irrigation_need_unavailable: 'pending' }))).toContain('Calculando necesidad de riego…');
+    });
+    it('rainfed or unknown regime shows nothing', () => {
+      for (const regime of ['rainfed', null] as const) {
+        const out = html(fitWith(regime, { irrigation_need: need, irrigation_need_unavailable: 'pending' }));
+        expect(out).not.toContain('Riego:');
+        expect(out).not.toContain('Calculando necesidad');
+      }
+    });
+    it('other unavailable reasons stay out of the card', () => {
+      const out = html(fitWith('irrigated', { irrigation_need_unavailable: 'no_kc' }));
+      expect(out).not.toContain('coeficientes de riego');
+    });
+    it('the detail says the years, the nature of the figure and the sources; or the reason it is missing', () => {
+      const withNeed = renderToStaticMarkup(<IrrigationDetail s={{ ...sp('maize', 'fits'), irrigation_need: need }} lang="es" t={esT} />);
+      expect(withNeed).toContain('2005–2024');
+      expect(withNeed).toContain('Weather data by Open-Meteo.com');
+      const none = renderToStaticMarkup(<IrrigationDetail s={{ ...sp('maize', 'fits'), irrigation_need_unavailable: 'no_kc' }} lang="es" t={esT} />);
+      expect(none).toContain('no tiene coeficientes de riego');
+    });
   });
 });

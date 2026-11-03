@@ -28,7 +28,7 @@ CLIMATE_UNKNOWN = {"code": "climate_unknown", "gate": "data", "params": {}}  # a
 MULTI_YEAR = {"code": "multi_year", "gate": "data", "params": {}}  # a herbaceous perennial occupies several campaigns
 BLOCKERS = frozenset({"soil_unsuitable", "soil_ph_unsuitable", "soil_texture_unsuitable",
                       "soil_drainage_unsuitable", "frost_risk"})
-INFORMATIVE = frozenset({"rotation_benefit", "multi_year"})
+INFORMATIVE = frozenset({"rotation_benefit", "multi_year", "irrigation_need_tight"})
 VERDICT_ORDER = {"fits": 0, "caveats": 1, "no_fit": 2}
 
 
@@ -92,6 +92,22 @@ def water_reasons(regime: str | None, climate: ParcelClimate, season_days: int |
     if deficit >= WATER_HIGH_DEFICIT_MM:
         return [{"code": "water_deficit_high", "gate": "water", "params": {
             "deficit_mm": round(deficit), "season_days_default": use_default}}]
+    return []
+
+
+def allotment_reasons(p50_mm: float | None, p90_mm: float | None, allotment_mm: float | None) -> list[dict]:
+    """Water gate of the declared allotment against the seasonal need. Never a blocker.
+
+    P50 above the allotment: a caveat. Allotment between P50 and P90: informative only ("tight").
+    No allotment or no need: no reason.
+    """
+    if allotment_mm is None or p50_mm is None or p90_mm is None:
+        return []
+    params = {"need_p50_mm": round(p50_mm), "need_p90_mm": round(p90_mm), "allotment_mm": round(allotment_mm)}
+    if p50_mm > allotment_mm:
+        return [{"code": "irrigation_need_exceeds_allotment", "gate": "water", "params": params}]
+    if p90_mm > allotment_mm:
+        return [{"code": "irrigation_need_tight", "gate": "water", "params": params}]
     return []
 
 

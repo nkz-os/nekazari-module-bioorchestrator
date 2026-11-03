@@ -9,10 +9,10 @@ vi.mock('@nekazari/sdk', async () => {
 
 // Server rendering runs no effects, so the loads are answered by the loader they would call: the fit
 // when `withFit` is on, nothing else. The other steps stay empty.
-const loads = vi.hoisted(() => ({ withFit: false }));
+const loads = vi.hoisted(() => ({ withFit: false, fitOverride: null as unknown }));
 vi.mock('./useLoad', () => ({
   useLoad: (load: (signal: AbortSignal) => unknown, _deps: unknown[], enabled = true) => ({
-    data: enabled && loads.withFit && String(load).includes('fetchFit') ? FIT : null, error: null, loading: false, retry: () => {},
+    data: enabled && loads.withFit && String(load).includes('fetchFit') ? (loads.fitOverride ?? FIT) : null, error: null, loading: false, retry: () => {},
   }),
 }));
 
@@ -99,5 +99,17 @@ describe('ParcelDetail (es)', () => {
     expect(render(sown, true)).not.toContain('Ver previsión en Salud del cultivo');
     const planned = renderToStaticMarkup(<ParcelDetail row={row([cell({})])} campaign={2027} onClose={() => {}} onSaved={() => {}} onForecast={() => {}} />);
     expect(planned).not.toContain('Ver previsión en Salud del cultivo');
+  });
+  it('an irrigated parcel offers the campaign allotment and shows what is stored, in mm and m3/ha', () => {
+    loads.withFit = true;
+    const fit = { ...FIT, facts: { ...FIT.facts, regime: 'irrigated' as const, irrigation_allotment_mm: 450 } };
+    loads.fitOverride = fit;
+    const html = render(row([], { regime: 'irrigated' }), true);
+    loads.fitOverride = null;
+    expect(html).toContain('Dotación de la campaña');
+    expect(html).toContain('Guardado: 450 mm (4500 m³/ha)');
+  });
+  it('a rainfed parcel does not ask for an allotment', () => {
+    expect(render(row([]), true)).not.toContain('Dotación de la campaña');
   });
 });

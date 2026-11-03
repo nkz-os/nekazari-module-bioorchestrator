@@ -25,6 +25,12 @@ from app.planning.calendar import (
     campaign_fortnights,
     fortnight_of,
 )
+from app.planning.climatology import (
+    cell_key,
+    climatology_status,
+    get_climatology,
+    schedule_climatology,
+)
 from app.planning.estimates import (
     aquacrop_status,
     disagreement,
@@ -42,6 +48,7 @@ from app.planning.fit import (
     ROTATION_UNKNOWN,
     VERDICT_ORDER,
     ParcelClimate,
+    allotment_reasons,
     frost_reasons,
     soil_reasons,
     verdict_of,
@@ -55,6 +62,14 @@ from app.planning.history import (
     iso_date,
     past_crops,
     species_slug,
+)
+from app.planning.irrigation import (
+    CropStages,
+    irrigation_need,
+    kc_curve,
+    load_pe_method,
+    load_stage_table,
+    read_allotment,
 )
 from app.planning.reference import EMPTY_REFERENCE, load_reference
 from app.planning.regional_yield import regional_yield
@@ -205,6 +220,68 @@ def crop_regional_yield(code: str | None, nuts: str | None, rows: list[dict], fa
     return found.model_dump(), reason
 
 
+def _season_start_doy(sowing: dict, eppo: str | None, lat, lon, regime: str | None) -> int | None:
+    """Typical sowing day of the crop at the point (GGCMI): from the sowing info, else straight from the calendar."""
+    doy = sowing.get("typical_sowing_doy")
+    if doy is None and eppo and lat is not None and lon is not None:
+        cal = ggcmi_calendar.lookup(catalog_code(eppo), lat, lon, irrigation=regime)
+        doy = cal["planting_doy"] if cal else None
+    return doy
+
+
+IRRIGATION_SOURCE_IDS = ("open_meteo_historical", "copernicus_era5", "fao56")
+
+
+class IrrigationContext:
+    """What the irrigation need of every species of ONE fit shares: regime, weather cell, stages, method."""
+
+    def __init__(self, regime: str | None, lat, lon, stages: dict[str, CropStages] | None):
+        self.regime = regime
+        self.lat, self.lon = lat, lon
+        self.stages = stages  # FAO-56 table by species slug; None: the table could not be loaded
+        self.attributions = attach_attributions({}, IRRIGATION_SOURCE_IDS)["attributions"]
+        self.clim = None
+        self.status = "absent"
+        self.cell = cell_key(lat, lon) if regime == "irrigated" and lat is not None and lon is not None else None
+        if self.cell is not None:
+            schedule_climatology(self.cell)  # the first request never waits for the archive
+            self.clim = get_climatology(self.cell)
+            self.status = climatology_status(self.cell)
+
+
+def species_irrigation_need(ctx: IrrigationContext, slug: str, eppo: str | None, sowing: dict) -> tuple[dict | None, str | None]:
+    """(irrigation_need dict | None, reason | None). Never a default figure."""
+    if ctx.regime is None:
+        return None, None  # regime_missing already says so
+    if ctx.regime != "irrigated":
+        return None, "regime_not_irrigated"
+    if ctx.stages is None:
+        return None, "kc_unavailable"
+    crop = ctx.stages.get(slug)
+    if crop is None:
+        return None, "no_stage_lengths"  # only the crops of the cited FAO-56 table have a Kc curve
+    kc = kc_curve(crop)
+    if len(kc) > 365:
+        return None, "no_stage_lengths"  # a season longer than a year is not an annual cycle
+    if ctx.cell is None:
+        return None, "weather_unavailable"  # the parcel has no location
+    doy = _season_start_doy(sowing, eppo, ctx.lat, ctx.lon, ctx.regime)
+    if doy is None:
+        return None, "no_sowing_date"
+    if ctx.clim is None:
+        return None, "weather_unavailable" if ctx.status == "failed" else "pending"
+    pe = load_pe_method()
+    result = irrigation_need(kc, int(doy), ctx.clim, pe)
+    if result is None:
+        return None, "weather_unavailable"
+    return {
+        "percentiles": {"p10": round(result.p10, 1), "p50": round(result.p50, 1), "p90": round(result.p90, 1)},
+        "unit": "mm", "n_years": result.n_years, "first_year": result.first_year, "last_year": result.last_year,
+        "sowing_doy": result.sowing_doy, "method": {"kc_source": crop.kc_source, "pe_method": pe.id},
+        "source": "openmeteo_era5", "attributions": list(ctx.attributions),
+    }, None
+
+
 def _rank_key(s: dict) -> tuple:
     ry = s.get("regional_yield")
     index = ry.get("relative_index") if ry else None
@@ -239,6 +316,16 @@ async def parcel_fit(*, dao, source: KnowledgeSource, parcel_id: str, tenant_id:
     nuts = parcel_nuts2(centroid.get("lat"), centroid.get("lon"))
     yield_rows, yield_failed = await regional_yields_for(
         source, nuts, tenant_id=tenant_id, parcel_id=env["parcel_id"])
+    allotment = read_allotment(env.get("irrigation_allotment_raw"), parcel_id=env["parcel_id"], tenant_id=tenant_id)
+    stages = None
+    if regime_used == "irrigated":
+        try:
+            stages = load_stage_table()
+        except Exception:
+            # A broken packaged table must not take the page down: every crop reports kc_unavailable.
+            logger.exception("planning fit: FAO-56 stage table load failed tenant=%s parcel=%s",
+                             tenant_id, env["parcel_id"])
+    irrigation = IrrigationContext(regime_used, centroid.get("lat"), centroid.get("lon"), stages)
     species = []
     for slug in list_species():
         if is_woody(slug):
@@ -273,6 +360,13 @@ async def parcel_fit(*, dao, source: KnowledgeSource, parcel_id: str, tenant_id:
             reasons.append(CLIMATE_UNKNOWN)
         if lifecycle == "perennial":
             reasons.append(MULTI_YEAR)
+        if irrigation.regime == "irrigated":
+            # numpy over ~15 seasons per species: off the event loop (the answers are memoized per cell).
+            need, need_reason = await asyncio.to_thread(species_irrigation_need, irrigation, slug, eppo, sowing)
+        else:
+            need, need_reason = species_irrigation_need(irrigation, slug, eppo, sowing)
+        if need is not None:
+            reasons += allotment_reasons(need["percentiles"]["p50"], need["percentiles"]["p90"], allotment)
         trials = has_trials(eppo, ref.trial_eppo)
         regional, regional_reason = crop_regional_yield(eppo, nuts, yield_rows, yield_failed)
         species.append({
@@ -282,6 +376,7 @@ async def parcel_fit(*, dao, source: KnowledgeSource, parcel_id: str, tenant_id:
                 catalog_code(eppo) if eppo else None, has_trials=trials, regime=regime_used, country=env.get("country")),
             "cover_only": is_cover_only(slug),
             "regional_yield": regional, "regional_yield_unavailable": regional_reason,
+            "irrigation_need": need, "irrigation_need_unavailable": need_reason,
         })
     species.sort(key=_rank_key)
     return {
@@ -289,7 +384,8 @@ async def parcel_fit(*, dao, source: KnowledgeSource, parcel_id: str, tenant_id:
         "facts": {"climate_class": env.get("climate_class"), "climate_source": detail.get("source") or "unavailable",
                   "soil_texture": soil.get("texture"), "soil_ph": soil.get("ph"),
                   "soil_source": soil.get("source") or "unavailable", "regime": regime_used,
-                  "regime_source": regime_source, "history_available": cycles is not None},
+                  "regime_source": regime_source, "history_available": cycles is not None,
+                  "irrigation_allotment_mm": allotment},
     }
 
 

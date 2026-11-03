@@ -113,3 +113,21 @@ export async function saveParcelRegime(parcelId: string, regime: Regime): Promis
   });
   if (!res.ok) throw new PlanningApiError(res.status, null);
 }
+
+export const ALLOTMENT_ATTRIBUTE = 'nkz:irrigationAllotment';
+
+/**
+ * The water the farmer has for the campaign, in mm, kept on the parcel like the regime. `null` clears it.
+ * The `nkz:` prefix is in the platform context; a bare name would land in the default vocabulary.
+ */
+export async function saveParcelAllotment(parcelId: string, mm: number | null, now: Date = new Date()): Promise<void> {
+  const body = mm === null
+    ? { remove: [ALLOTMENT_ATTRIBUTE] }
+    : { attributes: { [ALLOTMENT_ATTRIBUTE]: { type: 'Property', value: mm, unitCode: 'MMT', observedAt: now.toISOString() } } };
+  const res = await fetch(`${API_BASE}/api/entities/parcels/${enc(parcelId)}`, {
+    method: 'PATCH', credentials: 'include',
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) throw new PlanningApiError(res.status, null);
+}

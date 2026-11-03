@@ -43,6 +43,11 @@ const FAMILIES = [
   ...['region_lookup_unavailable', 'crop_not_in_statistics', 'region_series_short', 'national_series_short', 'region_stats_unavailable']
     .map((k) => `planning.wizard.crop.regional.unavailable.${k}`),
   'planning.wizard.crop.regional.lineNoIndex',
+  ...['regime_not_irrigated', 'no_kc', 'kc_unavailable', 'no_stage_lengths', 'no_sowing_date', 'pending', 'weather_unavailable']
+    .map((k) => `planning.wizard.crop.irrigation.unavailable.${k}`),
+  ...['detailYears', 'detailNet', 'detailNotForecast'].map((k) => `planning.wizard.crop.irrigation.${k}`),
+  ...['label', 'hint', 'placeholder', 'unitLabel', 'unit.m3ha', 'unit.mm', 'save', 'none', 'stored', 'clear', 'invalid', 'thousands', 'tooSmall', 'tooLarge', 'saveError']
+    .map((k) => `planning.detail.allotment.${k}`),
   ...COVER_METHODS.map((k) => `planning.plan.methods.${k}`),
   ...['productive', 'stable', 'balanced'].map((k) => `planning.wizard.variety.why.${k}`),
   ...['sand', 'loamy-sand', 'sandy-loam', 'loam', 'silt-loam', 'silt', 'sandy-clay-loam', 'clay-loam', 'silty-clay-loam',

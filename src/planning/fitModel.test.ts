@@ -93,3 +93,22 @@ describe('splitSharedReasons', () => {
     expect(perSpecies.get('wheat')).toEqual([frost]);
   });
 });
+
+describe('allotment reasons (backend shape: fit.py allotment_reasons)', () => {
+  const exceeds: Reason = { code: 'irrigation_need_exceeds_allotment', gate: 'water', params: { need_p50_mm: 450, need_p90_mm: 520, allotment_mm: 400 } };
+  const tight: Reason = { code: 'irrigation_need_tight', gate: 'water', params: { need_p50_mm: 380, need_p90_mm: 520, allotment_mm: 450 } };
+  it('exceeds is a caveat (warning), tight is informational', () => {
+    expect(reasonTone(exceeds)).toBe('warning');
+    expect(reasonTone(tight)).toBe('info');
+  });
+  it('interpolates exactly the params the backend emits', async () => {
+    const { esT } = await import('./testI18n');
+    const a = reasonText(exceeds, {}, 'es', esT);
+    const b = reasonText(tight, {}, 'es', esT);
+    expect(a).toContain('450');
+    expect(a).toContain('400');
+    expect(b).toContain('450');
+    expect(b).toContain('520');
+    expect(a + b).not.toContain('{{');
+  });
+});
