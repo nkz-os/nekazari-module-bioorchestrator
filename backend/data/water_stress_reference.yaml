@@ -1,0 +1,560 @@
+# Water-stress reference: non-water-stressed baselines (NWSB), upper limits and stage flags.
+#
+# Purpose: published reference values for the crop water stress index (CWSI), served per species
+# by the water-stress API. Numbers only; see source_id and ref on every row for the citation.
+# No text, tables or figures of the papers are stored here.
+#
+# Baseline: Tc - Ta = a0_c + a1_c_per_kpa * VPD (degrees C; kPa). Upper limit (upper): `constant`
+# (value_c, degrees C) or `linear_vpd` (a0_c + a1_c_per_kpa * VPD); null when the source publishes
+# none. The Idso 1981 upper-limit formula was not found in any source read, so no such form exists.
+#
+# Serving: only rows with evidence primary_read AND a non-null upper are served. Rows without an
+# upper limit, and secondary rows, are kept as data but are not served (no CWSI without an upper limit).
+#
+# Licences: FAO papers (fao33) are used with commercial_use unknown, pending the FAO reply.
+# Other journal sources are registered with commercial_use unknown (numbers and citations only).
+#
+# Stage names are those of stage_detection in phenology_sources.yaml.
+# ASSUMPTION: Idso 1982 "pre-heading" = emergence, tillering, stem_elongation; "post-heading" =
+#   heading, maturity (heading goes with post-heading because Idso attributes the slope change to
+#   seedheads; the exact boundary at heading is not published).
+# ASSUMPTION: Idso 1982 maize "no tassels" = emergence, vegetative_v6 (no baseline from silking on).
+# ASSUMPTION: Bellvert 2015 Stage I = vegetative; Stage II-III (one line in the paper) = veraison,
+#   maturity; postharvest = post_harvest.
+# Idso rows for species with one line only (no phase split in the paper) apply to all stages.
+dataset_version: "2026-11-03"
+
+species:
+  wheat:
+    baselines:
+      # Idso 1982 measured durum wheat only; soft wheat uses the same rows (see assumption).
+      - id: idso1982-wheat-pre-heading
+        cultivar: Produra
+        stages: [emergence, tillering, stem_elongation]
+        condition: sunlit
+        a0_c: 3.38
+        a1_c_per_kpa: -3.25
+        upper: null
+        valid: {clear_sky: true}
+        site: "Arizona, Kansas, Minnesota, North Dakota (USA)"
+        evidence: primary_read
+        source_id: idso1982
+        ref: "Table I p.62"
+        assumption: "durum wheat (cv. Produra) baselines applied to soft wheat"
+      - id: idso1982-wheat-post-heading
+        cultivar: Produra
+        stages: [heading, maturity]
+        condition: sunlit
+        a0_c: 2.88
+        a1_c_per_kpa: -2.11
+        upper: null
+        valid: {clear_sky: true}
+        site: "Arizona, Kansas, Minnesota, North Dakota (USA)"
+        evidence: primary_read
+        source_id: idso1982
+        ref: "Table I p.62"
+        assumption: "durum wheat (cv. Produra) baselines applied to soft wheat"
+    stages: {}
+  durum_wheat:
+    baselines:
+      - id: idso1982-durum-pre-heading
+        cultivar: Produra
+        stages: [emergence, tillering, stem_elongation]
+        condition: sunlit
+        a0_c: 3.38
+        a1_c_per_kpa: -3.25
+        upper: null
+        valid: {clear_sky: true}
+        site: "Arizona, Kansas, Minnesota, North Dakota (USA)"
+        evidence: primary_read
+        source_id: idso1982
+        ref: "Table I p.62"
+      - id: idso1982-durum-post-heading
+        cultivar: Produra
+        stages: [heading, maturity]
+        condition: sunlit
+        a0_c: 2.88
+        a1_c_per_kpa: -2.11
+        upper: null
+        valid: {clear_sky: true}
+        site: "Arizona, Kansas, Minnesota, North Dakota (USA)"
+        evidence: primary_read
+        source_id: idso1982
+        ref: "Table I p.62"
+    stages: {}
+  barley:
+    baselines:
+      - id: idso1982-barley-pre-heading
+        cultivar: null
+        stages: [emergence, tillering, stem_elongation]
+        condition: sunlit
+        a0_c: 2.01
+        a1_c_per_kpa: -2.25
+        upper: null
+        valid: {clear_sky: true}
+        site: "Arizona, Kansas, Minnesota, North Dakota (USA)"
+        evidence: primary_read
+        source_id: idso1982
+        ref: "Table I p.62"
+      - id: idso1982-barley-post-heading
+        cultivar: null
+        stages: [heading, maturity]
+        condition: sunlit
+        a0_c: 1.72
+        a1_c_per_kpa: -1.23
+        upper: null
+        valid: {clear_sky: true}
+        site: "Arizona, Kansas, Minnesota, North Dakota (USA)"
+        evidence: primary_read
+        source_id: idso1982
+        ref: "Table I p.62"
+    stages: {}
+  maize:
+    baselines:
+      - id: idso1982-maize-no-tassels
+        cultivar: null
+        stages: [emergence, vegetative_v6]
+        condition: sunlit
+        a0_c: 3.11
+        a1_c_per_kpa: -1.97
+        upper: null
+        valid: {clear_sky: true}
+        site: "Arizona, Kansas, Minnesota, North Dakota (USA)"
+        evidence: primary_read
+        source_id: idso1982
+        ref: "Table I p.62"
+    stages: {}
+  alfalfa:
+    baselines:
+      - id: idso1982-alfalfa
+        cultivar: null
+        stages: null
+        condition: sunlit
+        a0_c: 0.51
+        a1_c_per_kpa: -1.92
+        upper: null
+        valid: {clear_sky: true}
+        site: "Arizona, Kansas, Minnesota, North Dakota (USA)"
+        evidence: primary_read
+        source_id: idso1982
+        ref: "Table I p.62"
+    stages: {}
+  bean:
+    baselines:
+      - id: idso1982-bean
+        cultivar: null
+        stages: null
+        condition: sunlit
+        a0_c: 2.91
+        a1_c_per_kpa: -2.35
+        upper: null
+        valid: {clear_sky: true}
+        site: "Arizona, Kansas, Minnesota, North Dakota (USA)"
+        evidence: primary_read
+        source_id: idso1982
+        ref: "Table I p.62"
+    stages: {}
+  pea:
+    baselines:
+      - id: idso1982-pea
+        cultivar: null
+        stages: null
+        condition: sunlit
+        a0_c: 2.74
+        a1_c_per_kpa: -2.13
+        upper: null
+        valid: {clear_sky: true}
+        site: "Arizona, Kansas, Minnesota, North Dakota (USA)"
+        evidence: primary_read
+        source_id: idso1982
+        ref: "Table I p.62"
+    stages: {}
+  potato:
+    baselines:
+      - id: idso1982-potato
+        cultivar: null
+        stages: null
+        condition: sunlit
+        a0_c: 1.17
+        a1_c_per_kpa: -1.83
+        upper: null
+        valid: {clear_sky: true}
+        site: "Arizona, Kansas, Minnesota, North Dakota (USA)"
+        evidence: primary_read
+        source_id: idso1982
+        ref: "Table I p.62"
+    stages: {}
+  soybean:
+    baselines:
+      - id: idso1982-soybean
+        cultivar: null
+        stages: null
+        condition: sunlit
+        a0_c: 1.44
+        a1_c_per_kpa: -1.34
+        upper: null
+        valid: {clear_sky: true}
+        site: "Arizona, Kansas, Minnesota, North Dakota (USA)"
+        evidence: primary_read
+        source_id: idso1982
+        ref: "Table I p.62"
+    stages: {}
+  sugar_beet:
+    baselines:
+      - id: idso1982-sugar-beet
+        cultivar: null
+        stages: null
+        condition: sunlit
+        a0_c: 2.50
+        a1_c_per_kpa: -1.92
+        upper: null
+        valid: {clear_sky: true}
+        site: "Arizona, Kansas, Minnesota, North Dakota (USA)"
+        evidence: primary_read
+        source_id: idso1982
+        ref: "Table I p.62"
+    stages: {}
+  sunflower:
+    baselines:
+      - id: idso1982-sunflower
+        cultivar: null
+        stages: null
+        condition: sunlit
+        a0_c: 0.66
+        a1_c_per_kpa: -1.95
+        upper: null
+        valid: {clear_sky: true}
+        site: "Arizona, Kansas, Minnesota, North Dakota (USA)"
+        evidence: primary_read
+        source_id: idso1982
+        ref: "Table I p.62"
+    stages: {}
+  tomato:
+    baselines:
+      - id: idso1982-tomato
+        cultivar: null
+        stages: null
+        condition: sunlit
+        a0_c: 2.86
+        a1_c_per_kpa: -1.96
+        upper: null
+        valid: {clear_sky: true}
+        site: "Arizona, Kansas, Minnesota, North Dakota (USA)"
+        evidence: primary_read
+        source_id: idso1982
+        ref: "Table I p.62"
+    stages: {}
+  olive:
+    baselines:
+      # Egea 2017 Table 2: one baseline per GMT hour. The site longitude is not in the
+      # verified sources, so the solar window is unknown and left null; the GMT hour is in ref.
+      # Upper limit: Ta + 5 degrees C, assumed by the authors (Section 2.5).
+      - id: egea2017-t2-08gmt
+        cultivar: Arbequina
+        stages: null
+        condition: sunlit
+        a0_c: 0.94
+        a1_c_per_kpa: -0.77
+        upper: {form: constant, value_c: 5.0}
+        valid: {clear_sky: true}
+        site: "Sevilla (Spain), 37.25 N"
+        evidence: primary_read
+        source_id: egea2017
+        ref: "Table 2, 08:00 GMT"
+      - id: egea2017-t2-09gmt
+        cultivar: Arbequina
+        stages: null
+        condition: sunlit
+        a0_c: 0.97
+        a1_c_per_kpa: -0.67
+        upper: {form: constant, value_c: 5.0}
+        valid: {clear_sky: true}
+        site: "Sevilla (Spain), 37.25 N"
+        evidence: primary_read
+        source_id: egea2017
+        ref: "Table 2, 09:00 GMT"
+      - id: egea2017-t2-10gmt
+        cultivar: Arbequina
+        stages: null
+        condition: sunlit
+        a0_c: 1.44
+        a1_c_per_kpa: -0.61
+        upper: {form: constant, value_c: 5.0}
+        valid: {clear_sky: true}
+        site: "Sevilla (Spain), 37.25 N"
+        evidence: primary_read
+        source_id: egea2017
+        ref: "Table 2, 10:00 GMT"
+      - id: egea2017-t2-11gmt
+        cultivar: Arbequina
+        stages: null
+        condition: sunlit
+        a0_c: 2.18
+        a1_c_per_kpa: -0.55
+        upper: {form: constant, value_c: 5.0}
+        valid: {clear_sky: true}
+        site: "Sevilla (Spain), 37.25 N"
+        evidence: primary_read
+        source_id: egea2017
+        ref: "Table 2, 11:00 GMT"
+      - id: egea2017-t2-12gmt
+        cultivar: Arbequina
+        stages: null
+        condition: sunlit
+        a0_c: 2.50
+        a1_c_per_kpa: -0.36
+        upper: {form: constant, value_c: 5.0}
+        valid: {clear_sky: true}
+        site: "Sevilla (Spain), 37.25 N"
+        evidence: primary_read
+        source_id: egea2017
+        ref: "Table 2, 12:00 GMT"
+      - id: egea2017-t2-13gmt
+        cultivar: Arbequina
+        stages: null
+        condition: sunlit
+        a0_c: 2.43
+        a1_c_per_kpa: -0.30
+        upper: {form: constant, value_c: 5.0}
+        valid: {clear_sky: true}
+        site: "Sevilla (Spain), 37.25 N"
+        evidence: primary_read
+        source_id: egea2017
+        ref: "Table 2, 13:00 GMT"
+      - id: egea2017-t2-14gmt
+        cultivar: Arbequina
+        stages: null
+        condition: sunlit
+        a0_c: 2.05
+        a1_c_per_kpa: -0.32
+        upper: {form: constant, value_c: 5.0}
+        valid: {clear_sky: true}
+        site: "Sevilla (Spain), 37.25 N"
+        evidence: primary_read
+        source_id: egea2017
+        ref: "Table 2, 14:00 GMT"
+      - id: egea2017-t2-15gmt
+        cultivar: Arbequina
+        stages: null
+        condition: sunlit
+        a0_c: 1.43
+        a1_c_per_kpa: -0.30
+        upper: {form: constant, value_c: 5.0}
+        valid: {clear_sky: true}
+        site: "Sevilla (Spain), 37.25 N"
+        evidence: primary_read
+        source_id: egea2017
+        ref: "Table 2, 15:00 GMT"
+      - id: egea2017-t2-16gmt
+        cultivar: Arbequina
+        stages: null
+        condition: sunlit
+        a0_c: 0.83
+        a1_c_per_kpa: -0.30
+        upper: {form: constant, value_c: 5.0}
+        valid: {clear_sky: true}
+        site: "Sevilla (Spain), 37.25 N"
+        evidence: primary_read
+        source_id: egea2017
+        ref: "Table 2, 16:00 GMT"
+      - id: egea2017-t2-17gmt
+        cultivar: Arbequina
+        stages: null
+        condition: sunlit
+        a0_c: 0.31
+        a1_c_per_kpa: -0.31
+        upper: {form: constant, value_c: 5.0}
+        valid: {clear_sky: true}
+        site: "Sevilla (Spain), 37.25 N"
+        evidence: primary_read
+        source_id: egea2017
+        ref: "Table 2, 17:00 GMT"
+      - id: egea2017-t2-18gmt
+        cultivar: Arbequina
+        stages: null
+        condition: sunlit
+        a0_c: -0.09
+        a1_c_per_kpa: -0.32
+        upper: {form: constant, value_c: 5.0}
+        valid: {clear_sky: true}
+        site: "Sevilla (Spain), 37.25 N"
+        evidence: primary_read
+        source_id: egea2017
+        ref: "Table 2, 18:00 GMT"
+      # Berni 2009: hourly means close to solar noon (12:30 GMT); no upper limit published.
+      - id: berni2009-noon
+        cultivar: Arbequina
+        stages: null
+        condition: sunlit
+        a0_c: 2.08
+        a1_c_per_kpa: -0.35
+        upper: null
+        valid: {clear_sky: true}
+        site: "Cordoba (Spain)"
+        evidence: primary_read
+        source_id: berni2009
+        ref: "Section 3"
+    stages:
+      pit_hardening:
+        water_sensitive: unknown
+        rdi_tolerant: true
+        source_ids: [sanchezpinero2022]
+        ref: "RDI practice during pit hardening verified in Sanchez-Pinero 2022 (Section 2.1); the yield tolerance of the stage is secondary (Moriana 2003 pending)"
+  almond:
+    baselines:
+      # Gonzalez-Dugo 2019: 11 to 13 h solar time, cloudless days. Upper limit not published as an equation.
+      - id: gonzalezdugo2019-summer
+        cultivar: null
+        stages: null
+        condition: sunlit
+        a0_c: 3.419
+        a1_c_per_kpa: -1.207
+        upper: null
+        valid: {solar_hour_from: 11, solar_hour_to: 13, clear_sky: true}
+        site: "IFAPA Cordoba (Spain)"
+        evidence: primary_read
+        source_id: gonzalezdugo2019
+        ref: "Section 3"
+    stages: {}
+  pistachio:
+    baselines:
+      # Secondary: original paper not read; never served.
+      - id: testi2008-kerman
+        cultivar: Kerman
+        stages: null
+        condition: sunlit
+        a0_c: 2.44
+        a1_c_per_kpa: -1.33
+        upper: null
+        valid: {clear_sky: true}
+        site: "unknown"
+        evidence: secondary
+        source_id: egea2017
+        ref: "Testi et al. 2008 (doi:10.1007/s00271-008-0104-5), seen cited in Egea 2017; original not read"
+    stages: {}
+  grapevine:
+    baselines:
+      # Bellvert 2015 Table 3: baseline = lower limit (LL), upper = UL (a0 + a1*VPD).
+      # Valid 11-16 h solar time, clear days; LL developed for VPD 1-5 kPa.
+      # Syrah and Tempranillo have no postharvest row in the paper.
+      - id: bellvert2015-pinot-noir-i
+        cultivar: Pinot-noir
+        stages: [vegetative]
+        condition: sunlit
+        a0_c: 1.226
+        a1_c_per_kpa: -1.544
+        upper: {form: linear_vpd, a0_c: 5.043, a1_c_per_kpa: 0.429}
+        valid: {solar_hour_from: 11, solar_hour_to: 16, vpd_kpa_min: 1, vpd_kpa_max: 5, clear_sky: true}
+        site: "Raimat (Spain)"
+        evidence: primary_read
+        source_id: bellvert2015
+        ref: "Table 3, Stage I"
+      - id: bellvert2015-pinot-noir-ii-iii
+        cultivar: Pinot-noir
+        stages: [veraison, maturity]
+        condition: sunlit
+        a0_c: 1.332
+        a1_c_per_kpa: -1.331
+        upper: {form: linear_vpd, a0_c: 5.808, a1_c_per_kpa: 0.316}
+        valid: {solar_hour_from: 11, solar_hour_to: 16, vpd_kpa_min: 1, vpd_kpa_max: 5, clear_sky: true}
+        site: "Raimat (Spain)"
+        evidence: primary_read
+        source_id: bellvert2015
+        ref: "Table 3, Stage II-III"
+      - id: bellvert2015-pinot-noir-post
+        cultivar: Pinot-noir
+        stages: [post_harvest]
+        condition: sunlit
+        a0_c: 3.887
+        a1_c_per_kpa: -1.593
+        upper: {form: linear_vpd, a0_c: 5.383, a1_c_per_kpa: 0.250}
+        valid: {solar_hour_from: 11, solar_hour_to: 16, vpd_kpa_min: 1, vpd_kpa_max: 5, clear_sky: true}
+        site: "Raimat (Spain)"
+        evidence: primary_read
+        source_id: bellvert2015
+        ref: "Table 3, Postharvest"
+      - id: bellvert2015-chardonnay-i
+        cultivar: Chardonnay
+        stages: [vegetative]
+        condition: sunlit
+        a0_c: 3.638
+        a1_c_per_kpa: -2.226
+        upper: {form: linear_vpd, a0_c: 6.609, a1_c_per_kpa: 0.632}
+        valid: {solar_hour_from: 11, solar_hour_to: 16, vpd_kpa_min: 1, vpd_kpa_max: 5, clear_sky: true}
+        site: "Raimat (Spain)"
+        evidence: primary_read
+        source_id: bellvert2015
+        ref: "Table 3, Stage I"
+      - id: bellvert2015-chardonnay-ii-iii
+        cultivar: Chardonnay
+        stages: [veraison, maturity]
+        condition: sunlit
+        a0_c: 2.157
+        a1_c_per_kpa: -1.393
+        upper: {form: linear_vpd, a0_c: 6.451, a1_c_per_kpa: 0.635}
+        valid: {solar_hour_from: 11, solar_hour_to: 16, vpd_kpa_min: 1, vpd_kpa_max: 5, clear_sky: true}
+        site: "Raimat (Spain)"
+        evidence: primary_read
+        source_id: bellvert2015
+        ref: "Table 3, Stage II-III"
+      - id: bellvert2015-chardonnay-post
+        cultivar: Chardonnay
+        stages: [post_harvest]
+        condition: sunlit
+        a0_c: 1.551
+        a1_c_per_kpa: -1.285
+        upper: {form: linear_vpd, a0_c: 4.415, a1_c_per_kpa: 0.205}
+        valid: {solar_hour_from: 11, solar_hour_to: 16, vpd_kpa_min: 1, vpd_kpa_max: 5, clear_sky: true}
+        site: "Raimat (Spain)"
+        evidence: primary_read
+        source_id: bellvert2015
+        ref: "Table 3, Postharvest"
+      - id: bellvert2015-syrah-i
+        cultivar: Syrah
+        stages: [vegetative]
+        condition: sunlit
+        a0_c: 3.176
+        a1_c_per_kpa: -2.213
+        upper: {form: linear_vpd, a0_c: 4.653, a1_c_per_kpa: 0.371}
+        valid: {solar_hour_from: 11, solar_hour_to: 16, vpd_kpa_min: 1, vpd_kpa_max: 5, clear_sky: true}
+        site: "Raimat (Spain)"
+        evidence: primary_read
+        source_id: bellvert2015
+        ref: "Table 3, Stage I"
+      - id: bellvert2015-syrah-ii-iii
+        cultivar: Syrah
+        stages: [veraison, maturity]
+        condition: sunlit
+        a0_c: 2.729
+        a1_c_per_kpa: -1.465
+        upper: {form: linear_vpd, a0_c: 4.673, a1_c_per_kpa: 0.228}
+        valid: {solar_hour_from: 11, solar_hour_to: 16, vpd_kpa_min: 1, vpd_kpa_max: 5, clear_sky: true}
+        site: "Raimat (Spain)"
+        evidence: primary_read
+        source_id: bellvert2015
+        ref: "Table 3, Stage II-III"
+      - id: bellvert2015-tempranillo-i
+        cultivar: Tempranillo
+        stages: [vegetative]
+        condition: sunlit
+        a0_c: 1.098
+        a1_c_per_kpa: -1.438
+        upper: {form: linear_vpd, a0_c: 3.977, a1_c_per_kpa: 0.261}
+        valid: {solar_hour_from: 11, solar_hour_to: 16, vpd_kpa_min: 1, vpd_kpa_max: 5, clear_sky: true}
+        site: "Raimat (Spain)"
+        evidence: primary_read
+        source_id: bellvert2015
+        ref: "Table 3, Stage I"
+      - id: bellvert2015-tempranillo-ii-iii
+        cultivar: Tempranillo
+        stages: [veraison, maturity]
+        condition: sunlit
+        a0_c: 1.253
+        a1_c_per_kpa: -1.780
+        upper: {form: linear_vpd, a0_c: 5.317, a1_c_per_kpa: 0.466}
+        valid: {solar_hour_from: 11, solar_hour_to: 16, vpd_kpa_min: 1, vpd_kpa_max: 5, clear_sky: true}
+        site: "Raimat (Spain)"
+        evidence: primary_read
+        source_id: bellvert2015
+        ref: "Table 3, Stage II-III"
+    stages: {}
