@@ -44,7 +44,7 @@ species:
         evidence: primary_read
         source_id: idso1982
         ref: "Table I p.62"
-        assumption: "durum wheat (cv. Produra) baselines applied to soft wheat"
+        assumption: "durum wheat (cv. Produra) baselines applied to soft wheat; ASSUMPTION: Idso 1982 pre-heading = emergence, tillering, stem_elongation (boundary at heading not published)"
       - id: idso1982-wheat-post-heading
         cultivar: Produra
         stages: [heading, maturity]
@@ -57,7 +57,7 @@ species:
         evidence: primary_read
         source_id: idso1982
         ref: "Table I p.62"
-        assumption: "durum wheat (cv. Produra) baselines applied to soft wheat"
+        assumption: "durum wheat (cv. Produra) baselines applied to soft wheat; ASSUMPTION: Idso 1982 post-heading = heading, maturity (boundary at heading not published)"
     stages:
       post_maturity:
         water_sensitive: false
@@ -84,6 +84,7 @@ species:
         evidence: primary_read
         source_id: idso1982
         ref: "Table I p.62"
+        assumption: "ASSUMPTION: Idso 1982 pre-heading = emergence, tillering, stem_elongation (boundary at heading not published)"
       - id: idso1982-durum-post-heading
         cultivar: Produra
         stages: [heading, maturity]
@@ -96,6 +97,7 @@ species:
         evidence: primary_read
         source_id: idso1982
         ref: "Table I p.62"
+        assumption: "ASSUMPTION: Idso 1982 post-heading = heading, maturity (boundary at heading not published)"
     stages:
       post_maturity:
         water_sensitive: false
@@ -122,6 +124,7 @@ species:
         evidence: primary_read
         source_id: idso1982
         ref: "Table I p.62"
+        assumption: "ASSUMPTION: Idso 1982 pre-heading = emergence, tillering, stem_elongation (boundary at heading not published)"
       - id: idso1982-barley-post-heading
         cultivar: null
         stages: [heading, maturity]
@@ -134,6 +137,7 @@ species:
         evidence: primary_read
         source_id: idso1982
         ref: "Table I p.62"
+        assumption: "ASSUMPTION: Idso 1982 post-heading = heading, maturity (boundary at heading not published)"
     stages:
       post_maturity:
         water_sensitive: false
@@ -160,6 +164,7 @@ species:
         evidence: primary_read
         source_id: idso1982
         ref: "Table I p.62"
+        assumption: "ASSUMPTION: Idso 1982 maize no-tassels = emergence, vegetative_v6 (no baseline from silking on)"
     stages:
       post_maturity:
         water_sensitive: false
@@ -214,6 +219,7 @@ species:
         evidence: primary_read
         source_id: idso1982
         ref: "Table I p.62"
+        assumption: "ASSUMPTION: Idso 1982 gives one line for the species; applied to all stages"
     stages: {}
   bean:
     baselines:
@@ -229,6 +235,7 @@ species:
         evidence: primary_read
         source_id: idso1982
         ref: "Table I p.62"
+        assumption: "ASSUMPTION: Idso 1982 gives one line for the species; applied to all stages"
     stages: {}
   pea:
     baselines:
@@ -244,6 +251,7 @@ species:
         evidence: primary_read
         source_id: idso1982
         ref: "Table I p.62"
+        assumption: "ASSUMPTION: Idso 1982 gives one line for the species; applied to all stages"
     stages: {}
   potato:
     baselines:
@@ -259,6 +267,7 @@ species:
         evidence: primary_read
         source_id: idso1982
         ref: "Table I p.62"
+        assumption: "ASSUMPTION: Idso 1982 gives one line for the species; applied to all stages"
     stages: {}
   soybean:
     baselines:
@@ -274,6 +283,7 @@ species:
         evidence: primary_read
         source_id: idso1982
         ref: "Table I p.62"
+        assumption: "ASSUMPTION: Idso 1982 gives one line for the species; applied to all stages"
     stages: {}
   sugar_beet:
     baselines:
@@ -289,6 +299,7 @@ species:
         evidence: primary_read
         source_id: idso1982
         ref: "Table I p.62"
+        assumption: "ASSUMPTION: Idso 1982 gives one line for the species; applied to all stages"
     stages: {}
   sunflower:
     baselines:
@@ -304,6 +315,7 @@ species:
         evidence: primary_read
         source_id: idso1982
         ref: "Table I p.62"
+        assumption: "ASSUMPTION: Idso 1982 gives one line for the species; applied to all stages"
     stages: {}
   tomato:
     baselines:
@@ -319,6 +331,7 @@ species:
         evidence: primary_read
         source_id: idso1982
         ref: "Table I p.62"
+        assumption: "ASSUMPTION: Idso 1982 gives one line for the species; applied to all stages"
     stages: {}
   olive:
     baselines:
@@ -337,7 +350,7 @@ species:
         evidence: primary_read
         source_id: egea2017
         ref: "Table 2, 08:00 GMT; clear-sky days DOY 167-275 (summer) only; solar window = GMT hour +/- 0.5 h shifted by longitude -5.796538 (Section 2.1 site coordinates 37.248979, -5.796538)"
-        assumption: "measured on Arbequina; applied to all olive cultivars"
+        assumption: "measured on Arbequina; applied to all olive cultivars; ASSUMPTION: hourly mean centred on the GMT hour (±0.5 h); summer (DOY 167-275) baseline applied all year"
       - id: egea2017-t2-09gmt
         cultivar: null
         stages: null
@@ -350,7 +363,7 @@ species:
         evidence: primary_read
         source_id: egea2017
         ref: "Table 2, 09:00 GMT; clear-sky days DOY 167-275 (summer) only; solar window = GMT hour +/- 0.5 h shifted by longitude -5.796538 (Section 2.1 site coordinates 37.248979, -5.796538)"
-        assumption: "measured on Arbequina; applied to all olive cultivars"
+        assumption: "measured on Arbequina; applied to all olive cultivars; ASSUMPTION: hourly mean centred on the GMT hour (±0.5 h); summer (DOY 167-275) baseline applied all year"
       - id: egea2017-t2-10gmt
         cultivar: null
         stages: null
@@ -363,7 +376,7 @@ species:
         evidence: primary_read
         source_id: egea2017
         ref: "Table 2, 10:00 GMT; clear-sky days DOY 167-275 (summer) only; solar window = GMT hour +/- 0.5 h shifted by longitude -5.796538 (Section 2.1 site coordinates 37.248979, -5.796538)"
-        assumption: "measured on Arbequina; applied to all olive cultivars"
+        assumption: "measured on Arbequina; applied to all olive cultivars; ASSUMPTION: hourly mean centred on the GMT hour (±0.5 h); summer (DOY 167-275) baseline applied all year"
       - id: egea2017-t2-11gmt
         cultivar: null
         stages: null
@@ -376,7 +389,7 @@ species:
         evidence: primary_read
         source_id: egea2017
         ref: "Table 2, 11:00 GMT; clear-sky days DOY 167-275 (summer) only; solar window = GMT hour +/- 0.5 h shifted by longitude -5.796538 (Section 2.1 site coordinates 37.248979, -5.796538)"
-        assumption: "measured on Arbequina; applied to all olive cultivars"
+        assumption: "measured on Arbequina; applied to all olive cultivars; ASSUMPTION: hourly mean centred on the GMT hour (±0.5 h); summer (DOY 167-275) baseline applied all year"
       - id: egea2017-t2-12gmt
         cultivar: null
         stages: null
@@ -389,7 +402,7 @@ species:
         evidence: primary_read
         source_id: egea2017
         ref: "Table 2, 12:00 GMT; clear-sky days DOY 167-275 (summer) only; solar window = GMT hour +/- 0.5 h shifted by longitude -5.796538 (Section 2.1 site coordinates 37.248979, -5.796538)"
-        assumption: "measured on Arbequina; applied to all olive cultivars"
+        assumption: "measured on Arbequina; applied to all olive cultivars; ASSUMPTION: hourly mean centred on the GMT hour (±0.5 h); summer (DOY 167-275) baseline applied all year"
       - id: egea2017-t2-13gmt
         cultivar: null
         stages: null
@@ -402,7 +415,7 @@ species:
         evidence: primary_read
         source_id: egea2017
         ref: "Table 2, 13:00 GMT; clear-sky days DOY 167-275 (summer) only; solar window = GMT hour +/- 0.5 h shifted by longitude -5.796538 (Section 2.1 site coordinates 37.248979, -5.796538)"
-        assumption: "measured on Arbequina; applied to all olive cultivars"
+        assumption: "measured on Arbequina; applied to all olive cultivars; ASSUMPTION: hourly mean centred on the GMT hour (±0.5 h); summer (DOY 167-275) baseline applied all year"
       - id: egea2017-t2-14gmt
         cultivar: null
         stages: null
@@ -415,7 +428,7 @@ species:
         evidence: primary_read
         source_id: egea2017
         ref: "Table 2, 14:00 GMT; clear-sky days DOY 167-275 (summer) only; solar window = GMT hour +/- 0.5 h shifted by longitude -5.796538 (Section 2.1 site coordinates 37.248979, -5.796538)"
-        assumption: "measured on Arbequina; applied to all olive cultivars"
+        assumption: "measured on Arbequina; applied to all olive cultivars; ASSUMPTION: hourly mean centred on the GMT hour (±0.5 h); summer (DOY 167-275) baseline applied all year"
       - id: egea2017-t2-15gmt
         cultivar: null
         stages: null
@@ -428,7 +441,7 @@ species:
         evidence: primary_read
         source_id: egea2017
         ref: "Table 2, 15:00 GMT; clear-sky days DOY 167-275 (summer) only; solar window = GMT hour +/- 0.5 h shifted by longitude -5.796538 (Section 2.1 site coordinates 37.248979, -5.796538)"
-        assumption: "measured on Arbequina; applied to all olive cultivars"
+        assumption: "measured on Arbequina; applied to all olive cultivars; ASSUMPTION: hourly mean centred on the GMT hour (±0.5 h); summer (DOY 167-275) baseline applied all year"
       - id: egea2017-t2-16gmt
         cultivar: null
         stages: null
@@ -441,7 +454,7 @@ species:
         evidence: primary_read
         source_id: egea2017
         ref: "Table 2, 16:00 GMT; clear-sky days DOY 167-275 (summer) only; solar window = GMT hour +/- 0.5 h shifted by longitude -5.796538 (Section 2.1 site coordinates 37.248979, -5.796538)"
-        assumption: "measured on Arbequina; applied to all olive cultivars"
+        assumption: "measured on Arbequina; applied to all olive cultivars; ASSUMPTION: hourly mean centred on the GMT hour (±0.5 h); summer (DOY 167-275) baseline applied all year"
       - id: egea2017-t2-17gmt
         cultivar: null
         stages: null
@@ -454,7 +467,7 @@ species:
         evidence: primary_read
         source_id: egea2017
         ref: "Table 2, 17:00 GMT; clear-sky days DOY 167-275 (summer) only; solar window = GMT hour +/- 0.5 h shifted by longitude -5.796538 (Section 2.1 site coordinates 37.248979, -5.796538)"
-        assumption: "measured on Arbequina; applied to all olive cultivars"
+        assumption: "measured on Arbequina; applied to all olive cultivars; ASSUMPTION: hourly mean centred on the GMT hour (±0.5 h); summer (DOY 167-275) baseline applied all year"
       - id: egea2017-t2-18gmt
         cultivar: null
         stages: null
@@ -467,7 +480,7 @@ species:
         evidence: primary_read
         source_id: egea2017
         ref: "Table 2, 18:00 GMT; clear-sky days DOY 167-275 (summer) only; solar window = GMT hour +/- 0.5 h shifted by longitude -5.796538 (Section 2.1 site coordinates 37.248979, -5.796538)"
-        assumption: "measured on Arbequina; applied to all olive cultivars"
+        assumption: "measured on Arbequina; applied to all olive cultivars; ASSUMPTION: hourly mean centred on the GMT hour (±0.5 h); summer (DOY 167-275) baseline applied all year"
       # Berni 2009: hourly means close to solar noon (12:30 GMT); no upper limit published.
       - id: berni2009-noon
         cultivar: Arbequina
@@ -525,7 +538,7 @@ species:
       # Valid 11-16 h solar time, clear days; LL developed for VPD 1-5 kPa.
       # Syrah and Tempranillo have no postharvest row in the paper.
       - id: bellvert2015-pinot-noir-i
-        cultivar: Pinot-noir
+        cultivar: "Pinot Noir"
         stages: [vegetative]
         condition: sunlit
         a0_c: 1.226
@@ -536,8 +549,9 @@ species:
         evidence: primary_read
         source_id: bellvert2015
         ref: "Table 3, Stage I"
+        assumption: "ASSUMPTION: Bellvert 2015 Stage I = vegetative"
       - id: bellvert2015-pinot-noir-ii-iii
-        cultivar: Pinot-noir
+        cultivar: "Pinot Noir"
         stages: [veraison, maturity]
         condition: sunlit
         a0_c: 1.332
@@ -548,8 +562,9 @@ species:
         evidence: primary_read
         source_id: bellvert2015
         ref: "Table 3, Stage II-III"
+        assumption: "ASSUMPTION: Bellvert 2015 Stage II-III (one line in the paper) = veraison, maturity"
       - id: bellvert2015-pinot-noir-post
-        cultivar: Pinot-noir
+        cultivar: "Pinot Noir"
         stages: [post_harvest]
         condition: sunlit
         a0_c: 3.887
@@ -560,6 +575,7 @@ species:
         evidence: primary_read
         source_id: bellvert2015
         ref: "Table 3, Postharvest"
+        assumption: "ASSUMPTION: Bellvert 2015 postharvest = post_harvest"
       - id: bellvert2015-chardonnay-i
         cultivar: Chardonnay
         stages: [vegetative]
@@ -572,6 +588,7 @@ species:
         evidence: primary_read
         source_id: bellvert2015
         ref: "Table 3, Stage I"
+        assumption: "ASSUMPTION: Bellvert 2015 Stage I = vegetative"
       - id: bellvert2015-chardonnay-ii-iii
         cultivar: Chardonnay
         stages: [veraison, maturity]
@@ -584,6 +601,7 @@ species:
         evidence: primary_read
         source_id: bellvert2015
         ref: "Table 3, Stage II-III"
+        assumption: "ASSUMPTION: Bellvert 2015 Stage II-III (one line in the paper) = veraison, maturity"
       - id: bellvert2015-chardonnay-post
         cultivar: Chardonnay
         stages: [post_harvest]
@@ -596,6 +614,7 @@ species:
         evidence: primary_read
         source_id: bellvert2015
         ref: "Table 3, Postharvest"
+        assumption: "ASSUMPTION: Bellvert 2015 postharvest = post_harvest"
       - id: bellvert2015-syrah-i
         cultivar: Syrah
         stages: [vegetative]
@@ -608,6 +627,7 @@ species:
         evidence: primary_read
         source_id: bellvert2015
         ref: "Table 3, Stage I"
+        assumption: "ASSUMPTION: Bellvert 2015 Stage I = vegetative"
       - id: bellvert2015-syrah-ii-iii
         cultivar: Syrah
         stages: [veraison, maturity]
@@ -620,6 +640,7 @@ species:
         evidence: primary_read
         source_id: bellvert2015
         ref: "Table 3, Stage II-III"
+        assumption: "ASSUMPTION: Bellvert 2015 Stage II-III (one line in the paper) = veraison, maturity"
       - id: bellvert2015-tempranillo-i
         cultivar: Tempranillo
         stages: [vegetative]
@@ -632,6 +653,7 @@ species:
         evidence: primary_read
         source_id: bellvert2015
         ref: "Table 3, Stage I"
+        assumption: "ASSUMPTION: Bellvert 2015 Stage I = vegetative"
       - id: bellvert2015-tempranillo-ii-iii
         cultivar: Tempranillo
         stages: [veraison, maturity]
@@ -644,4 +666,5 @@ species:
         evidence: primary_read
         source_id: bellvert2015
         ref: "Table 3, Stage II-III"
+        assumption: "ASSUMPTION: Bellvert 2015 Stage II-III (one line in the paper) = veraison, maturity"
     stages: {}

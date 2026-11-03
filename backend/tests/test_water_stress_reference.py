@@ -308,11 +308,12 @@ def test_real_file_validates_with_stage_detection():
 def test_payload_has_citations_for_all_source_ids():
     for slug in ("wheat", "olive", "maize"):
         p = species_payload(DOC, slug)
-        assert [c["sourceId"] for c in p["citations"]] == p["sourceIds"]
+        assert [c["sourceId"] for c in p["citations"]] == sorted(set(p["sourceIds"]) | {"fao56"})
         for c in p["citations"]:
             assert c["text"] and c["url"].startswith("https://")
     ids = species_payload(DOC, "wheat")["sourceIds"]
     assert set(ids) == {"fao66", "timesat"}
+    assert "fao56" not in ids
     # unknown-licence sources are cited too
     assert _real_known()["fao66"] == "unknown"
 
@@ -327,3 +328,97 @@ def test_registry_has_fao66_and_timesat():
         assert legacy[sid]["attribution_text"] == reg[sid].licence.attribution_text
     assert "10.1016/j.cageo.2004.05.006" in legacy["timesat"]["attribution_text"]
     assert "FAO licence request pending" in reg["fao66"].licence.notes
+
+
+def test_citations_always_include_fao56_but_not_source_ids():
+    # FAO-56 is the source of the water-balance Ks method used when there is no CWSI.
+    for slug in ("wheat", "olive", "grapevine"):
+        p = species_payload(DOC, slug)
+        assert "fao56" in {c["sourceId"] for c in p["citations"]}
+        assert "fao56" not in p["sourceIds"]
+    seen = []
+    p = species_payload(DOC, "olive", citation_lookup=lambda sid: seen.append(sid) or {"sourceId": sid})
+    assert "fao56" in seen and "fao56" not in p["sourceIds"]
+
+
+def test_olive_egea_assumption_states_window_and_season():
+    rows = [b for b in DOC["species"]["olive"]["baselines"] if b["id"].startswith("egea2017-t2-")]
+    assert len(rows) == 11
+    for b in rows:
+        assert "measured on Arbequina; applied to all olive cultivars" in b["assumption"]
+        assert "ASSUMPTION: hourly mean centred on the GMT hour (+-0.5 h)".replace("+-", "\u00b1") in b["assumption"]
+        assert "summer (DOY 167-275) baseline applied all year" in b["assumption"]
+
+
+def test_grapevine_pinot_noir_cultivar_spelling():
+    rows = [b for b in DOC["species"]["grapevine"]["baselines"] if b["id"].startswith("bellvert2015-pinot-noir")]
+    assert len(rows) == 3
+    for b in rows:
+        assert b["cultivar"] == "Pinot Noir"
+
+
+def test_stage_mapping_assumptions_in_served_rows():
+    by_id = {b["id"]: b for b in DOC["species"]["grapevine"]["baselines"]}
+    for bid, b in by_id.items():
+        if bid.endswith("-i"):
+            assert "Stage I = vegetative" in b["assumption"]
+        elif bid.endswith("-ii-iii"):
+            assert "Stage II-III" in b["assumption"] and "veraison, maturity" in b["assumption"]
+    served = {b["id"]: b for b in species_payload(DOC, "grapevine")["baselines"]}
+    assert "Stage I = vegetative" in served["bellvert2015-pinot-noir-i"]["assumption"]
+    for sp, ids in (("wheat", None), ("durum_wheat", None), ("barley", None)):
+        for b in DOC["species"][sp]["baselines"]:
+            assert "pre-heading" in b["assumption"] or "post-heading" in b["assumption"]
+    assert "emergence, vegetative_v6" in DOC["species"]["maize"]["baselines"][0]["assumption"]
+    for sp in ("alfalfa", "bean", "pea", "potato", "soybean", "sugar_beet", "sunflower", "tomato"):
+        assert "all stages" in DOC["species"][sp]["baselines"][0]["assumption"]
+
+
+# --- validate() with stage_detection: slugs and stage names --------------------------------
+
+def _detect():
+    return yaml.safe_load((DATA / "phenology_sources.yaml").read_text(encoding="utf-8"))["stage_detection"]
+
+
+def _wheat_doc():
+    d = _cereal()
+    d["species"]["wheat"]["baselines"] = [{
+        "id": "b1", "cultivar": None, "stages": ["heading"], "condition": "sunlit",
+        "a0_c": 2.5, "a1_c_per_kpa": -0.36, "upper": None, "valid": {"clear_sky": True},
+        "evidence": "primary_read", "source_id": "idso1982", "ref": "r"}]
+    return d
+
+
+def test_stage_detection_clean_doc_passes():
+    assert validate(_wheat_doc(), KNOWN, _detect()) == []
+
+
+def test_stage_detection_rejects_unknown_species_slug():
+    d = _wheat_doc()
+    d["species"]["wheatt"] = d["species"].pop("wheat")
+    assert any("wheatt" in e and "not a known species slug" in e for e in validate(d, KNOWN, _detect()))
+
+
+def test_stage_detection_rejects_non_canonical_slug():
+    d = _wheat_doc()
+    d["species"]["TRZAX"] = d["species"].pop("wheat")  # resolves to wheat, not to itself
+    assert any("TRZAX" in e and "not a known species slug" in e for e in validate(d, KNOWN, _detect()))
+
+
+def test_stage_detection_rejects_unknown_stage_key_but_allows_reserved():
+    d = _wheat_doc()
+    d["species"]["wheat"]["stages"]["nope"] = dict(d["species"]["wheat"]["stages"]["post_maturity"])
+    errs = validate(d, KNOWN, _detect())
+    assert any("stages.nope" in e for e in errs) and not any("post_maturity" in e for e in errs)
+
+
+def test_stage_detection_rejects_unknown_baseline_stage():
+    d = _wheat_doc()
+    d["species"]["wheat"]["baselines"][0]["stages"] = ["heading", "silking"]
+    assert any("silking" in e and "b1" in e for e in validate(d, KNOWN, _detect()))
+
+
+def test_no_stage_detection_skips_name_checks():
+    d = _wheat_doc()
+    d["species"]["wheat"]["baselines"][0]["stages"] = ["silking"]
+    assert validate(d, KNOWN) == []

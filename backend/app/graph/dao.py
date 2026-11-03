@@ -1107,8 +1107,9 @@ class GraphDAO:
         """Served water-stress reference of a species slug, or None when nothing is served.
 
         The node keeps the raw curated block (all rows); the served payload is rebuilt with
-        ``species_payload`` so unserved rows never leave the graph. Raises ValueError on a
-        malformed stored payload; the route turns that into a null field.
+        ``species_payload`` so unserved rows never leave the graph. Raises ValueError (not JSON)
+        or TypeError (JSON that is not an object) on a malformed stored payload; the route turns
+        either into a null field.
         """
         async with self._driver.session() as session:
             result = await session.run(

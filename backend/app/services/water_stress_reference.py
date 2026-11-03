@@ -21,6 +21,7 @@ A0_RANGE = (-10.0, 15.0)
 A1_RANGE = (-5.0, 1.0)
 # `post_maturity` is a reserved key under `stages`: it is not a stage_detection name.
 RESERVED_STAGES = frozenset({"post_maturity"})
+WATER_BALANCE_SOURCE = "fao56"
 SENESCENCE_METHODS = frozenset({"timesat_amplitude"})
 
 logger = logging.getLogger(__name__)
@@ -146,12 +147,20 @@ def _check_senescence(where: str, sen: object, known: dict[str, str],
         errors.append(f"{where}.ref: missing")
 
 
+def _canonical_slug(slug: str) -> str | None:
+    from app.species_registry import resolve_species
+
+    return resolve_species(slug)
+
+
 def validate(doc: dict, known_sources: dict[str, str],
              stage_detection: Mapping[str, Mapping] | None = None) -> list[str]:
     """Return the errors of the document. `known_sources` maps source_id to commercial_use.
 
-    `stage_detection` (slug -> block with `stages`) enables the check that a senescence
-    `gate_stage` is a stage name of the species; without it that check is skipped.
+    `stage_detection` (slug -> block with `stages`) enables the name checks: every species slug is
+    a stage_detection species (or resolves to itself in the species registry), every `stages` key
+    is a stage of that species or in RESERVED_STAGES, every baseline `stages` entry and the
+    senescence `gate_stage` is a stage of the species. Without it those checks are skipped.
     """
     errors: list[str] = []
     species = doc.get("species") if isinstance(doc, dict) else None
@@ -161,15 +170,23 @@ def validate(doc: dict, known_sources: dict[str, str],
         if not isinstance(block, dict):
             errors.append(f"{slug}: must be a mapping")
             continue
+        names: set[str] | None = None
+        if stage_detection is not None:
+            if slug not in stage_detection and _canonical_slug(slug) != slug:
+                errors.append(f"{slug}: not a known species slug")
+            names = set((stage_detection.get(slug) or {}).get("stages") or {})
         seen: set[str] = set()
         for b in block.get("baselines") or []:
             _check_baseline(slug, b, known_sources, seen, errors)
+            if names is not None and isinstance(b, dict) and isinstance(b.get("stages"), list):
+                for st in b["stages"]:
+                    if isinstance(st, str) and st not in names:
+                        errors.append(f"{slug}.{b.get('id') or '?'}.stages: {st!r} is not a stage of the species")
         for name, flags in (block.get("stages") or {}).items():
             _check_stage(f"{slug}.stages.{name}", flags, known_sources, errors)
+            if names is not None and name not in names and name not in RESERVED_STAGES:
+                errors.append(f"{slug}.stages.{name}: not a stage of the species or a reserved key")
         if block.get("senescence") is not None:
-            names = None
-            if stage_detection is not None:
-                names = set((stage_detection.get(slug) or {}).get("stages") or {})
             _check_senescence(f"{slug}.senescence", block["senescence"], known_sources, names, errors)
     return errors
 
@@ -215,7 +232,7 @@ def species_payload(doc: dict, slug: str,
 
     Served: baselines read in their primary source that carry an upper limit. Secondary rows and
     rows without an upper limit stay in the file but are not served.
-    `citations` lists every source id of the payload from the registry's attribution text, whatever
+    `citations` lists every source id of the payload plus fao56 (water-balance method) from the registry's attribution text, whatever
     its commercial_use: citing is always allowed (the licence attribution list skips unknown ones).
     """
     block = (doc.get("species") or {}).get(slug)
@@ -239,8 +256,10 @@ def species_payload(doc: dict, slug: str,
         ids.update(f["sourceIds"])
     if senescence is not None:
         ids.add(senescence["sourceId"])
+    # FAO-56 is the source of the water-balance Ks method used when there is no CWSI, so it is
+    # always cited; it is not a source of this payload's rows, hence not in sourceIds.
     citations = []
-    for sid in sorted(ids):
+    for sid in sorted(ids | {WATER_BALANCE_SOURCE}):
         cite = citation_lookup(sid)
         if cite is None:
             logger.warning("water stress reference: no citation for source %s", sid)
