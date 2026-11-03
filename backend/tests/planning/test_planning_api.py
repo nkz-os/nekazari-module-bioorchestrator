@@ -27,6 +27,16 @@ def test_fit_route_validates_the_contract(client, monkeypatch):
     assert r.status_code == 200 and r.json()["contract_version"] == "2.5"
 
 
+def test_fit_route_passes_the_soil_refresh_flag_only_when_asked(client, monkeypatch):
+    fake = AsyncMock(return_value=FIT)
+    monkeypatch.setattr(planning_api, "parcel_fit", fake)
+    url = "/api/graph/planning/parcels/urn:ngsi-ld:AgriParcel:t:p1/fit"
+    client.get(url, params={"campaign": 2027})
+    assert fake.await_args.kwargs["refresh_soil"] is False
+    client.get(url, params={"campaign": 2027, "refresh_soil": "1"})
+    assert fake.await_args.kwargs["refresh_soil"] is True
+
+
 def test_fit_route_404_for_unknown_parcel(client, monkeypatch):
     from app.planning.service import ParcelNotFound
     monkeypatch.setattr(planning_api, "parcel_fit", AsyncMock(side_effect=ParcelNotFound("x")))

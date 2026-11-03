@@ -237,7 +237,9 @@ async def test_empty_history_lists_the_two_campaigns_before_the_plan(monkeypatch
     FitResponse.model_validate(out)
 
 
-async def test_fit_reads_the_soil_fresh_so_a_declared_texture_is_seen(monkeypatch):
+async def test_fit_uses_the_soil_cache_unless_a_refresh_is_asked(monkeypatch):
     dao = _setup(monkeypatch, _soil_env("Csa", MILD))
     await service.parcel_fit(**_fit_args(dao))
+    assert dao.get_parcel_environment.await_args.kwargs == {"fresh_soil": False}
+    await service.parcel_fit(**_fit_args(dao), refresh_soil=True)
     assert dao.get_parcel_environment.await_args.kwargs == {"fresh_soil": True}

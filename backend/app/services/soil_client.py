@@ -20,6 +20,12 @@ SOIL_API_URL = os.getenv("SOIL_API_URL", "http://soil-module-service:8000")
 _soil_cache: TTLCache[str, dict[str, Any]] = TTLCache(maxsize=256, ttl=86400)
 
 
+def _store(key: str, result: dict[str, Any], fresh: bool) -> None:
+    if fresh and not result.get("data_available"):
+        return
+    _soil_cache[key] = result
+
+
 async def get_parcel_soil_properties(parcel_id: str, tenant_id: str = "", *, fresh: bool = False) -> dict[str, Any]:
     """Fetch actual soil properties for a parcel from the Soil module.
 
@@ -31,8 +37,9 @@ async def get_parcel_soil_properties(parcel_id: str, tenant_id: str = "", *, fre
 
     If Soil module is unreachable or parcel has no soil data,
     returns data_available=False.
-    Results cached per parcel_id for 24h; `fresh` skips the read of the cache (the answer is still stored),
-    for a caller that must see a value the farmer has just declared in the Soil module.
+    Results cached per parcel_id for 24h; `fresh` skips the read of the cache, for a caller that must see a
+    value the farmer has just declared in the Soil module. A fresh read stores only a success: a failure or an
+    "unavailable" answer never replaces what the cache holds.
     """
     cache_key = f"{tenant_id}:{parcel_id}" if tenant_id else parcel_id
     cached = None if fresh else _soil_cache.get(cache_key)
@@ -57,7 +64,7 @@ async def get_parcel_soil_properties(parcel_id: str, tenant_id: str = "", *, fre
                     horizons = []
                 if not horizons:
                     result: dict[str, Any] = {"data_available": False, "source": "no_horizons"}
-                    _soil_cache[cache_key] = result
+                    _store(cache_key, result, fresh)
                     return result
                 h = horizons[0]
                 # Organic matter ≈ organic_carbon × 1.724 (van Bemmelen factor)
@@ -80,7 +87,7 @@ async def get_parcel_soil_properties(parcel_id: str, tenant_id: str = "", *, fre
                     "data_available": True,
                 }
                 result = sanitize_soil_properties(result)
-                _soil_cache[cache_key] = result
+                _store(cache_key, result, fresh)
                 return result
             elif resp.status_code == 404:
                 logger.info("No soil data for parcel %s (404)", parcel_id)
@@ -93,7 +100,7 @@ async def get_parcel_soil_properties(parcel_id: str, tenant_id: str = "", *, fre
         logger.warning("Soil module unreachable for parcel %s: %s", parcel_id, e)
 
     result: dict[str, Any] = {"data_available": False, "source": "unavailable"}
-    _soil_cache[cache_key] = result
+    _store(cache_key, result, fresh)
     return result
 
 

@@ -291,9 +291,9 @@ def _rank_key(s: dict) -> tuple:
 
 
 async def parcel_fit(*, dao, source: KnowledgeSource, parcel_id: str, tenant_id: str,
-                     campaign: int, regime: str | None) -> dict:
-    # The fit is where a farmer sees a soil texture they have just declared: it never reads the 24 h soil cache.
-    env = await load_environment(dao, parcel_id, tenant_id, fresh_soil=True)
+                     campaign: int, regime: str | None, refresh_soil: bool = False) -> dict:
+    # Only the read right after the farmer declared a soil texture skips the 24 h soil cache.
+    env = await load_environment(dao, parcel_id, tenant_id, fresh_soil=refresh_soil)
     regime_used, regime_source = resolve_regime(regime, env)
     cycles = await fetch_crop_cycles(env["parcel_id"], tenant_id)
     if cycles is not None and not isinstance(cycles, dict):

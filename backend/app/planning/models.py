@@ -95,6 +95,7 @@ class ParcelFacts(BaseModel):
     climate_source: str
     soil_texture: str | None
     soil_ph: float | None
+    # The soil PROFILE's source (soil module dataSource), not the provenance of the texture (entered/measured/estimated).
     soil_source: str
     regime: Regime | None
     regime_source: str
