@@ -67,3 +67,17 @@ describe('VarietyTable evidence depth (es)', () => {
     expect(html).not.toContain('ensayos ·');
   });
 });
+
+describe('VarietyTable actuality (es)', () => {
+  it('a variety without recent trials says since when, and stays in the table', () => {
+    const stale = { ...base, varieties: [{ ...base.varieties[0], variety: 'Var Old', last_year: 2021, stale: true }] };
+    const html = renderToStaticMarkup(<VarietyTable data={stale} selected={null} onSelect={() => {}} />);
+    expect(html).toContain('Var Old');
+    expect(html).toContain('sin ensayos desde 2021');
+  });
+  it('a current variety carries no such note', () => {
+    const current = { ...base, varieties: [{ ...base.varieties[0], last_year: 2024, stale: false }] };
+    const html = renderToStaticMarkup(<VarietyTable data={current} selected={null} onSelect={() => {}} />);
+    expect(html).not.toContain('sin ensayos desde');
+  });
+});

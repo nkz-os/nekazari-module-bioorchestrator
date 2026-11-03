@@ -13,7 +13,8 @@ Recency: the relative yield weighs each observation by ``0.5 ** (age / RECENCY_H
 (an observation eight years older than ``ref_year`` counts half), the same half-life as the graph
 recommender. Only the relative yield is weighted: the floor in poor environments and the mean kg/ha
 stay flat, because discounting old dry years would hide the very trials that define "when it goes
-badly".
+badly". Actuality: a variety whose last trial is older than RECENT_TRIAL_YEARS campaigns is flagged
+``stale`` and sorted after every current one (a ``ref_year`` earlier than the trials disables both).
 """
 from __future__ import annotations
 
@@ -22,6 +23,10 @@ from collections import defaultdict
 from statistics import fmean, quantiles
 
 RECENCY_HALF_LIFE_YEARS = 8.0
+# A variety with no trial in the last RECENT_TRIAL_YEARS campaigns (ref_year included) is "stale": it is
+# demoted to the end of the table, never hidden (the farmer can no longer buy or compare it, but the
+# evidence stays visible). ASSUMPTION (owner, 2026-11-02): 3 campaigns; revisit with the backtest.
+RECENT_TRIAL_YEARS = 3
 
 MIN_ENV_VARIETIES = 3
 MIN_FW_ENVIRONMENTS = 5
@@ -98,9 +103,13 @@ def variety_stats(rows: list[dict], *, ref_year: int | None = None) -> tuple[lis
                  if len(obs) >= MIN_FW_ENVIRONMENTS and len(low_ratios) >= MIN_LOW_ENVIRONMENTS else None)
         weights = [recency_weight(k[1], ref_year) for k, _, _ in obs]
         relative = sum(w * y / m for w, (_, y, m) in zip(weights, obs)) / sum(weights)
+        last_year = years[-1] if years else None
+        stale = last_year is None or last_year < ref_year - RECENT_TRIAL_YEARS + 1
         stats.append({
             "variety": variety,
             "relative_yield_pct": round(relative * 100, 1),
+            "last_year": last_year,
+            "stale": stale,
             "n_environments": len(obs),
             "years": [years[0], years[-1]] if years else [],
             "mean_kg_ha": round(fmean(y for _, y, _ in obs)),
@@ -110,5 +119,6 @@ def variety_stats(rows: list[dict], *, ref_year: int | None = None) -> tuple[lis
             "low_env_relative_yield_pct": floor,
             "n_low_environments": len(low_ratios),
         })
-    stats.sort(key=lambda s: (s["few_environments"], -s["relative_yield_pct"], -s["n_environments"], s["variety"]))
+    stats.sort(key=lambda s: (s["stale"], s["few_environments"], -s["relative_yield_pct"], -s["n_environments"],
+                              s["variety"]))
     return stats, len(usable)

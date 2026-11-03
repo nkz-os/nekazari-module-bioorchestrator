@@ -91,6 +91,9 @@ class VarietyStat(BaseModel):
     # Mean relative yield in the poor trials (lower tercile of environment means); None below the thresholds.
     low_env_relative_yield_pct: float | None = None
     n_low_environments: int = 0
+    # Actuality: the variety's last trial year, and whether it falls outside the recent campaigns window.
+    last_year: int | None = None
+    stale: bool = False
 
 
 class EvidenceDepth(BaseModel):

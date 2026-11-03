@@ -35,9 +35,9 @@ def test_finlay_wilkinson_slope_and_bands():
 def test_many_environment_varieties_rank_before_few_environment_ones():
     rows = []
     for i in range(3):
-        rows += _rows((f"S{i}", 2020 + i), {"OLD": 5000, "X": 5000, "Y": 5000})
+        rows += _rows((f"S{i}", 2023 + i), {"OLD": 5000, "X": 5000, "Y": 5000})
     rows += _rows(("S9", 2025), {"NEW": 9000, "X": 5000, "Y": 5000})
-    stats, _ = variety_stats(rows)
+    stats, _ = variety_stats(rows, ref_year=2025)  # every variety is current: only the environment count sorts
     assert stats[0]["variety"] != "NEW" and stats[-1]["variety"] == "NEW"
 
 
@@ -167,3 +167,44 @@ def test_recency_leaves_the_low_environment_floor_and_the_mean_flat():
     w = next(s for s in weighted if s["variety"] == "V1")
     assert w["low_env_relative_yield_pct"] == f["low_env_relative_yield_pct"] == pytest.approx(120.0)
     assert w["mean_kg_ha"] == f["mean_kg_ha"] and w["fw_slope"] == f["fw_slope"]
+
+
+# --- actuality: a variety without a recent trial is demoted, never hidden -------------------------
+
+def _grid(years, names, site="A"):
+    rows = []
+    for y in years:
+        rows += _rows((site, y), {n: 5000 + 100 * i for i, n in enumerate(names)})
+    return rows
+
+
+def test_variety_without_a_trial_in_the_last_three_campaigns_is_stale_and_demoted():
+    # OLD: best yields, but last trialled in 2021. NEW: trialled every year through 2025.
+    rows = _grid(range(2016, 2022), ["LOW", "MID", "OLD"]) + _grid(range(2019, 2026), ["LOW", "MID", "NEW"])
+    stats, _ = variety_stats(rows, ref_year=2025)
+    by = {s["variety"]: s for s in stats}
+    assert by["OLD"]["stale"] is True and by["OLD"]["last_year"] == 2021
+    assert by["NEW"]["stale"] is False and by["NEW"]["last_year"] == 2025
+    assert stats[-1]["variety"] == "OLD"  # demoted to the end
+    assert varieties_mod.RECENT_TRIAL_YEARS == 3
+
+
+def test_the_actuality_window_counts_campaigns_inclusively():
+    rows = _grid(range(2016, 2024), ["LOW", "MID", "EDGE"]) + _grid(range(2019, 2026), ["LOW", "MID", "NEW"])
+    by = {s["variety"]: s for s in variety_stats(rows, ref_year=2025)[0]}
+    assert by["EDGE"]["last_year"] == 2023 and by["EDGE"]["stale"] is False  # 2023, 2024, 2025 = 3 campaigns
+    by = {s["variety"]: s for s in variety_stats(rows, ref_year=2026)[0]}
+    assert by["EDGE"]["stale"] is True
+
+
+def test_stale_varieties_rank_after_recent_ones_even_with_few_environments():
+    rows = _grid(range(2016, 2022), ["LOW", "MID", "OLD"]) + _grid([2025], ["LOW", "MID", "FEW"])
+    stats, _ = variety_stats(rows, ref_year=2025)
+    names = [s["variety"] for s in stats]
+    assert names.index("FEW") < names.index("OLD")
+
+
+def test_a_reference_year_before_every_trial_disables_the_rule():
+    rows = _grid(range(2016, 2022), ["LOW", "MID", "OLD"]) + _grid(range(2019, 2026), ["LOW", "MID", "NEW"])
+    stats, _ = variety_stats(rows, ref_year=0)
+    assert all(s["stale"] is False for s in stats) and stats[0]["variety"] in ("OLD", "NEW")

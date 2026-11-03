@@ -51,6 +51,7 @@ export default function VarietyTable({ data, selected, onSelect }: Props) {
                     <td className="py-2 pr-4">
                       {`${v.n_environments} / ${v.years.length ? `${v.years[0]}–${v.years[v.years.length - 1]}` : '—'}`}
                       {v.few_environments && <span className="block text-nkz-xs text-nkz-warning">{t('planning.variety.few')}</span>}
+                      {v.stale && <span className="block text-nkz-xs text-nkz-warning">{t('planning.variety.stale', { year: v.last_year ?? '—' })}</span>}
                     </td>
                     <td className="py-2 pr-4">
                       <Button size="sm" variant={selected === v.variety ? 'primary' : 'secondary'} aria-pressed={selected === v.variety}
