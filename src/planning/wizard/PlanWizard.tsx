@@ -164,7 +164,7 @@ export default function PlanWizard({ row, campaign, regime, management, onSaved,
         return (
           <Step title={t('planning.wizard.step', { n, total: steps.length })} loading={fit.loading} error={fit.error}
             onRetry={fit.retry} loadingText={t('planning.loading.fit')}>
-            {fit.data && <StepCrop fit={fit.data} selected={s.crop} onPick={pick} />}
+            {fit.data && <StepCrop fit={fit.data} selected={s.crop} onPick={pick} row={row} onCompleted={fit.retry} />}
           </Step>
         );
       case 'variety':

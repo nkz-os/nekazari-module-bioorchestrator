@@ -7,7 +7,9 @@ import { num, regionalLine, regionalName, regionalUnavailableKey } from '../regi
 import { irrigatedParcel, irrigationLine, irrigationUnavailableKey, isPending } from '../irrigationNeed';
 import { reasonText, reasonTone, speciesIndex } from '../fitModel';
 import { cropName } from '../format';
-import type { FitResponse, RegionalYield, SpeciesFit, TFn } from '../types';
+import { askedByBar, completionNeeds } from '../completionModel';
+import type { FitResponse, ParcelRow, Reason, RegionalYield, SpeciesFit, TFn } from '../types';
+import CompletionBar from './CompletionBar';
 
 const VERDICT_TONE = { fits: 'positive', caveats: 'warning', no_fit: 'negative' } as const;
 
@@ -17,7 +19,10 @@ const fold = (text: string) => text.normalize('NFD').replace(/\p{M}/gu, '').toLo
 export const matchesCrop = (name: string, query: string): boolean => fold(name).includes(fold(query.trim()));
 
 /** A crop that does not fit says every reason; the others say their first one. */
-export const cardReasons = (s: SpeciesFit) => (s.verdict === 'no_fit' ? s.reasons : s.reasons.slice(0, 1));
+export const cardReasons = (s: SpeciesFit, hide: (r: Reason) => boolean = () => false) => {
+  const shown = s.reasons.filter((r) => !hide(r));
+  return s.verdict === 'no_fit' ? shown : shown.slice(0, 1);
+};
 
 /** A species sown only as a cover is offered in the cover step, never here. */
 export const mainCrops = (species: SpeciesFit[]): SpeciesFit[] => species.filter((s) => !s.cover_only);
@@ -61,15 +66,20 @@ export function IrrigationDetail({ s, lang, t }: { s: SpeciesFit; lang: string; 
   );
 }
 
-interface Props { fit: FitResponse; selected: string | null; onPick: (sp: SpeciesFit) => void }
+interface Props {
+  fit: FitResponse; selected: string | null; onPick: (sp: SpeciesFit) => void;
+  /** With the parcel and a way to read the fit again, missing data is asked for above the crops. */
+  row?: Pick<ParcelRow, 'parcel_id' | 'regime' | 'regime_source'>; onCompleted?: () => void;
+}
 
-export default function StepCrop({ fit, selected, onPick }: Props) {
+export default function StepCrop({ fit, selected, onPick, row, onCompleted }: Props) {
   const { t, i18n } = useTranslation('bioorchestrator');
   const lang = i18n.language;
   const [query, setQuery] = useState('');
   const [infoOpen, setInfoOpen] = useState<string | null>(null);
   const names = speciesIndex(fit.species);
   const irrigated = irrigatedParcel(fit.facts?.regime);
+  const asked = row && onCompleted ? askedByBar(completionNeeds(fit, row)) : undefined;
   const card = (s: SpeciesFit) => (
     <div key={s.species}>
       <Button variant={selected === s.species ? 'primary' : 'secondary'} aria-pressed={selected === s.species}
@@ -77,7 +87,7 @@ export default function StepCrop({ fit, selected, onPick }: Props) {
         <span className="block">
           <span className="font-medium">{cropName(s.names, s.species, lang)}</span>{' '}
           <Badge intent={VERDICT_TONE[s.verdict]}>{t(`planning.fit.${s.verdict}`)}</Badge>
-          {cardReasons(s).map((r, i) => <Badge key={`${r.code}-${i}`} intent={reasonTone(r)}>{reasonText(r, names, lang, t)}</Badge>)}
+          {cardReasons(s, asked).map((r, i) => <Badge key={`${r.code}-${i}`} intent={reasonTone(r)}>{reasonText(r, names, lang, t)}</Badge>)}
         </span>
       </Button>
       <div className="flex items-center gap-2 px-2">
@@ -109,6 +119,7 @@ export default function StepCrop({ fit, selected, onPick }: Props) {
   return (
     <Stack gap="stack">
       <h3 className="text-nkz-lg font-semibold text-nkz-text-primary">{t('planning.wizard.crop.title')}</h3>
+      {row && onCompleted && <CompletionBar fit={fit} row={row} onSaved={onCompleted} />}
       <p className="text-nkz-sm text-nkz-text-muted">{t('planning.wizard.crop.recommended')}</p>
       <Stack gap="tight">{recommendedCrops(fit.species).map(card)}</Stack>
       <Input value={query} placeholder={t('planning.wizard.crop.search')} aria-label={t('planning.wizard.crop.search')}

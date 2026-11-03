@@ -49,6 +49,9 @@ const FAMILIES = [
   ...['label', 'hint', 'placeholder', 'unitLabel', 'unit.m3ha', 'unit.mm', 'save', 'none', 'stored', 'clear', 'invalid', 'thousands', 'tooSmall', 'tooLarge', 'saveError']
     .map((k) => `planning.detail.allotment.${k}`),
   ...COVER_METHODS.map((k) => `planning.plan.methods.${k}`),
+  ...['title', 'unknown', 'regime.label', 'regime.why', 'soil.label', 'soil.why', 'soil.placeholder', 'history.label', 'history.why',
+    'history.campaign', 'history.placeholder', 'error.soilNotReady', 'error.campaign_not_past', 'error.invalid_campaign',
+    'error.invalid_species', 'error.campaign_has_dated_crop', 'error.generic'].map((k) => `planning.wizard.crop.complete.${k}`),
   ...['productive', 'stable', 'balanced'].map((k) => `planning.wizard.variety.why.${k}`),
   ...['sand', 'loamy-sand', 'sandy-loam', 'loam', 'silt-loam', 'silt', 'sandy-clay-loam', 'clay-loam', 'silty-clay-loam',
     'sandy-clay', 'silty-clay', 'clay'].map((k) => `planning.texture.${k}`),
