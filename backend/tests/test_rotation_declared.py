@@ -85,3 +85,23 @@ async def test_one_declared_campaign_behaves_like_a_dated_one(monkeypatch):
     out, codes = await _fit(monkeypatch, _payload([_declared("b", 2025)]))
     assert "rotation_restriction" in codes("wheat")
     assert "rotation_unknown" not in codes("wheat")
+
+
+def _prev(crops, campaign=2027):
+    return service.previous_crop(_payload(crops), campaign, maturity_for=lambda slug, start: None)
+
+
+def test_previous_crop_later_declared_beats_older_dated():
+    got = _prev([_declared("a", 2025, "wheat"), _dated("d", "2023-10-20", "2024-07-10", "barley")])
+    assert got.crop == "wheat" and got.end_source == "campaign_start"
+
+
+def test_previous_crop_same_campaign_dated_wins():
+    got = _prev([_declared("a", 2024, "wheat"), _dated("d", "2023-10-20", "2024-07-10", "barley")])
+    assert got.crop == "barley" and got.end == date(2024, 7, 10)
+
+
+def test_previous_crop_dated_only_and_declared_only():
+    assert _prev([_dated("d", "2022-10-20", "2023-07-10", "barley")]).crop == "barley"
+    got = _prev([_declared("a", 2025)])
+    assert (got.crop, got.end, got.end_source) == ("wheat", None, "campaign_start")

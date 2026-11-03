@@ -55,6 +55,7 @@ from app.planning.fit import (
     water_reasons,
 )
 from app.planning.history import (
+    declared_only,
     campaign_of_start,
     cycles_of,
     first_campaign,
@@ -569,7 +570,14 @@ def previous_crop(cycles: dict | None, campaign: int, *, maturity_for) -> Previo
              and (campaign_of(c) or campaign) < campaign]
     if not mains:
         return None
-    last = max(mains, key=lambda c: iso_date((c.get("start") or {}).get("date")) or date.min)
+    dated = [c for c in mains if not declared_only(c)]
+    declared = [c for c in mains if declared_only(c)]
+    last = max(dated, key=lambda c: iso_date((c.get("start") or {}).get("date")) or date.min) if dated else None
+    if declared:
+        latest_declared = max(declared, key=lambda c: campaign_of(c))
+        # Facts beat declarations: a declared crop wins only from a strictly later campaign.
+        if last is None or campaign_of(latest_declared) > campaign_of(last):
+            last = latest_declared
     slug = species_slug(last.get("species"))
     end = last.get("end") or {}
     end_date = iso_date(end.get("date"))
