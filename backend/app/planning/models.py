@@ -146,6 +146,28 @@ class Moisture(BaseModel):
     pct: float | None = None
 
 
+class RegionalMoisture(BaseModel):
+    basis: Literal["eu_standard"] = "eu_standard"
+    pct: float | None = None
+
+
+class RegionalYield(BaseModel):
+    """Regional statistic (Eurostat NUTS2 mean, rainfed and irrigated together); never a forecast for a parcel."""
+    provider_id: Literal["eurostat_nuts2"] = "eurostat_nuts2"
+    basis: Literal["regional_statistics"] = "regional_statistics"
+    nuts: str
+    region_name: dict[str, str] | None = None
+    first_year: int
+    last_year: int
+    n_years: int
+    percentiles: Percentiles
+    unit: Literal["t/ha"] = "t/ha"
+    moisture: RegionalMoisture = Field(default_factory=RegionalMoisture)
+    regimes: Literal["mixed"] = "mixed"
+    relative_index: float | None = None
+    attributions: list[dict[str, Any]] = Field(default_factory=list)
+
+
 class Estimate(BaseModel):
     provider_id: str
     provider_version: str
