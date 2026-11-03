@@ -16,11 +16,11 @@ from app.core.dependencies import get_neo4j_driver
 from app.graph.balance_dao import BalanceDao
 from app.services.crop_balance import payload_from_node
 from app.services.eurostat_yields import yields_payload
+from app.services.nuts_reference import names_or_none, plausible_range, province_table
 from app.services.nuts_regions import (
     is_superseded,
     nuts2_for_municipality,
 )
-from app.services.nuts_reference import names_or_none, plausible_range, province_table
 from app.services.region_lookup import es_province_at
 from app.species_registry import catalog_code, list_crop_names
 from neo4j import AsyncDriver

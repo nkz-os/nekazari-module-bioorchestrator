@@ -8,7 +8,7 @@ from __future__ import annotations
 import statistics
 
 from app.planning.estimates import _valid_yield, percentiles
-from app.planning.models import RegionalYield, RegionalMoisture, Percentiles
+from app.planning.models import Percentiles, RegionalMoisture, RegionalYield
 from app.services.eurostat_yields import PlausibleRange, _range_check
 
 REGION_SERIES_SHORT = "region_series_short"

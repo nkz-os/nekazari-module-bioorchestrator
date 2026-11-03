@@ -13,8 +13,8 @@ from app.auth import SKIP_AUTH_PREFIXES
 from app.core.dependencies import get_neo4j_driver
 from app.graph.balance_dao import BalanceDao
 from app.main import app
-from app.services.crop_balance import to_node_props
 from app.services import nuts_reference
+from app.services.crop_balance import to_node_props
 
 CROP = {
     "crop_type": "cereal", "harvest_product": "grain", "residue_product": "straw",

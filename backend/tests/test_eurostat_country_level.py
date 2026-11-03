@@ -2,14 +2,20 @@
 import gzip
 import json
 import sys
-from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
 
 from app.services.eurostat_yields import (
-    AREA, HUMIDITY, PRODUCTION, YIELD_METHOD, build_series, parse_jsonstat, request_url,
-    nuts_level, to_node_props,
+    AREA,
+    HUMIDITY,
+    PRODUCTION,
+    YIELD_METHOD,
+    build_series,
+    nuts_level,
+    parse_jsonstat,
+    request_url,
+    to_node_props,
 )
 from scripts import seed_regional_yields as seed
 

@@ -85,7 +85,7 @@ async def test_verdict_does_not_depend_on_yield(run, monkeypatch):
     with_y, _ = await run(ES_POINT)
     monkeypatch.setattr(service, "parcel_nuts2", lambda lat, lon: None)
     without, _ = await run(ES_POINT)
-    key = lambda o: {s["species"]: (s["verdict"], s["reasons"]) for s in o["species"]}  # noqa: E731
+    key = lambda o: {s["species"]: (s["verdict"], s["reasons"]) for s in o["species"]}
     assert key(with_y) == key(without)
 
 
@@ -126,7 +126,7 @@ async def test_graph_failure_degrades_without_changing_verdicts(run, monkeypatch
 
 
 async def test_real_point_resolves_a_nuts2(run):
-    out, calls = await run(ES_POINT)
+    _out, calls = await run(ES_POINT)
     assert len(calls) == 1 and calls[0][1][0].startswith("ES") and len(calls[0][1][0]) == 4
 
 
@@ -140,7 +140,7 @@ async def test_crop_set_load_failure_keeps_fit_and_verdicts(run, monkeypatch):
     monkeypatch.setattr(service, "_statistics_crops", broken)
     out, _ = await run(ES_POINT)
     assert all(s["regional_yield_unavailable"] == "region_stats_unavailable" for s in out["species"])
-    key = lambda o: {s["species"]: (s["verdict"], s["reasons"]) for s in o["species"]}  # noqa: E731
+    key = lambda o: {s["species"]: (s["verdict"], s["reasons"]) for s in o["species"]}
     assert key(out) == key(good)
 
 
