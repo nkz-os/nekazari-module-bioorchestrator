@@ -76,6 +76,9 @@ def load_pe_method() -> PeMethod:
 
 YAML_STAGES = ("initial", "development", "mid_season", "late_season")
 ROW_RULES = ("mediterranean_or_spain", "planting_period_spain", "first_row")  # in order of preference
+MEDITERRANEAN_OR_SPAIN = ("Mediterranean", "Medit.", "Spain")
+KC_MAX = 1.5  # sanity bound: no FAO-56 Table 12 field-crop Kc comes near it
+KC_NOT_ADJUSTED = "Kc = Table 12 standard-climate values, not adjusted for climate (eq. 62, 65): indicative"
 
 
 @dataclass(frozen=True)
@@ -108,7 +111,8 @@ def _text(v) -> str:
 
 
 def _crop_stages(eppo: str, raw) -> CropStages:
-    """One crop entry, or ValueError: four whole-day lengths > 0, three Kc > 0, both table sources cited."""
+    """One crop entry, or ValueError: four whole-day lengths > 0, three Kc in (0, KC_MAX], both table
+    sources cited, and a `mediterranean_or_spain` row whose region really names it."""
     raw = raw if isinstance(raw, dict) else {}  # not a mapping: fails on the first missing field below
     lengths_raw = raw.get("lengths_days") or {}
     lengths = []
@@ -121,8 +125,8 @@ def _crop_stages(eppo: str, raw) -> CropStages:
     kc = {}
     for name in ("ini", "mid", "end"):
         v = _num(kc_raw.get(name))
-        if v is None or v <= 0:
-            raise ValueError(f"{eppo}: Kc {name} must be a number > 0")
+        if v is None or v <= 0 or v > KC_MAX:
+            raise ValueError(f"{eppo}: Kc {name} must be a number > 0 and <= {KC_MAX}")
         kc[name] = v
     src = raw.get("source") or {}
     t11, t12 = src.get("stage_lengths") or {}, src.get("kc") or {}
@@ -135,11 +139,14 @@ def _crop_stages(eppo: str, raw) -> CropStages:
         raise ValueError(f"{eppo}: source of table 11 needs region (empty when the table prints none)")
     if t11["rule"] not in ROW_RULES:
         raise ValueError(f"{eppo}: unknown row rule {t11['rule']!r}")
+    if t11["rule"] == "mediterranean_or_spain" and not any(w in t11["region"] for w in MEDITERRANEAN_OR_SPAIN):
+        raise ValueError(f"{eppo}: rule mediterranean_or_spain but the region does not name it")
     region = _text(t11["region"]) or "no region printed"
     kc_source = (f"FAO-56 Table 11 '{_text(t11['row'])}' ({_text(t11['plant_date'])}, {region}); "
                  f"Table 12 '{_text(t12['row'])}'")
     if _text(t12["ini_row"]) != _text(t12["row"]):
         kc_source += f", Kc ini '{_text(t12['ini_row'])}'"
+    kc_source += f"; {KC_NOT_ADJUSTED}"
     return CropStages(eppo, tuple(lengths), kc["ini"], kc["mid"], kc["end"], kc_source)
 
 
