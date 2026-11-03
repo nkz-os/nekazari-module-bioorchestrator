@@ -16,6 +16,7 @@ import yaml
 
 YAML_PATH = Path(__file__).resolve().parents[1] / "data" / "phenology_sources.yaml"
 
+# d1/d2 are null (unsourced); DOIs match the corrected YAML.
 # Rescued from graph 2026-07-01 (read-only probe). DOIs marked null are NOT
 # invented — they were null in the graph too. Only Intrigliolo gets a known-DOI
 # added (verifiable: Irrigation Science 2006).
@@ -29,7 +30,7 @@ RESCUED = {
                 "management": "regulated_deficit_irrigation",
                 "climate_zone": "mediterranean",
                 "kc": 0.45, "kc_ci": [0.40, 0.50],
-                "d1": 2.0, "d2": 8.0,
+                "d1": None, "d2": None,
                 "mds_ref": 190.0, "mds_ref_ci": [160.0, 220.0],
                 "source": {
                     "source_type": "peer_reviewed_study",
@@ -50,11 +51,11 @@ RESCUED = {
                 "management": "deficit_irrigation",
                 "climate_zone": "mediterranean",
                 "kc": 0.50, "kc_ci": [0.45, 0.55],
-                "d1": 1.8, "d2": 7.5,
+                "d1": None, "d2": None,
                 "mds_ref": 130.0, "mds_ref_ci": [100.0, 160.0],
                 "source": {
                     "source_type": "peer_reviewed_study",
-                    "doi": "10.1016/j.agwat.2004.12.005",
+                    "doi": None,  # cited DOI resolves to an unrelated work
                     "short": "Orgaz et al. 2005",
                     "author": "Orgaz, Testi, Villalobos, Fereres",
                     "year": 2005,
@@ -73,7 +74,7 @@ RESCUED = {
                 "management": "deficit_irrigation",
                 "climate_zone": "mediterranean",
                 "kc": 0.65, "kc_ci": [0.55, 0.75],
-                "d1": 2.3, "d2": 8.5,
+                "d1": None, "d2": None,
                 "mds_ref": 140.0, "mds_ref_ci": [110.0, 170.0],
                 "source": {
                     "source_type": "peer_reviewed_study",
@@ -96,11 +97,11 @@ RESCUED = {
                 "management": "deficit_irrigation",
                 "climate_zone": "mediterranean",
                 "kc": 0.25, "kc_ci": [0.15, 0.35],
-                "d1": 1.3, "d2": 5.5,
+                "d1": None, "d2": None,
                 "mds_ref": 90.0, "mds_ref_ci": [70.0, 110.0],
                 "source": {
                     "source_type": "peer_reviewed_study",
-                    "doi": "10.1007/s00271-005-0005-9",
+                    "doi": None,  # cited DOI resolves to an unrelated work
                     "short": "Intrigliolo & Castel 2006",
                     "author": "Intrigliolo, Castel",
                     "year": 2006,
@@ -120,7 +121,7 @@ RESCUED = {
                 "management": "deficit_irrigation",
                 "climate_zone": "semi_arid",
                 "kc": 0.90, "kc_ci": [0.80, 1.00],
-                "d1": 2.0, "d2": 7.0,
+                "d1": None, "d2": None,
                 "mds_ref": None,
                 "source": {
                     "source_type": "peer_reviewed_study",

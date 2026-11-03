@@ -1,10 +1,13 @@
+# d1/d2 are intentionally null on every PhenologyParams entry until a cited source is added.
+# Unit when set: CWSI non-water-stressed baselines in degrees C (d1 < d2), as consumed by crop-health.
+# They are NOT stage day counts. DOIs are kept only where Crossref confirms the cited work.
 stage_detection:
   wheat:
     base_temp_c: 0
     upper_cutoff_c: 30
     gdd_method: simple_avg_capped
     source:
-      doi: 10.1016/j.agrformet.2015.04.012
+      doi: 10.1016/S0168-1923(97)00027-0
       short: McMaster & Wilhelm 1997
       author: McMaster, G.S.
       year: 1997
@@ -64,7 +67,7 @@ stage_detection:
     upper_cutoff_c: 30
     gdd_method: simple_avg_capped
     source:
-      doi: 10.1016/j.eja.2004.02.001
+      doi: null
       short: Jamieson et al. 1998
       author: Jamieson, P.D.
       year: 1998
@@ -277,7 +280,7 @@ stage_detection:
     gdd_method: simple_avg_capped
     source:
       short: Soltani et al. 2006
-      doi: 10.1016/j.fcr.2005.09.014
+      doi: null
       author: Soltani, A.
       year: 2006
     stages:
@@ -1193,7 +1196,7 @@ stage_detection:
     upper_cutoff_c: 35
     gdd_method: simple_avg_capped
     source:
-      doi: 10.1016/j.eja.2004.02.001
+      doi: null
       short: Jamieson et al. 1998
       author: Jamieson, P.D.
       year: 1998
@@ -1215,7 +1218,9 @@ stage_detection:
     upper_cutoff_c: 35
     gdd_method: simple_avg_capped
     source:
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
+      url: https://www.fao.org/4/x0490e/x0490e00.htm
+      isbn: 92-5-104219-5
       short: FAO-56
       author: Allen et al.
       year: 1998
@@ -1237,7 +1242,9 @@ stage_detection:
     upper_cutoff_c: 35
     gdd_method: simple_avg_capped
     source:
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
+      url: https://www.fao.org/4/x0490e/x0490e00.htm
+      isbn: 92-5-104219-5
       short: FAO-56
       author: Allen et al.
       year: 1998
@@ -1259,7 +1266,9 @@ stage_detection:
     upper_cutoff_c: 35
     gdd_method: simple_avg_capped
     source:
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
+      url: https://www.fao.org/4/x0490e/x0490e00.htm
+      isbn: 92-5-104219-5
       short: FAO-56
       author: Allen et al.
       year: 1998
@@ -1281,7 +1290,9 @@ stage_detection:
     upper_cutoff_c: 35
     gdd_method: simple_avg_capped
     source:
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
+      url: https://www.fao.org/4/x0490e/x0490e00.htm
+      isbn: 92-5-104219-5
       short: FAO-56
       author: Allen et al.
       year: 1998
@@ -1303,7 +1314,7 @@ stage_detection:
     upper_cutoff_c: 35
     gdd_method: simple_avg_capped
     source:
-      doi: 10.1016/j.eja.2004.02.001
+      doi: null
       short: Jamieson et al. 1998
       author: Jamieson, P.D.
       year: 1998
@@ -1325,7 +1336,9 @@ stage_detection:
     upper_cutoff_c: 35
     gdd_method: simple_avg_capped
     source:
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
+      url: https://www.fao.org/4/x0490e/x0490e00.htm
+      isbn: 92-5-104219-5
       short: FAO-56
       author: Allen et al.
       year: 1998
@@ -1350,7 +1363,7 @@ stage_detection:
     upper_cutoff_c: 30
     gdd_method: simple_avg_capped
     source:
-      doi: 10.1016/j.agrformet.2015.04.012
+      doi: 10.1016/S0168-1923(97)00027-0
       short: McMaster & Wilhelm 1997
       author: McMaster, G.S.
       year: 1997
@@ -1708,7 +1721,7 @@ crop_heat_tolerance:
     heat_accum_hours: 24
     source:
       short: Connor & Fereres 2005
-      doi: 10.1016/j.scienta.2005.03.008
+      doi: null
       author: Connor, D.J.
       year: 2005
   olive:
@@ -1717,7 +1730,7 @@ crop_heat_tolerance:
     heat_accum_hours: 6
     source:
       short: Connor & Fereres 2005
-      doi: 10.1016/j.scienta.2005.03.008
+      doi: null
       author: Connor, D.J.
       year: 2005
   pepper:
@@ -1782,7 +1795,7 @@ crop_nutrient_profiles:
       short: IPNI/FAO
       author: IPNI
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
     nitrogen:
       initial:
         uptake_kg_ha_day: 0.56
@@ -1866,7 +1879,7 @@ crop_nutrient_profiles:
       short: IPNI/FAO
       author: IPNI
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
   apple:
     nitrogen:
       initial:
@@ -1911,7 +1924,7 @@ crop_nutrient_profiles:
       short: IPNI/FAO
       author: IPNI
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
   apricot:
     nitrogen:
       initial:
@@ -1956,7 +1969,7 @@ crop_nutrient_profiles:
       short: IPNI/FAO
       author: IPNI
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
   artichoke:
     nitrogen:
       initial:
@@ -2001,7 +2014,7 @@ crop_nutrient_profiles:
       short: IPNI/FAO
       author: IPNI
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
   asparagus:
     nitrogen:
       initial:
@@ -2046,7 +2059,7 @@ crop_nutrient_profiles:
       short: IPNI/FAO
       author: IPNI
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
   barley:
     nitrogen:
       initial:
@@ -2091,7 +2104,7 @@ crop_nutrient_profiles:
       short: IPNI/FAO
       author: IPNI
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
   bean:
     nitrogen:
       initial:
@@ -2136,7 +2149,7 @@ crop_nutrient_profiles:
       short: IPNI/FAO
       author: IPNI
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
   broccoli:
     nitrogen:
       initial:
@@ -2181,7 +2194,7 @@ crop_nutrient_profiles:
       short: IPNI/FAO
       author: IPNI
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
   buckwheat:
     nitrogen:
       initial:
@@ -2226,7 +2239,7 @@ crop_nutrient_profiles:
       short: IPNI/FAO
       author: IPNI
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
   cardoon:
     nitrogen:
       initial:
@@ -2271,7 +2284,7 @@ crop_nutrient_profiles:
       short: IPNI/FAO
       author: IPNI
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
   cherry:
     nitrogen:
       initial:
@@ -2316,7 +2329,7 @@ crop_nutrient_profiles:
       short: IPNI/FAO
       author: IPNI
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
   chickpea:
     nitrogen:
       initial:
@@ -2361,7 +2374,7 @@ crop_nutrient_profiles:
       short: IPNI/FAO
       author: IPNI
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
   flax:
     nitrogen:
       initial:
@@ -2406,7 +2419,7 @@ crop_nutrient_profiles:
       short: IPNI/FAO
       author: IPNI
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
   garlic:
     nitrogen:
       initial:
@@ -2451,13 +2464,13 @@ crop_nutrient_profiles:
       short: IPNI/FAO
       author: IPNI
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
   grapevine:
     source:
       short: IPNI/FAO
       author: IPNI
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
     nitrogen:
       initial:
         uptake_kg_ha_day: 0.89
@@ -2541,7 +2554,7 @@ crop_nutrient_profiles:
       short: IPNI/FAO
       author: IPNI
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
   hemp:
     nitrogen:
       initial:
@@ -2586,7 +2599,7 @@ crop_nutrient_profiles:
       short: IPNI/FAO
       author: IPNI
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
   leek:
     nitrogen:
       initial:
@@ -2631,7 +2644,7 @@ crop_nutrient_profiles:
       short: IPNI/FAO
       author: IPNI
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
   lentil:
     nitrogen:
       initial:
@@ -2676,7 +2689,7 @@ crop_nutrient_profiles:
       short: IPNI/FAO
       author: IPNI
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
   oat:
     nitrogen:
       initial:
@@ -2721,7 +2734,7 @@ crop_nutrient_profiles:
       short: IPNI/FAO
       author: IPNI
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
   onion:
     nitrogen:
       initial:
@@ -2766,7 +2779,7 @@ crop_nutrient_profiles:
       short: IPNI/FAO
       author: IPNI
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
   pea:
     nitrogen:
       initial:
@@ -2811,7 +2824,7 @@ crop_nutrient_profiles:
       short: IPNI/FAO
       author: IPNI
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
   peach:
     nitrogen:
       initial:
@@ -2856,7 +2869,7 @@ crop_nutrient_profiles:
       short: IPNI/FAO
       author: IPNI
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
   pear:
     nitrogen:
       initial:
@@ -2901,7 +2914,7 @@ crop_nutrient_profiles:
       short: IPNI/FAO
       author: IPNI
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
   pistachio:
     nitrogen:
       initial:
@@ -2946,7 +2959,7 @@ crop_nutrient_profiles:
       short: IPNI/FAO
       author: IPNI
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
   plum:
     nitrogen:
       initial:
@@ -2991,13 +3004,13 @@ crop_nutrient_profiles:
       short: IPNI/FAO
       author: IPNI
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
   potato:
     source:
       short: IPNI/FAO
       author: IPNI
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
     nitrogen:
       initial:
         uptake_kg_ha_day: 2.0
@@ -3081,13 +3094,13 @@ crop_nutrient_profiles:
       short: IPNI/FAO
       author: IPNI
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
   rice:
     source:
       short: IPNI/FAO
       author: IPNI
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
     nitrogen:
       initial:
         uptake_kg_ha_day: 1.33
@@ -3171,13 +3184,13 @@ crop_nutrient_profiles:
       short: IPNI/FAO
       author: IPNI
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
   soybean:
     source:
       short: IPNI/FAO
       author: IPNI
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
     nitrogen:
       initial:
         uptake_kg_ha_day: 0.89
@@ -3261,13 +3274,13 @@ crop_nutrient_profiles:
       short: IPNI/FAO
       author: IPNI
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
   sunflower:
     source:
       short: IPNI/FAO
       author: IPNI
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
     nitrogen:
       initial:
         uptake_kg_ha_day: 1.11
@@ -3351,7 +3364,7 @@ crop_nutrient_profiles:
       short: IPNI/FAO
       author: IPNI
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
   vetch:
     nitrogen:
       initial:
@@ -3396,13 +3409,13 @@ crop_nutrient_profiles:
       short: IPNI/FAO
       author: IPNI
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
   wheat:
     source:
       short: IPNI/FAO
       author: IPNI
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
     nitrogen:
       initial:
         uptake_kg_ha_day: 1.56
@@ -3447,7 +3460,7 @@ crop_nutrient_profiles:
       short: IPNI/FAO
       author: IPNI
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
     nitrogen:
       initial:
         uptake_kg_ha_day: 2.22
@@ -3492,7 +3505,7 @@ crop_nutrient_profiles:
       short: IPNI/FAO
       author: IPNI
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
     nitrogen:
       initial:
         uptake_kg_ha_day: 1.0
@@ -3537,7 +3550,7 @@ crop_nutrient_profiles:
       short: IPNI/FAO
       author: IPNI
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
     nitrogen:
       initial:
         uptake_kg_ha_day: 2.22
@@ -3582,7 +3595,7 @@ crop_nutrient_profiles:
       short: IPNI/FAO
       author: IPNI
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
     nitrogen:
       initial:
         uptake_kg_ha_day: 2.0
@@ -3627,7 +3640,7 @@ crop_nutrient_profiles:
       short: IPNI/FAO
       author: IPNI
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
     nitrogen:
       initial:
         uptake_kg_ha_day: 1.33
@@ -3672,7 +3685,7 @@ crop_nutrient_profiles:
       short: IPNI/FAO
       author: IPNI
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
     nitrogen:
       initial:
         uptake_kg_ha_day: 1.56
@@ -3717,7 +3730,7 @@ crop_nutrient_profiles:
       short: IPNI/FAO
       author: IPNI
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
     nitrogen:
       initial:
         uptake_kg_ha_day: 0.67
@@ -3762,7 +3775,7 @@ crop_nutrient_profiles:
       short: IPNI/FAO
       author: IPNI
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
     nitrogen:
       initial:
         uptake_kg_ha_day: 1.11
@@ -3807,7 +3820,7 @@ crop_nutrient_profiles:
       short: IPNI/FAO
       author: IPNI
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
     nitrogen:
       initial:
         uptake_kg_ha_day: 1.56
@@ -3854,7 +3867,7 @@ crop_soil_suitability:
       short: FAO/ECOCROP
       author: FAO
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
     ph_min: 6.5
     ph_max: 8.0
     textures:
@@ -3868,7 +3881,7 @@ crop_soil_suitability:
       short: FAO/ECOCROP
       author: FAO
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
     ph_min: 6.0
     ph_max: 8.0
     textures:
@@ -3882,7 +3895,7 @@ crop_soil_suitability:
       short: FAO/ECOCROP
       author: FAO
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
     ph_min: 5.5
     ph_max: 7.5
     textures:
@@ -3896,7 +3909,7 @@ crop_soil_suitability:
       short: FAO/ECOCROP
       author: FAO
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
     ph_min: 6.0
     ph_max: 8.0
     textures:
@@ -3910,7 +3923,7 @@ crop_soil_suitability:
       short: FAO/ECOCROP
       author: FAO
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
     ph_min: 6.0
     ph_max: 8.0
     textures:
@@ -3924,7 +3937,7 @@ crop_soil_suitability:
       short: FAO/ECOCROP
       author: FAO
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
     ph_min: 6.0
     ph_max: 7.5
     textures:
@@ -3938,7 +3951,7 @@ crop_soil_suitability:
       short: FAO/ECOCROP
       author: FAO
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
     ph_min: 6.0
     ph_max: 8.5
     textures:
@@ -3952,7 +3965,7 @@ crop_soil_suitability:
       short: FAO/ECOCROP
       author: FAO
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
     ph_min: 5.5
     ph_max: 7.5
     textures:
@@ -3966,7 +3979,7 @@ crop_soil_suitability:
       short: FAO/ECOCROP
       author: FAO
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
     ph_min: 6.0
     ph_max: 7.5
     textures:
@@ -3980,7 +3993,7 @@ crop_soil_suitability:
       short: FAO/ECOCROP
       author: FAO
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
     ph_min: 5.0
     ph_max: 7.0
     textures:
@@ -3994,7 +4007,7 @@ crop_soil_suitability:
       short: FAO/ECOCROP
       author: FAO
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
     ph_min: 6.0
     ph_max: 8.0
     textures:
@@ -4008,7 +4021,7 @@ crop_soil_suitability:
       short: FAO/ECOCROP
       author: FAO
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
     ph_min: 5.5
     ph_max: 7.5
     textures:
@@ -4022,7 +4035,7 @@ crop_soil_suitability:
       short: FAO/ECOCROP
       author: FAO
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
     ph_min: 6.0
     ph_max: 8.0
     textures:
@@ -4036,7 +4049,7 @@ crop_soil_suitability:
       short: FAO/ECOCROP
       author: FAO
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
     ph_min: 5.5
     ph_max: 7.5
     textures:
@@ -4050,7 +4063,7 @@ crop_soil_suitability:
       short: FAO/ECOCROP
       author: FAO
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
     ph_min: 6.0
     ph_max: 7.5
     textures:
@@ -4064,7 +4077,7 @@ crop_soil_suitability:
       short: FAO/ECOCROP
       author: FAO
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
     ph_min: 5.5
     ph_max: 8.0
     textures:
@@ -4078,7 +4091,7 @@ crop_soil_suitability:
       short: FAO/ECOCROP
       author: FAO
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
     ph_min: 5.5
     ph_max: 8.0
     textures:
@@ -4092,7 +4105,7 @@ crop_soil_suitability:
       short: FAO/ECOCROP
       author: FAO
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
     ph_min: 6.0
     ph_max: 7.5
     textures:
@@ -4106,7 +4119,7 @@ crop_soil_suitability:
       short: FAO/ECOCROP
       author: FAO
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
     ph_min: 6.0
     ph_max: 7.5
     textures:
@@ -4120,7 +4133,7 @@ crop_soil_suitability:
       short: FAO/ECOCROP
       author: FAO
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
     ph_min: 6.0
     ph_max: 8.0
     textures:
@@ -4134,7 +4147,7 @@ crop_soil_suitability:
       short: FAO/ECOCROP
       author: FAO
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
     ph_min: 5.5
     ph_max: 7.5
     textures:
@@ -4148,7 +4161,7 @@ crop_soil_suitability:
       short: FAO/ECOCROP
       author: FAO
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
     ph_min: 6.0
     ph_max: 7.5
     textures:
@@ -4162,7 +4175,7 @@ crop_soil_suitability:
       short: FAO/ECOCROP
       author: FAO
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
     ph_min: 5.5
     ph_max: 7.5
     textures:
@@ -4176,7 +4189,7 @@ crop_soil_suitability:
       short: FAO/ECOCROP
       author: FAO
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
     ph_min: 6.0
     ph_max: 7.5
     textures:
@@ -4190,7 +4203,7 @@ crop_soil_suitability:
       short: FAO/ECOCROP
       author: FAO
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
     ph_min: 5.5
     ph_max: 7.5
     textures:
@@ -4204,7 +4217,7 @@ crop_soil_suitability:
       short: FAO/ECOCROP
       author: FAO
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
     ph_min: 7.0
     ph_max: 8.5
     textures:
@@ -4218,7 +4231,7 @@ crop_soil_suitability:
       short: FAO/ECOCROP
       author: FAO
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
     ph_min: 5.5
     ph_max: 7.5
     textures:
@@ -4232,7 +4245,7 @@ crop_soil_suitability:
       short: FAO/ECOCROP
       author: FAO
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
     ph_min: 5.0
     ph_max: 7.0
     textures:
@@ -4246,7 +4259,7 @@ crop_soil_suitability:
       short: FAO/ECOCROP
       author: FAO
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
     ph_min: 5.5
     ph_max: 8.0
     textures:
@@ -4260,7 +4273,7 @@ crop_soil_suitability:
       short: FAO/ECOCROP
       author: FAO
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
     ph_min: 5.0
     ph_max: 7.5
     textures:
@@ -4274,7 +4287,7 @@ crop_soil_suitability:
       short: FAO/ECOCROP
       author: FAO
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
     ph_min: 4.5
     ph_max: 7.5
     textures:
@@ -4288,7 +4301,7 @@ crop_soil_suitability:
       short: FAO/ECOCROP
       author: FAO
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
     ph_min: 6.0
     ph_max: 7.5
     textures:
@@ -4302,7 +4315,7 @@ crop_soil_suitability:
       short: FAO/ECOCROP
       author: FAO
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
     ph_min: 6.5
     ph_max: 8.0
     textures:
@@ -4316,7 +4329,7 @@ crop_soil_suitability:
       short: FAO/ECOCROP
       author: FAO
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
     ph_min: 6.0
     ph_max: 8.0
     textures:
@@ -4330,7 +4343,7 @@ crop_soil_suitability:
       short: FAO/ECOCROP
       author: FAO
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
     ph_min: 5.5
     ph_max: 7.5
     textures:
@@ -4344,7 +4357,7 @@ crop_soil_suitability:
       short: FAO/ECOCROP
       author: FAO
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
     ph_min: 5.5
     ph_max: 7.5
     textures:
@@ -4358,7 +4371,7 @@ crop_soil_suitability:
       short: FAO
       author: FAO
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
     ph_min: 5.5
     ph_max: 8.5
     textures:
@@ -4372,7 +4385,7 @@ crop_soil_suitability:
       short: FAO
       author: FAO
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
     ph_min: 5.0
     ph_max: 8.0
     textures:
@@ -4386,7 +4399,7 @@ crop_soil_suitability:
       short: FAO
       author: FAO
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
     ph_min: 5.5
     ph_max: 8.5
     textures:
@@ -4400,7 +4413,7 @@ crop_soil_suitability:
       short: FAO/ECOCROP
       author: FAO
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
     ph_min: 5.5
     ph_max: 7.0
     textures:
@@ -4414,7 +4427,7 @@ crop_soil_suitability:
       short: FAO/ECOCROP
       author: FAO
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
     ph_min: 5.5
     ph_max: 7.0
     textures:
@@ -4428,7 +4441,7 @@ crop_soil_suitability:
       short: FAO/ECOCROP
       author: FAO
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
     ph_min: 5.0
     ph_max: 7.0
     textures:
@@ -4442,7 +4455,7 @@ crop_soil_suitability:
       short: FAO/ECOCROP
       author: FAO
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
     ph_min: 6.0
     ph_max: 7.5
     textures:
@@ -4456,7 +4469,7 @@ crop_soil_suitability:
       short: FAO/ECOCROP
       author: FAO
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
     ph_min: 6.0
     ph_max: 8.0
     textures:
@@ -4470,7 +4483,7 @@ crop_soil_suitability:
       short: FAO/ECOCROP
       author: FAO
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
     ph_min: 6.0
     ph_max: 8.0
     textures:
@@ -4484,7 +4497,7 @@ crop_soil_suitability:
       short: FAO
       author: FAO
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
     ph_min: 5.5
     ph_max: 8.5
     textures:
@@ -4790,11 +4803,13 @@ species:
     description: From planting to 10% ground cover
     parameters:
     - kc: 0.3
-      d1: 15
-      d2: 45
+      d1: null
+      d2: null
       mds_ref: 80
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -4805,11 +4820,13 @@ species:
     description: From 10% ground cover to effective full cover
     parameters:
     - kc: 0.7
-      d1: 45
-      d2: 105
+      d1: null
+      d2: null
       mds_ref: 120
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -4820,11 +4837,13 @@ species:
     description: From effective full cover to start of maturity
     parameters:
     - kc: 1.15
-      d1: 105
-      d2: 180
+      d1: null
+      d2: null
       mds_ref: 150
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -4835,11 +4854,13 @@ species:
     description: From start of maturity to harvest or full senescence
     parameters:
     - kc: 0.4
-      d1: 180
-      d2: 230
+      d1: null
+      d2: null
       mds_ref: 100
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -4856,8 +4877,8 @@ species:
       kc_ci:
       - 0.8
       - 1.0
-      d1: 2.0
-      d2: 7.0
+      d1: null
+      d2: null
       mds_ref: null
       source:
         source_type: peer_reviewed_study
@@ -4877,11 +4898,13 @@ species:
     description: From planting to 10% ground cover
     parameters:
     - kc: 0.3
-      d1: 15
-      d2: 45
+      d1: null
+      d2: null
       mds_ref: 80
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -4892,11 +4915,13 @@ species:
     description: From 10% ground cover to effective full cover
     parameters:
     - kc: 0.7
-      d1: 45
-      d2: 105
+      d1: null
+      d2: null
       mds_ref: 120
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -4907,11 +4932,13 @@ species:
     description: From effective full cover to start of maturity
     parameters:
     - kc: 1.15
-      d1: 105
-      d2: 180
+      d1: null
+      d2: null
       mds_ref: 150
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -4922,11 +4949,13 @@ species:
     description: From start of maturity to harvest or full senescence
     parameters:
     - kc: 0.4
-      d1: 180
-      d2: 230
+      d1: null
+      d2: null
       mds_ref: 100
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -4943,8 +4972,8 @@ species:
       kc_ci:
       - 0.8
       - 1.0
-      d1: 2.0
-      d2: 7.0
+      d1: null
+      d2: null
       mds_ref: null
       source:
         source_type: peer_reviewed_study
@@ -4963,11 +4992,13 @@ species:
   - name: initial
     parameters:
     - kc: 0.3
-      d1: 15
-      d2: 50
+      d1: null
+      d2: null
       mds_ref: 90
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -4976,11 +5007,13 @@ species:
   - name: development
     parameters:
     - kc: 0.7
-      d1: 50
-      d2: 120
+      d1: null
+      d2: null
       mds_ref: 130
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -4988,11 +5021,13 @@ species:
   - name: mid-season
     parameters:
     - kc: 1.2
-      d1: 120
-      d2: 210
+      d1: null
+      d2: null
       mds_ref: 180
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -5000,11 +5035,13 @@ species:
   - name: late-season
     parameters:
     - kc: 0.6
-      d1: 210
-      d2: 260
+      d1: null
+      d2: null
       mds_ref: 110
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -5017,44 +5054,52 @@ species:
   - name: initial
     parameters:
     - kc: 1.05
-      d1: 10
-      d2: 40
+      d1: null
+      d2: null
       mds_ref: 70
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
   - name: development
     parameters:
     - kc: 1.1
-      d1: 40
-      d2: 100
+      d1: null
+      d2: null
       mds_ref: 110
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
   - name: mid-season
     parameters:
     - kc: 1.2
-      d1: 100
-      d2: 200
+      d1: null
+      d2: null
       mds_ref: 160
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
   - name: late-season
     parameters:
     - kc: 0.8
-      d1: 200
-      d2: 250
+      d1: null
+      d2: null
       mds_ref: 90
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -5066,44 +5111,52 @@ species:
   - name: initial
     parameters:
     - kc: 0.4
-      d1: 15
-      d2: 45
+      d1: null
+      d2: null
       mds_ref: 85
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
   - name: development
     parameters:
     - kc: 0.75
-      d1: 45
-      d2: 110
+      d1: null
+      d2: null
       mds_ref: 125
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
   - name: mid-season
     parameters:
     - kc: 1.15
-      d1: 110
-      d2: 190
+      d1: null
+      d2: null
       mds_ref: 170
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
   - name: late-season
     parameters:
     - kc: 0.5
-      d1: 190
-      d2: 240
+      d1: null
+      d2: null
       mds_ref: 100
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -5115,44 +5168,52 @@ species:
   - name: initial
     parameters:
     - kc: 0.35
-      d1: 10
-      d2: 40
+      d1: null
+      d2: null
       mds_ref: 75
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
   - name: development
     parameters:
     - kc: 0.7
-      d1: 40
-      d2: 100
+      d1: null
+      d2: null
       mds_ref: 120
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
   - name: mid-season
     parameters:
     - kc: 1.15
-      d1: 100
-      d2: 185
+      d1: null
+      d2: null
       mds_ref: 165
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
   - name: late-season
     parameters:
     - kc: 0.35
-      d1: 185
-      d2: 235
+      d1: null
+      d2: null
       mds_ref: 100
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -5164,44 +5225,52 @@ species:
   - name: initial
     parameters:
     - kc: 0.5
-      d1: 15
-      d2: 50
+      d1: null
+      d2: null
       mds_ref: 80
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
   - name: development
     parameters:
     - kc: 0.75
-      d1: 50
-      d2: 115
+      d1: null
+      d2: null
       mds_ref: 130
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
   - name: mid-season
     parameters:
     - kc: 1.15
-      d1: 115
-      d2: 195
+      d1: null
+      d2: null
       mds_ref: 160
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
   - name: late-season
     parameters:
     - kc: 0.75
-      d1: 195
-      d2: 245
+      d1: null
+      d2: null
       mds_ref: 100
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -5213,44 +5282,52 @@ species:
   - name: initial
     parameters:
     - kc: 0.4
-      d1: 5
-      d2: 20
+      d1: null
+      d2: null
       mds_ref: 60
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
   - name: development
     parameters:
     - kc: 0.8
-      d1: 20
-      d2: 55
+      d1: null
+      d2: null
       mds_ref: 100
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
   - name: mid-season
     parameters:
     - kc: 1.15
-      d1: 55
-      d2: 110
+      d1: null
+      d2: null
       mds_ref: 150
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
   - name: late-season
     parameters:
     - kc: 0.9
-      d1: 110
-      d2: 140
+      d1: null
+      d2: null
       mds_ref: 90
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -5262,11 +5339,13 @@ species:
   - name: initial
     parameters:
     - kc: 0.3
-      d1: 10
-      d2: 40
+      d1: null
+      d2: null
       mds_ref: 70
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -5277,15 +5356,15 @@ species:
       kc_ci:
       - 0.15
       - 0.35
-      d1: 1.3
-      d2: 5.5
+      d1: null
+      d2: null
       mds_ref: 90.0
       mds_ref_ci:
       - 70.0
       - 110.0
       source:
         source_type: peer_reviewed_study
-        doi: 10.1007/s00271-005-0005-9
+        doi: null
         short: Intrigliolo & Castel 2006
         author: Intrigliolo, Castel
         year: 2006
@@ -5295,33 +5374,39 @@ species:
   - name: development
     parameters:
     - kc: 0.7
-      d1: 40
-      d2: 100
+      d1: null
+      d2: null
       mds_ref: 110
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
   - name: mid-season
     parameters:
     - kc: 0.85
-      d1: 100
-      d2: 170
+      d1: null
+      d2: null
       mds_ref: 140
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
   - name: late-season
     parameters:
     - kc: 0.5
-      d1: 170
-      d2: 220
+      d1: null
+      d2: null
       mds_ref: 90
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -5333,11 +5418,13 @@ species:
   - name: initial
     parameters:
     - kc: 0.65
-      d1: 15
-      d2: 50
+      d1: null
+      d2: null
       mds_ref: 90
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -5348,15 +5435,15 @@ species:
       kc_ci:
       - 0.45
       - 0.55
-      d1: 1.8
-      d2: 7.5
+      d1: null
+      d2: null
       mds_ref: 130.0
       mds_ref_ci:
       - 100.0
       - 160.0
       source:
         source_type: peer_reviewed_study
-        doi: 10.1016/j.agwat.2004.12.005
+        doi: null
         short: Orgaz et al. 2005
         author: Orgaz, Testi, Villalobos, Fereres
         year: 2005
@@ -5366,33 +5453,39 @@ species:
   - name: development
     parameters:
     - kc: 0.7
-      d1: 50
-      d2: 110
+      d1: null
+      d2: null
       mds_ref: 130
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
   - name: mid-season
     parameters:
     - kc: 0.7
-      d1: 110
-      d2: 185
+      d1: null
+      d2: null
       mds_ref: 150
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
   - name: late-season
     parameters:
     - kc: 0.65
-      d1: 185
-      d2: 230
+      d1: null
+      d2: null
       mds_ref: 100
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -5406,8 +5499,8 @@ species:
       kc_ci:
       - 0.4
       - 0.5
-      d1: 2.0
-      d2: 8.0
+      d1: null
+      d2: null
       mds_ref: 190.0
       mds_ref_ci:
       - 160.0
@@ -5430,11 +5523,13 @@ species:
     description: FAO-56 initial stage for almond
     parameters:
     - kc: 0.4
-      d1: 30
-      d2: 90
+      d1: null
+      d2: null
       mds_ref: 120
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -5448,8 +5543,8 @@ species:
       kc_ci:
       - 0.55
       - 0.75
-      d1: 2.3
-      d2: 8.5
+      d1: null
+      d2: null
       mds_ref: 140.0
       mds_ref_ci:
       - 110.0
@@ -5467,11 +5562,13 @@ species:
     description: FAO-56 development stage for almond
     parameters:
     - kc: 0.6
-      d1: 90
-      d2: 160
+      d1: null
+      d2: null
       mds_ref: 200
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -5482,11 +5579,13 @@ species:
     description: FAO-56 mid-season stage for almond
     parameters:
     - kc: 0.9
-      d1: 160
-      d2: 240
+      d1: null
+      d2: null
       mds_ref: 250
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -5497,11 +5596,13 @@ species:
     description: FAO-56 late-season stage for almond
     parameters:
     - kc: 0.65
-      d1: 240
-      d2: 300
+      d1: null
+      d2: null
       mds_ref: 220
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -5517,11 +5618,13 @@ species:
     description: FAO-56 initial stage for apple
     parameters:
     - kc: 0.5
-      d1: 30
-      d2: 80
+      d1: null
+      d2: null
       mds_ref: 115
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -5532,11 +5635,13 @@ species:
     description: FAO-56 development stage for apple
     parameters:
     - kc: 0.75
-      d1: 80
-      d2: 160
+      d1: null
+      d2: null
       mds_ref: 200
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -5547,11 +5652,13 @@ species:
     description: FAO-56 mid-season stage for apple
     parameters:
     - kc: 1.0
-      d1: 160
-      d2: 240
+      d1: null
+      d2: null
       mds_ref: 250
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -5562,11 +5669,13 @@ species:
     description: FAO-56 late-season stage for apple
     parameters:
     - kc: 0.7
-      d1: 240
-      d2: 300
+      d1: null
+      d2: null
       mds_ref: 220
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -5582,11 +5691,13 @@ species:
     description: FAO-56 initial stage for apricot
     parameters:
     - kc: 0.5
-      d1: 30
-      d2: 80
+      d1: null
+      d2: null
       mds_ref: 115
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -5597,11 +5708,13 @@ species:
     description: FAO-56 development stage for apricot
     parameters:
     - kc: 0.7
-      d1: 80
-      d2: 150
+      d1: null
+      d2: null
       mds_ref: 195
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -5612,11 +5725,13 @@ species:
     description: FAO-56 mid-season stage for apricot
     parameters:
     - kc: 0.9
-      d1: 150
-      d2: 220
+      d1: null
+      d2: null
       mds_ref: 230
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -5627,11 +5742,13 @@ species:
     description: FAO-56 late-season stage for apricot
     parameters:
     - kc: 0.6
-      d1: 220
-      d2: 270
+      d1: null
+      d2: null
       mds_ref: 205
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -5647,11 +5764,13 @@ species:
     description: FAO-56 initial stage for artichoke
     parameters:
     - kc: 0.5
-      d1: 30
-      d2: 90
+      d1: null
+      d2: null
       mds_ref: 120
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -5662,11 +5781,13 @@ species:
     description: FAO-56 development stage for artichoke
     parameters:
     - kc: 0.8
-      d1: 90
-      d2: 180
+      d1: null
+      d2: null
       mds_ref: 175
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -5677,11 +5798,13 @@ species:
     description: FAO-56 mid-season stage for artichoke
     parameters:
     - kc: 1.05
-      d1: 180
-      d2: 300
+      d1: null
+      d2: null
       mds_ref: 240
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -5692,11 +5815,13 @@ species:
     description: FAO-56 late-season stage for artichoke
     parameters:
     - kc: 0.65
-      d1: 300
-      d2: 360
+      d1: null
+      d2: null
       mds_ref: 200
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -5712,11 +5837,13 @@ species:
     description: FAO-56 initial stage for asparagus
     parameters:
     - kc: 0.5
-      d1: 30
-      d2: 90
+      d1: null
+      d2: null
       mds_ref: 120
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -5727,11 +5854,13 @@ species:
     description: FAO-56 development stage for asparagus
     parameters:
     - kc: 0.8
-      d1: 90
-      d2: 180
+      d1: null
+      d2: null
       mds_ref: 175
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -5742,11 +5871,13 @@ species:
     description: FAO-56 mid-season stage for asparagus
     parameters:
     - kc: 1.0
-      d1: 180
-      d2: 270
+      d1: null
+      d2: null
       mds_ref: 230
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -5757,11 +5888,13 @@ species:
     description: FAO-56 late-season stage for asparagus
     parameters:
     - kc: 0.6
-      d1: 270
-      d2: 330
+      d1: null
+      d2: null
       mds_ref: 190
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -5777,11 +5910,13 @@ species:
     description: FAO-56 initial stage for barley
     parameters:
     - kc: 0.3
-      d1: 15
-      d2: 45
+      d1: null
+      d2: null
       mds_ref: 80
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -5792,11 +5927,13 @@ species:
     description: FAO-56 development stage for barley
     parameters:
     - kc: 0.7
-      d1: 45
-      d2: 105
+      d1: null
+      d2: null
       mds_ref: 120
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -5807,11 +5944,13 @@ species:
     description: FAO-56 mid-season stage for barley
     parameters:
     - kc: 1.15
-      d1: 105
-      d2: 170
+      d1: null
+      d2: null
       mds_ref: 150
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -5822,11 +5961,13 @@ species:
     description: FAO-56 late-season stage for barley
     parameters:
     - kc: 0.4
-      d1: 170
-      d2: 220
+      d1: null
+      d2: null
       mds_ref: 100
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -5842,11 +5983,13 @@ species:
     description: FAO-56 initial stage for bean
     parameters:
     - kc: 0.4
-      d1: 15
-      d2: 40
+      d1: null
+      d2: null
       mds_ref: 75
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -5857,11 +6000,13 @@ species:
     description: FAO-56 development stage for bean
     parameters:
     - kc: 0.75
-      d1: 40
-      d2: 80
+      d1: null
+      d2: null
       mds_ref: 115
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -5872,11 +6017,13 @@ species:
     description: FAO-56 mid-season stage for bean
     parameters:
     - kc: 1.1
-      d1: 80
-      d2: 130
+      d1: null
+      d2: null
       mds_ref: 145
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -5887,11 +6034,13 @@ species:
     description: FAO-56 late-season stage for bean
     parameters:
     - kc: 0.5
-      d1: 130
-      d2: 170
+      d1: null
+      d2: null
       mds_ref: 95
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -5907,11 +6056,13 @@ species:
     description: FAO-56 initial stage for broccoli
     parameters:
     - kc: 0.7
-      d1: 20
-      d2: 50
+      d1: null
+      d2: null
       mds_ref: 90
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -5922,11 +6073,13 @@ species:
     description: FAO-56 development stage for broccoli
     parameters:
     - kc: 0.8
-      d1: 50
-      d2: 80
+      d1: null
+      d2: null
       mds_ref: 120
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -5937,11 +6090,13 @@ species:
     description: FAO-56 mid-season stage for broccoli
     parameters:
     - kc: 1.05
-      d1: 80
-      d2: 115
+      d1: null
+      d2: null
       mds_ref: 145
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -5952,11 +6107,13 @@ species:
     description: FAO-56 late-season stage for broccoli
     parameters:
     - kc: 0.85
-      d1: 115
-      d2: 140
+      d1: null
+      d2: null
       mds_ref: 110
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -5972,11 +6129,13 @@ species:
     description: FAO-56 initial stage for buckwheat
     parameters:
     - kc: 0.35
-      d1: 10
-      d2: 30
+      d1: null
+      d2: null
       mds_ref: 60
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -5987,11 +6146,13 @@ species:
     description: FAO-56 development stage for buckwheat
     parameters:
     - kc: 0.7
-      d1: 30
-      d2: 60
+      d1: null
+      d2: null
       mds_ref: 100
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -6002,11 +6163,13 @@ species:
     description: FAO-56 mid-season stage for buckwheat
     parameters:
     - kc: 1.0
-      d1: 60
-      d2: 90
+      d1: null
+      d2: null
       mds_ref: 130
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -6017,11 +6180,13 @@ species:
     description: FAO-56 late-season stage for buckwheat
     parameters:
     - kc: 0.45
-      d1: 90
-      d2: 120
+      d1: null
+      d2: null
       mds_ref: 80
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -6037,11 +6202,13 @@ species:
     description: FAO-56 initial stage for cardoon
     parameters:
     - kc: 0.5
-      d1: 30
-      d2: 90
+      d1: null
+      d2: null
       mds_ref: 120
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -6052,11 +6219,13 @@ species:
     description: FAO-56 development stage for cardoon
     parameters:
     - kc: 0.8
-      d1: 90
-      d2: 180
+      d1: null
+      d2: null
       mds_ref: 175
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -6067,11 +6236,13 @@ species:
     description: FAO-56 mid-season stage for cardoon
     parameters:
     - kc: 1.05
-      d1: 180
-      d2: 300
+      d1: null
+      d2: null
       mds_ref: 240
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -6082,11 +6253,13 @@ species:
     description: FAO-56 late-season stage for cardoon
     parameters:
     - kc: 0.65
-      d1: 300
-      d2: 360
+      d1: null
+      d2: null
       mds_ref: 200
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -6102,11 +6275,13 @@ species:
     description: FAO-56 initial stage for cherry
     parameters:
     - kc: 0.5
-      d1: 25
-      d2: 75
+      d1: null
+      d2: null
       mds_ref: 110
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -6117,11 +6292,13 @@ species:
     description: FAO-56 development stage for cherry
     parameters:
     - kc: 0.7
-      d1: 75
-      d2: 135
+      d1: null
+      d2: null
       mds_ref: 185
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -6132,11 +6309,13 @@ species:
     description: FAO-56 mid-season stage for cherry
     parameters:
     - kc: 0.9
-      d1: 135
-      d2: 205
+      d1: null
+      d2: null
       mds_ref: 225
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -6147,11 +6326,13 @@ species:
     description: FAO-56 late-season stage for cherry
     parameters:
     - kc: 0.6
-      d1: 205
-      d2: 255
+      d1: null
+      d2: null
       mds_ref: 200
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -6167,11 +6348,13 @@ species:
     description: FAO-56 initial stage for chickpea
     parameters:
     - kc: 0.4
-      d1: 15
-      d2: 40
+      d1: null
+      d2: null
       mds_ref: 70
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -6182,11 +6365,13 @@ species:
     description: FAO-56 development stage for chickpea
     parameters:
     - kc: 0.7
-      d1: 40
-      d2: 80
+      d1: null
+      d2: null
       mds_ref: 110
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -6197,11 +6382,13 @@ species:
     description: FAO-56 mid-season stage for chickpea
     parameters:
     - kc: 1.05
-      d1: 80
-      d2: 130
+      d1: null
+      d2: null
       mds_ref: 140
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -6212,11 +6399,13 @@ species:
     description: FAO-56 late-season stage for chickpea
     parameters:
     - kc: 0.45
-      d1: 130
-      d2: 170
+      d1: null
+      d2: null
       mds_ref: 90
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -6232,11 +6421,13 @@ species:
     description: FAO-56 initial stage for flax
     parameters:
     - kc: 0.35
-      d1: 15
-      d2: 40
+      d1: null
+      d2: null
       mds_ref: 75
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -6247,11 +6438,13 @@ species:
     description: FAO-56 development stage for flax
     parameters:
     - kc: 0.75
-      d1: 40
-      d2: 90
+      d1: null
+      d2: null
       mds_ref: 120
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -6262,11 +6455,13 @@ species:
     description: FAO-56 mid-season stage for flax
     parameters:
     - kc: 1.1
-      d1: 90
-      d2: 140
+      d1: null
+      d2: null
       mds_ref: 145
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -6277,11 +6472,13 @@ species:
     description: FAO-56 late-season stage for flax
     parameters:
     - kc: 0.45
-      d1: 140
-      d2: 185
+      d1: null
+      d2: null
       mds_ref: 100
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -6297,11 +6494,13 @@ species:
     description: FAO-56 initial stage for garlic
     parameters:
     - kc: 0.7
-      d1: 20
-      d2: 60
+      d1: null
+      d2: null
       mds_ref: 95
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -6312,11 +6511,13 @@ species:
     description: FAO-56 development stage for garlic
     parameters:
     - kc: 0.8
-      d1: 60
-      d2: 110
+      d1: null
+      d2: null
       mds_ref: 130
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -6327,11 +6528,13 @@ species:
     description: FAO-56 mid-season stage for garlic
     parameters:
     - kc: 1.0
-      d1: 110
-      d2: 170
+      d1: null
+      d2: null
       mds_ref: 155
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -6342,11 +6545,13 @@ species:
     description: FAO-56 late-season stage for garlic
     parameters:
     - kc: 0.7
-      d1: 170
-      d2: 210
+      d1: null
+      d2: null
       mds_ref: 120
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -6362,11 +6567,13 @@ species:
     description: FAO-56 initial stage for grass_pea
     parameters:
     - kc: 0.4
-      d1: 15
-      d2: 40
+      d1: null
+      d2: null
       mds_ref: 70
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -6377,11 +6584,13 @@ species:
     description: FAO-56 development stage for grass_pea
     parameters:
     - kc: 0.7
-      d1: 40
-      d2: 80
+      d1: null
+      d2: null
       mds_ref: 110
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -6392,11 +6601,13 @@ species:
     description: FAO-56 mid-season stage for grass_pea
     parameters:
     - kc: 1.05
-      d1: 80
-      d2: 120
+      d1: null
+      d2: null
       mds_ref: 130
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -6407,11 +6618,13 @@ species:
     description: FAO-56 late-season stage for grass_pea
     parameters:
     - kc: 0.4
-      d1: 120
-      d2: 160
+      d1: null
+      d2: null
       mds_ref: 85
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -6427,11 +6640,13 @@ species:
     description: FAO-56 initial stage for hemp
     parameters:
     - kc: 0.35
-      d1: 15
-      d2: 40
+      d1: null
+      d2: null
       mds_ref: 75
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -6442,11 +6657,13 @@ species:
     description: FAO-56 development stage for hemp
     parameters:
     - kc: 0.75
-      d1: 40
-      d2: 90
+      d1: null
+      d2: null
       mds_ref: 120
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -6457,11 +6674,13 @@ species:
     description: FAO-56 mid-season stage for hemp
     parameters:
     - kc: 1.1
-      d1: 90
-      d2: 150
+      d1: null
+      d2: null
       mds_ref: 145
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -6472,11 +6691,13 @@ species:
     description: FAO-56 late-season stage for hemp
     parameters:
     - kc: 0.5
-      d1: 150
-      d2: 200
+      d1: null
+      d2: null
       mds_ref: 105
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -6492,11 +6713,13 @@ species:
     description: FAO-56 initial stage for leek
     parameters:
     - kc: 0.7
-      d1: 20
-      d2: 60
+      d1: null
+      d2: null
       mds_ref: 95
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -6507,11 +6730,13 @@ species:
     description: FAO-56 development stage for leek
     parameters:
     - kc: 0.8
-      d1: 60
-      d2: 110
+      d1: null
+      d2: null
       mds_ref: 130
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -6522,11 +6747,13 @@ species:
     description: FAO-56 mid-season stage for leek
     parameters:
     - kc: 1.0
-      d1: 110
-      d2: 180
+      d1: null
+      d2: null
       mds_ref: 155
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -6537,11 +6764,13 @@ species:
     description: FAO-56 late-season stage for leek
     parameters:
     - kc: 0.7
-      d1: 180
-      d2: 220
+      d1: null
+      d2: null
       mds_ref: 120
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -6557,11 +6786,13 @@ species:
     description: FAO-56 initial stage for lentil
     parameters:
     - kc: 0.4
-      d1: 15
-      d2: 40
+      d1: null
+      d2: null
       mds_ref: 70
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -6572,11 +6803,13 @@ species:
     description: FAO-56 development stage for lentil
     parameters:
     - kc: 0.7
-      d1: 40
-      d2: 80
+      d1: null
+      d2: null
       mds_ref: 110
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -6587,11 +6820,13 @@ species:
     description: FAO-56 mid-season stage for lentil
     parameters:
     - kc: 1.05
-      d1: 80
-      d2: 120
+      d1: null
+      d2: null
       mds_ref: 130
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -6602,11 +6837,13 @@ species:
     description: FAO-56 late-season stage for lentil
     parameters:
     - kc: 0.4
-      d1: 120
-      d2: 160
+      d1: null
+      d2: null
       mds_ref: 85
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -6622,11 +6859,13 @@ species:
     description: FAO-56 initial stage for oat
     parameters:
     - kc: 0.3
-      d1: 15
-      d2: 45
+      d1: null
+      d2: null
       mds_ref: 75
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -6637,11 +6876,13 @@ species:
     description: FAO-56 development stage for oat
     parameters:
     - kc: 0.7
-      d1: 45
-      d2: 105
+      d1: null
+      d2: null
       mds_ref: 120
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -6652,11 +6893,13 @@ species:
     description: FAO-56 mid-season stage for oat
     parameters:
     - kc: 1.15
-      d1: 105
-      d2: 170
+      d1: null
+      d2: null
       mds_ref: 150
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -6667,11 +6910,13 @@ species:
     description: FAO-56 late-season stage for oat
     parameters:
     - kc: 0.4
-      d1: 170
-      d2: 220
+      d1: null
+      d2: null
       mds_ref: 100
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -6687,11 +6932,13 @@ species:
     description: FAO-56 initial stage for onion
     parameters:
     - kc: 0.7
-      d1: 15
-      d2: 45
+      d1: null
+      d2: null
       mds_ref: 85
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -6702,11 +6949,13 @@ species:
     description: FAO-56 development stage for onion
     parameters:
     - kc: 0.8
-      d1: 45
-      d2: 95
+      d1: null
+      d2: null
       mds_ref: 125
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -6717,11 +6966,13 @@ species:
     description: FAO-56 mid-season stage for onion
     parameters:
     - kc: 1.05
-      d1: 95
-      d2: 155
+      d1: null
+      d2: null
       mds_ref: 160
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -6732,11 +6983,13 @@ species:
     description: FAO-56 late-season stage for onion
     parameters:
     - kc: 0.75
-      d1: 155
-      d2: 195
+      d1: null
+      d2: null
       mds_ref: 115
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -6752,11 +7005,13 @@ species:
     description: FAO-56 initial stage for pea
     parameters:
     - kc: 0.4
-      d1: 15
-      d2: 40
+      d1: null
+      d2: null
       mds_ref: 75
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -6767,11 +7022,13 @@ species:
     description: FAO-56 development stage for pea
     parameters:
     - kc: 0.75
-      d1: 40
-      d2: 85
+      d1: null
+      d2: null
       mds_ref: 115
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -6782,11 +7039,13 @@ species:
     description: FAO-56 mid-season stage for pea
     parameters:
     - kc: 1.1
-      d1: 85
-      d2: 130
+      d1: null
+      d2: null
       mds_ref: 145
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -6797,11 +7056,13 @@ species:
     description: FAO-56 late-season stage for pea
     parameters:
     - kc: 0.45
-      d1: 130
-      d2: 170
+      d1: null
+      d2: null
       mds_ref: 90
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -6817,11 +7078,13 @@ species:
     description: FAO-56 initial stage for peach
     parameters:
     - kc: 0.5
-      d1: 30
-      d2: 80
+      d1: null
+      d2: null
       mds_ref: 115
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -6832,11 +7095,13 @@ species:
     description: FAO-56 development stage for peach
     parameters:
     - kc: 0.7
-      d1: 80
-      d2: 150
+      d1: null
+      d2: null
       mds_ref: 195
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -6847,11 +7112,13 @@ species:
     description: FAO-56 mid-season stage for peach
     parameters:
     - kc: 0.95
-      d1: 150
-      d2: 230
+      d1: null
+      d2: null
       mds_ref: 240
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -6862,11 +7129,13 @@ species:
     description: FAO-56 late-season stage for peach
     parameters:
     - kc: 0.65
-      d1: 230
-      d2: 280
+      d1: null
+      d2: null
       mds_ref: 210
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -6882,11 +7151,13 @@ species:
     description: FAO-56 initial stage for pear
     parameters:
     - kc: 0.5
-      d1: 30
-      d2: 80
+      d1: null
+      d2: null
       mds_ref: 115
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -6897,11 +7168,13 @@ species:
     description: FAO-56 development stage for pear
     parameters:
     - kc: 0.75
-      d1: 80
-      d2: 160
+      d1: null
+      d2: null
       mds_ref: 200
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -6912,11 +7185,13 @@ species:
     description: FAO-56 mid-season stage for pear
     parameters:
     - kc: 0.95
-      d1: 160
-      d2: 240
+      d1: null
+      d2: null
       mds_ref: 245
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -6927,11 +7202,13 @@ species:
     description: FAO-56 late-season stage for pear
     parameters:
     - kc: 0.65
-      d1: 240
-      d2: 300
+      d1: null
+      d2: null
       mds_ref: 215
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -6947,11 +7224,13 @@ species:
     description: FAO-56 initial stage for pistachio
     parameters:
     - kc: 0.4
-      d1: 30
-      d2: 100
+      d1: null
+      d2: null
       mds_ref: 130
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -6962,11 +7241,13 @@ species:
     description: FAO-56 development stage for pistachio
     parameters:
     - kc: 0.55
-      d1: 100
-      d2: 170
+      d1: null
+      d2: null
       mds_ref: 210
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -6977,11 +7258,13 @@ species:
     description: FAO-56 mid-season stage for pistachio
     parameters:
     - kc: 0.85
-      d1: 170
-      d2: 260
+      d1: null
+      d2: null
       mds_ref: 260
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -6992,11 +7275,13 @@ species:
     description: FAO-56 late-season stage for pistachio
     parameters:
     - kc: 0.6
-      d1: 260
-      d2: 320
+      d1: null
+      d2: null
       mds_ref: 230
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -7012,11 +7297,13 @@ species:
     description: FAO-56 initial stage for plum
     parameters:
     - kc: 0.5
-      d1: 30
-      d2: 80
+      d1: null
+      d2: null
       mds_ref: 115
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -7027,11 +7314,13 @@ species:
     description: FAO-56 development stage for plum
     parameters:
     - kc: 0.7
-      d1: 80
-      d2: 150
+      d1: null
+      d2: null
       mds_ref: 195
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -7042,11 +7331,13 @@ species:
     description: FAO-56 mid-season stage for plum
     parameters:
     - kc: 0.9
-      d1: 150
-      d2: 230
+      d1: null
+      d2: null
       mds_ref: 235
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -7057,11 +7348,13 @@ species:
     description: FAO-56 late-season stage for plum
     parameters:
     - kc: 0.6
-      d1: 230
-      d2: 280
+      d1: null
+      d2: null
       mds_ref: 205
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -7077,11 +7370,13 @@ species:
     description: FAO-56 initial stage for rapeseed
     parameters:
     - kc: 0.35
-      d1: 15
-      d2: 50
+      d1: null
+      d2: null
       mds_ref: 80
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -7092,11 +7387,13 @@ species:
     description: FAO-56 development stage for rapeseed
     parameters:
     - kc: 0.75
-      d1: 50
-      d2: 140
+      d1: null
+      d2: null
       mds_ref: 130
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -7107,11 +7404,13 @@ species:
     description: FAO-56 mid-season stage for rapeseed
     parameters:
     - kc: 1.1
-      d1: 140
-      d2: 220
+      d1: null
+      d2: null
       mds_ref: 165
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -7122,11 +7421,13 @@ species:
     description: FAO-56 late-season stage for rapeseed
     parameters:
     - kc: 0.45
-      d1: 220
-      d2: 270
+      d1: null
+      d2: null
       mds_ref: 110
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -7142,11 +7443,13 @@ species:
     description: FAO-56 initial stage for rye
     parameters:
     - kc: 0.3
-      d1: 15
-      d2: 40
+      d1: null
+      d2: null
       mds_ref: 70
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -7157,11 +7460,13 @@ species:
     description: FAO-56 development stage for rye
     parameters:
     - kc: 0.7
-      d1: 40
-      d2: 100
+      d1: null
+      d2: null
       mds_ref: 110
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -7172,11 +7477,13 @@ species:
     description: FAO-56 mid-season stage for rye
     parameters:
     - kc: 1.1
-      d1: 100
-      d2: 160
+      d1: null
+      d2: null
       mds_ref: 140
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -7187,11 +7494,13 @@ species:
     description: FAO-56 late-season stage for rye
     parameters:
     - kc: 0.35
-      d1: 160
-      d2: 210
+      d1: null
+      d2: null
       mds_ref: 90
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -7207,11 +7516,13 @@ species:
     description: FAO-56 initial stage for sugar_beet
     parameters:
     - kc: 0.35
-      d1: 20
-      d2: 60
+      d1: null
+      d2: null
       mds_ref: 90
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -7222,11 +7533,13 @@ species:
     description: FAO-56 development stage for sugar_beet
     parameters:
     - kc: 0.8
-      d1: 60
-      d2: 130
+      d1: null
+      d2: null
       mds_ref: 140
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -7237,11 +7550,13 @@ species:
     description: FAO-56 mid-season stage for sugar_beet
     parameters:
     - kc: 1.2
-      d1: 130
-      d2: 230
+      d1: null
+      d2: null
       mds_ref: 190
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -7252,11 +7567,13 @@ species:
     description: FAO-56 late-season stage for sugar_beet
     parameters:
     - kc: 0.7
-      d1: 230
-      d2: 280
+      d1: null
+      d2: null
       mds_ref: 130
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -7272,11 +7589,13 @@ species:
     description: FAO-56 initial stage for tomato
     parameters:
     - kc: 0.6
-      d1: 25
-      d2: 50
+      d1: null
+      d2: null
       mds_ref: 90
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -7287,11 +7606,13 @@ species:
     description: FAO-56 development stage for tomato
     parameters:
     - kc: 0.9
-      d1: 50
-      d2: 95
+      d1: null
+      d2: null
       mds_ref: 140
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -7302,11 +7623,13 @@ species:
     description: FAO-56 mid-season stage for tomato
     parameters:
     - kc: 1.15
-      d1: 95
-      d2: 155
+      d1: null
+      d2: null
       mds_ref: 180
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -7317,11 +7640,13 @@ species:
     description: FAO-56 late-season stage for tomato
     parameters:
     - kc: 0.8
-      d1: 155
-      d2: 200
+      d1: null
+      d2: null
       mds_ref: 135
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -7337,11 +7662,13 @@ species:
     description: FAO-56 initial stage for vetch
     parameters:
     - kc: 0.4
-      d1: 10
-      d2: 35
+      d1: null
+      d2: null
       mds_ref: 70
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -7352,11 +7679,13 @@ species:
     description: FAO-56 development stage for vetch
     parameters:
     - kc: 0.7
-      d1: 35
-      d2: 75
+      d1: null
+      d2: null
       mds_ref: 110
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -7367,11 +7696,13 @@ species:
     description: FAO-56 mid-season stage for vetch
     parameters:
     - kc: 1.0
-      d1: 75
-      d2: 115
+      d1: null
+      d2: null
       mds_ref: 135
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -7382,11 +7713,13 @@ species:
     description: FAO-56 late-season stage for vetch
     parameters:
     - kc: 0.45
-      d1: 115
-      d2: 150
+      d1: null
+      d2: null
       mds_ref: 90
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -7402,11 +7735,13 @@ species:
     description: FAO-56 initial stage for faba_bean
     parameters:
     - kc: 0.4
-      d1: 15
-      d2: 40
+      d1: null
+      d2: null
       mds_ref: 75
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -7417,11 +7752,13 @@ species:
     description: FAO-56 development stage for faba_bean
     parameters:
     - kc: 0.75
-      d1: 40
-      d2: 85
+      d1: null
+      d2: null
       mds_ref: 115
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -7432,11 +7769,13 @@ species:
     description: FAO-56 mid-season stage for faba_bean
     parameters:
     - kc: 1.1
-      d1: 85
-      d2: 135
+      d1: null
+      d2: null
       mds_ref: 145
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -7447,11 +7786,13 @@ species:
     description: FAO-56 late-season stage for faba_bean
     parameters:
     - kc: 0.45
-      d1: 135
-      d2: 175
+      d1: null
+      d2: null
       mds_ref: 90
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -7467,11 +7808,13 @@ species:
     description: FAO-56 initial stage for pepper
     parameters:
     - kc: 0.6
-      d1: 25
-      d2: 55
+      d1: null
+      d2: null
       mds_ref: 90
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -7482,11 +7825,13 @@ species:
     description: FAO-56 development stage for pepper
     parameters:
     - kc: 0.85
-      d1: 55
-      d2: 110
+      d1: null
+      d2: null
       mds_ref: 140
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -7497,11 +7842,13 @@ species:
     description: FAO-56 mid-season stage for pepper
     parameters:
     - kc: 1.05
-      d1: 110
-      d2: 170
+      d1: null
+      d2: null
       mds_ref: 170
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -7512,11 +7859,13 @@ species:
     description: FAO-56 late-season stage for pepper
     parameters:
     - kc: 0.75
-      d1: 170
-      d2: 210
+      d1: null
+      d2: null
       mds_ref: 125
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -7532,11 +7881,13 @@ species:
     description: FAO-56 initial stage for eggplant
     parameters:
     - kc: 0.6
-      d1: 25
-      d2: 55
+      d1: null
+      d2: null
       mds_ref: 90
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -7547,11 +7898,13 @@ species:
     description: FAO-56 development stage for eggplant
     parameters:
     - kc: 0.85
-      d1: 55
-      d2: 110
+      d1: null
+      d2: null
       mds_ref: 140
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -7562,11 +7915,13 @@ species:
     description: FAO-56 mid-season stage for eggplant
     parameters:
     - kc: 1.05
-      d1: 110
-      d2: 170
+      d1: null
+      d2: null
       mds_ref: 170
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -7577,11 +7932,13 @@ species:
     description: FAO-56 late-season stage for eggplant
     parameters:
     - kc: 0.75
-      d1: 170
-      d2: 210
+      d1: null
+      d2: null
       mds_ref: 125
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -7597,11 +7954,13 @@ species:
     description: FAO-56 initial stage for strawberry
     parameters:
     - kc: 0.5
-      d1: 30
-      d2: 90
+      d1: null
+      d2: null
       mds_ref: 120
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -7612,11 +7971,13 @@ species:
     description: FAO-56 development stage for strawberry
     parameters:
     - kc: 0.75
-      d1: 90
-      d2: 180
+      d1: null
+      d2: null
       mds_ref: 185
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -7627,11 +7988,13 @@ species:
     description: FAO-56 mid-season stage for strawberry
     parameters:
     - kc: 0.9
-      d1: 180
-      d2: 300
+      d1: null
+      d2: null
       mds_ref: 255
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -7642,11 +8005,13 @@ species:
     description: FAO-56 late-season stage for strawberry
     parameters:
     - kc: 0.65
-      d1: 300
-      d2: 365
+      d1: null
+      d2: null
       mds_ref: 215
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -7662,11 +8027,13 @@ species:
     description: FAO-56 initial stage for melon
     parameters:
     - kc: 0.5
-      d1: 20
-      d2: 50
+      d1: null
+      d2: null
       mds_ref: 85
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -7677,11 +8044,13 @@ species:
     description: FAO-56 development stage for melon
     parameters:
     - kc: 0.8
-      d1: 50
-      d2: 90
+      d1: null
+      d2: null
       mds_ref: 125
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -7692,11 +8061,13 @@ species:
     description: FAO-56 mid-season stage for melon
     parameters:
     - kc: 1.05
-      d1: 90
-      d2: 140
+      d1: null
+      d2: null
       mds_ref: 155
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -7707,11 +8078,13 @@ species:
     description: FAO-56 late-season stage for melon
     parameters:
     - kc: 0.65
-      d1: 140
-      d2: 180
+      d1: null
+      d2: null
       mds_ref: 115
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -7727,11 +8100,13 @@ species:
     description: FAO-56 initial stage for bitter_vetch
     parameters:
     - kc: 0.4
-      d1: 10
-      d2: 35
+      d1: null
+      d2: null
       mds_ref: 70
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -7742,11 +8117,13 @@ species:
     description: FAO-56 development stage for bitter_vetch
     parameters:
     - kc: 0.7
-      d1: 35
-      d2: 75
+      d1: null
+      d2: null
       mds_ref: 110
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -7757,11 +8134,13 @@ species:
     description: FAO-56 mid-season stage for bitter_vetch
     parameters:
     - kc: 1.0
-      d1: 75
-      d2: 115
+      d1: null
+      d2: null
       mds_ref: 135
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998
@@ -7772,11 +8151,13 @@ species:
     description: FAO-56 late-season stage for bitter_vetch
     parameters:
     - kc: 0.4
-      d1: 115
-      d2: 150
+      d1: null
+      d2: null
       mds_ref: 85
       source:
-        doi: 10.1016/B978-0-12-813995-6.00008-X
+        doi: null
+        url: https://www.fao.org/4/x0490e/x0490e00.htm
+        isbn: 92-5-104219-5
         short: FAO-56
         author: Allen et al.
         year: 1998

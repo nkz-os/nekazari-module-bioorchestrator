@@ -83,11 +83,16 @@ def test_kc_values_in_range():
 
 
 def test_d1_less_than_d2():
-    """d1 (stage onset) must be < d2 (stage end)."""
+    """d1/d2 keys must exist; when set they are numbers with d1 < d2 (null = unsourced)."""
     data = _load_yaml()
     for sp in data["species"]:
         for stage in sp["stages"]:
             p = stage["parameters"][0]
+            assert "d1" in p and "d2" in p, f"{sp['name']}/{stage['name']}: d1/d2 key missing"
+            if p["d1"] is None and p["d2"] is None:
+                continue
+            assert isinstance(p["d1"], (int, float)) and isinstance(p["d2"], (int, float)), \
+                f"{sp['name']}/{stage['name']}: d1/d2 must be both numbers or both null"
             assert p["d1"] < p["d2"], \
                 f"{sp['name']}/{stage['name']}: d1={p['d1']} >= d2={p['d2']}"
 
@@ -115,6 +120,8 @@ def test_stages_in_chronological_order():
     for sp in data["species"]:
         stage_map = {s["name"]: s["parameters"][0]["d1"] for s in sp["stages"]}
         d1_values = [stage_map[name] for name in expected_order]
+        if any(v is None for v in d1_values):
+            continue  # d1 intentionally null until sourced
         assert d1_values == sorted(d1_values), \
             f"{sp['name']}: stages not in chronological order: {d1_values}"
 
@@ -221,3 +228,43 @@ def test_rotation_constraint_effect_counts():
     counts = Counter(e["effect"] for e in rc)
     assert counts["restriction"] == 34, counts
     assert counts["benefit"] == 14, counts
+
+
+KNOWN_BAD_DOIS = {
+    "10.1016/B978-0-12-813995-6.00008-X",
+    "10.1016/j.agrformet.2015.04.012",
+    "10.1016/j.eja.2004.02.001",
+    "10.1016/j.fcr.2005.09.014",
+    "10.1016/j.scienta.2005.03.008",
+    "10.1016/j.agwat.2004.12.005",
+    "10.1007/s00271-005-0005-9",
+}
+
+
+def test_no_known_bad_dois():
+    """DOIs that Crossref resolves to unrelated works (or not at all) must not return."""
+    found = set()
+
+    def walk(o):
+        if isinstance(o, dict):
+            if o.get("doi"):
+                found.add(o["doi"])
+            for v in o.values():
+                walk(v)
+        elif isinstance(o, list):
+            for v in o:
+                walk(v)
+
+    walk(_load_yaml())
+    assert not (found & KNOWN_BAD_DOIS), found & KNOWN_BAD_DOIS
+
+
+def test_rescue_script_has_no_known_bad_dois_or_baselines():
+    """The rescue script must not re-introduce bad DOIs or unsourced d1/d2 values."""
+    import re
+    from pathlib import Path
+
+    text = (Path(__file__).resolve().parents[1] / "scripts" / "rescue_curated_phenology.py").read_text()
+    for doi in KNOWN_BAD_DOIS:
+        assert doi not in text, doi
+    assert not re.search(r'"d[12]": \d', text), "rescue script hardcodes a d1/d2 value"
