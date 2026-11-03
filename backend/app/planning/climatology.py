@@ -11,8 +11,10 @@ from __future__ import annotations
 import asyncio
 import logging
 import time
+from array import array
+from collections import OrderedDict
 from datetime import date
-from typing import TypedDict
+from typing import Literal
 
 from app.services import sim_weather
 
@@ -21,21 +23,32 @@ logger = logging.getLogger(__name__)
 GRID_DEG = 0.25  # ERA5 grid
 TTL_S = 30 * 24 * 3600
 RETRY_BACKOFF_S = 15 * 60
+CLIMATOLOGY_MAX_CELLS = 200  # ~12 KB per cell and year; bounds the process memory
 
 
-class DayClimate(TypedDict):
-    doy: int
-    et0: float
-    precip: float
+DAYS = 366  # slots per year, indexed by day-of-year - 1
+_NAN = float("nan")
 
 
-class Climatology(TypedDict):
-    years: list[int]
-    daily: dict[int, list[DayClimate]]
+class Climatology:
+    """Daily ET0 and rain of the cell's last complete years, two float32 arrays per year.
+
+    Each array has 366 slots indexed by day-of-year - 1; NaN marks a day without usable archive data
+    (and day 366 of a non-leap year). Gaps are explicit, never zero.
+    """
+
+    def __init__(self, series: dict[int, tuple[array, array]]):
+        self._series = series
+        self.years: list[int] = sorted(series)
+
+    def year_series(self, year: int) -> tuple[array, array]:
+        """(et0_mm, precip_mm) of the year; KeyError if the year is not in `years`."""
+        return self._series[year]
 
 
-_CACHE: dict[str, tuple[float, Climatology]] = {}  # cell -> (loaded_at, data)
-_FAILED: dict[str, float] = {}  # cell -> failed_at
+# Least recently used first; a stale entry stays (served while it reloads) until replaced or evicted.
+_CACHE: OrderedDict[str, tuple[float, Climatology]] = OrderedDict()  # cell -> (loaded_at, data)
+_FAILED: dict[str, float] = {}  # cell -> failed_at, cleared by a success
 _LOADING: dict[str, asyncio.Task] = {}
 
 
@@ -61,14 +74,28 @@ def _centre(cell: str) -> tuple[float, float]:
 
 
 def get_climatology(cell: str) -> Climatology | None:
-    """The cached climatology of the cell, or None (cold, expired or failed). Never loads."""
+    """The cached climatology of the cell, or None. Never loads. Past the TTL the stale entry is still
+    returned while a reload runs (or after it failed); counts as a use for the LRU."""
     hit = _CACHE.get(cell)
     if hit is None:
         return None
-    loaded_at, data = hit
-    if _now() - loaded_at >= TTL_S:
-        return None
-    return data
+    _CACHE.move_to_end(cell)
+    return hit[1]
+
+
+def _fresh(cell: str) -> bool:
+    hit = _CACHE.get(cell)
+    return hit is not None and _now() - hit[0] < TTL_S
+
+
+def climatology_status(cell: str) -> Literal["ready", "loading", "failed", "absent"]:
+    if cell in _CACHE:
+        return "ready"
+    if cell in _LOADING:
+        return "loading"
+    if cell in _FAILED:
+        return "failed"
+    return "absent"
 
 
 def _years(today: date) -> list[int]:
@@ -82,26 +109,34 @@ async def _load(cell: str) -> None:
         years = _years(_today())
         lat, lon = _centre(cell)
         fetched = await sim_weather.fetch_archive_daily(lat, lon, date(years[0], 1, 1), date(years[-1], 12, 31))
-        daily: dict[int, list[DayClimate]] = {y: [] for y in years}
-        for day in sorted(fetched.days):
-            w = fetched.days[day]
-            if day.year in daily:
-                daily[day.year].append({"doy": day.timetuple().tm_yday, "et0": w.et0_mm, "precip": w.precip_mm})
-        daily = {y: rows for y, rows in daily.items() if rows}
-        if not daily:
+        series = {y: (array("f", [_NAN] * DAYS), array("f", [_NAN] * DAYS)) for y in years}
+        for day, w in fetched.days.items():
+            if day.year in series:
+                i = day.timetuple().tm_yday - 1
+                series[day.year][0][i] = w.et0_mm
+                series[day.year][1][i] = w.precip_mm
+        series = {y: ab for y, ab in series.items() if any(v == v for v in ab[0])}
+        if not series:
             raise ValueError("no usable archive days")
-        _CACHE[cell] = (_now(), {"years": sorted(daily), "daily": daily})
+        _CACHE[cell] = (_now(), Climatology(series))
+        _CACHE.move_to_end(cell)
+        while len(_CACHE) > CLIMATOLOGY_MAX_CELLS:
+            _CACHE.popitem(last=False)
         _FAILED.pop(cell, None)
     except Exception:
+        _FAILED.pop(cell, None)
         _FAILED[cell] = _now()
-        logger.warning("climatology load failed cell=%s years=%s", cell, years, exc_info=True)
+        while len(_FAILED) > CLIMATOLOGY_MAX_CELLS:
+            _FAILED.pop(next(iter(_FAILED)))
+        logger.warning("climatology load failed cell=%s years=%s stale_kept=%s", cell, years, cell in _CACHE,
+                       exc_info=True)
     finally:
         _LOADING.pop(cell, None)
 
 
 def schedule_climatology(cell: str) -> asyncio.Task | None:
-    """Start the background load unless the cell is fresh, loading, or recently failed. Needs a running loop."""
-    if get_climatology(cell) is not None or cell in _LOADING:
+    """Start the background load unless the cell is fresh (a stale one reloads), loading, or recently failed. Needs a running loop."""
+    if _fresh(cell) or cell in _LOADING:
         return None
     failed_at = _FAILED.get(cell)
     if failed_at is not None and _now() - failed_at < RETRY_BACKOFF_S:
