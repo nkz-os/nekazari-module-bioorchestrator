@@ -40,6 +40,9 @@ const FAMILIES = [
     // calibration reasons of the engine, prefixed by the backend: expected_<reason>
     ...['crop_not_calibrated', 'irrigated', 'outside_calibrated_regions', 'region_not_calibrated', 'missing', 'unknown']
       .map((r) => `expected_${r}`)].map((k) => `planning.estimate.unavailable.${k}`),
+  ...['region_lookup_unavailable', 'crop_not_in_statistics', 'region_series_short', 'national_series_short', 'region_stats_unavailable']
+    .map((k) => `planning.wizard.crop.regional.unavailable.${k}`),
+  'planning.wizard.crop.regional.lineNoIndex',
   ...COVER_METHODS.map((k) => `planning.plan.methods.${k}`),
   ...['productive', 'stable', 'balanced'].map((k) => `planning.wizard.variety.why.${k}`),
   ...['sand', 'loamy-sand', 'sandy-loam', 'loam', 'silt-loam', 'silt', 'sandy-clay-loam', 'clay-loam', 'silty-clay-loam',

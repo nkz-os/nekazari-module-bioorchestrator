@@ -1,9 +1,12 @@
 import React, { useState } from 'react';
 import { useTranslation } from '@nekazari/sdk';
 import { Badge, Button, Input, Stack } from '@nekazari/ui-kit';
+import { Info } from 'lucide-react';
+import SourceAttribution from '../../components/shared/SourceAttribution';
+import { num, regionalLine, regionalName, regionalUnavailableKey } from '../regionalYield';
 import { reasonText, reasonTone, speciesIndex } from '../fitModel';
 import { cropName } from '../format';
-import type { FitResponse, SpeciesFit } from '../types';
+import type { FitResponse, RegionalYield, SpeciesFit, TFn } from '../types';
 
 const VERDICT_TONE = { fits: 'positive', caveats: 'warning', no_fit: 'negative' } as const;
 
@@ -21,22 +24,54 @@ export const mainCrops = (species: SpeciesFit[]): SpeciesFit[] => species.filter
 export const recommendedCrops = (species: SpeciesFit[], max = 6): SpeciesFit[] =>
   mainCrops(species).filter((s) => s.verdict !== 'no_fit').slice(0, max);
 
+/** The full label of a regional figure: where, which years, what it mixes, and that it is not a forecast. */
+export function RegionalDetail({ s, lang, t }: { s: SpeciesFit; lang: string; t: TFn }) {
+  const r: RegionalYield | null | undefined = s.regional_yield;
+  const base = 'planning.wizard.crop.regional';
+  if (!r) return <p className="text-nkz-xs text-nkz-text-muted">{t(regionalUnavailableKey(s.regional_yield_unavailable))}</p>;
+  return (
+    <Stack gap="tight">
+      <p className="text-nkz-xs text-nkz-text-muted">
+        {t(`${base}.detailRegion`, { region: regionalName(r, lang), from: r.first_year, to: r.last_year })}{' '}
+        {t(`${base}.detailMixed`)}{' '}
+        {t(r.moisture.pct == null ? `${base}.detailMoistureNoPct` : `${base}.detailMoisture`,
+          { pct: r.moisture.pct == null ? '' : num(r.moisture.pct, lang, 1, false) })}{' '}
+        {t(`${base}.detailNotForecast`)}
+      </p>
+      <SourceAttribution attributions={r.attributions} />
+    </Stack>
+  );
+}
+
 interface Props { fit: FitResponse; selected: string | null; onPick: (sp: SpeciesFit) => void }
 
 export default function StepCrop({ fit, selected, onPick }: Props) {
   const { t, i18n } = useTranslation('bioorchestrator');
   const lang = i18n.language;
   const [query, setQuery] = useState('');
+  const [infoOpen, setInfoOpen] = useState<string | null>(null);
   const names = speciesIndex(fit.species);
   const card = (s: SpeciesFit) => (
-    <Button key={s.species} variant={selected === s.species ? 'primary' : 'secondary'} aria-pressed={selected === s.species}
-      onClick={() => onPick(s)} className="w-full justify-start text-left">
-      <span className="block">
-        <span className="font-medium">{cropName(s.names, s.species, lang)}</span>{' '}
-        <Badge intent={VERDICT_TONE[s.verdict]}>{t(`planning.fit.${s.verdict}`)}</Badge>
-        {cardReasons(s).map((r, i) => <Badge key={`${r.code}-${i}`} intent={reasonTone(r)}>{reasonText(r, names, lang, t)}</Badge>)}
-      </span>
-    </Button>
+    <div key={s.species}>
+      <Button variant={selected === s.species ? 'primary' : 'secondary'} aria-pressed={selected === s.species}
+        onClick={() => onPick(s)} className="w-full justify-start text-left">
+        <span className="block">
+          <span className="font-medium">{cropName(s.names, s.species, lang)}</span>{' '}
+          <Badge intent={VERDICT_TONE[s.verdict]}>{t(`planning.fit.${s.verdict}`)}</Badge>
+          {cardReasons(s).map((r, i) => <Badge key={`${r.code}-${i}`} intent={reasonTone(r)}>{reasonText(r, names, lang, t)}</Badge>)}
+        </span>
+      </Button>
+      <div className="flex items-center gap-2 px-2">
+        <span className="text-nkz-xs text-nkz-text-muted">
+          {s.regional_yield ? regionalLine(s.regional_yield, lang, t) : t('planning.wizard.crop.regional.none')}
+        </span>
+        <Button size="sm" variant="ghost" aria-expanded={infoOpen === s.species} aria-label={t('planning.wizard.crop.regional.info')}
+          onClick={() => setInfoOpen(infoOpen === s.species ? null : s.species)}>
+          <Info size={14} aria-hidden="true" />
+        </Button>
+      </div>
+      {infoOpen === s.species && <div className="px-2"><RegionalDetail s={s} lang={lang} t={t} /></div>}
+    </div>
   );
   const q = query.trim();
   const found = q ? mainCrops(fit.species).filter((s) => matchesCrop(cropName(s.names, s.species, lang), q)) : [];
