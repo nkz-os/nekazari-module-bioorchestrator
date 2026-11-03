@@ -29,12 +29,26 @@ class BalanceDao:
             )
             return [dict(r["props"]) for r in await result.data()]
 
+    async def get_regional_yields_batch(self, eppos: list[str], nuts: list[str]) -> list[dict]:
+        """Region and country rows of several crops in one query (`nuts` = [NUTS2 code, country code])."""
+        async with self._driver.session() as s:
+            result = await s.run(
+                """
+                MATCH (n:RegionalYieldStat)
+                WHERE n.eppo IN $eppos AND n.nuts IN $nuts AND n.yieldTHa IS NOT NULL
+                RETURN properties(n) AS props
+                ORDER BY n.eppo, n.nuts, n.year
+                """,
+                eppos=eppos, nuts=nuts,
+            )
+            return [dict(r["props"]) for r in await result.data()]
+
     async def list_yield_regions(self, country: str) -> list[dict]:
         async with self._driver.session() as s:
             result = await s.run(
                 """
                 MATCH (n:RegionalYieldStat)
-                WHERE n.nuts STARTS WITH $country AND n.yieldTHa IS NOT NULL
+                WHERE n.nutsLevel = 2 AND n.nuts STARTS WITH $country AND n.yieldTHa IS NOT NULL
                 RETURN n.nuts AS nuts, collect(DISTINCT n.eppo) AS eppos,
                        max(n.year) AS latest_year
                 ORDER BY nuts

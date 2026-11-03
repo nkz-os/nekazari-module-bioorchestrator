@@ -11,7 +11,7 @@ from typing import Annotated, Any, Literal
 
 from pydantic import BaseModel, BeforeValidator, Field
 
-CONTRACT_VERSION = "2.2"
+CONTRACT_VERSION = "2.3"
 
 Verdict = Literal["fits", "caveats", "no_fit"]
 # Owner decision (2026-10-13): the regime vocabulary is rainfed | irrigated. The Spanish words that
@@ -57,6 +57,9 @@ class SpeciesFit(BaseModel):
     has_variety_trials: bool
     estimate_providers: list[str]
     cover_only: bool = False  # offered as a cover crop only, never as the main crop
+    # Regional statistic; orders the crops inside a verdict, never changes it. Not a fit reason.
+    regional_yield: RegionalYield | None = None
+    regional_yield_unavailable: str | None = None
 
 
 class ParcelFacts(BaseModel):

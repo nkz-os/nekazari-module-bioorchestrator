@@ -51,6 +51,15 @@ async def test_list_yield_regions_filters_country_and_nulls():
     assert await dao.list_yield_regions("ES") == rows
     query, params = calls[0]
     assert "RegionalYieldStat" in query
+    assert "n.nutsLevel = 2" in query
     assert "yieldTHa IS NOT NULL" in query and "nuts STARTS WITH $country" in query
     assert "max(n.year) AS latest_year" in query
     assert params == {"country": "ES"}
+
+
+async def test_batch_query_takes_region_and_country_in_one_read():
+    dao, calls = _dao(data=[{"props": {"year": 2023}}])
+    assert await dao.get_regional_yields_batch(["TRZAX", "HORVX"], ["ES24", "ES"]) == [{"year": 2023}]
+    assert len(calls) == 1
+    assert "n.eppo IN $eppos" in calls[0][0] and "n.nuts IN $nuts" in calls[0][0]
+    assert calls[0][1] == {"eppos": ["TRZAX", "HORVX"], "nuts": ["ES24", "ES"]}
