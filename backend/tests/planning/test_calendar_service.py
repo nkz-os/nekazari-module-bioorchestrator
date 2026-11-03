@@ -120,7 +120,7 @@ def client(monkeypatch):
 def test_calendar_route_validates_the_contract(client, monkeypatch):
     monkeypatch.setattr(planning_api, "parcel_calendar", AsyncMock(return_value=BODY))
     r = client.get(URL, params={"campaign": 2027, "crop": "wheat"})
-    assert r.status_code == 200 and r.json()["contract_version"] == "2.2"
+    assert r.status_code == 200 and r.json()["contract_version"] == "2.3"
 
 
 def test_calendar_route_requires_a_verified_tenant(client, monkeypatch):

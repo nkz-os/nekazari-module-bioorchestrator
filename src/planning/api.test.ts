@@ -77,7 +77,7 @@ describe('planning api client', () => {
     expect(err).toBeInstanceOf(PlanningApiError);
   });
   it('asks the calendar for campaign, crop, cover and a moved main sowing', async () => {
-    const fetchMock = vi.fn().mockResolvedValue({ ok: true, status: 200, json: async () => ({ contract_version: '2.2' }) });
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, status: 200, json: async () => ({ contract_version: '2.3' }) });
     vi.stubGlobal('fetch', fetchMock);
     await fetchCalendar('p1', { campaign: 2027, crop: 'wheat', cover: 'vetch', mainSowing: '2026-11-01' });
     expect(String(fetchMock.mock.calls[0][0]))

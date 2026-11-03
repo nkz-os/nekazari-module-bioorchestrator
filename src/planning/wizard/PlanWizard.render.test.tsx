@@ -17,7 +17,7 @@ const sp = (species: string, es: string): SpeciesFit => ({
   species, eppo: null, names: { es }, lifecycle: 'annual', verdict: 'fits', reasons: [], has_variety_trials: false, estimate_providers: [],
   sowing: { sowing_type: null, start_month: 4, end_month: 5, typical_sowing_doy: null, source: null },
 });
-const FIT = { contract_version: '2.2', parcel_id: 'p1', campaign: 2027, graphs: ['global'],
+const FIT = { contract_version: '2.3', parcel_id: 'p1', campaign: 2027, graphs: ['global'],
   facts: { climate_class: 'Csa', climate_source: 'chelsa', soil_texture: 'loam', soil_ph: 7.5, soil_source: 'soil_module',
     regime: 'rainfed', regime_source: 'declared', history_available: true },
   species: [sp('maize', 'maíz'), sp('wheat', 'trigo')] } as FitResponse;

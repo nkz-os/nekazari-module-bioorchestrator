@@ -14,13 +14,11 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from app.api.v1.attribution import attach_attributions
 from app.core.dependencies import get_neo4j_driver
 from app.graph.balance_dao import BalanceDao
-from app.kg.registries import DEFAULT_REGISTRIES_PATH, Registries, load_registries
 from app.services.crop_balance import payload_from_node
-from app.services.eurostat_yields import PlausibleRange, yields_payload
+from app.services.eurostat_yields import yields_payload
+from app.services.nuts_reference import names_or_none, plausible_range, province_table
 from app.services.nuts_regions import (
     is_superseded,
-    load_province_table,
-    load_region_names,
     nuts2_for_municipality,
 )
 from app.services.region_lookup import es_province_at
@@ -33,27 +31,6 @@ router = APIRouter()
 DriverDep = Annotated[AsyncDriver, Depends(get_neo4j_driver)]
 _EPPO = r"^[A-Za-z0-9]{5,6}$"
 _NUTS2 = r"^[A-Za-z]{2}[A-Za-z0-9]{2}$"
-
-
-@functools.lru_cache(maxsize=1)
-def _registries() -> Registries:
-    return load_registries(DEFAULT_REGISTRIES_PATH)
-
-
-def _plausible_range(eppo: str) -> PlausibleRange | None:
-    """The grain-yield envelope of a crop from the BioOrch ranges, in t/ha; None when it has none.
-
-    The registry states kg/ha; any other unit is not converted (no guessing) and gives no range.
-    """
-    found = _registries().range_for(eppo, "crop_yield", {"purpose": "grain"})
-    if found is None:
-        return None
-    if found.unit != "kg/ha":
-        logger.warning("yield range %s has unit %r, expected kg/ha: no plausibility check",
-                       found.id, found.unit)
-        return None
-    return PlausibleRange(min_t_ha=found.min / 1000, max_t_ha=found.max / 1000,
-                          range_id=found.id, status=found.status)
 
 
 @functools.lru_cache(maxsize=1)
@@ -101,7 +78,7 @@ async def regional_yields(
     rows = await BalanceDao(driver).get_regional_yields(stored_eppo, nuts.strip().upper())
     if not rows:
         raise HTTPException(status_code=404, detail="No regional yields for this crop and region")
-    body = yields_payload(rows, recent, _plausible_range(stored_eppo))
+    body = yields_payload(rows, recent, plausible_range(stored_eppo))
     return attach_attributions(body, (r.get("sourceId") for r in rows))
 
 
@@ -109,32 +86,18 @@ _INE = r"^[0-9]{5}$"
 _COUNTRY = r"^[A-Za-z]{2}$"
 
 
-@functools.lru_cache(maxsize=1)
-def _province_table() -> dict[str, str]:
-    return load_province_table()
-
-
 _REGION_TTL_S = 600.0
 _REGION_CACHE: dict[str, tuple[float, list[dict]]] = {}
 _monotonic = time.monotonic
 
 
-def _names_or_none() -> dict[str, str] | None:
-    """Region names, or None (logged) when the snapshot cannot be read: names are decoration."""
-    try:
-        return load_region_names()
-    except Exception as exc:  # noqa: BLE001
-        logger.error("NUTS region names unavailable: %s: %s", type(exc).__name__, exc)
-        return None
-
-
 def warm_nuts_reference() -> None:
     """Load the province table and region names at startup; never raises."""
     try:
-        _province_table()
+        province_table()
     except Exception as exc:  # noqa: BLE001
         logger.error("NUTS province table unavailable: %s: %s", type(exc).__name__, exc)
-    _names_or_none()
+    names_or_none()
 
 
 @router.get("/agriculture/nuts-region")
@@ -153,18 +116,18 @@ async def nuts_region(
         raise HTTPException(status_code=422,
                             detail="Give either municipality or both lat and lon")
     if municipality is not None:
-        nuts = nuts2_for_municipality(municipality, _province_table())
+        nuts = nuts2_for_municipality(municipality, province_table())
         if nuts is None:
             raise HTTPException(status_code=404, detail="Unknown province")
-        names = _names_or_none() or {}
+        names = names_or_none() or {}
         return {"municipality": municipality, "country": "ES", "nuts": nuts,
                 "name": names.get(nuts), "nuts_version": 2024,
                 "method": "ine_province"}
     province = es_province_at(lat, lon)
-    nuts = _province_table().get(province["code"]) if province else None
+    nuts = province_table().get(province["code"]) if province else None
     if nuts is None:
         raise HTTPException(status_code=404, detail="No NUTS 2 region for this point")
-    names = _names_or_none() or {}
+    names = names_or_none() or {}
     return {"lat": lat, "lon": lon, "country": "ES", "nuts": nuts,
             "name": names.get(nuts), "nuts_version": 2024,
             "method": "natural_earth_province"}
@@ -183,7 +146,7 @@ async def nuts_regions(driver: DriverDep, country: str = Query(..., pattern=_COU
     if hit is not None and now - hit[0] < _REGION_TTL_S:
         regions = hit[1]
     else:
-        names = _names_or_none()
+        names = names_or_none()
         if names is None:
             raise HTTPException(status_code=503, detail="Region names unavailable")
         rows = await BalanceDao(driver).list_yield_regions(country)

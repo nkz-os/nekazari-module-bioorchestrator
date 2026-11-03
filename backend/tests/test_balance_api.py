@@ -13,6 +13,7 @@ from app.auth import SKIP_AUTH_PREFIXES
 from app.core.dependencies import get_neo4j_driver
 from app.graph.balance_dao import BalanceDao
 from app.main import app
+from app.services import nuts_reference
 from app.services.crop_balance import to_node_props
 
 CROP = {
@@ -143,25 +144,25 @@ def test_regional_yields_crop_without_a_range_is_not_checked(client):
 
 
 def test_plausible_range_converts_kg_ha_to_t_ha():
-    got = balance_api._plausible_range("TRZAX")
+    got = nuts_reference.plausible_range("TRZAX")
     assert (got.min_t_ha, got.max_t_ha, got.range_id, got.status) == (
         0.5, 14.0, "crop_yield.TRZAX.grain", "assumption")
-    assert balance_api._plausible_range("BEAVX") is None
+    assert nuts_reference.plausible_range("BEAVX") is None
 
 
 def test_plausible_range_in_another_unit_is_not_guessed(caplog):
     fake_range = SimpleNamespace(id="crop_yield.XXXXX.grain", min=1.0, max=9.0, unit="t/ha",
                                  status="assumption")
     fake = SimpleNamespace(range_for=lambda *_a, **_k: fake_range)
-    with (patch.object(balance_api, "_registries", lambda: fake),
-          caplog.at_level(logging.WARNING, logger=balance_api.logger.name)):
-        assert balance_api._plausible_range("XXXXX") is None
+    with (patch.object(nuts_reference, "_registries", lambda: fake),
+          caplog.at_level(logging.WARNING, logger=nuts_reference.logger.name)):
+        assert nuts_reference.plausible_range("XXXXX") is None
     assert any("crop_yield.XXXXX.grain" in r.getMessage() and r.levelno == logging.WARNING
                for r in caplog.records)
 
 
 def test_registries_are_loaded_once():
-    assert balance_api._registries() is balance_api._registries()
+    assert nuts_reference._registries() is nuts_reference._registries()
 
 
 def test_nuts_region_for_a_spanish_municipality(client):
@@ -226,7 +227,7 @@ def test_nuts_regions_cached_within_ttl(client, _fresh_region_cache):
 
 
 def test_nuts_region_survives_names_failure(client):
-    with patch("app.api.v1.balance.load_region_names", side_effect=OSError("boom")):
+    with patch("app.services.nuts_reference.load_region_names", side_effect=OSError("boom")):
         resp = client.get("/api/graph/agriculture/nuts-region?municipality=31201")
     assert resp.status_code == 200
     assert resp.json()["nuts"] == "ES22" and resp.json()["name"] is None
@@ -234,7 +235,7 @@ def test_nuts_region_survives_names_failure(client):
 
 def test_warm_nuts_reference_logs_error_and_does_not_raise(caplog):
     from app.api.v1 import balance
-    with patch("app.api.v1.balance.load_region_names", side_effect=OSError("boom")), \
+    with patch("app.services.nuts_reference.load_region_names", side_effect=OSError("boom")), \
             caplog.at_level("ERROR"):
         balance.warm_nuts_reference()
     assert any("boom" in r.getMessage() for r in caplog.records)

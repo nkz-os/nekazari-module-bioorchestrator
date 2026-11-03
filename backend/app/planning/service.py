@@ -1,13 +1,20 @@
 """Planning use cases: read the parcel, apply the pure rules, return contract dicts."""
 from __future__ import annotations
 
+import asyncio
 import calendar
+import functools
 import logging
+import os
 import re
 from datetime import UTC, date, datetime, timedelta
+from pathlib import Path
+
+import yaml
 
 from app.common.attribution import attach_attributions, rows_source_ids
 from app.core.knowledge import KnowledgeSource
+from app.graph.balance_dao import BalanceDao
 from app.graph.dao import _to_parcel_urn
 from app.graph.recommend import sowing_info
 from app.planning.aquacrop_provider import PROVIDER_ID as AQUACROP_ID
@@ -50,11 +57,14 @@ from app.planning.history import (
     species_slug,
 )
 from app.planning.reference import EMPTY_REFERENCE, load_reference
+from app.planning.regional_yield import regional_yield
 from app.planning.rotation import rotation_reasons
 from app.planning.varieties import variety_stats
 from app.services import ggcmi_calendar
 from app.services.crop_cycles_client import fetch_crop_cycles
 from app.services.crop_reference import CROP_REFERENCE
+from app.services.nuts_reference import names_or_none, plausible_range, province_table
+from app.services.region_lookup import es_province_at
 from app.services.sim_errors import SimulationError
 from app.services.soil_client import assess_soil_suitability
 from app.services.sowing_windows import load_rows
@@ -129,6 +139,78 @@ async def load_environment(dao, parcel_id: str, tenant_id: str) -> dict:
     return env
 
 
+REGION_LOOKUP_UNAVAILABLE = "region_lookup_unavailable"
+CROP_NOT_IN_STATISTICS = "crop_not_in_statistics"
+REGION_STATS_UNAVAILABLE = "region_stats_unavailable"
+EUROSTAT_SOURCE_ID = "eurostat_apro_cpshr"
+
+
+@functools.lru_cache(maxsize=1)
+def _statistics_crops() -> frozenset[str]:
+    """Catalog codes of the crops the Eurostat series cover (the codes the graph was seeded with)."""
+    path = Path(os.getenv("DATA_DIR", "./data")) / "eurostat" / "crop_codes.yaml"
+    return frozenset(catalog_code(c) for c in yaml.safe_load(path.read_text())["crops"].values())
+
+
+def parcel_nuts2(lat: float | None, lon: float | None) -> str | None:
+    """NUTS 2 code of the parcel's centroid (Spain only, through its province), else None."""
+    province = es_province_at(lat, lon)
+    return province_table().get(province["code"]) if province else None
+
+
+REGIONAL_READ_TIMEOUT_S = 5.0
+
+
+async def regional_yields_for(source: KnowledgeSource, nuts: str | None, *, tenant_id: str,
+                              parcel_id: str) -> tuple[list[dict], bool]:
+    """Rows of the region and its country for the statistics crops, in ONE graph query; (rows, failed).
+
+    Any failure (crop list unreadable, graph error, timeout) is `failed`: the fit is still returned.
+    """
+    if nuts is None:
+        return [], False
+    try:
+        codes = sorted(_statistics_crops())
+        rows = await asyncio.wait_for(
+            BalanceDao(source.driver).get_regional_yields_batch(codes, [nuts, nuts[:2]]),
+            timeout=REGIONAL_READ_TIMEOUT_S)
+        return rows, False
+    except TimeoutError:
+        logger.warning("planning fit: regional yields read timed out after %ss graph=%s tenant=%s parcel=%s nuts=%s",
+                       REGIONAL_READ_TIMEOUT_S, source.graph_id, tenant_id, parcel_id, nuts)
+    except Exception:
+        logger.exception("planning fit: regional yields read failed graph=%s tenant=%s parcel=%s nuts=%s",
+                         source.graph_id, tenant_id, parcel_id, nuts)
+    return [], True
+
+
+def crop_regional_yield(code: str | None, nuts: str | None, rows: list[dict], failed: bool):
+    """(regional yield dict | None, reason | None) of one crop. Never a default figure."""
+    if nuts is None:
+        return None, REGION_LOOKUP_UNAVAILABLE
+    if failed:
+        return None, REGION_STATS_UNAVAILABLE
+    if code is None or catalog_code(code) not in _statistics_crops():
+        return None, CROP_NOT_IN_STATISTICS
+    code = catalog_code(code)
+    region = [r for r in rows if r.get("eppo") == code and r.get("nuts") == nuts]
+    country = [r for r in rows if r.get("eppo") == code and r.get("nuts") == nuts[:2]]
+    name = (names_or_none() or {}).get(nuts)  # Eurostat labels are English
+    found, reason = regional_yield(region, country, plausible=plausible_range(code),
+                                   region_name={"en": name} if name else None)
+    if found is None:
+        return None, reason
+    found = found.model_copy(update={
+        "attributions": attach_attributions({}, [EUROSTAT_SOURCE_ID])["attributions"]})
+    return found.model_dump(), reason
+
+
+def _rank_key(s: dict) -> tuple:
+    ry = s.get("regional_yield")
+    index = ry.get("relative_index") if ry else None
+    return (VERDICT_ORDER[s["verdict"]], index is None, -(index or 0.0), s["species"])
+
+
 async def parcel_fit(*, dao, source: KnowledgeSource, parcel_id: str, tenant_id: str,
                      campaign: int, regime: str | None) -> dict:
     env = await load_environment(dao, parcel_id, tenant_id)
@@ -154,6 +236,9 @@ async def parcel_fit(*, dao, source: KnowledgeSource, parcel_id: str, tenant_id:
     soil = env.get("soil") or {}
     centroid = env.get("centroid") or {}
     rows = load_rows()
+    nuts = parcel_nuts2(centroid.get("lat"), centroid.get("lon"))
+    yield_rows, yield_failed = await regional_yields_for(
+        source, nuts, tenant_id=tenant_id, parcel_id=env["parcel_id"])
     species = []
     for slug in list_species():
         if is_woody(slug):
@@ -189,14 +274,16 @@ async def parcel_fit(*, dao, source: KnowledgeSource, parcel_id: str, tenant_id:
         if lifecycle == "perennial":
             reasons.append(MULTI_YEAR)
         trials = has_trials(eppo, ref.trial_eppo)
+        regional, regional_reason = crop_regional_yield(eppo, nuts, yield_rows, yield_failed)
         species.append({
             "species": slug, "eppo": eppo, "names": dict(info.get("common_names") or {}), "lifecycle": lifecycle,
             "verdict": verdict_of(reasons), "reasons": reasons, "sowing": _sowing(sowing),
             "has_variety_trials": trials, "estimate_providers": estimate_providers(
                 catalog_code(eppo) if eppo else None, has_trials=trials, regime=regime_used, country=env.get("country")),
             "cover_only": is_cover_only(slug),
+            "regional_yield": regional, "regional_yield_unavailable": regional_reason,
         })
-    species.sort(key=lambda s: (VERDICT_ORDER[s["verdict"]], s["species"]))
+    species.sort(key=_rank_key)
     return {
         "parcel_id": env["parcel_id"], "campaign": campaign, "graphs": [source.graph_id], "species": species,
         "facts": {"climate_class": env.get("climate_class"), "climate_source": detail.get("source") or "unavailable",

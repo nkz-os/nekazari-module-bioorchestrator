@@ -1,8 +1,8 @@
-/** Mirror of backend/app/planning/models.py — contract version 2.2. Change both together. */
+/** Mirror of backend/app/planning/models.py — contract version 2.3. Change both together. */
 import type { SourceAttributionItem } from '../types/attribution';
 import type { Fortnight } from './fortnight';
 
-export const CONTRACT_VERSION = '2.2';
+export const CONTRACT_VERSION = '2.3';
 export type Verdict = 'fits' | 'caveats' | 'no_fit';
 /** Owner decision (2026-10-13): one vocabulary everywhere; the words shown are translated. */
 export type Regime = 'rainfed' | 'irrigated';
@@ -21,6 +21,17 @@ export interface SpeciesFit {
   has_variety_trials: boolean; estimate_providers: string[];
   /** Sown only as a cover crop: offered in the cover step, never as the main crop. */
   cover_only?: boolean;
+  /** Eurostat NUTS2 statistic (2.3); null with a reason in `regional_yield_unavailable`. */
+  regional_yield?: RegionalYield | null;
+  regional_yield_unavailable?: string | null;
+}
+export interface RegionalYield {
+  provider_id: 'eurostat_nuts2'; basis: 'regional_statistics'; nuts: string;
+  region_name: Names | null; first_year: number; last_year: number; n_years: number;
+  percentiles: { p10: number; p50: number; p90: number }; unit: 't/ha';
+  moisture: { basis: 'eu_standard'; pct: number | null }; regimes: 'mixed';
+  /** Regional mean over the national mean; null when the national series is short. */
+  relative_index: number | null; attributions: SourceAttributionItem[];
 }
 export interface ParcelFacts {
   climate_class: string | null; climate_source: string; soil_texture: string | null; soil_ph: number | null;

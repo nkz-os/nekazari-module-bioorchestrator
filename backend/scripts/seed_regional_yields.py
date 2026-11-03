@@ -7,6 +7,7 @@ from __future__ import annotations
 import argparse
 import gzip
 import json
+import logging
 import os
 import sys
 from collections import Counter
@@ -19,9 +20,12 @@ from neo4j import GraphDatabase
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from app.services.eurostat_yields import (
     build_series,
+    keep_countries,
     parse_jsonstat,
     to_node_props,
 )
+
+log = logging.getLogger("seed_regional_yields")
 
 CONSTRAINT = (
     "CREATE CONSTRAINT regional_yield_stat_key IF NOT EXISTS "
@@ -36,15 +40,22 @@ MERGE = "UNWIND $rows AS row MERGE (n:RegionalYieldStat {key: row.key}) SET n = 
 BATCH = 1000
 
 
-def latest_snapshot(directory: Path) -> Path:
-    found = sorted(directory.glob("apro_cpshr_nuts2_*.json.gz"))
+def latest_snapshot(directory: Path, level: str = "nuts2", required: bool = True) -> Path | None:
+    found = sorted(directory.glob(f"apro_cpshr_{level}_*.json.gz"))
     if not found:
-        raise SystemExit(f"no snapshot in {directory}")
+        if required:
+            raise SystemExit(f"no {level} snapshot in {directory}")
+        return None
     return found[-1]
 
 
-def build_rows(snapshot: dict, crop_map: dict[str, str]) -> list[dict]:
-    rows = build_series(parse_jsonstat(snapshot["jsonstat"]), crop_map)
+def build_rows(snapshot: dict, crop_map: dict[str, str], level: str = "nuts2") -> list[dict]:
+    cells = parse_jsonstat(snapshot["jsonstat"])
+    if level == "country":
+        cells, dropped = keep_countries(cells)
+        if dropped:
+            log.info("dropped non-country geos: %s", ", ".join(dropped))
+    rows = build_series(cells, crop_map)
     return [to_node_props(r, dataset_updated=snapshot.get("dataset_updated"),
                           extracted_at=snapshot["retrieved_at"],
                           nuts_version=snapshot["nuts_version"]) for r in rows]
@@ -59,14 +70,19 @@ def main() -> None:
     parser.add_argument("--execute", action="store_true", help="write (default: dry run)")
     args = parser.parse_args()
 
-    path = latest_snapshot(args.data_dir / "eurostat")
-    with gzip.open(path, "rt", encoding="utf-8") as f:
-        snapshot = json.load(f)
     crop_map = yaml.safe_load((args.data_dir / "eurostat" / "crop_codes.yaml").read_text())["crops"]
-    rows = build_rows(snapshot, crop_map)
-    per_crop = Counter(r["eppo"] for r in rows)
-    print(f"[seed_regional_yields] {path.name}: {len(rows)} rows, "
-          f"{len({r['nuts'] for r in rows})} regions, per crop {dict(sorted(per_crop.items()))}")
+    # NUTS 2 snapshot is required; the country snapshot is optional (older data dirs lack it).
+    logging.basicConfig(level=logging.INFO)
+    paths = [("nuts2", latest_snapshot(args.data_dir / "eurostat", "nuts2")),
+             ("country", latest_snapshot(args.data_dir / "eurostat", "country", required=False))]
+    rows: list[dict] = []
+    for level, path in ((lv, p) for lv, p in paths if p is not None):
+        with gzip.open(path, "rt", encoding="utf-8") as f:
+            part = build_rows(json.load(f), crop_map, level)
+        rows.extend(part)
+        per_crop = Counter(r["eppo"] for r in part)
+        print(f"[seed_regional_yields] {path.name}: {len(part)} rows, "
+              f"{len({r['nuts'] for r in part})} regions, per crop {dict(sorted(per_crop.items()))}")
     if not args.execute:
         print("[seed_regional_yields] dry run, nothing written (use --execute)")
         return

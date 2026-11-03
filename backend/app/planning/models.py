@@ -11,7 +11,7 @@ from typing import Annotated, Any, Literal
 
 from pydantic import BaseModel, BeforeValidator, Field
 
-CONTRACT_VERSION = "2.2"
+CONTRACT_VERSION = "2.3"
 
 Verdict = Literal["fits", "caveats", "no_fit"]
 # Owner decision (2026-10-13): the regime vocabulary is rainfed | irrigated. The Spanish words that
@@ -57,6 +57,9 @@ class SpeciesFit(BaseModel):
     has_variety_trials: bool
     estimate_providers: list[str]
     cover_only: bool = False  # offered as a cover crop only, never as the main crop
+    # Regional statistic; orders the crops inside a verdict, never changes it. Not a fit reason.
+    regional_yield: RegionalYield | None = None
+    regional_yield_unavailable: str | None = None
 
 
 class ParcelFacts(BaseModel):
@@ -144,6 +147,28 @@ class Moisture(BaseModel):
     """Grain moisture the figure is expressed at; figures are only compared at the same one."""
     basis: Literal["commercial", "dry_matter", "as_reported"]
     pct: float | None = None
+
+
+class RegionalMoisture(BaseModel):
+    basis: Literal["eu_standard"] = "eu_standard"
+    pct: float | None = None
+
+
+class RegionalYield(BaseModel):
+    """Regional statistic (Eurostat NUTS2 mean, rainfed and irrigated together); never a forecast for a parcel."""
+    provider_id: Literal["eurostat_nuts2"] = "eurostat_nuts2"
+    basis: Literal["regional_statistics"] = "regional_statistics"
+    nuts: str
+    region_name: dict[str, str] | None = None
+    first_year: int
+    last_year: int
+    n_years: int
+    percentiles: Percentiles
+    unit: Literal["t/ha"] = "t/ha"
+    moisture: RegionalMoisture = Field(default_factory=RegionalMoisture)
+    regimes: Literal["mixed"] = "mixed"
+    relative_index: float | None = None
+    attributions: list[dict[str, Any]] = Field(default_factory=list)
 
 
 class Estimate(BaseModel):
