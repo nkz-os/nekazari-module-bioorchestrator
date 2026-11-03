@@ -64,6 +64,10 @@ def _check_valid(where: str, valid: object, errors: list[str]) -> None:
                            ("vpd_kpa_min", 0, 20), ("vpd_kpa_max", 0, 20)):
         if valid.get(key) is not None and not _num(valid[key], low, high):
             errors.append(f"{where}.valid.{key}: out of range")
+    for low_key, high_key in (("solar_hour_from", "solar_hour_to"), ("vpd_kpa_min", "vpd_kpa_max")):
+        low, high = valid.get(low_key), valid.get(high_key)
+        if _num(low, -1e9, 1e9) and _num(high, -1e9, 1e9) and low > high:
+            errors.append(f"{where}.valid: {low_key} greater than {high_key}")
 
 
 def _check_baseline(slug: str, b: object, known: dict[str, str], seen: set[str],

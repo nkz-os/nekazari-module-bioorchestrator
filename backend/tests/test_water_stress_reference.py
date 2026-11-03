@@ -1,5 +1,6 @@
 """Water-stress reference (NWSB baselines, upper limits, stage flags): validator, loader, API shape."""
 import copy
+from itertools import pairwise
 from pathlib import Path
 
 import pytest
@@ -203,3 +204,37 @@ def test_load_rejects_non_mapping(tmp_path):
     f.write_text("- a\n", encoding="utf-8")
     with pytest.raises(TypeError):
         load(f)
+
+
+def test_validator_rejects_inverted_windows():
+    for key_from, key_to in (("solar_hour_from", "solar_hour_to"), ("vpd_kpa_min", "vpd_kpa_max")):
+        d = _doc()
+        _first(d)["valid"].update({key_from: 12, key_to: 11})
+        assert any("greater" in e for e in _errors(d))
+        d = _doc()
+        _first(d)["valid"].update({key_from: 11, key_to: 12})
+        assert _errors(d) == []
+
+
+def test_served_olive_rows_have_distinct_non_overlapping_windows():
+    rows = [b for b in species_payload(DOC, "olive")["baselines"] if b["sourceId"] == "egea2017"]
+    assert len(rows) == 11
+    windows = sorted((b["valid"]["solarHourFrom"], b["valid"]["solarHourTo"]) for b in rows)
+    for (_f1, t1), (f2, _t2) in pairwise(windows):
+        assert t1 <= f2  # touching at the edge at most
+
+
+@pytest.mark.parametrize("solar_hour", [8.5, 11.6, 12.0, 12.6, 17.9])
+def test_a_solar_reading_falls_in_exactly_one_olive_window(solar_hour):
+    rows = species_payload(DOC, "olive")["baselines"]
+    hits = [b["id"] for b in rows
+            if b["valid"].get("solarHourFrom") is not None
+            and b["valid"]["solarHourFrom"] <= solar_hour < b["valid"]["solarHourTo"]]
+    assert len(hits) == 1, hits
+
+
+def test_olive_rows_cultivar_null_with_assumption_and_season():
+    for b in DOC["species"]["olive"]["baselines"]:
+        if b["source_id"] == "egea2017":
+            assert b["cultivar"] is None and "Arbequina" in b["assumption"]
+            assert "DOY 167-275" in b["ref"]

@@ -246,141 +246,152 @@ species:
     stages: {}
   olive:
     baselines:
-      # Egea 2017 Table 2: one baseline per GMT hour. The site longitude is not in the
-      # verified sources, so the solar window is unknown and left null; the GMT hour is in ref.
+      # Egea 2017 Table 2: one baseline per GMT hour. Section 2.1 gives the site coordinates
+      # (37.248979, -5.796538): solar hour = GMT hour + lon/15 (lon -5.796538), window +/- 0.5 h.
       # Upper limit: Ta + 5 degrees C, assumed by the authors (Section 2.5).
       - id: egea2017-t2-08gmt
-        cultivar: Arbequina
+        cultivar: null
         stages: null
         condition: sunlit
         a0_c: 0.94
         a1_c_per_kpa: -0.77
         upper: {form: constant, value_c: 5.0}
-        valid: {clear_sky: true}
-        site: "Sevilla (Spain), 37.25 N"
+        valid: {solar_hour_from: 7.1136, solar_hour_to: 8.1136, clear_sky: true}
+        site: "Sevilla (Spain), 37.248979 N, 5.796538 W"
         evidence: primary_read
         source_id: egea2017
-        ref: "Table 2, 08:00 GMT"
+        ref: "Table 2, 08:00 GMT; clear-sky days DOY 167-275 (summer) only; solar window = GMT hour +/- 0.5 h shifted by longitude -5.796538 (Section 2.1 site coordinates 37.248979, -5.796538)"
+        assumption: "measured on Arbequina; applied to all olive cultivars"
       - id: egea2017-t2-09gmt
-        cultivar: Arbequina
+        cultivar: null
         stages: null
         condition: sunlit
         a0_c: 0.97
         a1_c_per_kpa: -0.67
         upper: {form: constant, value_c: 5.0}
-        valid: {clear_sky: true}
-        site: "Sevilla (Spain), 37.25 N"
+        valid: {solar_hour_from: 8.1136, solar_hour_to: 9.1136, clear_sky: true}
+        site: "Sevilla (Spain), 37.248979 N, 5.796538 W"
         evidence: primary_read
         source_id: egea2017
-        ref: "Table 2, 09:00 GMT"
+        ref: "Table 2, 09:00 GMT; clear-sky days DOY 167-275 (summer) only; solar window = GMT hour +/- 0.5 h shifted by longitude -5.796538 (Section 2.1 site coordinates 37.248979, -5.796538)"
+        assumption: "measured on Arbequina; applied to all olive cultivars"
       - id: egea2017-t2-10gmt
-        cultivar: Arbequina
+        cultivar: null
         stages: null
         condition: sunlit
         a0_c: 1.44
         a1_c_per_kpa: -0.61
         upper: {form: constant, value_c: 5.0}
-        valid: {clear_sky: true}
-        site: "Sevilla (Spain), 37.25 N"
+        valid: {solar_hour_from: 9.1136, solar_hour_to: 10.1136, clear_sky: true}
+        site: "Sevilla (Spain), 37.248979 N, 5.796538 W"
         evidence: primary_read
         source_id: egea2017
-        ref: "Table 2, 10:00 GMT"
+        ref: "Table 2, 10:00 GMT; clear-sky days DOY 167-275 (summer) only; solar window = GMT hour +/- 0.5 h shifted by longitude -5.796538 (Section 2.1 site coordinates 37.248979, -5.796538)"
+        assumption: "measured on Arbequina; applied to all olive cultivars"
       - id: egea2017-t2-11gmt
-        cultivar: Arbequina
+        cultivar: null
         stages: null
         condition: sunlit
         a0_c: 2.18
         a1_c_per_kpa: -0.55
         upper: {form: constant, value_c: 5.0}
-        valid: {clear_sky: true}
-        site: "Sevilla (Spain), 37.25 N"
+        valid: {solar_hour_from: 10.1136, solar_hour_to: 11.1136, clear_sky: true}
+        site: "Sevilla (Spain), 37.248979 N, 5.796538 W"
         evidence: primary_read
         source_id: egea2017
-        ref: "Table 2, 11:00 GMT"
+        ref: "Table 2, 11:00 GMT; clear-sky days DOY 167-275 (summer) only; solar window = GMT hour +/- 0.5 h shifted by longitude -5.796538 (Section 2.1 site coordinates 37.248979, -5.796538)"
+        assumption: "measured on Arbequina; applied to all olive cultivars"
       - id: egea2017-t2-12gmt
-        cultivar: Arbequina
+        cultivar: null
         stages: null
         condition: sunlit
         a0_c: 2.50
         a1_c_per_kpa: -0.36
         upper: {form: constant, value_c: 5.0}
-        valid: {clear_sky: true}
-        site: "Sevilla (Spain), 37.25 N"
+        valid: {solar_hour_from: 11.1136, solar_hour_to: 12.1136, clear_sky: true}
+        site: "Sevilla (Spain), 37.248979 N, 5.796538 W"
         evidence: primary_read
         source_id: egea2017
-        ref: "Table 2, 12:00 GMT"
+        ref: "Table 2, 12:00 GMT; clear-sky days DOY 167-275 (summer) only; solar window = GMT hour +/- 0.5 h shifted by longitude -5.796538 (Section 2.1 site coordinates 37.248979, -5.796538)"
+        assumption: "measured on Arbequina; applied to all olive cultivars"
       - id: egea2017-t2-13gmt
-        cultivar: Arbequina
+        cultivar: null
         stages: null
         condition: sunlit
         a0_c: 2.43
         a1_c_per_kpa: -0.30
         upper: {form: constant, value_c: 5.0}
-        valid: {clear_sky: true}
-        site: "Sevilla (Spain), 37.25 N"
+        valid: {solar_hour_from: 12.1136, solar_hour_to: 13.1136, clear_sky: true}
+        site: "Sevilla (Spain), 37.248979 N, 5.796538 W"
         evidence: primary_read
         source_id: egea2017
-        ref: "Table 2, 13:00 GMT"
+        ref: "Table 2, 13:00 GMT; clear-sky days DOY 167-275 (summer) only; solar window = GMT hour +/- 0.5 h shifted by longitude -5.796538 (Section 2.1 site coordinates 37.248979, -5.796538)"
+        assumption: "measured on Arbequina; applied to all olive cultivars"
       - id: egea2017-t2-14gmt
-        cultivar: Arbequina
+        cultivar: null
         stages: null
         condition: sunlit
         a0_c: 2.05
         a1_c_per_kpa: -0.32
         upper: {form: constant, value_c: 5.0}
-        valid: {clear_sky: true}
-        site: "Sevilla (Spain), 37.25 N"
+        valid: {solar_hour_from: 13.1136, solar_hour_to: 14.1136, clear_sky: true}
+        site: "Sevilla (Spain), 37.248979 N, 5.796538 W"
         evidence: primary_read
         source_id: egea2017
-        ref: "Table 2, 14:00 GMT"
+        ref: "Table 2, 14:00 GMT; clear-sky days DOY 167-275 (summer) only; solar window = GMT hour +/- 0.5 h shifted by longitude -5.796538 (Section 2.1 site coordinates 37.248979, -5.796538)"
+        assumption: "measured on Arbequina; applied to all olive cultivars"
       - id: egea2017-t2-15gmt
-        cultivar: Arbequina
+        cultivar: null
         stages: null
         condition: sunlit
         a0_c: 1.43
         a1_c_per_kpa: -0.30
         upper: {form: constant, value_c: 5.0}
-        valid: {clear_sky: true}
-        site: "Sevilla (Spain), 37.25 N"
+        valid: {solar_hour_from: 14.1136, solar_hour_to: 15.1136, clear_sky: true}
+        site: "Sevilla (Spain), 37.248979 N, 5.796538 W"
         evidence: primary_read
         source_id: egea2017
-        ref: "Table 2, 15:00 GMT"
+        ref: "Table 2, 15:00 GMT; clear-sky days DOY 167-275 (summer) only; solar window = GMT hour +/- 0.5 h shifted by longitude -5.796538 (Section 2.1 site coordinates 37.248979, -5.796538)"
+        assumption: "measured on Arbequina; applied to all olive cultivars"
       - id: egea2017-t2-16gmt
-        cultivar: Arbequina
+        cultivar: null
         stages: null
         condition: sunlit
         a0_c: 0.83
         a1_c_per_kpa: -0.30
         upper: {form: constant, value_c: 5.0}
-        valid: {clear_sky: true}
-        site: "Sevilla (Spain), 37.25 N"
+        valid: {solar_hour_from: 15.1136, solar_hour_to: 16.1136, clear_sky: true}
+        site: "Sevilla (Spain), 37.248979 N, 5.796538 W"
         evidence: primary_read
         source_id: egea2017
-        ref: "Table 2, 16:00 GMT"
+        ref: "Table 2, 16:00 GMT; clear-sky days DOY 167-275 (summer) only; solar window = GMT hour +/- 0.5 h shifted by longitude -5.796538 (Section 2.1 site coordinates 37.248979, -5.796538)"
+        assumption: "measured on Arbequina; applied to all olive cultivars"
       - id: egea2017-t2-17gmt
-        cultivar: Arbequina
+        cultivar: null
         stages: null
         condition: sunlit
         a0_c: 0.31
         a1_c_per_kpa: -0.31
         upper: {form: constant, value_c: 5.0}
-        valid: {clear_sky: true}
-        site: "Sevilla (Spain), 37.25 N"
+        valid: {solar_hour_from: 16.1136, solar_hour_to: 17.1136, clear_sky: true}
+        site: "Sevilla (Spain), 37.248979 N, 5.796538 W"
         evidence: primary_read
         source_id: egea2017
-        ref: "Table 2, 17:00 GMT"
+        ref: "Table 2, 17:00 GMT; clear-sky days DOY 167-275 (summer) only; solar window = GMT hour +/- 0.5 h shifted by longitude -5.796538 (Section 2.1 site coordinates 37.248979, -5.796538)"
+        assumption: "measured on Arbequina; applied to all olive cultivars"
       - id: egea2017-t2-18gmt
-        cultivar: Arbequina
+        cultivar: null
         stages: null
         condition: sunlit
         a0_c: -0.09
         a1_c_per_kpa: -0.32
         upper: {form: constant, value_c: 5.0}
-        valid: {clear_sky: true}
-        site: "Sevilla (Spain), 37.25 N"
+        valid: {solar_hour_from: 17.1136, solar_hour_to: 18.1136, clear_sky: true}
+        site: "Sevilla (Spain), 37.248979 N, 5.796538 W"
         evidence: primary_read
         source_id: egea2017
-        ref: "Table 2, 18:00 GMT"
+        ref: "Table 2, 18:00 GMT; clear-sky days DOY 167-275 (summer) only; solar window = GMT hour +/- 0.5 h shifted by longitude -5.796538 (Section 2.1 site coordinates 37.248979, -5.796538)"
+        assumption: "measured on Arbequina; applied to all olive cultivars"
       # Berni 2009: hourly means close to solar noon (12:30 GMT); no upper limit published.
       - id: berni2009-noon
         cultivar: Arbequina
