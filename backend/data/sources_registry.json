@@ -1663,5 +1663,427 @@
       "evapotranspiration",
       "phenology"
     ]
+  },
+  {
+    "source_id": "fao33",
+    "name": "FAO Irrigation and Drainage Paper 33, Yield response to water",
+    "institution": "FAO",
+    "institution_short": "FAO",
+    "country": "INT",
+    "country_name": {
+      "en": "International",
+      "es": "Internacional",
+      "eu": "Nazioartekoa",
+      "fr": "International",
+      "pt": "Internacional"
+    },
+    "url": "https://www.fao.org",
+    "document_url_template": null,
+    "license_class": "international-organisation",
+    "use_type": "reference-parameters",
+    "official_status": false,
+    "data_format": "database",
+    "extraction_method": "structured",
+    "confidence_default": "high",
+    "attribution": {
+      "en": "Doorenbos J., Kassam A.H. (1979) Yield response to water. FAO Irrigation and Drainage Paper 33, FAO, Rome. ISBN 92-5-100744-6",
+      "es": "Doorenbos J., Kassam A.H. (1979) Yield response to water. FAO Irrigation and Drainage Paper 33, FAO, Rome. ISBN 92-5-100744-6"
+    },
+    "disclaimer": {
+      "en": "Ky values are FAO-33 reference values; any use made of them is an NKZ calculation.",
+      "es": "Los valores de Ky son valores de referencia de FAO-33; el uso que se haga de ellos es un c\u00e1lculo de NKZ."
+    },
+    "attribution_text": "Doorenbos J., Kassam A.H. (1979) Yield response to water. FAO Irrigation and Drainage Paper 33, FAO, Rome. ISBN 92-5-100744-6",
+    "attribution_url": "https://www.fao.org",
+    "licence_id": "fao-copyright",
+    "licence_url": "https://www.fao.org/contact-us/terms/en/",
+    "download_date": "2026-11-03",
+    "processing_note": {
+      "en": "Estimates and averages are Nekazari calculations based on these data; they are not data published by the sources.",
+      "es": "Las estimaciones y medias son c\u00e1lculos de Nekazari a partir de estos datos; no son datos publicados por las fuentes."
+    },
+    "site_urls": [
+      "https://www.fao.org"
+    ],
+    "tags": [
+      "water-stress",
+      "yield-response"
+    ]
+  },
+  {
+    "source_id": "idso1982",
+    "name": "Idso 1982, Non-water-stressed baselines: A key to measuring and interpreting plant water stress",
+    "institution": "Agricultural Meteorology (Elsevier)",
+    "institution_short": "Agricultural Meteorology",
+    "country": "US",
+    "country_name": {
+      "en": "United States",
+      "es": "Estados Unidos",
+      "eu": "Estatu Batuak",
+      "fr": "\u00c9tats-Unis",
+      "pt": "Estados Unidos"
+    },
+    "url": "https://doi.org/10.1016/0002-1571(82)90020-6",
+    "document_url_template": null,
+    "license_class": "academic-published",
+    "use_type": "reference-parameters",
+    "official_status": false,
+    "data_format": "pdf-extracted",
+    "extraction_method": "structured",
+    "confidence_default": "high",
+    "attribution": {
+      "en": "Idso S.B. (1982) Non-water-stressed baselines: A key to measuring and interpreting plant water stress. Agricultural Meteorology 27, 59-70. doi:10.1016/0002-1571(82)90020-6",
+      "es": "Idso S.B. (1982) Non-water-stressed baselines: A key to measuring and interpreting plant water stress. Agricultural Meteorology 27, 59-70. doi:10.1016/0002-1571(82)90020-6"
+    },
+    "disclaimer": {
+      "en": "Data from a peer-reviewed journal article. NKZ uses these numbers as reference parameters; this is not an official recommendation by the authors or the journal.",
+      "es": "Datos de un art\u00edculo cient\u00edfico revisado por pares. NKZ usa estos n\u00fameros como par\u00e1metros de referencia; esto no es una recomendaci\u00f3n oficial de los autores ni de la revista."
+    },
+    "attribution_text": "Idso S.B. (1982) Non-water-stressed baselines: A key to measuring and interpreting plant water stress. Agricultural Meteorology 27, 59-70. doi:10.1016/0002-1571(82)90020-6",
+    "attribution_url": "https://doi.org/10.1016/0002-1571(82)90020-6",
+    "licence_id": "publisher-copyright",
+    "licence_url": null,
+    "download_date": "2026-11-03",
+    "processing_note": {
+      "en": "Estimates and averages are Nekazari calculations based on these data; they are not data published by the sources.",
+      "es": "Las estimaciones y medias son c\u00e1lculos de Nekazari a partir de estos datos; no son datos publicados por las fuentes."
+    },
+    "site_urls": [
+      "https://doi.org/10.1016/0002-1571(82)90020-6"
+    ],
+    "tags": [
+      "water-stress",
+      "cwsi",
+      "academic"
+    ]
+  },
+  {
+    "source_id": "egea2017",
+    "name": "Egea et al. 2017, Assessing a crop water stress index derived from aerial thermal imaging and infrared thermometry in super-high density olive orchards",
+    "institution": "Agricultural Water Management (Elsevier)",
+    "institution_short": "Agricultural Water Management",
+    "country": "ES",
+    "country_name": {
+      "en": "Spain",
+      "es": "Espa\u00f1a",
+      "eu": "Espainia",
+      "fr": "Espagne",
+      "pt": "Espanha"
+    },
+    "url": "https://doi.org/10.1016/j.agwat.2017.03.030",
+    "document_url_template": null,
+    "license_class": "academic-published",
+    "use_type": "reference-parameters",
+    "official_status": false,
+    "data_format": "pdf-extracted",
+    "extraction_method": "structured",
+    "confidence_default": "high",
+    "attribution": {
+      "en": "Egea G., Padilla-D\u00edaz C.M., Martinez-Guanter J., Fern\u00e1ndez J.E., P\u00e9rez-Ruiz M. (2017) Assessing a crop water stress index derived from aerial thermal imaging and infrared thermometry in super-high density olive orchards. Agricultural Water Management 187, 210-221. doi:10.1016/j.agwat.2017.03.030",
+      "es": "Egea G., Padilla-D\u00edaz C.M., Martinez-Guanter J., Fern\u00e1ndez J.E., P\u00e9rez-Ruiz M. (2017) Assessing a crop water stress index derived from aerial thermal imaging and infrared thermometry in super-high density olive orchards. Agricultural Water Management 187, 210-221. doi:10.1016/j.agwat.2017.03.030"
+    },
+    "disclaimer": {
+      "en": "Data from a peer-reviewed journal article. NKZ uses these numbers as reference parameters; this is not an official recommendation by the authors or the journal.",
+      "es": "Datos de un art\u00edculo cient\u00edfico revisado por pares. NKZ usa estos n\u00fameros como par\u00e1metros de referencia; esto no es una recomendaci\u00f3n oficial de los autores ni de la revista."
+    },
+    "attribution_text": "Egea G., Padilla-D\u00edaz C.M., Martinez-Guanter J., Fern\u00e1ndez J.E., P\u00e9rez-Ruiz M. (2017) Assessing a crop water stress index derived from aerial thermal imaging and infrared thermometry in super-high density olive orchards. Agricultural Water Management 187, 210-221. doi:10.1016/j.agwat.2017.03.030",
+    "attribution_url": "https://doi.org/10.1016/j.agwat.2017.03.030",
+    "licence_id": "publisher-copyright",
+    "licence_url": null,
+    "download_date": "2026-11-03",
+    "processing_note": {
+      "en": "Estimates and averages are Nekazari calculations based on these data; they are not data published by the sources.",
+      "es": "Las estimaciones y medias son c\u00e1lculos de Nekazari a partir de estos datos; no son datos publicados por las fuentes."
+    },
+    "site_urls": [
+      "https://doi.org/10.1016/j.agwat.2017.03.030"
+    ],
+    "tags": [
+      "water-stress",
+      "cwsi",
+      "academic"
+    ]
+  },
+  {
+    "source_id": "berni2009",
+    "name": "Berni et al. 2009, Mapping canopy conductance and CWSI in olive orchards using high resolution thermal remote sensing imagery",
+    "institution": "Remote Sensing of Environment (Elsevier)",
+    "institution_short": "Remote Sensing of Environment",
+    "country": "ES",
+    "country_name": {
+      "en": "Spain",
+      "es": "Espa\u00f1a",
+      "eu": "Espainia",
+      "fr": "Espagne",
+      "pt": "Espanha"
+    },
+    "url": "https://doi.org/10.1016/j.rse.2009.06.018",
+    "document_url_template": null,
+    "license_class": "academic-published",
+    "use_type": "reference-parameters",
+    "official_status": false,
+    "data_format": "pdf-extracted",
+    "extraction_method": "structured",
+    "confidence_default": "high",
+    "attribution": {
+      "en": "Berni J., Zarco-Tejada P., Sepulcre-Cant\u00f3 G., Fereres E., Villalobos F. (2009) Mapping canopy conductance and CWSI in olive orchards using high resolution thermal remote sensing imagery. Remote Sensing of Environment 113, 2380-2388. doi:10.1016/j.rse.2009.06.018",
+      "es": "Berni J., Zarco-Tejada P., Sepulcre-Cant\u00f3 G., Fereres E., Villalobos F. (2009) Mapping canopy conductance and CWSI in olive orchards using high resolution thermal remote sensing imagery. Remote Sensing of Environment 113, 2380-2388. doi:10.1016/j.rse.2009.06.018"
+    },
+    "disclaimer": {
+      "en": "Data from a peer-reviewed journal article. NKZ uses these numbers as reference parameters; this is not an official recommendation by the authors or the journal.",
+      "es": "Datos de un art\u00edculo cient\u00edfico revisado por pares. NKZ usa estos n\u00fameros como par\u00e1metros de referencia; esto no es una recomendaci\u00f3n oficial de los autores ni de la revista."
+    },
+    "attribution_text": "Berni J., Zarco-Tejada P., Sepulcre-Cant\u00f3 G., Fereres E., Villalobos F. (2009) Mapping canopy conductance and CWSI in olive orchards using high resolution thermal remote sensing imagery. Remote Sensing of Environment 113, 2380-2388. doi:10.1016/j.rse.2009.06.018",
+    "attribution_url": "https://doi.org/10.1016/j.rse.2009.06.018",
+    "licence_id": "publisher-copyright",
+    "licence_url": null,
+    "download_date": "2026-11-03",
+    "processing_note": {
+      "en": "Estimates and averages are Nekazari calculations based on these data; they are not data published by the sources.",
+      "es": "Las estimaciones y medias son c\u00e1lculos de Nekazari a partir de estos datos; no son datos publicados por las fuentes."
+    },
+    "site_urls": [
+      "https://doi.org/10.1016/j.rse.2009.06.018"
+    ],
+    "tags": [
+      "water-stress",
+      "cwsi",
+      "academic"
+    ]
+  },
+  {
+    "source_id": "gonzalezdugo2014",
+    "name": "Gonzalez-Dugo et al. 2014, Applicability and limitations of using the crop water stress index as an indicator of water deficits in citrus orchards",
+    "institution": "Agricultural and Forest Meteorology (Elsevier)",
+    "institution_short": "Agricultural and Forest Meteorology",
+    "country": "ES",
+    "country_name": {
+      "en": "Spain",
+      "es": "Espa\u00f1a",
+      "eu": "Espainia",
+      "fr": "Espagne",
+      "pt": "Espanha"
+    },
+    "url": "https://doi.org/10.1016/j.agrformet.2014.08.003",
+    "document_url_template": null,
+    "license_class": "academic-published",
+    "use_type": "reference-parameters",
+    "official_status": false,
+    "data_format": "pdf-extracted",
+    "extraction_method": "structured",
+    "confidence_default": "high",
+    "attribution": {
+      "en": "Gonzalez-Dugo V., Zarco-Tejada P., Fereres E. (2014) Applicability and limitations of using the crop water stress index as an indicator of water deficits in citrus orchards. Agricultural and Forest Meteorology 198-199, 94-104. doi:10.1016/j.agrformet.2014.08.003",
+      "es": "Gonzalez-Dugo V., Zarco-Tejada P., Fereres E. (2014) Applicability and limitations of using the crop water stress index as an indicator of water deficits in citrus orchards. Agricultural and Forest Meteorology 198-199, 94-104. doi:10.1016/j.agrformet.2014.08.003"
+    },
+    "disclaimer": {
+      "en": "Data from a peer-reviewed journal article. NKZ uses these numbers as reference parameters; this is not an official recommendation by the authors or the journal.",
+      "es": "Datos de un art\u00edculo cient\u00edfico revisado por pares. NKZ usa estos n\u00fameros como par\u00e1metros de referencia; esto no es una recomendaci\u00f3n oficial de los autores ni de la revista."
+    },
+    "attribution_text": "Gonzalez-Dugo V., Zarco-Tejada P., Fereres E. (2014) Applicability and limitations of using the crop water stress index as an indicator of water deficits in citrus orchards. Agricultural and Forest Meteorology 198-199, 94-104. doi:10.1016/j.agrformet.2014.08.003",
+    "attribution_url": "https://doi.org/10.1016/j.agrformet.2014.08.003",
+    "licence_id": "publisher-copyright",
+    "licence_url": null,
+    "download_date": "2026-11-03",
+    "processing_note": {
+      "en": "Estimates and averages are Nekazari calculations based on these data; they are not data published by the sources.",
+      "es": "Las estimaciones y medias son c\u00e1lculos de Nekazari a partir de estos datos; no son datos publicados por las fuentes."
+    },
+    "site_urls": [
+      "https://doi.org/10.1016/j.agrformet.2014.08.003"
+    ],
+    "tags": [
+      "water-stress",
+      "cwsi",
+      "academic"
+    ]
+  },
+  {
+    "source_id": "gonzalezdugo2019",
+    "name": "Gonzalez-Dugo et al. 2019, Transpiration from canopy temperature: Implications for the assessment of crop yield in almond orchards",
+    "institution": "European Journal of Agronomy (Elsevier)",
+    "institution_short": "European Journal of Agronomy",
+    "country": "ES",
+    "country_name": {
+      "en": "Spain",
+      "es": "Espa\u00f1a",
+      "eu": "Espainia",
+      "fr": "Espagne",
+      "pt": "Espanha"
+    },
+    "url": "https://doi.org/10.1016/j.eja.2019.01.010",
+    "document_url_template": null,
+    "license_class": "academic-published",
+    "use_type": "reference-parameters",
+    "official_status": false,
+    "data_format": "pdf-extracted",
+    "extraction_method": "structured",
+    "confidence_default": "high",
+    "attribution": {
+      "en": "Gonzalez-Dugo V., Lopez-Lopez M., Espadafor M., Orgaz F., Testi L., Zarco-Tejada P., Lorite I., Fereres E. (2019) Transpiration from canopy temperature: Implications for the assessment of crop yield in almond orchards. European Journal of Agronomy 105, 78-85. doi:10.1016/j.eja.2019.01.010",
+      "es": "Gonzalez-Dugo V., Lopez-Lopez M., Espadafor M., Orgaz F., Testi L., Zarco-Tejada P., Lorite I., Fereres E. (2019) Transpiration from canopy temperature: Implications for the assessment of crop yield in almond orchards. European Journal of Agronomy 105, 78-85. doi:10.1016/j.eja.2019.01.010"
+    },
+    "disclaimer": {
+      "en": "Data from a peer-reviewed journal article. NKZ uses these numbers as reference parameters; this is not an official recommendation by the authors or the journal.",
+      "es": "Datos de un art\u00edculo cient\u00edfico revisado por pares. NKZ usa estos n\u00fameros como par\u00e1metros de referencia; esto no es una recomendaci\u00f3n oficial de los autores ni de la revista."
+    },
+    "attribution_text": "Gonzalez-Dugo V., Lopez-Lopez M., Espadafor M., Orgaz F., Testi L., Zarco-Tejada P., Lorite I., Fereres E. (2019) Transpiration from canopy temperature: Implications for the assessment of crop yield in almond orchards. European Journal of Agronomy 105, 78-85. doi:10.1016/j.eja.2019.01.010",
+    "attribution_url": "https://doi.org/10.1016/j.eja.2019.01.010",
+    "licence_id": "publisher-copyright",
+    "licence_url": null,
+    "download_date": "2026-11-03",
+    "processing_note": {
+      "en": "Estimates and averages are Nekazari calculations based on these data; they are not data published by the sources.",
+      "es": "Las estimaciones y medias son c\u00e1lculos de Nekazari a partir de estos datos; no son datos publicados por las fuentes."
+    },
+    "site_urls": [
+      "https://doi.org/10.1016/j.eja.2019.01.010"
+    ],
+    "tags": [
+      "water-stress",
+      "cwsi",
+      "academic"
+    ]
+  },
+  {
+    "source_id": "bellvert2015",
+    "name": "Bellvert et al. 2015, Seasonal evolution of crop water stress index in grapevine varieties determined with high-resolution remote sensing thermal imagery",
+    "institution": "Irrigation Science (Springer)",
+    "institution_short": "Irrigation Science",
+    "country": "ES",
+    "country_name": {
+      "en": "Spain",
+      "es": "Espa\u00f1a",
+      "eu": "Espainia",
+      "fr": "Espagne",
+      "pt": "Espanha"
+    },
+    "url": "https://doi.org/10.1007/s00271-014-0456-y",
+    "document_url_template": null,
+    "license_class": "academic-published",
+    "use_type": "reference-parameters",
+    "official_status": false,
+    "data_format": "pdf-extracted",
+    "extraction_method": "structured",
+    "confidence_default": "high",
+    "attribution": {
+      "en": "Bellvert J., Marsal J., Girona J., Zarco-Tejada P.J. (2015) Seasonal evolution of crop water stress index in grapevine varieties determined with high-resolution remote sensing thermal imagery. Irrigation Science 33, 81-93. doi:10.1007/s00271-014-0456-y",
+      "es": "Bellvert J., Marsal J., Girona J., Zarco-Tejada P.J. (2015) Seasonal evolution of crop water stress index in grapevine varieties determined with high-resolution remote sensing thermal imagery. Irrigation Science 33, 81-93. doi:10.1007/s00271-014-0456-y"
+    },
+    "disclaimer": {
+      "en": "Data from a peer-reviewed journal article. NKZ uses these numbers as reference parameters; this is not an official recommendation by the authors or the journal.",
+      "es": "Datos de un art\u00edculo cient\u00edfico revisado por pares. NKZ usa estos n\u00fameros como par\u00e1metros de referencia; esto no es una recomendaci\u00f3n oficial de los autores ni de la revista."
+    },
+    "attribution_text": "Bellvert J., Marsal J., Girona J., Zarco-Tejada P.J. (2015) Seasonal evolution of crop water stress index in grapevine varieties determined with high-resolution remote sensing thermal imagery. Irrigation Science 33, 81-93. doi:10.1007/s00271-014-0456-y",
+    "attribution_url": "https://doi.org/10.1007/s00271-014-0456-y",
+    "licence_id": "publisher-copyright",
+    "licence_url": null,
+    "download_date": "2026-11-03",
+    "processing_note": {
+      "en": "Estimates and averages are Nekazari calculations based on these data; they are not data published by the sources.",
+      "es": "Las estimaciones y medias son c\u00e1lculos de Nekazari a partir de estos datos; no son datos publicados por las fuentes."
+    },
+    "site_urls": [
+      "https://doi.org/10.1007/s00271-014-0456-y"
+    ],
+    "tags": [
+      "water-stress",
+      "cwsi",
+      "academic"
+    ]
+  },
+  {
+    "source_id": "sanchezpinero2022",
+    "name": "S\u00e1nchez-Pi\u00f1ero et al. 2022, Evaluation of a simplified methodology to estimate the CWSI in olive orchards",
+    "institution": "Agricultural Water Management (Elsevier)",
+    "institution_short": "Agricultural Water Management",
+    "country": "ES",
+    "country_name": {
+      "en": "Spain",
+      "es": "Espa\u00f1a",
+      "eu": "Espainia",
+      "fr": "Espagne",
+      "pt": "Espanha"
+    },
+    "url": "https://doi.org/10.1016/j.agwat.2022.107729",
+    "document_url_template": null,
+    "license_class": "academic-published",
+    "use_type": "reference-parameters",
+    "official_status": false,
+    "data_format": "pdf-extracted",
+    "extraction_method": "structured",
+    "confidence_default": "high",
+    "attribution": {
+      "en": "S\u00e1nchez-Pi\u00f1ero M., Mart\u00edn-Palomo M., Andreu L., Moriana A., Corell M. (2022) Evaluation of a simplified methodology to estimate the CWSI in olive orchards. Agricultural Water Management 269, 107729. doi:10.1016/j.agwat.2022.107729",
+      "es": "S\u00e1nchez-Pi\u00f1ero M., Mart\u00edn-Palomo M., Andreu L., Moriana A., Corell M. (2022) Evaluation of a simplified methodology to estimate the CWSI in olive orchards. Agricultural Water Management 269, 107729. doi:10.1016/j.agwat.2022.107729"
+    },
+    "disclaimer": {
+      "en": "Data from a peer-reviewed journal article. NKZ uses these numbers as reference parameters; this is not an official recommendation by the authors or the journal.",
+      "es": "Datos de un art\u00edculo cient\u00edfico revisado por pares. NKZ usa estos n\u00fameros como par\u00e1metros de referencia; esto no es una recomendaci\u00f3n oficial de los autores ni de la revista."
+    },
+    "attribution_text": "S\u00e1nchez-Pi\u00f1ero M., Mart\u00edn-Palomo M., Andreu L., Moriana A., Corell M. (2022) Evaluation of a simplified methodology to estimate the CWSI in olive orchards. Agricultural Water Management 269, 107729. doi:10.1016/j.agwat.2022.107729",
+    "attribution_url": "https://doi.org/10.1016/j.agwat.2022.107729",
+    "licence_id": "publisher-copyright",
+    "licence_url": null,
+    "download_date": "2026-11-03",
+    "processing_note": {
+      "en": "Estimates and averages are Nekazari calculations based on these data; they are not data published by the sources.",
+      "es": "Las estimaciones y medias son c\u00e1lculos de Nekazari a partir de estos datos; no son datos publicados por las fuentes."
+    },
+    "site_urls": [
+      "https://doi.org/10.1016/j.agwat.2022.107729"
+    ],
+    "tags": [
+      "water-stress",
+      "cwsi",
+      "academic"
+    ]
+  },
+  {
+    "source_id": "gonzalezdugozarcotejada2022",
+    "name": "Gonzalez-Dugo et al. 2022, Assessing the impact of measurement errors in the calculation of CWSI for characterizing the water status of several crop species",
+    "institution": "Irrigation Science (Springer)",
+    "institution_short": "Irrigation Science",
+    "country": "ES",
+    "country_name": {
+      "en": "Spain",
+      "es": "Espa\u00f1a",
+      "eu": "Espainia",
+      "fr": "Espagne",
+      "pt": "Espanha"
+    },
+    "url": "https://doi.org/10.1007/s00271-022-00819-6",
+    "document_url_template": null,
+    "license_class": "academic-published",
+    "use_type": "reference-parameters",
+    "official_status": false,
+    "data_format": "pdf-extracted",
+    "extraction_method": "structured",
+    "confidence_default": "high",
+    "attribution": {
+      "en": "Gonzalez-Dugo V., Zarco-Tejada P.J. (2022) Assessing the impact of measurement errors in the calculation of CWSI for characterizing the water status of several crop species. Irrigation Science 42, 431-443. doi:10.1007/s00271-022-00819-6",
+      "es": "Gonzalez-Dugo V., Zarco-Tejada P.J. (2022) Assessing the impact of measurement errors in the calculation of CWSI for characterizing the water status of several crop species. Irrigation Science 42, 431-443. doi:10.1007/s00271-022-00819-6"
+    },
+    "disclaimer": {
+      "en": "Data from a peer-reviewed journal article. NKZ uses these numbers as reference parameters; this is not an official recommendation by the authors or the journal.",
+      "es": "Datos de un art\u00edculo cient\u00edfico revisado por pares. NKZ usa estos n\u00fameros como par\u00e1metros de referencia; esto no es una recomendaci\u00f3n oficial de los autores ni de la revista."
+    },
+    "attribution_text": "Gonzalez-Dugo V., Zarco-Tejada P.J. (2022) Assessing the impact of measurement errors in the calculation of CWSI for characterizing the water status of several crop species. Irrigation Science 42, 431-443. doi:10.1007/s00271-022-00819-6",
+    "attribution_url": "https://doi.org/10.1007/s00271-022-00819-6",
+    "licence_id": "publisher-copyright",
+    "licence_url": null,
+    "download_date": "2026-11-03",
+    "processing_note": {
+      "en": "Estimates and averages are Nekazari calculations based on these data; they are not data published by the sources.",
+      "es": "Las estimaciones y medias son c\u00e1lculos de Nekazari a partir de estos datos; no son datos publicados por las fuentes."
+    },
+    "site_urls": [
+      "https://doi.org/10.1007/s00271-022-00819-6"
+    ],
+    "tags": [
+      "water-stress",
+      "cwsi",
+      "academic"
+    ]
   }
 ]
