@@ -134,7 +134,7 @@ def kc_curve(stages: dict[str, float], lengths: dict[str, tuple[float, float]]) 
     ini_end = lengths["initial"][1]
     mid_end = lengths["mid-season"][1]
     out = []
-    for day in range(1, int(math.ceil(late_end)) + 1):
+    for day in range(1, math.ceil(late_end) + 1):
         if day <= ini_end:
             k = kc_ini
         elif day <= dev_end:
@@ -188,7 +188,7 @@ def percentile(sorted_values: list[float], q: float) -> float:
     if len(sorted_values) == 1:
         return sorted_values[0]
     pos = (len(sorted_values) - 1) * q / 100.0
-    lo = int(math.floor(pos))
+    lo = math.floor(pos)
     hi = min(lo + 1, len(sorted_values) - 1)
     return sorted_values[lo] + (sorted_values[hi] - sorted_values[lo]) * (pos - lo)
 

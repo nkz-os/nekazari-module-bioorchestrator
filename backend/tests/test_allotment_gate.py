@@ -81,7 +81,7 @@ async def test_irrigated_fit_carries_need_and_allotment_gate(monkeypatch):
     _, base = await _fit(monkeypatch, climatology=clim())
     need = base["irrigation_need"]
     assert need["unit"] == "mm" and need["n_years"] >= 5 and base["irrigation_need_unavailable"] is None
-    p50, p90 = need["percentiles"]["p50"], need["percentiles"]["p90"]
+    p50 = need["percentiles"]["p50"]
     assert need["method"]["pe_method"] == "usda_scs_decadal" and need["method"]["kc_source"] == "FAO-56"
     assert not codes(base) & {"irrigation_need_exceeds_allotment", "irrigation_need_tight"}
 

@@ -10,10 +10,11 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import math
 import time
 from array import array
 from collections import OrderedDict
-from datetime import date
+from datetime import UTC, date, datetime
 from typing import Literal
 
 from app.services import sim_weather
@@ -57,7 +58,7 @@ def _now() -> float:
 
 
 def _today() -> date:
-    return date.today()
+    return datetime.now(UTC).date()
 
 
 def _snap(v: float) -> float:
@@ -115,7 +116,7 @@ async def _load(cell: str) -> None:
                 i = day.timetuple().tm_yday - 1
                 series[day.year][0][i] = w.et0_mm
                 series[day.year][1][i] = w.precip_mm
-        series = {y: ab for y, ab in series.items() if any(v == v for v in ab[0])}
+        series = {y: ab for y, ab in series.items() if any(not math.isnan(v) for v in ab[0])}
         if not series:
             raise ValueError("no usable archive days")
         _CACHE[cell] = (_now(), Climatology(series))

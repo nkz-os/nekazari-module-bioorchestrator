@@ -25,6 +25,12 @@ from app.planning.calendar import (
     campaign_fortnights,
     fortnight_of,
 )
+from app.planning.climatology import (
+    cell_key,
+    climatology_status,
+    get_climatology,
+    schedule_climatology,
+)
 from app.planning.estimates import (
     aquacrop_status,
     disagreement,
@@ -57,7 +63,6 @@ from app.planning.history import (
     past_crops,
     species_slug,
 )
-from app.planning.climatology import cell_key, climatology_status, get_climatology, schedule_climatology
 from app.planning.irrigation import (
     irrigation_need,
     kc_curve,
