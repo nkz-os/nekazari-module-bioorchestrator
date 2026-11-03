@@ -11,7 +11,7 @@ from typing import Annotated, Any, Literal
 
 from pydantic import BaseModel, BeforeValidator, Field
 
-CONTRACT_VERSION = "2.4"
+CONTRACT_VERSION = "2.5"
 
 Verdict = Literal["fits", "caveats", "no_fit"]
 # Owner decision (2026-10-13): the regime vocabulary is rainfed | irrigated. The Spanish words that
@@ -100,6 +100,9 @@ class ParcelFacts(BaseModel):
     regime_source: str
     history_available: bool
     irrigation_allotment_mm: float | None = None
+    # Of the 2 campaigns before the planned one, those with no main crop in the history (2.5);
+    # [] when complete, null when the history could not be read.
+    history_missing_campaigns: list[int] | None = None
 
 
 class FitResponse(BaseModel):

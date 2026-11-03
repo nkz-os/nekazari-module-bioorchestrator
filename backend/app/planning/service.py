@@ -55,12 +55,13 @@ from app.planning.fit import (
     water_reasons,
 )
 from app.planning.history import (
-    declared_only,
     campaign_of_start,
     cycles_of,
+    declared_only,
     first_campaign,
     history_complete,
     iso_date,
+    missing_history_campaigns,
     past_crops,
     species_slug,
 )
@@ -148,8 +149,8 @@ def _sowing(sowing: dict) -> dict:
             "source": sowing.get("source")}
 
 
-async def load_environment(dao, parcel_id: str, tenant_id: str) -> dict:
-    env = await dao.get_parcel_environment(parcel_id, tenant_id)
+async def load_environment(dao, parcel_id: str, tenant_id: str, *, fresh_soil: bool = False) -> dict:
+    env = await dao.get_parcel_environment(parcel_id, tenant_id, fresh_soil=fresh_soil)
     if "error" in env:
         raise ParcelNotFound(env["error"])
     return env
@@ -291,7 +292,8 @@ def _rank_key(s: dict) -> tuple:
 
 async def parcel_fit(*, dao, source: KnowledgeSource, parcel_id: str, tenant_id: str,
                      campaign: int, regime: str | None) -> dict:
-    env = await load_environment(dao, parcel_id, tenant_id)
+    # The fit is where a farmer sees a soil texture they have just declared: it never reads the 24 h soil cache.
+    env = await load_environment(dao, parcel_id, tenant_id, fresh_soil=True)
     regime_used, regime_source = resolve_regime(regime, env)
     cycles = await fetch_crop_cycles(env["parcel_id"], tenant_id)
     if cycles is not None and not isinstance(cycles, dict):
@@ -385,6 +387,7 @@ async def parcel_fit(*, dao, source: KnowledgeSource, parcel_id: str, tenant_id:
                   "soil_texture": soil.get("texture"), "soil_ph": soil.get("ph"),
                   "soil_source": soil.get("source") or "unavailable", "regime": regime_used,
                   "regime_source": regime_source, "history_available": cycles is not None,
+                  "history_missing_campaigns": missing_history_campaigns(cycles, campaign),
                   "irrigation_allotment_mm": allotment},
     }
 

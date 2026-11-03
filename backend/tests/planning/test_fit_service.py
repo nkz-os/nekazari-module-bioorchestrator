@@ -28,6 +28,7 @@ async def test_bare_parcel_never_fits_and_history_down_is_explicit(monkeypatch):
     assert {"regime_missing", "rotation_unknown", "soil_unknown"} <= codes
     assert wheat["has_variety_trials"] is True
     assert out["facts"]["history_available"] is False
+    assert out["facts"]["history_missing_campaigns"] is None
     assert all(s["species"] not in ("olive", "apple", "grapevine") for s in out["species"])  # woody out
     alfalfa = next(s for s in out["species"] if s["species"] == "alfalfa")
     assert alfalfa["lifecycle"] == "perennial" and "multi_year" in {r["code"] for r in alfalfa["reasons"]}
@@ -227,3 +228,16 @@ async def test_fit_offers_aquacrop_only_in_its_validated_scope(monkeypatch):
     by_slug = {s["species"]: s for s in out["species"]}
     assert by_slug["wheat"]["estimate_providers"] == ["trial_evidence", "aquacrop"]
     assert by_slug["barley"]["estimate_providers"] == []
+
+
+async def test_empty_history_lists_the_two_campaigns_before_the_plan(monkeypatch):
+    dao = _setup(monkeypatch, _soil_env("Csa", MILD), cycles={"cycles": []})
+    out = await service.parcel_fit(**_fit_args(dao))
+    assert out["facts"]["history_missing_campaigns"] == [2025, 2026]
+    FitResponse.model_validate(out)
+
+
+async def test_fit_reads_the_soil_fresh_so_a_declared_texture_is_seen(monkeypatch):
+    dao = _setup(monkeypatch, _soil_env("Csa", MILD))
+    await service.parcel_fit(**_fit_args(dao))
+    assert dao.get_parcel_environment.await_args.kwargs == {"fresh_soil": True}

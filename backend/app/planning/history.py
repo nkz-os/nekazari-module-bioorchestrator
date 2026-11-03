@@ -106,6 +106,23 @@ def history_complete(payload: dict | None) -> bool:
     return all(species_slug(c.get("species")) and first_campaign(c) is not None for c in cycles_of(payload))
 
 
+HISTORY_LOOKBACK = 2  # campaigns before the planned one that rotation looks at
+
+
+def missing_history_campaigns(payload: dict | None, campaign: int) -> list[int] | None:
+    """Of the campaigns just before `campaign`, those with no main crop (dated or declared) placed in them.
+
+    None when the history could not be read: unknown is not "complete" and not "all missing".
+    """
+    if payload is None:
+        return None
+    covered: set[int] = set()
+    for cycle in cycles_of(payload):
+        if (cycle.get("role") or "main_crop") == "main_crop":
+            covered.update(cycle_campaigns(cycle, until=campaign - 1))
+    return [c for c in range(campaign - HISTORY_LOOKBACK, campaign) if c not in covered]
+
+
 def cell_from_cycle(cycle: dict, crop: dict | None) -> dict:
     slug = species_slug(cycle.get("species"))
     info = get_species_info(slug) if slug else None

@@ -20,7 +20,7 @@ SOIL_API_URL = os.getenv("SOIL_API_URL", "http://soil-module-service:8000")
 _soil_cache: TTLCache[str, dict[str, Any]] = TTLCache(maxsize=256, ttl=86400)
 
 
-async def get_parcel_soil_properties(parcel_id: str, tenant_id: str = "") -> dict[str, Any]:
+async def get_parcel_soil_properties(parcel_id: str, tenant_id: str = "", *, fresh: bool = False) -> dict[str, Any]:
     """Fetch actual soil properties for a parcel from the Soil module.
 
     Calls GET /v1/soil/parcel/{id}/summary (AgriSoilExtended entity)
@@ -31,10 +31,11 @@ async def get_parcel_soil_properties(parcel_id: str, tenant_id: str = "") -> dic
 
     If Soil module is unreachable or parcel has no soil data,
     returns data_available=False.
-    Results cached per parcel_id for 24h.
+    Results cached per parcel_id for 24h; `fresh` skips the read of the cache (the answer is still stored),
+    for a caller that must see a value the farmer has just declared in the Soil module.
     """
     cache_key = f"{tenant_id}:{parcel_id}" if tenant_id else parcel_id
-    cached = _soil_cache.get(cache_key)
+    cached = None if fresh else _soil_cache.get(cache_key)
     if cached is not None:
         return cached
 

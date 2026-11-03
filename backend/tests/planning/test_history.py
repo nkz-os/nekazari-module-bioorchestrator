@@ -2,6 +2,7 @@ from app.planning.history import (
     cell_from_cycle,
     cycle_campaigns,
     history_complete,
+    missing_history_campaigns,
     past_crops,
     plain,
 )
@@ -53,3 +54,35 @@ def test_history_is_complete_only_when_every_cycle_is_placed():
     no_campaign = {k: v for k, v in PAYLOAD["cycles"][0].items() if k != "campaign_label"}
     assert not history_complete({"cycles": [no_campaign]})
     assert not history_complete(None)
+
+
+def _main(label, **over):
+    return {"crop_id": f"c{label}", "role": "main_crop", "species": "TRZAX", "status": "harvested",
+            "campaign_label": label, **over}
+
+
+def test_missing_history_is_none_when_the_read_failed():
+    assert missing_history_campaigns(None, 2027) is None
+
+
+def test_missing_history_is_every_lookback_campaign_when_there_are_no_cycles():
+    assert missing_history_campaigns({"cycles": []}, 2027) == [2025, 2026]
+
+
+def test_missing_history_ignores_campaigns_with_a_main_crop_dated_or_declared():
+    declared = _main(2025, start={"date": None}, end={"date": None}, declared_campaign=2025)
+    assert missing_history_campaigns({"cycles": [_main(2026), declared]}, 2027) == []
+    assert missing_history_campaigns({"cycles": [_main(2026)]}, 2027) == [2025]
+
+
+def test_missing_history_does_not_count_covers_cancelled_or_later_cycles():
+    cover = _main(2026, role="cover_crop")
+    cancelled = _main(2025, status="cancelled")
+    planned_later = _main(2027, status="planned")
+    assert missing_history_campaigns({"cycles": [cover, cancelled, planned_later]}, 2027) == [2025, 2026]
+
+
+def test_missing_history_counts_a_perennial_spanning_the_campaigns():
+    alfalfa = {"crop_id": "a1", "role": "main_crop", "species": "MEDSA", "status": "active", "lifecycle": "perennial",
+               "start": {"date": "2024-09-15"}, "end": {"date": None}, "campaign_label": 2025}
+    assert missing_history_campaigns({"cycles": [alfalfa]}, 2027) == []
