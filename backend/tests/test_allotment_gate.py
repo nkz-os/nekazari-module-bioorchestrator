@@ -15,10 +15,7 @@ REF = Reference(tolerances={}, constraints=(), trial_eppo=frozenset({"TRZAX"}))
 ENV = {"parcel_id": "urn:ngsi-ld:AgriParcel:t:p1", "climate_class": None, "climate_detail": None,
        "soil": {"data_available": False, "source": "unavailable"}, "irrigation": {"inferred": None, "source": "unknown"},
        "centroid": {"lat": 42.0, "lon": -1.0}, "country": "ES"}
-KC = {"initial": 0.3, "development": 0.7, "mid-season": 1.15, "late-season": 0.4}
-LEN = {"initial": (15, 45), "development": (45, 105), "mid-season": (105, 180), "late-season": (180, 230)}
-STAGE_ROWS = {"wheat": [{"species": "wheat", "stage": s, "kc": KC[s], "d1": LEN[s][0], "d2": LEN[s][1], "source": "FAO-56"}
-                        for s in irr.STAGES]}
+STAGES = irr.load_stage_table()  # the cited FAO-56 table (data/fao56_stage_lengths.yaml)
 
 
 def clim(et0=5.0):
@@ -56,14 +53,14 @@ def test_allotment_above_p90_or_absent_gives_no_reason():
     assert allotment_reasons(300, 350, 300) != [] and allotment_reasons(300, 350, 300)[0]["code"] == "irrigation_need_tight"
 
 
-async def _fit(monkeypatch, *, regime="irrigated", raw=None, climatology=None, status="ready", stages=STAGE_ROWS,
+async def _fit(monkeypatch, *, regime="irrigated", raw=None, climatology=None, status="ready", stages=STAGES,
                centroid=None):
     dao = AsyncMock()
     dao.get_parcel_environment.return_value = {**ENV, "irrigation_allotment_raw": raw,
                                                **({"centroid": centroid} if centroid else {})}
     monkeypatch.setattr(service, "fetch_crop_cycles", AsyncMock(return_value=None))
     monkeypatch.setattr(service, "load_reference", AsyncMock(return_value=REF))
-    monkeypatch.setattr(service, "load_stage_rows", AsyncMock(return_value=stages))
+    monkeypatch.setattr(service, "load_stage_table", lambda: stages)
     monkeypatch.setattr(service, "schedule_climatology", lambda cell: None)
     monkeypatch.setattr(service, "get_climatology", lambda cell: climatology)
     monkeypatch.setattr(service, "climatology_status", lambda cell: status)
@@ -82,7 +79,7 @@ async def test_irrigated_fit_carries_need_and_allotment_gate(monkeypatch):
     need = base["irrigation_need"]
     assert need["unit"] == "mm" and need["n_years"] >= 5 and base["irrigation_need_unavailable"] is None
     p50 = need["percentiles"]["p50"]
-    assert need["method"]["pe_method"] == "usda_scs_decadal" and need["method"]["kc_source"] == "FAO-56"
+    assert need["method"]["pe_method"] == "usda_scs_decadal" and need["method"]["kc_source"].startswith("FAO-56 Table 11 'Winter Wheat'")
     assert not codes(base) & {"irrigation_need_exceeds_allotment", "irrigation_need_tight"}
 
     out, over = await _fit(monkeypatch, climatology=clim(),
@@ -119,11 +116,8 @@ async def test_unavailable_reasons(monkeypatch):
     assert sp["irrigation_need_unavailable"] == "weather_unavailable"
     _, sp = await _fit(monkeypatch, climatology=Climatology({2019: clim().year_series(2005)}))
     assert sp["irrigation_need_unavailable"] == "weather_unavailable"  # under 5 valid years
-    _, sp = await _fit(monkeypatch, climatology=clim(), stages={})
-    assert sp["irrigation_need_unavailable"] == "no_kc"
-    bad = {"wheat": [{**r, "d2": None} if r["stage"] == "mid-season" else r for r in STAGE_ROWS["wheat"]]}
-    _, sp = await _fit(monkeypatch, climatology=clim(), stages=bad)
-    assert sp["irrigation_need_unavailable"] == "no_stage_lengths"
+    _, sp = await _fit(monkeypatch, climatology=clim(), stages={k: v for k, v in STAGES.items() if k != "wheat"})
+    assert sp["irrigation_need_unavailable"] == "no_stage_lengths"  # not in the FAO-56 table
 
 
 async def test_tight_allotment_between_p50_and_p90_keeps_the_verdict(monkeypatch):
@@ -154,7 +148,9 @@ async def test_stage_read_failure_is_kc_unavailable(monkeypatch):
     dao.get_parcel_environment.return_value = ENV
     monkeypatch.setattr(service, "fetch_crop_cycles", AsyncMock(return_value=None))
     monkeypatch.setattr(service, "load_reference", AsyncMock(return_value=REF))
-    monkeypatch.setattr(service, "load_stage_rows", AsyncMock(side_effect=RuntimeError("down")))
+    def broken():
+        raise ValueError("fao56_stage_lengths.yaml: no crops")
+    monkeypatch.setattr(service, "load_stage_table", broken)
     monkeypatch.setattr(service, "schedule_climatology", lambda cell: None)
     monkeypatch.setattr(service, "get_climatology", lambda cell: clim())
     monkeypatch.setattr(service, "climatology_status", lambda cell: "ready")

@@ -64,12 +64,12 @@ from app.planning.history import (
     species_slug,
 )
 from app.planning.irrigation import (
+    CropStages,
     irrigation_need,
     kc_curve,
     load_pe_method,
-    load_stage_rows,
+    load_stage_table,
     read_allotment,
-    stage_set,
 )
 from app.planning.reference import EMPTY_REFERENCE, load_reference
 from app.planning.regional_yield import regional_yield
@@ -235,10 +235,10 @@ IRRIGATION_SOURCE_IDS = ("open_meteo_historical", "copernicus_era5", "fao56")
 class IrrigationContext:
     """What the irrigation need of every species of ONE fit shares: regime, weather cell, stages, method."""
 
-    def __init__(self, regime: str | None, lat, lon, stage_rows: dict[str, list[dict]] | None):
+    def __init__(self, regime: str | None, lat, lon, stages: dict[str, CropStages] | None):
         self.regime = regime
         self.lat, self.lon = lat, lon
-        self.stage_rows = stage_rows  # None: the graph read failed
+        self.stages = stages  # FAO-56 table by species slug; None: the table could not be loaded
         self.attributions = attach_attributions({}, IRRIGATION_SOURCE_IDS)["attributions"]
         self.clim = None
         self.status = "absent"
@@ -255,12 +255,12 @@ def species_irrigation_need(ctx: IrrigationContext, slug: str, eppo: str | None,
         return None, None  # regime_missing already says so
     if ctx.regime != "irrigated":
         return None, "regime_not_irrigated"
-    if ctx.stage_rows is None:
+    if ctx.stages is None:
         return None, "kc_unavailable"
-    stages, why = stage_set(ctx.stage_rows.get(slug, []))
-    if stages is None:
-        return None, why
-    kc = kc_curve(stages.kc, stages.lengths)
+    crop = ctx.stages.get(slug)
+    if crop is None:
+        return None, "no_stage_lengths"  # only the crops of the cited FAO-56 table have a Kc curve
+    kc = kc_curve(crop)
     if len(kc) > 365:
         return None, "no_stage_lengths"  # a season longer than a year is not an annual cycle
     if ctx.cell is None:
@@ -277,7 +277,7 @@ def species_irrigation_need(ctx: IrrigationContext, slug: str, eppo: str | None,
     return {
         "percentiles": {"p10": round(result.p10, 1), "p50": round(result.p50, 1), "p90": round(result.p90, 1)},
         "unit": "mm", "n_years": result.n_years, "first_year": result.first_year, "last_year": result.last_year,
-        "sowing_doy": result.sowing_doy, "method": {"kc_source": stages.kc_source, "pe_method": pe.id},
+        "sowing_doy": result.sowing_doy, "method": {"kc_source": crop.kc_source, "pe_method": pe.id},
         "source": "openmeteo_era5", "attributions": list(ctx.attributions),
     }, None
 
@@ -317,14 +317,15 @@ async def parcel_fit(*, dao, source: KnowledgeSource, parcel_id: str, tenant_id:
     yield_rows, yield_failed = await regional_yields_for(
         source, nuts, tenant_id=tenant_id, parcel_id=env["parcel_id"])
     allotment = read_allotment(env.get("irrigation_allotment_raw"), parcel_id=env["parcel_id"], tenant_id=tenant_id)
-    stage_rows = None
+    stages = None
     if regime_used == "irrigated":
         try:
-            stage_rows = await load_stage_rows(source)
+            stages = load_stage_table()
         except Exception:
-            logger.exception("planning fit: FAO stage read failed graph=%s tenant=%s parcel=%s",
-                             source.graph_id, tenant_id, env["parcel_id"])
-    irrigation = IrrigationContext(regime_used, centroid.get("lat"), centroid.get("lon"), stage_rows)
+            # A broken packaged table must not take the page down: every crop reports kc_unavailable.
+            logger.exception("planning fit: FAO-56 stage table load failed tenant=%s parcel=%s",
+                             tenant_id, env["parcel_id"])
+    irrigation = IrrigationContext(regime_used, centroid.get("lat"), centroid.get("lon"), stages)
     species = []
     for slug in list_species():
         if is_woody(slug):

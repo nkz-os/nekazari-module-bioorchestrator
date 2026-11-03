@@ -4,9 +4,10 @@ net need of a year = sum over 10-day periods of max(0, ETc - Pe), ETc = Kc(day) 
 effective rain of the period (method and citation in data/fao56_stage_lengths.yaml). In the field,
 without irrigation efficiency. Pure functions; the weather comes from planning.climatology.
 
-Kc curve (FAO-56 eq. 66): Kc_ini constant until the end of `initial`, linear Kc_ini -> Kc_mid through
-`development`, Kc_mid constant through `mid-season`, linear Kc_mid -> Kc_end through `late-season`.
-The stored Kc of `development` is not a node of the curve. d1/d2 are cumulative days after sowing.
+Kc and stage lengths come ONLY from data/fao56_stage_lengths.yaml (FAO-56 Tables 11 and 12, each value
+cited there); a crop that is not in it has no stage lengths. Kc curve (FAO-56 eq. 66): Kc_ini constant
+through `initial` (which starts on the sowing day), linear Kc_ini -> Kc_mid through `development`, Kc_mid
+constant through `mid-season`, linear Kc_mid -> Kc_end through `late-season`.
 """
 from __future__ import annotations
 
@@ -15,7 +16,6 @@ import functools
 import logging
 import math
 import os
-import time
 from dataclasses import dataclass
 from datetime import date, timedelta
 from pathlib import Path
@@ -23,8 +23,8 @@ from pathlib import Path
 import numpy as np
 import yaml
 
-from app.core.knowledge import KnowledgeSource
 from app.planning.climatology import Climatology
+from app.species_registry import resolve_species
 
 logger = logging.getLogger(__name__)
 
@@ -32,20 +32,6 @@ STAGES = ("initial", "development", "mid-season", "late-season")
 MIN_YEARS = 5
 MIN_COVERAGE = 0.95
 MAX_SEASON_DAYS = 365
-STAGE_TTL_S = 600.0
-
-# Generic parameter of a stage: the seeder stores an unset cultivar / management / climate zone as
-# these markers; cultivar, deficit-irrigation and contributed rows are other things.
-_STAGES_QUERY = """
-MATCH (sp:Species)-[:HAS_STAGE]->(st:PhenologyStage)-[:HAS_PARAMETER]->(p:PhenologyParams)
-WHERE st.name IN $stages
-  AND coalesce(p.cultivar, '__generic__') = '__generic__'
-  AND coalesce(p.management, '__standard__') = '__standard__'
-  AND coalesce(p.climateZone, '__any__') = '__any__'
-  AND coalesce(p.status, '') <> 'pending_review'
-RETURN sp.name AS species, st.name AS stage, p.kc AS kc, p.d1 AS d1, p.d2 AS d2,
-       coalesce(p.sourceShort, p.sourceMethod) AS source
-"""
 
 
 @dataclass(frozen=True)
@@ -73,10 +59,13 @@ class PeMethod:
         return np.where(rain_mm <= 0, 0.0, np.where(rain_mm <= self.break_mm, low, high))
 
 
+def _parameters_path() -> Path:
+    return Path(os.getenv("DATA_DIR", "./data")) / "fao56_stage_lengths.yaml"
+
+
 @functools.lru_cache(maxsize=1)
 def load_pe_method() -> PeMethod:
-    path = Path(os.getenv("DATA_DIR", "./data")) / "fao56_stage_lengths.yaml"
-    raw = yaml.safe_load(path.read_text(encoding="utf-8"))["pe_method"]
+    raw = yaml.safe_load(_parameters_path().read_text(encoding="utf-8"))["pe_method"]
     return PeMethod(id=raw["id"], citation=" ".join(str(raw["citation"]).split()),
                     period_days=int(raw["period_days"]), ref_mm=float(raw["ref_mm"]),
                     low_slope=float(raw["low_slope"]), break_mm=float(raw["break_mm"]),
@@ -85,12 +74,26 @@ def load_pe_method() -> PeMethod:
 
 # ── Stages ────────────────────────────────────────────────────────────────────
 
+YAML_STAGES = ("initial", "development", "mid_season", "late_season")
+
+
 @dataclass(frozen=True)
-class StageSet:
-    """Validated FAO stages of a species: Kc per stage, (d1, d2) per stage, and the Kc source."""
-    kc: dict[str, float]
-    lengths: dict[str, tuple[float, float]]
+class CropStages:
+    """FAO-56 stage lengths (days, Table 11) and Kc ini/mid/end (Table 12) of one crop."""
+    eppo: str
+    lengths: tuple[int, int, int, int]
+    kc_ini: float
+    kc_mid: float
+    kc_end: float
     kc_source: str
+
+    def bounds(self) -> dict[str, tuple[int, int]]:
+        """Cumulative (start, end) days after sowing per stage; `initial` starts on day 0."""
+        out, start = {}, 0
+        for name, length in zip(STAGES, self.lengths, strict=True):
+            out[name] = (start, start + length)
+            start += length
+        return out
 
 
 def _num(v) -> float | None:
@@ -99,75 +102,80 @@ def _num(v) -> float | None:
     return float(v)
 
 
-def stage_set(rows: list[dict]) -> tuple[StageSet | None, str | None]:
-    """(stages, None) or (None, reason): `no_kc` when a stage has no usable single Kc, `no_stage_lengths`
-    when the limits are missing, not increasing or not contiguous. `rows` are the generic parameters of ONE species."""
-    by_stage: dict[str, list[dict]] = {s: [] for s in STAGES}
-    for r in rows:
-        if r.get("stage") in by_stage:
-            by_stage[r["stage"]].append(r)
-    kc: dict[str, float] = {}
-    lengths: dict[str, tuple[float, float]] = {}
-    for s in STAGES:
-        if len(by_stage[s]) != 1 or (_num(by_stage[s][0].get("kc")) or 0.0) <= 0:
-            return None, "no_kc"
-        kc[s] = _num(by_stage[s][0]["kc"])
-    prev_end = None
-    for s in STAGES:
-        d1, d2 = _num(by_stage[s][0].get("d1")), _num(by_stage[s][0].get("d2"))
-        if d1 is None or d2 is None or d1 < 0 or d2 <= d1 or (prev_end is not None and d1 != prev_end):
-            return None, "no_stage_lengths"
-        lengths[s] = (d1, d2)
-        prev_end = d2
-    sources = sorted({str(by_stage[s][0]["source"]) for s in STAGES if by_stage[s][0].get("source")})
-    return StageSet(kc, lengths, "; ".join(sources) or "unknown"), None
+def _text(v) -> str:
+    return " ".join(str(v).split()) if isinstance(v, str) else ""
 
 
-def kc_curve(stages: dict[str, float], lengths: dict[str, tuple[float, float]]) -> list[float]:
-    """Kc per day after sowing (index 0 = day 1), up to the end of `late-season`.
+def _crop_stages(eppo: str, raw) -> CropStages:
+    """One crop entry, or ValueError: four whole-day lengths > 0, three Kc > 0, both table sources cited."""
+    raw = raw if isinstance(raw, dict) else {}  # not a mapping: fails on the first missing field below
+    lengths_raw = raw.get("lengths_days") or {}
+    lengths = []
+    for name in YAML_STAGES:
+        v = lengths_raw.get(name)
+        if isinstance(v, bool) or not isinstance(v, int) or v <= 0:
+            raise ValueError(f"{eppo}: stage length {name} must be a whole number of days > 0")
+        lengths.append(v)
+    kc_raw = raw.get("kc") or {}
+    kc = {}
+    for name in ("ini", "mid", "end"):
+        v = _num(kc_raw.get(name))
+        if v is None or v <= 0:
+            raise ValueError(f"{eppo}: Kc {name} must be a number > 0")
+        kc[name] = v
+    src = raw.get("source") or {}
+    t11, t12 = src.get("stage_lengths") or {}, src.get("kc") or {}
+    if t11.get("table") != 11 or t12.get("table") != 12:
+        raise ValueError(f"{eppo}: stage lengths must cite FAO-56 Table 11 and Kc Table 12")
+    for part, fields in ((t11, ("row", "plant_date", "region", "rule", "url")), (t12, ("row", "ini_row", "url"))):
+        if not all(_text(part.get(f)) for f in fields):
+            raise ValueError(f"{eppo}: source of table {part.get('table')} needs {', '.join(fields)}")
+    if t11["rule"] not in ("mediterranean_or_spain", "first_row"):
+        raise ValueError(f"{eppo}: unknown row rule {t11['rule']!r}")
+    kc_source = (f"FAO-56 Table 11 '{_text(t11['row'])}' ({_text(t11['plant_date'])}, {_text(t11['region'])}); "
+                 f"Table 12 '{_text(t12['row'])}'")
+    if _text(t12["ini_row"]) != _text(t12["row"]):
+        kc_source += f", Kc ini '{_text(t12['ini_row'])}'"
+    return CropStages(eppo, tuple(lengths), kc["ini"], kc["mid"], kc["end"], kc_source)
 
-    `stages` maps stage name -> Kc, `lengths` stage name -> (d1, d2) in cumulative days after sowing.
-    """
-    kc_ini, kc_mid, kc_end = stages["initial"], stages["mid-season"], stages["late-season"]
-    dev_start, dev_end = lengths["development"]
-    late_start, late_end = lengths["late-season"]
-    ini_end = lengths["initial"][1]
-    mid_end = lengths["mid-season"][1]
+
+@functools.lru_cache(maxsize=1)
+def load_stage_table() -> dict[str, CropStages]:
+    """Species slug -> CropStages from the FAO-56 YAML. Raises when the file is missing or an entry is
+    invalid (the caller reports `kc_unavailable`), or when a key does not resolve to a registry species."""
+    crops = yaml.safe_load(_parameters_path().read_text(encoding="utf-8")).get("crops")
+    if not isinstance(crops, dict) or not crops:
+        raise ValueError("fao56_stage_lengths.yaml: no crops")
+    table: dict[str, CropStages] = {}
+    for eppo, raw in crops.items():
+        slug = resolve_species(str(eppo))
+        if slug is None:
+            raise ValueError(f"fao56_stage_lengths.yaml: {eppo} is not a registry species")
+        if slug in table:
+            raise ValueError(f"fao56_stage_lengths.yaml: {eppo} repeats species {slug}")
+        table[slug] = _crop_stages(str(eppo), raw)
+    return table
+
+
+def kc_curve(crop: CropStages) -> list[float]:
+    """Kc per day after sowing (index 0 = day 1), up to the end of `late-season`."""
+    b = crop.bounds()
+    ini_end = b["initial"][1]
+    dev_start, dev_end = b["development"]
+    mid_end = b["mid-season"][1]
+    late_start, late_end = b["late-season"]
     out = []
-    for day in range(1, math.ceil(late_end) + 1):
+    for day in range(1, late_end + 1):
         if day <= ini_end:
-            k = kc_ini
+            k = crop.kc_ini
         elif day <= dev_end:
-            k = kc_ini + (day - dev_start) / (dev_end - dev_start) * (kc_mid - kc_ini)
+            k = crop.kc_ini + (day - dev_start) / (dev_end - dev_start) * (crop.kc_mid - crop.kc_ini)
         elif day <= mid_end:
-            k = kc_mid
+            k = crop.kc_mid
         else:
-            k = kc_mid + (day - late_start) / (late_end - late_start) * (kc_end - kc_mid)
+            k = crop.kc_mid + (day - late_start) / (late_end - late_start) * (crop.kc_end - crop.kc_mid)
         out.append(k)
     return out
-
-
-_stage_cache: dict[str, tuple[float, dict[str, list[dict]]]] = {}
-
-
-def clear_stage_cache() -> None:
-    _stage_cache.clear()
-
-
-async def load_stage_rows(source: KnowledgeSource, now: float | None = None) -> dict[str, list[dict]]:
-    """Generic FAO stage parameters of every species, one graph query, cached per graph."""
-    t = time.monotonic() if now is None else now
-    hit = _stage_cache.get(source.graph_id)
-    if hit is not None and t - hit[0] < STAGE_TTL_S:
-        return hit[1]
-    async with source.driver.session() as session:
-        rows = await (await session.run(_STAGES_QUERY, stages=list(STAGES))).data()
-    by_species: dict[str, list[dict]] = {}
-    for r in rows:
-        if r.get("species"):
-            by_species.setdefault(r["species"], []).append(r)
-    _stage_cache[source.graph_id] = (t, by_species)
-    return by_species
 
 
 # ── Need ──────────────────────────────────────────────────────────────────────

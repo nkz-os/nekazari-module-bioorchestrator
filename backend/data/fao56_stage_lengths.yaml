@@ -1,12 +1,232 @@
 # Parameters of the seasonal irrigation-need calculation (app/planning/irrigation.py).
 #
-# Stage lengths and Kc come from the knowledge graph (PhenologyParams, FAO-56 Table 12, seeded from
-# phenology_sources.yaml); a species whose generic stage set is incomplete reports `no_stage_lengths`.
-# No species needs a fallback table: the generic (cultivar and management unset) parameter set of all
-# 46 species is complete and contiguous. `stage_lengths` stays empty until one fails; an entry must
-# carry its FAO-56 Table 11 citation and only the main irrigated crops (the Eurostat statistics crops,
-# alfalfa and tomato) may be listed.
-stage_lengths: {}
+# Stage lengths and crop coefficients: FAO Irrigation and Drainage Paper 56 (Allen R.G., Pereira L.S.,
+# Raes D., Smith M., 1998, Crop evapotranspiration, FAO, Rome; ISBN 92-5-104219-5), chapter 6,
+# Table 11 (lengths of crop development stages) and Table 12 (single crop coefficients), read from
+# https://www.fao.org/4/x0490e/x0490e0b.htm on 2026-11-03. (c) FAO 1998. A licence request to FAO is
+# pending (owner, 2026-11-03). These are the ONLY Kc and stage lengths the calculation uses.
+#
+# Scope: the main irrigated crops (the Eurostat apro_cpshr crops of data/eurostat/crop_codes.yaml, plus
+# alfalfa MEDSA and tomato LYPES); every other crop reports `no_stage_lengths`. Keys are EPPO codes and
+# must resolve in data/species_registry.yaml.
+#
+# Stage lengths: the four values of ONE Table 11 row, in days. The initial stage starts on the sowing
+# day (day 0) and the stages follow each other without gaps (FAO-56 eq. 66 Kc curve).
+# Row rule (`rule`): `mediterranean_or_spain` = a row whose region text names the Mediterranean or Spain
+# with a planting period compatible with how the crop is grown in Spain; `first_row` = no such row, so
+# the first row FAO lists for the crop. `region` and `plant_date` are the row's text as printed.
+#
+# Kc: Kc ini, Kc mid and Kc end of the crop's Table 12 row. Where the crop row leaves Kc ini blank, the
+# crop group row gives it (`ini_row`): "For several group types only one value for Kc ini is listed and
+# it is considered to be representative of the whole group" (FAO-56, chapter 6). FAO-56 has no Kc for
+# the development stage: the curve is linear there. Where Table 12 prints a range, `note` says which
+# end is used and why. Footnote markers of the printed values are left out.
+#
+# Omitted (FAO-56 gives no usable season, so these report `no_stage_lengths`):
+#   BRSNN rapeseed: Table 11 has no row for rapeseed/canola (Table 12 has its Kc, without lengths).
+#   MEDSA alfalfa: the Table 11 "Alfalfa, total season" row prints "var." for Lmid and Llate; its other
+#     rows are single cutting cycles (30-75 days), not a season from sowing.
+crops:
+  TRZAX:  # common wheat
+    lengths_days: {initial: 30, development: 140, mid_season: 40, late_season: 30}
+    kc: {ini: 0.7, mid: 1.15, end: 0.25}
+    source:
+      stage_lengths:
+        table: 11
+        row: "Winter Wheat"
+        plant_date: "November"
+        region: "Mediterranean"
+        rule: mediterranean_or_spain
+        url: https://www.fao.org/4/x0490e/x0490e0b.htm
+      kc:
+        table: 12
+        row: "Winter Wheat - with non-frozen soils"
+        ini_row: "Winter Wheat - with non-frozen soils"
+        url: https://www.fao.org/4/x0490e/x0490e0b.htm
+        note: >-
+          Kc end printed 0.25-0.4; footnote 10: "The higher value is for hand-harvested crops", so 0.25
+          (mechanised harvest).
+  TRZDU:  # durum wheat
+    lengths_days: {initial: 30, development: 140, mid_season: 40, late_season: 30}
+    kc: {ini: 0.7, mid: 1.15, end: 0.25}
+    source:
+      stage_lengths:
+        table: 11
+        row: "Winter Wheat"
+        plant_date: "November"
+        region: "Mediterranean"
+        rule: mediterranean_or_spain
+        url: https://www.fao.org/4/x0490e/x0490e0b.htm
+        note: >-
+          ASSUMPTION: FAO-56 has no durum row; durum is autumn-sown in Spain, so the autumn-sown
+          (winter) wheat row is used.
+      kc:
+        table: 12
+        row: "Winter Wheat - with non-frozen soils"
+        ini_row: "Winter Wheat - with non-frozen soils"
+        url: https://www.fao.org/4/x0490e/x0490e0b.htm
+        note: >-
+          Kc end printed 0.25-0.4; footnote 10: "The higher value is for hand-harvested crops", so 0.25
+          (mechanised harvest). Same row as common wheat (autumn sowing).
+  HORVX:  # barley
+    lengths_days: {initial: 15, development: 25, mid_season: 50, late_season: 30}
+    kc: {ini: 0.3, mid: 1.15, end: 0.25}
+    source:
+      stage_lengths:
+        table: 11
+        row: "Barley/Oats/Wheat"
+        plant_date: "November"
+        region: "Central India"
+        rule: first_row
+        url: https://www.fao.org/4/x0490e/x0490e0b.htm
+        note: >-
+          No Barley/Oats/Wheat row names the Mediterranean or Spain (two rows print no region), so the
+          first row applies. Its 120-day season is much shorter than an autumn-sown barley season in Spain.
+      kc:
+        table: 12
+        row: "Barley"
+        ini_row: "i. Cereals"
+        url: https://www.fao.org/4/x0490e/x0490e0b.htm
+  ZEAMX:  # grain maize
+    lengths_days: {initial: 30, development: 40, mid_season: 50, late_season: 30}
+    kc: {ini: 0.3, mid: 1.20, end: 0.35}
+    source:
+      stage_lengths:
+        table: 11
+        row: "Maize (grain)"
+        plant_date: "April"
+        region: "Spain (spr, sum.); Calif."
+        rule: mediterranean_or_spain
+        url: https://www.fao.org/4/x0490e/x0490e0b.htm
+      kc:
+        table: 12
+        row: "Maize, Field (grain) (field corn)"
+        ini_row: "i. Cereals"
+        url: https://www.fao.org/4/x0490e/x0490e0b.htm
+        note: >-
+          Kc end printed 0.60-0.35; footnote 11: the first value is for harvest at high grain moisture,
+          the second "for harvest after complete field drying of the grain (to about 18% moisture, wet
+          mass basis)". ASSUMPTION: 0.35, grain maize left to dry in the field before harvest.
+  HELAN:  # sunflower
+    lengths_days: {initial: 25, development: 35, mid_season: 45, late_season: 25}
+    kc: {ini: 0.35, mid: 1.15, end: 0.35}
+    source:
+      stage_lengths:
+        table: 11
+        row: "Sunflower"
+        plant_date: "April/May"
+        region: "Medit.; California"
+        rule: mediterranean_or_spain
+        url: https://www.fao.org/4/x0490e/x0490e0b.htm
+      kc:
+        table: 12
+        row: "Sunflower"
+        ini_row: "h. Oil Crops"
+        url: https://www.fao.org/4/x0490e/x0490e0b.htm
+        note: >-
+          Kc mid printed 1.0-1.15; footnote 9: "The lower values are for rainfed crops having less dense
+          plant populations", so 1.15 (the need is computed for irrigated parcels only).
+  PIBSX:  # field peas
+    lengths_days: {initial: 20, development: 30, mid_season: 35, late_season: 15}
+    kc: {ini: 0.4, mid: 1.15, end: 0.30}
+    source:
+      stage_lengths:
+        table: 11
+        row: "Peas"
+        plant_date: "Mar/Apr"
+        region: "Mediterranean"
+        rule: mediterranean_or_spain
+        url: https://www.fao.org/4/x0490e/x0490e0b.htm
+        note: >-
+          ASSUMPTION: a late-winter/spring sowing is taken as compatible with Spain; FAO-56 has no
+          autumn-sown pea row.
+      kc:
+        table: 12
+        row: "Peas - Dry/Seed"
+        ini_row: "e. Legumes (Leguminosae)"
+        url: https://www.fao.org/4/x0490e/x0490e0b.htm
+  VICFX:  # broad and field beans
+    lengths_days: {initial: 20, development: 30, mid_season: 35, late_season: 15}
+    kc: {ini: 0.5, mid: 1.15, end: 0.30}
+    source:
+      stage_lengths:
+        table: 11
+        row: "Faba bean, broad bean"
+        plant_date: "Mar/Apr"
+        region: "Mediterranean"
+        rule: mediterranean_or_spain
+        url: https://www.fao.org/4/x0490e/x0490e0b.htm
+        note: >-
+          ASSUMPTION: a late-winter/spring sowing is taken as compatible with Spain. The only autumn row,
+          "- dry" (90/45/40/60, Nov, Europe), does not name the Mediterranean or Spain.
+      kc:
+        table: 12
+        row: "Fababean (broad bean) - Dry/Seed"
+        ini_row: "Fababean (broad bean) - Dry/Seed"
+        url: https://www.fao.org/4/x0490e/x0490e0b.htm
+  SOLTU:  # potato
+    lengths_days: {initial: 25, development: 30, mid_season: 30, late_season: 30}
+    kc: {ini: 0.5, mid: 1.15, end: 0.75}
+    source:
+      stage_lengths:
+        table: 11
+        row: "Potato"
+        plant_date: "Jan/Nov"
+        region: "(Semi) Arid Climate"
+        rule: first_row
+        url: https://www.fao.org/4/x0490e/x0490e0b.htm
+        note: >-
+          No Potato row names the Mediterranean or Spain, so the first row applies. It prints Lmid
+          "30/45" and total "115/130". ASSUMPTION: the first alternatives go together (30 days, total
+          115 = 25+30+30+30).
+      kc:
+        table: 12
+        row: "Potato"
+        ini_row: "d. Roots and Tubers"
+        url: https://www.fao.org/4/x0490e/x0490e0b.htm
+        note: >-
+          Kc end 0.75 as printed; footnote 4 gives about 0.40 only for long season potatoes with vine kill.
+  BEAVX:  # sugar beet
+    lengths_days: {initial: 25, development: 35, mid_season: 50, late_season: 50}
+    kc: {ini: 0.35, mid: 1.20, end: 0.70}
+    source:
+      stage_lengths:
+        table: 11
+        row: "Sugarbeet"
+        plant_date: "May"
+        region: "Mediterranean"
+        rule: mediterranean_or_spain
+        url: https://www.fao.org/4/x0490e/x0490e0b.htm
+        note: >-
+          Two rows name the Mediterranean (May; November). ASSUMPTION: the first one (spring sowing).
+      kc:
+        table: 12
+        row: "Sugar Beet"
+        ini_row: "Sugar Beet"
+        url: https://www.fao.org/4/x0490e/x0490e0b.htm
+        note: >-
+          Kc end 0.70 as printed; footnote 5: it is for no irrigation during the last month, and higher,
+          up to 1.0, when irrigation or significant rain occurs then.
+  LYPES:  # tomato
+    lengths_days: {initial: 30, development: 40, mid_season: 45, late_season: 30}
+    kc: {ini: 0.6, mid: 1.15, end: 0.70}
+    source:
+      stage_lengths:
+        table: 11
+        row: "Tomato"
+        plant_date: "April/May"
+        region: "Mediterranean"
+        rule: mediterranean_or_spain
+        url: https://www.fao.org/4/x0490e/x0490e0b.htm
+      kc:
+        table: 12
+        row: "Tomato"
+        ini_row: "b. Vegetables - Solanum Family (Solanaceae)"
+        url: https://www.fao.org/4/x0490e/x0490e0b.htm
+        note: >-
+          Kc mid 1.15 for field (unstaked) tomato; footnote 2 gives 1.20 when grown on stalks. Kc end
+          printed 0.70-0.90 with no footnote. ASSUMPTION: 0.70, a crop left to ripen with less irrigation
+          in the late season (FAO-56: crops irrigated frequently until harvested fresh have a high Kc end).
 
 # Effective rainfall: USDA Soil Conservation Service method, 10-day form used by FAO CROPWAT 8.0.
 #   Pdec <= break_mm : Pe = Pdec * (ref_mm - low_slope * Pdec) / ref_mm
