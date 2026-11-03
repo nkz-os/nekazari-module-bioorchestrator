@@ -19,7 +19,7 @@ describe('allotment input', () => {
 });
 
 describe('allotment input: thousands separators and units', () => {
-  it.each(['4.500', '4,500', '12.000', '1.234.567'])('%j is ambiguous and refused', (text) => {
+  it.each(['4.500', '4,500', '12.000', '1.234.567', '01.500', '01,500', '0.500'])('%j is ambiguous and refused', (text) => {
     expect(parseAllotment(text, 'm3ha')).toEqual({ ok: false, error: 'thousands' });
     expect(parseAllotment(text, 'mm')).toEqual({ ok: false, error: 'thousands' });
   });
@@ -29,17 +29,19 @@ describe('allotment input: thousands separators and units', () => {
     expect(parseAllotment('12,345', 'm3ha')).toEqual({ ok: false, error: 'thousands' });
   });
   it('under 1 mm after conversion is refused', () => {
-    expect(parseAllotment('0.004', 'm3ha')).toEqual({ ok: false, error: 'invalid' });
+    expect(parseAllotment('0.004', 'm3ha')).toEqual({ ok: false, error: 'thousands' });
+    expect(parseAllotment('0.0004', 'm3ha')).toEqual({ ok: false, error: 'invalid' });
     expect(parseAllotment('9', 'm3ha')).toEqual({ ok: false, error: 'tooSmall' });
     expect(parseAllotment('10', 'm3ha')).toEqual({ ok: true, mm: 1 });
     expect(parseAllotment('0.5', 'mm')).toEqual({ ok: false, error: 'tooSmall' });
-    expect(parseAllotment('0.001', 'mm')).toEqual({ ok: false, error: 'invalid' });
+    expect(parseAllotment('0.0001', 'mm')).toEqual({ ok: false, error: 'invalid' });
   });
   it('switching unit converts the typed quantity or clears it', () => {
     expect(convertTyped('4500', 'm3ha', 'mm')).toBe('450');
     expect(convertTyped('450', 'mm', 'm3ha')).toBe('4500');
     expect(convertTyped('4,5', 'mm', 'm3ha')).toBe('45');
     expect(convertTyped('4.500', 'mm', 'm3ha')).toBe('');
+    expect(convertTyped('01.500', 'mm', 'm3ha')).toBe('');
     expect(convertTyped('abc', 'mm', 'm3ha')).toBe('');
     expect(convertTyped('', 'mm', 'm3ha')).toBe('');
   });

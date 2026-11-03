@@ -36,7 +36,7 @@ export type AllotmentParse = { ok: true; mm: number } | { ok: false; error: 'inv
 export const MIN_ALLOTMENT_MM = 1;
 
 /** «4.500» / «4,500»: a thousands separator or a decimal? Unknowable, so the user retypes it. */
-const AMBIGUOUS_THOUSANDS = /^[1-9]\d{0,2}([.,]\d{3})+$/;
+const AMBIGUOUS_THOUSANDS = /^\d{1,3}([.,]\d{3})+$/;
 
 /**
  * Positive number (comma or dot decimals), 1 to MAX_ALLOTMENT_MM once converted to mm and rounded to
