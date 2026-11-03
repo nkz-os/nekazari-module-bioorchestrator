@@ -165,7 +165,7 @@
       "climate": "Clima", "soil": "Sòl", "noData": "sense dades", "regimeQuestion": "Secà o regadiu?",
       "regimeHint": "Cal per planificar: l'evidència i les simulacions mai barregen secà i regadiu.",
       "managementLabel": "Maneig", "historyDown": "No s'ha pogut llegir l'historial: la rotació no s'ha comprovat.",
-      "allotment": {"label": "Dotació de la campanya", "hint": "Aigua disponible per al reg d'aquesta campanya.", "placeholder": "Ex.: 4500", "unitLabel": "Unitat", "unit": {"m3ha": "m³/ha", "mm": "mm"}, "save": "Desa", "none": "Sense dotació declarada", "stored": "Desat: {{mm}} mm ({{m3}} m³/ha)", "clear": "Treu", "invalid": "Introdueix un número més gran que 0.", "tooLarge": "Massa alt: màxim {{max}} {{unit}}.", "saveError": "No s'ha pogut desar la dotació. Torna-ho a provar."}
+      "allotment": {"label": "Dotació de la campanya", "hint": "Aigua disponible per al reg d'aquesta campanya.", "placeholder": "Ex.: 4500", "unitLabel": "Unitat", "unit": {"m3ha": "m³/ha", "mm": "mm"}, "save": "Desa", "none": "Sense dotació declarada", "stored": "Desat: {{mm}} mm ({{m3}} m³/ha)", "clear": "Treu", "invalid": "Introdueix un número més gran que 0.", "thousands": "Escriu el número sense separador de milers (per exemple 4500).", "tooSmall": "Massa baix: mínim 1 mm (10 m³/ha).", "tooLarge": "Massa alt: màxim {{max}} {{unit}}.", "saveError": "No s'ha pogut desar la dotació. Torna-ho a provar."}
     },
     "fit": {
       "fits": "Encaixa", "caveats": "Amb reserves", "no_fit": "No encaixa",

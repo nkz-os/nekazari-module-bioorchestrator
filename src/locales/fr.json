@@ -165,7 +165,7 @@
       "climate": "Climat", "soil": "Sol", "noData": "sans données", "regimeQuestion": "Sec ou irrigué ?",
       "regimeHint": "Nécessaire pour planifier : les résultats et les simulations ne mélangent jamais sec et irrigué.",
       "managementLabel": "Conduite", "historyDown": "Impossible de lire l'historique : la rotation n'a pas été vérifiée.",
-      "allotment": {"label": "Dotation de la campagne", "hint": "Eau disponible pour l'irrigation de cette campagne.", "placeholder": "Ex. : 4500", "unitLabel": "Unité", "unit": {"m3ha": "m³/ha", "mm": "mm"}, "save": "Enregistrer", "none": "Aucune dotation déclarée", "stored": "Enregistré : {{mm}} mm ({{m3}} m³/ha)", "clear": "Retirer", "invalid": "Saisissez un nombre supérieur à 0.", "tooLarge": "Trop élevé : maximum {{max}} {{unit}}.", "saveError": "La dotation n'a pas pu être enregistrée. Réessayez."}
+      "allotment": {"label": "Dotation de la campagne", "hint": "Eau disponible pour l'irrigation de cette campagne.", "placeholder": "Ex. : 4500", "unitLabel": "Unité", "unit": {"m3ha": "m³/ha", "mm": "mm"}, "save": "Enregistrer", "none": "Aucune dotation déclarée", "stored": "Enregistré : {{mm}} mm ({{m3}} m³/ha)", "clear": "Retirer", "invalid": "Saisissez un nombre supérieur à 0.", "thousands": "Saisissez le nombre sans séparateur de milliers (par exemple 4500).", "tooSmall": "Trop bas : minimum 1 mm (10 m³/ha).", "tooLarge": "Trop élevé : maximum {{max}} {{unit}}.", "saveError": "La dotation n'a pas pu être enregistrée. Réessayez."}
     },
     "fit": {
       "fits": "Convient", "caveats": "Avec réserves", "no_fit": "Ne convient pas",

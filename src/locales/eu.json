@@ -165,7 +165,7 @@
       "climate": "Klima", "soil": "Lurzorua", "noData": "daturik gabe", "regimeQuestion": "Lehorrekoa ala ureztatua?",
       "regimeHint": "Planifikatzeko beharrezkoa da: ebidentziak eta simulazioek ez dituzte inoiz lehorra eta ureztatua nahasten.",
       "managementLabel": "Kudeaketa", "historyDown": "Ezin izan da historia irakurri: errotazioa ez da egiaztatu.",
-      "allotment": {"label": "Kanpainaren dotazioa", "hint": "Kanpaina honetan ureztatzeko eskura dagoen ura.", "placeholder": "Adib.: 4500", "unitLabel": "Unitatea", "unit": {"m3ha": "m³/ha", "mm": "mm"}, "save": "Gorde", "none": "Dotaziorik ez da adierazi", "stored": "Gordeta: {{mm}} mm ({{m3}} m³/ha)", "clear": "Kendu", "invalid": "Sartu 0 baino zenbaki handiagoa.", "tooLarge": "Handiegia: gehienez {{max}} {{unit}}.", "saveError": "Ezin izan da dotazioa gorde. Saiatu berriro."}
+      "allotment": {"label": "Kanpainaren dotazioa", "hint": "Kanpaina honetan ureztatzeko eskura dagoen ura.", "placeholder": "Adib.: 4500", "unitLabel": "Unitatea", "unit": {"m3ha": "m³/ha", "mm": "mm"}, "save": "Gorde", "none": "Dotaziorik ez da adierazi", "stored": "Gordeta: {{mm}} mm ({{m3}} m³/ha)", "clear": "Kendu", "invalid": "Sartu 0 baino zenbaki handiagoa.", "thousands": "Idatzi zenbakia milakoen bereizlerik gabe (adibidez 4500).", "tooSmall": "Baxuegia: gutxienez 1 mm (10 m³/ha).", "tooLarge": "Handiegia: gehienez {{max}} {{unit}}.", "saveError": "Ezin izan da dotazioa gorde. Saiatu berriro."}
     },
     "fit": {
       "fits": "Egokia", "caveats": "Ñabardurekin", "no_fit": "Ez da egokia",

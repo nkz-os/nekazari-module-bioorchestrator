@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { allotmentToMm, armOneShotRefetch, irrigatedParcel, irrigationUnavailableKey, parseAllotment } from './irrigationNeed';
+import { allotmentToMm, armOneShotRefetch, convertTyped, irrigatedParcel, irrigationUnavailableKey, parseAllotment } from './irrigationNeed';
 
 describe('allotment input', () => {
   it('converts m3/ha to mm by dividing by 10', () => {
@@ -15,6 +15,33 @@ describe('allotment input', () => {
     expect(parseAllotment('2001', 'mm')).toEqual({ ok: false, error: 'tooLarge' });
     expect(parseAllotment('20010', 'm3ha')).toEqual({ ok: false, error: 'tooLarge' });
     expect(parseAllotment('2000', 'mm')).toEqual({ ok: true, mm: 2000 });
+  });
+});
+
+describe('allotment input: thousands separators and units', () => {
+  it.each(['4.500', '4,500', '12.000', '1.234.567'])('%j is ambiguous and refused', (text) => {
+    expect(parseAllotment(text, 'm3ha')).toEqual({ ok: false, error: 'thousands' });
+    expect(parseAllotment(text, 'mm')).toEqual({ ok: false, error: 'thousands' });
+  });
+  it('4500 m3/ha is 450 mm; 4,5 mm stays 4.5 mm; 1,25 rounds to 0.01', () => {
+    expect(parseAllotment('4500', 'm3ha')).toEqual({ ok: true, mm: 450 });
+    expect(parseAllotment('4,5', 'mm')).toEqual({ ok: true, mm: 4.5 });
+    expect(parseAllotment('12,345', 'm3ha')).toEqual({ ok: false, error: 'thousands' });
+  });
+  it('under 1 mm after conversion is refused', () => {
+    expect(parseAllotment('0.004', 'm3ha')).toEqual({ ok: false, error: 'invalid' });
+    expect(parseAllotment('9', 'm3ha')).toEqual({ ok: false, error: 'tooSmall' });
+    expect(parseAllotment('10', 'm3ha')).toEqual({ ok: true, mm: 1 });
+    expect(parseAllotment('0.5', 'mm')).toEqual({ ok: false, error: 'tooSmall' });
+    expect(parseAllotment('0.001', 'mm')).toEqual({ ok: false, error: 'invalid' });
+  });
+  it('switching unit converts the typed quantity or clears it', () => {
+    expect(convertTyped('4500', 'm3ha', 'mm')).toBe('450');
+    expect(convertTyped('450', 'mm', 'm3ha')).toBe('4500');
+    expect(convertTyped('4,5', 'mm', 'm3ha')).toBe('45');
+    expect(convertTyped('4.500', 'mm', 'm3ha')).toBe('');
+    expect(convertTyped('abc', 'mm', 'm3ha')).toBe('');
+    expect(convertTyped('', 'mm', 'm3ha')).toBe('');
   });
 });
 

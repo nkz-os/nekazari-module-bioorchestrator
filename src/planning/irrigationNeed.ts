@@ -30,17 +30,40 @@ export function irrigationUnavailableKey(reason: string | null | undefined): str
 export const allotmentToMm = (value: number, unit: AllotmentUnit): number => (unit === 'm3ha' ? value / 10 : value);
 export const mmToUnit = (mm: number, unit: AllotmentUnit): number => (unit === 'm3ha' ? mm * 10 : mm);
 
-export type AllotmentParse = { ok: true; mm: number } | { ok: false; error: 'invalid' | 'tooLarge' };
+export type AllotmentParse = { ok: true; mm: number } | { ok: false; error: 'invalid' | 'thousands' | 'tooSmall' | 'tooLarge' };
 
-/** Positive number (comma or dot decimals), at most MAX_ALLOTMENT_MM once converted to mm. */
+/** Below this (mm, after conversion) the figure is a typing slip, not a water allotment. */
+export const MIN_ALLOTMENT_MM = 1;
+
+/** «4.500» / «4,500»: a thousands separator or a decimal? Unknowable, so the user retypes it. */
+const AMBIGUOUS_THOUSANDS = /^[1-9]\d{0,2}([.,]\d{3})+$/;
+
+/**
+ * Positive number (comma or dot decimals), 1 to MAX_ALLOTMENT_MM once converted to mm and rounded to
+ * 0.01 mm. A string that looks like a thousands-grouped number is refused rather than guessed.
+ */
 export function parseAllotment(text: string, unit: AllotmentUnit): AllotmentParse {
-  const clean = text.trim().replace(',', '.');
+  const raw = text.trim();
+  if (AMBIGUOUS_THOUSANDS.test(raw)) return { ok: false, error: 'thousands' };
+  const clean = raw.replace(',', '.');
   if (!/^\d+(\.\d+)?$/.test(clean)) return { ok: false, error: 'invalid' };
   const value = Number(clean);
-  if (!Number.isFinite(value) || value <= 0) return { ok: false, error: 'invalid' };
-  const mm = allotmentToMm(value, unit);
+  if (!Number.isFinite(value)) return { ok: false, error: 'invalid' };
+  const mm = Math.round(allotmentToMm(value, unit) * 100) / 100;
+  if (mm <= 0) return { ok: false, error: 'invalid' };
+  if (mm < MIN_ALLOTMENT_MM) return { ok: false, error: 'tooSmall' };
   if (mm > MAX_ALLOTMENT_MM) return { ok: false, error: 'tooLarge' };
-  return { ok: true, mm: Math.round(mm * 100) / 100 };
+  return { ok: true, mm };
+}
+
+/** Switching unit keeps the quantity: a plain typed number is converted; anything else is cleared. */
+export function convertTyped(text: string, from: AllotmentUnit, to: AllotmentUnit): string {
+  const raw = text.trim();
+  if (raw === '' || from === to || AMBIGUOUS_THOUSANDS.test(raw)) return '';
+  const clean = raw.replace(',', '.');
+  if (!/^\d+(\.\d+)?$/.test(clean)) return '';
+  const mm = allotmentToMm(Number(clean), from);
+  return String(Math.round(mmToUnit(mm, to) * 100) / 100);
 }
 
 /**

@@ -182,7 +182,7 @@
       "climate": "Climate", "soil": "Soil", "noData": "no data", "regimeQuestion": "Rainfed or irrigated?",
       "regimeHint": "Needed to plan: evidence and simulations never mix rainfed and irrigated.",
       "managementLabel": "Management", "historyDown": "Could not read the history: rotation was not checked.",
-      "allotment": {"label": "Campaign water allotment", "hint": "Water available for irrigation this campaign.", "placeholder": "e.g. 4500", "unitLabel": "Unit", "unit": {"m3ha": "m³/ha", "mm": "mm"}, "save": "Save", "none": "No allotment declared", "stored": "Saved: {{mm}} mm ({{m3}} m³/ha)", "clear": "Remove", "invalid": "Enter a number greater than 0.", "tooLarge": "Too high: maximum {{max}} {{unit}}.", "saveError": "The allotment could not be saved. Try again."}
+      "allotment": {"label": "Campaign water allotment", "hint": "Water available for irrigation this campaign.", "placeholder": "e.g. 4500", "unitLabel": "Unit", "unit": {"m3ha": "m³/ha", "mm": "mm"}, "save": "Save", "none": "No allotment declared", "stored": "Saved: {{mm}} mm ({{m3}} m³/ha)", "clear": "Remove", "invalid": "Enter a number greater than 0.", "thousands": "Type the number without a thousands separator (for example 4500).", "tooSmall": "Too low: minimum 1 mm (10 m³/ha).", "tooLarge": "Too high: maximum {{max}} {{unit}}.", "saveError": "The allotment could not be saved. Try again."}
     },
     "fit": {
       "fits": "Fits", "caveats": "With caveats", "no_fit": "Does not fit",

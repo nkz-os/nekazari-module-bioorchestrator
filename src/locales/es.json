@@ -185,7 +185,7 @@
       "climate": "Clima", "soil": "Suelo", "noData": "sin datos", "regimeQuestion": "¿Secano o regadío?",
       "regimeHint": "Hace falta para planificar: la evidencia y las simulaciones nunca mezclan secano y regadío.",
       "managementLabel": "Manejo", "historyDown": "No se ha podido leer el historial: la rotación no se ha comprobado.",
-      "allotment": {"label": "Dotación de la campaña", "hint": "Agua disponible para el riego de esta campaña.", "placeholder": "Ej.: 4500", "unitLabel": "Unidad", "unit": {"m3ha": "m³/ha", "mm": "mm"}, "save": "Guardar", "none": "Sin dotación declarada", "stored": "Guardado: {{mm}} mm ({{m3}} m³/ha)", "clear": "Quitar", "invalid": "Introduce un número mayor que 0.", "tooLarge": "Demasiado alto: máximo {{max}} {{unit}}.", "saveError": "No se ha podido guardar la dotación. Inténtalo de nuevo."}
+      "allotment": {"label": "Dotación de la campaña", "hint": "Agua disponible para el riego de esta campaña.", "placeholder": "Ej.: 4500", "unitLabel": "Unidad", "unit": {"m3ha": "m³/ha", "mm": "mm"}, "save": "Guardar", "none": "Sin dotación declarada", "stored": "Guardado: {{mm}} mm ({{m3}} m³/ha)", "clear": "Quitar", "invalid": "Introduce un número mayor que 0.", "thousands": "Escribe el número sin separador de miles (por ejemplo 4500).", "tooSmall": "Demasiado bajo: mínimo 1 mm (10 m³/ha).", "tooLarge": "Demasiado alto: máximo {{max}} {{unit}}.", "saveError": "No se ha podido guardar la dotación. Inténtalo de nuevo."}
     },
     "fit": {
       "fits": "Encaja", "caveats": "Con reservas", "no_fit": "No encaja",

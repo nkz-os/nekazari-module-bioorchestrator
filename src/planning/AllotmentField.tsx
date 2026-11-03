@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useTranslation } from '@nekazari/sdk';
 import { Button, FormField, Input, Inline, Select, Stack } from '@nekazari/ui-kit';
 import { num } from './regionalYield';
-import { MAX_ALLOTMENT_MM, mmToUnit, parseAllotment, type AllotmentUnit } from './irrigationNeed';
+import { MAX_ALLOTMENT_MM, convertTyped, mmToUnit, parseAllotment, type AllotmentUnit } from './irrigationNeed';
 
 interface Props {
   /** Stored allotment in mm, or null when none is declared. */
@@ -37,7 +37,9 @@ export default function AllotmentField({ stored, onSave }: Props) {
   const submit = () => {
     const parsed = parseAllotment(text, unit);
     if (!parsed.ok) {
-      setError(parsed.error === 'tooLarge' ? t(`${base}.tooLarge`, { max: num(mmToUnit(MAX_ALLOTMENT_MM, unit), lang, 0, false), unit: t(`${base}.unit.${unit}`) }) : t(`${base}.invalid`));
+      setError(parsed.error === 'tooLarge'
+        ? t(`${base}.tooLarge`, { max: num(mmToUnit(MAX_ALLOTMENT_MM, unit), lang, 0, false), unit: t(`${base}.unit.${unit}`) })
+        : t(`${base}.${parsed.error}`));
       return;
     }
     void run(parsed.mm);
@@ -52,7 +54,7 @@ export default function AllotmentField({ stored, onSave }: Props) {
             onChange={(e) => { setText(e.target.value); setError(null); }} />
         </FormField>
         <Select value={unit} options={unitOptions} aria-label={t(`${base}.unitLabel`)}
-          onValueChange={(v) => { setUnit(v as AllotmentUnit); setError(null); }} />
+          onValueChange={(v) => { setText(convertTyped(text, unit, v as AllotmentUnit)); setUnit(v as AllotmentUnit); setError(null); }} />
         <Button size="sm" variant="secondary" disabled={saving || text.trim() === ''} onClick={submit}>{t(`${base}.save`)}</Button>
       </Inline>
       <Inline gap="inline" wrap align="center">

@@ -165,7 +165,7 @@
       "climate": "Clima", "soil": "Solo", "noData": "sem dados", "regimeQuestion": "Sequeiro ou regadio?",
       "regimeHint": "É necessário para planear: a evidência e as simulações nunca misturam sequeiro e regadio.",
       "managementLabel": "Maneio", "historyDown": "Não foi possível ler o historial: a rotação não foi verificada.",
-      "allotment": {"label": "Dotação da campanha", "hint": "Água disponível para a rega desta campanha.", "placeholder": "Ex.: 4500", "unitLabel": "Unidade", "unit": {"m3ha": "m³/ha", "mm": "mm"}, "save": "Guardar", "none": "Sem dotação declarada", "stored": "Guardado: {{mm}} mm ({{m3}} m³/ha)", "clear": "Remover", "invalid": "Introduza um número maior que 0.", "tooLarge": "Demasiado alto: máximo {{max}} {{unit}}.", "saveError": "Não foi possível guardar a dotação. Tente novamente."}
+      "allotment": {"label": "Dotação da campanha", "hint": "Água disponível para a rega desta campanha.", "placeholder": "Ex.: 4500", "unitLabel": "Unidade", "unit": {"m3ha": "m³/ha", "mm": "mm"}, "save": "Guardar", "none": "Sem dotação declarada", "stored": "Guardado: {{mm}} mm ({{m3}} m³/ha)", "clear": "Remover", "invalid": "Introduza um número maior que 0.", "thousands": "Escreva o número sem separador de milhares (por exemplo 4500).", "tooSmall": "Demasiado baixo: mínimo 1 mm (10 m³/ha).", "tooLarge": "Demasiado alto: máximo {{max}} {{unit}}.", "saveError": "Não foi possível guardar a dotação. Tente novamente."}
     },
     "fit": {
       "fits": "Adequada", "caveats": "Com reservas", "no_fit": "Não adequada",
