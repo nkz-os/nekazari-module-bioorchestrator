@@ -24,6 +24,14 @@ export interface SpeciesFit {
   /** Eurostat NUTS2 statistic (2.3); null with a reason in `regional_yield_unavailable`. */
   regional_yield?: RegionalYield | null;
   regional_yield_unavailable?: string | null;
+  /** Net seasonal irrigation need (2.4); only for irrigated parcels. Null with a reason in `irrigation_need_unavailable`. */
+  irrigation_need?: IrrigationNeed | null;
+  irrigation_need_unavailable?: string | null;
+}
+export interface IrrigationNeed {
+  percentiles: { p10: number; p50: number; p90: number }; unit: 'mm';
+  n_years: number; first_year: number; last_year: number; sowing_doy: number;
+  method: { kc_source: string; pe_method: string }; source: 'openmeteo_era5'; attributions: SourceAttributionItem[];
 }
 export interface RegionalYield {
   provider_id: 'eurostat_nuts2'; basis: 'regional_statistics'; nuts: string;
@@ -36,6 +44,8 @@ export interface RegionalYield {
 export interface ParcelFacts {
   climate_class: string | null; climate_source: string; soil_texture: string | null; soil_ph: number | null;
   soil_source: string; regime: Regime | null; regime_source: string; history_available: boolean;
+  /** Water the farmer declared for the campaign, in mm (2.4); null when none. */
+  irrigation_allotment_mm?: number | null;
 }
 export interface FitResponse { contract_version: string; parcel_id: string; campaign: number; facts: ParcelFacts; species: SpeciesFit[]; graphs: string[] }
 export interface VarietyStat {

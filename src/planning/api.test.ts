@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { buildQuery, fetchAquacrop, fetchCoverReference, fetchCalendar, fetchEstimates, fetchFit, PlanningApiError, putPlan, saveParcelRegime } from './api';
+import { buildQuery, fetchAquacrop, fetchCoverReference, fetchCalendar, fetchEstimates, fetchFit, PlanningApiError, putPlan, saveParcelAllotment, saveParcelRegime } from './api';
 
 afterEach(() => vi.unstubAllGlobals());
 
@@ -104,5 +104,26 @@ describe('cover reference client', () => {
     vi.stubGlobal('fetch', fetchMock);
     await fetchCoverReference('hairy_vetch', 'autumn');
     expect(String(fetchMock.mock.calls[0][0])).toContain('/api/graph/planning/cover-crops/hairy_vetch/reference?season=autumn');
+  });
+  it('saves the allotment in mm as an nkz: Property with unit and time, through the regime PATCH path', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, status: 200, json: async () => ({}) });
+    vi.stubGlobal('fetch', fetchMock);
+    await saveParcelAllotment('urn:ngsi-ld:AgriParcel:t:p1', 450, new Date('2027-03-01T10:00:00Z'));
+    const [url, init] = fetchMock.mock.calls[0];
+    expect(String(url)).toContain('/api/entities/parcels/urn%3Angsi-ld%3AAgriParcel%3At%3Ap1');
+    expect(init.method).toBe('PATCH');
+    expect(init.credentials).toBe('include');
+    expect(JSON.parse(init.body)).toEqual({ attributes: { 'nkz:irrigationAllotment': {
+      type: 'Property', value: 450, unitCode: 'MMT', observedAt: '2027-03-01T10:00:00.000Z' } } });
+  });
+  it('clearing the allotment removes the attribute', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, status: 200, json: async () => ({}) });
+    vi.stubGlobal('fetch', fetchMock);
+    await saveParcelAllotment('p1', null);
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual({ remove: ['nkz:irrigationAllotment'] });
+  });
+  it('a failed allotment save rejects', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false, status: 500, json: async () => ({}) }));
+    await expect(saveParcelAllotment('p1', 100)).rejects.toMatchObject({ status: 500 });
   });
 });

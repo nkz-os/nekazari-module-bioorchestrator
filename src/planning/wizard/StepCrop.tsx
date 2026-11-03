@@ -4,6 +4,7 @@ import { Badge, Button, Input, Stack } from '@nekazari/ui-kit';
 import { Info } from 'lucide-react';
 import SourceAttribution from '../../components/shared/SourceAttribution';
 import { num, regionalLine, regionalName, regionalUnavailableKey } from '../regionalYield';
+import { irrigatedParcel, irrigationLine, irrigationUnavailableKey, isPending } from '../irrigationNeed';
 import { reasonText, reasonTone, speciesIndex } from '../fitModel';
 import { cropName } from '../format';
 import type { FitResponse, RegionalYield, SpeciesFit, TFn } from '../types';
@@ -43,6 +44,23 @@ export function RegionalDetail({ s, lang, t }: { s: SpeciesFit; lang: string; t:
   );
 }
 
+/** The seasonal irrigation need in full: the years it covers, how it was computed, and its sources. */
+export function IrrigationDetail({ s, lang, t }: { s: SpeciesFit; lang: string; t: TFn }) {
+  const n = s.irrigation_need;
+  const base = 'planning.wizard.crop.irrigation';
+  if (!n) return <p className="text-nkz-xs text-nkz-text-muted">{t(irrigationUnavailableKey(s.irrigation_need_unavailable))}</p>;
+  return (
+    <Stack gap="tight">
+      <p className="text-nkz-xs text-nkz-text-muted">
+        {t(`${base}.detailYears`, { from: n.first_year, to: n.last_year, n: n.n_years })}{' '}
+        {t(`${base}.detailNet`)}{' '}
+        {t(`${base}.detailNotForecast`)}
+      </p>
+      <SourceAttribution attributions={n.attributions} />
+    </Stack>
+  );
+}
+
 interface Props { fit: FitResponse; selected: string | null; onPick: (sp: SpeciesFit) => void }
 
 export default function StepCrop({ fit, selected, onPick }: Props) {
@@ -51,6 +69,7 @@ export default function StepCrop({ fit, selected, onPick }: Props) {
   const [query, setQuery] = useState('');
   const [infoOpen, setInfoOpen] = useState<string | null>(null);
   const names = speciesIndex(fit.species);
+  const irrigated = irrigatedParcel(fit.facts?.regime);
   const card = (s: SpeciesFit) => (
     <div key={s.species}>
       <Button variant={selected === s.species ? 'primary' : 'secondary'} aria-pressed={selected === s.species}
@@ -70,7 +89,19 @@ export default function StepCrop({ fit, selected, onPick }: Props) {
           <Info size={14} aria-hidden="true" />
         </Button>
       </div>
-      {infoOpen === s.species && <div className="px-2"><RegionalDetail s={s} lang={lang} t={t} /></div>}
+      {irrigated && (s.irrigation_need || isPending(s)) && (
+        <p className="px-2 text-nkz-xs text-nkz-text-muted">
+          {s.irrigation_need ? irrigationLine(s.irrigation_need, lang, t) : t('planning.wizard.crop.irrigation.pending')}
+        </p>
+      )}
+      {infoOpen === s.species && (
+        <div className="px-2">
+          <Stack gap="tight">
+            <RegionalDetail s={s} lang={lang} t={t} />
+            {irrigated && <IrrigationDetail s={s} lang={lang} t={t} />}
+          </Stack>
+        </div>
+      )}
     </div>
   );
   const q = query.trim();
