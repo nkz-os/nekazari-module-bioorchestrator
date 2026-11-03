@@ -7,7 +7,7 @@ stage_detection:
     upper_cutoff_c: 30
     gdd_method: simple_avg_capped
     source:
-      doi: 10.1016/j.agrformet.2015.04.012
+      doi: 10.1016/S0168-1923(97)00027-0
       short: McMaster & Wilhelm 1997
       author: McMaster, G.S.
       year: 1997
@@ -67,7 +67,7 @@ stage_detection:
     upper_cutoff_c: 30
     gdd_method: simple_avg_capped
     source:
-      doi: 10.1016/j.eja.2004.02.001
+      doi: null
       short: Jamieson et al. 1998
       author: Jamieson, P.D.
       year: 1998
@@ -280,7 +280,7 @@ stage_detection:
     gdd_method: simple_avg_capped
     source:
       short: Soltani et al. 2006
-      doi: 10.1016/j.fcr.2005.09.014
+      doi: null
       author: Soltani, A.
       year: 2006
     stages:
@@ -1196,7 +1196,7 @@ stage_detection:
     upper_cutoff_c: 35
     gdd_method: simple_avg_capped
     source:
-      doi: 10.1016/j.eja.2004.02.001
+      doi: null
       short: Jamieson et al. 1998
       author: Jamieson, P.D.
       year: 1998
@@ -1314,7 +1314,7 @@ stage_detection:
     upper_cutoff_c: 35
     gdd_method: simple_avg_capped
     source:
-      doi: 10.1016/j.eja.2004.02.001
+      doi: null
       short: Jamieson et al. 1998
       author: Jamieson, P.D.
       year: 1998
@@ -1363,7 +1363,7 @@ stage_detection:
     upper_cutoff_c: 30
     gdd_method: simple_avg_capped
     source:
-      doi: 10.1016/j.agrformet.2015.04.012
+      doi: 10.1016/S0168-1923(97)00027-0
       short: McMaster & Wilhelm 1997
       author: McMaster, G.S.
       year: 1997
@@ -1721,7 +1721,7 @@ crop_heat_tolerance:
     heat_accum_hours: 24
     source:
       short: Connor & Fereres 2005
-      doi: 10.1016/j.scienta.2005.03.008
+      doi: null
       author: Connor, D.J.
       year: 2005
   olive:
@@ -1730,7 +1730,7 @@ crop_heat_tolerance:
     heat_accum_hours: 6
     source:
       short: Connor & Fereres 2005
-      doi: 10.1016/j.scienta.2005.03.008
+      doi: null
       author: Connor, D.J.
       year: 2005
   pepper:
@@ -1795,7 +1795,7 @@ crop_nutrient_profiles:
       short: IPNI/FAO
       author: IPNI
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
     nitrogen:
       initial:
         uptake_kg_ha_day: 0.56
@@ -1879,7 +1879,7 @@ crop_nutrient_profiles:
       short: IPNI/FAO
       author: IPNI
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
   apple:
     nitrogen:
       initial:
@@ -1924,7 +1924,7 @@ crop_nutrient_profiles:
       short: IPNI/FAO
       author: IPNI
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
   apricot:
     nitrogen:
       initial:
@@ -1969,7 +1969,7 @@ crop_nutrient_profiles:
       short: IPNI/FAO
       author: IPNI
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
   artichoke:
     nitrogen:
       initial:
@@ -2014,7 +2014,7 @@ crop_nutrient_profiles:
       short: IPNI/FAO
       author: IPNI
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
   asparagus:
     nitrogen:
       initial:
@@ -2059,7 +2059,7 @@ crop_nutrient_profiles:
       short: IPNI/FAO
       author: IPNI
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
   barley:
     nitrogen:
       initial:
@@ -2104,7 +2104,7 @@ crop_nutrient_profiles:
       short: IPNI/FAO
       author: IPNI
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
   bean:
     nitrogen:
       initial:
@@ -2149,7 +2149,7 @@ crop_nutrient_profiles:
       short: IPNI/FAO
       author: IPNI
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
   broccoli:
     nitrogen:
       initial:
@@ -2194,7 +2194,7 @@ crop_nutrient_profiles:
       short: IPNI/FAO
       author: IPNI
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
   buckwheat:
     nitrogen:
       initial:
@@ -2239,7 +2239,7 @@ crop_nutrient_profiles:
       short: IPNI/FAO
       author: IPNI
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
   cardoon:
     nitrogen:
       initial:
@@ -2284,7 +2284,7 @@ crop_nutrient_profiles:
       short: IPNI/FAO
       author: IPNI
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
   cherry:
     nitrogen:
       initial:
@@ -2329,7 +2329,7 @@ crop_nutrient_profiles:
       short: IPNI/FAO
       author: IPNI
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
   chickpea:
     nitrogen:
       initial:
@@ -2374,7 +2374,7 @@ crop_nutrient_profiles:
       short: IPNI/FAO
       author: IPNI
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
   flax:
     nitrogen:
       initial:
@@ -2419,7 +2419,7 @@ crop_nutrient_profiles:
       short: IPNI/FAO
       author: IPNI
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
   garlic:
     nitrogen:
       initial:
@@ -2464,13 +2464,13 @@ crop_nutrient_profiles:
       short: IPNI/FAO
       author: IPNI
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
   grapevine:
     source:
       short: IPNI/FAO
       author: IPNI
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
     nitrogen:
       initial:
         uptake_kg_ha_day: 0.89
@@ -2554,7 +2554,7 @@ crop_nutrient_profiles:
       short: IPNI/FAO
       author: IPNI
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
   hemp:
     nitrogen:
       initial:
@@ -2599,7 +2599,7 @@ crop_nutrient_profiles:
       short: IPNI/FAO
       author: IPNI
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
   leek:
     nitrogen:
       initial:
@@ -2644,7 +2644,7 @@ crop_nutrient_profiles:
       short: IPNI/FAO
       author: IPNI
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
   lentil:
     nitrogen:
       initial:
@@ -2689,7 +2689,7 @@ crop_nutrient_profiles:
       short: IPNI/FAO
       author: IPNI
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
   oat:
     nitrogen:
       initial:
@@ -2734,7 +2734,7 @@ crop_nutrient_profiles:
       short: IPNI/FAO
       author: IPNI
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
   onion:
     nitrogen:
       initial:
@@ -2779,7 +2779,7 @@ crop_nutrient_profiles:
       short: IPNI/FAO
       author: IPNI
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
   pea:
     nitrogen:
       initial:
@@ -2824,7 +2824,7 @@ crop_nutrient_profiles:
       short: IPNI/FAO
       author: IPNI
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
   peach:
     nitrogen:
       initial:
@@ -2869,7 +2869,7 @@ crop_nutrient_profiles:
       short: IPNI/FAO
       author: IPNI
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
   pear:
     nitrogen:
       initial:
@@ -2914,7 +2914,7 @@ crop_nutrient_profiles:
       short: IPNI/FAO
       author: IPNI
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
   pistachio:
     nitrogen:
       initial:
@@ -2959,7 +2959,7 @@ crop_nutrient_profiles:
       short: IPNI/FAO
       author: IPNI
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
   plum:
     nitrogen:
       initial:
@@ -3004,13 +3004,13 @@ crop_nutrient_profiles:
       short: IPNI/FAO
       author: IPNI
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
   potato:
     source:
       short: IPNI/FAO
       author: IPNI
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
     nitrogen:
       initial:
         uptake_kg_ha_day: 2.0
@@ -3094,13 +3094,13 @@ crop_nutrient_profiles:
       short: IPNI/FAO
       author: IPNI
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
   rice:
     source:
       short: IPNI/FAO
       author: IPNI
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
     nitrogen:
       initial:
         uptake_kg_ha_day: 1.33
@@ -3184,13 +3184,13 @@ crop_nutrient_profiles:
       short: IPNI/FAO
       author: IPNI
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
   soybean:
     source:
       short: IPNI/FAO
       author: IPNI
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
     nitrogen:
       initial:
         uptake_kg_ha_day: 0.89
@@ -3274,13 +3274,13 @@ crop_nutrient_profiles:
       short: IPNI/FAO
       author: IPNI
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
   sunflower:
     source:
       short: IPNI/FAO
       author: IPNI
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
     nitrogen:
       initial:
         uptake_kg_ha_day: 1.11
@@ -3364,7 +3364,7 @@ crop_nutrient_profiles:
       short: IPNI/FAO
       author: IPNI
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
   vetch:
     nitrogen:
       initial:
@@ -3409,13 +3409,13 @@ crop_nutrient_profiles:
       short: IPNI/FAO
       author: IPNI
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
   wheat:
     source:
       short: IPNI/FAO
       author: IPNI
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
     nitrogen:
       initial:
         uptake_kg_ha_day: 1.56
@@ -3460,7 +3460,7 @@ crop_nutrient_profiles:
       short: IPNI/FAO
       author: IPNI
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
     nitrogen:
       initial:
         uptake_kg_ha_day: 2.22
@@ -3505,7 +3505,7 @@ crop_nutrient_profiles:
       short: IPNI/FAO
       author: IPNI
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
     nitrogen:
       initial:
         uptake_kg_ha_day: 1.0
@@ -3550,7 +3550,7 @@ crop_nutrient_profiles:
       short: IPNI/FAO
       author: IPNI
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
     nitrogen:
       initial:
         uptake_kg_ha_day: 2.22
@@ -3595,7 +3595,7 @@ crop_nutrient_profiles:
       short: IPNI/FAO
       author: IPNI
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
     nitrogen:
       initial:
         uptake_kg_ha_day: 2.0
@@ -3640,7 +3640,7 @@ crop_nutrient_profiles:
       short: IPNI/FAO
       author: IPNI
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
     nitrogen:
       initial:
         uptake_kg_ha_day: 1.33
@@ -3685,7 +3685,7 @@ crop_nutrient_profiles:
       short: IPNI/FAO
       author: IPNI
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
     nitrogen:
       initial:
         uptake_kg_ha_day: 1.56
@@ -3730,7 +3730,7 @@ crop_nutrient_profiles:
       short: IPNI/FAO
       author: IPNI
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
     nitrogen:
       initial:
         uptake_kg_ha_day: 0.67
@@ -3775,7 +3775,7 @@ crop_nutrient_profiles:
       short: IPNI/FAO
       author: IPNI
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
     nitrogen:
       initial:
         uptake_kg_ha_day: 1.11
@@ -3820,7 +3820,7 @@ crop_nutrient_profiles:
       short: IPNI/FAO
       author: IPNI
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
     nitrogen:
       initial:
         uptake_kg_ha_day: 1.56
@@ -3867,7 +3867,7 @@ crop_soil_suitability:
       short: FAO/ECOCROP
       author: FAO
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
     ph_min: 6.5
     ph_max: 8.0
     textures:
@@ -3881,7 +3881,7 @@ crop_soil_suitability:
       short: FAO/ECOCROP
       author: FAO
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
     ph_min: 6.0
     ph_max: 8.0
     textures:
@@ -3895,7 +3895,7 @@ crop_soil_suitability:
       short: FAO/ECOCROP
       author: FAO
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
     ph_min: 5.5
     ph_max: 7.5
     textures:
@@ -3909,7 +3909,7 @@ crop_soil_suitability:
       short: FAO/ECOCROP
       author: FAO
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
     ph_min: 6.0
     ph_max: 8.0
     textures:
@@ -3923,7 +3923,7 @@ crop_soil_suitability:
       short: FAO/ECOCROP
       author: FAO
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
     ph_min: 6.0
     ph_max: 8.0
     textures:
@@ -3937,7 +3937,7 @@ crop_soil_suitability:
       short: FAO/ECOCROP
       author: FAO
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
     ph_min: 6.0
     ph_max: 7.5
     textures:
@@ -3951,7 +3951,7 @@ crop_soil_suitability:
       short: FAO/ECOCROP
       author: FAO
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
     ph_min: 6.0
     ph_max: 8.5
     textures:
@@ -3965,7 +3965,7 @@ crop_soil_suitability:
       short: FAO/ECOCROP
       author: FAO
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
     ph_min: 5.5
     ph_max: 7.5
     textures:
@@ -3979,7 +3979,7 @@ crop_soil_suitability:
       short: FAO/ECOCROP
       author: FAO
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
     ph_min: 6.0
     ph_max: 7.5
     textures:
@@ -3993,7 +3993,7 @@ crop_soil_suitability:
       short: FAO/ECOCROP
       author: FAO
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
     ph_min: 5.0
     ph_max: 7.0
     textures:
@@ -4007,7 +4007,7 @@ crop_soil_suitability:
       short: FAO/ECOCROP
       author: FAO
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
     ph_min: 6.0
     ph_max: 8.0
     textures:
@@ -4021,7 +4021,7 @@ crop_soil_suitability:
       short: FAO/ECOCROP
       author: FAO
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
     ph_min: 5.5
     ph_max: 7.5
     textures:
@@ -4035,7 +4035,7 @@ crop_soil_suitability:
       short: FAO/ECOCROP
       author: FAO
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
     ph_min: 6.0
     ph_max: 8.0
     textures:
@@ -4049,7 +4049,7 @@ crop_soil_suitability:
       short: FAO/ECOCROP
       author: FAO
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
     ph_min: 5.5
     ph_max: 7.5
     textures:
@@ -4063,7 +4063,7 @@ crop_soil_suitability:
       short: FAO/ECOCROP
       author: FAO
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
     ph_min: 6.0
     ph_max: 7.5
     textures:
@@ -4077,7 +4077,7 @@ crop_soil_suitability:
       short: FAO/ECOCROP
       author: FAO
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
     ph_min: 5.5
     ph_max: 8.0
     textures:
@@ -4091,7 +4091,7 @@ crop_soil_suitability:
       short: FAO/ECOCROP
       author: FAO
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
     ph_min: 5.5
     ph_max: 8.0
     textures:
@@ -4105,7 +4105,7 @@ crop_soil_suitability:
       short: FAO/ECOCROP
       author: FAO
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
     ph_min: 6.0
     ph_max: 7.5
     textures:
@@ -4119,7 +4119,7 @@ crop_soil_suitability:
       short: FAO/ECOCROP
       author: FAO
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
     ph_min: 6.0
     ph_max: 7.5
     textures:
@@ -4133,7 +4133,7 @@ crop_soil_suitability:
       short: FAO/ECOCROP
       author: FAO
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
     ph_min: 6.0
     ph_max: 8.0
     textures:
@@ -4147,7 +4147,7 @@ crop_soil_suitability:
       short: FAO/ECOCROP
       author: FAO
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
     ph_min: 5.5
     ph_max: 7.5
     textures:
@@ -4161,7 +4161,7 @@ crop_soil_suitability:
       short: FAO/ECOCROP
       author: FAO
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
     ph_min: 6.0
     ph_max: 7.5
     textures:
@@ -4175,7 +4175,7 @@ crop_soil_suitability:
       short: FAO/ECOCROP
       author: FAO
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
     ph_min: 5.5
     ph_max: 7.5
     textures:
@@ -4189,7 +4189,7 @@ crop_soil_suitability:
       short: FAO/ECOCROP
       author: FAO
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
     ph_min: 6.0
     ph_max: 7.5
     textures:
@@ -4203,7 +4203,7 @@ crop_soil_suitability:
       short: FAO/ECOCROP
       author: FAO
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
     ph_min: 5.5
     ph_max: 7.5
     textures:
@@ -4217,7 +4217,7 @@ crop_soil_suitability:
       short: FAO/ECOCROP
       author: FAO
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
     ph_min: 7.0
     ph_max: 8.5
     textures:
@@ -4231,7 +4231,7 @@ crop_soil_suitability:
       short: FAO/ECOCROP
       author: FAO
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
     ph_min: 5.5
     ph_max: 7.5
     textures:
@@ -4245,7 +4245,7 @@ crop_soil_suitability:
       short: FAO/ECOCROP
       author: FAO
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
     ph_min: 5.0
     ph_max: 7.0
     textures:
@@ -4259,7 +4259,7 @@ crop_soil_suitability:
       short: FAO/ECOCROP
       author: FAO
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
     ph_min: 5.5
     ph_max: 8.0
     textures:
@@ -4273,7 +4273,7 @@ crop_soil_suitability:
       short: FAO/ECOCROP
       author: FAO
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
     ph_min: 5.0
     ph_max: 7.5
     textures:
@@ -4287,7 +4287,7 @@ crop_soil_suitability:
       short: FAO/ECOCROP
       author: FAO
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
     ph_min: 4.5
     ph_max: 7.5
     textures:
@@ -4301,7 +4301,7 @@ crop_soil_suitability:
       short: FAO/ECOCROP
       author: FAO
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
     ph_min: 6.0
     ph_max: 7.5
     textures:
@@ -4315,7 +4315,7 @@ crop_soil_suitability:
       short: FAO/ECOCROP
       author: FAO
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
     ph_min: 6.5
     ph_max: 8.0
     textures:
@@ -4329,7 +4329,7 @@ crop_soil_suitability:
       short: FAO/ECOCROP
       author: FAO
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
     ph_min: 6.0
     ph_max: 8.0
     textures:
@@ -4343,7 +4343,7 @@ crop_soil_suitability:
       short: FAO/ECOCROP
       author: FAO
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
     ph_min: 5.5
     ph_max: 7.5
     textures:
@@ -4357,7 +4357,7 @@ crop_soil_suitability:
       short: FAO/ECOCROP
       author: FAO
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
     ph_min: 5.5
     ph_max: 7.5
     textures:
@@ -4371,7 +4371,7 @@ crop_soil_suitability:
       short: FAO
       author: FAO
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
     ph_min: 5.5
     ph_max: 8.5
     textures:
@@ -4385,7 +4385,7 @@ crop_soil_suitability:
       short: FAO
       author: FAO
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
     ph_min: 5.0
     ph_max: 8.0
     textures:
@@ -4399,7 +4399,7 @@ crop_soil_suitability:
       short: FAO
       author: FAO
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
     ph_min: 5.5
     ph_max: 8.5
     textures:
@@ -4413,7 +4413,7 @@ crop_soil_suitability:
       short: FAO/ECOCROP
       author: FAO
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
     ph_min: 5.5
     ph_max: 7.0
     textures:
@@ -4427,7 +4427,7 @@ crop_soil_suitability:
       short: FAO/ECOCROP
       author: FAO
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
     ph_min: 5.5
     ph_max: 7.0
     textures:
@@ -4441,7 +4441,7 @@ crop_soil_suitability:
       short: FAO/ECOCROP
       author: FAO
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
     ph_min: 5.0
     ph_max: 7.0
     textures:
@@ -4455,7 +4455,7 @@ crop_soil_suitability:
       short: FAO/ECOCROP
       author: FAO
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
     ph_min: 6.0
     ph_max: 7.5
     textures:
@@ -4469,7 +4469,7 @@ crop_soil_suitability:
       short: FAO/ECOCROP
       author: FAO
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
     ph_min: 6.0
     ph_max: 8.0
     textures:
@@ -4483,7 +4483,7 @@ crop_soil_suitability:
       short: FAO/ECOCROP
       author: FAO
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
     ph_min: 6.0
     ph_max: 8.0
     textures:
@@ -4497,7 +4497,7 @@ crop_soil_suitability:
       short: FAO
       author: FAO
       year: 2020
-      doi: 10.1016/B978-0-12-813995-6.00008-X
+      doi: null
     ph_min: 5.5
     ph_max: 8.5
     textures:
@@ -5364,7 +5364,7 @@ species:
       - 110.0
       source:
         source_type: peer_reviewed_study
-        doi: 10.1007/s00271-005-0005-9
+        doi: null
         short: Intrigliolo & Castel 2006
         author: Intrigliolo, Castel
         year: 2006
@@ -5443,7 +5443,7 @@ species:
       - 160.0
       source:
         source_type: peer_reviewed_study
-        doi: 10.1016/j.agwat.2004.12.005
+        doi: null
         short: Orgaz et al. 2005
         author: Orgaz, Testi, Villalobos, Fereres
         year: 2005
