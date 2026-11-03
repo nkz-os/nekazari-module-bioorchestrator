@@ -257,3 +257,14 @@ def test_no_known_bad_dois():
 
     walk(_load_yaml())
     assert not (found & KNOWN_BAD_DOIS), found & KNOWN_BAD_DOIS
+
+
+def test_rescue_script_has_no_known_bad_dois_or_baselines():
+    """The rescue script must not re-introduce bad DOIs or unsourced d1/d2 values."""
+    import re
+    from pathlib import Path
+
+    text = (Path(__file__).resolve().parents[1] / "scripts" / "rescue_curated_phenology.py").read_text()
+    for doi in KNOWN_BAD_DOIS:
+        assert doi not in text, doi
+    assert not re.search(r'"d[12]": \d', text), "rescue script hardcodes a d1/d2 value"
