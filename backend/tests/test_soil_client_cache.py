@@ -54,3 +54,20 @@ async def test_fresh_failure_keeps_the_cached_entry(status):
         failed = await soil_client.get_parcel_soil_properties("p1", "tenant-a", fresh=True)
     assert failed["data_available"] is False
     assert (await soil_client.get_parcel_soil_properties("p1", "tenant-a"))["texture"] == "loam"
+
+
+async def test_texture_falls_back_to_the_summary_topsoil_class():
+    no_class = {"horizons": [{"ph": 6.5, "depthFrom": 0, "depthTo": 30}],
+                "topsoilTexture": {"usdaTextureClass": "clay_loam", "source": "entered"},
+                "dataSource": {"value": "soilgrids"}}
+    cm, _ = _client(200, no_class)
+    with patch.object(httpx, "AsyncClient", return_value=cm):
+        got = await soil_client.get_parcel_soil_properties("p1", "tenant-a")
+    assert got["texture"] == "clay_loam"
+
+
+async def test_a_horizon_class_wins_over_the_summary_topsoil_class():
+    cm, _ = _client(200, {**SUMMARY, "topsoilTexture": {"usdaTextureClass": "clay", "source": "entered"}})
+    with patch.object(httpx, "AsyncClient", return_value=cm):
+        got = await soil_client.get_parcel_soil_properties("p1", "tenant-a")
+    assert got["texture"] == "loam"

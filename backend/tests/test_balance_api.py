@@ -337,3 +337,18 @@ def test_grain_legume_coefficients_from_the_committed_file(client, eppo):
     assert set(body["missing"]) == {"dm_residue_pct", "residue_left_pct"}
     assert [a["source_id"] for a in body["attributions"]] == [
         "essd_2024_s3", "fertilicalc_script_2024", "ludemann_cc0", "panagos_2022"]
+
+
+@pytest.fixture(autouse=True)
+def _reset_names_failure_flag():
+    nuts_reference._names_failure_logged = False
+    yield
+    nuts_reference._names_failure_logged = False
+
+
+def test_names_failure_is_logged_once_per_process(caplog):
+    with patch("app.services.nuts_reference.load_region_names", side_effect=OSError("boom")), \
+            caplog.at_level("ERROR", logger=nuts_reference.logger.name):
+        results = [nuts_reference.names_or_none() for _ in range(5)]
+    assert results == [None] * 5
+    assert len([r for r in caplog.records if "boom" in r.getMessage()]) == 1

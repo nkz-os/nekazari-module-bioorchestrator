@@ -1622,13 +1622,13 @@
     "name": "FAO Irrigation and Drainage Paper 56, Crop evapotranspiration (crop coefficients and stage lengths)",
     "institution": "FAO",
     "institution_short": "FAO",
-    "country": "EU",
+    "country": "INT",
     "country_name": {
-      "en": "European Union",
-      "es": "Uni\u00f3n Europea",
-      "eu": "Europar Batasuna",
-      "fr": "Union europ\u00e9enne",
-      "pt": "Uni\u00e3o Europeia"
+      "en": "International",
+      "es": "Internacional",
+      "eu": "Nazioartekoa",
+      "fr": "International",
+      "pt": "Internacional"
     },
     "url": "https://www.fao.org/4/x0490e/x0490e00.htm",
     "document_url_template": null,

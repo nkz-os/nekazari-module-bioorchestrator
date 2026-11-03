@@ -11,6 +11,7 @@ from collections import defaultdict
 from datetime import date
 
 from app.planning.history import (
+    ROLLOVER_MONTH,
     cell_from_cycle,
     cycle_campaigns,
     cycles_of,
@@ -23,7 +24,6 @@ from app.planning.history import (
 from app.planning.rotation import rotation_reasons
 from app.species_registry import get_species_info
 
-ROLLOVER_MONTH = 7
 # Only words we know map to a regime: anything else is "unknown", never a guess.
 _IRRIGATED_WORDS = ("drip", "sprinkler", "flood", "pivot", "irrigat", "regad", "furrow", "gravity", "goteo",
                     "aspersi", "surco", "gravedad", "riego")

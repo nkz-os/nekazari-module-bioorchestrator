@@ -72,7 +72,7 @@ async def get_parcel_soil_properties(parcel_id: str, tenant_id: str = "", *, fre
                 om_pct = round(oc * 1.724, 2) if oc is not None else None
                 result = {
                     "ph": h.get("ph"),
-                    "texture": h.get("usdaTextureClass"),
+                    "texture": h.get("usdaTextureClass") or _summary_texture(data),
                     "awc_mm": (
                         round((h["fieldCapacity"] - h["wiltingPoint"]) * (h["depthTo"] - h["depthFrom"]) * 10, 1)
                         if h.get("fieldCapacity") is not None and h.get("wiltingPoint") is not None
@@ -102,6 +102,15 @@ async def get_parcel_soil_properties(parcel_id: str, tenant_id: str = "", *, fre
     result: dict[str, Any] = {"data_available": False, "source": "unavailable"}
     _store(cache_key, result, fresh)
     return result
+
+
+def _summary_texture(data: dict) -> str | None:
+    """The summary's own topsoil texture (measured or declared), for when the first horizon has no class."""
+    top = data.get("topsoilTexture")
+    if isinstance(top, dict) and isinstance(top.get("value"), dict):
+        top = top["value"]
+    cls = top.get("usdaTextureClass") if isinstance(top, dict) else None
+    return cls if isinstance(cls, str) and cls else None
 
 
 class SoilSummaryError(RuntimeError):
