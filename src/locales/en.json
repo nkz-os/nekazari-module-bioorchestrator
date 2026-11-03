@@ -232,6 +232,10 @@
         "pilot": "pilot network"
       },
       "depthDetail": "{{n_trials}} trials · {{n_sites}} sites · {{years}}",
+      "staleShow_one": "Show {{count}} variety without recent trials",
+      "staleShow_other": "Show {{count}} varieties without recent trials",
+      "staleHide": "Hide the varieties without recent trials",
+      "staleHint": "Not in any trial of the last campaigns: the network retired or replaced them. They stay here in case you know them or have seed.",
       "choose": "Choose", "chosen": "Chosen"
     },
     "gap": {

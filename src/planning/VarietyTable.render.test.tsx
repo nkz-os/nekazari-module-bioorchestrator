@@ -98,3 +98,40 @@ describe('VarietyTable actuality (es)', () => {
     expect(html).not.toContain('sin ensayos desde');
   });
 });
+
+describe('VarietyTable stale group (es)', () => {
+  const current = { ...base.varieties[0], variety: 'Var Now', last_year: 2026, stale: false };
+  const old = { ...base.varieties[0], variety: 'Var Old', relative_yield_pct: 119, last_year: 2023, stale: true };
+  it('keeps the stale varieties out of the main table, behind a toggle that counts them', () => {
+    const html = renderToStaticMarkup(<VarietyTable data={{ ...base, varieties: [current, old] }} selected={null} onSelect={() => {}} />);
+    expect(html).toContain('Var Now');
+    expect(html).not.toContain('Var Old');
+    expect(html).toContain('1 variedad sin ensayos recientes');
+    expect(html).toContain('aria-expanded="false"');
+  });
+  it('pluralises the toggle', () => {
+    const other = { ...old, variety: 'Var Older' };
+    const html = renderToStaticMarkup(<VarietyTable data={{ ...base, varieties: [current, old, other] }} selected={null} onSelect={() => {}} />);
+    expect(html).toContain('2 variedades sin ensayos recientes');
+  });
+  it('when every variety is stale the table shows them all, with their notes, and no toggle', () => {
+    const html = renderToStaticMarkup(<VarietyTable data={{ ...base, varieties: [old] }} selected={null} onSelect={() => {}} />);
+    expect(html).toContain('Var Old');
+    expect(html).toContain('sin ensayos desde 2023');
+    expect(html).not.toContain('sin ensayos recientes');
+  });
+  it('without the stale flag the table is as before', () => {
+    const html = renderToStaticMarkup(<VarietyTable data={base} selected={null} onSelect={() => {}} />);
+    expect(html).toContain('Var A');
+    expect(html).not.toContain('sin ensayos recientes');
+  });
+});
+
+describe('VarietyTable evidence depth detail (es)', () => {
+  it('shows the trial, site and campaign counts next to the badge, not only in the title', () => {
+    const depth = { level: 'broad' as const, n_trials: 733, n_sites: 17, n_years: 4, first_year: 2023, last_year: 2026 };
+    const html = renderToStaticMarkup(<VarietyTable data={{ ...base, evidence_depth: depth }} selected={null} onSelect={() => {}} />);
+    expect(html).toContain('evidencia amplia');
+    expect(html).toContain('>733 ensayos · 17 sitios · 2023–2026<');
+  });
+});

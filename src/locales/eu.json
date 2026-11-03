@@ -215,6 +215,10 @@
         "pilot": "sare pilotua"
       },
       "depthDetail": "{{n_trials}} saiakuntza · {{n_sites}} toki · {{years}}",
+      "staleShow_one": "Erakutsi saiakuntza berririk gabeko {{count}} barietate",
+      "staleShow_other": "Erakutsi saiakuntza berririk gabeko {{count}} barietate",
+      "staleHide": "Ezkutatu saiakuntza berririk gabeko barietateak",
+      "staleHint": "Azken kanpainetako saiakuntza bakar batean ere ez daude: sareak kendu edo berritu ditu. Hemen jarraitzen dute, ezagutzen badituzu edo hazia baduzu.",
       "choose": "Aukeratu", "chosen": "Aukeratuta"
     },
     "gap": {
