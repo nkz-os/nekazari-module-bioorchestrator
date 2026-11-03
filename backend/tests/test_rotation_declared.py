@@ -2,7 +2,6 @@
 from datetime import date
 from unittest.mock import AsyncMock
 
-import pytest
 from nkz_platform_sdk.crop_cycles import resolve_crop_cycles
 
 from app.planning import service
@@ -82,7 +81,7 @@ async def test_nothing_declared_is_rotation_unknown(monkeypatch):
 
 
 async def test_one_declared_campaign_behaves_like_a_dated_one(monkeypatch):
-    out, codes = await _fit(monkeypatch, _payload([_declared("b", 2025)]))
+    _out, codes = await _fit(monkeypatch, _payload([_declared("b", 2025)]))
     assert "rotation_restriction" in codes("wheat")
     assert "rotation_unknown" not in codes("wheat")
 
