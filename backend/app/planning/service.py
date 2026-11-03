@@ -1,6 +1,7 @@
 """Planning use cases: read the parcel, apply the pure rules, return contract dicts."""
 from __future__ import annotations
 
+import asyncio
 import calendar
 import functools
 import logging
@@ -62,6 +63,7 @@ from app.planning.varieties import variety_stats
 from app.services import ggcmi_calendar
 from app.services.crop_cycles_client import fetch_crop_cycles
 from app.services.crop_reference import CROP_REFERENCE
+from app.services.nuts_reference import names_or_none, plausible_range, province_table
 from app.services.region_lookup import es_province_at
 from app.services.sim_errors import SimulationError
 from app.services.soil_client import assess_soil_suitability
@@ -152,36 +154,49 @@ def _statistics_crops() -> frozenset[str]:
 
 def parcel_nuts2(lat: float | None, lon: float | None) -> str | None:
     """NUTS 2 code of the parcel's centroid (Spain only, through its province), else None."""
-    from app.api.v1.balance import _province_table  # lazy: app.api imports this module
     province = es_province_at(lat, lon)
-    return _province_table().get(province["code"]) if province else None
+    return province_table().get(province["code"]) if province else None
 
 
-async def regional_yields_for(source: KnowledgeSource, nuts: str | None, codes: list[str]):
-    """Rows of the region and its country for `codes`, in ONE graph query; (rows, failed)."""
-    if nuts is None or not codes:
+REGIONAL_READ_TIMEOUT_S = 5.0
+
+
+async def regional_yields_for(source: KnowledgeSource, nuts: str | None, *, tenant_id: str,
+                              parcel_id: str) -> tuple[list[dict], bool]:
+    """Rows of the region and its country for the statistics crops, in ONE graph query; (rows, failed).
+
+    Any failure (crop list unreadable, graph error, timeout) is `failed`: the fit is still returned.
+    """
+    if nuts is None:
         return [], False
     try:
-        return await BalanceDao(source.driver).get_regional_yields_batch(codes, [nuts, nuts[:2]]), False
+        codes = sorted(_statistics_crops())
+        rows = await asyncio.wait_for(
+            BalanceDao(source.driver).get_regional_yields_batch(codes, [nuts, nuts[:2]]),
+            timeout=REGIONAL_READ_TIMEOUT_S)
+        return rows, False
+    except TimeoutError:
+        logger.warning("planning fit: regional yields read timed out after %ss graph=%s tenant=%s parcel=%s nuts=%s",
+                       REGIONAL_READ_TIMEOUT_S, source.graph_id, tenant_id, parcel_id, nuts)
     except Exception:
-        logger.exception("planning fit: regional yields read failed graph=%s nuts=%s", source.graph_id, nuts)
-        return [], True
+        logger.exception("planning fit: regional yields read failed graph=%s tenant=%s parcel=%s nuts=%s",
+                         source.graph_id, tenant_id, parcel_id, nuts)
+    return [], True
 
 
 def crop_regional_yield(code: str | None, nuts: str | None, rows: list[dict], failed: bool):
     """(regional yield dict | None, reason | None) of one crop. Never a default figure."""
     if nuts is None:
         return None, REGION_LOOKUP_UNAVAILABLE
-    if code is None or catalog_code(code) not in _statistics_crops():
-        return None, CROP_NOT_IN_STATISTICS
     if failed:
         return None, REGION_STATS_UNAVAILABLE
-    from app.api.v1.balance import _names_or_none, _plausible_range  # lazy: app.api imports this module
+    if code is None or catalog_code(code) not in _statistics_crops():
+        return None, CROP_NOT_IN_STATISTICS
     code = catalog_code(code)
     region = [r for r in rows if r.get("eppo") == code and r.get("nuts") == nuts]
     country = [r for r in rows if r.get("eppo") == code and r.get("nuts") == nuts[:2]]
-    name = (_names_or_none() or {}).get(nuts)  # Eurostat labels are English
-    found, reason = regional_yield(region, country, plausible=_plausible_range(code),
+    name = (names_or_none() or {}).get(nuts)  # Eurostat labels are English
+    found, reason = regional_yield(region, country, plausible=plausible_range(code),
                                    region_name={"en": name} if name else None)
     if found is None:
         return None, reason
@@ -222,7 +237,8 @@ async def parcel_fit(*, dao, source: KnowledgeSource, parcel_id: str, tenant_id:
     centroid = env.get("centroid") or {}
     rows = load_rows()
     nuts = parcel_nuts2(centroid.get("lat"), centroid.get("lon"))
-    yield_rows, yield_failed = await regional_yields_for(source, nuts, sorted(_statistics_crops()))
+    yield_rows, yield_failed = await regional_yields_for(
+        source, nuts, tenant_id=tenant_id, parcel_id=env["parcel_id"])
     species = []
     for slug in list_species():
         if is_woody(slug):
@@ -258,15 +274,15 @@ async def parcel_fit(*, dao, source: KnowledgeSource, parcel_id: str, tenant_id:
         if lifecycle == "perennial":
             reasons.append(MULTI_YEAR)
         trials = has_trials(eppo, ref.trial_eppo)
+        regional, regional_reason = crop_regional_yield(eppo, nuts, yield_rows, yield_failed)
         species.append({
             "species": slug, "eppo": eppo, "names": dict(info.get("common_names") or {}), "lifecycle": lifecycle,
             "verdict": verdict_of(reasons), "reasons": reasons, "sowing": _sowing(sowing),
             "has_variety_trials": trials, "estimate_providers": estimate_providers(
                 catalog_code(eppo) if eppo else None, has_trials=trials, regime=regime_used, country=env.get("country")),
             "cover_only": is_cover_only(slug),
+            "regional_yield": regional, "regional_yield_unavailable": regional_reason,
         })
-        species[-1]["regional_yield"], species[-1]["regional_yield_unavailable"] = crop_regional_yield(
-            eppo, nuts, yield_rows, yield_failed)
     species.sort(key=_rank_key)
     return {
         "parcel_id": env["parcel_id"], "campaign": campaign, "graphs": [source.graph_id], "species": species,

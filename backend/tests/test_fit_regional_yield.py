@@ -92,11 +92,11 @@ async def test_verdict_does_not_depend_on_yield(run, monkeypatch):
 async def test_crop_outside_statistics(run, monkeypatch):
     monkeypatch.setattr(service, "parcel_nuts2", lambda lat, lon: NUTS)
     out, _ = await run(ES_POINT)
-    rice = _by(out, "rice") if any(s["species"] == "rice" for s in out["species"]) else None
-    other = next(s for s in out["species"] if s["eppo"] not in ("TRZAX", "HORVX", "ZEAMX")
-                 and service.catalog_code(s["eppo"] or "") not in service._statistics_crops())
-    assert other["regional_yield"] is None and other["regional_yield_unavailable"] == "crop_not_in_statistics"
-    assert rice is None or rice["regional_yield"] is None
+    outside = [s for s in out["species"]
+               if not s["eppo"] or service.catalog_code(s["eppo"]) not in service._statistics_crops()]
+    assert outside
+    for s in outside:
+        assert s["regional_yield"] is None and s["regional_yield_unavailable"] == "crop_not_in_statistics"
 
 
 async def test_short_series_reason_is_not_a_fit_reason(run, monkeypatch):
@@ -128,3 +128,51 @@ async def test_graph_failure_degrades_without_changing_verdicts(run, monkeypatch
 async def test_real_point_resolves_a_nuts2(run):
     out, calls = await run(ES_POINT)
     assert len(calls) == 1 and calls[0][1][0].startswith("ES") and len(calls[0][1][0]) == 4
+
+
+async def test_crop_set_load_failure_keeps_fit_and_verdicts(run, monkeypatch):
+    monkeypatch.setattr(service, "parcel_nuts2", lambda lat, lon: NUTS)
+    good, _ = await run(ES_POINT)
+
+    def broken():
+        raise FileNotFoundError("crop_codes.yaml")
+
+    monkeypatch.setattr(service, "_statistics_crops", broken)
+    out, _ = await run(ES_POINT)
+    assert all(s["regional_yield_unavailable"] == "region_stats_unavailable" for s in out["species"])
+    key = lambda o: {s["species"]: (s["verdict"], s["reasons"]) for s in o["species"]}  # noqa: E731
+    assert key(out) == key(good)
+
+
+async def test_slow_graph_read_times_out(run, monkeypatch, caplog):
+    import asyncio
+
+    monkeypatch.setattr(service, "parcel_nuts2", lambda lat, lon: NUTS)
+    monkeypatch.setattr(service, "REGIONAL_READ_TIMEOUT_S", 0.05)
+
+    async def slow(self, eppos, nuts):
+        await asyncio.sleep(1)
+        return []
+
+    monkeypatch.setattr(balance_dao.BalanceDao, "get_regional_yields_batch", slow)
+    with caplog.at_level("WARNING", logger=service.logger.name):
+        out, _ = await run(ES_POINT)
+    assert _by(out, "wheat")["regional_yield_unavailable"] == "region_stats_unavailable"
+    msg = next(r.getMessage() for r in caplog.records if "timed out" in r.getMessage())
+    assert "tenant=t" in msg and "parcel=urn:ngsi-ld:AgriParcel:t:p1" in msg
+
+
+async def test_figure_without_index_sorts_after_indexed_crops(run, monkeypatch):
+    monkeypatch.setattr(service, "parcel_nuts2", lambda lat, lon: NUTS)
+
+    async def only_region_for_maize(self, eppos, nuts):
+        # maize: a full regional series but no national one -> figure, index None
+        return [r for r in _rows() if r["eppo"] != "ZEAMX"] + _series("ZEAMX", NUTS, 9.0)
+
+    monkeypatch.setattr(balance_dao.BalanceDao, "get_regional_yields_batch", only_region_for_maize)
+    out, _ = await run(ES_POINT)
+    maize = _by(out, "maize")
+    assert maize["regional_yield"] and maize["regional_yield"]["relative_index"] is None
+    assert maize["regional_yield_unavailable"] == "national_series_short"
+    order = [s["species"] for s in out["species"]]
+    assert order.index("maize") > order.index("wheat") > order.index("barley")
