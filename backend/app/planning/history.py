@@ -68,9 +68,24 @@ def cycle_campaigns(cycle: dict, until: int) -> list[int]:
     return list(range(first, max(first, last) + 1))
 
 
+def _declared_only(cycle: dict) -> bool:
+    """A crop known only by the campaign a person declared: no dates at all."""
+    return (cycle.get("declared_campaign") is not None
+            and not (cycle.get("start") or {}).get("date") and not (cycle.get("end") or {}).get("date"))
+
+
+def _without_shadowed_declarations(cycles: list[dict]) -> list[dict]:
+    """Facts beat declarations: a declared-only main crop yields to a dated one of the same campaign."""
+    def main(c: dict) -> bool:
+        return (c.get("role") or "main_crop") == "main_crop"
+
+    dated = {first_campaign(c) for c in cycles if main(c) and not _declared_only(c)}
+    return [c for c in cycles if not (main(c) and _declared_only(c) and first_campaign(c) in dated)]
+
+
 def past_crops(payload: dict | None, before_campaign: int) -> list[PastCrop]:
     out = []
-    for cycle in cycles_of(payload):
+    for cycle in _without_shadowed_declarations(cycles_of(payload)):
         slug = species_slug(cycle.get("species"))
         if not slug:
             continue
