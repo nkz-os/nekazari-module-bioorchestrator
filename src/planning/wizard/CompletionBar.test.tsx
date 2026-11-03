@@ -7,8 +7,8 @@ vi.mock('@nekazari/sdk', async () => {
 });
 import CompletionBar from './CompletionBar';
 import StepCrop, { cardReasons } from './StepCrop';
-import { anyCompletion, attemptWrite, completionNeeds, declarableCrops } from '../completionModel';
-import { PlanningApiError, saveDeclaredCrop, saveDeclaredTexture, saveParcelRegime, USDA_TEXTURE_CLASSES } from '../api';
+import { anyCompletion, attemptWrite, completionNeeds, declarableCrops, remainingNeeds, type CompletionState } from '../completionModel';
+import { PlanningApiError, fetchFit, clearDeclaredTexture, saveDeclaredCrop, saveDeclaredTexture, saveParcelRegime, USDA_TEXTURE_CLASSES } from '../api';
 import type { FitResponse, Reason, SpeciesFit } from '../types';
 
 afterEach(() => vi.unstubAllGlobals());
@@ -25,7 +25,9 @@ type Row = { parcel_id: string; regime: 'rainfed' | null; regime_source: string 
 const OWN: Row = { parcel_id: 'urn:ngsi-ld:AgriParcel:t:p1', regime: 'rainfed', regime_source: 'parcel:irrigationRegime' };
 const NONE: Row = { ...OWN, regime: null, regime_source: 'unknown' };
 const MISSING = [reason('regime_missing'), reason('soil_unknown', { why: 'no_parcel_soil' })];
-const html = (fit: FitResponse, row = NONE) => renderToStaticMarkup(<CompletionBar fit={fit} row={row} onSaved={() => {}} />);
+const state = (skipped: string[] = [], saved: CompletionState['saved'] = new Set()): CompletionState =>
+  ({ skipped: new Set(skipped), saved, skip: () => {}, markSaved: () => {} });
+const html = (fit: FitResponse, row = NONE, st = state()) => renderToStaticMarkup(<CompletionBar fit={fit} row={row} onSaved={() => {}} state={st} />);
 
 describe('completion needs', () => {
   const fit = fitOf([sp('wheat', 'TRZAX', MISSING), sp('barley', 'HORVX', MISSING)], { history_missing_campaigns: [2025, 2026] });
@@ -66,10 +68,28 @@ describe('CompletionBar markup', () => {
     expect(html(fit, OWN)).not.toContain('¿Secano o regadío?');
   });
   it('StepCrop puts the bar above the recommended list and stops repeating the reasons it asks about', () => {
-    const out = renderToStaticMarkup(<StepCrop fit={fit} selected={null} onPick={() => {}} row={NONE} onCompleted={() => {}} />);
+    const out = renderToStaticMarkup(<StepCrop fit={fit} selected={null} onPick={() => {}} row={NONE} onCompleted={() => {}} completion={state()} />);
     expect(out.indexOf('Completa los datos')).toBeGreaterThan(-1);
     expect(out.indexOf('Completa los datos')).toBeLessThan(out.indexOf('Recomendados para esta parcela'));
     expect(cardReasons(fit.species[0], (r) => r.code === 'regime_missing').map((r) => r.code)).toEqual(['soil_unknown']);
+  });
+});
+
+describe('skipped and saved controls', () => {
+  const fit = fitOf([sp('wheat', 'TRZAX', MISSING), sp('barley', 'HORVX', MISSING)], { history_missing_campaigns: [2025, 2026] });
+  const step = (st: CompletionState) => renderToStaticMarkup(
+    <StepCrop fit={fit} selected={null} onPick={() => {}} row={NONE} onCompleted={() => {}} completion={st} />);
+  it('while the soil control is offered the card does not repeat the soil reason; after "No lo sé" it does', () => {
+    expect(step(state())).not.toContain('Falta el suelo de la parcela');
+    const after = step(state(['soil']));
+    expect(after).toContain('Falta el suelo de la parcela');
+    expect(after).not.toContain('¿Cuál es la textura del suelo?');
+  });
+  it('a skipped campaign leaves the other one', () => {
+    expect(remainingNeeds(completionNeeds(fit, NONE), new Set(['history:2025'])).history).toEqual([2026]);
+  });
+  it('a saved fact is acknowledged even when the control is still needed', () => {
+    expect(html(fit, NONE, state([], new Set(['soil'])))).toContain('Textura guardada');
   });
 });
 
@@ -87,8 +107,23 @@ describe('writes', () => {
   it('soil: PUTs the USDA class to the soil module with credentials', async () => {
     const f = ok(); vi.stubGlobal('fetch', f);
     await saveDeclaredTexture(PID, 'clay-loam');
-    expect(String(f.mock.calls[0][0])).toMatch(/\/api\/soil\/parcel\/urn%3Angsi-ld%3AAgriParcel%3At%3Ap1\/declared-texture$/);
+    expect(String(f.mock.calls[0][0])).toMatch(/\/api\/soil\/parcel\/t%3Ap1\/declared-texture$/);
     expect(f.mock.calls[0][1]).toMatchObject({ method: 'PUT', credentials: 'include', body: JSON.stringify({ usda_texture_class: 'clay-loam' }) });
+  });
+  it('soil: a full URN is sent the way the soil module builds it, without the URN prefix', async () => {
+    const f = ok(); vi.stubGlobal('fetch', f);
+    await saveDeclaredTexture('urn:ngsi-ld:AgriParcel:t:p1', 'loam');
+    expect(String(f.mock.calls[0][0])).toMatch(/\/api\/soil\/parcel\/t%3Ap1\/declared-texture$/);
+    await clearDeclaredTexture('urn:ngsi-ld:AgriParcel:t:p1');
+    expect(String(f.mock.calls[1][0])).toMatch(/\/api\/soil\/parcel\/t%3Ap1\/declared-texture$/);
+    expect(f.mock.calls[1][1].method).toBe('DELETE');
+  });
+  it('fit: only the read after a soil write carries the refresh flag', async () => {
+    const f = ok({ species: [] }); vi.stubGlobal('fetch', f);
+    await fetchFit(PID, 2027, null);
+    await fetchFit(PID, 2027, null, undefined, true);
+    expect(String(f.mock.calls[0][0])).not.toContain('refresh_soil');
+    expect(String(f.mock.calls[1][0])).toContain('refresh_soil=1');
   });
   it('soil: offers the 12 classes the soil module emits', () => {
     expect(USDA_TEXTURE_CLASSES).toHaveLength(12);
@@ -97,7 +132,7 @@ describe('writes', () => {
   it('history: POSTs campaign and EPPO to field operations and returns the crop id', async () => {
     const f = ok({ crop_id: 'urn:c1' }, 201); vi.stubGlobal('fetch', f);
     expect(await saveDeclaredCrop(PID, 2026, 'TRZAX')).toBe('urn:c1');
-    expect(String(f.mock.calls[0][0])).toMatch(/\/api\/field-operations\/parcels\/.+\/declared-crops$/);
+    expect(String(f.mock.calls[0][0])).toMatch(/\/api\/field-operations\/parcels\/urn%3Angsi-ld%3AAgriParcel%3At%3Ap1\/declared-crops$/);
     expect(f.mock.calls[0][1]).toMatchObject({ method: 'POST', credentials: 'include', body: JSON.stringify({ campaign: 2026, eppo: 'TRZAX' }) });
   });
   it('a refused history write carries the module error code', async () => {

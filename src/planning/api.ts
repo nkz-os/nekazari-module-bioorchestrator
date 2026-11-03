@@ -66,8 +66,9 @@ async function request<T>(method: 'GET' | 'PUT', url: string, body?: unknown, si
 export const fetchFarm = (campaign?: number, parcelId?: string, signal?: AbortSignal) =>
   request<FarmResponse>('GET', `${PLANNING}/farm${buildQuery({ campaign, parcel_id: parcelId })}`, undefined, signal);
 
-export const fetchFit = (parcelId: string, campaign: number, regime: Regime | null, signal?: AbortSignal) =>
-  request<FitResponse>('GET', `${PLANNING}/parcels/${enc(parcelId)}/fit${buildQuery({ campaign, regime })}`, undefined, signal);
+/** `refreshSoil` is sent only for the read right after a soil write: the server then skips its soil cache. */
+export const fetchFit = (parcelId: string, campaign: number, regime: Regime | null, signal?: AbortSignal, refreshSoil = false) =>
+  request<FitResponse>('GET', `${PLANNING}/parcels/${enc(parcelId)}/fit${buildQuery({ campaign, regime, refresh_soil: refreshSoil ? 1 : null })}`, undefined, signal);
 
 export const fetchVarieties = (parcelId: string, crop: string, regime: Regime, management: Management, signal?: AbortSignal) =>
   request<VarietiesResponse>('GET', `${PLANNING}/parcels/${enc(parcelId)}/varieties${buildQuery({ crop, regime, management })}`, undefined, signal);
@@ -160,12 +161,20 @@ async function writeToModule(method: 'POST' | 'PUT' | 'DELETE', url: string, bod
   return res;
 }
 
+/** The soil module's own parcel path segment: the id without its URN prefix (or anything up to "AgriParcel:"), URL-encoded. */
+export function soilParcelSegment(parcelId: string): string {
+  const canonical = 'urn:ngsi-ld:AgriParcel:';
+  if (parcelId.startsWith(canonical)) return enc(parcelId.slice(canonical.length));
+  const expanded = parcelId.match(/AgriParcel:(.+)$/);
+  return enc(expanded ? expanded[1] : parcelId);
+}
+
 /** The farmer's own topsoil texture, kept by the soil module (provenance "entered"; a lab analysis still wins). 404: no soil profile yet. */
 export const saveDeclaredTexture = async (parcelId: string, textureClass: UsdaTextureClass): Promise<void> => {
-  await writeToModule('PUT', `${API_ORIGIN}/api/soil/parcel/${enc(parcelId)}/declared-texture`, { usda_texture_class: textureClass });
+  await writeToModule('PUT', `${API_ORIGIN}/api/soil/parcel/${soilParcelSegment(parcelId)}/declared-texture`, { usda_texture_class: textureClass });
 };
 export const clearDeclaredTexture = async (parcelId: string): Promise<void> => {
-  await writeToModule('DELETE', `${API_ORIGIN}/api/soil/parcel/${enc(parcelId)}/declared-texture`);
+  await writeToModule('DELETE', `${API_ORIGIN}/api/soil/parcel/${soilParcelSegment(parcelId)}/declared-texture`);
 };
 
 export const EPPO_PATTERN = /^[A-Z0-9]{5,6}$/;

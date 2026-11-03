@@ -31,7 +31,14 @@ export default function ParcelDetail({ row, campaign, onClose, onSaved, onSimula
   const [editing, setEditing] = useState(row.regime === null);
   const targetCells = row.cells[String(campaign)] ?? [];
 
-  const fit = useLoad((s) => fetchFit(row.parcel_id, campaign, regime, s), [row.parcel_id, campaign, regime]);
+  // Set by the retry that follows a soil write and consumed by the next read: ordinary reads use the server's soil cache.
+  const freshSoil = useRef(false);
+  const loaded = useLoad((s) => {
+    const refresh = freshSoil.current;
+    freshSoil.current = false;
+    return fetchFit(row.parcel_id, campaign, regime, s, refresh);
+  }, [row.parcel_id, campaign, regime]);
+  const fit = { ...loaded, retryFreshSoil: () => { freshSoil.current = true; loaded.retry(); } };
   // The allotment just saved shows at once; the fit read that follows confirms it.
   const [savedAllotment, setSavedAllotment] = useState<{ key: string; mm: number | null } | null>(null);
   const allotmentKey = `${row.parcel_id}|${campaign}|${regime}`;

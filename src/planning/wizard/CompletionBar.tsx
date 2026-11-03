@@ -3,43 +3,46 @@ import { useTranslation } from '@nekazari/sdk';
 import { Button, Select, Stack } from '@nekazari/ui-kit';
 import { saveDeclaredCrop, saveDeclaredTexture, saveParcelRegime, USDA_TEXTURE_CLASSES } from '../api';
 import type { UsdaTextureClass } from '../api';
-import { anyCompletion, attemptWrite, completionNeeds, declarableCrops } from '../completionModel';
+import { anyCompletion, attemptWrite, completionNeeds, declarableCrops, remainingNeeds } from '../completionModel';
 import { cropName } from '../format';
-import type { WriteKind } from '../completionModel';
+import type { CompletionState, WriteKind } from '../completionModel';
 import type { FitResponse, ParcelRow, Regime } from '../types';
 
 interface Props {
   fit: FitResponse;
   row: Pick<ParcelRow, 'parcel_id' | 'regime' | 'regime_source'>;
   /** A fact was saved: the fit is read again. */
-  onSaved: () => void;
+  onSaved: (kind: WriteKind) => void;
+  state: CompletionState;
 }
 
 /**
  * One control per missing fact, above the recommended crops. Each writes to the module that owns the fact
  * and then asks for the fit again; a refused write says so and leaves the list as it is.
  */
-export default function CompletionBar({ fit, row, onSaved }: Props) {
+export default function CompletionBar({ fit, row, onSaved, state }: Props) {
   const { t, i18n } = useTranslation('bioorchestrator');
   const lang = i18n.language;
   const base = 'planning.wizard.crop.complete';
-  const needs = completionNeeds(fit, row);
+  const needs = remainingNeeds(completionNeeds(fit, row), state.skipped);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  // "No lo sé": the control is put away for this visit; nothing is saved.
-  const [skipped, setSkipped] = useState<ReadonlySet<string>>(new Set());
-  const skip = (key: string) => setSkipped((prev) => new Set(prev).add(key));
-  const history = needs.history.filter((c) => !skipped.has(`history:${c}`));
+  const skip = state.skip;
+  const history = needs.history;
   const showRegime = needs.regime;
-  const showSoil = needs.soil && !skipped.has('soil');
-  if (!anyCompletion({ regime: showRegime, soil: showSoil, history })) return null;
+  const showSoil = needs.soil;
+  const savedKinds = [...state.saved];
+  if (!anyCompletion(needs) && savedKinds.length === 0) return null;
 
   const run = async (kind: WriteKind, write: () => Promise<unknown>) => {
     setBusy(true);
     setError(null);
     const outcome = await attemptWrite(kind, write);
     setBusy(false);
-    if (outcome.ok) onSaved();
+    if (outcome.ok) {
+      state.markSaved(kind);
+      onSaved(kind);
+    }
     else setError(outcome.errorKey);
   };
 
@@ -89,6 +92,7 @@ export default function CompletionBar({ fit, row, onSaved }: Props) {
             <p className="text-nkz-xs text-nkz-text-muted">{t(`${base}.history.why`)}</p>
           </Stack>
         )}
+        {savedKinds.map((k) => <p key={k} role="status" className="text-nkz-xs text-nkz-success">{t(`${base}.saved.${k}`)}</p>)}
         {error && <p role="alert" className="text-nkz-sm text-nkz-danger">{t(`${base}.error.${error}`)}</p>}
       </Stack>
     </section>

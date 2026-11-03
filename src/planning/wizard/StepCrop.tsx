@@ -7,7 +7,8 @@ import { num, regionalLine, regionalName, regionalUnavailableKey } from '../regi
 import { irrigatedParcel, irrigationLine, irrigationUnavailableKey, isPending } from '../irrigationNeed';
 import { reasonText, reasonTone, speciesIndex } from '../fitModel';
 import { cropName } from '../format';
-import { askedByBar, completionNeeds } from '../completionModel';
+import { askedByBar, completionNeeds, remainingNeeds } from '../completionModel';
+import type { CompletionState, WriteKind } from '../completionModel';
 import type { FitResponse, ParcelRow, Reason, RegionalYield, SpeciesFit, TFn } from '../types';
 import CompletionBar from './CompletionBar';
 
@@ -69,17 +70,20 @@ export function IrrigationDetail({ s, lang, t }: { s: SpeciesFit; lang: string; 
 interface Props {
   fit: FitResponse; selected: string | null; onPick: (sp: SpeciesFit) => void;
   /** With the parcel and a way to read the fit again, missing data is asked for above the crops. */
-  row?: Pick<ParcelRow, 'parcel_id' | 'regime' | 'regime_source'>; onCompleted?: () => void;
+  row?: Pick<ParcelRow, 'parcel_id' | 'regime' | 'regime_source'>; onCompleted?: (kind: WriteKind) => void;
+  /** Skipped and saved controls; kept by the wizard because this step unmounts while the fit reloads. */
+  completion?: CompletionState;
 }
 
-export default function StepCrop({ fit, selected, onPick, row, onCompleted }: Props) {
+export default function StepCrop({ fit, selected, onPick, row, onCompleted, completion }: Props) {
   const { t, i18n } = useTranslation('bioorchestrator');
   const lang = i18n.language;
   const [query, setQuery] = useState('');
   const [infoOpen, setInfoOpen] = useState<string | null>(null);
   const names = speciesIndex(fit.species);
   const irrigated = irrigatedParcel(fit.facts?.regime);
-  const asked = row && onCompleted ? askedByBar(completionNeeds(fit, row)) : undefined;
+  const asked = row && onCompleted && completion
+    ? askedByBar(remainingNeeds(completionNeeds(fit, row), completion.skipped)) : undefined;
   const card = (s: SpeciesFit) => (
     <div key={s.species}>
       <Button variant={selected === s.species ? 'primary' : 'secondary'} aria-pressed={selected === s.species}
@@ -119,7 +123,7 @@ export default function StepCrop({ fit, selected, onPick, row, onCompleted }: Pr
   return (
     <Stack gap="stack">
       <h3 className="text-nkz-lg font-semibold text-nkz-text-primary">{t('planning.wizard.crop.title')}</h3>
-      {row && onCompleted && <CompletionBar fit={fit} row={row} onSaved={onCompleted} />}
+      {row && onCompleted && completion && <CompletionBar fit={fit} row={row} onSaved={onCompleted} state={completion} />}
       <p className="text-nkz-sm text-nkz-text-muted">{t('planning.wizard.crop.recommended')}</p>
       <Stack gap="tight">{recommendedCrops(fit.species).map(card)}</Stack>
       <Input value={query} placeholder={t('planning.wizard.crop.search')} aria-label={t('planning.wizard.crop.search')}

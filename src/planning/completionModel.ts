@@ -1,3 +1,4 @@
+import { useCallback, useState } from 'react';
 import { EPPO_PATTERN, PlanningApiError } from './api';
 import { regimeToSave } from './wizardModel';
 import type { FitResponse, ParcelRow, Reason, SpeciesFit } from './types';
@@ -23,6 +24,25 @@ export function completionNeeds(fit: FitResponse, row: Pick<ParcelRow, 'regime' 
 /** A reason the bar already asks about: a card does not repeat it. */
 export const askedByBar = (needs: Completion) => (r: Reason): boolean =>
   (needs.regime && r.code === 'regime_missing') || (needs.soil && r.code === 'soil_unknown' && r.params?.why !== 'no_tolerance');
+
+/** What the farmer put away ("No lo sé") or already saved; it lives above the step, which unmounts while the fit reloads. */
+export interface CompletionState {
+  skipped: ReadonlySet<string>; saved: ReadonlySet<WriteKind>;
+  skip: (key: string) => void; markSaved: (kind: WriteKind) => void;
+}
+
+export function useCompletionState(): CompletionState {
+  const [skipped, setSkipped] = useState<ReadonlySet<string>>(new Set());
+  const [saved, setSaved] = useState<ReadonlySet<WriteKind>>(new Set());
+  const skip = useCallback((key: string) => setSkipped((prev) => new Set(prev).add(key)), []);
+  const markSaved = useCallback((kind: WriteKind) => setSaved((prev) => new Set(prev).add(kind)), []);
+  return { skipped, saved, skip, markSaved };
+}
+
+/** The needs the bar still shows: a skipped control is not offered, but its reason stays on the cards. */
+export function remainingNeeds(needs: Completion, skipped: ReadonlySet<string>): Completion {
+  return { regime: needs.regime, soil: needs.soil && !skipped.has('soil'), history: needs.history.filter((c) => !skipped.has(`history:${c}`)) };
+}
 
 export const anyCompletion = (c: Completion): boolean => c.regime || c.soil || c.history.length > 0;
 
