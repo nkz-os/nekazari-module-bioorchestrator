@@ -39,6 +39,7 @@ from app.graph import evidence_policy as ep
 from app.services.country_lookup import country_at
 from app.services.crop_cycles_client import fetch_crop_cycles
 from app.services.soil_client import assess_soil_suitability, get_parcel_soil_properties
+from app.services.water_stress_reference import species_payload
 from app.species_registry import (
     CATALOG_SIBLING_CODES,
     resolve_species,
@@ -1101,6 +1102,30 @@ class GraphDAO:
             if r.get("gddMin") is not None and r.get("gddMax") is not None
         ]
         return sorted(rows, key=lambda r: r["gddMin"])
+
+    async def get_water_stress_reference(self, slug: str) -> dict | None:
+        """Served water-stress reference of a species slug, or None when nothing is served.
+
+        The node keeps the raw curated block (all rows); the served payload is rebuilt with
+        ``species_payload`` so unserved rows never leave the graph. Raises ValueError (not JSON)
+        or TypeError (JSON that is not an object) on a malformed stored payload; the route turns
+        either into a null field.
+        """
+        async with self._driver.session() as session:
+            result = await session.run(
+                "MATCH (n:WaterStressReference {species: $species}) RETURN n.payload AS payload LIMIT 1",
+                species=slug,
+            )
+            rows = await result.data()
+        if not rows or rows[0].get("payload") is None:
+            return None
+        try:
+            block = json.loads(rows[0]["payload"])
+        except (TypeError, json.JSONDecodeError) as exc:
+            raise ValueError(f"malformed water stress payload for {slug}") from exc
+        if not isinstance(block, dict):
+            raise TypeError(f"malformed water stress payload for {slug}")
+        return species_payload({"species": {slug: block}}, slug)
 
     async def contribute_phenology(
         self,

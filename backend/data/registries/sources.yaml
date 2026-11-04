@@ -433,6 +433,207 @@ sources:
         en: Estimates and averages are Nekazari calculations based on these data; they are not data published by the sources.
         es: Las estimaciones y medias son cálculos de Nekazari a partir de estos datos; no son datos publicados por las fuentes.
       notes: Used as published reference parameters (Kc, stage lengths); terms of reuse not audited, hence unknown.
+  - source_id: fao33
+    name: FAO Irrigation and Drainage Paper 33, Yield response to water
+    institution: FAO
+    country: INT
+    url: https://www.fao.org
+    licence:
+      licence_id: fao-copyright
+      terms_url: https://www.fao.org/contact-us/terms/en/
+      checked_at: '2026-11-03'
+      commercial_use: unknown
+      tdm_reserved: null
+      attribution_text: Doorenbos J., Kassam A.H. (1979) Yield response to water. FAO Irrigation and Drainage Paper 33, FAO,
+        Rome. ISBN 92-5-100744-6
+      attribution_url: https://www.fao.org
+      download_date: '2026-11-03'
+      processing_note:
+        en: Estimates and averages are Nekazari calculations based on these data; they are not data published by the sources.
+        es: Las estimaciones y medias son cálculos de Nekazari a partir de estos datos; no son datos publicados por las fuentes.
+      notes: licence requested 2026-11-03, pending
+  - source_id: idso1981
+    name: 'Idso et al. 1981, Normalizing the stress-degree-day parameter for environmental variability'
+    institution: Agricultural Meteorology (Elsevier)
+    country: US
+    url: https://doi.org/10.1016/0002-1571(81)90032-7
+    licence:
+      licence_id: publisher-copyright
+      terms_url: null
+      checked_at: '2026-11-04'
+      commercial_use: unknown
+      tdm_reserved: null
+      attribution_text: 'Idso S.B., Jackson R.D., Pinter P.J. Jr., Reginato R.J., Hatfield J.L. (1981) Normalizing the stress-degree-day
+        parameter for environmental variability. Agricultural Meteorology 24, 45-55. doi:10.1016/0002-1571(81)90032-7'
+      attribution_url: https://doi.org/10.1016/0002-1571(81)90032-7
+      download_date: '2026-11-04'
+      processing_note:
+        en: Estimates and averages are Nekazari calculations based on these data; they are not data published by the sources.
+        es: Las estimaciones y medias son cálculos de Nekazari a partir de estos datos; no son datos publicados por las fuentes.
+      notes: Journal article cited for the upper-limit method only (no text or figures stored); publisher licence not audited, hence unknown.
+  - source_id: idso1982
+    name: 'Idso 1982, Non-water-stressed baselines: A key to measuring and interpreting plant water stress'
+    institution: Agricultural Meteorology (Elsevier)
+    country: US
+    url: https://doi.org/10.1016/0002-1571(82)90020-6
+    licence:
+      licence_id: publisher-copyright
+      terms_url: null
+      checked_at: '2026-11-03'
+      commercial_use: unknown
+      tdm_reserved: null
+      attribution_text: 'Idso S.B. (1982) Non-water-stressed baselines: A key to measuring and interpreting plant water stress.
+        Agricultural Meteorology 27, 59-70. doi:10.1016/0002-1571(82)90020-6'
+      attribution_url: https://doi.org/10.1016/0002-1571(82)90020-6
+      download_date: '2026-11-03'
+      processing_note:
+        en: Estimates and averages are Nekazari calculations based on these data; they are not data published by the sources.
+        es: Las estimaciones y medias son cálculos de Nekazari a partir de estos datos; no son datos publicados por las fuentes.
+      notes: Journal article cited for numbers only (no text or figures stored); publisher licence not audited, hence unknown.
+  - source_id: egea2017
+    name: Egea et al. 2017, Assessing a crop water stress index derived from aerial thermal imaging and infrared thermometry
+      in super-high density olive orchards
+    institution: Agricultural Water Management (Elsevier)
+    country: ES
+    url: https://doi.org/10.1016/j.agwat.2017.03.030
+    licence:
+      licence_id: publisher-copyright
+      terms_url: null
+      checked_at: '2026-11-03'
+      commercial_use: unknown
+      tdm_reserved: null
+      attribution_text: Egea G., Padilla-Díaz C.M., Martinez-Guanter J., Fernández J.E., Pérez-Ruiz M. (2017) Assessing a crop
+        water stress index derived from aerial thermal imaging and infrared thermometry in super-high density olive orchards.
+        Agricultural Water Management 187, 210-221. doi:10.1016/j.agwat.2017.03.030
+      attribution_url: https://doi.org/10.1016/j.agwat.2017.03.030
+      download_date: '2026-11-03'
+      processing_note:
+        en: Estimates and averages are Nekazari calculations based on these data; they are not data published by the sources.
+        es: Las estimaciones y medias son cálculos de Nekazari a partir de estos datos; no son datos publicados por las fuentes.
+      notes: Journal article cited for numbers only (no text or figures stored); publisher licence not audited, hence unknown.
+  - source_id: berni2009
+    name: Berni et al. 2009, Mapping canopy conductance and CWSI in olive orchards using high resolution thermal remote sensing
+      imagery
+    institution: Remote Sensing of Environment (Elsevier)
+    country: ES
+    url: https://doi.org/10.1016/j.rse.2009.06.018
+    licence:
+      licence_id: publisher-copyright
+      terms_url: null
+      checked_at: '2026-11-03'
+      commercial_use: unknown
+      tdm_reserved: null
+      attribution_text: Berni J., Zarco-Tejada P., Sepulcre-Cantó G., Fereres E., Villalobos F. (2009) Mapping canopy conductance
+        and CWSI in olive orchards using high resolution thermal remote sensing imagery. Remote Sensing of Environment 113,
+        2380-2388. doi:10.1016/j.rse.2009.06.018
+      attribution_url: https://doi.org/10.1016/j.rse.2009.06.018
+      download_date: '2026-11-03'
+      processing_note:
+        en: Estimates and averages are Nekazari calculations based on these data; they are not data published by the sources.
+        es: Las estimaciones y medias son cálculos de Nekazari a partir de estos datos; no son datos publicados por las fuentes.
+      notes: Journal article cited for numbers only (no text or figures stored); publisher licence not audited, hence unknown.
+  - source_id: gonzalezdugo2014
+    name: Gonzalez-Dugo et al. 2014, Applicability and limitations of using the crop water stress index as an indicator of water
+      deficits in citrus orchards
+    institution: Agricultural and Forest Meteorology (Elsevier)
+    country: ES
+    url: https://doi.org/10.1016/j.agrformet.2014.08.003
+    licence:
+      licence_id: publisher-copyright
+      terms_url: null
+      checked_at: '2026-11-03'
+      commercial_use: unknown
+      tdm_reserved: null
+      attribution_text: Gonzalez-Dugo V., Zarco-Tejada P., Fereres E. (2014) Applicability and limitations of using the crop
+        water stress index as an indicator of water deficits in citrus orchards. Agricultural and Forest Meteorology 198-199,
+        94-104. doi:10.1016/j.agrformet.2014.08.003
+      attribution_url: https://doi.org/10.1016/j.agrformet.2014.08.003
+      download_date: '2026-11-03'
+      processing_note:
+        en: Estimates and averages are Nekazari calculations based on these data; they are not data published by the sources.
+        es: Las estimaciones y medias son cálculos de Nekazari a partir de estos datos; no son datos publicados por las fuentes.
+      notes: Journal article cited for numbers only (no text or figures stored); publisher licence not audited, hence unknown.
+  - source_id: gonzalezdugo2019
+    name: 'Gonzalez-Dugo et al. 2019, Transpiration from canopy temperature: Implications for the assessment of crop yield in
+      almond orchards'
+    institution: European Journal of Agronomy (Elsevier)
+    country: ES
+    url: https://doi.org/10.1016/j.eja.2019.01.010
+    licence:
+      licence_id: publisher-copyright
+      terms_url: null
+      checked_at: '2026-11-03'
+      commercial_use: unknown
+      tdm_reserved: null
+      attribution_text: 'Gonzalez-Dugo V., Lopez-Lopez M., Espadafor M., Orgaz F., Testi L., Zarco-Tejada P., Lorite I., Fereres
+        E. (2019) Transpiration from canopy temperature: Implications for the assessment of crop yield in almond orchards. European
+        Journal of Agronomy 105, 78-85. doi:10.1016/j.eja.2019.01.010'
+      attribution_url: https://doi.org/10.1016/j.eja.2019.01.010
+      download_date: '2026-11-03'
+      processing_note:
+        en: Estimates and averages are Nekazari calculations based on these data; they are not data published by the sources.
+        es: Las estimaciones y medias son cálculos de Nekazari a partir de estos datos; no son datos publicados por las fuentes.
+      notes: Journal article cited for numbers only (no text or figures stored); publisher licence not audited, hence unknown.
+  - source_id: bellvert2015
+    name: Bellvert et al. 2015, Seasonal evolution of crop water stress index in grapevine varieties determined with high-resolution
+      remote sensing thermal imagery
+    institution: Irrigation Science (Springer)
+    country: ES
+    url: https://doi.org/10.1007/s00271-014-0456-y
+    licence:
+      licence_id: publisher-copyright
+      terms_url: null
+      checked_at: '2026-11-03'
+      commercial_use: unknown
+      tdm_reserved: null
+      attribution_text: Bellvert J., Marsal J., Girona J., Zarco-Tejada P.J. (2015) Seasonal evolution of crop water stress
+        index in grapevine varieties determined with high-resolution remote sensing thermal imagery. Irrigation Science 33,
+        81-93. doi:10.1007/s00271-014-0456-y
+      attribution_url: https://doi.org/10.1007/s00271-014-0456-y
+      download_date: '2026-11-03'
+      processing_note:
+        en: Estimates and averages are Nekazari calculations based on these data; they are not data published by the sources.
+        es: Las estimaciones y medias son cálculos de Nekazari a partir de estos datos; no son datos publicados por las fuentes.
+      notes: Journal article cited for numbers only (no text or figures stored); publisher licence not audited, hence unknown.
+  - source_id: sanchezpinero2022
+    name: Sánchez-Piñero et al. 2022, Evaluation of a simplified methodology to estimate the CWSI in olive orchards
+    institution: Agricultural Water Management (Elsevier)
+    country: ES
+    url: https://doi.org/10.1016/j.agwat.2022.107729
+    licence:
+      licence_id: publisher-copyright
+      terms_url: null
+      checked_at: '2026-11-03'
+      commercial_use: unknown
+      tdm_reserved: null
+      attribution_text: Sánchez-Piñero M., Martín-Palomo M., Andreu L., Moriana A., Corell M. (2022) Evaluation of a simplified
+        methodology to estimate the CWSI in olive orchards. Agricultural Water Management 269, 107729. doi:10.1016/j.agwat.2022.107729
+      attribution_url: https://doi.org/10.1016/j.agwat.2022.107729
+      download_date: '2026-11-03'
+      processing_note:
+        en: Estimates and averages are Nekazari calculations based on these data; they are not data published by the sources.
+        es: Las estimaciones y medias son cálculos de Nekazari a partir de estos datos; no son datos publicados por las fuentes.
+      notes: Journal article cited for numbers only (no text or figures stored); publisher licence not audited, hence unknown.
+  - source_id: gonzalezdugozarcotejada2022
+    name: Gonzalez-Dugo et al. 2022, Assessing the impact of measurement errors in the calculation of CWSI for characterizing
+      the water status of several crop species
+    institution: Irrigation Science (Springer)
+    country: ES
+    url: https://doi.org/10.1007/s00271-022-00819-6
+    licence:
+      licence_id: publisher-copyright
+      terms_url: null
+      checked_at: '2026-11-03'
+      commercial_use: unknown
+      tdm_reserved: null
+      attribution_text: Gonzalez-Dugo V., Zarco-Tejada P.J. (2022) Assessing the impact of measurement errors in the calculation
+        of CWSI for characterizing the water status of several crop species. Irrigation Science 42, 431-443. doi:10.1007/s00271-022-00819-6
+      attribution_url: https://doi.org/10.1007/s00271-022-00819-6
+      download_date: '2026-11-03'
+      processing_note:
+        en: Estimates and averages are Nekazari calculations based on these data; they are not data published by the sources.
+        es: Las estimaciones y medias son cálculos de Nekazari a partir de estos datos; no son datos publicados por las fuentes.
+      notes: Journal article cited for numbers only (no text or figures stored); publisher licence not audited, hence unknown.
   - source_id: fertilicalc_script_2024
     name: FertiliCalc reference script (fertilicalc_script_231124.py)
     institution: Universidad de Córdoba / IAS-CSIC (F. J. Villalobos)
@@ -765,3 +966,39 @@ sources:
       commercial_use: unknown
       tdm_reserved: null
       notes: Not audited in the 2026-10-04 licence audit (section 4); treated as unknown until a person reads its terms.
+  - source_id: fao66
+    name: FAO Irrigation and Drainage Paper 66, Crop yield response to water
+    institution: FAO
+    country: INT
+    url: https://www.fao.org/3/i2800e/i2800e.pdf
+    licence:
+      licence_id: fao-copyright
+      terms_url: https://www.fao.org/contact-us/terms/en/
+      checked_at: '2026-11-03'
+      commercial_use: unknown
+      tdm_reserved: null
+      attribution_text: 'Steduto P., Hsiao T.C., Fereres E., Raes D. (2012) Crop yield response to water. FAO Irrigation and Drainage Paper 66, FAO, Rome.'
+      attribution_url: https://www.fao.org/3/i2800e/i2800e.pdf
+      download_date: '2026-11-03'
+      processing_note:
+        en: Estimates and averages are Nekazari calculations based on these data; they are not data published by the sources.
+        es: Las estimaciones y medias son cálculos de Nekazari a partir de estos datos; no son datos publicados por las fuentes.
+      notes: FAO licence request pending (FAO-56/33 request 2026-11-03). Cited for a qualitative statement only (p.7); ISBN not read.
+  - source_id: timesat
+    name: Jönsson and Eklundh 2004, TIMESAT, a program for analyzing time-series of satellite sensor data
+    institution: Computers & Geosciences (Elsevier)
+    country: SE
+    url: https://doi.org/10.1016/j.cageo.2004.05.006
+    licence:
+      licence_id: publisher-copyright
+      terms_url: null
+      checked_at: '2026-11-03'
+      commercial_use: unknown
+      tdm_reserved: null
+      attribution_text: 'Jönsson P., Eklundh L. (2004) TIMESAT, a program for analyzing time-series of satellite sensor data. Computers & Geosciences 30, 833-845. doi:10.1016/j.cageo.2004.05.006'
+      attribution_url: https://doi.org/10.1016/j.cageo.2004.05.006
+      download_date: '2026-11-03'
+      processing_note:
+        en: Estimates and averages are Nekazari calculations based on these data; they are not data published by the sources.
+        es: Las estimaciones y medias son cálculos de Nekazari a partir de estos datos; no son datos publicados por las fuentes.
+      notes: End-of-season rule read in the TIMESAT 2.3 Users Guide (authors, open access); the 2004 paper itself was not read. Cited for a method and a threshold only.

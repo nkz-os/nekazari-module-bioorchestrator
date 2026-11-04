@@ -486,13 +486,36 @@ def test_loadable_sources_today(reg):
         assert source.loadable == (source.licence.commercial_use in ("allowed", "permission_granted"))
 
 
+WATER_STRESS_SOURCES = {
+    "fao33", "idso1981", "idso1982", "egea2017", "berni2009", "gonzalezdugo2014", "gonzalezdugo2019", "bellvert2015",
+    "sanchezpinero2022", "gonzalezdugozarcotejada2022", "fao66", "timesat",
+}
+
+
+def test_water_stress_sources_registered(reg):
+    import json
+
+    legacy = {e["source_id"]: e for e in json.loads(
+        (DEFAULT_REGISTRIES_PATH.parent / "sources_registry.json").read_text(encoding="utf-8"))}
+    for source_id in sorted(WATER_STRESS_SOURCES):
+        source = reg.source(source_id)  # raises if missing
+        assert source.licence.commercial_use == "unknown", source_id
+        assert (source.licence.notes or "").strip(), source_id
+        assert source.licence.attribution_text and source.licence.attribution_url, source_id
+        assert source_id in legacy, source_id
+        assert legacy[source_id]["attribution_text"] == source.licence.attribution_text, source_id
+    assert "Doorenbos" in reg.source("fao33").licence.attribution_text
+    assert "92-5-100744-6" in reg.source("fao33").licence.attribution_text
+    assert "pending" in reg.source("fao33").licence.notes
+
+
 def test_audit_verdicts_are_recorded(reg):
     denied = {"NAVARRA-AGRARIA", "INTIA-EXP", "CTIFL", "LFL-BAYERN", "INIAV-LVR", "ITACYL", "IFAPA",
               "IFAPA_ALMOND", "IFAPA_ALMENDRO_2023", "AHDB", "TAGEM_TR_2012", "TAGEM_TR_CATALOG_2015",
               "TAGEM_TR_CATALOG_2017"}
     unknown = {"BSL", "NEBIH", "EVENA", "INRAMAROC", "EU-TRIAL-REPORTS", "ECOCROP-GAEZ-V4", "CPVO",
                "SCIENTIA-PIAVE", "VISION2024", "REDALYC-PLEUROTUS-2017", "WAGENINGEN-FUNGAL-SUBSTRATES-2021",
-               "NATURE-CORDYCEPS-2026", "HUNGARY-KING-OYSTER-2016", "EXCALIBUR-H2020", "fao56"}
+               "NATURE-CORDYCEPS-2026", "HUNGARY-KING-OYSTER-2016", "EXCALIBUR-H2020", "fao56"} | WATER_STRESS_SOURCES
     assert {s.source_id for s in reg.sources if s.licence.commercial_use == "denied"} == denied
     assert {s.source_id for s in reg.sources if s.licence.commercial_use == "unknown"} == unknown
 

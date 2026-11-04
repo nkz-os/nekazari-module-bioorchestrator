@@ -1,0 +1,673 @@
+# Water-stress reference: non-water-stressed baselines (NWSB), upper limits and stage flags.
+#
+# Purpose: published reference values for the crop water stress index (CWSI), served per species
+# by the water-stress API. Numbers only; see source_id and ref on every row for the citation.
+# No text, tables or figures of the papers are stored here.
+#
+# Baseline: Tc - Ta = a0_c + a1_c_per_kpa * VPD (degrees C; kPa). Upper limit (upper): `constant`
+# (value_c, degrees C) or `linear_vpd` (a0_c + a1_c_per_kpa * VPD); null when the source publishes
+# none; `idso1981` (no numbers here) = Idso et al. 1981 pp.51-52, computed by the consumer from the row's
+# a0/a1 and air temperature.
+#
+# Validity: valid.hours_after_sunrise / hours_before_sunset (0 < x < 12) give a daylight window; they
+# do not combine with solar_hour_from/to on the same row.
+# Serving: only rows with evidence primary_read AND a non-null upper are served. Rows without an
+# upper limit, and secondary rows, are kept as data but are not served (no CWSI without an upper limit).
+#
+# `post_maturity` (under stages) is a reserved key, not a stage_detection name: grain cereals after
+# physiological maturity, set from the NDVI end-of-season rule in `senescence` (gated at the maturity stage so
+# drought collapse before it cannot silence the alert; GDD only restricts, never declares), never from GDD alone. No stage_detection value is changed.
+#
+# Licences: FAO papers (fao33, fao66) are used with commercial_use unknown, pending the FAO reply.
+# Other journal sources are registered with commercial_use unknown (numbers and citations only).
+#
+# Stage names are those of stage_detection in phenology_sources.yaml.
+# ASSUMPTION: Idso 1982 "pre-heading" = emergence, tillering, stem_elongation; "post-heading" =
+#   heading, maturity (heading goes with post-heading because Idso attributes the slope change to
+#   seedheads; the exact boundary at heading is not published).
+# ASSUMPTION: Idso 1982 maize "no tassels" = emergence, vegetative_v6 (no baseline from silking on).
+# ASSUMPTION: Bellvert 2015 Stage I = vegetative; Stage II-III (one line in the paper) = veraison,
+#   maturity; postharvest = post_harvest.
+# Idso rows for species with one line only (no phase split in the paper) apply to all stages.
+dataset_version: "2026-11-03"
+
+species:
+  wheat:
+    baselines:
+      # Idso 1982 measured durum wheat only; soft wheat uses the same rows (see assumption).
+      - id: idso1982-wheat-pre-heading
+        cultivar: null
+        stages: [emergence, tillering, stem_elongation]
+        condition: sunlit
+        a0_c: 3.38
+        a1_c_per_kpa: -3.25
+        upper: {form: idso1981}
+        valid: {hours_after_sunrise: 3, hours_before_sunset: 3, clear_sky: true}
+        site: "Arizona, Kansas, Minnesota, North Dakota (USA)"
+        evidence: primary_read
+        source_id: idso1982
+        ref: "Table I p.62; UL: Idso et al. 1981 pp.51-52; validity 2-3 h after sunrise to 2-3 h before sunset, clear sky, pp.48-49"
+        assumption: "durum wheat (cv. Produra) baselines applied to soft wheat; ASSUMPTION: Idso 1982 pre-heading = emergence, tillering, stem_elongation (boundary at heading not published); window uses 3 h (prudent end of 2-3 h)"
+      - id: idso1982-wheat-post-heading
+        cultivar: null
+        stages: [heading, maturity]
+        condition: sunlit
+        a0_c: 2.88
+        a1_c_per_kpa: -2.11
+        upper: {form: idso1981}
+        valid: {hours_after_sunrise: 3, hours_before_sunset: 3, clear_sky: true}
+        site: "Arizona, Kansas, Minnesota, North Dakota (USA)"
+        evidence: primary_read
+        source_id: idso1982
+        ref: "Table I p.62; UL: Idso et al. 1981 pp.51-52; validity 2-3 h after sunrise to 2-3 h before sunset, clear sky, pp.48-49"
+        assumption: "durum wheat (cv. Produra) baselines applied to soft wheat; ASSUMPTION: Idso 1982 post-heading = heading, maturity (boundary at heading not published); window uses 3 h (prudent end of 2-3 h)"
+    stages:
+      post_maturity:
+        water_sensitive: false
+        rdi_tolerant: false
+        source_ids: [fao66]
+        ref: "FAO-66 p.7: stress in ripening has limited yield impact; post-maturity confirmed by NDVI end of season (TIMESAT rule), never by GDD alone"
+    senescence:
+      method: timesat_amplitude
+      end_fraction: 0.20
+      gate_stage: maturity
+      source_id: timesat
+      ref: "TIMESAT 2.3 Users Guide: end of season when the fitted curve falls to base + 20 % of amplitude after the peak; gate at maturity stage: drought collapse before it cannot silence the alert"
+  durum_wheat:
+    baselines:
+      - id: idso1982-durum-pre-heading
+        cultivar: null
+        stages: [emergence, tillering, stem_elongation]
+        condition: sunlit
+        a0_c: 3.38
+        a1_c_per_kpa: -3.25
+        upper: {form: idso1981}
+        valid: {hours_after_sunrise: 3, hours_before_sunset: 3, clear_sky: true}
+        site: "Arizona, Kansas, Minnesota, North Dakota (USA)"
+        evidence: primary_read
+        source_id: idso1982
+        ref: "Table I p.62; UL: Idso et al. 1981 pp.51-52; validity 2-3 h after sunrise to 2-3 h before sunset, clear sky, pp.48-49"
+        assumption: "measured on durum cv. Produra; ASSUMPTION: Idso 1982 pre-heading = emergence, tillering, stem_elongation (boundary at heading not published); window uses 3 h (prudent end of 2-3 h)"
+      - id: idso1982-durum-post-heading
+        cultivar: null
+        stages: [heading, maturity]
+        condition: sunlit
+        a0_c: 2.88
+        a1_c_per_kpa: -2.11
+        upper: {form: idso1981}
+        valid: {hours_after_sunrise: 3, hours_before_sunset: 3, clear_sky: true}
+        site: "Arizona, Kansas, Minnesota, North Dakota (USA)"
+        evidence: primary_read
+        source_id: idso1982
+        ref: "Table I p.62; UL: Idso et al. 1981 pp.51-52; validity 2-3 h after sunrise to 2-3 h before sunset, clear sky, pp.48-49"
+        assumption: "measured on durum cv. Produra; ASSUMPTION: Idso 1982 post-heading = heading, maturity (boundary at heading not published); window uses 3 h (prudent end of 2-3 h)"
+    stages:
+      post_maturity:
+        water_sensitive: false
+        rdi_tolerant: false
+        source_ids: [fao66]
+        ref: "FAO-66 p.7: stress in ripening has limited yield impact; post-maturity confirmed by NDVI end of season (TIMESAT rule), never by GDD alone"
+    senescence:
+      method: timesat_amplitude
+      end_fraction: 0.20
+      gate_stage: maturity
+      source_id: timesat
+      ref: "TIMESAT 2.3 Users Guide: end of season when the fitted curve falls to base + 20 % of amplitude after the peak; gate at maturity stage: drought collapse before it cannot silence the alert"
+  barley:
+    baselines:
+      - id: idso1982-barley-pre-heading
+        cultivar: null
+        stages: [emergence, tillering, stem_elongation]
+        condition: sunlit
+        a0_c: 2.01
+        a1_c_per_kpa: -2.25
+        upper: {form: idso1981}
+        valid: {hours_after_sunrise: 3, hours_before_sunset: 3, clear_sky: true}
+        site: "Arizona, Kansas, Minnesota, North Dakota (USA)"
+        evidence: primary_read
+        source_id: idso1982
+        ref: "Table I p.62; UL: Idso et al. 1981 pp.51-52; validity 2-3 h after sunrise to 2-3 h before sunset, clear sky, pp.48-49"
+        assumption: "ASSUMPTION: Idso 1982 pre-heading = emergence, tillering, stem_elongation (boundary at heading not published); window uses 3 h (prudent end of 2-3 h)"
+      - id: idso1982-barley-post-heading
+        cultivar: null
+        stages: [heading, maturity]
+        condition: sunlit
+        a0_c: 1.72
+        a1_c_per_kpa: -1.23
+        upper: {form: idso1981}
+        valid: {hours_after_sunrise: 3, hours_before_sunset: 3, clear_sky: true}
+        site: "Arizona, Kansas, Minnesota, North Dakota (USA)"
+        evidence: primary_read
+        source_id: idso1982
+        ref: "Table I p.62; UL: Idso et al. 1981 pp.51-52; validity 2-3 h after sunrise to 2-3 h before sunset, clear sky, pp.48-49"
+        assumption: "ASSUMPTION: Idso 1982 post-heading = heading, maturity (boundary at heading not published); window uses 3 h (prudent end of 2-3 h)"
+    stages:
+      post_maturity:
+        water_sensitive: false
+        rdi_tolerant: false
+        source_ids: [fao66]
+        ref: "FAO-66 p.7: stress in ripening has limited yield impact; post-maturity confirmed by NDVI end of season (TIMESAT rule), never by GDD alone"
+    senescence:
+      method: timesat_amplitude
+      end_fraction: 0.20
+      gate_stage: maturity
+      source_id: timesat
+      ref: "TIMESAT 2.3 Users Guide: end of season when the fitted curve falls to base + 20 % of amplitude after the peak; gate at maturity stage: drought collapse before it cannot silence the alert"
+  maize:
+    baselines:
+      - id: idso1982-maize-no-tassels
+        cultivar: null
+        stages: [emergence, vegetative_v6]
+        condition: sunlit
+        a0_c: 3.11
+        a1_c_per_kpa: -1.97
+        upper: {form: idso1981}
+        valid: {hours_after_sunrise: 3, hours_before_sunset: 3, clear_sky: true}
+        site: "Arizona, Kansas, Minnesota, North Dakota (USA)"
+        evidence: primary_read
+        source_id: idso1982
+        ref: "Table I p.62; UL: Idso et al. 1981 pp.51-52; validity 2-3 h after sunrise to 2-3 h before sunset, clear sky, pp.48-49"
+        assumption: "ASSUMPTION: Idso 1982 maize no-tassels = emergence, vegetative_v6 (no baseline from silking on); window uses 3 h (prudent end of 2-3 h)"
+    stages:
+      post_maturity:
+        water_sensitive: false
+        rdi_tolerant: false
+        source_ids: [fao66]
+        ref: "FAO-66 p.7: stress in ripening has limited yield impact; post-maturity confirmed by NDVI end of season (TIMESAT rule), never by GDD alone"
+    senescence:
+      method: timesat_amplitude
+      end_fraction: 0.20
+      gate_stage: maturity
+      source_id: timesat
+      ref: "TIMESAT 2.3 Users Guide: end of season when the fitted curve falls to base + 20 % of amplitude after the peak; gate at maturity stage: drought collapse before it cannot silence the alert"
+  oat:
+    baselines: []
+    stages:
+      post_maturity:
+        water_sensitive: false
+        rdi_tolerant: false
+        source_ids: [fao66]
+        ref: "FAO-66 p.7: stress in ripening has limited yield impact; post-maturity confirmed by NDVI end of season (TIMESAT rule), never by GDD alone"
+    senescence:
+      method: timesat_amplitude
+      end_fraction: 0.20
+      gate_stage: maturity
+      source_id: timesat
+      ref: "TIMESAT 2.3 Users Guide: end of season when the fitted curve falls to base + 20 % of amplitude after the peak; gate at maturity stage: drought collapse before it cannot silence the alert"
+  rye:
+    baselines: []
+    stages:
+      post_maturity:
+        water_sensitive: false
+        rdi_tolerant: false
+        source_ids: [fao66]
+        ref: "FAO-66 p.7: stress in ripening has limited yield impact; post-maturity confirmed by NDVI end of season (TIMESAT rule), never by GDD alone"
+    senescence:
+      method: timesat_amplitude
+      end_fraction: 0.20
+      gate_stage: maturity
+      source_id: timesat
+      ref: "TIMESAT 2.3 Users Guide: end of season when the fitted curve falls to base + 20 % of amplitude after the peak; gate at maturity stage: drought collapse before it cannot silence the alert"
+  alfalfa:
+    baselines:
+      - id: idso1982-alfalfa
+        cultivar: null
+        stages: null
+        condition: sunlit
+        a0_c: 0.51
+        a1_c_per_kpa: -1.92
+        upper: {form: idso1981}
+        valid: {hours_after_sunrise: 3, hours_before_sunset: 3, clear_sky: true}
+        site: "Arizona, Kansas, Minnesota, North Dakota (USA)"
+        evidence: primary_read
+        source_id: idso1982
+        ref: "Table I p.62; UL: Idso et al. 1981 pp.51-52; validity 2-3 h after sunrise to 2-3 h before sunset, clear sky, pp.48-49"
+        assumption: "ASSUMPTION: Idso 1982 gives one line for the species; applied to all stages; window uses 3 h (prudent end of 2-3 h)"
+    stages: {}
+  bean:
+    baselines:
+      - id: idso1982-bean
+        cultivar: null
+        stages: null
+        condition: sunlit
+        a0_c: 2.91
+        a1_c_per_kpa: -2.35
+        upper: {form: idso1981}
+        valid: {hours_after_sunrise: 3, hours_before_sunset: 3, clear_sky: true}
+        site: "Arizona, Kansas, Minnesota, North Dakota (USA)"
+        evidence: primary_read
+        source_id: idso1982
+        ref: "Table I p.62; UL: Idso et al. 1981 pp.51-52; validity 2-3 h after sunrise to 2-3 h before sunset, clear sky, pp.48-49"
+        assumption: "ASSUMPTION: Idso 1982 gives one line for the species; applied to all stages; window uses 3 h (prudent end of 2-3 h)"
+    stages: {}
+  pea:
+    baselines:
+      - id: idso1982-pea
+        cultivar: null
+        stages: null
+        condition: sunlit
+        a0_c: 2.74
+        a1_c_per_kpa: -2.13
+        upper: {form: idso1981}
+        valid: {hours_after_sunrise: 3, hours_before_sunset: 3, clear_sky: true}
+        site: "Arizona, Kansas, Minnesota, North Dakota (USA)"
+        evidence: primary_read
+        source_id: idso1982
+        ref: "Table I p.62; UL: Idso et al. 1981 pp.51-52; validity 2-3 h after sunrise to 2-3 h before sunset, clear sky, pp.48-49"
+        assumption: "ASSUMPTION: Idso 1982 gives one line for the species; applied to all stages; window uses 3 h (prudent end of 2-3 h)"
+    stages: {}
+  potato:
+    baselines:
+      - id: idso1982-potato
+        cultivar: null
+        stages: null
+        condition: sunlit
+        a0_c: 1.17
+        a1_c_per_kpa: -1.83
+        upper: {form: idso1981}
+        valid: {hours_after_sunrise: 3, hours_before_sunset: 3, clear_sky: true}
+        site: "Arizona, Kansas, Minnesota, North Dakota (USA)"
+        evidence: primary_read
+        source_id: idso1982
+        ref: "Table I p.62; UL: Idso et al. 1981 pp.51-52; validity 2-3 h after sunrise to 2-3 h before sunset, clear sky, pp.48-49"
+        assumption: "ASSUMPTION: Idso 1982 gives one line for the species; applied to all stages; window uses 3 h (prudent end of 2-3 h)"
+    stages: {}
+  soybean:
+    baselines:
+      - id: idso1982-soybean
+        cultivar: null
+        stages: null
+        condition: sunlit
+        a0_c: 1.44
+        a1_c_per_kpa: -1.34
+        upper: {form: idso1981}
+        valid: {hours_after_sunrise: 3, hours_before_sunset: 3, clear_sky: true}
+        site: "Arizona, Kansas, Minnesota, North Dakota (USA)"
+        evidence: primary_read
+        source_id: idso1982
+        ref: "Table I p.62; UL: Idso et al. 1981 pp.51-52; validity 2-3 h after sunrise to 2-3 h before sunset, clear sky, pp.48-49"
+        assumption: "ASSUMPTION: Idso 1982 gives one line for the species; applied to all stages; window uses 3 h (prudent end of 2-3 h)"
+    stages: {}
+  sugar_beet:
+    baselines:
+      - id: idso1982-sugar-beet
+        cultivar: null
+        stages: null
+        condition: sunlit
+        a0_c: 2.50
+        a1_c_per_kpa: -1.92
+        upper: {form: idso1981}
+        valid: {hours_after_sunrise: 3, hours_before_sunset: 3, clear_sky: true}
+        site: "Arizona, Kansas, Minnesota, North Dakota (USA)"
+        evidence: primary_read
+        source_id: idso1982
+        ref: "Table I p.62; UL: Idso et al. 1981 pp.51-52; validity 2-3 h after sunrise to 2-3 h before sunset, clear sky, pp.48-49"
+        assumption: "ASSUMPTION: Idso 1982 gives one line for the species; applied to all stages; window uses 3 h (prudent end of 2-3 h)"
+    stages: {}
+  sunflower:
+    baselines:
+      - id: idso1982-sunflower
+        cultivar: null
+        stages: null
+        condition: sunlit
+        a0_c: 0.66
+        a1_c_per_kpa: -1.95
+        upper: {form: idso1981}
+        valid: {hours_after_sunrise: 3, hours_before_sunset: 3, clear_sky: true}
+        site: "Arizona, Kansas, Minnesota, North Dakota (USA)"
+        evidence: primary_read
+        source_id: idso1982
+        ref: "Table I p.62; UL: Idso et al. 1981 pp.51-52; validity 2-3 h after sunrise to 2-3 h before sunset, clear sky, pp.48-49"
+        assumption: "ASSUMPTION: Idso 1982 gives one line for the species; applied to all stages; window uses 3 h (prudent end of 2-3 h)"
+    stages: {}
+  tomato:
+    baselines:
+      - id: idso1982-tomato
+        cultivar: null
+        stages: null
+        condition: sunlit
+        a0_c: 2.86
+        a1_c_per_kpa: -1.96
+        upper: {form: idso1981}
+        valid: {hours_after_sunrise: 3, hours_before_sunset: 3, clear_sky: true}
+        site: "Arizona, Kansas, Minnesota, North Dakota (USA)"
+        evidence: primary_read
+        source_id: idso1982
+        ref: "Table I p.62; UL: Idso et al. 1981 pp.51-52; validity 2-3 h after sunrise to 2-3 h before sunset, clear sky, pp.48-49"
+        assumption: "ASSUMPTION: Idso 1982 gives one line for the species; applied to all stages; window uses 3 h (prudent end of 2-3 h)"
+    stages: {}
+  olive:
+    baselines:
+      # Egea 2017 Table 2: one baseline per GMT hour. Section 2.1 gives the site coordinates
+      # (37.248979, -5.796538): solar hour = GMT hour + lon/15 (lon -5.796538), window +/- 0.5 h.
+      # Upper limit: Ta + 5 degrees C, assumed by the authors (Section 2.5).
+      - id: egea2017-t2-08gmt
+        cultivar: null
+        stages: null
+        condition: sunlit
+        a0_c: 0.94
+        a1_c_per_kpa: -0.77
+        upper: {form: constant, value_c: 5.0}
+        valid: {solar_hour_from: 7.1136, solar_hour_to: 8.1136, clear_sky: true}
+        site: "Sevilla (Spain), 37.248979 N, 5.796538 W"
+        evidence: primary_read
+        source_id: egea2017
+        ref: "Table 2, 08:00 GMT; clear-sky days DOY 167-275 (summer) only; solar window = GMT hour +/- 0.5 h shifted by longitude -5.796538 (Section 2.1 site coordinates 37.248979, -5.796538)"
+        assumption: "measured on Arbequina; applied to all olive cultivars; ASSUMPTION: hourly mean centred on the GMT hour (±0.5 h); summer (DOY 167-275) baseline applied all year"
+      - id: egea2017-t2-09gmt
+        cultivar: null
+        stages: null
+        condition: sunlit
+        a0_c: 0.97
+        a1_c_per_kpa: -0.67
+        upper: {form: constant, value_c: 5.0}
+        valid: {solar_hour_from: 8.1136, solar_hour_to: 9.1136, clear_sky: true}
+        site: "Sevilla (Spain), 37.248979 N, 5.796538 W"
+        evidence: primary_read
+        source_id: egea2017
+        ref: "Table 2, 09:00 GMT; clear-sky days DOY 167-275 (summer) only; solar window = GMT hour +/- 0.5 h shifted by longitude -5.796538 (Section 2.1 site coordinates 37.248979, -5.796538)"
+        assumption: "measured on Arbequina; applied to all olive cultivars; ASSUMPTION: hourly mean centred on the GMT hour (±0.5 h); summer (DOY 167-275) baseline applied all year"
+      - id: egea2017-t2-10gmt
+        cultivar: null
+        stages: null
+        condition: sunlit
+        a0_c: 1.44
+        a1_c_per_kpa: -0.61
+        upper: {form: constant, value_c: 5.0}
+        valid: {solar_hour_from: 9.1136, solar_hour_to: 10.1136, clear_sky: true}
+        site: "Sevilla (Spain), 37.248979 N, 5.796538 W"
+        evidence: primary_read
+        source_id: egea2017
+        ref: "Table 2, 10:00 GMT; clear-sky days DOY 167-275 (summer) only; solar window = GMT hour +/- 0.5 h shifted by longitude -5.796538 (Section 2.1 site coordinates 37.248979, -5.796538)"
+        assumption: "measured on Arbequina; applied to all olive cultivars; ASSUMPTION: hourly mean centred on the GMT hour (±0.5 h); summer (DOY 167-275) baseline applied all year"
+      - id: egea2017-t2-11gmt
+        cultivar: null
+        stages: null
+        condition: sunlit
+        a0_c: 2.18
+        a1_c_per_kpa: -0.55
+        upper: {form: constant, value_c: 5.0}
+        valid: {solar_hour_from: 10.1136, solar_hour_to: 11.1136, clear_sky: true}
+        site: "Sevilla (Spain), 37.248979 N, 5.796538 W"
+        evidence: primary_read
+        source_id: egea2017
+        ref: "Table 2, 11:00 GMT; clear-sky days DOY 167-275 (summer) only; solar window = GMT hour +/- 0.5 h shifted by longitude -5.796538 (Section 2.1 site coordinates 37.248979, -5.796538)"
+        assumption: "measured on Arbequina; applied to all olive cultivars; ASSUMPTION: hourly mean centred on the GMT hour (±0.5 h); summer (DOY 167-275) baseline applied all year"
+      - id: egea2017-t2-12gmt
+        cultivar: null
+        stages: null
+        condition: sunlit
+        a0_c: 2.50
+        a1_c_per_kpa: -0.36
+        upper: {form: constant, value_c: 5.0}
+        valid: {solar_hour_from: 11.1136, solar_hour_to: 12.1136, clear_sky: true}
+        site: "Sevilla (Spain), 37.248979 N, 5.796538 W"
+        evidence: primary_read
+        source_id: egea2017
+        ref: "Table 2, 12:00 GMT; clear-sky days DOY 167-275 (summer) only; solar window = GMT hour +/- 0.5 h shifted by longitude -5.796538 (Section 2.1 site coordinates 37.248979, -5.796538)"
+        assumption: "measured on Arbequina; applied to all olive cultivars; ASSUMPTION: hourly mean centred on the GMT hour (±0.5 h); summer (DOY 167-275) baseline applied all year"
+      - id: egea2017-t2-13gmt
+        cultivar: null
+        stages: null
+        condition: sunlit
+        a0_c: 2.43
+        a1_c_per_kpa: -0.30
+        upper: {form: constant, value_c: 5.0}
+        valid: {solar_hour_from: 12.1136, solar_hour_to: 13.1136, clear_sky: true}
+        site: "Sevilla (Spain), 37.248979 N, 5.796538 W"
+        evidence: primary_read
+        source_id: egea2017
+        ref: "Table 2, 13:00 GMT; clear-sky days DOY 167-275 (summer) only; solar window = GMT hour +/- 0.5 h shifted by longitude -5.796538 (Section 2.1 site coordinates 37.248979, -5.796538)"
+        assumption: "measured on Arbequina; applied to all olive cultivars; ASSUMPTION: hourly mean centred on the GMT hour (±0.5 h); summer (DOY 167-275) baseline applied all year"
+      - id: egea2017-t2-14gmt
+        cultivar: null
+        stages: null
+        condition: sunlit
+        a0_c: 2.05
+        a1_c_per_kpa: -0.32
+        upper: {form: constant, value_c: 5.0}
+        valid: {solar_hour_from: 13.1136, solar_hour_to: 14.1136, clear_sky: true}
+        site: "Sevilla (Spain), 37.248979 N, 5.796538 W"
+        evidence: primary_read
+        source_id: egea2017
+        ref: "Table 2, 14:00 GMT; clear-sky days DOY 167-275 (summer) only; solar window = GMT hour +/- 0.5 h shifted by longitude -5.796538 (Section 2.1 site coordinates 37.248979, -5.796538)"
+        assumption: "measured on Arbequina; applied to all olive cultivars; ASSUMPTION: hourly mean centred on the GMT hour (±0.5 h); summer (DOY 167-275) baseline applied all year"
+      - id: egea2017-t2-15gmt
+        cultivar: null
+        stages: null
+        condition: sunlit
+        a0_c: 1.43
+        a1_c_per_kpa: -0.30
+        upper: {form: constant, value_c: 5.0}
+        valid: {solar_hour_from: 14.1136, solar_hour_to: 15.1136, clear_sky: true}
+        site: "Sevilla (Spain), 37.248979 N, 5.796538 W"
+        evidence: primary_read
+        source_id: egea2017
+        ref: "Table 2, 15:00 GMT; clear-sky days DOY 167-275 (summer) only; solar window = GMT hour +/- 0.5 h shifted by longitude -5.796538 (Section 2.1 site coordinates 37.248979, -5.796538)"
+        assumption: "measured on Arbequina; applied to all olive cultivars; ASSUMPTION: hourly mean centred on the GMT hour (±0.5 h); summer (DOY 167-275) baseline applied all year"
+      - id: egea2017-t2-16gmt
+        cultivar: null
+        stages: null
+        condition: sunlit
+        a0_c: 0.83
+        a1_c_per_kpa: -0.30
+        upper: {form: constant, value_c: 5.0}
+        valid: {solar_hour_from: 15.1136, solar_hour_to: 16.1136, clear_sky: true}
+        site: "Sevilla (Spain), 37.248979 N, 5.796538 W"
+        evidence: primary_read
+        source_id: egea2017
+        ref: "Table 2, 16:00 GMT; clear-sky days DOY 167-275 (summer) only; solar window = GMT hour +/- 0.5 h shifted by longitude -5.796538 (Section 2.1 site coordinates 37.248979, -5.796538)"
+        assumption: "measured on Arbequina; applied to all olive cultivars; ASSUMPTION: hourly mean centred on the GMT hour (±0.5 h); summer (DOY 167-275) baseline applied all year"
+      - id: egea2017-t2-17gmt
+        cultivar: null
+        stages: null
+        condition: sunlit
+        a0_c: 0.31
+        a1_c_per_kpa: -0.31
+        upper: {form: constant, value_c: 5.0}
+        valid: {solar_hour_from: 16.1136, solar_hour_to: 17.1136, clear_sky: true}
+        site: "Sevilla (Spain), 37.248979 N, 5.796538 W"
+        evidence: primary_read
+        source_id: egea2017
+        ref: "Table 2, 17:00 GMT; clear-sky days DOY 167-275 (summer) only; solar window = GMT hour +/- 0.5 h shifted by longitude -5.796538 (Section 2.1 site coordinates 37.248979, -5.796538)"
+        assumption: "measured on Arbequina; applied to all olive cultivars; ASSUMPTION: hourly mean centred on the GMT hour (±0.5 h); summer (DOY 167-275) baseline applied all year"
+      - id: egea2017-t2-18gmt
+        cultivar: null
+        stages: null
+        condition: sunlit
+        a0_c: -0.09
+        a1_c_per_kpa: -0.32
+        upper: {form: constant, value_c: 5.0}
+        valid: {solar_hour_from: 17.1136, solar_hour_to: 18.1136, clear_sky: true}
+        site: "Sevilla (Spain), 37.248979 N, 5.796538 W"
+        evidence: primary_read
+        source_id: egea2017
+        ref: "Table 2, 18:00 GMT; clear-sky days DOY 167-275 (summer) only; solar window = GMT hour +/- 0.5 h shifted by longitude -5.796538 (Section 2.1 site coordinates 37.248979, -5.796538)"
+        assumption: "measured on Arbequina; applied to all olive cultivars; ASSUMPTION: hourly mean centred on the GMT hour (±0.5 h); summer (DOY 167-275) baseline applied all year"
+      # Berni 2009: hourly means close to solar noon (12:30 GMT); no upper limit published.
+      - id: berni2009-noon
+        cultivar: Arbequina
+        stages: null
+        condition: sunlit
+        a0_c: 2.08
+        a1_c_per_kpa: -0.35
+        upper: null
+        valid: {clear_sky: true}
+        site: "Cordoba (Spain)"
+        evidence: primary_read
+        source_id: berni2009
+        ref: "Section 3"
+    stages:
+      pit_hardening:
+        water_sensitive: unknown
+        rdi_tolerant: true
+        source_ids: [sanchezpinero2022]
+        ref: "RDI practice during pit hardening verified in Sanchez-Pinero 2022 (Section 2.1); the yield tolerance of the stage is secondary (Moriana 2003 pending)"
+  almond:
+    baselines:
+      # Gonzalez-Dugo 2019: 11 to 13 h solar time, cloudless days. Upper limit: Idso 1981 form (no published equation).
+      - id: gonzalezdugo2019-summer
+        cultivar: null
+        stages: null
+        condition: sunlit
+        a0_c: 3.419
+        a1_c_per_kpa: -1.207
+        upper: {form: idso1981}
+        valid: {solar_hour_from: 11, solar_hour_to: 13, clear_sky: true}
+        site: "IFAPA Cordoba (Spain)"
+        evidence: primary_read
+        source_id: gonzalezdugo2019
+        ref: "Section 3"
+    stages: {}
+  pistachio:
+    baselines:
+      # Secondary: original paper not read; never served.
+      - id: testi2008-kerman
+        cultivar: Kerman
+        stages: null
+        condition: sunlit
+        a0_c: 2.44
+        a1_c_per_kpa: -1.33
+        upper: null
+        valid: {clear_sky: true}
+        site: "unknown"
+        evidence: secondary
+        source_id: egea2017
+        ref: "Testi et al. 2008 (doi:10.1007/s00271-008-0104-5), seen cited in Egea 2017; original not read"
+    stages: {}
+  grapevine:
+    baselines:
+      # Bellvert 2015 Table 3: baseline = lower limit (LL), upper = UL (a0 + a1*VPD).
+      # Valid 11-16 h solar time, clear days; LL developed for VPD 1-5 kPa.
+      # Syrah and Tempranillo have no postharvest row in the paper.
+      - id: bellvert2015-pinot-noir-i
+        cultivar: "Pinot Noir"
+        stages: [vegetative]
+        condition: sunlit
+        a0_c: 1.226
+        a1_c_per_kpa: -1.544
+        upper: {form: linear_vpd, a0_c: 5.043, a1_c_per_kpa: 0.429}
+        valid: {solar_hour_from: 11, solar_hour_to: 16, vpd_kpa_min: 1, vpd_kpa_max: 5, clear_sky: true}
+        site: "Raimat (Spain)"
+        evidence: primary_read
+        source_id: bellvert2015
+        ref: "Table 3, Stage I"
+        assumption: "ASSUMPTION: Bellvert 2015 Stage I = vegetative"
+      - id: bellvert2015-pinot-noir-ii-iii
+        cultivar: "Pinot Noir"
+        stages: [veraison, maturity]
+        condition: sunlit
+        a0_c: 1.332
+        a1_c_per_kpa: -1.331
+        upper: {form: linear_vpd, a0_c: 5.808, a1_c_per_kpa: 0.316}
+        valid: {solar_hour_from: 11, solar_hour_to: 16, vpd_kpa_min: 1, vpd_kpa_max: 5, clear_sky: true}
+        site: "Raimat (Spain)"
+        evidence: primary_read
+        source_id: bellvert2015
+        ref: "Table 3, Stage II-III"
+        assumption: "ASSUMPTION: Bellvert 2015 Stage II-III (one line in the paper) = veraison, maturity"
+      - id: bellvert2015-pinot-noir-post
+        cultivar: "Pinot Noir"
+        stages: [post_harvest]
+        condition: sunlit
+        a0_c: 3.887
+        a1_c_per_kpa: -1.593
+        upper: {form: linear_vpd, a0_c: 5.383, a1_c_per_kpa: 0.250}
+        valid: {solar_hour_from: 11, solar_hour_to: 16, vpd_kpa_min: 1, vpd_kpa_max: 5, clear_sky: true}
+        site: "Raimat (Spain)"
+        evidence: primary_read
+        source_id: bellvert2015
+        ref: "Table 3, Postharvest"
+        assumption: "ASSUMPTION: Bellvert 2015 postharvest = post_harvest"
+      - id: bellvert2015-chardonnay-i
+        cultivar: Chardonnay
+        stages: [vegetative]
+        condition: sunlit
+        a0_c: 3.638
+        a1_c_per_kpa: -2.226
+        upper: {form: linear_vpd, a0_c: 6.609, a1_c_per_kpa: 0.632}
+        valid: {solar_hour_from: 11, solar_hour_to: 16, vpd_kpa_min: 1, vpd_kpa_max: 5, clear_sky: true}
+        site: "Raimat (Spain)"
+        evidence: primary_read
+        source_id: bellvert2015
+        ref: "Table 3, Stage I"
+        assumption: "ASSUMPTION: Bellvert 2015 Stage I = vegetative"
+      - id: bellvert2015-chardonnay-ii-iii
+        cultivar: Chardonnay
+        stages: [veraison, maturity]
+        condition: sunlit
+        a0_c: 2.157
+        a1_c_per_kpa: -1.393
+        upper: {form: linear_vpd, a0_c: 6.451, a1_c_per_kpa: 0.635}
+        valid: {solar_hour_from: 11, solar_hour_to: 16, vpd_kpa_min: 1, vpd_kpa_max: 5, clear_sky: true}
+        site: "Raimat (Spain)"
+        evidence: primary_read
+        source_id: bellvert2015
+        ref: "Table 3, Stage II-III"
+        assumption: "ASSUMPTION: Bellvert 2015 Stage II-III (one line in the paper) = veraison, maturity"
+      - id: bellvert2015-chardonnay-post
+        cultivar: Chardonnay
+        stages: [post_harvest]
+        condition: sunlit
+        a0_c: 1.551
+        a1_c_per_kpa: -1.285
+        upper: {form: linear_vpd, a0_c: 4.415, a1_c_per_kpa: 0.205}
+        valid: {solar_hour_from: 11, solar_hour_to: 16, vpd_kpa_min: 1, vpd_kpa_max: 5, clear_sky: true}
+        site: "Raimat (Spain)"
+        evidence: primary_read
+        source_id: bellvert2015
+        ref: "Table 3, Postharvest"
+        assumption: "ASSUMPTION: Bellvert 2015 postharvest = post_harvest"
+      - id: bellvert2015-syrah-i
+        cultivar: Syrah
+        stages: [vegetative]
+        condition: sunlit
+        a0_c: 3.176
+        a1_c_per_kpa: -2.213
+        upper: {form: linear_vpd, a0_c: 4.653, a1_c_per_kpa: 0.371}
+        valid: {solar_hour_from: 11, solar_hour_to: 16, vpd_kpa_min: 1, vpd_kpa_max: 5, clear_sky: true}
+        site: "Raimat (Spain)"
+        evidence: primary_read
+        source_id: bellvert2015
+        ref: "Table 3, Stage I"
+        assumption: "ASSUMPTION: Bellvert 2015 Stage I = vegetative"
+      - id: bellvert2015-syrah-ii-iii
+        cultivar: Syrah
+        stages: [veraison, maturity]
+        condition: sunlit
+        a0_c: 2.729
+        a1_c_per_kpa: -1.465
+        upper: {form: linear_vpd, a0_c: 4.673, a1_c_per_kpa: 0.228}
+        valid: {solar_hour_from: 11, solar_hour_to: 16, vpd_kpa_min: 1, vpd_kpa_max: 5, clear_sky: true}
+        site: "Raimat (Spain)"
+        evidence: primary_read
+        source_id: bellvert2015
+        ref: "Table 3, Stage II-III"
+        assumption: "ASSUMPTION: Bellvert 2015 Stage II-III (one line in the paper) = veraison, maturity"
+      - id: bellvert2015-tempranillo-i
+        cultivar: Tempranillo
+        stages: [vegetative]
+        condition: sunlit
+        a0_c: 1.098
+        a1_c_per_kpa: -1.438
+        upper: {form: linear_vpd, a0_c: 3.977, a1_c_per_kpa: 0.261}
+        valid: {solar_hour_from: 11, solar_hour_to: 16, vpd_kpa_min: 1, vpd_kpa_max: 5, clear_sky: true}
+        site: "Raimat (Spain)"
+        evidence: primary_read
+        source_id: bellvert2015
+        ref: "Table 3, Stage I"
+        assumption: "ASSUMPTION: Bellvert 2015 Stage I = vegetative"
+      - id: bellvert2015-tempranillo-ii-iii
+        cultivar: Tempranillo
+        stages: [veraison, maturity]
+        condition: sunlit
+        a0_c: 1.253
+        a1_c_per_kpa: -1.780
+        upper: {form: linear_vpd, a0_c: 5.317, a1_c_per_kpa: 0.466}
+        valid: {solar_hour_from: 11, solar_hour_to: 16, vpd_kpa_min: 1, vpd_kpa_max: 5, clear_sky: true}
+        site: "Raimat (Spain)"
+        evidence: primary_read
+        source_id: bellvert2015
+        ref: "Table 3, Stage II-III"
+        assumption: "ASSUMPTION: Bellvert 2015 Stage II-III (one line in the paper) = veraison, maturity"
+    stages: {}

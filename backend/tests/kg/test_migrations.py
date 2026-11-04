@@ -434,6 +434,8 @@ EXPECTED_CONSTRAINTS = {
     "source_sourceid": ("Source", ("sourceId",)),
     "study_studykey": ("Study", ("studyKey",)),
     "article_source_documentkey": ("ArticleSource", ("documentKey",)),
+    # 011
+    "water_stress_reference_species": ("WaterStressReference", ("species",)),
     # runner bootstrap
     "schema_version_file": ("SchemaVersion", ("file",)),
 }
@@ -481,7 +483,7 @@ def test_all_shipped_migrations_apply_on_empty_community_and_match_expected_sche
     report = _run(apply_migrations(db))
 
     assert report.files == tuple(m.name for m in discover_migrations())
-    assert report.files[0] == "001_schema_constraints.cypher" and report.files[-1] == "010_kg_identity.cypher"
+    assert report.files[0] == "001_schema_constraints.cypher" and report.files[-1] == "011_water_stress_reference.cypher"
     assert constraints(db) == _expected_constraint_set()
     assert indexes(db) == _expected_index_set()
     versions = schema_versions(db)
@@ -545,6 +547,7 @@ def test_enterprise_directory_holds_no_runnable_migration_names():
         "008_climate_cell.cypher",
         "009_trial_site_name_index.cypher",
         "010_kg_identity.cypher",
+        "011_water_stress_reference.cypher",
     ]
 
 
