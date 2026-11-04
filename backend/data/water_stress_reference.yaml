@@ -6,8 +6,11 @@
 #
 # Baseline: Tc - Ta = a0_c + a1_c_per_kpa * VPD (degrees C; kPa). Upper limit (upper): `constant`
 # (value_c, degrees C) or `linear_vpd` (a0_c + a1_c_per_kpa * VPD); null when the source publishes
-# none. The Idso 1981 upper-limit formula was not found in any source read, so no such form exists.
+# none; `idso1981` (no numbers here) = Idso et al. 1981 pp.51-52, computed by the consumer from the row's
+# a0/a1 and air temperature.
 #
+# Validity: valid.hours_after_sunrise / hours_before_sunset (0 < x < 12) give a daylight window; they
+# do not combine with solar_hour_from/to on the same row.
 # Serving: only rows with evidence primary_read AND a non-null upper are served. Rows without an
 # upper limit, and secondary rows, are kept as data but are not served (no CWSI without an upper limit).
 #
@@ -33,31 +36,31 @@ species:
     baselines:
       # Idso 1982 measured durum wheat only; soft wheat uses the same rows (see assumption).
       - id: idso1982-wheat-pre-heading
-        cultivar: Produra
+        cultivar: null
         stages: [emergence, tillering, stem_elongation]
         condition: sunlit
         a0_c: 3.38
         a1_c_per_kpa: -3.25
-        upper: null
-        valid: {clear_sky: true}
+        upper: {form: idso1981}
+        valid: {hours_after_sunrise: 3, hours_before_sunset: 3, clear_sky: true}
         site: "Arizona, Kansas, Minnesota, North Dakota (USA)"
         evidence: primary_read
         source_id: idso1982
-        ref: "Table I p.62"
-        assumption: "durum wheat (cv. Produra) baselines applied to soft wheat; ASSUMPTION: Idso 1982 pre-heading = emergence, tillering, stem_elongation (boundary at heading not published)"
+        ref: "Table I p.62; UL: Idso et al. 1981 pp.51-52; validity 2-3 h after sunrise to 2-3 h before sunset, clear sky, pp.48-49"
+        assumption: "durum wheat (cv. Produra) baselines applied to soft wheat; ASSUMPTION: Idso 1982 pre-heading = emergence, tillering, stem_elongation (boundary at heading not published); window uses 3 h (prudent end of 2-3 h)"
       - id: idso1982-wheat-post-heading
-        cultivar: Produra
+        cultivar: null
         stages: [heading, maturity]
         condition: sunlit
         a0_c: 2.88
         a1_c_per_kpa: -2.11
-        upper: null
-        valid: {clear_sky: true}
+        upper: {form: idso1981}
+        valid: {hours_after_sunrise: 3, hours_before_sunset: 3, clear_sky: true}
         site: "Arizona, Kansas, Minnesota, North Dakota (USA)"
         evidence: primary_read
         source_id: idso1982
-        ref: "Table I p.62"
-        assumption: "durum wheat (cv. Produra) baselines applied to soft wheat; ASSUMPTION: Idso 1982 post-heading = heading, maturity (boundary at heading not published)"
+        ref: "Table I p.62; UL: Idso et al. 1981 pp.51-52; validity 2-3 h after sunrise to 2-3 h before sunset, clear sky, pp.48-49"
+        assumption: "durum wheat (cv. Produra) baselines applied to soft wheat; ASSUMPTION: Idso 1982 post-heading = heading, maturity (boundary at heading not published); window uses 3 h (prudent end of 2-3 h)"
     stages:
       post_maturity:
         water_sensitive: false
@@ -73,31 +76,31 @@ species:
   durum_wheat:
     baselines:
       - id: idso1982-durum-pre-heading
-        cultivar: Produra
+        cultivar: null
         stages: [emergence, tillering, stem_elongation]
         condition: sunlit
         a0_c: 3.38
         a1_c_per_kpa: -3.25
-        upper: null
-        valid: {clear_sky: true}
+        upper: {form: idso1981}
+        valid: {hours_after_sunrise: 3, hours_before_sunset: 3, clear_sky: true}
         site: "Arizona, Kansas, Minnesota, North Dakota (USA)"
         evidence: primary_read
         source_id: idso1982
-        ref: "Table I p.62"
-        assumption: "ASSUMPTION: Idso 1982 pre-heading = emergence, tillering, stem_elongation (boundary at heading not published)"
+        ref: "Table I p.62; UL: Idso et al. 1981 pp.51-52; validity 2-3 h after sunrise to 2-3 h before sunset, clear sky, pp.48-49"
+        assumption: "measured on durum cv. Produra; ASSUMPTION: Idso 1982 pre-heading = emergence, tillering, stem_elongation (boundary at heading not published); window uses 3 h (prudent end of 2-3 h)"
       - id: idso1982-durum-post-heading
-        cultivar: Produra
+        cultivar: null
         stages: [heading, maturity]
         condition: sunlit
         a0_c: 2.88
         a1_c_per_kpa: -2.11
-        upper: null
-        valid: {clear_sky: true}
+        upper: {form: idso1981}
+        valid: {hours_after_sunrise: 3, hours_before_sunset: 3, clear_sky: true}
         site: "Arizona, Kansas, Minnesota, North Dakota (USA)"
         evidence: primary_read
         source_id: idso1982
-        ref: "Table I p.62"
-        assumption: "ASSUMPTION: Idso 1982 post-heading = heading, maturity (boundary at heading not published)"
+        ref: "Table I p.62; UL: Idso et al. 1981 pp.51-52; validity 2-3 h after sunrise to 2-3 h before sunset, clear sky, pp.48-49"
+        assumption: "measured on durum cv. Produra; ASSUMPTION: Idso 1982 post-heading = heading, maturity (boundary at heading not published); window uses 3 h (prudent end of 2-3 h)"
     stages:
       post_maturity:
         water_sensitive: false
@@ -118,26 +121,26 @@ species:
         condition: sunlit
         a0_c: 2.01
         a1_c_per_kpa: -2.25
-        upper: null
-        valid: {clear_sky: true}
+        upper: {form: idso1981}
+        valid: {hours_after_sunrise: 3, hours_before_sunset: 3, clear_sky: true}
         site: "Arizona, Kansas, Minnesota, North Dakota (USA)"
         evidence: primary_read
         source_id: idso1982
-        ref: "Table I p.62"
-        assumption: "ASSUMPTION: Idso 1982 pre-heading = emergence, tillering, stem_elongation (boundary at heading not published)"
+        ref: "Table I p.62; UL: Idso et al. 1981 pp.51-52; validity 2-3 h after sunrise to 2-3 h before sunset, clear sky, pp.48-49"
+        assumption: "ASSUMPTION: Idso 1982 pre-heading = emergence, tillering, stem_elongation (boundary at heading not published); window uses 3 h (prudent end of 2-3 h)"
       - id: idso1982-barley-post-heading
         cultivar: null
         stages: [heading, maturity]
         condition: sunlit
         a0_c: 1.72
         a1_c_per_kpa: -1.23
-        upper: null
-        valid: {clear_sky: true}
+        upper: {form: idso1981}
+        valid: {hours_after_sunrise: 3, hours_before_sunset: 3, clear_sky: true}
         site: "Arizona, Kansas, Minnesota, North Dakota (USA)"
         evidence: primary_read
         source_id: idso1982
-        ref: "Table I p.62"
-        assumption: "ASSUMPTION: Idso 1982 post-heading = heading, maturity (boundary at heading not published)"
+        ref: "Table I p.62; UL: Idso et al. 1981 pp.51-52; validity 2-3 h after sunrise to 2-3 h before sunset, clear sky, pp.48-49"
+        assumption: "ASSUMPTION: Idso 1982 post-heading = heading, maturity (boundary at heading not published); window uses 3 h (prudent end of 2-3 h)"
     stages:
       post_maturity:
         water_sensitive: false
@@ -158,13 +161,13 @@ species:
         condition: sunlit
         a0_c: 3.11
         a1_c_per_kpa: -1.97
-        upper: null
-        valid: {clear_sky: true}
+        upper: {form: idso1981}
+        valid: {hours_after_sunrise: 3, hours_before_sunset: 3, clear_sky: true}
         site: "Arizona, Kansas, Minnesota, North Dakota (USA)"
         evidence: primary_read
         source_id: idso1982
-        ref: "Table I p.62"
-        assumption: "ASSUMPTION: Idso 1982 maize no-tassels = emergence, vegetative_v6 (no baseline from silking on)"
+        ref: "Table I p.62; UL: Idso et al. 1981 pp.51-52; validity 2-3 h after sunrise to 2-3 h before sunset, clear sky, pp.48-49"
+        assumption: "ASSUMPTION: Idso 1982 maize no-tassels = emergence, vegetative_v6 (no baseline from silking on); window uses 3 h (prudent end of 2-3 h)"
     stages:
       post_maturity:
         water_sensitive: false
@@ -213,13 +216,13 @@ species:
         condition: sunlit
         a0_c: 0.51
         a1_c_per_kpa: -1.92
-        upper: null
-        valid: {clear_sky: true}
+        upper: {form: idso1981}
+        valid: {hours_after_sunrise: 3, hours_before_sunset: 3, clear_sky: true}
         site: "Arizona, Kansas, Minnesota, North Dakota (USA)"
         evidence: primary_read
         source_id: idso1982
-        ref: "Table I p.62"
-        assumption: "ASSUMPTION: Idso 1982 gives one line for the species; applied to all stages"
+        ref: "Table I p.62; UL: Idso et al. 1981 pp.51-52; validity 2-3 h after sunrise to 2-3 h before sunset, clear sky, pp.48-49"
+        assumption: "ASSUMPTION: Idso 1982 gives one line for the species; applied to all stages; window uses 3 h (prudent end of 2-3 h)"
     stages: {}
   bean:
     baselines:
@@ -229,13 +232,13 @@ species:
         condition: sunlit
         a0_c: 2.91
         a1_c_per_kpa: -2.35
-        upper: null
-        valid: {clear_sky: true}
+        upper: {form: idso1981}
+        valid: {hours_after_sunrise: 3, hours_before_sunset: 3, clear_sky: true}
         site: "Arizona, Kansas, Minnesota, North Dakota (USA)"
         evidence: primary_read
         source_id: idso1982
-        ref: "Table I p.62"
-        assumption: "ASSUMPTION: Idso 1982 gives one line for the species; applied to all stages"
+        ref: "Table I p.62; UL: Idso et al. 1981 pp.51-52; validity 2-3 h after sunrise to 2-3 h before sunset, clear sky, pp.48-49"
+        assumption: "ASSUMPTION: Idso 1982 gives one line for the species; applied to all stages; window uses 3 h (prudent end of 2-3 h)"
     stages: {}
   pea:
     baselines:
@@ -245,13 +248,13 @@ species:
         condition: sunlit
         a0_c: 2.74
         a1_c_per_kpa: -2.13
-        upper: null
-        valid: {clear_sky: true}
+        upper: {form: idso1981}
+        valid: {hours_after_sunrise: 3, hours_before_sunset: 3, clear_sky: true}
         site: "Arizona, Kansas, Minnesota, North Dakota (USA)"
         evidence: primary_read
         source_id: idso1982
-        ref: "Table I p.62"
-        assumption: "ASSUMPTION: Idso 1982 gives one line for the species; applied to all stages"
+        ref: "Table I p.62; UL: Idso et al. 1981 pp.51-52; validity 2-3 h after sunrise to 2-3 h before sunset, clear sky, pp.48-49"
+        assumption: "ASSUMPTION: Idso 1982 gives one line for the species; applied to all stages; window uses 3 h (prudent end of 2-3 h)"
     stages: {}
   potato:
     baselines:
@@ -261,13 +264,13 @@ species:
         condition: sunlit
         a0_c: 1.17
         a1_c_per_kpa: -1.83
-        upper: null
-        valid: {clear_sky: true}
+        upper: {form: idso1981}
+        valid: {hours_after_sunrise: 3, hours_before_sunset: 3, clear_sky: true}
         site: "Arizona, Kansas, Minnesota, North Dakota (USA)"
         evidence: primary_read
         source_id: idso1982
-        ref: "Table I p.62"
-        assumption: "ASSUMPTION: Idso 1982 gives one line for the species; applied to all stages"
+        ref: "Table I p.62; UL: Idso et al. 1981 pp.51-52; validity 2-3 h after sunrise to 2-3 h before sunset, clear sky, pp.48-49"
+        assumption: "ASSUMPTION: Idso 1982 gives one line for the species; applied to all stages; window uses 3 h (prudent end of 2-3 h)"
     stages: {}
   soybean:
     baselines:
@@ -277,13 +280,13 @@ species:
         condition: sunlit
         a0_c: 1.44
         a1_c_per_kpa: -1.34
-        upper: null
-        valid: {clear_sky: true}
+        upper: {form: idso1981}
+        valid: {hours_after_sunrise: 3, hours_before_sunset: 3, clear_sky: true}
         site: "Arizona, Kansas, Minnesota, North Dakota (USA)"
         evidence: primary_read
         source_id: idso1982
-        ref: "Table I p.62"
-        assumption: "ASSUMPTION: Idso 1982 gives one line for the species; applied to all stages"
+        ref: "Table I p.62; UL: Idso et al. 1981 pp.51-52; validity 2-3 h after sunrise to 2-3 h before sunset, clear sky, pp.48-49"
+        assumption: "ASSUMPTION: Idso 1982 gives one line for the species; applied to all stages; window uses 3 h (prudent end of 2-3 h)"
     stages: {}
   sugar_beet:
     baselines:
@@ -293,13 +296,13 @@ species:
         condition: sunlit
         a0_c: 2.50
         a1_c_per_kpa: -1.92
-        upper: null
-        valid: {clear_sky: true}
+        upper: {form: idso1981}
+        valid: {hours_after_sunrise: 3, hours_before_sunset: 3, clear_sky: true}
         site: "Arizona, Kansas, Minnesota, North Dakota (USA)"
         evidence: primary_read
         source_id: idso1982
-        ref: "Table I p.62"
-        assumption: "ASSUMPTION: Idso 1982 gives one line for the species; applied to all stages"
+        ref: "Table I p.62; UL: Idso et al. 1981 pp.51-52; validity 2-3 h after sunrise to 2-3 h before sunset, clear sky, pp.48-49"
+        assumption: "ASSUMPTION: Idso 1982 gives one line for the species; applied to all stages; window uses 3 h (prudent end of 2-3 h)"
     stages: {}
   sunflower:
     baselines:
@@ -309,13 +312,13 @@ species:
         condition: sunlit
         a0_c: 0.66
         a1_c_per_kpa: -1.95
-        upper: null
-        valid: {clear_sky: true}
+        upper: {form: idso1981}
+        valid: {hours_after_sunrise: 3, hours_before_sunset: 3, clear_sky: true}
         site: "Arizona, Kansas, Minnesota, North Dakota (USA)"
         evidence: primary_read
         source_id: idso1982
-        ref: "Table I p.62"
-        assumption: "ASSUMPTION: Idso 1982 gives one line for the species; applied to all stages"
+        ref: "Table I p.62; UL: Idso et al. 1981 pp.51-52; validity 2-3 h after sunrise to 2-3 h before sunset, clear sky, pp.48-49"
+        assumption: "ASSUMPTION: Idso 1982 gives one line for the species; applied to all stages; window uses 3 h (prudent end of 2-3 h)"
     stages: {}
   tomato:
     baselines:
@@ -325,13 +328,13 @@ species:
         condition: sunlit
         a0_c: 2.86
         a1_c_per_kpa: -1.96
-        upper: null
-        valid: {clear_sky: true}
+        upper: {form: idso1981}
+        valid: {hours_after_sunrise: 3, hours_before_sunset: 3, clear_sky: true}
         site: "Arizona, Kansas, Minnesota, North Dakota (USA)"
         evidence: primary_read
         source_id: idso1982
-        ref: "Table I p.62"
-        assumption: "ASSUMPTION: Idso 1982 gives one line for the species; applied to all stages"
+        ref: "Table I p.62; UL: Idso et al. 1981 pp.51-52; validity 2-3 h after sunrise to 2-3 h before sunset, clear sky, pp.48-49"
+        assumption: "ASSUMPTION: Idso 1982 gives one line for the species; applied to all stages; window uses 3 h (prudent end of 2-3 h)"
     stages: {}
   olive:
     baselines:
@@ -502,14 +505,14 @@ species:
         ref: "RDI practice during pit hardening verified in Sanchez-Pinero 2022 (Section 2.1); the yield tolerance of the stage is secondary (Moriana 2003 pending)"
   almond:
     baselines:
-      # Gonzalez-Dugo 2019: 11 to 13 h solar time, cloudless days. Upper limit not published as an equation.
+      # Gonzalez-Dugo 2019: 11 to 13 h solar time, cloudless days. Upper limit: Idso 1981 form (no published equation).
       - id: gonzalezdugo2019-summer
         cultivar: null
         stages: null
         condition: sunlit
         a0_c: 3.419
         a1_c_per_kpa: -1.207
-        upper: null
+        upper: {form: idso1981}
         valid: {solar_hour_from: 11, solar_hour_to: 13, clear_sky: true}
         site: "IFAPA Cordoba (Spain)"
         evidence: primary_read

@@ -13,7 +13,7 @@ from app.species_registry import resolve_species
 DATA = Path(__file__).resolve().parents[1] / "data"
 PATH = DATA / "water_stress_reference.yaml"
 DOC = load(PATH)
-KNOWN = {"idso1982": "unknown", "egea2017": "unknown", "bellvert2015": "unknown",
+KNOWN = {"idso1981": "unknown", "idso1982": "unknown", "egea2017": "unknown", "bellvert2015": "unknown",
          "sanchezpinero2022": "unknown", "fao33": "unknown", "fao66": "unknown", "timesat": "unknown", "allowed1": "allowed"}
 
 
@@ -77,7 +77,40 @@ def test_accepts_allowed_and_permission_granted():
 
 def test_rejects_unknown_upper_form():
     d = _doc()
+    _first(d)["upper"] = {"form": "idso1982"}
+    assert _errors(d)
+
+
+def test_idso1981_upper_is_accepted_without_numbers():
+    d = _doc()
     _first(d)["upper"] = {"form": "idso1981"}
+    assert _errors(d) == []
+
+
+@pytest.mark.parametrize("extra", [{"value_c": 5.0}, {"a0_c": 4.0}, {"a1_c_per_kpa": -1.0}])
+def test_idso1981_upper_rejects_numeric_params(extra):
+    d = _doc()
+    _first(d)["upper"] = {"form": "idso1981", **extra}
+    assert any("idso1981" in e for e in _errors(d))
+
+
+@pytest.mark.parametrize("key", ["hours_after_sunrise", "hours_before_sunset"])
+@pytest.mark.parametrize("value,ok", [(3, True), (0.5, True), (11.9, True), (0, False), (12, False),
+                                      (-1, False), (True, False), ("3", False)])
+def test_daylight_hours_validated(key, value, ok):
+    d = _doc()
+    _first(d)["valid"][key] = value
+    assert (_errors(d) == []) is ok
+
+
+def test_daylight_hours_may_coexist_with_clear_sky_and_vpd_but_not_solar_window():
+    d = _doc()
+    _first(d)["valid"].update(hours_after_sunrise=3, hours_before_sunset=3, vpd_kpa_min=1, vpd_kpa_max=5)
+    assert _errors(d) == []
+    _first(d)["valid"].update(solar_hour_from=11, solar_hour_to=13)
+    assert any("solar_hour" in e for e in _errors(d))
+    d = _doc()
+    _first(d)["valid"].update(hours_before_sunset=3, solar_hour_from=11)
     assert _errors(d)
 
 
@@ -155,18 +188,54 @@ def test_rows_without_upper_not_served():
     p = species_payload(d, "olive")
     assert p is None or p["baselines"] == []
     # ...but the real file keeps them.
-    stored = DOC["species"]["almond"]["baselines"]
+    stored = DOC["species"]["pistachio"]["baselines"]
     assert stored and all(b["upper"] is None for b in stored)
-    assert species_payload(DOC, "almond") is None
+    assert species_payload(DOC, "pistachio") is None
 
 
 def test_idso_wheat_pre_heading():
     rows = {b["id"]: b for b in DOC["species"]["durum_wheat"]["baselines"]}
     pre = rows["idso1982-durum-pre-heading"]
     assert (pre["a0_c"], pre["a1_c_per_kpa"]) == (3.38, -3.25)
-    assert pre["source_id"] == "idso1982" and pre["ref"] == "Table I p.62"
+    assert pre["source_id"] == "idso1982" and pre["ref"].startswith("Table I p.62; UL: Idso et al. 1981 pp.51-52")
     assert pre["stages"] == ["emergence", "tillering", "stem_elongation"]
-    assert pre["upper"] is None
+    assert pre["upper"] == {"form": "idso1981"}
+    assert pre["cultivar"] is None and "measured on durum cv. Produra" in pre["assumption"]
+
+
+@pytest.mark.parametrize("slug", ["wheat", "maize", "sunflower"])
+def test_idso_rows_are_served_with_the_1981_upper_and_daylight_window(slug):
+    p = species_payload(DOC, slug)
+    rows = [b for b in p["baselines"] if b["sourceId"] == "idso1982"]
+    assert rows
+    for b in rows:
+        assert b["upper"] == {"form": "idso1981"}
+        assert b["valid"] == {"hoursAfterSunrise": 3, "hoursBeforeSunset": 3, "clearSky": True}
+        assert "window uses 3 h" in b["assumption"]
+        assert "cultivar" not in b
+    assert "idso1981" in p["sourceIds"] and "idso1982" in p["sourceIds"]
+    assert "idso1981" in {c["sourceId"] for c in p["citations"]}
+
+
+def test_almond_row_is_served_with_its_solar_window_and_1981_upper():
+    (b,) = species_payload(DOC, "almond")["baselines"]
+    assert b["upper"] == {"form": "idso1981"}
+    assert b["valid"] == {"solarHourFrom": 11, "solarHourTo": 13, "clearSky": True}
+    assert "idso1981" in species_payload(DOC, "almond")["sourceIds"]
+
+
+def test_idso1981_is_cited_only_when_a_served_row_uses_the_form():
+    d = _doc()
+    assert "idso1981" not in species_payload(d, "olive")["sourceIds"]
+    _first(d)["upper"] = {"form": "idso1981"}
+    p = species_payload(d, "olive", citation_lookup=lambda sid: {"sourceId": sid, "text": "t", "url": None})
+    assert "idso1981" in p["sourceIds"] and "idso1981" in {c["sourceId"] for c in p["citations"]}
+
+
+def test_berni_olive_row_is_still_not_served():
+    stored = [b for b in DOC["species"]["olive"]["baselines"] if b["source_id"] == "berni2009"]
+    assert stored and all(b["upper"] is None for b in stored)
+    assert not [b for b in species_payload(DOC, "olive")["baselines"] if b["sourceId"] == "berni2009"]
 
 
 def test_soft_wheat_marked_assumption():
@@ -312,7 +381,7 @@ def test_payload_has_citations_for_all_source_ids():
         for c in p["citations"]:
             assert c["text"] and c["url"].startswith("https://")
     ids = species_payload(DOC, "wheat")["sourceIds"]
-    assert set(ids) == {"fao66", "timesat"}
+    assert set(ids) == {"fao66", "timesat", "idso1981", "idso1982"}
     assert "fao56" not in ids
     # unknown-licence sources are cited too
     assert _real_known()["fao66"] == "unknown"

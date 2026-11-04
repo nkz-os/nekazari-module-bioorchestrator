@@ -452,6 +452,25 @@ sources:
         en: Estimates and averages are Nekazari calculations based on these data; they are not data published by the sources.
         es: Las estimaciones y medias son cálculos de Nekazari a partir de estos datos; no son datos publicados por las fuentes.
       notes: licence requested 2026-11-03, pending
+  - source_id: idso1981
+    name: 'Idso et al. 1981, Normalizing the stress-degree-day parameter for environmental variability'
+    institution: Agricultural Meteorology (Elsevier)
+    country: US
+    url: https://doi.org/10.1016/0002-1571(81)90032-7
+    licence:
+      licence_id: publisher-copyright
+      terms_url: null
+      checked_at: '2026-11-04'
+      commercial_use: unknown
+      tdm_reserved: null
+      attribution_text: 'Idso S.B., Jackson R.D., Pinter P.J. Jr., Reginato R.J., Hatfield J.L. (1981) Normalizing the stress-degree-day
+        parameter for environmental variability. Agricultural Meteorology 24, 45-55. doi:10.1016/0002-1571(81)90032-7'
+      attribution_url: https://doi.org/10.1016/0002-1571(81)90032-7
+      download_date: '2026-11-04'
+      processing_note:
+        en: Estimates and averages are Nekazari calculations based on these data; they are not data published by the sources.
+        es: Las estimaciones y medias son cálculos de Nekazari a partir de estos datos; no son datos publicados por las fuentes.
+      notes: Journal article cited for the upper-limit method only (no text or figures stored); publisher licence not audited, hence unknown.
   - source_id: idso1982
     name: 'Idso 1982, Non-water-stressed baselines: A key to measuring and interpreting plant water stress'
     institution: Agricultural Meteorology (Elsevier)

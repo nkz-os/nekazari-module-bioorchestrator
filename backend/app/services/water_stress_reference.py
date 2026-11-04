@@ -1,7 +1,7 @@
 """Water-stress reference: non-water-stressed baselines (NWSB), upper limits and stage flags.
 
 Pure functions: load and validate the curated YAML, and build the API payload for one species.
-Only rows read in their primary source AND carrying a published upper limit are served: without
+Only rows read in their primary source AND carrying an upper limit (published, or the Idso 1981 form) are served: without
 an upper limit no CWSI can be computed. Other rows stay in the file as data but are not served.
 """
 from __future__ import annotations
@@ -13,7 +13,8 @@ from pathlib import Path
 
 import yaml
 
-UPPER_FORMS = frozenset({"constant", "linear_vpd"})
+UPPER_FORMS = frozenset({"constant", "linear_vpd", "idso1981"})
+DAYLIGHT_KEYS = ("hours_after_sunrise", "hours_before_sunset")
 EVIDENCE = frozenset({"primary_read", "secondary"})
 # Registry licence states that may be served. `unknown` is accepted while permissions are pending.
 ACCEPTED_USE = frozenset({"allowed", "permission_granted", "unknown"})
@@ -22,6 +23,7 @@ A1_RANGE = (-5.0, 1.0)
 # `post_maturity` is a reserved key under `stages`: it is not a stage_detection name.
 RESERVED_STAGES = frozenset({"post_maturity"})
 WATER_BALANCE_SOURCE = "fao56"
+IDSO_UPPER_SOURCE = "idso1981"
 SENESCENCE_METHODS = frozenset({"timesat_amplitude"})
 
 logger = logging.getLogger(__name__)
@@ -54,7 +56,12 @@ def _check_upper(where: str, upper: object, errors: list[str]) -> None:
     if not isinstance(upper, dict) or upper.get("form") not in UPPER_FORMS:
         errors.append(f"{where}.upper: form must be one of {sorted(UPPER_FORMS)}")
         return
-    if upper["form"] == "constant":
+    if upper["form"] == "idso1981":
+        extra = sorted(set(upper) - {"form"})
+        if extra:
+            errors.append(f"{where}.upper: idso1981 takes no parameters (got {extra}); "
+                          "the consumer computes it from a0/a1 and air temperature")
+    elif upper["form"] == "constant":
         if not _num(upper.get("value_c"), *A0_RANGE):
             errors.append(f"{where}.upper: constant needs value_c in {A0_RANGE}")
     else:
@@ -72,6 +79,12 @@ def _check_valid(where: str, valid: object, errors: list[str]) -> None:
                            ("vpd_kpa_min", 0, 20), ("vpd_kpa_max", 0, 20)):
         if valid.get(key) is not None and not _num(valid[key], low, high):
             errors.append(f"{where}.valid.{key}: out of range")
+    for key in DAYLIGHT_KEYS:
+        v = valid.get(key)
+        if v is not None and not (_num(v, 0, 12) and 0 < v < 12):
+            errors.append(f"{where}.valid.{key}: must be a number with 0 < value < 12")
+        if v is not None and (valid.get("solar_hour_from") is not None or valid.get("solar_hour_to") is not None):
+            errors.append(f"{where}.valid.{key}: cannot be combined with solar_hour_from/solar_hour_to")
     for low_key, high_key in (("solar_hour_from", "solar_hour_to"), ("vpd_kpa_min", "vpd_kpa_max")):
         low, high = valid.get(low_key), valid.get(high_key)
         if _num(low, -1e9, 1e9) and _num(high, -1e9, 1e9) and low > high:
@@ -206,6 +219,8 @@ def _baseline_payload(b: dict) -> dict:
                              "solarHourTo": valid.get("solar_hour_to"),
                              "vpdKpaMin": valid.get("vpd_kpa_min"),
                              "vpdKpaMax": valid.get("vpd_kpa_max"),
+                             "hoursAfterSunrise": valid.get("hours_after_sunrise"),
+                             "hoursBeforeSunset": valid.get("hours_before_sunset"),
                              "clearSky": valid["clear_sky"]}),
         "site": b.get("site"), "evidence": b["evidence"], "sourceId": b["source_id"],
         "ref": b["ref"], "assumption": b.get("assumption"),
@@ -252,6 +267,9 @@ def species_payload(doc: dict, slug: str,
     if not baselines and not stages and senescence is None:
         return None
     ids = {b["sourceId"] for b in baselines}
+    # The idso1981 upper limit is that paper's method: cite it whenever a served row uses it.
+    if any(b["upper"]["form"] == "idso1981" for b in baselines):
+        ids.add(IDSO_UPPER_SOURCE)
     for f in stages.values():
         ids.update(f["sourceIds"])
     if senescence is not None:

@@ -1711,6 +1711,53 @@
     ]
   },
   {
+    "source_id": "idso1981",
+    "name": "Idso et al. 1981, Normalizing the stress-degree-day parameter for environmental variability",
+    "institution": "Agricultural Meteorology (Elsevier)",
+    "institution_short": "Agricultural Meteorology",
+    "country": "US",
+    "country_name": {
+      "en": "United States",
+      "es": "Estados Unidos",
+      "eu": "Estatu Batuak",
+      "fr": "\u00c9tats-Unis",
+      "pt": "Estados Unidos"
+    },
+    "url": "https://doi.org/10.1016/0002-1571(81)90032-7",
+    "document_url_template": null,
+    "license_class": "academic-published",
+    "use_type": "reference-parameters",
+    "official_status": false,
+    "data_format": "pdf-extracted",
+    "extraction_method": "structured",
+    "confidence_default": "high",
+    "attribution": {
+      "en": "Idso S.B., Jackson R.D., Pinter P.J. Jr., Reginato R.J., Hatfield J.L. (1981) Normalizing the stress-degree-day parameter for environmental variability. Agricultural Meteorology 24, 45-55. doi:10.1016/0002-1571(81)90032-7",
+      "es": "Idso S.B., Jackson R.D., Pinter P.J. Jr., Reginato R.J., Hatfield J.L. (1981) Normalizing the stress-degree-day parameter for environmental variability. Agricultural Meteorology 24, 45-55. doi:10.1016/0002-1571(81)90032-7"
+    },
+    "disclaimer": {
+      "en": "Data from a peer-reviewed journal article. NKZ uses these numbers as reference parameters; this is not an official recommendation by the authors or the journal.",
+      "es": "Datos de un art\u00edculo cient\u00edfico revisado por pares. NKZ usa estos n\u00fameros como par\u00e1metros de referencia; esto no es una recomendaci\u00f3n oficial de los autores ni de la revista."
+    },
+    "attribution_text": "Idso S.B., Jackson R.D., Pinter P.J. Jr., Reginato R.J., Hatfield J.L. (1981) Normalizing the stress-degree-day parameter for environmental variability. Agricultural Meteorology 24, 45-55. doi:10.1016/0002-1571(81)90032-7",
+    "attribution_url": "https://doi.org/10.1016/0002-1571(81)90032-7",
+    "licence_id": "publisher-copyright",
+    "licence_url": null,
+    "download_date": "2026-11-04",
+    "processing_note": {
+      "en": "Estimates and averages are Nekazari calculations based on these data; they are not data published by the sources.",
+      "es": "Las estimaciones y medias son c\u00e1lculos de Nekazari a partir de estos datos; no son datos publicados por las fuentes."
+    },
+    "site_urls": [
+      "https://doi.org/10.1016/0002-1571(81)90032-7"
+    ],
+    "tags": [
+      "water-stress",
+      "cwsi",
+      "academic"
+    ]
+  },
+  {
     "source_id": "idso1982",
     "name": "Idso 1982, Non-water-stressed baselines: A key to measuring and interpreting plant water stress",
     "institution": "Agricultural Meteorology (Elsevier)",
