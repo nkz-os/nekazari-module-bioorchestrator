@@ -129,11 +129,17 @@ describe('writes', () => {
     expect(USDA_TEXTURE_CLASSES).toHaveLength(12);
     expect(USDA_TEXTURE_CLASSES).toContain('silty-clay-loam');
   });
-  it('history: POSTs campaign and EPPO to field operations and returns the crop id', async () => {
+  it('history: POSTs campaign, EPPO and optional variety/yield to field operations and returns the crop id', async () => {
     const f = ok({ crop_id: 'urn:c1' }, 201); vi.stubGlobal('fetch', f);
     expect(await saveDeclaredCrop(PID, 2026, 'TRZAX')).toBe('urn:c1');
     expect(String(f.mock.calls[0][0])).toMatch(/\/api\/field-operations\/parcels\/urn%3Angsi-ld%3AAgriParcel%3At%3Ap1\/declared-crops$/);
     expect(f.mock.calls[0][1]).toMatchObject({ method: 'POST', credentials: 'include', body: JSON.stringify({ campaign: 2026, eppo: 'TRZAX' }) });
+    await saveDeclaredCrop(PID, 2025, 'HORVX', { variety: 'Pewter', yieldKgHa: 4200 });
+    expect(f.mock.calls[1][1]).toMatchObject({
+      method: 'POST',
+      credentials: 'include',
+      body: JSON.stringify({ campaign: 2025, eppo: 'HORVX', variety: 'Pewter', yield_kg_ha: 4200 }),
+    });
   });
   it('a refused history write carries the module error code', async () => {
     vi.stubGlobal('fetch', refused(409, { detail: { code: 'campaign_has_dated_crop' } }));

@@ -73,6 +73,12 @@ export default function CompletionBar({ fit, row, onSaved, state }: Props) {
             <div className="flex flex-wrap items-center gap-2">
               <Select value="" size="sm" placeholder={t(`${base}.soil.placeholder`)} options={textureOptions} disabled={busy}
                 onValueChange={(v) => v && run('soil', () => saveDeclaredTexture(row.parcel_id, v as UsdaTextureClass))} />
+              <a
+                href={`/module/soil?parcel=${encodeURIComponent(row.parcel_id)}&tab=manual`}
+                className="text-nkz-xs text-nkz-accent-base underline"
+              >
+                {t('planning.detail.soilLabLink')}
+              </a>
               <Button size="sm" variant="ghost" disabled={busy} onClick={() => skip('soil')}>{t(`${base}.unknown`)}</Button>
             </div>
             <p className="text-nkz-xs text-nkz-text-muted">{t(`${base}.soil.why`)}</p>

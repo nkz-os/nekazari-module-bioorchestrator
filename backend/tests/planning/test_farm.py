@@ -48,6 +48,30 @@ def test_target_campaign_rolls_over_in_july():
     assert campaign_columns(2027) == [2024, 2025, 2026, 2027]
 
 
+def test_farm_payload_includes_five_history_campaigns_and_cycle_yields():
+    cycles = {
+        P1["id"]: {"cycles": [
+            {"crop_id": "c22", "role": "main_crop", "species": "TRZAX", "status": "harvested",
+             "campaign_label": 2022, "declared_campaign": 2022, "start": {"date": None}, "end": {"date": None},
+             "variety": "Filón", "declared_yield_kg_ha": 4100.0},
+            {"crop_id": "c26", "role": "main_crop", "species": "HORVX", "status": "harvested",
+             "campaign_label": 2026, "start": {"date": "2025-11-10", "provenance": "actual"},
+             "end": {"date": "2026-06-25", "provenance": "actual"}, "harvested_weight_kg": 62000.0},
+        ]},
+    }
+    out = farm_payload([P1], [], {}, cycles, 2027, [])
+    FarmResponse.model_validate(out)
+    assert out["campaigns"] == [2024, 2025, 2026, 2027]
+    assert out["history_campaigns"] == [2022, 2023, 2024, 2025, 2026]
+    row = out["parcels"][0]
+    assert set(row["cells"].keys()) == {"2022", "2023", "2024", "2025", "2026", "2027"}
+    c22 = row["cells"]["2022"][0]
+    assert c22["species"] == "wheat" and c22["variety"] == "Filón"
+    assert c22["yield_kg_ha"] == 4100.0 and c22["yield_source"] == "declared" and c22["provenance"] == "declared"
+    c26 = row["cells"]["2026"][0]
+    assert c26["species"] == "barley" and c26["yield_kg_ha"] == 5000.0 and c26["yield_source"] == "measured"
+
+
 def test_regime_prefers_the_target_campaign_crop():
     assert parcel_regime({"irrigationRegime": "rainfed"}, [{"irrigationRegime": "irrigated"}]) == ("irrigated", "crop")
     assert parcel_regime({"irrigationSystemType": "drip"}, []) == ("irrigated", "parcel:irrigationSystemType")

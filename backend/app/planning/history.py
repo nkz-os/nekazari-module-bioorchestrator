@@ -6,6 +6,7 @@ or up to the campaign being looked at while it has no end yet.
 """
 from __future__ import annotations
 
+import math
 from datetime import UTC, date, datetime
 from typing import Any
 
@@ -13,6 +14,17 @@ from app.planning.rotation import PastCrop
 from app.species_registry import get_species_info, resolve_species
 
 _PROVENANCE = ("actual", "declared", "planned")
+_DECLARED_YIELD_TERMS = (
+    "https://nkz-os.org/ns/declaredYieldKgHa",
+    "nkz:declaredYieldKgHa",
+    "declaredYieldKgHa",
+)
+_VARIETY_TERMS = (
+    "https://nkz-os.org/ns/variety",
+    "nkz:variety",
+    "variety",
+    "https://uri.etsi.org/ngsi-ld/default-context/variety",
+)
 # From this month a campaign of the current year is over and planning moves to the next one. The platform
 # applies the same rollover (SDK crop_cycles, field-operations declared crops): keep the three equal.
 ROLLOVER_MONTH = 7
@@ -117,7 +129,40 @@ def history_complete(payload: dict | None) -> bool:
     return all(species_slug(c.get("species")) and first_campaign(c) is not None for c in cycles_of(payload))
 
 
-HISTORY_LOOKBACK = 2  # campaigns before the planned one that rotation looks at
+HISTORY_LOOKBACK = 2  # campaigns before the planned one that rotation CompletionBar asks for
+HISTORY_WINDOW = 5  # past campaigns exposed in the parcel history editor and FaST 5-year window
+
+
+def _positive_float(value: Any) -> float | None:
+    val = plain(value)
+    if isinstance(val, (int, float)) and not isinstance(val, bool) and math.isfinite(val) and val > 0:
+        return float(val)
+    return None
+
+
+def cycle_variety(cycle: dict, crop: dict | None = None) -> str | None:
+    for raw in (cycle.get("variety"), *( [crop.get(t) for t in _VARIETY_TERMS] if crop else [] )):
+        val = plain(raw)
+        if isinstance(val, str) and val.strip():
+            return val.strip()
+    return None
+
+
+def cycle_yield_kg_ha(cycle: dict, crop: dict | None = None, area_ha: float | None = None) -> tuple[float | None, str | None]:
+    """(yield_kg_ha, 'measured' | 'declared' | None). Measured harvest weight beats declared yield when area_ha > 0."""
+    weight = _positive_float(cycle.get("harvested_weight_kg"))
+    area = _positive_float(area_ha)
+    if weight is not None and area is not None:
+        return round(weight / area, 1), "measured"
+    declared = _positive_float(cycle.get("declared_yield_kg_ha"))
+    if declared is None and crop:
+        for term in _DECLARED_YIELD_TERMS:
+            declared = _positive_float(crop.get(term))
+            if declared is not None:
+                break
+    if declared is not None:
+        return round(declared, 1), "declared"
+    return None, None
 
 
 def campaign_is_over(campaign: int, today: date) -> bool:
@@ -142,17 +187,20 @@ def missing_history_campaigns(payload: dict | None, campaign: int, today: date |
             if c not in covered and campaign_is_over(c, today)]
 
 
-def cell_from_cycle(cycle: dict, crop: dict | None) -> dict:
+def cell_from_cycle(cycle: dict, crop: dict | None, area_ha: float | None = None) -> dict:
     slug = species_slug(cycle.get("species"))
     info = get_species_info(slug) if slug else None
     start, end = cycle.get("start") or {}, cycle.get("end") or {}
     provenance = start.get("provenance")
+    if provenance not in _PROVENANCE and declared_only(cycle):
+        provenance = "declared"
+    yield_kg_ha, yield_source = cycle_yield_kg_ha(cycle, crop, area_ha)
     return {
         "crop_id": cycle.get("crop_id"),
         "species": slug,
         "species_raw": cycle.get("species"),
         "names": dict((info or {}).get("common_names") or {}),
-        "variety": plain((crop or {}).get("variety")),
+        "variety": cycle_variety(cycle, crop),
         "role": cycle.get("role") or "main_crop",
         "provenance": provenance if provenance in _PROVENANCE else "unknown",
         "status": cycle.get("status"),
@@ -160,4 +208,6 @@ def cell_from_cycle(cycle: dict, crop: dict | None) -> dict:
         "end": end.get("date"),
         "lifecycle": cycle.get("lifecycle") if cycle.get("lifecycle") in ("annual", "perennial") else "unknown",
         "first_campaign": first_campaign(cycle),
+        "yield_kg_ha": yield_kg_ha,
+        "yield_source": yield_source,
     }

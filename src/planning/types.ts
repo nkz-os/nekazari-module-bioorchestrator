@@ -1,8 +1,8 @@
-/** Mirror of backend/app/planning/models.py — contract version 2.5. Change both together. */
+/** Mirror of backend/app/planning/models.py — contract version 2.6. Change both together. */
 import type { SourceAttributionItem } from '../types/attribution';
 import type { Fortnight } from './fortnight';
 
-export const CONTRACT_VERSION = '2.5';
+export const CONTRACT_VERSION = '2.6';
 export type Verdict = 'fits' | 'caveats' | 'no_fit';
 /** Owner decision (2026-10-13): one vocabulary everywhere; the words shown are translated. */
 export type Regime = 'rainfed' | 'irrigated';
@@ -72,7 +72,7 @@ export interface VarietiesResponse {
   /** Depth of the trial evidence behind the table (additive; older answers omit it). */
   evidence_depth?: EvidenceDepth | null;
 }
-export type Basis = 'trial_evidence' | 'water_limited' | 'gap_corrected' | 'potential';
+export type Basis = 'parcel_history' | 'trial_evidence' | 'water_limited' | 'gap_corrected' | 'potential';
 export interface Moisture { basis: 'commercial' | 'dry_matter' | 'as_reported'; pct: number | null }
 export interface Estimate {
   provider_id: string; provider_version: string; basis: Basis; unit: 't/ha';
@@ -112,6 +112,7 @@ export interface CycleCell {
   crop_id: string | null; species: string | null; species_raw: string | null; names: Names; variety: string | null;
   role: string; provenance: Provenance; status: string | null; start: string | null; end: string | null;
   lifecycle: string; first_campaign: number | null;
+  yield_kg_ha?: number | null; yield_source?: 'measured' | 'declared' | null;
 }
 export interface PlanWarning { code: string; campaign: number | null; params: Record<string, ParamValue> }
 export interface ParcelRow {
@@ -120,6 +121,7 @@ export interface ParcelRow {
 }
 export interface FarmResponse {
   contract_version: string; campaign: number; campaigns: number[];
+  history_campaigns?: number[];
   farms: { farm_id: string | null; name: string | null }[]; parcels: ParcelRow[];
   summary: { area_by_crop: { species: string | null; names: Names; area_ha: number }[]; undecided: number; rotation_warnings: number };
 }

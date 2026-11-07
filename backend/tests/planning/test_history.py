@@ -110,3 +110,25 @@ def test_a_declared_only_cycle_is_history_only_when_closed():
     for status in ("active", "planned", None):
         assert missing_history_campaigns({"cycles": [declared(status)]}, 2027, NOV) == [2025, 2026]
         assert past_crops({"cycles": [declared(status)]}, 2027) == []
+
+
+def test_cell_from_cycle_reads_declared_only_provenance_variety_and_yield():
+    decl = _main(2024, start={"date": None}, end={"date": None}, declared_campaign=2024,
+                 variety="Filón", declared_yield_kg_ha=4200.0)
+    cell = cell_from_cycle(decl, None, area_ha=10.0)
+    assert cell["provenance"] == "declared"
+    assert cell["variety"] == "Filón"
+    assert cell["yield_kg_ha"] == 4200.0 and cell["yield_source"] == "declared"
+
+
+def test_cell_from_cycle_prefers_measured_harvest_weight_when_area_is_positive():
+    dated = _main(2025, start={"date": "2024-11-01", "provenance": "actual"},
+                  end={"date": "2025-07-01", "provenance": "actual"},
+                  harvested_weight_kg=55000.0, declared_yield_kg_ha=4000.0)
+    measured = cell_from_cycle(dated, None, area_ha=10.0)
+    assert measured["yield_kg_ha"] == 5500.0 and measured["yield_source"] == "measured"
+    # Without positive area_ha, harvested_weight_kg cannot be converted -> falls back to declared_yield_kg_ha
+    fallback = cell_from_cycle(dated, None, area_ha=0.0)
+    assert fallback["yield_kg_ha"] == 4000.0 and fallback["yield_source"] == "declared"
+    no_yield = cell_from_cycle({**dated, "declared_yield_kg_ha": None}, None, area_ha=None)
+    assert no_yield["yield_kg_ha"] is None and no_yield["yield_source"] is None

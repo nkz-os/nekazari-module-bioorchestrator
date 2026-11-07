@@ -46,10 +46,11 @@ def _no_chelsa_network(request, monkeypatch):
 
 @pytest.fixture(autouse=True)
 def _no_crop_cycles_network(request, monkeypatch):
-    """Tests never call entity-manager; those that need cycles patch ``app.graph.dao.fetch_crop_cycles``."""
+    """Tests never call entity-manager; those that need cycles patch ``fetch_crop_cycles``."""
     if request.node.get_closest_marker("network"):
         return
     monkeypatch.setattr("app.graph.dao.fetch_crop_cycles", AsyncMock(return_value=None))
+    monkeypatch.setattr("app.planning.service.fetch_crop_cycles", AsyncMock(return_value=None))
 
 
 @pytest.fixture

@@ -179,9 +179,30 @@ export const clearDeclaredTexture = async (parcelId: string): Promise<void> => {
 
 export const EPPO_PATTERN = /^[A-Z0-9]{5,6}$/;
 
+export interface DeclaredCropOptions {
+  variety?: string | null;
+  yieldKgHa?: number | null;
+}
+
 /** A past main crop the farmer declares for a campaign; field operations keeps it with no dates. Returns the crop id. */
-export async function saveDeclaredCrop(parcelId: string, campaign: number, eppo: string): Promise<string> {
-  const res = await writeToModule('POST', `${API_ORIGIN}/api/field-operations/parcels/${enc(parcelId)}/declared-crops`, { campaign, eppo });
+export async function saveDeclaredCrop(
+  parcelId: string,
+  campaign: number,
+  eppo: string,
+  opts?: DeclaredCropOptions,
+): Promise<string> {
+  const payload: Record<string, unknown> = { campaign, eppo };
+  const trimmedVariety = opts?.variety?.trim();
+  if (trimmedVariety) payload.variety = trimmedVariety;
+  if (typeof opts?.yieldKgHa === 'number' && Number.isFinite(opts.yieldKgHa) && opts.yieldKgHa > 0) {
+    payload.yield_kg_ha = opts.yieldKgHa;
+  }
+  const res = await writeToModule('POST', `${API_ORIGIN}/api/field-operations/parcels/${enc(parcelId)}/declared-crops`, payload);
   const body = await res.json().catch(() => null);
   return typeof body?.crop_id === 'string' ? body.crop_id : '';
+}
+
+/** Deletes a declared-only past crop for a campaign (never deletes a dated cycle). */
+export async function deleteDeclaredCrop(parcelId: string, campaign: number): Promise<void> {
+  await writeToModule('DELETE', `${API_ORIGIN}/api/field-operations/parcels/${enc(parcelId)}/declared-crops/${enc(String(campaign))}`);
 }

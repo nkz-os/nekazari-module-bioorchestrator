@@ -132,27 +132,93 @@
     }
   },
   "planning": {
-    "whatNow": {"today": "gaur", "title": "Orain zer dagokion", "quiet": "Ez dago ezusteko edo lan zain", "job": {"irrigate": "Ureztatu gaur", "sow": "Erein: {{crop}}", "treat": "Berrikusi: {{disease}}", "harvest": "Bildu", "pending_assessment": "Ebaluazioaren zain", "none_until": "Ezer ez {{date}} arte", "none": "Ez dago ezer zain", "sowOn": "Erein {{crop}}: {{date}}", "harvestOn": "Bildu: {{date}}"}, "surprise": {"vigor_below_expected": "Indarra espero baino txikiagoa", "water_drop": "Ur-erreserbaren jaitsiera bortitza", "phenology_deviation": "Fenologia desbideratuta", "new_high_alert": "Alerta berria: {{disease}}"}, "open": "Ikusi laborantzaren osasunean"},
-    "loading": {"generic": "Kargatzen…", "farm": "Zure partzelak kargatzen…", "fit": "Partzela honetara egokitzen diren laboreak aztertzen…", "varieties": "Zure eremuko saiakuntzetan barietateak bilatzen; segundo batzuk behar izan ditzake…", "estimates": "Espero den uzta kalkulatzen…"},
+    "whatNow": {
+      "today": "gaur",
+      "title": "Orain zer dagokion",
+      "quiet": "Ez dago ezusteko edo lan zain",
+      "job": {
+        "irrigate": "Ureztatu gaur",
+        "sow": "Erein: {{crop}}",
+        "treat": "Berrikusi: {{disease}}",
+        "harvest": "Bildu",
+        "pending_assessment": "Ebaluazioaren zain",
+        "none_until": "Ezer ez {{date}} arte",
+        "none": "Ez dago ezer zain",
+        "sowOn": "Erein {{crop}}: {{date}}",
+        "harvestOn": "Bildu: {{date}}"
+      },
+      "surprise": {
+        "vigor_below_expected": "Indarra espero baino txikiagoa",
+        "water_drop": "Ur-erreserbaren jaitsiera bortitza",
+        "phenology_deviation": "Fenologia desbideratuta",
+        "new_high_alert": "Alerta berria: {{disease}}"
+      },
+      "open": "Ikusi laborantzaren osasunean"
+    },
+    "loading": {
+      "generic": "Kargatzen…",
+      "farm": "Zure partzelak kargatzen…",
+      "fit": "Partzela honetara egokitzen diren laboreak aztertzen…",
+      "varieties": "Zure eremuko saiakuntzetan barietateak bilatzen; segundo batzuk behar izan ditzake…",
+      "estimates": "Espero den uzta kalkulatzen…"
+    },
     "title": "Laboreen planifikazioa",
     "subtitle": "Zer erein partzela bakoitzean, zein barietaterekin eta zer ordenatan",
-    "campaign": "Kanpaina", "farm": "Ustiategia", "farmAll": "Partzela guztiak", "retry": "Saiatu berriro",
+    "campaign": "Kanpaina",
+    "farm": "Ustiategia",
+    "farmAll": "Partzela guztiak",
+    "retry": "Saiatu berriro",
     "errorLoad": "Ezin izan da kargatu. Saiatu berriro.",
     "reload": "Kargatu berriro orria",
-    "error": { "session": "Saioa iraungi da: sartu berriro." },
-    "empty": { "noParcels": "Ez dago partzelarik", "noParcelsHint": "Sortu partzelak ikusgailuan haien kanpainak planifikatzeko." },
+    "error": {
+      "session": "Saioa iraungi da: sartu berriro."
+    },
+    "empty": {
+      "noParcels": "Ez dago partzelarik",
+      "noParcelsHint": "Sortu partzelak ikusgailuan haien kanpainak planifikatzeko."
+    },
     "summary": {
       "area": "{{crop}} {{ha}} ha",
-      "title": "{{campaign}} kanpaina", "ha": "{{ha}} ha",
-      "undecided_one": "{{count}} partzela erabaki gabe", "undecided_other": "{{count}} partzela erabaki gabe",
-      "rotation_one": "{{count}} errotazio-abisu", "rotation_other": "{{count}} errotazio-abisu"
+      "title": "{{campaign}} kanpaina",
+      "ha": "{{ha}} ha",
+      "undecided_one": "{{count}} partzela erabaki gabe",
+      "undecided_other": "{{count}} partzela erabaki gabe",
+      "rotation_one": "{{count}} errotazio-abisu",
+      "rotation_other": "{{count}} errotazio-abisu"
     },
-    "next": { "sowing": "Aurreikusitako hazkuntza: {{crop}}{{window}}", "inField": "Zelaian: ikusi laboreen osasuna" },
-    "matrix": { "nextStep": "Hurrengo urratsa", "parcel": "Partzela", "area": "ha", "regime": "Erregimena", "choose": "Aukeratu", "change": "Aldatu", "legend": "● eginda · ◐ adierazita · ○ planifikatuta" },
-    "provenance": { "actual": "eginda", "declared": "adierazita", "planned": "planifikatuta", "unknown": "daturik gabe" },
-    "role": { "main_crop": "labore nagusia", "cover_crop": "estaldura-laborea", "catch_crop": "tarteko laborea" },
-    "regime": { "rainfed": "Lehorrekoa", "irrigated": "Ureztatua", "unknown": "Adierazi gabe" },
-    "management": { "conventional": "Konbentzionala", "organic": "Ekologikoa" },
+    "next": {
+      "sowing": "Aurreikusitako hazkuntza: {{crop}}{{window}}",
+      "inField": "Zelaian: ikusi laboreen osasuna"
+    },
+    "matrix": {
+      "nextStep": "Hurrengo urratsa",
+      "parcel": "Partzela",
+      "area": "ha",
+      "regime": "Erregimena",
+      "choose": "Aukeratu",
+      "change": "Aldatu",
+      "legend": "● eginda · ◐ adierazita · ○ planifikatuta"
+    },
+    "provenance": {
+      "actual": "eginda",
+      "declared": "adierazita",
+      "planned": "planifikatuta",
+      "unknown": "daturik gabe"
+    },
+    "role": {
+      "main_crop": "labore nagusia",
+      "cover_crop": "estaldura-laborea",
+      "catch_crop": "tarteko laborea"
+    },
+    "regime": {
+      "rainfed": "Lehorrekoa",
+      "irrigated": "Ureztatua",
+      "unknown": "Adierazi gabe"
+    },
+    "management": {
+      "conventional": "Konbentzionala",
+      "organic": "Ekologikoa"
+    },
     "warning": {
       "cycles_unavailable": "Ezin izan da partzela honen historia irakurri",
       "regime_missing": "Lehorrekoa ala ureztatua adierazi gabe",
@@ -161,14 +227,41 @@
     },
     "detail": {
       "currentPlan": "Egungo plana",
-      "back": "Itzuli planera", "previous": "Aurrekoa: {{crop}} ({{campaign}})", "known": "Dakiguna",
-      "climate": "Klima", "soil": "Lurzorua", "noData": "daturik gabe", "regimeQuestion": "Lehorrekoa ala ureztatua?",
+      "back": "Itzuli planera",
+      "previous": "Aurrekoa: {{crop}} ({{campaign}})",
+      "known": "Dakiguna",
+      "climate": "Klima",
+      "soil": "Lurzorua",
+      "noData": "daturik gabe",
+      "regimeQuestion": "Lehorrekoa ala ureztatua?",
       "regimeHint": "Planifikatzeko beharrezkoa da: ebidentziak eta simulazioek ez dituzte inoiz lehorra eta ureztatua nahasten.",
-      "managementLabel": "Kudeaketa", "historyDown": "Ezin izan da historia irakurri: errotazioa ez da egiaztatu.",
-      "allotment": {"label": "Kanpainaren dotazioa", "hint": "Kanpaina honetan ureztatzeko eskura dagoen ura.", "placeholder": "Adib.: 4500", "unitLabel": "Unitatea", "unit": {"m3ha": "m³/ha", "mm": "mm"}, "save": "Gorde", "none": "Dotaziorik ez da adierazi", "stored": "Gordeta: {{mm}} mm ({{m3}} m³/ha)", "clear": "Kendu", "invalid": "Sartu 0 baino zenbaki handiagoa.", "thousands": "Idatzi zenbakia milakoen bereizlerik gabe (adibidez 4500).", "tooSmall": "Baxuegia: gutxienez 1 mm (10 m³/ha).", "tooLarge": "Handiegia: gehienez {{max}} {{unit}}.", "saveError": "Ezin izan da dotazioa gorde. Saiatu berriro."}
+      "managementLabel": "Kudeaketa",
+      "historyDown": "Ezin izan da historia irakurri: errotazioa ez da egiaztatu.",
+      "allotment": {
+        "label": "Kanpainaren dotazioa",
+        "hint": "Kanpaina honetan ureztatzeko eskura dagoen ura.",
+        "placeholder": "Adib.: 4500",
+        "unitLabel": "Unitatea",
+        "unit": {
+          "m3ha": "m³/ha",
+          "mm": "mm"
+        },
+        "save": "Gorde",
+        "none": "Dotaziorik ez da adierazi",
+        "stored": "Gordeta: {{mm}} mm ({{m3}} m³/ha)",
+        "clear": "Kendu",
+        "invalid": "Sartu 0 baino zenbaki handiagoa.",
+        "thousands": "Idatzi zenbakia milakoen bereizlerik gabe (adibidez 4500).",
+        "tooSmall": "Baxuegia: gutxienez 1 mm (10 m³/ha).",
+        "tooLarge": "Handiegia: gehienez {{max}} {{unit}}.",
+        "saveError": "Ezin izan da dotazioa gorde. Saiatu berriro."
+      },
+      "soilLabLink": "Lurzoruaren analisia sartu"
     },
     "fit": {
-      "fits": "Egokia", "caveats": "Ñabardurekin", "no_fit": "Ez da egokia",
+      "fits": "Egokia",
+      "caveats": "Ñabardurekin",
+      "no_fit": "Ez da egokia",
       "sowing": "ereitea {{from}}–{{to}}"
     },
     "reason": {
@@ -199,18 +292,38 @@
       "climate_unknown": "Partzelaren klimarik gabe: egokitasuna ez da guztiz egiaztatu"
     },
     "texture": {
-      "sand": "hareatsua", "loamy-sand": "harea-frankoa", "sandy-loam": "franko-hareatsua", "loam": "frankoa",
-      "silt-loam": "franko-limotsua", "silt": "limotsua", "sandy-clay-loam": "franko-buztin-hareatsua", "clay-loam": "franko-buztintsua",
-      "silty-clay-loam": "franko-buztin-limotsua", "sandy-clay": "buztin-hareatsua", "silty-clay": "buztin-limotsua", "clay": "buztintsua"
+      "sand": "hareatsua",
+      "loamy-sand": "harea-frankoa",
+      "sandy-loam": "franko-hareatsua",
+      "loam": "frankoa",
+      "silt-loam": "franko-limotsua",
+      "silt": "limotsua",
+      "sandy-clay-loam": "franko-buztin-hareatsua",
+      "clay-loam": "franko-buztintsua",
+      "silty-clay-loam": "franko-buztin-limotsua",
+      "sandy-clay": "buztin-hareatsua",
+      "silty-clay": "buztin-limotsua",
+      "clay": "buztintsua"
     },
     "variety": {
       "noTrials": "Zure eremuan ez dago labore honen barietate-saiakuntzarik. Barietaterik gabe planifika dezakezu.",
       "needsClimate": "Partzelaren klimarik gabe ezin da ebidentziarik bilatu.",
-      "variety": "Barietatea", "relative": "Etekin erlatiboa", "stability": "Egonkortasuna", "environments": "Saiakuntzak / urteak",
+      "variety": "Barietatea",
+      "relative": "Etekin erlatiboa",
+      "stability": "Egonkortasuna",
+      "environments": "Saiakuntzak / urteak",
       "relativeHint": "Etekina saiakuntza bakoitzaren batezbestekoarekin alderatuta: % 100 = batezbestekoaren berdina.",
-      "lowEnv": "Saiakuntza ahuletan", "lowEnvHint": "Saiakuntza ahuletan: batez bestekoarekiko etekina, ekoizpen txikieneko saiakuntzen herenean (urte lehorrak edo txarrak).",
-      "stable": "egonkorra", "average": "ertaina", "responsive": "ingurunearekiko sentikorra", "few": "saiakuntza gutxi", "stale": "{{year}}tik saiakuntzarik gabe",
-      "tier": { "field": "landa-saiakuntzak", "regional": "eskualdeko batezbestekoak" },
+      "lowEnv": "Saiakuntza ahuletan",
+      "lowEnvHint": "Saiakuntza ahuletan: batez bestekoarekiko etekina, ekoizpen txikieneko saiakuntzen herenean (urte lehorrak edo txarrak).",
+      "stable": "egonkorra",
+      "average": "ertaina",
+      "responsive": "ingurunearekiko sentikorra",
+      "few": "saiakuntza gutxi",
+      "stale": "{{year}}tik saiakuntzarik gabe",
+      "tier": {
+        "field": "landa-saiakuntzak",
+        "regional": "eskualdeko batezbestekoak"
+      },
       "depth": {
         "deep": "ebidentzia sakona",
         "broad": "ebidentzia zabala",
@@ -222,7 +335,8 @@
       "staleShow_other": "Erakutsi saiakuntza berririk gabeko {{count}} barietate",
       "staleHide": "Ezkutatu saiakuntza berririk gabeko barietateak",
       "staleHint": "Azken kanpainetako saiakuntza bakar batean ere ez daude: sareak kendu edo berritu ditu. Hemen jarraitzen dute, ezagutzen badituzu edo hazia baduzu.",
-      "choose": "Aukeratu", "chosen": "Aukeratuta"
+      "choose": "Aukeratu",
+      "chosen": "Aukeratuta"
     },
     "gap": {
       "no_expected_yield": "Espero den etekinik gabe",
@@ -251,21 +365,45 @@
     },
     "estimate": {
       "inputs": "Sarrera berberak guztientzat: {{regime}} · {{management}} · ereitea {{sowing}}",
-      "noSowing": "datarik gabe", "source": "Iturria", "median": "P50", "range": "Tartea (t/ha)", "basisCol": "Oinarria",
-      "basis": { "trial_evidence": "saiakuntza-partzela, kudeaketa optimoa", "water_limited": "urak mugatutako potentziala", "gap_corrected": "eremuko etekin-hutsunearekin", "potential": "uraren mugarik gabeko potentziala" },
-      "provider": { "trial_evidence": "Eremuko saiakuntzak", "aquacrop": "AquaCrop" },
+      "noSowing": "datarik gabe",
+      "source": "Iturria",
+      "median": "P50",
+      "range": "Tartea (t/ha)",
+      "basisCol": "Oinarria",
+      "basis": {
+        "trial_evidence": "saiakuntza-partzela, kudeaketa optimoa",
+        "water_limited": "urak mugatutako potentziala",
+        "gap_corrected": "eremuko etekin-hutsunearekin",
+        "potential": "uraren mugarik gabeko potentziala",
+        "parcel_history": "lursail honetako uztak"
+      },
+      "provider": {
+        "trial_evidence": "Eremuko saiakuntzak",
+        "aquacrop": "AquaCrop",
+        "parcel_history": "Lursail honetako historikoa"
+      },
       "experimental": "esperimentala",
       "directSowing": "Zuzeneko ereitea anizpearen gainean",
       "directSowingHint": "AquaCropek anizpea lurzoruaren % 30 estaltzen duen estaldura gisa simulatzen du, eta lurrunketa murrizten du.",
       "directSowingFromOperations": "Zuzeneko ereitearekin simulatua: horrela jasota dago Landa-eragiketetan erregistratutako ereitean.",
       "directSowingNotApplied": "Simulazioak ez du zuzeneko ereitea aplikatu: emaitza hau lurzoru biluziarena da.",
       "validatedAs": "Balioztatua: {{metric}}",
-      "ceiling": "eskuragarri dagoen urarekiko sabaia, ez da aurreikuspena", "coverage": "urteen % {{pct}}ean asmatzen du",
-      "simulating": "Simulatzen… {{done}}/{{total}} urte", "simulatingStart": "Simulatzen…",
+      "ceiling": "eskuragarri dagoen urarekiko sabaia, ez da aurreikuspena",
+      "coverage": "urteen % {{pct}}ean asmatzen du",
+      "simulating": "Simulatzen… {{done}}/{{total}} urte",
+      "simulatingStart": "Simulatzen…",
       "firstRunNote": "Eremu berri bateko lehen simulazioak minutu batzuk behar ditu: eremuaren 15 urteko klima deskargatzen dugu. Hurrengoek minutu bat inguru behar dute.",
-      "moisture": { "commercial": "% {{pct}}eko hezetasunean", "commercialNoPct": "hezetasun komertzialean", "dry_matter": "materia lehorrean", "as_reported": "iturri bakoitzak argitaratzen duen hezetasunean" },
-      "unavailable": { "preseason_not_supported": "Ereiteaurreko simulazioa: oraindik ez dago eskuragarri", "engine_not_deployed": "zain",
-        "no_trials": "ez dago saiakuntzarik labore honetarako", "no_trials_for_variety": "ez dago barietate honen saiakuntzarik zure eremuan",
+      "moisture": {
+        "commercial": "% {{pct}}eko hezetasunean",
+        "commercialNoPct": "hezetasun komertzialean",
+        "dry_matter": "materia lehorrean",
+        "as_reported": "iturri bakoitzak argitaratzen duen hezetasunean"
+      },
+      "unavailable": {
+        "preseason_not_supported": "Ereiteaurreko simulazioa: oraindik ez dago eskuragarri",
+        "engine_not_deployed": "zain",
+        "no_trials": "ez dago saiakuntzarik labore honetarako",
+        "no_trials_for_variety": "ez dago barietate honen saiakuntzarik zure eremuan",
         "variety_not_in_evidence_sample": "barietate hau ez dago aztertutako saiakuntzen artean (gehiegi daude; berrienak erabili dira)",
         "not_validated": "zain: oraindik ez dago balioztatuta labore honetarako",
         "needs_sowing_date": "adierazi ereite-data simulatzeko",
@@ -283,9 +421,13 @@
         "expected_region_not_calibrated": "uztaren aurreikuspenik ez: probintzia kalibratu gabe dago",
         "expected_missing": "uztaren aurreikuspenik ez: motorrak ez du itzuli",
         "expected_unknown": "Ez dago espero den etekinik eremu honetarako",
-        "water_limited_missing": "uztaren sabairik ez: motorrak ez du itzuli" },
+        "water_limited_missing": "uztaren sabairik ez: motorrak ez du itzuli"
+      },
       "disagreement": "Ereduak ez datoz bat: ziurgabetasun handia.",
-      "trials_one": "{{count}} saiakuntza", "trials_other": "{{count}} saiakuntza", "years_one": "{{count}} urte", "years_other": "{{count}} urte",
+      "trials_one": "{{count}} saiakuntza",
+      "trials_other": "{{count}} saiakuntza",
+      "years_one": "{{count}} urte",
+      "years_other": "{{count}} urte",
       "none": "Oraindik ez dago estimaziorik labore honetarako."
     },
     "plan": {
@@ -293,16 +435,26 @@
       "years": "Aurreikusitako urteak",
       "cover": "Estaldura",
       "method": "Nola amaitzen den",
-      "methods": { "roller_crimper": "Arrabota zanpatzailea (roller crimper)", "mowing": "Sega", "incorporate": "Lurrean sartzea", "grazing": "Abereekin bazkatzea", "harvest": "Uzta" },
-      "otherSpecies": "Beste espezie bat…", "speciesName": "Espeziearen izena",
+      "methods": {
+        "roller_crimper": "Arrabota zanpatzailea (roller crimper)",
+        "mowing": "Sega",
+        "incorporate": "Lurrean sartzea",
+        "grazing": "Abereekin bazkatzea",
+        "harvest": "Uzta"
+      },
+      "otherSpecies": "Beste espezie bat…",
+      "speciesName": "Espeziearen izena",
       "error": {
         "species_name_invalid": "Idatzi espezie-izen baliozko bat (letrak soilik, gutxienez 2)",
-        "missing_species": "Espeziea aukeratu behar da", "missing_dates": "Datak falta dira",
+        "missing_species": "Espeziea aukeratu behar da",
+        "missing_dates": "Datak falta dira",
         "termination_outside_campaign": "Uzta edo amaiera {{campaign}} kanpainan egon behar da",
-        "dates_inconsistent": "Datak ez dira koherenteak", "cycles_overlap": "Datak lursaileko beste labore batekin gainjartzen dira",
+        "dates_inconsistent": "Datak ez dira koherenteak",
+        "cycles_overlap": "Datak lursaileko beste labore batekin gainjartzen dira",
         "campaign_past": "Ezin da iragan den kanpaina bat planifikatu",
         "campaign_started": "Kanpaina honek ereindako labore bat du jada: aldatu landa-eragiketetatik",
-        "unknown_crop": "Labore ezezaguna", "generic": "Ezin izan da plana gorde",
+        "unknown_crop": "Labore ezezaguna",
+        "generic": "Ezin izan da plana gorde",
         "perennial_start_outside_campaign": "Urte anitzeko labore bat {{campaign}} kanpainan erein behar da",
         "perennial_too_long": "Urte anitzeko labore batek {{campaign}} kanpainaren eta hamar urte geroagoren artean amaitu behar du",
         "missing_duration": "Adierazi zenbat urtez mantenduko den laborea",
@@ -316,11 +468,171 @@
         "invalid_response": "Zerbitzariak ustekabeko erantzuna eman du; saiatu berriro."
       }
     },
-    "wizard": {"step": "{{n}}/{{total}} urratsa", "next": "Hurrengoa", "back": "Atzera", "save": "Gorde plana", "crop": {"complete": {"saved": {"soil": "Ehundura gordeta", "regime": "Erregimena gordeta", "history": "Laborantza gordeta"}, "title": "Osatu partzelaren datuak", "regime": {"label": "Lehorrekoa ala ureztatua?", "why": "Erregimenarekin jakingo dugu uraren atea aplikatzen den eta laborantza bakoitzak zenbat ureztatze behar duen."}, "soil": {"label": "Zein da lurzoruaren ehundura?", "why": "Ehundurak laborantza bakoitza zure lurzoruari zein ondo egokitzen zaion doitzen du.", "placeholder": "Aukeratu ehundura"}, "history": {"label": "Zer landatu zenuen aurreko kanpainetan?", "why": "Historialarekin errotazio-arauak laborantza bakoitzari aplikatzen zaizkio.", "campaign": "{{campaign}}. kanpaina", "placeholder": "Aukeratu laborantza"}, "unknown": "Ez dakit", "error": {"soilNotReady": "Partzela honen lurzoru-daturik ez dago oraindik; saiatu geroago.", "campaign_not_past": "Kanpaina hori ez da oraingoaren aurrekoa.", "invalid_campaign": "Kanpaina baliogabea.", "invalid_species": "Laborantza baliogabea.", "campaign_has_dated_crop": "Kanpaina horrek data duen laborantza erregistratuta dauka jada.", "generic": "Ezin izan da gorde. Zerrendak erabilgarri jarraitzen du; saiatu berriro."}}, "title": "Zer ereingo duzu?", "recommended": "Partzela honetarako gomendatuak", "search": "Bilatu beste labore bat", "noResults": "Ez dago izen hori duen laborerik", "irrigation": {"line": "Ureztatzea: ~{{p50}} mm ({{p10}}–{{p90}}) urte arruntean", "pending": "Ureztatze-beharra kalkulatzen…", "detailYears": "Klima historikoa, {{from}}–{{to}} urteak ({{n}} urte).", "detailNet": "Soroko behar garbia, aplikazio-eraginkortasunik gabe.", "detailNotForecast": "Klima-erreferentzia da, ez zure partzelarako aurreikuspena.", "unavailable": {"regime_not_irrigated": "Partzela ez da ureztatua.", "no_kc": "Laboreak ez du ureztatze-koefizienterik.", "kc_unavailable": "Ureztatze-koefizienteak ez daude eskuragarri orain.", "no_stage_lengths": "Laboreko faseen iraupenak falta dira.", "no_sowing_date": "Ez dago ereiteko data tipikorik ureztatzea kalkulatzeko.", "pending": "Ureztatze-beharra kalkulatzen…", "weather_unavailable": "Ez dago klima-daturik ureztatzea orain kalkulatzeko."}}, "regional": {"line": "Eskualdea: {{p50}} t/ha ({{p10}}–{{p90}}) · Espainiaren % {{index}}", "lineNoIndex": "Eskualdea: {{p50}} t/ha ({{p10}}–{{p90}})", "none": "Eskualdeko estatistikarik ez", "info": "Eskualdeko errendimenduari buruzko informazio gehiago", "detailRegion": "{{region}} eskualdeko estatistika, {{from}}–{{to}} urteak.", "detailMixed": "Ihartuko eta ureztatuko batez bestekoa, elkarrekin.", "detailMoisture": "EBko hezetasun estandarra (% {{pct}}).", "detailMoistureNoPct": "EBko hezetasun estandarra.", "detailNotForecast": "Ez da zure partzelarentzako aurreikuspena.", "unavailable": {"region_lookup_unavailable": "Ezin izan da partzelaren eskualdea zehaztu.", "crop_not_in_statistics": "Laborantza hau ez dago eskualdeko estatistiketan.", "region_series_short": "Eskualdeko seriea laburregia da.", "national_series_short": "Estatuko seriea laburregia da alderatzeko.", "region_stats_unavailable": "Eskualdeko estatistika ez dago eskuragarri orain."}}}, "variety": {"title": "Zein barietate?", "none": "Barietaterik gabe / gero erabakiko dut", "all": "Ikusi barietate guztiak", "why": {"productive": "Zure eremuan emankorrena", "stable": "Urteen artean egonkorrena", "balanced": "Ekoizpen ona eta egonkorra"}}, "sowing": {"title": "Noiz ereingo duzu?", "chosen": "{{crop}} ereitea: {{range}}", "recommended": "Zure eremuan gomendatua: {{range}}", "noWindow": "Ez dakigu labore honen ereite-leihoa zure eremuan: aukeratu hamabostaldi bat", "years": "Zenbat urte?"}, "cover": {"title": "Estaldura aurretik?", "no": "Ez", "yes": "Bai", "grows": "Estaldura {{range}} hazten da, {{weeks}} aste inguru", "short": "Denbora gutxi estaldura baterako: {{weeks}} aste inguru", "noFit": "Ez dago estaldurarako tarterik ereite honen aurretik", "ends": "Labore nagusia ereitean amaitzen da ({{method}})", "ref": {"title": "Erreferentzia agronomikoa", "loading": "Erreferentzia kargatzen…", "error": "Ezin izan da erreferentzia kargatu", "noData": "Ez dago erreferentzia-daturik espezie eta garai honetarako", "seasonAutumn": "Udazkeneko ereite-entseguak", "seasonSpring": "Udaberriko ereite-entseguak", "seasonUnspecified": "Garairik adierazi gabeko entseguak", "dm": "Goiko biomasa (t MI/ha)", "nPct": "N biomasan (% MI)", "cn": "C/N", "value": "{{mean}} ± {{se}} (n = {{n}})", "valueNoSe": "{{mean}} (n = {{n}})", "nAcc": "Goiko zatian metatutako N: {{value}} kg N/ha", "nAccNote": "Kalkulua: biomasa × %N; ez da finkatutako N, ezta hurrengo laborerako eskuragarri dagoena ere.", "coverage": "Europako entseguen batezbestekoa, gehienak Europako iparraldekoak eta erdialdekoak"}}, "summary": {"title": "Zure plana", "yield": "Espero den uzta {{low}}–{{high}} t/ha", "detail": "Ikusi xehetasunak", "regimeNotSaved": "Plana gorde da, baina ezin izan da lehorra/ureztatua partzelan gorde; hurrengo plana gordetzean berriro saiatuko da", "continue": "Jarraitu"}, "change": "Aldatu"},
-    "lock": { "campaign_unknown": "Kanpaina honek jatorri edo egoera ezezaguneko labore bat du: berrikusi landa-eragiketetan" },
-    "simulation": { "forecast": "Ikusi aurreikuspena Laborearen Osasunean", "open": "Martxan dagoen kanpainaren simulazioa", "forecastNote": "Kanpainaren aurreikuspena Laborearen Osasunean ere badago." },
-    "widget": { "title": "Partzelaren plana", "undecided": "Erabaki gabe", "plan": "Planifikatu" },
-    "sources": { "open": "Datu-iturriak", "close": "Ezkutatu iturriak" },
-    "tabs": { "plan": "Plana", "more": "Gehiago" }
+    "wizard": {
+      "step": "{{n}}/{{total}} urratsa",
+      "next": "Hurrengoa",
+      "back": "Atzera",
+      "save": "Gorde plana",
+      "crop": {
+        "complete": {
+          "saved": {
+            "soil": "Ehundura gordeta",
+            "regime": "Erregimena gordeta",
+            "history": "Laborantza gordeta"
+          },
+          "title": "Osatu partzelaren datuak",
+          "regime": {
+            "label": "Lehorrekoa ala ureztatua?",
+            "why": "Erregimenarekin jakingo dugu uraren atea aplikatzen den eta laborantza bakoitzak zenbat ureztatze behar duen."
+          },
+          "soil": {
+            "label": "Zein da lurzoruaren ehundura?",
+            "why": "Ehundurak laborantza bakoitza zure lurzoruari zein ondo egokitzen zaion doitzen du.",
+            "placeholder": "Aukeratu ehundura"
+          },
+          "history": {
+            "label": "Zer landatu zenuen aurreko kanpainetan?",
+            "why": "Historialarekin errotazio-arauak laborantza bakoitzari aplikatzen zaizkio.",
+            "campaign": "{{campaign}}. kanpaina",
+            "placeholder": "Aukeratu laborantza"
+          },
+          "unknown": "Ez dakit",
+          "error": {
+            "soilNotReady": "Partzela honen lurzoru-daturik ez dago oraindik; saiatu geroago.",
+            "campaign_not_past": "Kanpaina hori ez da oraingoaren aurrekoa.",
+            "invalid_campaign": "Kanpaina baliogabea.",
+            "invalid_species": "Laborantza baliogabea.",
+            "campaign_has_dated_crop": "Kanpaina horrek data duen laborantza erregistratuta dauka jada.",
+            "generic": "Ezin izan da gorde. Zerrendak erabilgarri jarraitzen du; saiatu berriro.",
+            "invalid_variety": "Barietate baliogabea.",
+            "invalid_yield": "Sartu 1 eta 200000 kg/ha arteko errendimendua."
+          }
+        },
+        "title": "Zer ereingo duzu?",
+        "recommended": "Partzela honetarako gomendatuak",
+        "search": "Bilatu beste labore bat",
+        "noResults": "Ez dago izen hori duen laborerik",
+        "irrigation": {
+          "line": "Ureztatzea: ~{{p50}} mm ({{p10}}–{{p90}}) urte arruntean",
+          "pending": "Ureztatze-beharra kalkulatzen…",
+          "detailYears": "Klima historikoa, {{from}}–{{to}} urteak ({{n}} urte).",
+          "detailNet": "Soroko behar garbia, aplikazio-eraginkortasunik gabe.",
+          "detailNotForecast": "Klima-erreferentzia da, ez zure partzelarako aurreikuspena.",
+          "unavailable": {
+            "regime_not_irrigated": "Partzela ez da ureztatua.",
+            "no_kc": "Laboreak ez du ureztatze-koefizienterik.",
+            "kc_unavailable": "Ureztatze-koefizienteak ez daude eskuragarri orain.",
+            "no_stage_lengths": "Laboreko faseen iraupenak falta dira.",
+            "no_sowing_date": "Ez dago ereiteko data tipikorik ureztatzea kalkulatzeko.",
+            "pending": "Ureztatze-beharra kalkulatzen…",
+            "weather_unavailable": "Ez dago klima-daturik ureztatzea orain kalkulatzeko."
+          }
+        },
+        "regional": {
+          "line": "Eskualdea: {{p50}} t/ha ({{p10}}–{{p90}}) · Espainiaren % {{index}}",
+          "lineNoIndex": "Eskualdea: {{p50}} t/ha ({{p10}}–{{p90}})",
+          "none": "Eskualdeko estatistikarik ez",
+          "info": "Eskualdeko errendimenduari buruzko informazio gehiago",
+          "detailRegion": "{{region}} eskualdeko estatistika, {{from}}–{{to}} urteak.",
+          "detailMixed": "Ihartuko eta ureztatuko batez bestekoa, elkarrekin.",
+          "detailMoisture": "EBko hezetasun estandarra (% {{pct}}).",
+          "detailMoistureNoPct": "EBko hezetasun estandarra.",
+          "detailNotForecast": "Ez da zure partzelarentzako aurreikuspena.",
+          "unavailable": {
+            "region_lookup_unavailable": "Ezin izan da partzelaren eskualdea zehaztu.",
+            "crop_not_in_statistics": "Laborantza hau ez dago eskualdeko estatistiketan.",
+            "region_series_short": "Eskualdeko seriea laburregia da.",
+            "national_series_short": "Estatuko seriea laburregia da alderatzeko.",
+            "region_stats_unavailable": "Eskualdeko estatistika ez dago eskuragarri orain."
+          }
+        }
+      },
+      "variety": {
+        "title": "Zein barietate?",
+        "none": "Barietaterik gabe / gero erabakiko dut",
+        "all": "Ikusi barietate guztiak",
+        "why": {
+          "productive": "Zure eremuan emankorrena",
+          "stable": "Urteen artean egonkorrena",
+          "balanced": "Ekoizpen ona eta egonkorra"
+        }
+      },
+      "sowing": {
+        "title": "Noiz ereingo duzu?",
+        "chosen": "{{crop}} ereitea: {{range}}",
+        "recommended": "Zure eremuan gomendatua: {{range}}",
+        "noWindow": "Ez dakigu labore honen ereite-leihoa zure eremuan: aukeratu hamabostaldi bat",
+        "years": "Zenbat urte?"
+      },
+      "cover": {
+        "title": "Estaldura aurretik?",
+        "no": "Ez",
+        "yes": "Bai",
+        "grows": "Estaldura {{range}} hazten da, {{weeks}} aste inguru",
+        "short": "Denbora gutxi estaldura baterako: {{weeks}} aste inguru",
+        "noFit": "Ez dago estaldurarako tarterik ereite honen aurretik",
+        "ends": "Labore nagusia ereitean amaitzen da ({{method}})",
+        "ref": {
+          "title": "Erreferentzia agronomikoa",
+          "loading": "Erreferentzia kargatzen…",
+          "error": "Ezin izan da erreferentzia kargatu",
+          "noData": "Ez dago erreferentzia-daturik espezie eta garai honetarako",
+          "seasonAutumn": "Udazkeneko ereite-entseguak",
+          "seasonSpring": "Udaberriko ereite-entseguak",
+          "seasonUnspecified": "Garairik adierazi gabeko entseguak",
+          "dm": "Goiko biomasa (t MI/ha)",
+          "nPct": "N biomasan (% MI)",
+          "cn": "C/N",
+          "value": "{{mean}} ± {{se}} (n = {{n}})",
+          "valueNoSe": "{{mean}} (n = {{n}})",
+          "nAcc": "Goiko zatian metatutako N: {{value}} kg N/ha",
+          "nAccNote": "Kalkulua: biomasa × %N; ez da finkatutako N, ezta hurrengo laborerako eskuragarri dagoena ere.",
+          "coverage": "Europako entseguen batezbestekoa, gehienak Europako iparraldekoak eta erdialdekoak"
+        }
+      },
+      "summary": {
+        "title": "Zure plana",
+        "yield": "Espero den uzta {{low}}–{{high}} t/ha",
+        "detail": "Ikusi xehetasunak",
+        "regimeNotSaved": "Plana gorde da, baina ezin izan da lehorra/ureztatua partzelan gorde; hurrengo plana gordetzean berriro saiatuko da",
+        "continue": "Jarraitu"
+      },
+      "change": "Aldatu"
+    },
+    "lock": {
+      "campaign_unknown": "Kanpaina honek jatorri edo egoera ezezaguneko labore bat du: berrikusi landa-eragiketetan"
+    },
+    "simulation": {
+      "forecast": "Ikusi aurreikuspena Laborearen Osasunean",
+      "open": "Martxan dagoen kanpainaren simulazioa",
+      "forecastNote": "Kanpainaren aurreikuspena Laborearen Osasunean ere badago."
+    },
+    "widget": {
+      "title": "Partzelaren plana",
+      "undecided": "Erabaki gabe",
+      "plan": "Planifikatu"
+    },
+    "sources": {
+      "open": "Datu-iturriak",
+      "close": "Ezkutatu iturriak"
+    },
+    "tabs": {
+      "plan": "Plana",
+      "more": "Gehiago"
+    },
+    "historyEditor": {
+      "title": "Kanpainen historikoa (5 urte)",
+      "hint": "Adierazi edo zuzendu azken 5 kanpainetako labore, barietate eta errendimendua (kg/ha) txandakatzea, ongarritzea eta lursailaren erreferentzia doitzeko.",
+      "campaign": "{{campaign}} kanpaina",
+      "cropPlaceholder": "Aukeratu laborea",
+      "varietyLabel": "Barietatea",
+      "varietyPlaceholder": "Barietatea (auk.)",
+      "yieldLabel": "Errendimendua (kg/ha)",
+      "yieldPlaceholder": "kg/ha (auk.)",
+      "noYield": "erregistratutako errendimendurik gabe",
+      "save": "Gorde",
+      "clear": "Kendu",
+      "saved": "{{campaign}} kanpaina eguneratuta"
+    }
   }
 }

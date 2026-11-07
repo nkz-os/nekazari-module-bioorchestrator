@@ -11,6 +11,7 @@ from collections import defaultdict
 from datetime import date
 
 from app.planning.history import (
+    HISTORY_WINDOW,
     ROLLOVER_MONTH,
     cell_from_cycle,
     cycle_campaigns,
@@ -40,6 +41,10 @@ def default_target_campaign(today: date) -> int:
 
 def campaign_columns(target: int) -> list[int]:
     return [target - 3, target - 2, target - 1, target]
+
+
+def history_columns(target: int) -> list[int]:
+    return list(range(target - HISTORY_WINDOW, target))
 
 
 def _negates_irrigation(tokens: list[str]) -> bool:
@@ -111,15 +116,16 @@ def _rotation_warnings(payload: dict, target: int, constraints) -> list[dict]:
 
 
 def parcel_row(parcel: dict, crops_by_id: dict, payload: dict | None, target: int, constraints) -> dict:
-    columns = campaign_columns(target)
-    cells: dict[str, list[dict]] = {str(c): [] for c in columns}
+    area_ha = _area(parcel)
+    all_columns = history_columns(target) + [target]
+    cells: dict[str, list[dict]] = {str(c): [] for c in all_columns}
     target_crops, warnings = [], []
     for cycle in cycles_of(payload):
         crop = crops_by_id.get(cycle.get("crop_id"))
         # An annual sits in the campaign it ends in; a perennial fills every campaign it occupies.
         for label in cycle_campaigns(cycle, until=target):
-            if label in columns:
-                cells[str(label)].append(cell_from_cycle(cycle, crop))
+            if label in all_columns:
+                cells[str(label)].append(cell_from_cycle(cycle, crop, area_ha=area_ha))
                 if label == target and crop:
                     target_crops.append(crop)
     regime, regime_source = parcel_regime(parcel, target_crops)
@@ -132,7 +138,7 @@ def parcel_row(parcel: dict, crops_by_id: dict, payload: dict | None, target: in
         warnings.extend(_rotation_warnings(payload, target, constraints))
     if regime is None:
         warnings.append({"code": "regime_missing", "campaign": target, "params": {}})
-    return {"parcel_id": parcel["id"], "name": plain(parcel.get("name")), "area_ha": _area(parcel),
+    return {"parcel_id": parcel["id"], "name": plain(parcel.get("name")), "area_ha": area_ha,
             "farm_id": _farm_id(parcel), "regime": regime, "regime_source": regime_source,
             "cycles_available": payload is not None, "cells": cells, "warnings": warnings}
 
@@ -148,7 +154,7 @@ def farm_payload(parcels: list[dict], farms: list[dict], crops_by_id: dict, cycl
     names = {f["id"]: plain(f.get("name")) for f in farms}
     linked = sorted({r["farm_id"] for r in rows if r["farm_id"]})
     return {
-        "campaign": target, "campaigns": campaign_columns(target),
+        "campaign": target, "campaigns": campaign_columns(target), "history_campaigns": history_columns(target),
         "farms": [{"farm_id": f, "name": names.get(f)} for f in linked] or [{"farm_id": None, "name": None}],
         "parcels": rows,
         "summary": {

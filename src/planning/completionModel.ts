@@ -60,7 +60,14 @@ export function declarableCrops(species: SpeciesFit[]): SpeciesFit[] {
 export function writeErrorKey(kind: WriteKind, status: number | null, code: string | null): string {
   if (kind === 'soil' && status === 404) return 'soilNotReady';
   if (kind === 'history') {
-    if (code === 'campaign_not_past' || code === 'invalid_campaign' || code === 'invalid_species' || code === 'campaign_has_dated_crop') return code;
+    if (
+      code === 'campaign_not_past'
+      || code === 'invalid_campaign'
+      || code === 'invalid_species'
+      || code === 'invalid_variety'
+      || code === 'invalid_yield'
+      || code === 'campaign_has_dated_crop'
+    ) return code;
   }
   return 'generic';
 }

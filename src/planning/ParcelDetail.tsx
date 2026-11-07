@@ -9,6 +9,7 @@ import { saveRegimePick } from './completionModel';
 import { cropName, safeLang, shortId } from './format';
 import { armOneShotRefetch, irrigatedParcel, isPending } from './irrigationNeed';
 import { lockMessage, lockReason, previousMain, simulationAvailable } from './matrixModel';
+import ParcelHistorySection from './ParcelHistorySection';
 import { CycleLine } from './PlanMatrix';
 import type { Management, ParcelRow, Regime } from './types';
 import { useLoad } from './useLoad';
@@ -98,8 +99,23 @@ export default function ParcelDetail({ row, campaign, onClose, onSaved, onSimula
           <span className="text-nkz-sm text-nkz-text-muted">{t('planning.detail.known')}:</span>
           <Badge intent="default">{`${t('planning.detail.climate')}: ${facts.climate_class ?? t('planning.detail.noData')}`}</Badge>
           <Badge intent="default">{`${t('planning.detail.soil')}: ${soilTexture}${facts.soil_ph != null ? `, pH ${facts.soil_ph.toLocaleString(safeLang(lang))}` : ''}`}</Badge>
+          <a
+            href={`/module/soil?parcel=${encodeURIComponent(row.parcel_id)}&tab=manual`}
+            className="text-nkz-xs text-nkz-accent-base underline"
+          >
+            {t('planning.detail.soilLabLink')}
+          </a>
           {!facts.history_available && <Badge intent="warning">{t('planning.detail.historyDown')}</Badge>}
         </Inline>
+      )}
+
+      {fit.data && (
+        <ParcelHistorySection
+          row={row}
+          campaign={campaign}
+          species={fit.data.species}
+          onSaved={() => { fit.retry(); onReload?.(); }}
+        />
       )}
 
       {targetCells.length > 0 && (
