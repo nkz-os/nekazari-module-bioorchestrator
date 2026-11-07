@@ -28,7 +28,7 @@ def varying_clim():
 
 
 def test_contract_version_and_blockers():
-    assert CONTRACT_VERSION == "2.5"
+    assert CONTRACT_VERSION == "2.6"
     assert BLOCKERS == frozenset({"soil_unsuitable", "soil_ph_unsuitable", "soil_texture_unsuitable",
                                   "soil_drainage_unsuitable", "frost_risk"})
     assert "irrigation_need_tight" in INFORMATIVE

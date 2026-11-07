@@ -132,27 +132,93 @@
     }
   },
   "planning": {
-    "whatNow": {"today": "hoje", "title": "O que fazer agora", "quiet": "Sem surpresas nem tarefas pendentes", "job": {"irrigate": "Regar hoje", "sow": "Semear {{crop}}", "treat": "Verificar {{disease}}", "harvest": "Colher", "pending_assessment": "Avaliação pendente", "none_until": "Nada até {{date}}", "none": "Nada pendente", "sowOn": "Semear {{crop}}: {{date}}", "harvestOn": "Colher: {{date}}"}, "surprise": {"vigor_below_expected": "Vigor abaixo do esperado", "water_drop": "Queda brusca da reserva de água", "phenology_deviation": "Fenologia desviada", "new_high_alert": "Alerta nova: {{disease}}"}, "open": "Abrir em saúde da cultura"},
-    "loading": {"generic": "A carregar…", "farm": "A carregar as suas parcelas…", "fit": "A analisar que culturas se adaptam a esta parcela…", "varieties": "A procurar variedades nos ensaios da sua zona; pode demorar alguns segundos…", "estimates": "A calcular a colheita esperada…"},
+    "whatNow": {
+      "today": "hoje",
+      "title": "O que fazer agora",
+      "quiet": "Sem surpresas nem tarefas pendentes",
+      "job": {
+        "irrigate": "Regar hoje",
+        "sow": "Semear {{crop}}",
+        "treat": "Verificar {{disease}}",
+        "harvest": "Colher",
+        "pending_assessment": "Avaliação pendente",
+        "none_until": "Nada até {{date}}",
+        "none": "Nada pendente",
+        "sowOn": "Semear {{crop}}: {{date}}",
+        "harvestOn": "Colher: {{date}}"
+      },
+      "surprise": {
+        "vigor_below_expected": "Vigor abaixo do esperado",
+        "water_drop": "Queda brusca da reserva de água",
+        "phenology_deviation": "Fenologia desviada",
+        "new_high_alert": "Alerta nova: {{disease}}"
+      },
+      "open": "Abrir em saúde da cultura"
+    },
+    "loading": {
+      "generic": "A carregar…",
+      "farm": "A carregar as suas parcelas…",
+      "fit": "A analisar que culturas se adaptam a esta parcela…",
+      "varieties": "A procurar variedades nos ensaios da sua zona; pode demorar alguns segundos…",
+      "estimates": "A calcular a colheita esperada…"
+    },
     "title": "Planeamento de culturas",
     "subtitle": "O que semear em cada parcela, com que variedade e por que ordem",
-    "campaign": "Campanha", "farm": "Exploração", "farmAll": "Todas as parcelas", "retry": "Tentar novamente",
+    "campaign": "Campanha",
+    "farm": "Exploração",
+    "farmAll": "Todas as parcelas",
+    "retry": "Tentar novamente",
     "errorLoad": "Não foi possível carregar. Tente novamente.",
     "reload": "Recarregar a página",
-    "error": { "session": "A sessão expirou: volta a entrar." },
-    "empty": { "noParcels": "Sem parcelas", "noParcelsHint": "Crie parcelas no visualizador para planear as respetivas campanhas." },
+    "error": {
+      "session": "A sessão expirou: volta a entrar."
+    },
+    "empty": {
+      "noParcels": "Sem parcelas",
+      "noParcelsHint": "Crie parcelas no visualizador para planear as respetivas campanhas."
+    },
     "summary": {
       "area": "{{crop}} {{ha}} ha",
-      "title": "Campanha {{campaign}}", "ha": "{{ha}} ha",
-      "undecided_one": "{{count}} parcela por decidir", "undecided_other": "{{count}} parcelas por decidir",
-      "rotation_one": "{{count}} aviso de rotação", "rotation_other": "{{count}} avisos de rotação"
+      "title": "Campanha {{campaign}}",
+      "ha": "{{ha}} ha",
+      "undecided_one": "{{count}} parcela por decidir",
+      "undecided_other": "{{count}} parcelas por decidir",
+      "rotation_one": "{{count}} aviso de rotação",
+      "rotation_other": "{{count}} avisos de rotação"
     },
-    "next": { "sowing": "Sementeira planeada: {{crop}}{{window}}", "inField": "No campo: ver a saúde da cultura" },
-    "matrix": { "nextStep": "Próximo passo", "parcel": "Parcela", "area": "ha", "regime": "Regime", "choose": "Escolher", "change": "Alterar", "legend": "● realizado · ◐ declarado · ○ planeado" },
-    "provenance": { "actual": "realizado", "declared": "declarado", "planned": "planeado", "unknown": "sem dados" },
-    "role": { "main_crop": "cultura principal", "cover_crop": "cultura de cobertura", "catch_crop": "cultura intercalar" },
-    "regime": { "rainfed": "Sequeiro", "irrigated": "Regadio", "unknown": "Por declarar" },
-    "management": { "conventional": "Convencional", "organic": "Biológico" },
+    "next": {
+      "sowing": "Sementeira planeada: {{crop}}{{window}}",
+      "inField": "No campo: ver a saúde da cultura"
+    },
+    "matrix": {
+      "nextStep": "Próximo passo",
+      "parcel": "Parcela",
+      "area": "ha",
+      "regime": "Regime",
+      "choose": "Escolher",
+      "change": "Alterar",
+      "legend": "● realizado · ◐ declarado · ○ planeado"
+    },
+    "provenance": {
+      "actual": "realizado",
+      "declared": "declarado",
+      "planned": "planeado",
+      "unknown": "sem dados"
+    },
+    "role": {
+      "main_crop": "cultura principal",
+      "cover_crop": "cultura de cobertura",
+      "catch_crop": "cultura intercalar"
+    },
+    "regime": {
+      "rainfed": "Sequeiro",
+      "irrigated": "Regadio",
+      "unknown": "Por declarar"
+    },
+    "management": {
+      "conventional": "Convencional",
+      "organic": "Biológico"
+    },
     "warning": {
       "cycles_unavailable": "Não foi possível ler o historial desta parcela",
       "regime_missing": "Falta declarar sequeiro ou regadio",
@@ -161,14 +227,41 @@
     },
     "detail": {
       "currentPlan": "Plano atual",
-      "back": "Voltar ao plano", "previous": "Anterior: {{crop}} ({{campaign}})", "known": "O que sabemos",
-      "climate": "Clima", "soil": "Solo", "noData": "sem dados", "regimeQuestion": "Sequeiro ou regadio?",
+      "back": "Voltar ao plano",
+      "previous": "Anterior: {{crop}} ({{campaign}})",
+      "known": "O que sabemos",
+      "climate": "Clima",
+      "soil": "Solo",
+      "noData": "sem dados",
+      "regimeQuestion": "Sequeiro ou regadio?",
       "regimeHint": "É necessário para planear: a evidência e as simulações nunca misturam sequeiro e regadio.",
-      "managementLabel": "Maneio", "historyDown": "Não foi possível ler o historial: a rotação não foi verificada.",
-      "allotment": {"label": "Dotação da campanha", "hint": "Água disponível para a rega desta campanha.", "placeholder": "Ex.: 4500", "unitLabel": "Unidade", "unit": {"m3ha": "m³/ha", "mm": "mm"}, "save": "Guardar", "none": "Sem dotação declarada", "stored": "Guardado: {{mm}} mm ({{m3}} m³/ha)", "clear": "Remover", "invalid": "Introduza um número maior que 0.", "thousands": "Escreva o número sem separador de milhares (por exemplo 4500).", "tooSmall": "Demasiado baixo: mínimo 1 mm (10 m³/ha).", "tooLarge": "Demasiado alto: máximo {{max}} {{unit}}.", "saveError": "Não foi possível guardar a dotação. Tente novamente."}
+      "managementLabel": "Maneio",
+      "historyDown": "Não foi possível ler o historial: a rotação não foi verificada.",
+      "allotment": {
+        "label": "Dotação da campanha",
+        "hint": "Água disponível para a rega desta campanha.",
+        "placeholder": "Ex.: 4500",
+        "unitLabel": "Unidade",
+        "unit": {
+          "m3ha": "m³/ha",
+          "mm": "mm"
+        },
+        "save": "Guardar",
+        "none": "Sem dotação declarada",
+        "stored": "Guardado: {{mm}} mm ({{m3}} m³/ha)",
+        "clear": "Remover",
+        "invalid": "Introduza um número maior que 0.",
+        "thousands": "Escreva o número sem separador de milhares (por exemplo 4500).",
+        "tooSmall": "Demasiado baixo: mínimo 1 mm (10 m³/ha).",
+        "tooLarge": "Demasiado alto: máximo {{max}} {{unit}}.",
+        "saveError": "Não foi possível guardar a dotação. Tente novamente."
+      },
+      "soilLabLink": "Introduzir análise de solo"
     },
     "fit": {
-      "fits": "Adequada", "caveats": "Com reservas", "no_fit": "Não adequada",
+      "fits": "Adequada",
+      "caveats": "Com reservas",
+      "no_fit": "Não adequada",
       "sowing": "sementeira {{from}}–{{to}}"
     },
     "reason": {
@@ -199,18 +292,38 @@
       "climate_unknown": "Sem clima da parcela: adequação não totalmente verificada"
     },
     "texture": {
-      "sand": "arenosa", "loamy-sand": "areno-franca", "sandy-loam": "franco-arenosa", "loam": "franca",
-      "silt-loam": "franco-limosa", "silt": "limosa", "sandy-clay-loam": "franco-argilo-arenosa", "clay-loam": "franco-argilosa",
-      "silty-clay-loam": "franco-argilo-limosa", "sandy-clay": "argilo-arenosa", "silty-clay": "argilo-limosa", "clay": "argilosa"
+      "sand": "arenosa",
+      "loamy-sand": "areno-franca",
+      "sandy-loam": "franco-arenosa",
+      "loam": "franca",
+      "silt-loam": "franco-limosa",
+      "silt": "limosa",
+      "sandy-clay-loam": "franco-argilo-arenosa",
+      "clay-loam": "franco-argilosa",
+      "silty-clay-loam": "franco-argilo-limosa",
+      "sandy-clay": "argilo-arenosa",
+      "silty-clay": "argilo-limosa",
+      "clay": "argilosa"
     },
     "variety": {
       "noTrials": "Não há ensaios de variedades desta cultura na sua zona. Pode planeá-la sem variedade.",
       "needsClimate": "Sem o clima da parcela não é possível procurar evidência.",
-      "variety": "Variedade", "relative": "Rend. relativo", "stability": "Estabilidade", "environments": "Ensaios / anos",
+      "variety": "Variedade",
+      "relative": "Rend. relativo",
+      "stability": "Estabilidade",
+      "environments": "Ensaios / anos",
       "relativeHint": "Rendimento face à média de cada ensaio: 100 % = igual à média.",
-      "lowEnv": "Em ensaios fracos", "lowEnvHint": "Em ensaios fracos: rendimento face à média no terço de ensaios com menor produção (anos secos ou maus).",
-      "stable": "estável", "average": "média", "responsive": "sensível ao ambiente", "few": "poucos ensaios", "stale": "sem ensaios desde {{year}}",
-      "tier": { "field": "ensaios de campo", "regional": "médias regionais" },
+      "lowEnv": "Em ensaios fracos",
+      "lowEnvHint": "Em ensaios fracos: rendimento face à média no terço de ensaios com menor produção (anos secos ou maus).",
+      "stable": "estável",
+      "average": "média",
+      "responsive": "sensível ao ambiente",
+      "few": "poucos ensaios",
+      "stale": "sem ensaios desde {{year}}",
+      "tier": {
+        "field": "ensaios de campo",
+        "regional": "médias regionais"
+      },
       "depth": {
         "deep": "evidência profunda",
         "broad": "evidência ampla",
@@ -222,7 +335,8 @@
       "staleShow_other": "Mostrar {{count}} variedades sem ensaios recentes",
       "staleHide": "Ocultar as variedades sem ensaios recentes",
       "staleHint": "Não estiveram em nenhum ensaio das últimas campanhas: a rede retirou-as ou renovou-as. Continuam aqui caso as conheça ou tenha semente.",
-      "choose": "Escolher", "chosen": "Escolhida"
+      "choose": "Escolher",
+      "chosen": "Escolhida"
     },
     "gap": {
       "no_expected_yield": "Sem rendimento esperado",
@@ -251,21 +365,45 @@
     },
     "estimate": {
       "inputs": "Mesmos dados para todas: {{regime}} · {{management}} · sementeira {{sowing}}",
-      "noSowing": "sem data", "source": "Fonte", "median": "P50", "range": "Intervalo (t/ha)", "basisCol": "Base",
-      "basis": { "trial_evidence": "parcela de ensaio, maneio ótimo", "water_limited": "potencial limitado pela água", "gap_corrected": "com a lacuna de rendimento da zona", "potential": "potencial sem limitação de água" },
-      "provider": { "trial_evidence": "Ensaios da zona", "aquacrop": "AquaCrop" },
+      "noSowing": "sem data",
+      "source": "Fonte",
+      "median": "P50",
+      "range": "Intervalo (t/ha)",
+      "basisCol": "Base",
+      "basis": {
+        "trial_evidence": "parcela de ensaio, maneio ótimo",
+        "water_limited": "potencial limitado pela água",
+        "gap_corrected": "com a lacuna de rendimento da zona",
+        "potential": "potencial sem limitação de água",
+        "parcel_history": "colheitas desta parcela"
+      },
+      "provider": {
+        "trial_evidence": "Ensaios da zona",
+        "aquacrop": "AquaCrop",
+        "parcel_history": "Histórico nesta parcela"
+      },
       "experimental": "experimental",
       "directSowing": "Sementeira direta sobre o restolho",
       "directSowingHint": "O AquaCrop simula o restolho como uma cobertura de 30 % do solo, que reduz a sua evaporação.",
       "directSowingFromOperations": "Simulado com sementeira direta: é o que consta da sementeira registada em Operações de campo.",
       "directSowingNotApplied": "A simulação não aplicou a sementeira direta: este resultado é de solo nu.",
       "validatedAs": "Validado: {{metric}}",
-      "ceiling": "teto com a água disponível, não é uma previsão", "coverage": "acerta em {{pct}} % dos anos",
-      "simulating": "A simular… {{done}}/{{total}} anos", "simulatingStart": "A simular…",
+      "ceiling": "teto com a água disponível, não é uma previsão",
+      "coverage": "acerta em {{pct}} % dos anos",
+      "simulating": "A simular… {{done}}/{{total}} anos",
+      "simulatingStart": "A simular…",
       "firstRunNote": "A primeira simulação numa zona nova demora alguns minutos: descarregamos 15 anos de clima da zona. As seguintes demoram cerca de um minuto.",
-      "moisture": { "commercial": "a {{pct}} % de humidade", "commercialNoPct": "a humidade comercial", "dry_matter": "em matéria seca", "as_reported": "à humidade que cada fonte publica" },
-      "unavailable": { "preseason_not_supported": "Simulação antes da sementeira: ainda não disponível", "engine_not_deployed": "pendente",
-        "no_trials": "sem ensaios desta cultura", "no_trials_for_variety": "sem ensaios desta variedade na sua zona",
+      "moisture": {
+        "commercial": "a {{pct}} % de humidade",
+        "commercialNoPct": "a humidade comercial",
+        "dry_matter": "em matéria seca",
+        "as_reported": "à humidade que cada fonte publica"
+      },
+      "unavailable": {
+        "preseason_not_supported": "Simulação antes da sementeira: ainda não disponível",
+        "engine_not_deployed": "pendente",
+        "no_trials": "sem ensaios desta cultura",
+        "no_trials_for_variety": "sem ensaios desta variedade na sua zona",
         "variety_not_in_evidence_sample": "esta variedade não consta dos ensaios analisados (são demasiados; foram usados os mais recentes)",
         "not_validated": "pendente: ainda não validado para esta cultura",
         "needs_sowing_date": "indique a data de sementeira para simular",
@@ -283,9 +421,13 @@
         "expected_region_not_calibrated": "sem previsão de colheita: província não calibrada",
         "expected_missing": "sem previsão de colheita: o motor não a devolveu",
         "expected_unknown": "Sem rendimento esperado para esta zona",
-        "water_limited_missing": "sem teto de colheita: o motor não o devolveu" },
+        "water_limited_missing": "sem teto de colheita: o motor não o devolveu"
+      },
       "disagreement": "Os modelos não coincidem: incerteza elevada.",
-      "trials_one": "{{count}} ensaio", "trials_other": "{{count}} ensaios", "years_one": "{{count}} ano", "years_other": "{{count}} anos",
+      "trials_one": "{{count}} ensaio",
+      "trials_other": "{{count}} ensaios",
+      "years_one": "{{count}} ano",
+      "years_other": "{{count}} anos",
       "none": "Ainda não há estimativas para esta cultura."
     },
     "plan": {
@@ -293,16 +435,26 @@
       "years": "Anos previstos",
       "cover": "Cobertura",
       "method": "Como termina",
-      "methods": { "roller_crimper": "Rolo de facas (roller crimper)", "mowing": "Corte", "incorporate": "Incorporação", "grazing": "Pastoreio", "harvest": "Colheita" },
-      "otherSpecies": "Outra espécie…", "speciesName": "Nome da espécie",
+      "methods": {
+        "roller_crimper": "Rolo de facas (roller crimper)",
+        "mowing": "Corte",
+        "incorporate": "Incorporação",
+        "grazing": "Pastoreio",
+        "harvest": "Colheita"
+      },
+      "otherSpecies": "Outra espécie…",
+      "speciesName": "Nome da espécie",
       "error": {
         "species_name_invalid": "Escreve um nome de espécie válido (só letras, pelo menos 2)",
-        "missing_species": "Falta escolher a espécie", "missing_dates": "Faltam datas",
+        "missing_species": "Falta escolher a espécie",
+        "missing_dates": "Faltam datas",
         "termination_outside_campaign": "A colheita ou o fim têm de cair na campanha {{campaign}}",
-        "dates_inconsistent": "As datas não são coerentes", "cycles_overlap": "As datas sobrepõem-se a outra cultura da parcela",
+        "dates_inconsistent": "As datas não são coerentes",
+        "cycles_overlap": "As datas sobrepõem-se a outra cultura da parcela",
         "campaign_past": "Não é possível planear uma campanha passada",
         "campaign_started": "Esta campanha já tem uma cultura semeada: altere-a a partir das operações de campo",
-        "unknown_crop": "Cultura desconhecida", "generic": "Não foi possível guardar o plano",
+        "unknown_crop": "Cultura desconhecida",
+        "generic": "Não foi possível guardar o plano",
         "perennial_start_outside_campaign": "Uma cultura plurianual tem de ser semeada na campanha {{campaign}}",
         "perennial_too_long": "Uma cultura plurianual tem de terminar entre {{campaign}} e dez anos depois",
         "missing_duration": "Indique quantos anos a cultura se manterá",
@@ -316,11 +468,171 @@
         "invalid_response": "O servidor respondeu algo inesperado; tente novamente."
       }
     },
-    "wizard": {"step": "Passo {{n}} de {{total}}", "next": "Seguinte", "back": "Voltar", "save": "Guardar plano", "crop": {"complete": {"saved": {"soil": "Textura guardada", "regime": "Regime guardado", "history": "Cultura guardada"}, "title": "Complete os dados da parcela", "regime": {"label": "Sequeiro ou regadio?", "why": "Com o regime sabemos se a porta da água se aplica e quanta rega cada cultura precisa."}, "soil": {"label": "Qual é a textura do solo?", "why": "A textura ajusta a adequação de cada cultura ao seu solo.", "placeholder": "Escolha a textura"}, "history": {"label": "O que cultivou nas campanhas anteriores?", "why": "Com o histórico aplicam-se as regras de rotação a cada cultura.", "campaign": "Campanha {{campaign}}", "placeholder": "Escolha a cultura"}, "unknown": "Não sei", "error": {"soilNotReady": "Os dados de solo desta parcela ainda não estão prontos; tente mais tarde.", "campaign_not_past": "Essa campanha não é anterior à atual.", "invalid_campaign": "Campanha inválida.", "invalid_species": "Cultura inválida.", "campaign_has_dated_crop": "Essa campanha já tem uma cultura com datas registadas.", "generic": "Não foi possível guardar. A lista continua utilizável; tente novamente."}}, "title": "O que vai semear?", "recommended": "Recomendadas para esta parcela", "search": "Procurar outra cultura", "noResults": "Nenhuma cultura com esse nome", "irrigation": {"line": "Rega: ~{{p50}} mm ({{p10}}–{{p90}}) num ano médio", "pending": "A calcular a necessidade de rega…", "detailYears": "Clima histórico, anos {{from}}–{{to}} ({{n}} anos).", "detailNet": "Necessidade líquida na parcela, sem eficiência de aplicação.", "detailNotForecast": "É uma referência climática, não uma previsão para a sua parcela.", "unavailable": {"regime_not_irrigated": "A parcela não é de regadio.", "no_kc": "Esta cultura não tem coeficientes de rega.", "kc_unavailable": "Os coeficientes de rega não estão disponíveis agora.", "no_stage_lengths": "Faltam as durações das fases da cultura.", "no_sowing_date": "Sem data de sementeira típica para calcular a rega.", "pending": "A calcular a necessidade de rega…", "weather_unavailable": "Sem dados de clima para calcular a rega agora."}}, "regional": {"line": "Região: {{p50}} t/ha ({{p10}}–{{p90}}) · {{index}} % de Espanha", "lineNoIndex": "Região: {{p50}} t/ha ({{p10}}–{{p90}})", "none": "Sem estatística regional", "info": "Mais informação sobre o rendimento regional", "detailRegion": "Estatística de {{region}}, anos {{from}}–{{to}}.", "detailMixed": "Média de sequeiro e regadio em conjunto.", "detailMoisture": "Humidade padrão da UE ({{pct}} %).", "detailMoistureNoPct": "Humidade padrão da UE.", "detailNotForecast": "Não é uma previsão para a sua parcela.", "unavailable": {"region_lookup_unavailable": "Não foi possível determinar a região da parcela.", "crop_not_in_statistics": "Esta cultura não consta das estatísticas regionais.", "region_series_short": "A série da região é demasiado curta.", "national_series_short": "A série nacional é demasiado curta para comparar.", "region_stats_unavailable": "Estatística regional indisponível neste momento."}}}, "variety": {"title": "Que variedade?", "none": "Sem variedade / decido depois", "all": "Ver todas as variedades", "why": {"productive": "A mais produtiva na sua zona", "stable": "A mais estável entre anos", "balanced": "Boa produção e estável"}}, "sowing": {"title": "Quando vai semear?", "chosen": "Sementeira de {{crop}}: {{range}}", "recommended": "Recomendado na sua zona: {{range}}", "noWindow": "Não conhecemos a janela de sementeira desta cultura na sua zona: escolha uma quinzena", "years": "Quantos anos?"}, "cover": {"title": "Cobertura antes?", "no": "Não", "yes": "Sim", "grows": "A cobertura cresce de {{range}}, cerca de {{weeks}} semanas", "short": "Pouco tempo para uma cobertura: cerca de {{weeks}} semanas", "noFit": "Não cabe uma cobertura antes desta sementeira", "ends": "Termina ({{method}}) ao semear a cultura principal", "ref": {"title": "Referência agronómica", "loading": "A carregar a referência…", "error": "Não foi possível carregar a referência", "noData": "Sem dados de referência para esta espécie e época", "seasonAutumn": "Ensaios de sementeira de outono", "seasonSpring": "Ensaios de sementeira de primavera", "seasonUnspecified": "Ensaios sem época indicada", "dm": "Biomassa aérea (t MS/ha)", "nPct": "N na biomassa (% MS)", "cn": "C/N", "value": "{{mean}} ± {{se}} (n = {{n}})", "valueNoSe": "{{mean}} (n = {{n}})", "nAcc": "N acumulado na parte aérea: {{value}} kg N/ha", "nAccNote": "Cálculo: biomassa × %N; não é N fixado nem disponível para a cultura seguinte.", "coverage": "Média de ensaios europeus, na maioria do norte e do centro da Europa"}}, "summary": {"title": "O seu plano", "yield": "Colheita esperada {{low}}–{{high}} t/ha", "detail": "Ver detalhe", "regimeNotSaved": "O plano foi guardado, mas não foi possível guardar sequeiro/regadio na parcela; será tentado de novo ao guardar o próximo plano", "continue": "Continuar"}, "change": "Alterar"},
-    "lock": { "campaign_unknown": "Esta campanha tem uma cultura de origem ou estado desconhecido: revê-a nas operações de campo" },
-    "simulation": { "forecast": "Ver previsão em Saúde da cultura", "open": "Simulação da campanha em curso", "forecastNote": "A previsão da campanha também está em Saúde da cultura." },
-    "widget": { "title": "Plano da parcela", "undecided": "Por decidir", "plan": "Planear" },
-    "sources": { "open": "Fontes de dados", "close": "Ocultar fontes" },
-    "tabs": { "plan": "Plano", "more": "Mais" }
+    "wizard": {
+      "step": "Passo {{n}} de {{total}}",
+      "next": "Seguinte",
+      "back": "Voltar",
+      "save": "Guardar plano",
+      "crop": {
+        "complete": {
+          "saved": {
+            "soil": "Textura guardada",
+            "regime": "Regime guardado",
+            "history": "Cultura guardada"
+          },
+          "title": "Complete os dados da parcela",
+          "regime": {
+            "label": "Sequeiro ou regadio?",
+            "why": "Com o regime sabemos se a porta da água se aplica e quanta rega cada cultura precisa."
+          },
+          "soil": {
+            "label": "Qual é a textura do solo?",
+            "why": "A textura ajusta a adequação de cada cultura ao seu solo.",
+            "placeholder": "Escolha a textura"
+          },
+          "history": {
+            "label": "O que cultivou nas campanhas anteriores?",
+            "why": "Com o histórico aplicam-se as regras de rotação a cada cultura.",
+            "campaign": "Campanha {{campaign}}",
+            "placeholder": "Escolha a cultura"
+          },
+          "unknown": "Não sei",
+          "error": {
+            "soilNotReady": "Os dados de solo desta parcela ainda não estão prontos; tente mais tarde.",
+            "campaign_not_past": "Essa campanha não é anterior à atual.",
+            "invalid_campaign": "Campanha inválida.",
+            "invalid_species": "Cultura inválida.",
+            "campaign_has_dated_crop": "Essa campanha já tem uma cultura com datas registadas.",
+            "generic": "Não foi possível guardar. A lista continua utilizável; tente novamente.",
+            "invalid_variety": "Variedade inválida.",
+            "invalid_yield": "Introduza um rendimento entre 1 e 200000 kg/ha."
+          }
+        },
+        "title": "O que vai semear?",
+        "recommended": "Recomendadas para esta parcela",
+        "search": "Procurar outra cultura",
+        "noResults": "Nenhuma cultura com esse nome",
+        "irrigation": {
+          "line": "Rega: ~{{p50}} mm ({{p10}}–{{p90}}) num ano médio",
+          "pending": "A calcular a necessidade de rega…",
+          "detailYears": "Clima histórico, anos {{from}}–{{to}} ({{n}} anos).",
+          "detailNet": "Necessidade líquida na parcela, sem eficiência de aplicação.",
+          "detailNotForecast": "É uma referência climática, não uma previsão para a sua parcela.",
+          "unavailable": {
+            "regime_not_irrigated": "A parcela não é de regadio.",
+            "no_kc": "Esta cultura não tem coeficientes de rega.",
+            "kc_unavailable": "Os coeficientes de rega não estão disponíveis agora.",
+            "no_stage_lengths": "Faltam as durações das fases da cultura.",
+            "no_sowing_date": "Sem data de sementeira típica para calcular a rega.",
+            "pending": "A calcular a necessidade de rega…",
+            "weather_unavailable": "Sem dados de clima para calcular a rega agora."
+          }
+        },
+        "regional": {
+          "line": "Região: {{p50}} t/ha ({{p10}}–{{p90}}) · {{index}} % de Espanha",
+          "lineNoIndex": "Região: {{p50}} t/ha ({{p10}}–{{p90}})",
+          "none": "Sem estatística regional",
+          "info": "Mais informação sobre o rendimento regional",
+          "detailRegion": "Estatística de {{region}}, anos {{from}}–{{to}}.",
+          "detailMixed": "Média de sequeiro e regadio em conjunto.",
+          "detailMoisture": "Humidade padrão da UE ({{pct}} %).",
+          "detailMoistureNoPct": "Humidade padrão da UE.",
+          "detailNotForecast": "Não é uma previsão para a sua parcela.",
+          "unavailable": {
+            "region_lookup_unavailable": "Não foi possível determinar a região da parcela.",
+            "crop_not_in_statistics": "Esta cultura não consta das estatísticas regionais.",
+            "region_series_short": "A série da região é demasiado curta.",
+            "national_series_short": "A série nacional é demasiado curta para comparar.",
+            "region_stats_unavailable": "Estatística regional indisponível neste momento."
+          }
+        }
+      },
+      "variety": {
+        "title": "Que variedade?",
+        "none": "Sem variedade / decido depois",
+        "all": "Ver todas as variedades",
+        "why": {
+          "productive": "A mais produtiva na sua zona",
+          "stable": "A mais estável entre anos",
+          "balanced": "Boa produção e estável"
+        }
+      },
+      "sowing": {
+        "title": "Quando vai semear?",
+        "chosen": "Sementeira de {{crop}}: {{range}}",
+        "recommended": "Recomendado na sua zona: {{range}}",
+        "noWindow": "Não conhecemos a janela de sementeira desta cultura na sua zona: escolha uma quinzena",
+        "years": "Quantos anos?"
+      },
+      "cover": {
+        "title": "Cobertura antes?",
+        "no": "Não",
+        "yes": "Sim",
+        "grows": "A cobertura cresce de {{range}}, cerca de {{weeks}} semanas",
+        "short": "Pouco tempo para uma cobertura: cerca de {{weeks}} semanas",
+        "noFit": "Não cabe uma cobertura antes desta sementeira",
+        "ends": "Termina ({{method}}) ao semear a cultura principal",
+        "ref": {
+          "title": "Referência agronómica",
+          "loading": "A carregar a referência…",
+          "error": "Não foi possível carregar a referência",
+          "noData": "Sem dados de referência para esta espécie e época",
+          "seasonAutumn": "Ensaios de sementeira de outono",
+          "seasonSpring": "Ensaios de sementeira de primavera",
+          "seasonUnspecified": "Ensaios sem época indicada",
+          "dm": "Biomassa aérea (t MS/ha)",
+          "nPct": "N na biomassa (% MS)",
+          "cn": "C/N",
+          "value": "{{mean}} ± {{se}} (n = {{n}})",
+          "valueNoSe": "{{mean}} (n = {{n}})",
+          "nAcc": "N acumulado na parte aérea: {{value}} kg N/ha",
+          "nAccNote": "Cálculo: biomassa × %N; não é N fixado nem disponível para a cultura seguinte.",
+          "coverage": "Média de ensaios europeus, na maioria do norte e do centro da Europa"
+        }
+      },
+      "summary": {
+        "title": "O seu plano",
+        "yield": "Colheita esperada {{low}}–{{high}} t/ha",
+        "detail": "Ver detalhe",
+        "regimeNotSaved": "O plano foi guardado, mas não foi possível guardar sequeiro/regadio na parcela; será tentado de novo ao guardar o próximo plano",
+        "continue": "Continuar"
+      },
+      "change": "Alterar"
+    },
+    "lock": {
+      "campaign_unknown": "Esta campanha tem uma cultura de origem ou estado desconhecido: revê-a nas operações de campo"
+    },
+    "simulation": {
+      "forecast": "Ver previsão em Saúde da cultura",
+      "open": "Simulação da campanha em curso",
+      "forecastNote": "A previsão da campanha também está em Saúde da cultura."
+    },
+    "widget": {
+      "title": "Plano da parcela",
+      "undecided": "Por decidir",
+      "plan": "Planear"
+    },
+    "sources": {
+      "open": "Fontes de dados",
+      "close": "Ocultar fontes"
+    },
+    "tabs": {
+      "plan": "Plano",
+      "more": "Mais"
+    },
+    "historyEditor": {
+      "title": "Histórico de campanhas (5 anos)",
+      "hint": "Declare ou corrija cultura, variedade e rendimento (kg/ha) das últimas 5 campanhas para afinar a rotação, a adubação e a referência da parcela.",
+      "campaign": "Campanha {{campaign}}",
+      "cropPlaceholder": "Escolha a cultura",
+      "varietyLabel": "Variedade",
+      "varietyPlaceholder": "Variedade (opc.)",
+      "yieldLabel": "Rendimento (kg/ha)",
+      "yieldPlaceholder": "kg/ha (opc.)",
+      "noYield": "sem rendimento registado",
+      "save": "Guardar",
+      "clear": "Remover",
+      "saved": "Campanha {{campaign}} atualizada"
+    }
   }
 }

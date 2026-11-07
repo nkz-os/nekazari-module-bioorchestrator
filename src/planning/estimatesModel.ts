@@ -1,7 +1,7 @@
 import type { SourceAttributionItem } from '../types/attribution';
 import type { AquacropResponse, AquacropState, Basis, Estimate, EstimatesResponse, Moisture } from './types';
 
-export const BASIS_ORDER: Basis[] = ['trial_evidence', 'gap_corrected', 'water_limited', 'potential'];
+export const BASIS_ORDER: Basis[] = ['parcel_history', 'trial_evidence', 'gap_corrected', 'water_limited', 'potential'];
 
 /** Rank of a basis; an unknown basis ranks after every known one. */
 const rank = (basis: Basis): number => {
@@ -31,7 +31,7 @@ const DISAGREEMENT_RATIO = 1.5; // same value and rule as backend app/planning/e
 export function disagrees(estimates: Estimate[]): boolean {
   const groups = new Map<string, number[]>();
   for (const e of estimates) {
-    if (e.basis === 'trial_evidence' || !e.percentiles) continue;
+    if (e.basis === 'trial_evidence' || e.basis === 'parcel_history' || !e.percentiles) continue;
     const key = `${e.basis}|${e.moisture?.basis}|${e.moisture?.pct}`;
     groups.set(key, [...(groups.get(key) ?? []), e.percentiles.p50]);
   }

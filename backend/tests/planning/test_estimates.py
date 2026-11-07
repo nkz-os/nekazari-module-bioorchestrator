@@ -8,6 +8,7 @@ from app.planning import service
 from app.planning.estimates import (
     aquacrop_status,
     disagreement,
+    parcel_history_estimate,
     percentiles,
     trial_estimate,
     visible,
@@ -36,7 +37,28 @@ def _est(basis, p50):
 
 def test_disagreement_only_between_same_basis_models():
     assert disagreement([_est("trial_evidence", 8.0), _est("water_limited", 3.0)]) is False
+    assert disagreement([_est("parcel_history", 8.0), _est("parcel_history", 3.0)]) is False
     assert disagreement([_est("water_limited", 8.0), _est("water_limited", 3.0)]) is True
+
+
+def test_parcel_history_estimate_from_declared_and_measured_cycles():
+    payload = {"cycles": [
+        {"crop_id": "c23", "role": "main_crop", "species": "TRZAX", "status": "harvested",
+         "campaign_label": 2023, "declared_campaign": 2023, "start": {"date": None}, "end": {"date": None},
+         "declared_yield_kg_ha": 3800.0},
+        {"crop_id": "c24", "role": "main_crop", "species": "TRZAX", "status": "harvested",
+         "campaign_label": 2024, "start": {"date": "2023-11-10", "provenance": "actual"},
+         "end": {"date": "2024-07-02", "provenance": "actual"}, "harvested_weight_kg": 44000.0},
+        {"crop_id": "c25", "role": "main_crop", "species": "HORVX", "status": "harvested",
+         "campaign_label": 2025, "declared_campaign": 2025, "start": {"date": None}, "end": {"date": None},
+         "declared_yield_kg_ha": 6000.0},
+    ]}
+    est = parcel_history_estimate(payload, "TRZAX", area_ha=10.0)
+    assert est is not None
+    assert est["provider_id"] == "parcel_history" and est["basis"] == "parcel_history"
+    assert est["n"] == 2 and est["n_kind"] == "years"
+    assert est["percentiles"]["p50"] == 4.1
+    assert parcel_history_estimate(payload, "ZEAMX", area_ha=10.0) is None
 
 
 def test_disagreement_is_flagged_against_a_zero_estimate():
@@ -151,3 +173,20 @@ async def test_unknown_crop_never_reaches_the_parcel():
                                        tenant_id="t", crop="zzz", variety=None, regime="rainfed",
                                        management="conventional", sowing_date=None)
     dao.get_parcel_environment.assert_not_called()
+
+
+async def test_parcel_estimates_includes_parcel_history_row_even_without_trials(monkeypatch):
+    cycles = {"cycles": [
+        {"crop_id": "c24", "role": "main_crop", "species": "TRZAX", "status": "harvested",
+         "campaign_label": 2024, "declared_campaign": 2024, "start": {"date": None}, "end": {"date": None},
+         "declared_yield_kg_ha": 4200.0},
+    ]}
+    monkeypatch.setattr(service, "fetch_crop_cycles", AsyncMock(return_value=cycles))
+    out = await service.parcel_estimates(dao=_dao([], recommendations=[]), source=KnowledgeSource("global", None),
+                                         parcel_id="p1", tenant_id="t", crop="TRZAX", variety=None,
+                                         regime="rainfed", management="conventional", sowing_date=None)
+    EstimatesResponse.model_validate(out)
+    assert out["status"] == "ok"
+    assert [e["provider_id"] for e in out["estimates"]] == ["parcel_history"]
+    assert out["estimates"][0]["percentiles"]["p50"] == 4.2
+    assert {"provider_id": "trial_evidence", "reason": "no_trials"} in out["unavailable"]

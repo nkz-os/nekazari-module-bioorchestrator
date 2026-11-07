@@ -1,17 +1,19 @@
 import React from 'react';
 import { useTranslation } from '@nekazari/sdk';
 import { Button, EmptyState, Inline } from '@nekazari/ui-kit';
-import { cropName, formatHa, shortId } from './format';
+import { cropName, formatHa, formatT, shortId } from './format';
 import { fortnightOf, formatRange } from './fortnight';
 import { SYMBOL, lockMessage, lockReason, namesIndex, nextStep, rowsForFarm, simulationAvailable, warningText } from './matrixModel';
 import type { CycleCell, FarmResponse } from './types';
 
 export function CycleLine({ cell }: { cell: CycleCell }) {
   const { t, i18n } = useTranslation('bioorchestrator');
-  const name = cropName(cell.names, cell.species_raw, i18n.language);
+  const lang = i18n.language;
+  const name = cropName(cell.names, cell.species_raw, lang);
+  const yieldText = cell.yield_kg_ha != null ? ` · ${formatT(cell.yield_kg_ha / 1000, lang)} t/ha` : '';
   return (
     <span className="block" title={t(`planning.provenance.${cell.provenance}`)}>
-      {`${SYMBOL[cell.provenance]} ${name}${cell.variety ? ` · ${cell.variety}` : ''}`}
+      {`${SYMBOL[cell.provenance]} ${name}${cell.variety ? ` · ${cell.variety}` : ''}${yieldText}`}
       {cell.role !== 'main_crop' && <span className="text-nkz-text-muted">{` (${t(`planning.role.${cell.role}`)})`}</span>}
     </span>
   );

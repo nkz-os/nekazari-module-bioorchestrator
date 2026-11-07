@@ -14,9 +14,9 @@ const est = (basis: Estimate['basis'], source = 'GENVCE'): Estimate => ({
 });
 
 describe('estimates model', () => {
-  it('orders trials first, then gap-corrected (the expected yield), then the water-limited ceiling', () => {
-    expect(sortEstimates([est('water_limited'), est('trial_evidence'), est('gap_corrected')]).map((e) => e.basis))
-      .toEqual(['trial_evidence', 'gap_corrected', 'water_limited']);
+  it('orders parcel history first, then trials, then gap-corrected (the expected yield), then the water-limited ceiling', () => {
+    expect(sortEstimates([est('water_limited'), est('trial_evidence'), est('parcel_history'), est('gap_corrected')]).map((e) => e.basis))
+      .toEqual(['parcel_history', 'trial_evidence', 'gap_corrected', 'water_limited']);
   });
   it('an unknown basis sorts last, never first', () => {
     expect(sortEstimates([est('bogus' as unknown as Estimate['basis']), est('trial_evidence')]).map((e) => e.basis))
@@ -45,9 +45,10 @@ describe('disagreement (same rule as the backend)', () => {
     expect(disagrees([model(8, C13), model(3, { basis: 'commercial', pct: 14 })])).toBe(false);
     expect(disagrees([model(8, C13), model(3, C13)])).toBe(true);
   });
-  it('range-only figures and trials never take part', () => {
+  it('range-only figures, parcel history and trials never take part', () => {
     expect(disagrees([rangeOnly, rangeOnly, model(5, C13)])).toBe(false);
     expect(disagrees([est('trial_evidence'), est('trial_evidence')])).toBe(false);
+    expect(disagrees([est('parcel_history'), est('parcel_history')])).toBe(false);
   });
 });
 

@@ -15,10 +15,20 @@ from collections import defaultdict
 from statistics import median, quantiles
 
 from app.planning.aquacrop_provider import VALIDATED
+from app.planning.history import (
+    _history_cycles,
+    _without_shadowed_declarations,
+    cycle_yield_kg_ha,
+    species_slug,
+)
+from app.species_registry import catalog_code, get_species_info
 
+PROVIDER_PARCEL_HISTORY = "parcel_history"
+PARCEL_HISTORY_VERSION = "1.0"
 PROVIDER_TRIALS = "trial_evidence"
 PROVIDER_AQUACROP = "aquacrop"
 DISAGREEMENT_RATIO = 1.5  # P50 max/min among same-basis model estimates (owner, 2026-10-13: kept, revisit with use)
+_OBSERVED_BASES = frozenset({"trial_evidence", "parcel_history"})
 
 
 def estimate_providers(eppo: str | None, *, has_trials: bool, regime: str | None, country: str | None) -> list[str]:
@@ -68,6 +78,40 @@ def trial_estimate(rows: list[dict], variety: str | None, attributions: list[dic
             "warnings": [], "attributions": attributions, "graph_id": graph_id}
 
 
+def parcel_history_estimate(cycles_payload: dict | None, crop_eppo: str,
+                            area_ha: float | None = None) -> dict | None:
+    """Empirical yield distribution from this parcel's own closed past cycles of the crop."""
+    target_code = catalog_code(crop_eppo)
+    tonnes: list[float] = []
+    for cycle in _without_shadowed_declarations(_history_cycles(cycles_payload)):
+        if (cycle.get("role") or "main_crop") != "main_crop":
+            continue
+        slug = species_slug(cycle.get("species"))
+        eppo = (get_species_info(slug) or {}).get("eppo_code") if slug else None
+        if not eppo or catalog_code(eppo) != target_code:
+            continue
+        yield_kg_ha, _ = cycle_yield_kg_ha(cycle, area_ha=area_ha)
+        if _valid_yield(yield_kg_ha):
+            tonnes.append(float(yield_kg_ha) / 1000.0)
+    pct = percentiles(tonnes)
+    if pct is None:
+        return None
+    return {
+        "provider_id": PROVIDER_PARCEL_HISTORY,
+        "provider_version": PARCEL_HISTORY_VERSION,
+        "basis": "parcel_history",
+        "unit": "t/ha",
+        "percentiles": {k: round(v, 2) for k, v in pct.items()},
+        "n": len(tonnes),
+        "n_kind": "years",
+        "validation": {"status": "not_applicable"},
+        "moisture": {"basis": "as_reported", "pct": None},
+        "warnings": [],
+        "attributions": [],
+        "graph_id": None,
+    }
+
+
 def aquacrop_status(gate_reason: str | None) -> dict:
     """The AquaCrop entry of ``unavailable`` in /estimates: ``async`` when it will answer (poll it)."""
     return {"provider_id": PROVIDER_AQUACROP, "reason": gate_reason or "async"}
@@ -76,11 +120,11 @@ def aquacrop_status(gate_reason: str | None) -> dict:
 def disagreement(estimates: list[dict]) -> bool:
     """Same-basis AND same-moisture model medians that differ by more than DISAGREEMENT_RATIO.
 
-    Range-only figures have no median and trial evidence is never compared with models.
+    Range-only figures have no median and empirical observations (trials, parcel history) are never compared with models.
     """
     groups: dict[tuple, list[float]] = defaultdict(list)
     for e in estimates:
-        if e["basis"] == "trial_evidence" or not e.get("percentiles"):
+        if e["basis"] in _OBSERVED_BASES or not e.get("percentiles"):
             continue
         moisture = e.get("moisture") or {}
         groups[(e["basis"], moisture.get("basis"), moisture.get("pct"))].append(e["percentiles"]["p50"])

@@ -35,6 +35,7 @@ from app.planning.estimates import (
     aquacrop_status,
     disagreement,
     estimate_providers,
+    parcel_history_estimate,
     trial_estimate,
     usable_rows,
     visible,
@@ -427,6 +428,10 @@ async def parcel_estimates(*, dao, source: KnowledgeSource, parcel_id: str, tena
                            today: date | None = None) -> dict:
     eppo = crop_code(crop)
     env = await load_environment(dao, parcel_id, tenant_id)
+    cycles = await fetch_crop_cycles(env["parcel_id"], tenant_id)
+    if cycles is not None and not isinstance(cycles, dict):
+        cycles = None
+    own_est = parcel_history_estimate(cycles, eppo, area_ha=env.get("area_ha"))
     gate = aquacrop_gate(eppo, regime, env.get("country"), sowing_date, today or datetime.now(UTC).date())
     inputs = {"regime": regime, "management": management, "sowing_date": sowing_date,
               "sowing_source": "planned" if sowing_date else "none",
@@ -438,16 +443,18 @@ async def parcel_estimates(*, dao, source: KnowledgeSource, parcel_id: str, tena
     if ev["status"] != "ok":
         # needs_climate is already the status; for no_trials the trial provider also states its reason.
         reasons = [_no_trials_reason(variety, [])] if ev["status"] == "no_trials" else []
-        return {**base, "status": ev["status"], "unavailable": base["unavailable"] + reasons,
-                "estimates": [], "disagreement": False}
+        shown = visible([own_est] if own_est is not None else [])
+        return {**base, "status": "ok" if shown else ev["status"], "unavailable": base["unavailable"] + reasons,
+                "estimates": shown, "disagreement": False}
     gaps = list(ev["data_gaps"])
     # Credit only the sources of the rows that feed the number (same filter as trial_estimate).
     attributions = attach_attributions({}, rows_source_ids(usable_rows(ev["rows"], variety)))["attributions"]
     # The evidence gaps (e.g. evidence_truncated) travel with the estimate they qualify.
-    found = [{**e, "warnings": gaps}
-             for e in (trial_estimate(ev["rows"], variety, attributions, source.graph_id, ev["policy_version"]),)
-             if e is not None]
-    unavailable = base["unavailable"] + ([] if found else [_no_trials_reason(variety, gaps)])
+    trials = [{**e, "warnings": gaps}
+              for e in (trial_estimate(ev["rows"], variety, attributions, source.graph_id, ev["policy_version"]),)
+              if e is not None]
+    unavailable = base["unavailable"] + ([] if trials else [_no_trials_reason(variety, gaps)])
+    found = ([own_est] if own_est is not None else []) + trials
     shown = visible(found)
     return {**base, "status": "ok", "unavailable": unavailable, "estimates": shown,
             "disagreement": disagreement(shown)}
