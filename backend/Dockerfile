@@ -22,7 +22,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY backend/app/ app/
 COPY backend/scripts/ scripts/
 COPY backend/cypher_migrations/ cypher_migrations/
-COPY data/ data/
 # Ship the whole backend/data/ dir: sources_registry.json, species_registry.yaml,
 # phenology_sources.yaml, action_rules.yaml — needed by ingesters + registries.
 # Without this get_source() raises KeyError and no ingester can run in the pod.
