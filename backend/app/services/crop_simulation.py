@@ -107,16 +107,18 @@ def engine_soil(layers: list[dict]) -> list[aq.SoilLayer]:
     return [aq.SoilLayer(l["thickness_m"], l["wp"], l["fc"], l["sat"], l["ksat_mm_day"]) for l in layers]
 
 
-def _phenology(slug, irrigation, lat, lon, sowing_date, observed_days, analog_years, ctx) -> dict | None:
-    """Milestone dates from the weather the simulation used (observed days, then each analog member).
+def phenology_for(slug, irrigation, lat, lon, sowing_date, observed_days, analog_years) -> dict:
+    """Milestone dates from observed days, then each analog member (the simulation's own assembly)."""
+    calendar = cal.effective_calendar(slug, lat=lat, lon=lon, irrigation=irrigation)
+    members = [aq.project_weather(observed_days, analog_years[y], sowing_date, y)
+               for y in sorted(analog_years)]
+    return cal.phenology_block(sowing_date, observed_days, members, calendar)
 
-    An additive block: a failure here is logged and the block left out, never the yield answer.
-    """
+
+def _phenology(slug, irrigation, lat, lon, sowing_date, observed_days, analog_years, ctx) -> dict | None:
+    """The block for the simulation answer. Additive: a failure is logged and the block left out."""
     try:
-        calendar = cal.effective_calendar(slug, lat=lat, lon=lon, irrigation=irrigation)
-        members = [aq.project_weather(observed_days, analog_years[y], sowing_date, y)
-                   for y in sorted(analog_years)]
-        return cal.phenology_block(sowing_date, observed_days, members, calendar)
+        return phenology_for(slug, irrigation, lat, lon, sowing_date, observed_days, analog_years)
     except Exception:
         logger.exception("crop_simulation_phenology_failed %s", ctx)
         return None

@@ -185,7 +185,7 @@ def test_route_answers_the_2_1_contract(client, monkeypatch):
         "state": "unavailable", "done": 0, "total": None, "estimates": [],
         "unavailable": [{"provider_id": "aquacrop", "reason": "not_sown"}], "job_id": None, "season": None}))
     r = client.get(URL)
-    assert r.status_code == 200 and r.json()["contract_version"] == "2.7"
+    assert r.status_code == 200 and r.json()["contract_version"] == "2.8"
     assert r.json()["unavailable"] == [{"provider_id": "aquacrop", "reason": "not_sown", "code": None}]
 
 
@@ -223,3 +223,12 @@ async def test_the_job_runs_the_engine_with_the_sown_date_only():
     dao.run_crop_simulation.assert_awaited_once_with(
         parcel_id=PARCEL_ID, tenant_id="t", crop_slug="wheat", sowing_date_str="2025-10-20",
         irrigation="rainfed", engine="aquacrop", progress=ANY)
+
+
+def test_no_regime_is_answered_before_the_country_is_looked_up(monkeypatch):
+    def boom(lat, lon):
+        raise RuntimeError("country lookup")
+    monkeypatch.setattr(in_season, "country_at", boom)
+    parcel = {k: v for k, v in PARCEL.items() if k != "irrigationRegime"}
+    crops = {CROP_ID: {"id": CROP_ID, "species": "TRZAX"}}
+    assert in_season.resolve_in_season(parcel, crops, SOWN, TODAY) == "no_regime"

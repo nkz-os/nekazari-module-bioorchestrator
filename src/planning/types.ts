@@ -2,7 +2,7 @@
 import type { SourceAttributionItem } from '../types/attribution';
 import type { Fortnight } from './fortnight';
 
-export const CONTRACT_VERSION = '2.7';
+export const CONTRACT_VERSION = '2.8';
 export type Verdict = 'fits' | 'caveats' | 'no_fit';
 /** Owner decision (2026-10-13): one vocabulary everywhere; the words shown are translated. */
 export type Regime = 'rainfed' | 'irrigated';
@@ -121,6 +121,16 @@ export interface InSeasonPhenology {
   model: { id: string; cultivar: string; version: string };
   calibration: { status: 'calibrated' | 'builtin'; scheme: string | null; region: { code: string; name: string } | null; version: string | null };
   milestones: Record<string, PhenologyMilestone>;
+}
+/** Contract 2.8: milestone dates without the yield forecast (GET .../parcels/{id}/phenology). */
+export interface ParcelPhenologyResponse {
+  contract_version: string; provider_id: 'aquacrop_calendar'; state: 'unavailable' | 'done' | 'failed';
+  unavailable: Unavailable[];
+  season: {
+    crop: string; sowing: { date: string; source: 'crop_cycle'; provenance: 'actual' | 'declared' };
+    regime: Regime | null; as_of: string | null; weather_source: string | null;
+  } | null;
+  phenology: InSeasonPhenology | null;
 }
 export interface CycleCell {
   crop_id: string | null; species: string | null; species_raw: string | null; names: Names; variety: string | null;
