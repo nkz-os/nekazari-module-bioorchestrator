@@ -74,6 +74,14 @@ describe('ParcelDetail (es)', () => {
     expect(html).toContain('Hace falta para planificar');
     expect(html).not.toContain('Paso 1 de');
   });
+  it('picking a regime is a draft: one Guardar next to the question, disabled until a regime is picked', () => {
+    // Without the fit there is no history editor, so the only Guardar is the regime's.
+    const html = render(row([], { regime: null, regime_source: 'unknown' }));
+    const saves = html.match(/<button[^>]*>Guardar<\/button>/g) ?? [];
+    expect(saves).toHaveLength(1);
+    expect(saves[0]).toContain('disabled=""');
+    expect(html.indexOf('Guardar')).toBeGreaterThan(html.indexOf('¿Secano o regadío?'));
+  });
   it('an open campaign shows the wizard at its first step; "Cambiar" starts from the current plan', () => {
     expect(render(row([]), true)).toMatch(/Paso 1 de \d/);
     expect(render(row([cell({})]), true)).toMatch(/aria-pressed="true"[^>]*>(?:(?!<\/button>).)*maíz/);
