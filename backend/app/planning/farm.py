@@ -8,11 +8,12 @@ from __future__ import annotations
 import math
 import re
 from collections import defaultdict
-from datetime import date
+from datetime import UTC, date, datetime
 
 from app.planning.history import (
     HISTORY_WINDOW,
     ROLLOVER_MONTH,
+    campaign_is_over,
     cell_from_cycle,
     cycle_campaigns,
     cycles_of,
@@ -144,7 +145,8 @@ def parcel_row(parcel: dict, crops_by_id: dict, payload: dict | None, target: in
 
 
 def farm_payload(parcels: list[dict], farms: list[dict], crops_by_id: dict, cycles: dict,
-                 target: int, constraints) -> dict:
+                 target: int, constraints, today: date | None = None) -> dict:
+    today = today or datetime.now(UTC).date()
     rows = [parcel_row(p, crops_by_id, cycles.get(p["id"]), target, constraints) for p in parcels]
     area: dict[str | None, float] = defaultdict(float)
     for row in rows:
@@ -154,7 +156,10 @@ def farm_payload(parcels: list[dict], farms: list[dict], crops_by_id: dict, cycl
     names = {f["id"]: plain(f.get("name")) for f in farms}
     linked = sorted({r["farm_id"] for r in rows if r["farm_id"]})
     return {
-        "campaign": target, "campaigns": campaign_columns(target), "history_campaigns": history_columns(target),
+        "campaign": target, "campaigns": campaign_columns(target),
+        # Only campaigns a past crop can be declared for (the platform refuses one that is not over);
+        # the row cells keep every history column, since an open campaign can hold real cycles.
+        "history_campaigns": [c for c in history_columns(target) if campaign_is_over(c, today)],
         "farms": [{"farm_id": f, "name": names.get(f)} for f in linked] or [{"farm_id": None, "name": None}],
         "parcels": rows,
         "summary": {

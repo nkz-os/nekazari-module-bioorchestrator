@@ -59,7 +59,7 @@ def test_farm_payload_includes_five_history_campaigns_and_cycle_yields():
              "end": {"date": "2026-06-25", "provenance": "actual"}, "harvested_weight_kg": 62000.0},
         ]},
     }
-    out = farm_payload([P1], [], {}, cycles, 2027, [])
+    out = farm_payload([P1], [], {}, cycles, 2027, [], today=date(2026, 11, 9))
     FarmResponse.model_validate(out)
     assert out["campaigns"] == [2024, 2025, 2026, 2027]
     assert out["history_campaigns"] == [2022, 2023, 2024, 2025, 2026]
@@ -184,3 +184,20 @@ def test_negated_irrigation_text_is_rainfed(word):
                                             ("regadío", "irrigated"), ("irrigated", "irrigated"), ("something", None)])
 def test_affirmed_irrigation_text_is_unchanged_by_the_negation_rule(word, expected):
     assert parcel_regime({"irrigationSystemType": word}, [])[0] == expected
+
+
+def test_history_campaigns_exclude_a_campaign_that_is_not_over():
+    # Target 2028 seen in November 2026: 2027 is not over yet, so it cannot be declared.
+    out = farm_payload([P1], [], {}, {}, 2028, [], today=date(2026, 11, 9))
+    assert out["history_campaigns"] == [2023, 2024, 2025, 2026]
+    # The matrix cells keep every history column: an open campaign can still hold real cycles.
+    assert "2027" in out["parcels"][0]["cells"]
+
+
+@pytest.mark.parametrize("today, expected", [
+    (date(2026, 3, 15), [2022, 2023, 2024, 2025]),
+    (date(2026, 6, 30), [2022, 2023, 2024, 2025]),
+    (date(2026, 7, 1), [2022, 2023, 2024, 2025, 2026]),
+])
+def test_history_campaigns_follow_the_july_rollover(today, expected):
+    assert farm_payload([P1], [], {}, {}, 2027, [], today=today)["history_campaigns"] == expected
