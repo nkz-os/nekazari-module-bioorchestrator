@@ -67,3 +67,73 @@ def test_in_season_range_spans_the_ensemble():
 def test_range_never_below_zero():
     out = yc.expected_yield("wheat", "rainfed", NAVARRA, 0.0)
     assert out["range_t_ha"]["low"] >= 0.0
+
+
+BARLEY_PHENOLOGY_KEYS = {"Senescence", "Maturity", "HIstart", "Flowering", "YldForm"}
+
+
+def test_barley_phenology_only_for_rainfed_in_a_province_of_the_file():
+    assert yc.calibrated_phenology("barley", "rainfed", NAVARRA) == {
+        "Senescence": 1160.6, "Maturity": 1746.0, "HIstart": 1003.0, "Flowering": 180.0, "YldForm": 608.5}
+    assert yc.calibrated_phenology("barley", "full", NAVARRA) is None
+    assert yc.calibrated_phenology("barley", "rainfed", None) is None
+    assert yc.calibrated_phenology("barley", "rainfed", {"scheme": "es_province", "code": "52", "name": "x"}) is None
+
+
+def test_barley_file_has_no_yield_figures_and_every_province_passes_the_engine_check():
+    from app.services.engines import aquacrop_engine as aq
+    cal = yc._calibration("barley")
+    assert cal["crop"] == "barley" and cal["validation"]["status"] == "not_validated"
+    assert "range" not in cal
+    assert len(cal["provinces"]) == 45
+    for code, prov in cal["provinces"].items():
+        assert "gap_factor" not in prov and set(prov["phenology"]) == BARLEY_PHENOLOGY_KEYS, code
+        assert aq._validate_crop_params("BarleyES", prov["phenology"]) == prov["phenology"], code
+
+
+@pytest.mark.parametrize("irrigation,region", [
+    ("rainfed", NAVARRA), ("full", NAVARRA), ("rainfed", None),
+    ("rainfed", {"scheme": "es_province", "code": "52", "name": "Melilla"})])
+def test_barley_expected_yield_stays_without_a_figure(irrigation, region):
+    assert yc.expected_yield("barley", irrigation, region, 5.0) == {
+        "status": "unavailable", "reason": "crop_not_calibrated"}
+
+
+# ----------------------------------------------------- unreadable calibration files
+@pytest.fixture
+def broken_files(monkeypatch, tmp_path):
+    """DATA_DIR with a missing barley file and a malformed wheat file; caches cleared around the test."""
+    (tmp_path / "wheat_es_province_calibration.json").write_text("{not json", encoding="utf-8")
+    monkeypatch.setattr(yc, "DATA_DIR", tmp_path)
+    monkeypatch.setattr(yc, "_FAILED_FILES", set())
+    yc._calibration.cache_clear()
+    yield
+    yc._calibration.cache_clear()
+
+
+@pytest.mark.parametrize("slug", ["barley", "wheat", "durum_wheat"])
+def test_an_unreadable_file_means_no_calibration(broken_files, slug, caplog):
+    from app.services import sim_jobs as sj
+    assert yc._calibration(slug) is None
+    assert yc.calibrated_phenology(slug, "rainfed", NAVARRA) is None
+    assert yc.expected_yield(slug, "rainfed", NAVARRA, 5.0) == {
+        "status": "unavailable", "reason": "crop_not_calibrated"}
+    assert sj.crop_simulation_version(slug) == sj.crop_simulation_version("maize")
+
+
+def test_an_unreadable_file_is_logged_once_per_file(broken_files, caplog):
+    with caplog.at_level("ERROR", logger=yc.logger.name):
+        for slug in ("wheat", "durum_wheat", "barley"):
+            yc._calibration(slug)
+            yc._calibration(slug)
+    msgs = [r.getMessage() for r in caplog.records]
+    assert len(msgs) == 2
+    assert any("file=wheat_es_province_calibration.json" in m and "crop=wheat" in m for m in msgs)
+    assert any("file=barley_es_province_calibration.json" in m and "crop=barley" in m for m in msgs)
+
+
+def test_a_province_without_gap_factor_is_not_calibrated(monkeypatch):
+    cal = {"version": "x", "region_scheme": "es_province", "range": {}, "provinces": {"31": {"phenology": {}}}}
+    monkeypatch.setattr(yc, "_calibration", lambda slug: cal)
+    assert yc.expected_yield("wheat", "rainfed", NAVARRA, 5.0) == {
+        "status": "unavailable", "reason": "region_not_calibrated"}

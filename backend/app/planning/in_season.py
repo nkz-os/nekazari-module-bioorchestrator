@@ -242,13 +242,14 @@ async def parcel_in_season(*, dao, jobs, tenant_id: str, parcel_id: str, today: 
             sowing_date_str=params["sowing_date"], irrigation=params["irrigation"], engine="aquacrop",
             progress=progress)
 
-    known = jobs.get(jobs.job_id(tenant_id, params, today, jobs.version), tenant_id)
+    version = jobs.version_for(params["crop_slug"])
+    known = jobs.get(jobs.job_id(tenant_id, params, today, version), tenant_id)
     if known is not None and known.state == "failed" and not retry:
-        return _view(known, inputs, jobs.version)
+        return _view(known, inputs, version)
     try:
         job = await jobs.start(tenant_id, params, run, today)
     except SimulationError as e:
         if e.code != "too_many_jobs":
             raise
         return _unavailable("busy")
-    return _view(job, inputs, jobs.version)
+    return _view(job, inputs, version)

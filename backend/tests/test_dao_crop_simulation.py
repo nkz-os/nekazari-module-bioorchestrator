@@ -269,12 +269,34 @@ def test_in_season_response_shape(mock_driver, tunis):
     assert res["yield_basis"]["moisture"] == "commercial" and res["yield_basis"]["grain_moisture_pct"] == 13.0
     pheno = res["inputs"]["phenology"]
     assert pheno["source"] == "calibrated" and pheno["region"]["code"] == "31"
+    assert res["inputs"]["cultivar"] == "WheatGDD"
     assert set(pheno["params"]) == {"Senescence", "Maturity", "HIstart", "Flowering", "YldForm"}
     exp = res["expected_yield"]
     assert exp["status"] == "ok" and exp["basis"] == "gap_corrected" and exp["region"]["code"] == "31"
     assert 0 <= exp["range_t_ha"]["low"] <= exp["range_t_ha"]["high"]
     json.dumps(res)  # response must be serialisable
     print(json.dumps({k: v for k, v in res.items() if k != "daily"}, indent=1))
+
+
+def test_rainfed_barley_in_a_calibrated_province_reaches_the_engine_with_the_es_calendar(mock_driver, tunis):
+    from app.services import crop_simulation as cs
+    seen = {}
+    real = cs.aq.simulate
+
+    async def spy(*args, **kwargs):
+        seen["crop"], seen["crop_params"] = args[3], kwargs.get("crop_params")
+        return await real(*args, **kwargs)
+
+    with patch("app.services.crop_simulation.aq.simulate", spy):
+        res = _run(GraphDAO(mock_driver), net=_Net(tunis, parcel_from=date(1989, 10, 1)),
+                   today=date(1992, 1, 1), sowing_date_str="1990-10-01", crop_slug="barley")
+    assert seen["crop"] == "BarleyES"
+    assert seen["crop_params"] == {"Senescence": 1160.6, "Maturity": 1746.0, "HIstart": 1003.0,
+                                   "Flowering": 180.0, "YldForm": 608.5}
+    assert res["inputs"]["phenology"]["source"] == "calibrated"
+    assert res["expected_yield"] == {"status": "unavailable", "reason": "crop_not_calibrated"}
+    assert res["yield_basis"]["moisture"] == "commercial"
+    assert res["inputs"]["cultivar"] == "BarleyES"
 
 
 def test_complete_season_has_no_ensemble_and_never_loads_climatology(mock_driver, tunis):

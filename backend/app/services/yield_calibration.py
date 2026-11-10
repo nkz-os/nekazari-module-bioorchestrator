@@ -16,15 +16,21 @@ from __future__ import annotations
 import bisect
 import functools
 import json
+import logging
 import statistics
 from pathlib import Path
 from typing import Any
+
+logger = logging.getLogger(__name__)
+_FAILED_FILES: set[str] = set()  # files already reported, so the log is once per process
 
 # backend/data locally; /app/data in the image (Dockerfile: COPY backend/data/ data/).
 DATA_DIR = Path(__file__).resolve().parents[2] / "data"
 # The official wheat yields mix bread and durum wheat; both are simulated as WheatGDD.
 CALIBRATION_FILES = {"wheat": "wheat_es_province_calibration.json",
-                     "durum_wheat": "wheat_es_province_calibration.json"}
+                     "durum_wheat": "wheat_es_province_calibration.json",
+                     # phenology only: no gap factor and no yield ranges (barley yield is not validated)
+                     "barley": "barley_es_province_calibration.json"}
 CALIBRATED_IRRIGATION = "rainfed"
 
 _LLOVERAS_2017 = ("Lloveras J., Petit X., Yakoub A., Vida Rural 433 (2017) 42-47: commercial "
@@ -56,7 +62,14 @@ def _calibration(crop_slug: str) -> dict | None:
     name = CALIBRATION_FILES.get(crop_slug)
     if name is None:
         return None
-    return json.loads((DATA_DIR / name).read_text(encoding="utf-8"))
+    try:
+        return json.loads((DATA_DIR / name).read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        # Safe state: the crop behaves as one without calibration (built-in parameters, no yield figure).
+        if name not in _FAILED_FILES:
+            _FAILED_FILES.add(name)
+            logger.exception("calibration_unavailable crop=%s file=%s", crop_slug, name)
+        return None
 
 
 def _province(crop_slug: str, region: dict | None) -> dict | None:
@@ -88,7 +101,8 @@ def expected_yield(crop_slug: str, irrigation: str, region: dict | None, ceiling
     model over-predicts, so a higher prediction can carry a lower upper bound).
     """
     cal = _calibration(crop_slug)
-    if cal is None:
+    # A file without yield ranges (phenology only) calibrates no yield.
+    if cal is None or "range" not in cal:
         return {"status": "unavailable", "reason": "crop_not_calibrated"}
     if irrigation != CALIBRATED_IRRIGATION:
         return {"status": "unavailable", "reason": "irrigated"}
@@ -97,7 +111,9 @@ def expected_yield(crop_slug: str, irrigation: str, region: dict | None, ceiling
     prov = cal["provinces"].get(region.get("code"))
     if prov is None:
         return {"status": "unavailable", "reason": "region_not_calibrated"}
-    f = prov["gap_factor"]
+    f = prov.get("gap_factor")
+    if f is None:
+        return {"status": "unavailable", "reason": "region_not_calibrated"}
     scenarios = ([ceiling_t_ha[k] for k in ("p10", "p50", "p90")] if isinstance(ceiling_t_ha, dict)
                  else [ceiling_t_ha])
     bounds = [_lookup(cal["range"], f * v * 1000.0) for v in scenarios]

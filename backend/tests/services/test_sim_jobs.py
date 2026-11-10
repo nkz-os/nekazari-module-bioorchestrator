@@ -157,6 +157,21 @@ def test_version_is_public_and_the_shared_store_is_one(monkeypatch):
     assert sj.shared_sim_jobs() is sj.shared_sim_jobs() and sj.shared_sim_jobs().version == "v-shared"
 
 
+def test_version_carries_the_calibration_file_of_the_crop():
+    # wheat/durum/no crop pinned to what origin/main produced before the change
+    assert sj.crop_simulation_version() == "aquacrop-3.1.0|calibration-2026-10-13"
+    assert sj.crop_simulation_version("wheat") == "aquacrop-3.1.0|calibration-2026-10-13"
+    assert sj.crop_simulation_version("durum_wheat") == "aquacrop-3.1.0|calibration-2026-10-13"
+    assert sj.crop_simulation_version("barley") == "aquacrop-3.1.0|calibration-2026-11-10"
+    assert sj.crop_simulation_version("maize") == sj.crop_simulation_version()
+
+
+def test_the_store_keys_jobs_by_the_version_of_each_crop():
+    jobs = sj.SimJobs(version="v1", version_for=lambda crop: f"v-{crop}")
+    assert jobs.version == "v1" and jobs.version_for("barley") == "v-barley"
+    assert sj.SimJobs(version="v1").version_for("barley") == "v1"
+
+
 async def test_a_finished_job_records_when_it_finished():
     import asyncio
     from datetime import UTC, date, datetime

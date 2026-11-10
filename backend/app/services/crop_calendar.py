@@ -75,9 +75,13 @@ def validation_for(crop_slug: str, calibration_status: str) -> dict:
         measured_on = data.get("measured_on", {}).get(crop_slug)
         if measured_on is None or measured_on != calibration_status:
             return {**_NOT_VALIDATED, "reason": "calendar_not_measured"}
-        return {"status": "measured", "version": data["version"], "sign": data["sign"],
-                "dataset": data["dataset"], "comparisons": data["comparisons"], "groups": groups,
-                "measured_on": measured_on}
+        out = {"status": "measured", "version": data["version"], "sign": data["sign"],
+               "dataset": data["dataset"], "comparisons": data["comparisons"], "groups": groups,
+               "measured_on": measured_on}
+        note = (data.get("notes") or {}).get(crop_slug)
+        if note:
+            out["note"] = note
+        return out
     except (KeyError, TypeError, AttributeError):
         logger.warning("phenology_validation_malformed path=%s", VALIDATION_PATH, exc_info=True)
         return dict(_NOT_VALIDATED)
@@ -122,9 +126,12 @@ def _calendar(crop_slug: str, region: tuple | None, irrigation: str) -> CropCale
     sources.append({**_SOURCE_LIBRARY, "detail": _SOURCE_LIBRARY["detail"].format(version=version)})
     if overrides:
         cal = yc._calibration(crop_slug)
-        sources.append({"short": "Calibration",
-                        "detail": f"Provincial phenology calibration {cal['version']}; ranges: "
-                                  f"{cal['sources']['phenology_ranges']}"})
+        detail = f"Provincial phenology calibration {cal['version']}"
+        if "phenology_ranges" in cal["sources"]:
+            detail += f"; ranges: {cal['sources']['phenology_ranges']}"
+        elif "phenology_rule" in cal["sources"]:
+            detail += f"; {cal['sources']['phenology_rule']}"
+        sources.append({"short": "Calibration", "detail": detail})
         calibration = {"status": "calibrated", "scheme": region[0],
                        "region": {"code": region[1], "name": region[2]}, "version": cal["version"]}
     else:

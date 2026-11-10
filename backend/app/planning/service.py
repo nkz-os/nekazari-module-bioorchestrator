@@ -475,11 +475,12 @@ async def parcel_aquacrop(*, dao, jobs, tenant_id: str, parcel_id: str, crop: st
         # Light poll: read the job by id (tenant-scoped), skipping the parcel lookup. Only the id these very
         # inputs hash to is accepted, so a stale or foreign id never answers for another parcel, crop or
         # date. A lost job, or a failed one being retried, takes the full path below.
-        expected = jobs.job_id(tenant_id, _job_params(parcel_id, crop, sowing_date, sowing_method), today,
-                               jobs.version)
+        light = _job_params(parcel_id, crop, sowing_date, sowing_method)
+        version = jobs.version_for(light["crop_slug"])
+        expected = jobs.job_id(tenant_id, light, today, version)
         live = jobs.get(job_id, tenant_id) if job_id == expected else None
         if live is not None and not (live.state == "failed" and retry):
-            return _job_view(live, jobs.version)
+            return _job_view(live, version)
     env = await load_environment(dao, parcel_id, tenant_id)
     reason = aquacrop_gate(eppo, regime, env.get("country"), sowing_date, today)
     if reason is not None:
@@ -495,9 +496,10 @@ async def parcel_aquacrop(*, dao, jobs, tenant_id: str, parcel_id: str, crop: st
             sowing_method=params.get("sowing_method"))
 
     # ``start`` relaunches a failed job, which would loop on every poll: look first.
-    known = jobs.get(jobs.job_id(tenant_id, params, today, jobs.version), tenant_id)
+    version = jobs.version_for(params["crop_slug"])
+    known = jobs.get(jobs.job_id(tenant_id, params, today, version), tenant_id)
     if known is not None and known.state == "failed" and not retry:
-        return _job_view(known, jobs.version)
+        return _job_view(known, version)
     try:
         job = await jobs.start(tenant_id, params, run, today)
     except SimulationError as e:
@@ -506,7 +508,7 @@ async def parcel_aquacrop(*, dao, jobs, tenant_id: str, parcel_id: str, crop: st
         # The tenant's other simulations are still waiting or running: say so, start nothing.
         return {"state": "unavailable", "done": 0, "total": None, "estimates": [],
                 "unavailable": [{"provider_id": AQUACROP_ID, "reason": "busy"}], "job_id": None}
-    return _job_view(job, jobs.version)
+    return _job_view(job, version)
 
 
 def _job_params(parcel_id: str, crop: str, sowing_date: date, sowing_method: str | None = None) -> dict:

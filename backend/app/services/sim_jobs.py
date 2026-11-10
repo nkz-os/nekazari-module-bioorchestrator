@@ -53,9 +53,10 @@ class Job:
 
 
 class SimJobs:
-    def __init__(self, *, version: str, max_jobs: int = MAX_JOBS, max_concurrent: int = 1,
+    def __init__(self, *, version: str, version_for: Callable[[str | None], str] | None = None, max_jobs: int = MAX_JOBS, max_concurrent: int = 1,
                  max_pending_per_tenant: int = MAX_PENDING_PER_TENANT):
         self._version = version
+        self._version_for = version_for
         self._max_jobs = max_jobs
         self._max_pending = max_pending_per_tenant
         self._jobs: OrderedDict[str, Job] = OrderedDict()
@@ -66,6 +67,10 @@ class SimJobs:
         """Engine and calibration version that job ids are keyed by."""
         return self._version
 
+    def version_for(self, crop_slug: str | None = None) -> str:
+        """The version of what a simulation of this crop depends on (its calibration file)."""
+        return self._version_for(crop_slug) if self._version_for else self._version
+
     @staticmethod
     def job_id(tenant_id: str, params: dict[str, Any], today: date, version: str) -> str:
         raw = json.dumps([tenant_id, sorted(params.items()), today.isoformat(), version], default=str)
@@ -73,7 +78,7 @@ class SimJobs:
 
     async def start(self, tenant_id: str, params: dict[str, Any], run: Run, today: date | None = None) -> Job:
         today = today or datetime.now(UTC).date()
-        jid = self.job_id(tenant_id, params, today, self._version)
+        jid = self.job_id(tenant_id, params, today, self.version_for(params.get("crop_slug")))
         job = self._jobs.get(jid)
         if job is not None and job.state != "failed":
             self._jobs.move_to_end(jid)
@@ -129,12 +134,16 @@ class SimJobs:
                 "result": job.result, "error": job.error}
 
 
-def crop_simulation_version() -> str:
-    """Engine and calibration versions: a change in either is a different job."""
+def crop_simulation_version(crop_slug: str | None = None) -> str:
+    """Engine and calibration versions: a change in either is a different job.
+
+    A crop with its own calibration file carries that file's version; any other crop (or none)
+    keeps the wheat file's, as before.
+    """
     from app.services import yield_calibration as yc
     from app.services.engines import aquacrop_engine as aq
 
-    cal = yc._calibration("wheat") or {}
+    cal = (crop_slug and yc._calibration(crop_slug)) or yc._calibration("wheat") or {}
     return f"aquacrop-{aq._version()}|calibration-{cal.get('version', 'none')}"
 
 
@@ -145,5 +154,6 @@ def shared_sim_jobs() -> SimJobs:
     """The process-wide job store (single replica): every route that starts simulations shares it."""
     global _SHARED
     if _SHARED is None:
-        _SHARED = SimJobs(version=crop_simulation_version())
+        _SHARED = SimJobs(version=crop_simulation_version(),
+                          version_for=lambda crop: crop_simulation_version(crop))
     return _SHARED

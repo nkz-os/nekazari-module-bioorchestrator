@@ -598,36 +598,39 @@ def _gdd10_weather():
 
 # ------------------------------------------------------- sourced cultivars
 def test_supported_crops_lists_sourced_cultivars():
-    assert "BarleyPonente" in supported_crops()
+    assert "BarleyES" in supported_crops()
+    assert "BarleyPonente" not in supported_crops()
 
 
-def test_ponente_takes_the_source_values_over_barley_gdd():
-    # Abrha et al. 2012, Exp. Agric. 48(2), tables 5-6; BarleyGDD keeps the shared table 6 values
-    p = eng.crop_defaults("BarleyPonente")
+def test_barley_es_takes_the_fitted_calendar_over_barley_gdd():
+    p = eng.crop_defaults("BarleyES")
     assert (p["Tbase"], p["Tupp"]) == (2.0, 28.0)
-    assert (p["Emergence"], p["HIstart"], p["Flowering"]) == (226.0, 1166.0, 180.0)
-    assert (p["Senescence"], p["Maturity"], p["MaxRooting"], p["YldForm"]) == (
-        1289.0, 1746.0, 1208.0, 475.0)
-    assert (p["CCx"], p["HI0"], p["CGC"], p["CDC"]) == (0.95, 0.44, 0.0087, 0.006)
+    assert (p["Emergence"], p["HIstart"], p["Flowering"]) == (117.0, 1003.0, 180.0)
+    assert (p["Senescence"], p["Maturity"], p["YldForm"]) == (1210.0, 1979.0, 799.3)
+    # canopy, harvest index and rooting stay as in the original cultivar
+    assert (p["MaxRooting"], p["CCx"], p["HI0"], p["CGC"], p["CDC"]) == (1208.0, 0.95, 0.44, 0.0087, 0.006)
     assert p["PlantPop"] * p["SeedSize"] * 1e-8 == pytest.approx(0.03)  # CC0 3 %
     assert (p["WP"], p["Kcb"], p["Zmax"], p["p_up3"]) == (15.0, 1.1, 1.3, 0.55)
+    src = eng.CULTIVARS["BarleyES"]["source"]
+    assert "Abrha" in src and "2023" in src
 
 
-def test_ponente_matures_at_its_own_degree_days():
-    # Tmin 5 / Tmax 15 with Tbase 2: 8 degree days a day; maturity 1746 -> 219 days
-    res = run_aquacrop(_gdd10_weather(), _soil(), "BarleyPonente", date(2020, 1, 1), "full")
+def test_barley_es_matures_at_its_own_degree_days():
+    # Tmin 5 / Tmax 15 with Tbase 2: 8 degree days a day; maturity 1979 would be day 248, but
+    # the canopy (CDC unchanged from the original cultivar) is gone before: the engine harvests then.
+    res = run_aquacrop(_gdd10_weather(), _soil(), "BarleyES", date(2020, 1, 1), "full")
     days = (date.fromisoformat(res["harvest_date"]) - date(2020, 1, 1)).days
-    assert days == 219
+    assert days == 213
     assert res["yield_t_ha"] > 0
 
 
 def test_cultivar_phenology_overrides_are_checked_against_the_cultivar():
-    shorter = run_aquacrop(_gdd10_weather(), _soil(), "BarleyPonente", date(2020, 1, 1), "full",
-                           crop_params={"Maturity": 1700.0, "Senescence": 1250.0})
-    assert shorter["crop_params"] == {"Maturity": 1700.0, "Senescence": 1250.0}
+    shorter = run_aquacrop(_gdd10_weather(), _soil(), "BarleyES", date(2020, 1, 1), "full",
+                           crop_params={"Maturity": 1900.0, "Senescence": 1250.0})
+    assert shorter["crop_params"] == {"Maturity": 1900.0, "Senescence": 1250.0}
     with pytest.raises(EngineInputError, match="phase order"):  # before HIstart + YldForm
-        run_aquacrop(_gdd10_weather(), _soil(), "BarleyPonente", date(2020, 1, 1),
-                     crop_params={"Maturity": 1300.0})
+        run_aquacrop(_gdd10_weather(), _soil(), "BarleyES", date(2020, 1, 1),
+                     crop_params={"Maturity": 1700.0})
 
 
 def test_crop_params_lengthen_the_cycle():

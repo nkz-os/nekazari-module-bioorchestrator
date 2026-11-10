@@ -1,5 +1,5 @@
 {
-  "version": "2026-11-10",
+  "version": "2026-11-10.2",
   "sign": "engine date minus observed date, in days; negative means the engine is early",
   "dataset": {
     "name": "GENVCE per-site variety trial result sheets",
@@ -36,7 +36,7 @@
   "measured_on": {
     "wheat": "calibrated",
     "durum_wheat": "calibrated",
-    "barley": "builtin"
+    "barley": "calibrated"
   },
   "crops": {
     "wheat": {
@@ -136,48 +136,48 @@
     "barley": {
       "winter_type": {
         "emergence": {
-          "n": 38,
-          "bias_days": 20.0,
-          "mae_days": 26.1,
-          "p10_days": -14,
-          "p90_days": 43
+          "n": 35,
+          "bias_days": 1.0,
+          "mae_days": 10.8,
+          "p10_days": -29,
+          "p90_days": 10
         },
         "heading": {
-          "n": 59,
-          "bias_days": 18.0,
-          "mae_days": 19.0,
-          "p10_days": 0,
-          "p90_days": 36
+          "n": 55,
+          "bias_days": 5.0,
+          "mae_days": 12.9,
+          "p10_days": -15,
+          "p90_days": 25
         },
         "maturity": {
           "n": 12,
           "bias_days": 7.5,
-          "mae_days": 13.0,
-          "p10_days": -9,
+          "mae_days": 13.8,
+          "p10_days": -11,
           "p90_days": 31
         },
         "harvest": {
-          "n": 60,
-          "bias_days": -18.5,
-          "mae_days": 21.1,
+          "n": 56,
+          "bias_days": -23.0,
+          "mae_days": 23.3,
           "p10_days": -36,
-          "p90_days": -6
+          "p90_days": -7
         }
       },
       "spring_type": {
         "emergence": {
-          "n": 32,
-          "bias_days": 20.5,
-          "mae_days": 21.0,
-          "p10_days": 3,
-          "p90_days": 32
+          "n": 28,
+          "bias_days": -0.5,
+          "mae_days": 7.2,
+          "p10_days": -14,
+          "p90_days": 5
         },
         "heading": {
-          "n": 55,
-          "bias_days": 8.0,
-          "mae_days": 11.7,
-          "p10_days": -7,
-          "p90_days": 25
+          "n": 51,
+          "bias_days": -5.0,
+          "mae_days": 11.3,
+          "p10_days": -20,
+          "p90_days": 15
         },
         "maturity": {
           "n": 8,
@@ -187,13 +187,16 @@
           "p90_days": 7
         },
         "harvest": {
-          "n": 55,
-          "bias_days": -18.0,
-          "mae_days": 26.0,
+          "n": 51,
+          "bias_days": -21.0,
+          "mae_days": 29.2,
           "p10_days": -38,
-          "p90_days": 0
+          "p90_days": -9
         }
       }
     }
+  },
+  "notes": {
+    "barley": "Emergence and heading thresholds were fitted on these same sheets; leaving one season out, the heading error is 12.2 days. The engine's maturity is close to the observed maturity date and about three weeks before the harvest date."
   }
 }

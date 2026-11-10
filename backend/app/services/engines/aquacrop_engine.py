@@ -75,19 +75,25 @@ MULCH_F_ORGANIC = 0.5
 # Sourced cultivars: a built-in crop plus one published cultivar's own values. Degree days
 # count from sowing (AquaCrop-OSPy), i.e. the source's times from emergence plus Emergence.
 CULTIVARS: dict[str, dict] = {
-    "BarleyPonente": {
-        "base": "BarleyGDD",  # = cultivar Birguda of the same source, whose table 6 it shares
-        "source": ("Abrha B. et al., Experimental Agriculture 48(2) (2012) 252-271, tables 5-6: "
-                   "winter barley Ponente, Bari (Italy), sown 24 Nov - 7 Dec, Tbase 2 / Tupper 28 C"),
+    "BarleyES": {
+        "base": "BarleyGDD",  # = cultivar Birguda of the Abrha source, whose table 6 it shares
+        "source": ("Canopy, harvest index and rooting from Abrha B. et al., Experimental Agriculture "
+                   "48(2) (2012) 252-271, tables 5-6: winter barley Ponente, Bari (Italy), sown "
+                   "24 Nov - 7 Dec, Tbase 2 / Tupper 28 C. Emergence and start of yield formation fitted "
+                   "on Spanish variety-trial result sheets, 2023-2026. Maturity from the harvest calendar "
+                   "minus a 7-day dry-down. Senescence and yield-formation length placed proportionally "
+                   "as in the original cultivar"),
         "params": {
             "Tbase": 2.0, "Tupp": 28.0,
-            "Emergence": 226.0,  # 100 (2006) and 226 (2007, 2008): median of the three seasons
-            "HIstart": 1166.0, "Flowering": 180.0, "Senescence": 1289.0, "Maturity": 1746.0,
+            "Emergence": 117.0, "HIstart": 1003.0, "Flowering": 180.0,
+            # Maturity 1979 = median of harvest date minus 7 days on the same sheets; the other two
+            # keep the original cultivar's relative positions:
+            # Senescence = HIstart + 0.2121 x (Maturity - HIstart), YldForm = 0.8190 x (Maturity - HIstart)
+            "Senescence": 1210.0, "Maturity": 1979.0,
             # ASSUMPTION: "between maximum canopy and senescence" (source); placed as Birguda's
             # BarleyGDD value, (756 - 680) / (826 - 680) of the way: 226 + 893 + 0.521 * 170.
             "MaxRooting": 1208.0,
-            # ASSUMPTION: not in the source; Birguda's ratio 351 / (1198 - 769) on 1520 - 940.
-            "YldForm": 475.0,
+            "YldForm": 799.3,
             "CCx": 0.95, "CGC": 0.0087, "CDC": 0.006, "HI0": 0.44,
             "PlantPop": 2_000_000.0,  # CC0 3 % = PlantPop x SeedSize (1.5 cm2)
         },
