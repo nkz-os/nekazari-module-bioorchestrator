@@ -21,6 +21,7 @@ from app.core.dependencies import (
     require_platform_admin,
 )
 from app.graph.dao import GraphDAO
+from app.services.crop_calendar import cereal_slugs, cereal_stage_response
 from app.services.sim_errors import SimulationError
 from app.services.sim_jobs import SimJobs, shared_sim_jobs
 from app.species_registry import get_species_info, resolve_species
@@ -194,6 +195,21 @@ async def phenology_params(
     return attach_attributions(params, reference["sourceIds"] if reference else [])
 
 
+def _cereal_point(lat: str | None, lon: str | None) -> tuple[float | None, float | None]:
+    """Validated lat/lon of a cereal calendar request (422 otherwise); only cereals are checked."""
+    if (lat is None) != (lon is None):
+        raise HTTPException(status_code=422, detail="lat and lon must be given together.")
+    if lat is None:
+        return None, None
+    try:
+        la, lo = float(lat), float(lon)
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail="lat and lon must be numbers.") from e
+    if not (-90 <= la <= 90 and -180 <= lo <= 180):  # also rejects nan
+        raise HTTPException(status_code=422, detail="lat/lon out of range.")
+    return la, lo
+
+
 @router.get("/phenology-stages")
 async def phenology_stages(
     driver: DriverDep,
@@ -201,14 +217,26 @@ async def phenology_stages(
         ...,
         description="Species name or scientific name (e.g. 'olive', 'Olea europaea')",
     ),
+    lat: str | None = Query(default=None, description="Latitude: regional calibration of the cereal calendar."),
+    lon: str | None = Query(default=None, description="Longitude, with lat."),
+    irrigation: str | None = Query(
+        default=None, description="'rainfed' (default) or 'irrigated': regime of the cereal calendar."),
 ):
     """Full ordered phenology stage table for a species (for crop-health).
 
     Returns all PhenologyStage nodes for the species ordered ascending by
     gddMin. Returns an empty `stages` list (not 404) when the species has
     no stage nodes — the caller falls back to its own default table.
+
+    Wheat, durum wheat and barley: the table is the yield engine's own calendar (library,
+    cultivar and, with lat/lon, regional calibration), GDD from sowing; see ``crop_calendar``.
     """
     species = resolve_species(species.strip()) or species
+    if species in cereal_slugs():
+        point = _cereal_point(lat, lon)
+        if irrigation not in (None, "rainfed", "irrigated"):
+            raise HTTPException(status_code=422, detail="irrigation must be 'rainfed' or 'irrigated'.")
+        return cereal_stage_response(species, point[0], point[1], irrigation or "rainfed")
     dao = GraphDAO(driver)
     stages = await dao.get_phenology_stages(species)
     return {"species": species, "stages": stages}

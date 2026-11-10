@@ -2,7 +2,7 @@
 import type { SourceAttributionItem } from '../types/attribution';
 import type { Fortnight } from './fortnight';
 
-export const CONTRACT_VERSION = '2.6';
+export const CONTRACT_VERSION = '2.7';
 export type Verdict = 'fits' | 'caveats' | 'no_fit';
 /** Owner decision (2026-10-13): one vocabulary everywhere; the words shown are translated. */
 export type Regime = 'rainfed' | 'irrigated';
@@ -107,6 +107,20 @@ export interface InSeasonResponse {
   contract_version: string; provider_id: 'aquacrop'; state: 'unavailable' | 'queued' | 'running' | 'done' | 'failed';
   done: number; total: number | null; estimates: Estimate[]; unavailable: Unavailable[]; job_id: string | null;
   season: SeasonInfo | null;
+  /** Contract 2.7: milestone dates from the engine's own calendar; null when no forecast was produced. */
+  phenology?: InSeasonPhenology | null;
+}
+export interface PhenologyMilestone {
+  gdd: number; status: 'reached' | 'projected' | 'unavailable';
+  date?: string; n_members?: number; date_p10?: string; date_p50?: string; date_p90?: string; reason?: string;
+}
+export interface InSeasonPhenology {
+  gdd_method: string; base_temp: number; upper_cutoff: number; origin: 'sowing';
+  basis: 'thermal_time'; notes: string[];
+  validation?: { status: 'measured' | 'not_validated'; version?: string; sign?: string; dataset?: Record<string, unknown>; comparisons?: Record<string, unknown>; groups?: Record<string, unknown> };
+  model: { id: string; cultivar: string; version: string };
+  calibration: { status: 'calibrated' | 'builtin'; scheme: string | null; region: { code: string; name: string } | null; version: string | null };
+  milestones: Record<string, PhenologyMilestone>;
 }
 export interface CycleCell {
   crop_id: string | null; species: string | null; species_raw: string | null; names: Names; variety: string | null;

@@ -151,7 +151,7 @@ def _unavailable(reason: str, code: str | None = None) -> dict:
     if code is not None:
         item["code"] = code
     return {"state": "unavailable", "done": 0, "total": None, "estimates": [], "unavailable": [item],
-            "job_id": None, "season": None}
+            "job_id": None, "season": None, "phenology": None}
 
 
 def _failed(reason: str, code: str) -> dict:
@@ -160,13 +160,14 @@ def _failed(reason: str, code: str) -> dict:
 
 def _view(job, inputs: InSeasonInputs, version: str) -> dict:
     out = {"state": job.state, "done": job.done, "total": job.total, "estimates": [], "unavailable": [],
-           "job_id": job.id, "season": None}
+           "job_id": job.id, "season": None, "phenology": None}
     if job.state == "failed":
         out["unavailable"] = [{"provider_id": PROVIDER_ID, "reason": "engine_error",
                                "code": (job.error or {}).get("code")}]
     elif job.state == "done":
         out["estimates"], out["unavailable"] = map_in_season(job.result or {}, version)
         out["season"] = season_info(job.result or {}, inputs, job.finished_at, version)
+        out["phenology"] = (job.result or {}).get("phenology")
     return out
 
 

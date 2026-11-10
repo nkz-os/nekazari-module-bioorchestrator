@@ -11,6 +11,7 @@ from collections.abc import Callable
 from datetime import date, timedelta
 from typing import Any, Protocol
 
+from app.services import crop_calendar as cal
 from app.services import yield_calibration as yc
 from app.services.engines import aquacrop_engine as aq
 from app.services.region_lookup import es_province_at
@@ -106,6 +107,21 @@ def engine_soil(layers: list[dict]) -> list[aq.SoilLayer]:
     return [aq.SoilLayer(l["thickness_m"], l["wp"], l["fc"], l["sat"], l["ksat_mm_day"]) for l in layers]
 
 
+def _phenology(slug, irrigation, lat, lon, sowing_date, observed_days, analog_years, ctx) -> dict | None:
+    """Milestone dates from the weather the simulation used (observed days, then each analog member).
+
+    An additive block: a failure here is logged and the block left out, never the yield answer.
+    """
+    try:
+        calendar = cal.effective_calendar(slug, lat=lat, lon=lon, irrigation=irrigation)
+        members = [aq.project_weather(observed_days, analog_years[y], sowing_date, y)
+                   for y in sorted(analog_years)]
+        return cal.phenology_block(sowing_date, observed_days, members, calendar)
+    except Exception:
+        logger.exception("crop_simulation_phenology_failed %s", ctx)
+        return None
+
+
 async def run_crop_simulation(
     *,
     engine_name: str,
@@ -152,10 +168,12 @@ async def run_crop_simulation(
     observed = await assemble_observed(parcel_id, tenant_id, lat, lon, sowing_date, today)
 
     analog_warnings: list[str] = []
+    analog_years: dict = {}
 
     async def analogs():
         found, warns = await assemble_analogs(lat, lon, sowing_date, today)
         analog_warnings.extend(warns)
+        analog_years.update(found)
         return found
 
     # Calibrated phenology only where it was validated (crop, regime and region); else built-in.
@@ -217,6 +235,10 @@ async def run_crop_simulation(
     }
     if crop.note:
         out["crop_parameters_note"] = crop.note
+    if crop.slug in cal.CEREAL_SLUGS:
+        block = _phenology(crop.slug, irrigation, lat, lon, sowing_date, observed.weather, analog_years, ctx)
+        if block is not None:
+            out["phenology"] = block
     logger.info(
         "crop_simulation_done %s status=%s n_years=%s weather_days=%d",
         ctx, out["status"], (out["ensemble"] or {}).get("n_years"), len(observed.weather))

@@ -98,6 +98,36 @@ async def test_done_job_answers_experimental_estimates_and_the_season():
         "computed_at": finished.isoformat(), "provider_version": "v-test"}
 
 
+PHENOLOGY = {"gdd_method": "aquacrop_m3", "milestones": {"maturity": {"gdd": 2400.0, "status": "projected"}}}
+
+
+async def test_done_job_carries_the_simulations_phenology_block_untouched():
+    jobs = FakeJobs()
+    out = await call(jobs)
+    job = jobs.jobs[out["job_id"]]
+    job.state, job.result, job.finished_at = "done", {**RESULT, "phenology": PHENOLOGY}, datetime(2026, 3, 15, tzinfo=UTC)
+    assert (await call(jobs))["phenology"] == PHENOLOGY
+
+
+async def test_no_phenology_block_unless_the_forecast_is_done_and_has_one():
+    jobs = FakeJobs()
+    out = await call(jobs)  # queued
+    assert out["phenology"] is None
+    job = jobs.jobs[out["job_id"]]
+    job.state, job.result, job.finished_at = "done", RESULT, datetime(2026, 3, 15, tzinfo=UTC)
+    assert (await call(jobs))["phenology"] is None
+    out = await call(FakeJobs(), load=loader(cycles={"current": None}))
+    assert out["state"] == "unavailable" and out["phenology"] is None
+
+
+def test_route_serialises_the_phenology_block(client, monkeypatch):
+    import app.api.v1.planning as planning_api
+    monkeypatch.setattr(planning_api, "parcel_in_season", AsyncMock(return_value={
+        "state": "unavailable", "done": 0, "total": None, "estimates": [], "unavailable": [],
+        "job_id": None, "season": None, "phenology": PHENOLOGY}))
+    assert client.get(URL).json()["phenology"] == PHENOLOGY
+
+
 async def test_a_failed_job_is_reported_and_only_retry_relaunches_it():
     jobs = FakeJobs()
     out = await call(jobs)
@@ -155,7 +185,7 @@ def test_route_answers_the_2_1_contract(client, monkeypatch):
         "state": "unavailable", "done": 0, "total": None, "estimates": [],
         "unavailable": [{"provider_id": "aquacrop", "reason": "not_sown"}], "job_id": None, "season": None}))
     r = client.get(URL)
-    assert r.status_code == 200 and r.json()["contract_version"] == "2.6"
+    assert r.status_code == 200 and r.json()["contract_version"] == "2.7"
     assert r.json()["unavailable"] == [{"provider_id": "aquacrop", "reason": "not_sown", "code": None}]
 
 
