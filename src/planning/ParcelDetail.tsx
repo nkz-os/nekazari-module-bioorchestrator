@@ -19,12 +19,15 @@ import PlanWizard from './wizard/PlanWizard';
 export const IRRIGATION_REFETCH_MS = 90_000;
 
 interface Props {
-  row: ParcelRow; campaign: number; onClose: () => void; onSaved: () => void; onSimulate?: () => void; onForecast?: () => void;
+  row: ParcelRow; campaign: number;
+  /** Past campaigns a crop can be declared for, from the same farm payload as `campaign`. */
+  historyCampaigns: number[];
+  onClose: () => void; onSaved: () => void; onSimulate?: () => void; onForecast?: () => void;
   /** Reloads the farm data: offered next to a lock that a failed history read causes. */
   onReload?: () => void;
 }
 
-export default function ParcelDetail({ row, campaign, onClose, onSaved, onSimulate, onForecast, onReload }: Props) {
+export default function ParcelDetail({ row, campaign, historyCampaigns, onClose, onSaved, onSimulate, onForecast, onReload }: Props) {
   const { t, i18n } = useTranslation('bioorchestrator');
   const lang = i18n.language;
   const [regime, setRegime] = useState<Regime | null>(row.regime);
@@ -112,7 +115,7 @@ export default function ParcelDetail({ row, campaign, onClose, onSaved, onSimula
       {fit.data && (
         <ParcelHistorySection
           row={row}
-          campaign={campaign}
+          campaigns={historyCampaigns}
           species={fit.data.species}
           onSaved={() => { fit.retry(); onReload?.(); }}
         />

@@ -37,12 +37,20 @@ const row = (cells: CycleCell[], over: Partial<ParcelRow> = {}): ParcelRow => ({
   parcel_id: 'urn:ngsi-ld:AgriParcel:t:p1', name: 'Soto Alto', area_ha: 12, farm_id: null, regime: 'rainfed',
   regime_source: 'declared', cycles_available: true, cells: { '2026': [], '2027': cells }, warnings: [], ...over,
 });
+const HISTORY = [2022, 2023, 2024, 2025, 2026];
 const render = (r: ParcelRow, withFit = false, onReload?: () => void) => {
   loads.withFit = withFit;
-  return renderToStaticMarkup(<ParcelDetail row={r} campaign={2027} onClose={() => {}} onSaved={() => {}} onReload={onReload} />);
+  return renderToStaticMarkup(<ParcelDetail row={r} campaign={2027} historyCampaigns={HISTORY} onClose={() => {}} onSaved={() => {}} onReload={onReload} />);
 };
 
 describe('ParcelDetail (es)', () => {
+  it('the history editor lists the declarable campaigns the farm payload sends', () => {
+    loads.withFit = true;
+    const html = renderToStaticMarkup(
+      <ParcelDetail row={row([])} campaign={2027} historyCampaigns={[2026]} onClose={() => {}} onSaved={() => {}} />);
+    expect(html).toContain('Campaña 2026');
+    expect(html).not.toContain('Campaña 2025');
+  });
   it('shows the current plan of the campaign above the wizard', () => {
     const cover = cell({ crop_id: 'c0', role: 'cover_crop', species: 'vetch', species_raw: 'VICSA', names: { es: 'veza' }, variety: null });
     const html = render(row([cover, cell({})]), true);
@@ -94,10 +102,10 @@ describe('ParcelDetail (es)', () => {
   });
   it('links a sown parcel to its crop-health forecast only when the page wires it', () => {
     const sown = row([cell({}), cell({ crop_id: 'c2', provenance: 'actual', status: 'active' })]);
-    const wired = renderToStaticMarkup(<ParcelDetail row={sown} campaign={2027} onClose={() => {}} onSaved={() => {}} onForecast={() => {}} />);
+    const wired = renderToStaticMarkup(<ParcelDetail row={sown} campaign={2027} historyCampaigns={HISTORY} onClose={() => {}} onSaved={() => {}} onForecast={() => {}} />);
     expect(wired).toContain('Ver previsión en Salud del cultivo');
     expect(render(sown, true)).not.toContain('Ver previsión en Salud del cultivo');
-    const planned = renderToStaticMarkup(<ParcelDetail row={row([cell({})])} campaign={2027} onClose={() => {}} onSaved={() => {}} onForecast={() => {}} />);
+    const planned = renderToStaticMarkup(<ParcelDetail row={row([cell({})])} campaign={2027} historyCampaigns={HISTORY} onClose={() => {}} onSaved={() => {}} onForecast={() => {}} />);
     expect(planned).not.toContain('Ver previsión en Salud del cultivo');
   });
   it('an irrigated parcel offers the campaign allotment and shows what is stored, in mm and m3/ha', () => {

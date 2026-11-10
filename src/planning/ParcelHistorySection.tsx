@@ -6,17 +6,6 @@ import { attemptWrite, declarableCrops } from './completionModel';
 import { cropName, formatT } from './format';
 import type { CycleCell, ParcelRow, SpeciesFit } from './types';
 
-export const HISTORY_CAMPAIGN_COUNT = 5;
-
-export function pastCampaigns(targetCampaign: number): number[] {
-  const currentYear = new Date().getFullYear();
-  const list: number[] = [];
-  for (let c = targetCampaign - HISTORY_CAMPAIGN_COUNT; c < targetCampaign; c += 1) {
-    if (c < currentYear) list.push(c);
-  }
-  return list;
-}
-
 function mainCellOf(row: ParcelRow, campaign: number): CycleCell | null {
   const cells = row.cells[String(campaign)] ?? [];
   return cells.find((c) => c.role === 'main_crop') ?? null;
@@ -42,15 +31,15 @@ interface RowDraft {
 
 interface Props {
   row: ParcelRow;
-  campaign: number;
+  /** Declarable past campaigns, as the farm payload sends them (`history_campaigns`): the backend owns the rollover rule. */
+  campaigns: number[];
   species: SpeciesFit[];
   onSaved: () => void;
 }
 
-export default function ParcelHistorySection({ row, campaign, species, onSaved }: Props) {
+export default function ParcelHistorySection({ row, campaigns, species, onSaved }: Props) {
   const { t, i18n } = useTranslation('bioorchestrator');
   const lang = i18n.language;
-  const campaigns = pastCampaigns(campaign);
   const crops = declarableCrops(species);
   const speciesBySlug = new Map<string, string>();
   for (const s of crops) {
