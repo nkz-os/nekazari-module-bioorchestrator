@@ -207,25 +207,49 @@ def test_validation_publishes_the_measured_error_of_this_crop():
 
     from app.services import yield_calibration as yc
     raw = json.loads((yc.DATA_DIR / "phenology_validation.json").read_text(encoding="utf-8"))
-    v = cc.validation_for("barley")
+    v = cc.validation_for("barley", "builtin")
     assert v["status"] == "measured" and v["version"] == raw["version"] and v["sign"] == raw["sign"]
     assert v["dataset"] == raw["dataset"] and v["comparisons"] == raw["comparisons"]
-    assert v["groups"] == raw["crops"]["barley"]
-    assert cc.validation_for("durum_wheat")["groups"] == raw["crops"]["durum_wheat"]
+    assert v["groups"] == raw["crops"]["barley"] and v["measured_on"] == "builtin"
+    for slug in ("wheat", "durum_wheat"):
+        w = cc.validation_for(slug, "calibrated")
+        assert w["status"] == "measured" and w["groups"] == raw["crops"][slug] and w["measured_on"] == "calibrated"
     block = cc.phenology_block(SOWING, _series(SOWING, 3, 0.0, 20.0), [], cc.effective_calendar("barley"))
-    assert block["validation"] == cc.validation_for("barley")
+    assert block["validation"] == cc.validation_for("barley", "builtin")
+
+
+@pytest.mark.parametrize("slug,measured_on,other",
+                         [("wheat", "calibrated", "builtin"), ("durum_wheat", "calibrated", "builtin"),
+                          ("barley", "builtin", "calibrated")])
+def test_validation_is_withheld_for_a_calendar_it_was_not_measured_on(slug, measured_on, other):
+    assert cc.validation_for(slug, measured_on)["status"] == "measured"
+    assert cc.validation_for(slug, other) == {"status": "not_validated", "reason": "calendar_not_measured"}
+
+
+def test_slug_missing_from_measured_on_is_not_measured(monkeypatch):
+    monkeypatch.setattr(cc, "_validation_file", lambda: {"version": "x", "sign": "s", "dataset": {},
+                                                          "comparisons": {}, "crops": {"wheat": {"g": {}}},
+                                                          "measured_on": {}})
+    assert cc.validation_for("wheat", "calibrated") == {"status": "not_validated", "reason": "calendar_not_measured"}
+
+
+def test_phenology_block_of_a_builtin_wheat_calendar_is_not_validated():
+    cal = cc.effective_calendar("wheat")
+    assert cal.calibration["status"] == "builtin"
+    block = cc.phenology_block(SOWING, _series(SOWING, 3, 0.0, 20.0), [], cal)
+    assert block["validation"] == {"status": "not_validated", "reason": "calendar_not_measured"}
 
 
 def test_validation_falls_back_when_the_file_is_missing_or_broken(tmp_path, monkeypatch, caplog):
     monkeypatch.setattr(cc, "VALIDATION_PATH", tmp_path / "absent.json")
     cc._validation_file.cache_clear()
     try:
-        assert cc.validation_for("wheat") == {"status": "not_validated"}
+        assert cc.validation_for("wheat", "calibrated") == {"status": "not_validated"}
         bad = tmp_path / "bad.json"
         bad.write_text("{not json", encoding="utf-8")
         monkeypatch.setattr(cc, "VALIDATION_PATH", bad)
         cc._validation_file.cache_clear()
-        assert cc.validation_for("wheat") == {"status": "not_validated"}
+        assert cc.validation_for("wheat", "calibrated") == {"status": "not_validated"}
         assert "phenology_validation_unavailable" in caplog.text
     finally:
         cc._validation_file.cache_clear()
@@ -234,4 +258,4 @@ def test_validation_falls_back_when_the_file_is_missing_or_broken(tmp_path, monk
 def test_crop_without_an_entry_is_not_validated(monkeypatch):
     monkeypatch.setattr(cc, "_validation_file", lambda: {"version": "x", "sign": "s", "dataset": {},
                                                           "comparisons": {}, "crops": {}})
-    assert cc.validation_for("wheat") == {"status": "not_validated"}
+    assert cc.validation_for("wheat", "calibrated") == {"status": "not_validated"}
