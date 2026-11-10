@@ -7,7 +7,7 @@ vi.mock('@nekazari/sdk', async () => {
   return { useTranslation: () => ({ t: esT, i18n: { language: 'es' } }), i18n: {} };
 });
 
-import ParcelHistorySection, { pastCampaigns } from './ParcelHistorySection';
+import ParcelHistorySection from './ParcelHistorySection';
 import { CycleLine } from './PlanMatrix';
 import type { CycleCell, ParcelRow, SpeciesFit } from './types';
 
@@ -56,11 +56,28 @@ const row = (cells: Record<string, CycleCell[]>): ParcelRow => ({
 });
 
 describe('ParcelHistorySection', () => {
-  it('computes the past campaigns up to 5 years before the target campaign', () => {
-    const camps = pastCampaigns(2027);
-    expect(camps.length).toBeGreaterThanOrEqual(4);
-    expect(camps[0]).toBe(2022);
-    expect(camps).toContain(2025);
+  it('renders one row per declarable campaign the backend sends, including the current year after the July rollover', () => {
+    const r = row({ '2027': [cell({ crop_id: 'c2027', provenance: 'planned', status: 'planned' })] });
+    const html = renderToStaticMarkup(
+      <ParcelHistorySection row={r} campaigns={[2022, 2023, 2024, 2025, 2026]} species={SPECIES} onSaved={() => {}} />,
+    );
+    for (const c of [2022, 2023, 2024, 2025, 2026]) expect(html).toContain(`Campaña ${c}`);
+    // A campaign the backend leaves out (not over yet) gets no row, even when the parcel has a cycle in it.
+    expect(html).not.toContain('Campaña 2027');
+  });
+
+  it('a declared crop in the rollover campaign can be cleared from the editor', () => {
+    const r = row({ '2026': [cell({ crop_id: 'c2026', provenance: 'declared', start: null, end: null })] });
+    const html = renderToStaticMarkup(
+      <ParcelHistorySection row={r} campaigns={[2025, 2026]} species={SPECIES} onSaved={() => {}} />,
+    );
+    expect(html).toContain('Campaña 2026');
+    expect(html).toContain('Quitar');
+  });
+
+  it('renders nothing when the backend sends no declarable campaign', () => {
+    const html = renderToStaticMarkup(<ParcelHistorySection row={row({})} campaigns={[]} species={SPECIES} onSaved={() => {}} />);
+    expect(html).toBe('');
   });
 
   it('renders editable rows for declared/empty past campaigns and read-only rows for dated field-book cycles', () => {
@@ -69,7 +86,7 @@ describe('ParcelHistorySection', () => {
       '2025': [cell({ crop_id: 'c2025', provenance: 'actual', start: '2024-11-01', end: '2025-07-01', variety: 'Filon', yield_kg_ha: 4800, yield_source: 'measured' })],
     });
     const html = renderToStaticMarkup(
-      <ParcelHistorySection row={r} campaign={2027} species={SPECIES} onSaved={() => {}} />,
+      <ParcelHistorySection row={r} campaigns={[2022, 2023, 2024, 2025]} species={SPECIES} onSaved={() => {}} />,
     );
     expect(html).toContain('Histórico de campañas (5 años)');
     expect(html).toContain('Campaña 2024');

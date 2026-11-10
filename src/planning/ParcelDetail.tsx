@@ -19,19 +19,25 @@ import PlanWizard from './wizard/PlanWizard';
 export const IRRIGATION_REFETCH_MS = 90_000;
 
 interface Props {
-  row: ParcelRow; campaign: number; onClose: () => void; onSaved: () => void; onSimulate?: () => void; onForecast?: () => void;
+  row: ParcelRow; campaign: number;
+  /** Past campaigns a crop can be declared for, from the same farm payload as `campaign`. */
+  historyCampaigns: number[];
+  onClose: () => void; onSaved: () => void; onSimulate?: () => void; onForecast?: () => void;
   /** Reloads the farm data: offered next to a lock that a failed history read causes. */
   onReload?: () => void;
 }
 
-export default function ParcelDetail({ row, campaign, onClose, onSaved, onSimulate, onForecast, onReload }: Props) {
+export default function ParcelDetail({ row, campaign, historyCampaigns, onClose, onSaved, onSimulate, onForecast, onReload }: Props) {
   const { t, i18n } = useTranslation('bioorchestrator');
   const lang = i18n.language;
   const [regime, setRegime] = useState<Regime | null>(row.regime);
-  // A regime pick is saved on the parcel at once when it has none; a refusal keeps the pick for the session.
+  // A pick in the select is a draft: "Guardar" applies it, and saves it on the parcel when it has none;
+  // a refusal keeps the pick for the session.
+  const [regimeDraft, setRegimeDraft] = useState<Regime | null>(null);
   const [regimeError, setRegimeError] = useState<string | null>(null);
   const pickRegime = async (v: Regime) => {
     setRegime(v);
+    setRegimeDraft(null);
     setRegimeError(null);
     const outcome = await saveRegimePick(row, v, (r) => saveParcelRegime(row.parcel_id, r));
     if (outcome.errorKey) setRegimeError(outcome.errorKey);
@@ -112,7 +118,7 @@ export default function ParcelDetail({ row, campaign, onClose, onSaved, onSimula
       {fit.data && (
         <ParcelHistorySection
           row={row}
-          campaign={campaign}
+          campaigns={historyCampaigns}
           species={fit.data.species}
           onSaved={() => { fit.retry(); onReload?.(); }}
         />
@@ -130,9 +136,13 @@ export default function ParcelDetail({ row, campaign, onClose, onSaved, onSimula
       {editing ? (
         <Inline gap="inline" wrap align="end">
           <FormField label={t('planning.detail.regimeQuestion')} description={regime ? undefined : t('planning.detail.regimeHint')}>
-            <Select value={regime ?? ''} placeholder={t('planning.detail.regimeQuestion')} options={regimeOptions}
-              onValueChange={(v) => { void pickRegime(v as Regime); }} error={!regime} />
+            <Select value={regimeDraft ?? regime ?? ''} placeholder={t('planning.detail.regimeQuestion')} options={regimeOptions}
+              onValueChange={(v) => setRegimeDraft((v || null) as Regime | null)} error={!regime} />
           </FormField>
+          <Button size="sm" variant="secondary" disabled={!regimeDraft}
+            onClick={() => { if (regimeDraft) void pickRegime(regimeDraft); }}>
+            {t('planning.historyEditor.save')}
+          </Button>
           {regimeError && <p role="alert" className="text-nkz-sm text-nkz-danger">{t(`planning.wizard.crop.complete.error.${regimeError}`)}</p>}
           <FormField label={t('planning.detail.managementLabel')}>
             <Select value={management} options={managementOptions} onValueChange={(v) => setManagement(v as Management)} />
