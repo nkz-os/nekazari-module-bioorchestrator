@@ -1,0 +1,194 @@
+{
+  "version": "2026-11-10",
+  "sign": "engine date minus observed date, in days; negative means the engine is early",
+  "dataset": {
+    "name": "GENVCE per-site variety trial result sheets",
+    "country": "ES",
+    "seasons": [
+      2023,
+      2024,
+      2025,
+      2026
+    ],
+    "sheets": 303,
+    "observed_date": "median across the varieties of each sheet",
+    "weather": "ERA5-based daily archive at the trial site coordinates",
+    "gdd_method": "aquacrop_m3"
+  },
+  "comparisons": {
+    "emergence": {
+      "engine": "emergence",
+      "observed": "emergence date"
+    },
+    "heading": {
+      "engine": "flowering_start",
+      "observed": "heading date"
+    },
+    "maturity": {
+      "engine": "maturity",
+      "observed": "maturity date"
+    },
+    "harvest": {
+      "engine": "maturity",
+      "observed": "harvest date"
+    }
+  },
+  "crops": {
+    "wheat": {
+      "winter_type": {
+        "emergence": {
+          "n": 44,
+          "bias_days": 0.0,
+          "mae_days": 8.5,
+          "p10_days": -29,
+          "p90_days": 4
+        },
+        "heading": {
+          "n": 60,
+          "bias_days": -4.0,
+          "mae_days": 9.6,
+          "p10_days": -19,
+          "p90_days": 10
+        },
+        "maturity": {
+          "n": 10,
+          "bias_days": 14.5,
+          "mae_days": 12.4,
+          "p10_days": 1,
+          "p90_days": 24
+        },
+        "harvest": {
+          "n": 64,
+          "bias_days": -2.0,
+          "mae_days": 10.9,
+          "p10_days": -21,
+          "p90_days": 16
+        }
+      },
+      "spring_type": {
+        "emergence": {
+          "n": 36,
+          "bias_days": -2.0,
+          "mae_days": 13.2,
+          "p10_days": -24,
+          "p90_days": 6
+        },
+        "heading": {
+          "n": 55,
+          "bias_days": 1.0,
+          "mae_days": 5.8,
+          "p10_days": -8,
+          "p90_days": 9
+        },
+        "maturity": {
+          "n": 7,
+          "bias_days": 21.0,
+          "mae_days": 20.9,
+          "p10_days": 10,
+          "p90_days": 32
+        },
+        "harvest": {
+          "n": 64,
+          "bias_days": -1.0,
+          "mae_days": 14.2,
+          "p10_days": -16,
+          "p90_days": 13
+        }
+      }
+    },
+    "durum_wheat": {
+      "all": {
+        "emergence": {
+          "n": 25,
+          "bias_days": -2.0,
+          "mae_days": 8.0,
+          "p10_days": -18,
+          "p90_days": 3
+        },
+        "heading": {
+          "n": 43,
+          "bias_days": 1.0,
+          "mae_days": 7.8,
+          "p10_days": -10,
+          "p90_days": 13
+        },
+        "maturity": {
+          "n": 3,
+          "bias_days": 17.0,
+          "mae_days": 14.7,
+          "p10_days": 6,
+          "p90_days": 21
+        },
+        "harvest": {
+          "n": 51,
+          "bias_days": -2.0,
+          "mae_days": 8.0,
+          "p10_days": -14,
+          "p90_days": 9
+        }
+      }
+    },
+    "barley": {
+      "winter_type": {
+        "emergence": {
+          "n": 38,
+          "bias_days": 20.0,
+          "mae_days": 26.1,
+          "p10_days": -14,
+          "p90_days": 43
+        },
+        "heading": {
+          "n": 59,
+          "bias_days": 18.0,
+          "mae_days": 19.0,
+          "p10_days": 0,
+          "p90_days": 36
+        },
+        "maturity": {
+          "n": 12,
+          "bias_days": 7.5,
+          "mae_days": 13.0,
+          "p10_days": -9,
+          "p90_days": 31
+        },
+        "harvest": {
+          "n": 60,
+          "bias_days": -18.5,
+          "mae_days": 21.1,
+          "p10_days": -36,
+          "p90_days": -6
+        }
+      },
+      "spring_type": {
+        "emergence": {
+          "n": 32,
+          "bias_days": 20.5,
+          "mae_days": 21.0,
+          "p10_days": 3,
+          "p90_days": 32
+        },
+        "heading": {
+          "n": 55,
+          "bias_days": 8.0,
+          "mae_days": 11.7,
+          "p10_days": -7,
+          "p90_days": 25
+        },
+        "maturity": {
+          "n": 8,
+          "bias_days": -1.0,
+          "mae_days": 5.0,
+          "p10_days": -5,
+          "p90_days": 7
+        },
+        "harvest": {
+          "n": 55,
+          "bias_days": -18.0,
+          "mae_days": 26.0,
+          "p10_days": -38,
+          "p90_days": 0
+        }
+      }
+    }
+  }
+}

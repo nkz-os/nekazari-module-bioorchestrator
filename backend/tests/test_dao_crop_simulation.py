@@ -370,3 +370,57 @@ def test_without_method_the_result_is_bare_soil(mock_driver, tunis):
     res = _run(GraphDAO(mock_driver), net=_Net(tunis))
     assert res["inputs"]["field_management"] == {
         "sowing_method": "conventional", "source": "default", "mulch_pct": None, "f_mulch": None}
+
+
+# -------------------------------------------------------------- cereal phenology block
+def test_in_season_cereal_has_a_phenology_block_from_the_same_weather(mock_driver, tunis):
+    res = _run(GraphDAO(mock_driver), net=_Net(tunis))
+    ph = res["phenology"]
+    assert ph["gdd_method"] == "aquacrop_m3" and ph["origin"] == "sowing"
+    assert ph["calibration"]["status"] == "calibrated" and ph["calibration"]["region"]["code"] == "31"
+    assert ph["upper_cutoff"] == 26.0 and ph["model"]["id"] == "aquacrop_calendar"
+    ms = ph["milestones"]
+    assert ms["emergence"]["status"] == "reached" and "1990-10-01" <= ms["emergence"]["date"] <= "1991-01-31"
+    m = ms["maturity"]
+    assert m["status"] == "projected" and m["n_members"] == 5
+    assert "1991-01-31" < m["date_p10"] <= m["date_p50"] <= m["date_p90"]
+    json.dumps(res)
+
+
+def test_complete_cereal_season_reaches_every_milestone(mock_driver, tunis):
+    net = _Net(tunis, parcel_from=date(1989, 10, 1))
+    res = _run(GraphDAO(mock_driver), net=net, today=date(1992, 1, 1), sowing_date_str="1990-10-01",
+               crop_slug="wheat")
+    ms = res["phenology"]["milestones"]
+    assert all(v["status"] == "reached" for v in ms.values())
+    dates = [ms[k]["date"] for k in ("emergence", "flowering_start", "senescence_start", "maturity")]
+    assert dates == sorted(dates)
+    # the thermal-time maturity: the run may end earlier when water stress kills the canopy first
+    assert res["harvest_date"] <= (date.fromisoformat(ms["maturity"]["date"]) + timedelta(days=1)).isoformat()
+
+
+def test_milestone_maturity_is_the_simulated_harvest_when_nothing_ends_the_season_early(mock_driver, tunis):
+    net = _Net(tunis, parcel_from=date(1989, 10, 1))
+    res = _run(GraphDAO(mock_driver), net=net, today=date(1992, 1, 1), sowing_date_str="1990-10-01",
+               crop_slug="wheat", irrigation="full")
+    # the library records the harvest at the end of the maturity day, i.e. the next day's start
+    maturity = date.fromisoformat(res["phenology"]["milestones"]["maturity"]["date"])
+    assert (maturity + timedelta(days=1)).isoformat() == res["harvest_date"]
+
+
+def test_other_crops_have_no_phenology_block(mock_driver, tunis):
+    res = _run(GraphDAO(mock_driver), net=_Net(tunis), crop_slug="sunflower",
+               sowing_date_str="1990-04-15", today=date(1990, 6, 1))
+    assert "phenology" not in res
+
+
+def test_non_finite_weather_drops_the_phenology_block_but_not_the_result(mock_driver, tunis, caplog):
+    from app.services import crop_calendar as cc
+
+    def poisoned(sowing, observed, members, calendar):
+        raise ValueError("non-finite temperature on 1990-10-05")
+
+    with patch.object(cc, "milestone_dates", poisoned):
+        res = _run(GraphDAO(mock_driver), net=_Net(tunis))
+    assert "phenology" not in res and res["yield_t_ha"]["p50"] > 0
+    assert "crop_simulation_phenology_failed" in caplog.text

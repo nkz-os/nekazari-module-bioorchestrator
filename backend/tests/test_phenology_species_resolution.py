@@ -26,11 +26,12 @@ def test_phenology_params_accepts_eppo():
 
 
 def test_phenology_stages_accepts_eppo():
+    # wheat, durum wheat and barley are served from the engine calendar (test_phenology_stages_calendar)
     with patch("app.graph.dao.GraphDAO.get_phenology_stages",
                AsyncMock(return_value=[])) as dao:
-        r = _client().get("/api/graph/phenology-stages?species=TRZAX")
+        r = _client().get("/api/graph/phenology-stages?species=ZEAMX")
     assert r.status_code == 200
-    assert dao.await_args.args[0] == "wheat"
+    assert dao.await_args.args[0] == "maize"
 
 
 def test_unknown_identifier_passes_through():
