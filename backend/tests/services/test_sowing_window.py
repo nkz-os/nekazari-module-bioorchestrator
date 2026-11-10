@@ -126,4 +126,4 @@ def test_forced_sowing_on_29_february_moves_to_the_28th():
 
 
 def test_a_sourced_cultivar_sows_by_its_base_crop_rule():
-    assert rule_for("BarleyPonente") is rule_for("BarleyGDD")
+    assert rule_for("BarleyES") is rule_for("BarleyGDD")

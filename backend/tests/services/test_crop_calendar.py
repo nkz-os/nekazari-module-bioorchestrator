@@ -4,6 +4,7 @@ from datetime import date, timedelta
 import pytest
 
 from app.services import crop_calendar as cc
+from app.services import yield_calibration as yc
 from app.services.engines import aquacrop_engine as aq
 
 NAVARRA = (42.7, -1.6)  # synthetic point inside a calibrated province
@@ -69,11 +70,31 @@ def test_outside_calibrated_regions_is_builtin():
     assert cal.calibration["status"] == "builtin"
 
 
-def test_barley_is_the_ponente_cultivar_and_never_calibrated():
+def test_barley_is_the_es_cultivar_and_calibrated_in_a_province_of_the_file():
     cal = cc.effective_calendar("barley", lat=NAVARRA[0], lon=NAVARRA[1], irrigation="rainfed")
-    assert cal.cultivar == "BarleyPonente" and cal.tbase == 2.0 and cal.tupp == 28.0
-    assert cal.calibration["status"] == "builtin"
+    assert cal.cultivar == "BarleyES" and cal.tbase == 2.0 and cal.tupp == 28.0
+    assert cal.calibration["status"] == "calibrated" and cal.calibration["scheme"] == "es_province"
+    assert cal.calibration["region"]["code"] == "31"
+    assert cal.calibration["version"] == yc._calibration("barley")["version"] == "2026-11-10"
+    assert (cal.emergence, cal.hi_start, cal.flowering, cal.senescence, cal.maturity) == (
+        117.0, 1003.0, 180.0, 1160.6, 1746.0)
     assert any("Abrha" in s["detail"] for s in cal.sources)
+    assert any(s["short"] == "Calibration" for s in cal.sources)
+    builtin = (cc.effective_calendar("barley", lat=NAVARRA[0], lon=NAVARRA[1], irrigation="full"),
+               cc.effective_calendar("barley", lat=OUTSIDE[0], lon=OUTSIDE[1], irrigation="rainfed"),
+               cc.effective_calendar("barley"))
+    for b in builtin:
+        assert b.calibration["status"] == "builtin"
+        assert (b.emergence, b.hi_start, b.senescence, b.maturity) == (117.0, 1003.0, 1210.0, 1979.0)
+
+
+def test_barley_validation_follows_the_calendar_used():
+    cal = cc.effective_calendar("barley", lat=NAVARRA[0], lon=NAVARRA[1], irrigation="rainfed")
+    v = cc.validation_for("barley", cal.calibration["status"])
+    assert v["status"] == "measured" and v["measured_on"] == "calibrated"
+    assert v["note"] and v["groups"]["winter_type"]["heading"]["n"] > 0
+    assert cc.validation_for("barley", "builtin") == {"status": "not_validated", "reason": "calendar_not_measured"}
+    assert "note" not in cc.validation_for("wheat", "calibrated")
 
 
 def test_durum_shares_the_wheat_parameters_and_other_crops_are_refused():
@@ -207,10 +228,11 @@ def test_validation_publishes_the_measured_error_of_this_crop():
 
     from app.services import yield_calibration as yc
     raw = json.loads((yc.DATA_DIR / "phenology_validation.json").read_text(encoding="utf-8"))
-    v = cc.validation_for("barley", "builtin")
+    v = cc.validation_for("barley", "calibrated")
     assert v["status"] == "measured" and v["version"] == raw["version"] and v["sign"] == raw["sign"]
     assert v["dataset"] == raw["dataset"] and v["comparisons"] == raw["comparisons"]
-    assert v["groups"] == raw["crops"]["barley"] and v["measured_on"] == "builtin"
+    assert v["groups"] == raw["crops"]["barley"] and v["measured_on"] == "calibrated"
+    assert v["note"] == raw["notes"]["barley"]
     for slug in ("wheat", "durum_wheat"):
         w = cc.validation_for(slug, "calibrated")
         assert w["status"] == "measured" and w["groups"] == raw["crops"][slug] and w["measured_on"] == "calibrated"
@@ -220,7 +242,7 @@ def test_validation_publishes_the_measured_error_of_this_crop():
 
 @pytest.mark.parametrize("slug,measured_on,other",
                          [("wheat", "calibrated", "builtin"), ("durum_wheat", "calibrated", "builtin"),
-                          ("barley", "builtin", "calibrated")])
+                          ("barley", "calibrated", "builtin")])
 def test_validation_is_withheld_for_a_calendar_it_was_not_measured_on(slug, measured_on, other):
     assert cc.validation_for(slug, measured_on)["status"] == "measured"
     assert cc.validation_for(slug, other) == {"status": "not_validated", "reason": "calendar_not_measured"}

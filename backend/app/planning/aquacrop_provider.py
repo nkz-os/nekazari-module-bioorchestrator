@@ -14,7 +14,7 @@ MAX_SOWING_AHEAD_DAYS = 366  # the engine's pre-season window: [today, today + 3
 
 # (EPPO, regime, country) the engine is validated for. Source: the engine team's validation
 # table (2026-10-13, soil evaporation to 0.15 m): rainfed wheat in Spain, out-of-sample against
-# MAPA 2008-2022, 44 provinces, RMSE 1.65 t/ha, anomaly r 0.48. Barley (simulated as Ponente),
+# MAPA 2008-2022, 44 provinces, RMSE 1.65 t/ha, anomaly r 0.48. Barley (simulated as BarleyES),
 # irrigated maize, sunflower and the rest are NOT validated: they never run the engine.
 VALIDATED: dict[tuple[str, str, str], dict[str, str]] = {
     ("TRZAX", "rainfed", "ES"): {"metric": "RMSE 1.65 t/ha, anomaly r 0.48",

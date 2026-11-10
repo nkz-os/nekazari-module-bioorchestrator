@@ -26,6 +26,9 @@ class FakeJobs:
     version = "v-test"
     job_id = staticmethod(SimJobs.job_id)
 
+    def version_for(self, crop_slug=None):
+        return self.version
+
     def __init__(self, full: bool = False):
         self.jobs: dict[str, Job] = {}
         self.started: list[dict] = []

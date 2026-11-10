@@ -12,7 +12,7 @@ from app.species_registry import resolve_species
 AQUACROP_CROPS: dict[str, str] = {
     "wheat": "WheatGDD",
     "durum_wheat": "WheatGDD",
-    "barley": "BarleyPonente",  # winter barley; BarleyGDD is a July-sown Ethiopian cultivar
+    "barley": "BarleyES",  # winter barley; BarleyGDD is a July-sown Ethiopian cultivar
     "maize": "MaizeGDD",
     "rice": "PaddyRiceGDD",
     "soybean": "SoybeanGDD",

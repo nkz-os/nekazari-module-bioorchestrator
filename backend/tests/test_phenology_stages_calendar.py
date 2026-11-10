@@ -72,9 +72,23 @@ def test_durum_validation_follows_the_calendar_used():
     assert v["status"] == "measured" and v["measured_on"] == "calibrated"
 
 
-def test_barley_builtin_validation_is_measured():
-    v = _client().get("/api/graph/phenology-stages", params={"species": "HORVX"}).json()["validation"]
-    assert v["status"] == "measured" and v["measured_on"] == "builtin"
+def test_barley_validation_follows_the_calendar_used():
+    c = _client()
+    p = {"species": "HORVX"}
+    nm = {"status": "not_validated", "reason": "calendar_not_measured"}
+    assert c.get("/api/graph/phenology-stages", params=p).json()["validation"] == nm
+    v = c.get("/api/graph/phenology-stages", params={**p, **NAVARRA}).json()["validation"]
+    assert v["status"] == "measured" and v["measured_on"] == "calibrated" and v["note"]
+
+
+def test_barley_stage_table_at_a_calibrated_point():
+    body = _client().get("/api/graph/phenology-stages", params={"species": "HORVX", **NAVARRA}).json()
+    rows = {s["stage"]: (s["gddMin"], s["gddMax"]) for s in body["stages"]}
+    assert rows["emergence"] == (0, 117) and rows["vegetative"] == (117, 1003)
+    assert rows["flowering"] == (1003, 1183) and rows["grain_filling"][0] == 1183
+    assert body["stages"][-1]["gddMin"] == 1746
+    assert body["calibration"]["status"] == "calibrated" and body["calibration"]["region"]["code"] == "31"
+    assert body["calibration"]["version"] == "2026-11-10"
 
 
 @pytest.mark.parametrize("species,slug", [("durum_wheat", "durum_wheat"), ("HORVX", "barley")])

@@ -230,6 +230,7 @@ async def run_crop_simulation(
                 "mulch_pct": result["field_management"].get("mulch_pct"),
                 "f_mulch": result["field_management"].get("f_mulch"),
             },
+            "cultivar": crop.aquacrop_crop,
             "phenology": {"source": "calibrated" if phenology else "builtin", "region": region,
                           "params": phenology or {}},
         },
