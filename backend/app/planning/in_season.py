@@ -39,14 +39,20 @@ class InSeasonInputs:
     sowing_provenance: str
 
 
-def _country(parcel: dict) -> str | None:
+def parcel_point(parcel: dict) -> tuple[float, float] | None:
+    """(lat, lon) of the parcel's centroid, or None without a usable geometry."""
     location = parcel.get("location")
     geometry = location.get("value", location) if isinstance(location, dict) else None
     point = _geometry_centroid(geometry.get("coordinates")) if isinstance(geometry, dict) else None
     if point is None:
         return None
     lon, lat = point
-    return country_at(lat, lon)
+    return lat, lon
+
+
+def _country(parcel: dict) -> str | None:
+    point = parcel_point(parcel)
+    return country_at(*point) if point else None
 
 
 def _iso(value) -> date | None:
@@ -68,13 +74,25 @@ def _ended_recently(previous, today: date) -> bool:
             and today - timedelta(days=MAX_SEASON_DAYS) <= ended <= today)
 
 
-def resolve_in_season(parcel: dict, crops: dict[str, dict], cycles: dict | None,
-                      today: date) -> InSeasonInputs | str:
-    """The inputs of an in-season forecast, or the reason code why there is none.
+@dataclass(frozen=True)
+class SownCrop:
+    """What the parcel's current cycle says, before any forecast gate: the regime may be unknown."""
+    crop_slug: str
+    eppo: str
+    regime: str | None
+    regime_source: str
+    sowing_date: date
+    sowing_provenance: str
+
+
+def resolve_sown_crop(parcel: dict, crops: dict[str, dict], cycles: dict | None,
+                      today: date) -> SownCrop | str:
+    """The sown crop of the current cycle, or the reason code why there is none.
 
     No current cycle: a crop due but not sown (``pending``) is ``not_sown``; else a season whose
     harvest was just recorded is ``season_ended``; else ``no_committed_crop``. A malformed core
-    answer is treated as no answer (``cycles_unavailable``), never guessed through.
+    answer is treated as no answer (``cycles_unavailable``), never guessed through. Shared by the
+    in-season forecast (which then gates) and the milestone dates (which do not).
     """
     if not isinstance(cycles, dict):
         return "cycles_unavailable"
@@ -101,17 +119,36 @@ def resolve_in_season(parcel: dict, crops: dict[str, dict], cycles: dict | None,
         return "unknown_crop"
     eppo = catalog_code(eppo)
     regime, regime_source = parcel_regime(parcel, [crop] if crop else [])
-    if regime is None:
-        return "no_regime"
-    country = _country(parcel)
-    if (eppo, regime, country) not in VALIDATED:
-        return "not_validated"
+    return SownCrop(crop_slug=slug, eppo=eppo, regime=regime, regime_source=regime_source,
+                    sowing_date=sowing, sowing_provenance=start["provenance"])
+
+
+def season_window_reason(sowing: date, today: date) -> str | None:
+    """``sowing_in_future`` or ``season_too_old`` when the sowing is outside the season window."""
     if sowing > today:
         return "sowing_in_future"
     if sowing < today - timedelta(days=MAX_SEASON_DAYS):
         return "season_too_old"
-    return InSeasonInputs(crop_slug=slug, eppo=eppo, regime=regime, regime_source=regime_source,
-                          country=country, sowing_date=sowing, sowing_provenance=start["provenance"])
+    return None
+
+
+def resolve_in_season(parcel: dict, crops: dict[str, dict], cycles: dict | None,
+                      today: date) -> InSeasonInputs | str:
+    """The inputs of an in-season forecast, or the reason code why there is none."""
+    sown = resolve_sown_crop(parcel, crops, cycles, today)
+    if isinstance(sown, str):
+        return sown
+    if sown.regime is None:
+        return "no_regime"
+    country = _country(parcel)
+    if (sown.eppo, sown.regime, country) not in VALIDATED:
+        return "not_validated"
+    reason = season_window_reason(sown.sowing_date, today)
+    if reason is not None:
+        return reason
+    return InSeasonInputs(crop_slug=sown.crop_slug, eppo=sown.eppo, regime=sown.regime,
+                          regime_source=sown.regime_source, country=country,
+                          sowing_date=sown.sowing_date, sowing_provenance=sown.sowing_provenance)
 
 
 IRRIGATION = {"rainfed": "rainfed", "irrigated": "full"}

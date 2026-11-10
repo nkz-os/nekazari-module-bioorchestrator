@@ -11,7 +11,7 @@ from typing import Annotated, Any, Literal
 
 from pydantic import BaseModel, BeforeValidator, Field
 
-CONTRACT_VERSION = "2.7"
+CONTRACT_VERSION = "2.8"
 
 Verdict = Literal["fits", "caveats", "no_fit"]
 # Owner decision (2026-10-13): the regime vocabulary is rainfed | irrigated. The Spanish words that
@@ -297,6 +297,25 @@ class InSeasonResponse(BaseModel):
     job_id: str | None = None
     season: SeasonInfo | None = None
     # 2.7: milestone dates of the engine's cereal calendar (wheat, durum wheat, barley); null otherwise
+    phenology: dict[str, Any] | None = None
+
+
+class PhenologySeason(BaseModel):
+    """What is known about the season without simulating it (2.8)."""
+    crop: str  # EPPO
+    sowing: SeasonSowing
+    regime: Regime | None  # None: unknown (the rainfed calendar is used)
+    as_of: date | None  # last day of observed weather
+    weather_source: str | None = None
+
+
+class ParcelPhenologyResponse(BaseModel):
+    """Milestone dates of a sown cereal parcel (2.8): no yield forecast, no validation gate."""
+    contract_version: str = CONTRACT_VERSION
+    provider_id: Literal["aquacrop_calendar"] = "aquacrop_calendar"
+    state: Literal["unavailable", "done", "failed"]
+    unavailable: list[Unavailable] = Field(default_factory=list)
+    season: PhenologySeason | None = None
     phenology: dict[str, Any] | None = None
 
 

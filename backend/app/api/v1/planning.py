@@ -24,12 +24,14 @@ from app.planning.models import (
     FitResponse,
     InSeasonResponse,
     Management,
+    ParcelPhenologyResponse,
     PlanIn,
     PlanWriteResponse,
     Regime,
     SowingMethod,
     VarietiesResponse,
 )
+from app.planning.phenology_dates import parcel_phenology
 from app.planning.plan_write import PlanError, write_plan
 from app.planning.prefetch import schedule_evidence_prefetch
 from app.planning.reference import EMPTY_REFERENCE, load_reference
@@ -152,6 +154,21 @@ async def estimates_in_season(request: Request, parcel_id: str, sources: Sources
     try:
         return await parcel_in_season(dao=GraphDAO(sources[0].driver), jobs=shared_sim_jobs(),
                                       tenant_id=tenant, parcel_id=parcel_id, retry=retry)
+    except ParcelNotFound as e:
+        raise HTTPException(status_code=404, detail=str(e)) from e
+
+
+@router.get("/parcels/{parcel_id:path}/phenology", response_model=ParcelPhenologyResponse)
+async def parcel_phenology_dates(request: Request, parcel_id: str):
+    """Milestone dates of the parcel's sown cereal (contract 2.8), without the yield forecast.
+
+    Same parcel, cycle, crop, sowing and regime resolution as ``/estimates/in-season``, but no
+    validation gate and no simulation: crop, sowing, place and weather are all it needs.
+    """
+    tenant = _require_tenant_id(request)
+    parcel_id = _checked_parcel_urn(parcel_id)
+    try:
+        return await parcel_phenology(tenant_id=tenant, parcel_id=parcel_id)
     except ParcelNotFound as e:
         raise HTTPException(status_code=404, detail=str(e)) from e
 
