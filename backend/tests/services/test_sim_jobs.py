@@ -162,7 +162,7 @@ def test_version_carries_the_calibration_file_of_the_crop():
     assert sj.crop_simulation_version() == "aquacrop-3.1.0|calibration-2026-10-13"
     assert sj.crop_simulation_version("wheat") == "aquacrop-3.1.0|calibration-2026-10-13"
     assert sj.crop_simulation_version("durum_wheat") == "aquacrop-3.1.0|calibration-2026-10-13"
-    assert sj.crop_simulation_version("barley") == "aquacrop-3.1.0|calibration-2026-11-10"
+    assert sj.crop_simulation_version("barley") == "aquacrop-3.1.0|calibration-2026-11-10b"
     assert sj.crop_simulation_version("maize") == sj.crop_simulation_version()
 
 

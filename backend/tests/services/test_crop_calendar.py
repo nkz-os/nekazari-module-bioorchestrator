@@ -1,5 +1,6 @@
 """Cereal phenology calendar: the engine's own parameters, its GDD method, milestone dates."""
 from datetime import date, timedelta
+from itertools import pairwise
 
 import pytest
 
@@ -75,9 +76,9 @@ def test_barley_is_the_es_cultivar_and_calibrated_in_a_province_of_the_file():
     assert cal.cultivar == "BarleyES" and cal.tbase == 2.0 and cal.tupp == 28.0
     assert cal.calibration["status"] == "calibrated" and cal.calibration["scheme"] == "es_province"
     assert cal.calibration["region"]["code"] == "31"
-    assert cal.calibration["version"] == yc._calibration("barley")["version"] == "2026-11-10"
+    assert cal.calibration["version"] == yc._calibration("barley")["version"] == "2026-11-10b"
     assert (cal.emergence, cal.hi_start, cal.flowering, cal.senescence, cal.maturity) == (
-        117.0, 1003.0, 180.0, 1160.6, 1746.0)
+        117.0, 1003.0, 180.0, 1199.1, 1927.4)
     assert any("Abrha" in s["detail"] for s in cal.sources)
     assert any(s["short"] == "Calibration" for s in cal.sources)
     builtin = (cc.effective_calendar("barley", lat=NAVARRA[0], lon=NAVARRA[1], irrigation="full"),
@@ -281,3 +282,27 @@ def test_crop_without_an_entry_is_not_validated(monkeypatch):
     monkeypatch.setattr(cc, "_validation_file", lambda: {"version": "x", "sign": "s", "dataset": {},
                                                           "comparisons": {}, "crops": {}})
     assert cc.validation_for("wheat", "calibrated") == {"status": "not_validated"}
+
+
+@pytest.mark.parametrize("crop_slug", sorted(yc.CALIBRATION_FILES))
+def test_every_province_of_a_calibration_file_gives_an_ordered_calendar(crop_slug):
+    """All provinces, not one: thresholds in order, no empty stage, parameters the engine accepts."""
+    provinces = yc._calibration(crop_slug)["provinces"]
+    assert provinces
+    for code, prov in provinces.items():
+        cal = cc._calendar(crop_slug, ("es_province", code, prov["name"]), yc.CALIBRATED_IRRIGATION)
+        assert cal.calibration["status"] == "calibrated", code
+        aq._validate_crop_params(cal.aquacrop_crop, prov["phenology"])
+        t = cc._thresholds(cal)
+        assert 0 < t["emergence"] < t["flowering_start"] < t["senescence_start"] <= t["maturity"], (code, t)
+        rows = cc.stage_table(cal)
+        assert [r["stage"] for r in rows] == ["emergence", "vegetative", "flowering", "grain_filling", "maturity"]
+        for r in rows[:-1]:
+            assert r["gddMin"] < r["gddMax"], (code, r)
+        for a, b in pairwise(rows):
+            assert a["gddMax"] == b["gddMin"], (code, a, b)
+        # a year of mild days reaches every milestone, in order
+        obs = _series(SOWING, 900, 6.0, 18.0)
+        out = cc.milestone_dates(SOWING, obs, [], cal)
+        dates = [out[k]["date"] for k in ("emergence", "flowering_start", "senescence_start", "maturity")]
+        assert all(out[k]["status"] == "reached" for k in out) and dates == sorted(dates), (code, out)

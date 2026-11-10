@@ -86,9 +86,9 @@ def test_barley_stage_table_at_a_calibrated_point():
     rows = {s["stage"]: (s["gddMin"], s["gddMax"]) for s in body["stages"]}
     assert rows["emergence"] == (0, 117) and rows["vegetative"] == (117, 1003)
     assert rows["flowering"] == (1003, 1183) and rows["grain_filling"][0] == 1183
-    assert body["stages"][-1]["gddMin"] == 1746
+    assert body["stages"][-1]["gddMin"] == 1927.4
     assert body["calibration"]["status"] == "calibrated" and body["calibration"]["region"]["code"] == "31"
-    assert body["calibration"]["version"] == "2026-11-10"
+    assert body["calibration"]["version"] == "2026-11-10b"
 
 
 @pytest.mark.parametrize("species,slug", [("durum_wheat", "durum_wheat"), ("HORVX", "barley")])

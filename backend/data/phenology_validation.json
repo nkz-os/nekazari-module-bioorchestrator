@@ -1,5 +1,5 @@
 {
-  "version": "2026-11-10.2",
+  "version": "2026-11-10.3",
   "sign": "engine date minus observed date, in days; negative means the engine is early",
   "dataset": {
     "name": "GENVCE per-site variety trial result sheets",
@@ -151,17 +151,17 @@
         },
         "maturity": {
           "n": 12,
-          "bias_days": 7.5,
-          "mae_days": 13.8,
+          "bias_days": 12.5,
+          "mae_days": 16.2,
           "p10_days": -11,
-          "p90_days": 31
+          "p90_days": 35
         },
         "harvest": {
           "n": 56,
-          "bias_days": -23.0,
-          "mae_days": 23.3,
-          "p10_days": -36,
-          "p90_days": -7
+          "bias_days": -13.5,
+          "mae_days": 17.0,
+          "p10_days": -28,
+          "p90_days": 10
         }
       },
       "spring_type": {
@@ -181,22 +181,22 @@
         },
         "maturity": {
           "n": 8,
-          "bias_days": -1.0,
-          "mae_days": 5.0,
-          "p10_days": -5,
-          "p90_days": 7
+          "bias_days": 7.0,
+          "mae_days": 10.2,
+          "p10_days": -1,
+          "p90_days": 24
         },
         "harvest": {
           "n": 51,
-          "bias_days": -21.0,
-          "mae_days": 29.2,
-          "p10_days": -38,
-          "p90_days": -9
+          "bias_days": -9.0,
+          "mae_days": 23.7,
+          "p10_days": -33,
+          "p90_days": 15
         }
       }
     }
   },
   "notes": {
-    "barley": "Emergence and heading thresholds were fitted on these same sheets; leaving one season out, the heading error is 12.2 days. The engine's maturity is close to the observed maturity date and about three weeks before the harvest date."
+    "barley": "Emergence and heading thresholds were fitted on these same sheets; leaving one season out, the heading error is 12.2 days. The engine's maturity follows each province's harvest calendar: it falls one to two weeks after the observed maturity date and one to two weeks before the harvest date."
   }
 }

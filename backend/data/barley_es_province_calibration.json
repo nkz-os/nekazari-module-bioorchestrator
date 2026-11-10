@@ -1,5 +1,5 @@
 {
- "version": "2026-11-10",
+ "version": "2026-11-10b",
  "crop": "barley",
  "regime": "secano",
  "region_scheme": "es_province",
@@ -17,11 +17,11 @@
   "03": {
    "name": "Alicante",
    "phenology": {
-    "Senescence": 1160.6,
-    "Maturity": 1746.0,
+    "Senescence": 1238.3,
+    "Maturity": 2112.2,
     "HIstart": 1003.0,
     "Flowering": 180.0,
-    "YldForm": 608.5
+    "YldForm": 908.4
    }
   },
   "04": {
@@ -47,21 +47,21 @@
   "06": {
    "name": "Badajoz",
    "phenology": {
-    "Senescence": 1160.6,
-    "Maturity": 1746.0,
+    "Senescence": 1284.1,
+    "Maturity": 2328.1,
     "HIstart": 1003.0,
     "Flowering": 180.0,
-    "YldForm": 608.5
+    "YldForm": 1085.3
    }
   },
   "07": {
    "name": "Illes Balears",
    "phenology": {
-    "Senescence": 1160.6,
-    "Maturity": 1746.0,
+    "Senescence": 1523.4,
+    "Maturity": 3456.6,
     "HIstart": 1003.0,
     "Flowering": 180.0,
-    "YldForm": 608.5
+    "YldForm": 2009.5
    }
   },
   "08": {
@@ -87,90 +87,91 @@
   "10": {
    "name": "Caceres",
    "phenology": {
-    "Senescence": 1160.6,
-    "Maturity": 1746.0,
+    "Senescence": 1275.9,
+    "Maturity": 2289.5,
     "HIstart": 1003.0,
     "Flowering": 180.0,
-    "YldForm": 608.5
+    "YldForm": 1053.6
    }
   },
   "11": {
    "name": "Cadiz",
    "phenology": {
-    "Senescence": 1160.6,
-    "Maturity": 1746.0,
+    "Senescence": 1391.7,
+    "Maturity": 2835.5,
     "HIstart": 1003.0,
     "Flowering": 180.0,
-    "YldForm": 608.5
+    "YldForm": 1500.8
    }
   },
   "12": {
    "name": "Castellon",
    "phenology": {
-    "Senescence": 1160.6,
-    "Maturity": 1746.0,
+    "Senescence": 1165.3,
+    "Maturity": 1768.1,
     "HIstart": 1003.0,
     "Flowering": 180.0,
-    "YldForm": 608.5
+    "YldForm": 626.6
    }
   },
   "13": {
    "name": "Ciudad Real",
    "phenology": {
-    "Senescence": 1160.6,
-    "Maturity": 1746.0,
+    "Senescence": 1205.9,
+    "Maturity": 1959.6,
     "HIstart": 1003.0,
     "Flowering": 180.0,
-    "YldForm": 608.5
+    "YldForm": 783.5
    }
   },
   "14": {
    "name": "Cordoba",
    "phenology": {
-    "Senescence": 1160.6,
-    "Maturity": 1746.0,
+    "Senescence": 1293.3,
+    "Maturity": 2371.6,
     "HIstart": 1003.0,
     "Flowering": 180.0,
-    "YldForm": 608.5
+    "YldForm": 1120.9
    }
   },
   "15": {
+   "name": "A Coruña",
    "phenology": {
-    "Senescence": 1160.6,
-    "Maturity": 1746.0,
+    "Senescence": 1219.8,
+    "Maturity": 2025.1,
     "HIstart": 1003.0,
     "Flowering": 180.0,
-    "YldForm": 608.5
+    "YldForm": 837.1
    }
   },
   "16": {
    "name": "Cuenca",
    "phenology": {
-    "Senescence": 1160.6,
-    "Maturity": 1746.0,
+    "Senescence": 1241.0,
+    "Maturity": 2125.1,
     "HIstart": 1003.0,
     "Flowering": 180.0,
-    "YldForm": 608.5
+    "YldForm": 919.0
    }
   },
   "17": {
    "name": "Girona",
    "phenology": {
-    "Senescence": 1160.6,
-    "Maturity": 1746.0,
+    "Senescence": 1252.8,
+    "Maturity": 2180.7,
     "HIstart": 1003.0,
     "Flowering": 180.0,
-    "YldForm": 608.5
+    "YldForm": 964.5
    }
   },
   "18": {
    "name": "Granada",
    "phenology": {
-    "Senescence": 1160.6,
-    "Maturity": 1746.0,
+    "Senescence": 1209.3,
+    "Maturity": 1975.8,
     "HIstart": 1003.0,
     "Flowering": 180.0,
-    "YldForm": 608.5
+    "YldForm": 796.7
    }
   },
   "19": {
@@ -186,51 +187,51 @@
   "21": {
    "name": "Huelva",
    "phenology": {
-    "Senescence": 1160.6,
-    "Maturity": 1746.0,
+    "Senescence": 1415.9,
+    "Maturity": 2949.9,
     "HIstart": 1003.0,
     "Flowering": 180.0,
-    "YldForm": 608.5
+    "YldForm": 1594.5
    }
   },
   "22": {
    "name": "Huesca",
    "phenology": {
-    "Senescence": 1160.6,
-    "Maturity": 1746.0,
+    "Senescence": 1241.0,
+    "Maturity": 2125.0,
     "HIstart": 1003.0,
     "Flowering": 180.0,
-    "YldForm": 608.5
+    "YldForm": 918.9
    }
   },
   "23": {
    "name": "Jaen",
    "phenology": {
-    "Senescence": 1160.6,
-    "Maturity": 1746.0,
+    "Senescence": 1254.4,
+    "Maturity": 2188.2,
     "HIstart": 1003.0,
     "Flowering": 180.0,
-    "YldForm": 608.5
+    "YldForm": 970.7
    }
   },
   "24": {
    "name": "Leon",
    "phenology": {
-    "Senescence": 1160.6,
-    "Maturity": 1746.0,
+    "Senescence": 1166.6,
+    "Maturity": 1774.4,
     "HIstart": 1003.0,
     "Flowering": 180.0,
-    "YldForm": 608.5
+    "YldForm": 631.8
    }
   },
   "25": {
    "name": "Lleida",
    "phenology": {
-    "Senescence": 1160.6,
-    "Maturity": 1746.0,
+    "Senescence": 1176.1,
+    "Maturity": 1818.9,
     "HIstart": 1003.0,
     "Flowering": 180.0,
-    "YldForm": 608.5
+    "YldForm": 668.2
    }
   },
   "26": {
@@ -244,55 +245,57 @@
    }
   },
   "27": {
+   "name": "Lugo",
    "phenology": {
-    "Senescence": 1160.6,
-    "Maturity": 1746.0,
+    "Senescence": 1176.1,
+    "Maturity": 1819.2,
     "HIstart": 1003.0,
     "Flowering": 180.0,
-    "YldForm": 608.5
+    "YldForm": 668.5
    }
   },
   "28": {
    "name": "Madrid",
    "phenology": {
-    "Senescence": 1160.6,
-    "Maturity": 1746.0,
+    "Senescence": 1230.5,
+    "Maturity": 2075.5,
     "HIstart": 1003.0,
     "Flowering": 180.0,
-    "YldForm": 608.5
+    "YldForm": 878.4
    }
   },
   "29": {
    "name": "Malaga",
    "phenology": {
-    "Senescence": 1160.6,
-    "Maturity": 1746.0,
+    "Senescence": 1372.9,
+    "Maturity": 2747.2,
     "HIstart": 1003.0,
     "Flowering": 180.0,
-    "YldForm": 608.5
+    "YldForm": 1428.5
    }
   },
   "30": {
    "name": "Murcia",
    "phenology": {
-    "Senescence": 1160.6,
-    "Maturity": 1746.0,
+    "Senescence": 1461.0,
+    "Maturity": 3162.5,
     "HIstart": 1003.0,
     "Flowering": 180.0,
-    "YldForm": 608.5
+    "YldForm": 1768.6
    }
   },
   "31": {
    "name": "Navarra",
    "phenology": {
-    "Senescence": 1160.6,
-    "Maturity": 1746.0,
+    "Senescence": 1199.1,
+    "Maturity": 1927.4,
     "HIstart": 1003.0,
     "Flowering": 180.0,
-    "YldForm": 608.5
+    "YldForm": 757.1
    }
   },
   "32": {
+   "name": "Ourense",
    "phenology": {
     "Senescence": 1124.8,
     "Maturity": 1577.1,
@@ -304,21 +307,21 @@
   "34": {
    "name": "Palencia",
    "phenology": {
-    "Senescence": 1160.6,
-    "Maturity": 1746.0,
+    "Senescence": 1249.6,
+    "Maturity": 2165.7,
     "HIstart": 1003.0,
     "Flowering": 180.0,
-    "YldForm": 608.5
+    "YldForm": 952.3
    }
   },
   "35": {
    "name": "Las Palmas",
    "phenology": {
-    "Senescence": 1160.6,
-    "Maturity": 1746.0,
+    "Senescence": 1377.2,
+    "Maturity": 2767.4,
     "HIstart": 1003.0,
     "Flowering": 180.0,
-    "YldForm": 608.5
+    "YldForm": 1445.0
    }
   },
   "37": {
@@ -334,41 +337,41 @@
   "38": {
    "name": "Santa Cruz de Tenerife",
    "phenology": {
-    "Senescence": 1160.6,
-    "Maturity": 1746.0,
+    "Senescence": 1392.8,
+    "Maturity": 2840.8,
     "HIstart": 1003.0,
     "Flowering": 180.0,
-    "YldForm": 608.5
+    "YldForm": 1505.2
    }
   },
   "39": {
    "name": "Cantabria",
    "phenology": {
-    "Senescence": 1160.6,
-    "Maturity": 1746.0,
+    "Senescence": 1285.9,
+    "Maturity": 2337.0,
     "HIstart": 1003.0,
     "Flowering": 180.0,
-    "YldForm": 608.5
+    "YldForm": 1092.5
    }
   },
   "40": {
    "name": "Segovia",
    "phenology": {
-    "Senescence": 1160.6,
-    "Maturity": 1746.0,
+    "Senescence": 1192.3,
+    "Maturity": 1895.5,
     "HIstart": 1003.0,
     "Flowering": 180.0,
-    "YldForm": 608.5
+    "YldForm": 731.0
    }
   },
   "41": {
    "name": "Sevilla",
    "phenology": {
-    "Senescence": 1160.6,
-    "Maturity": 1746.0,
+    "Senescence": 1179.9,
+    "Maturity": 1837.0,
     "HIstart": 1003.0,
     "Flowering": 180.0,
-    "YldForm": 608.5
+    "YldForm": 683.0
    }
   },
   "42": {
@@ -384,41 +387,41 @@
   "43": {
    "name": "Tarragona",
    "phenology": {
-    "Senescence": 1160.6,
-    "Maturity": 1746.0,
+    "Senescence": 1244.1,
+    "Maturity": 2139.6,
     "HIstart": 1003.0,
     "Flowering": 180.0,
-    "YldForm": 608.5
+    "YldForm": 930.9
    }
   },
   "44": {
    "name": "Teruel",
    "phenology": {
-    "Senescence": 1160.6,
-    "Maturity": 1746.0,
+    "Senescence": 1171.8,
+    "Maturity": 1798.9,
     "HIstart": 1003.0,
     "Flowering": 180.0,
-    "YldForm": 608.5
+    "YldForm": 651.8
    }
   },
   "45": {
    "name": "Toledo",
    "phenology": {
-    "Senescence": 1160.6,
-    "Maturity": 1746.0,
+    "Senescence": 1226.7,
+    "Maturity": 2057.6,
     "HIstart": 1003.0,
     "Flowering": 180.0,
-    "YldForm": 608.5
+    "YldForm": 863.7
    }
   },
   "46": {
    "name": "Valencia",
    "phenology": {
-    "Senescence": 1160.6,
-    "Maturity": 1746.0,
+    "Senescence": 1227.1,
+    "Maturity": 2059.8,
     "HIstart": 1003.0,
     "Flowering": 180.0,
-    "YldForm": 608.5
+    "YldForm": 865.5
    }
   },
   "47": {
@@ -434,21 +437,21 @@
   "49": {
    "name": "Zamora",
    "phenology": {
-    "Senescence": 1160.6,
-    "Maturity": 1746.0,
+    "Senescence": 1241.6,
+    "Maturity": 2127.8,
     "HIstart": 1003.0,
     "Flowering": 180.0,
-    "YldForm": 608.5
+    "YldForm": 921.2
    }
   },
   "50": {
    "name": "Zaragoza",
    "phenology": {
-    "Senescence": 1160.6,
-    "Maturity": 1746.0,
+    "Senescence": 1281.7,
+    "Maturity": 2317.2,
     "HIstart": 1003.0,
     "Flowering": 180.0,
-    "YldForm": 608.5
+    "YldForm": 1076.3
    }
   }
  },
@@ -456,19 +459,19 @@
   "harvest_calendar": "MAPA, Calendario de siembra, recoleccion y comercializacion 2014-2016, cereales",
   "drydown_and_moisture": "Lloveras J., Petit X., Yakoub A., Vida Rural 433 (2017) 42-47: ~7 days from physiological maturity to 13 % grain moisture (commercial wheat and barley)",
   "trial_sheets": "GENVCE per-site variety trial result sheets, 2023-2026: median thermal time from sowing to observed emergence and heading",
-  "phenology_rule": "Maturity per province from the harvest calendar minus a 7-day dry-down, capped at the original cultivar's 1746 degree days; senescence = HIstart + 0.2121 x (Maturity - HIstart) and yield formation = 0.8190 x (Maturity - HIstart), the relative positions of the original cultivar"
+  "phenology_rule": "Maturity per province from the harvest calendar minus a 7-day dry-down, not below 1577 degree days and with no upper limit. It is the thermal time that reproduces the local season length, not a cultivar trait: the engine has no day-length or vernalisation response, and in the warmest provinces the value is well above those of the trial sheets. Senescence = HIstart + 0.2121 x (Maturity - HIstart) and yield formation = 0.8190 x (Maturity - HIstart), the relative positions of the original cultivar"
  },
  "validation": {
   "status": "not_validated",
   "province_campaigns": 6225,
   "provinces_with_10_years": 44,
-  "anomaly_r_median": 0.309,
-  "anomaly_r_pooled": 0.387,
-  "between_province_r": 0.922,
-  "rmse_pct_of_mean_observed": 48.9,
-  "abs_bias_pct": 3.7,
-  "criterion": "median anomaly r >= 0.40",
-  "failed": "median anomaly r 0.309 < 0.40",
-  "note": "No metric worse than the previous configuration beyond noise, so the calendar is adopted; yield is not validated: no gap factor and no expected yield"
+  "anomaly_r_median": 0.313,
+  "anomaly_r_pooled": 0.404,
+  "between_province_r": 0.933,
+  "rmse_pct_of_mean_observed": 46.1,
+  "abs_bias_pct": 6.7,
+  "criterion": "median anomaly r >= 0.40 and absolute bias <= 5 %",
+  "failed": "median anomaly r 0.313 < 0.40; absolute bias 6.7 % > 5 %",
+  "note": "No metric worse than the capped maturity beyond noise, so the maturity without the upper limit is adopted; yield is not validated: no gap factor and no expected yield"
  }
 }
