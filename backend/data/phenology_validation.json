@@ -33,6 +33,11 @@
       "observed": "harvest date"
     }
   },
+  "measured_on": {
+    "wheat": "calibrated",
+    "durum_wheat": "calibrated",
+    "barley": "builtin"
+  },
   "crops": {
     "wheat": {
       "winter_type": {

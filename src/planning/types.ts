@@ -117,7 +117,7 @@ export interface PhenologyMilestone {
 export interface InSeasonPhenology {
   gdd_method: string; base_temp: number; upper_cutoff: number; origin: 'sowing';
   basis: 'thermal_time'; notes: string[];
-  validation?: { status: 'measured' | 'not_validated'; version?: string; sign?: string; dataset?: Record<string, unknown>; comparisons?: Record<string, unknown>; groups?: Record<string, unknown> };
+  validation?: { status: 'measured' | 'not_validated'; reason?: string; measured_on?: 'calibrated' | 'builtin'; version?: string; sign?: string; dataset?: Record<string, unknown>; comparisons?: Record<string, unknown>; groups?: Record<string, unknown> };
   model: { id: string; cultivar: string; version: string };
   calibration: { status: 'calibrated' | 'builtin'; scheme: string | null; region: { code: string; name: string } | null; version: string | null };
   milestones: Record<string, PhenologyMilestone>;

@@ -40,7 +40,7 @@ def test_wheat_builtin_without_point():
     assert body["gddMethod"] == "aquacrop_m3" and body["origin"] == "sowing" and body["upperCutoff"] == cal.tupp
     assert body["model"]["id"] == "aquacrop_calendar" and body["model"]["cultivar"] == "WheatGDD"
     assert body["calibration"]["status"] == "builtin"
-    assert body["validation"]["status"] == "measured" and body["validation"]["groups"]["winter_type"]["heading"]["n"] > 0
+    assert body["validation"] == {"status": "not_validated", "reason": "calendar_not_measured"}
     assert [(x["bbchFrom"], x["bbchTo"]) for x in body["stages"]] == [(0, 9), (10, 49), (51, 69), (71, 87), (89, 89)]
     assert "heading" in next(x for x in body["sources"] if x["short"] == "Engine assumption")["detail"]
     assert body["sources"] and all({"short", "detail"} <= set(s) for s in body["sources"])
@@ -55,6 +55,26 @@ def test_wheat_calibrated_with_point_changes_the_thresholds():
     irrigated = c.get("/api/graph/phenology-stages",
                       params={"species": "wheat", **NAVARRA, "irrigation": "irrigated"}).json()
     assert irrigated["calibration"]["status"] == "builtin" and irrigated["stages"] == plain["stages"]
+    nm = {"status": "not_validated", "reason": "calendar_not_measured"}
+    assert plain["validation"] == nm and irrigated["validation"] == nm
+    v = cal["validation"]
+    assert v["status"] == "measured" and v["measured_on"] == "calibrated"
+    assert v["groups"]["winter_type"]["heading"]["n"] > 0
+
+
+def test_durum_validation_follows_the_calendar_used():
+    c = _client()
+    p = {"species": "durum_wheat"}
+    nm = {"status": "not_validated", "reason": "calendar_not_measured"}
+    assert c.get("/api/graph/phenology-stages", params=p).json()["validation"] == nm
+    assert c.get("/api/graph/phenology-stages", params={**p, **NAVARRA, "irrigation": "irrigated"}).json()["validation"] == nm
+    v = c.get("/api/graph/phenology-stages", params={**p, **NAVARRA}).json()["validation"]
+    assert v["status"] == "measured" and v["measured_on"] == "calibrated"
+
+
+def test_barley_builtin_validation_is_measured():
+    v = _client().get("/api/graph/phenology-stages", params={"species": "HORVX"}).json()["validation"]
+    assert v["status"] == "measured" and v["measured_on"] == "builtin"
 
 
 @pytest.mark.parametrize("species,slug", [("durum_wheat", "durum_wheat"), ("HORVX", "barley")])

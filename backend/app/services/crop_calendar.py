@@ -61,15 +61,23 @@ def _validation_file() -> dict | None:
         return None
 
 
-def validation_for(crop_slug: str) -> dict:
-    """The measured error (engine date minus observed date) of this crop, else ``not_validated``."""
+def validation_for(crop_slug: str, calibration_status: str) -> dict:
+    """The measured error (engine date minus observed date) of this crop, else ``not_validated``.
+
+    The figures were measured on one calendar per crop (``measured_on``: ``calibrated`` or
+    ``builtin``); they are published only with a calendar of that status.
+    """
     data = _validation_file()
     try:
         groups = data["crops"].get(crop_slug) if data else None
         if not groups:
             return dict(_NOT_VALIDATED)
+        measured_on = data.get("measured_on", {}).get(crop_slug)
+        if measured_on is None or measured_on != calibration_status:
+            return {**_NOT_VALIDATED, "reason": "calendar_not_measured"}
         return {"status": "measured", "version": data["version"], "sign": data["sign"],
-                "dataset": data["dataset"], "comparisons": data["comparisons"], "groups": groups}
+                "dataset": data["dataset"], "comparisons": data["comparisons"], "groups": groups,
+                "measured_on": measured_on}
     except (KeyError, TypeError, AttributeError):
         logger.warning("phenology_validation_malformed path=%s", VALIDATION_PATH, exc_info=True)
         return dict(_NOT_VALIDATED)
@@ -230,7 +238,7 @@ def phenology_block(sowing_date: date, observed_days: Sequence[Any], analog_memb
     """The ``phenology`` block of the simulation and in-season answers."""
     return {"gdd_method": GDD_METHOD, "base_temp": cal.tbase, "upper_cutoff": cal.tupp, "origin": "sowing",
             "basis": "thermal_time", "notes": ["no_stress_delay"],
-            "validation": validation_for(cal.crop_slug), "model": model_info(cal), "calibration": dict(cal.calibration),
+            "validation": validation_for(cal.crop_slug, cal.calibration["status"]), "model": model_info(cal), "calibration": dict(cal.calibration),
             "milestones": milestone_dates(sowing_date, observed_days, analog_members, cal)}
 
 
@@ -245,7 +253,7 @@ def cereal_stage_response(crop_slug: str, lat: float | None, lon: float | None, 
                 crop_slug, cal.calibration["status"], irrigation)
     return {"species": crop_slug, "stages": stage_table(cal), "gddMethod": GDD_METHOD,
             "upperCutoff": cal.tupp, "origin": "sowing", "model": model_info(cal),
-            "calibration": dict(cal.calibration), "validation": validation_for(crop_slug),
+            "calibration": dict(cal.calibration), "validation": validation_for(crop_slug, cal.calibration["status"]),
             "sources": [dict(s) for s in cal.sources]}
 
 
