@@ -27,6 +27,8 @@ export default function CompletionBar({ fit, row, onSaved, state }: Props) {
   const needs = remainingNeeds(completionNeeds(fit, row), state.skipped);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // A crop picked for a past campaign is a draft: only "Guardar" writes it (a stray tap on a long list must not).
+  const [historyDrafts, setHistoryDrafts] = useState<Record<number, string>>({});
   const skip = state.skip;
   const history = needs.history;
   const showRegime = needs.regime;
@@ -90,8 +92,16 @@ export default function CompletionBar({ fit, row, onSaved, state }: Props) {
             {history.map((campaign) => (
               <div key={campaign} className="flex flex-wrap items-center gap-2">
                 <span className="text-nkz-sm text-nkz-text-muted">{t(`${base}.history.campaign`, { campaign })}</span>
-                <Select value="" size="sm" placeholder={t(`${base}.history.placeholder`)} options={cropOptions} disabled={busy}
-                  onValueChange={(v) => v && run('history', () => saveDeclaredCrop(row.parcel_id, campaign, v))} />
+                <Select value={historyDrafts[campaign] ?? ''} size="sm" placeholder={t(`${base}.history.placeholder`)}
+                  options={cropOptions} disabled={busy}
+                  onValueChange={(v) => setHistoryDrafts((d) => ({ ...d, [campaign]: v }))} />
+                <Button size="sm" variant="secondary" disabled={busy || !historyDrafts[campaign]}
+                  onClick={() => {
+                    const eppo = historyDrafts[campaign];
+                    if (eppo) void run('history', () => saveDeclaredCrop(row.parcel_id, campaign, eppo));
+                  }}>
+                  {t('planning.historyEditor.save')}
+                </Button>
                 <Button size="sm" variant="ghost" disabled={busy} onClick={() => skip(`history:${campaign}`)}>{t(`${base}.unknown`)}</Button>
               </div>
             ))}

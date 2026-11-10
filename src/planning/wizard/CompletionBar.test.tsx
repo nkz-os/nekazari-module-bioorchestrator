@@ -88,6 +88,13 @@ describe('skipped and saved controls', () => {
   it('a skipped campaign leaves the other one', () => {
     expect(remainingNeeds(completionNeeds(fit, NONE), new Set(['history:2025'])).history).toEqual([2026]);
   });
+  it('a history pick is a draft until Guardar: one save button per campaign, disabled until a crop is picked', () => {
+    const markup = html(fit);
+    const saves = markup.match(/<button[^>]*>Guardar<\/button>/g) ?? [];
+    expect(saves).toHaveLength(2);
+    // The class list holds "disabled:" variants, so look for the attribute itself.
+    for (const b of saves) expect(b).toContain('disabled=""');
+  });
   it('a saved fact is acknowledged even when the control is still needed', () => {
     expect(html(fit, NONE, state([], new Set(['soil'])))).toContain('Textura guardada');
   });
