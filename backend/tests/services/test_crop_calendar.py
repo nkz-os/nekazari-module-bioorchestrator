@@ -1,6 +1,8 @@
 """Cereal phenology calendar: the engine's own parameters, its GDD method, milestone dates."""
+import json
 from datetime import date, timedelta
 from itertools import pairwise
+from pathlib import Path
 
 import pytest
 
@@ -29,6 +31,15 @@ def test_gdd_m3_matches_the_library_function():
             for tmax in range(tmin, 45, 4):
                 assert cc.daily_gdd_m3(tmin, tmax, tbase, tupp) == pytest.approx(
                     growing_degree_day(3, tupp, tbase, tmax, tmin))
+
+
+def test_daily_gdd_m3_matches_shared_vectors():
+    path = Path(__file__).resolve().parents[1] / "data" / "gdd_vectors.json"
+    cases = json.loads(path.read_text())["cases"]
+    assert len(cases) >= 30
+    for c in cases:
+        got = cc.daily_gdd_m3(c["tmin"], c["tmax"], c["base"], c["upper"])
+        assert got == pytest.approx(c["aquacrop_m3"], abs=1e-9), c
 
 
 def test_gdd_m3_tmax_below_base_is_zero():
