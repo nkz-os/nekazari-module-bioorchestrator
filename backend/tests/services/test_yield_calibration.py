@@ -74,7 +74,7 @@ BARLEY_PHENOLOGY_KEYS = {"Senescence", "Maturity", "HIstart", "Flowering", "YldF
 
 def test_barley_phenology_only_for_rainfed_in_a_province_of_the_file():
     assert yc.calibrated_phenology("barley", "rainfed", NAVARRA) == {
-        "Senescence": 1160.6, "Maturity": 1746.0, "HIstart": 1003.0, "Flowering": 180.0, "YldForm": 608.5}
+        "Senescence": 1199.1, "Maturity": 1927.4, "HIstart": 1003.0, "Flowering": 180.0, "YldForm": 757.1}
     assert yc.calibrated_phenology("barley", "full", NAVARRA) is None
     assert yc.calibrated_phenology("barley", "rainfed", None) is None
     assert yc.calibrated_phenology("barley", "rainfed", {"scheme": "es_province", "code": "52", "name": "x"}) is None
@@ -137,3 +137,8 @@ def test_a_province_without_gap_factor_is_not_calibrated(monkeypatch):
     monkeypatch.setattr(yc, "_calibration", lambda slug: cal)
     assert yc.expected_yield("wheat", "rainfed", NAVARRA, 5.0) == {
         "status": "unavailable", "reason": "region_not_calibrated"}
+
+
+def test_barley_maturity_keeps_the_lower_bound_of_its_rule():
+    maturities = [p["phenology"]["Maturity"] for p in yc._calibration("barley")["provinces"].values()]
+    assert min(maturities) == 1577.1 and max(maturities) > 1746.0

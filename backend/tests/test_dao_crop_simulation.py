@@ -291,8 +291,8 @@ def test_rainfed_barley_in_a_calibrated_province_reaches_the_engine_with_the_es_
         res = _run(GraphDAO(mock_driver), net=_Net(tunis, parcel_from=date(1989, 10, 1)),
                    today=date(1992, 1, 1), sowing_date_str="1990-10-01", crop_slug="barley")
     assert seen["crop"] == "BarleyES"
-    assert seen["crop_params"] == {"Senescence": 1160.6, "Maturity": 1746.0, "HIstart": 1003.0,
-                                   "Flowering": 180.0, "YldForm": 608.5}
+    assert seen["crop_params"] == {"Senescence": 1199.1, "Maturity": 1927.4, "HIstart": 1003.0,
+                                   "Flowering": 180.0, "YldForm": 757.1}
     assert res["inputs"]["phenology"]["source"] == "calibrated"
     assert res["expected_yield"] == {"status": "unavailable", "reason": "crop_not_calibrated"}
     assert res["yield_basis"]["moisture"] == "commercial"
