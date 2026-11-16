@@ -59,9 +59,6 @@ class Settings(BaseSettings):
     # ── Entity-manager (parcel crop cycles: season start, campaign) ───────────
     entity_manager_url: str = "http://entity-manager-service:5000"
 
-    # ── Weather-Map (per-parcel meteo stats: temperature_avg, water_balance, frost_risk) ─
-    weather_map_url: str = "http://weather-map-backend:8080"
-
     # ── Logging ───────────────────────────────────────────────────────────────
     log_level: str = "INFO"  # level for this module's own loggers; see app.logging_setup
 
