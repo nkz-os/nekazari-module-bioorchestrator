@@ -2487,20 +2487,6 @@ class GraphDAO:
                 ]
                 ranked = []
 
-        # ── Weather-based scoring adjustment ─────────────────────
-        weather_stats = None
-        penalties_applied: dict = {}
-        if parcel_id:
-            weather_stats = await self.fetch_parcel_weather_stats(parcel_id, tenant_id)
-            if weather_stats:
-                from app.graph.recommendation import apply_weather_penalties
-                ranked, weather_stats, penalties_applied = await apply_weather_penalties(
-                    weather_stats=weather_stats,
-                    ranked_varieties=ranked,
-                    crop=crop,
-                    dao=self,
-                )
-
         return {
             "target_environment": target_env,
             "similar_sites": [s["name"] for s in similar_sites_result],
@@ -2513,8 +2499,6 @@ class GraphDAO:
             "soil_filter_applied": bool(soil_gate and soil_gate["verdict"] != "unknown"),
             "target_soil": (soil_gate or {}).get("parcel_soil") if soil_gate else None,
             "irrigation_filter_applied": irrigation_regime is not None,
-            "weather_stats": weather_stats,
-            "weather_penalties": penalties_applied if weather_stats else None,
             "evidence": _assess_evidence(ranked),
             "data_quality": {
                 "total_trials_analyzed": sum(v["trial_count"] for v in ranked),
@@ -2800,58 +2784,6 @@ class GraphDAO:
         return sorted(merged.values(), key=lambda c: c["trial_count"], reverse=True)
 
     # ── Regenerative Sequence Planner ────────────────────────────────────
-
-    @staticmethod
-    async def fetch_parcel_weather_stats(parcel_id: str, tenant_id: str = "") -> dict | None:
-        """Fetch per-parcel weather stats from the Weather-Map module.
-
-        Calls GET {WEATHER_MAP_URL}/api/weather-map/stats/{parcel_id}?metrics=...
-        and returns the ``metrics`` sub-dict, whose keys
-        (temperature_avg/water_balance/frost_risk) and nested pct fields
-        (heat_stress_pct/deficit_area_pct/high_risk_pct) are exactly what
-        app.graph.recommendation.apply_weather_penalties() reads via _safe_get.
-
-        Contract (frozen 2026-06-30): BioOrch and Crop-Health MUST consume the
-        same weather source so yield_potential/yield_gap stay comparable.
-
-        Returns None on any error, non-200, or empty metrics → no weather
-        penalties applied (fail-safe: ranking unchanged).
-        """
-        import httpx
-
-        from app.core.config import settings
-        from app.services.soil_headers import soil_module_headers
-        from app.services.weather_stats_cache import weather_stats_cache
-
-        cache_key = (tenant_id, parcel_id)
-        cached = weather_stats_cache.get(cache_key)
-        if cached is not None:
-            return cached
-
-        url = f"{settings.weather_map_url}/api/weather-map/stats/{parcel_id}"
-        try:
-            async with httpx.AsyncClient(timeout=10.0) as client:
-                resp = await client.get(
-                    url,
-                    params={"metrics": "temperature_avg,water_balance,frost_risk"},
-                    # weather-map verifies the tenant with the module signature.
-                    headers=soil_module_headers(tenant_id),
-                )
-            if resp.status_code != 200:
-                logger.info(
-                    "weather-map stats for %s returned %d", parcel_id, resp.status_code,
-                )
-                return None
-            metrics = (resp.json() or {}).get("metrics")
-            if not metrics:
-                return None
-            weather_stats_cache.set(cache_key, metrics)
-            return metrics
-        except (httpx.ConnectError, httpx.TimeoutException, httpx.HTTPError) as exc:
-            logger.warning("weather-map stats failed for parcel %s: %s", parcel_id, exc)
-        except Exception as exc:  # noqa: BLE001 — never break ranking on weather failure
-            logger.warning("weather-map stats unexpected error for %s: %s", parcel_id, exc)
-        return None
 
     @staticmethod
     def _extract_value(entity: dict, attr_name: str):
