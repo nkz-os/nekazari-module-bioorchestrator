@@ -84,7 +84,8 @@ export function reasonText(r: Reason, names: Record<string, Names>, lang: string
       params.stage = stages.map(stageName).join(t('planning.frostStageJoin', { defaultValue: ' / ' }));
       if (typeof r.params.thresholds_c === 'string') {
         const limits = r.params.thresholds_c.split('/');
-        params.thresholds = stages.map((st, i) => `${stageName(st)} ≤ ${limits[i] ?? '?'} °C`).join(', ');
+        // one stage: the stage is already named in the sentence, so only the limit is shown
+        params.thresholds = stages.map((st, i) => `${stages.length > 1 ? `${stageName(st)} ` : ''}≤ ${limits[i] ?? '?'} °C`).join(', ');
       }
     }
     for (const [param, family, name] of [['source', 'frostSource', 'threshold_source'], ['caveat', 'frostCaveat', 'tmin_caveat']] as const) {

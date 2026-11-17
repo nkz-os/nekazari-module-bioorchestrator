@@ -146,7 +146,7 @@ describe('late frost reasons (backend shape: gate frost, frost_late_*)', () => {
       return key.startsWith('planning.frostStage.') ? 'FLOW' : key;
     };
     reasonText({ ...risk, code: 'frost_late_info', params: { ...risk.params, stage: 'flowering', thresholds_c: '-1' } }, {}, 'es', t);
-    expect(seen).toMatchObject({ stage: 'FLOW', thresholds: 'FLOW ≤ -1 °C' });
+    expect(seen).toMatchObject({ stage: 'FLOW', thresholds: '≤ -1 °C' });
   });
   it('renders the real Spanish copy', async () => {
     const { esT } = await import('./testI18n');
@@ -154,6 +154,11 @@ describe('late frost reasons (backend shape: gate frost, frost_late_*)', () => {
     expect(txt).toBe('Helada tardía en espigado y floración o llenado del grano: 5 de 34 años desde 1991 con mínima por debajo del umbral (espigado y floración ≤ -1 °C, llenado del grano ≤ -2 °C; K-State C-646). El modelo tiende a dar mínimas más altas que las de finca en noches de helada; la frecuencia real puede ser mayor.');
     const unk = reasonText({ code: 'frost_late_unknown', gate: 'frost', params: { why: 'history_pending' } }, {}, 'es', esT);
     expect(unk).toBe('Helada tardía: preparando el histórico de la parcela');
+  });
+  it('renders the real Spanish copy for one stage without repeating it', async () => {
+    const { esT } = await import('./testI18n');
+    const txt = reasonText({ ...risk, params: { ...risk.params, stage: 'flowering', thresholds_c: '-1' } }, {}, 'es', esT);
+    expect(txt).toContain('Helada tardía en espigado y floración: 5 de 34 años desde 1991 con mínima por debajo del umbral (≤ -1 °C; K-State C-646).');
   });
   it('a missing caveat leaves no trailing space', async () => {
     const { esT } = await import('./testI18n');
