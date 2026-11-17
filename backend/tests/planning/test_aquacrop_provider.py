@@ -134,3 +134,28 @@ def test_in_season_without_expected_yield_says_why():
                                                                "reason": "region_not_calibrated"}}, "v")
     assert [e["basis"] for e in est] == ["water_limited"]
     assert unav == [{"provider_id": "aquacrop", "reason": "expected_region_not_calibrated"}]
+
+
+VALIDATED_RUNNING = (
+    [{"provider_id": "aquacrop", "provider_version": "v-test", "unit": "t/ha", "n": 14, "n_kind": "years",
+      "moisture": {"basis": "commercial", "pct": 13.0}, "warnings": [], "attributions": [], "graph_id": None,
+      "basis": "gap_corrected", "percentiles": None, "range": {"low": 2.4, "high": 3.9}, "coverage": 0.8,
+      "validation": {"status": "experimental", "metric": None,
+                     "scope": "in-season forecast; skill by forecast date not yet measured"}},
+     {"provider_id": "aquacrop", "provider_version": "v-test", "unit": "t/ha", "n": 14, "n_kind": "years",
+      "moisture": {"basis": "commercial", "pct": 13.0}, "warnings": [], "attributions": [], "graph_id": None,
+      "basis": "water_limited", "range": None, "coverage": None,
+      "percentiles": {"p10": 3.0, "p50": 4.0, "p90": 5.0}, "validation": {"status": "not_applicable"}}], [])
+
+
+def test_validated_running_season_output_is_unchanged():
+    assert map_in_season(IN_SEASON, "v-test") == VALIDATED_RUNNING
+
+
+def test_validated_complete_season_output_is_unchanged():
+    done = {**IN_SEASON, "status": "complete", "yield_t_ha": 4.2, "ensemble": None}
+    gap, ceiling = (dict(e) for e in VALIDATED_RUNNING[0])
+    gap.update(n=1, validation={"status": "validated", "metric": "RMSE 1.65 t/ha, anomaly r 0.48",
+                                "scope": "ES, 44 provinces, MAPA 2008–2022"})
+    ceiling.update(n=1, percentiles={"p10": 4.2, "p50": 4.2, "p90": 4.2})
+    assert map_in_season(done, "v-test") == ([gap, ceiling], [])
