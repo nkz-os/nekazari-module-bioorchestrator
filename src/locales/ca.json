@@ -280,8 +280,8 @@
       "frost_unknown_no_climate": "Sense clima de la parcel·la per valorar gelades",
       "frost_unknown_no_tolerance": "Sense llindar de gelada per a aquest cultiu",
       "frost_unknown_season_unknown": "Sense calendari de sembra: gelada no valorada",
-      "frost_late_risk": "Gelada tardana en {{stage}}: {{years_hit}} de {{years_total}} anys des de 1991 amb mínima ≤ {{threshold_c}} °C ({{source}}). {{caveat}}",
-      "frost_late_info": "Gelada tardana en {{stage}}: {{years_hit}} de {{years_total}} anys des de 1991 amb mínima ≤ {{threshold_c}} °C ({{source}}). {{caveat}}",
+      "frost_late_risk": "Gelada tardana en {{stage}}: {{years_hit}} de {{years_total}} anys des de 1991 amb mínima per sota del llindar ({{thresholds}}; {{source}}). {{caveat}}",
+      "frost_late_info": "Gelada tardana en {{stage}}: {{years_hit}} de {{years_total}} anys des de 1991 amb mínima per sota del llindar ({{thresholds}}; {{source}}). {{caveat}}",
       "frost_late_unknown_no_threshold": "Gelada tardana no valorada: sense llindar amb font per a aquest cultiu",
       "frost_late_unknown_no_stage_model": "Gelada tardana no valorada: sense fenologia per a aquest cultiu",
       "frost_late_unknown_history_pending": "Gelada tardana: preparant l'històric de la parcel·la",
@@ -644,6 +644,7 @@
       "flowering": "espigat i floració",
       "grain_filling": "umplit del gra"
     },
+    "frostStageJoin": " o ",
     "frostSource": {
       "kstate_c646": "K-State C-646",
       "fao_2005_t45": "FAO 2005"

@@ -280,8 +280,8 @@
       "frost_unknown_no_climate": "Sem clima da parcela para avaliar geadas",
       "frost_unknown_no_tolerance": "Sem limiar de geada para esta cultura",
       "frost_unknown_season_unknown": "Sem calendário de sementeira: geada não avaliada",
-      "frost_late_risk": "Geada tardia em {{stage}}: {{years_hit}} de {{years_total}} anos desde 1991 com mínima ≤ {{threshold_c}} °C ({{source}}). {{caveat}}",
-      "frost_late_info": "Geada tardia em {{stage}}: {{years_hit}} de {{years_total}} anos desde 1991 com mínima ≤ {{threshold_c}} °C ({{source}}). {{caveat}}",
+      "frost_late_risk": "Geada tardia em {{stage}}: {{years_hit}} de {{years_total}} anos desde 1991 com mínima abaixo do limiar ({{thresholds}}; {{source}}). {{caveat}}",
+      "frost_late_info": "Geada tardia em {{stage}}: {{years_hit}} de {{years_total}} anos desde 1991 com mínima abaixo do limiar ({{thresholds}}; {{source}}). {{caveat}}",
       "frost_late_unknown_no_threshold": "Geada tardia não avaliada: sem limiar com fonte para esta cultura",
       "frost_late_unknown_no_stage_model": "Geada tardia não avaliada: sem fenologia para esta cultura",
       "frost_late_unknown_history_pending": "Geada tardia: a preparar o histórico da parcela",
@@ -644,6 +644,7 @@
       "flowering": "espigamento e floração",
       "grain_filling": "enchimento do grão"
     },
+    "frostStageJoin": " ou ",
     "frostSource": {
       "kstate_c646": "K-State C-646",
       "fao_2005_t45": "FAO 2005"

@@ -297,8 +297,8 @@
       "frost_unknown_no_climate": "No parcel climate to assess frost",
       "frost_unknown_no_tolerance": "No frost threshold for this crop",
       "frost_unknown_season_unknown": "No sowing calendar: frost not assessed",
-      "frost_late_risk": "Late frost at {{stage}}: {{years_hit}} of {{years_total}} years since 1991 with a minimum ≤ {{threshold_c}} °C ({{source}}). {{caveat}}",
-      "frost_late_info": "Late frost at {{stage}}: {{years_hit}} of {{years_total}} years since 1991 with a minimum ≤ {{threshold_c}} °C ({{source}}). {{caveat}}",
+      "frost_late_risk": "Late frost at {{stage}}: {{years_hit}} of {{years_total}} years since 1991 with a minimum below the threshold ({{thresholds}}; {{source}}). {{caveat}}",
+      "frost_late_info": "Late frost at {{stage}}: {{years_hit}} of {{years_total}} years since 1991 with a minimum below the threshold ({{thresholds}}; {{source}}). {{caveat}}",
       "frost_late_unknown_no_threshold": "Late frost not assessed: no sourced threshold for this crop",
       "frost_late_unknown_no_stage_model": "Late frost not assessed: no phenology for this crop",
       "frost_late_unknown_history_pending": "Late frost: preparing the parcel's history",
@@ -661,6 +661,7 @@
       "flowering": "heading and flowering",
       "grain_filling": "grain filling"
     },
+    "frostStageJoin": " or ",
     "frostSource": {
       "kstate_c646": "K-State C-646",
       "fao_2005_t45": "FAO 2005"

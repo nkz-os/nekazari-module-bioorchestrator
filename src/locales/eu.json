@@ -280,8 +280,8 @@
       "frost_unknown_no_climate": "Ez dago partzelaren klimarik izotzak baloratzeko",
       "frost_unknown_no_tolerance": "Ez dago izotz-atalaserik labore honetarako",
       "frost_unknown_season_unknown": "Ereite-egutegirik gabe: izotza ez da baloratu",
-      "frost_late_risk": "Izotz berantiarra ({{stage}}): 1991tik, {{years_total}} urtetatik {{years_hit}} urtetan izan da gutxieneko tenperatura ≤ {{threshold_c}} °C ({{source}}). {{caveat}}",
-      "frost_late_info": "Izotz berantiarra ({{stage}}): 1991tik, {{years_total}} urtetatik {{years_hit}} urtetan izan da gutxieneko tenperatura ≤ {{threshold_c}} °C ({{source}}). {{caveat}}",
+      "frost_late_risk": "Izotz berantiarra ({{stage}}): 1991tik, {{years_total}} urtetatik {{years_hit}} urtetan izan da gutxieneko tenperatura atalasearen azpitik ({{thresholds}}; {{source}}). {{caveat}}",
+      "frost_late_info": "Izotz berantiarra ({{stage}}): 1991tik, {{years_total}} urtetatik {{years_hit}} urtetan izan da gutxieneko tenperatura atalasearen azpitik ({{thresholds}}; {{source}}). {{caveat}}",
       "frost_late_unknown_no_threshold": "Izotz berantiarra ez da baloratu: labore honetarako ez dago iturri ezagunik duen atalaserik",
       "frost_late_unknown_no_stage_model": "Izotz berantiarra ez da baloratu: labore honetarako ez dago fenologiarik",
       "frost_late_unknown_history_pending": "Izotz berantiarra: partzelaren historiala prestatzen",
@@ -644,6 +644,7 @@
       "flowering": "espiga-ateratzea eta loraldia",
       "grain_filling": "alea betetzea"
     },
+    "frostStageJoin": " edo ",
     "frostSource": {
       "kstate_c646": "K-State C-646",
       "fao_2005_t45": "FAO 2005"

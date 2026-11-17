@@ -3,7 +3,7 @@
 For each past year the crop's sensitive stage window is found with the engine's own thermal-time
 calendar (``crop_calendar``: AquaCrop GDD method 3, counted from sowing, sowing day included) over
 that year's daily Tmin/Tmax; the year is "hit" when any day of the window (both ends included) has
-Tmin <= the stage threshold. Frequency = hit years / complete years.
+Tmin <= the stage threshold. Frequency = hit years / complete years (a year is hit when ANY evaluated stage is; complete when ALL are).
 
 Thresholds, transcribed from the primary sources:
 
@@ -173,7 +173,7 @@ def unknown_reason(slug: str, why: str) -> dict:
 
 def late_frost_reason(slug: str, *, cal: CropCalendar | None, sowing_doy: int | None,
                       history: FrostHistory | None, status: str) -> dict:
-    """ONE planning-fit reason: the worst stage (highest hit share, earliest on a tie)."""
+    """ONE planning-fit reason: seasons complete for every stage, hit when any stage is hit."""
     stages = STAGE_THRESHOLDS.get(slug)
     if stages is None:
         return _unknown("no_stage_model" if slug in FAO_ONLY_THRESHOLDS else "no_threshold")
@@ -185,20 +185,23 @@ def late_frost_reason(slug: str, *, cal: CropCalendar | None, sowing_doy: int | 
         # ASSUMPTION: any status other than ready/loading/absent (incl. failed) is unavailable.
         return _unknown("history_unavailable")
     tmin = {d: t[0] for d, t in history.days.items() if t[0] is not None}
-    best: tuple[StageThreshold, FrostFrequency] | None = None
+    # A season counts only when complete for EVERY evaluated stage; it is hit when ANY stage is hit.
+    complete: set[int] | None = None
+    hit: set[int] = set()
     for st in stages:
         windows = stage_windows(cal, sowing_doy, history.days, st.stage)
         freq = late_frost_frequency(tmin, windows, st.threshold_c)
-        if freq.years_total == 0:
-            continue
-        # strict > keeps the earliest stage on a tie
-        if best is None or freq.years_hit * best[1].years_total > best[1].years_hit * freq.years_total:
-            best = (st, freq)
-    if best is None:
+        complete = set(windows) if complete is None else complete & set(windows)
+        hit.update(freq.hit_years)
+    if not complete:
         return _unknown("history_unavailable")
-    st, freq = best
-    risky = freq.years_hit / freq.years_total >= RISK_SHARE - 1e-9
+    years_hit = len(hit & complete)
+    years_total = len(complete)
+    risky = years_hit / years_total >= RISK_SHARE - 1e-9
+    # ParamValue is scalar-only: stages and thresholds travel as "+"- and "/"-joined strings, in stage order.
     return {"code": "frost_late_risk" if risky else "frost_late_info", "gate": "frost",
-            "params": {"years_hit": freq.years_hit, "years_total": freq.years_total, "stage": st.stage,
-                       "threshold_c": st.threshold_c, "threshold_source": st.source,
+            "params": {"years_hit": years_hit, "years_total": years_total,
+                       "stage": "+".join(st.stage for st in stages),
+                       "thresholds_c": "/".join(f"{st.threshold_c:g}" for st in stages),
+                       "threshold_source": stages[0].source,
                        "tmin_source": TMIN_SOURCE, "tmin_caveat": history.tmin_caveat}}

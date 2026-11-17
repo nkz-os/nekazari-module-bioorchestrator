@@ -280,8 +280,8 @@
       "frost_unknown_no_climate": "Pas de climat de la parcelle pour évaluer le gel",
       "frost_unknown_no_tolerance": "Pas de seuil de gel pour cette culture",
       "frost_unknown_season_unknown": "Pas de calendrier de semis : gel non évalué",
-      "frost_late_risk": "Gel tardif au stade {{stage}} : {{years_hit}} années sur {{years_total}} depuis 1991 avec une minimale ≤ {{threshold_c}} °C ({{source}}). {{caveat}}",
-      "frost_late_info": "Gel tardif au stade {{stage}} : {{years_hit}} années sur {{years_total}} depuis 1991 avec une minimale ≤ {{threshold_c}} °C ({{source}}). {{caveat}}",
+      "frost_late_risk": "Gel tardif au stade {{stage}} : {{years_hit}} années sur {{years_total}} depuis 1991 avec une minimale inférieure au seuil ({{thresholds}} ; {{source}}). {{caveat}}",
+      "frost_late_info": "Gel tardif au stade {{stage}} : {{years_hit}} années sur {{years_total}} depuis 1991 avec une minimale inférieure au seuil ({{thresholds}} ; {{source}}). {{caveat}}",
       "frost_late_unknown_no_threshold": "Gel tardif non évalué : pas de seuil sourcé pour cette culture",
       "frost_late_unknown_no_stage_model": "Gel tardif non évalué : pas de phénologie pour cette culture",
       "frost_late_unknown_history_pending": "Gel tardif : préparation de l'historique de la parcelle",
@@ -644,6 +644,7 @@
       "flowering": "épiaison et floraison",
       "grain_filling": "remplissage du grain"
     },
+    "frostStageJoin": " ou ",
     "frostSource": {
       "kstate_c646": "K-State C-646",
       "fao_2005_t45": "FAO 2005"

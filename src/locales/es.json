@@ -297,8 +297,8 @@
       "frost_unknown_no_climate": "Sin clima de la parcela para valorar heladas",
       "frost_unknown_no_tolerance": "Sin umbral de helada para este cultivo",
       "frost_unknown_season_unknown": "Sin calendario de siembra: helada no valorada",
-      "frost_late_risk": "Helada tardía en {{stage}}: {{years_hit}} de {{years_total}} años desde 1991 con mínima ≤ {{threshold_c}} °C ({{source}}). {{caveat}}",
-      "frost_late_info": "Helada tardía en {{stage}}: {{years_hit}} de {{years_total}} años desde 1991 con mínima ≤ {{threshold_c}} °C ({{source}}). {{caveat}}",
+      "frost_late_risk": "Helada tardía en {{stage}}: {{years_hit}} de {{years_total}} años desde 1991 con mínima por debajo del umbral ({{thresholds}}; {{source}}). {{caveat}}",
+      "frost_late_info": "Helada tardía en {{stage}}: {{years_hit}} de {{years_total}} años desde 1991 con mínima por debajo del umbral ({{thresholds}}; {{source}}). {{caveat}}",
       "frost_late_unknown_no_threshold": "Helada tardía no valorada: sin umbral con fuente para este cultivo",
       "frost_late_unknown_no_stage_model": "Helada tardía no valorada: sin fenología para este cultivo",
       "frost_late_unknown_history_pending": "Helada tardía: preparando el histórico de la parcela",
@@ -661,6 +661,7 @@
       "flowering": "espigado y floración",
       "grain_filling": "llenado del grano"
     },
+    "frostStageJoin": " o ",
     "frostSource": {
       "kstate_c646": "K-State C-646",
       "fao_2005_t45": "FAO 2005"
