@@ -111,3 +111,27 @@ async def test_scheduling_failure_is_unavailable_not_a_500(monkeypatch):
     out, _ = await _fit(monkeypatch, "ready", None, schedule=MagicMock(side_effect=RuntimeError("no loop")))
     wheat = next(s for s in out["species"] if s["species"] == "wheat")
     assert _late(wheat)[0]["params"] == {"why": "history_unavailable"}
+
+
+async def test_sowing_window_backs_up_a_missing_sowing_day(monkeypatch):
+    seen = []
+    real = service.late_frost_reason
+
+    def spy(slug, **kw):
+        seen.append((slug, kw["sowing_doy"]))
+        return real(slug, **kw)
+
+    monkeypatch.setattr(service, "late_frost_reason", spy)
+    sowing = {"sowing_window": {"start_month": 10, "end_month": 1}, "typical_sowing_doy": None}
+    monkeypatch.setattr(service, "_season_start_doy", lambda *a, **k: None)
+    reason = await service._late_frost_reason("barley", "HORVX", sowing, {"lat": 42.5, "lon": -1.6}, "rainfed",
+                                              _history(1), "ready", "tenant-a", "p1")
+    assert seen == [("barley", 335)]
+    assert reason["code"] in {"frost_late_risk", "frost_late_info"}
+
+
+async def test_no_sowing_day_and_no_window_is_no_stage_model(monkeypatch):
+    monkeypatch.setattr(service, "_season_start_doy", lambda *a, **k: None)
+    reason = await service._late_frost_reason("barley", "HORVX", {"sowing_window": None}, {"lat": 42.5, "lon": -1.6},
+                                              "rainfed", _history(1), "ready", "tenant-a", "p1")
+    assert reason == {"code": "frost_late_unknown", "gate": "frost", "params": {"why": "no_stage_model"}}

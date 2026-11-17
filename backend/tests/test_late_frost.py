@@ -165,3 +165,16 @@ def test_non_finite_values_exclude_season():
     days = _days(date(2000, 1, 1), 60)
     days[date(2000, 1, 5)] = (float("nan"), 15.0)
     assert lf.stage_windows(_cal(), 1, days, "flowering") == {}
+
+
+def test_window_mid_doy_is_the_window_middle():
+    assert lf.window_mid_doy({"start_month": 10, "end_month": 1}) == 335  # 1 Dec: Oct 1 .. Jan 31
+    assert lf.window_mid_doy({"start_month": 10, "end_month": 12}) == 319  # 15 Nov: Oct 1 .. Dec 31
+    assert lf.window_mid_doy({"start_month": 3, "end_month": 4}) == 90  # 31 Mar: Mar 1 .. Apr 30
+    assert lf.window_mid_doy({"start_month": 11, "end_month": 11}) == 319  # 15 Nov
+
+
+def test_window_mid_doy_without_a_usable_window():
+    for window in (None, {}, {"start_month": 10}, {"start_month": 13, "end_month": 1},
+                   {"start_month": "10", "end_month": 1}, {"start_month": True, "end_month": 1}):
+        assert lf.window_mid_doy(window) is None
