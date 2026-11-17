@@ -98,6 +98,13 @@ async def test_late_frost_reason_is_last(monkeypatch):
     for s in out["species"]:
         assert s["reasons"][-1]["code"].startswith("frost_late_")
     assert any(len(s["reasons"]) > 1 for s in out["species"])
+    # no rotation history, no climate, a perennial: all of these precede the frost reason
+    perennial = [s for s in out["species"] if any(r["code"] == "multi_year" for r in s["reasons"])]
+    assert perennial
+    for s in perennial:
+        codes = [r["code"] for r in s["reasons"]]
+        assert {"rotation_unknown", "climate_unknown"} <= set(codes)
+        assert codes[-1].startswith("frost_late_") and codes.index("multi_year") < len(codes) - 1
 
 
 async def test_scheduling_failure_is_unavailable_not_a_500(monkeypatch):

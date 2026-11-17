@@ -408,7 +408,7 @@ async def parcel_fit(*, dao, source: KnowledgeSource, parcel_id: str, tenant_id:
             need, need_reason = species_irrigation_need(irrigation, slug, eppo, sowing)
         if need is not None:
             reasons += allotment_reasons(need["percentiles"]["p50"], need["percentiles"]["p90"], allotment)
-        # Last, so a card's first reason stays the blocking/marginal one.
+        # Very last (after every other reason), so a card's first reason stays the blocking/marginal one.
         reasons.append(await _late_frost_reason(slug, eppo, sowing, centroid, regime_used,
                                                 frost_hist, frost_status, tenant_id, env["parcel_id"]))
         trials = has_trials(eppo, ref.trial_eppo)
