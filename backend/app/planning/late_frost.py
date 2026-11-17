@@ -145,6 +145,13 @@ def _unknown(why: str) -> dict:
     return {"code": "frost_late_unknown", "gate": "frost", "params": {"why": why}}
 
 
+def unknown_reason(slug: str, why: str) -> dict:
+    """A ``frost_late_unknown`` for ``slug``: ``why`` when it has a stage model, else the reason it has none."""
+    if slug in STAGE_THRESHOLDS:
+        return _unknown(why)
+    return _unknown("no_stage_model" if slug in FAO_ONLY_THRESHOLDS else "no_threshold")
+
+
 def late_frost_reason(slug: str, *, cal: CropCalendar | None, sowing_doy: int | None,
                       history: FrostHistory | None, status: str) -> dict:
     """ONE planning-fit reason: the worst stage (highest hit share, earliest on a tie)."""

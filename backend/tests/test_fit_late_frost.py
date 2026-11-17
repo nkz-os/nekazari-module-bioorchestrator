@@ -88,7 +88,16 @@ async def test_late_frost_failure_keeps_one_reason_and_the_page(monkeypatch):
     out, _ = await _fit(monkeypatch, "ready", _history(2))
     assert all(len(_late(s)) == 1 for s in out["species"])
     wheat = next(s for s in out["species"] if s["species"] == "wheat")
-    assert _late(wheat)[0]["params"] == {"why": "no_stage_model"}
+    assert _late(wheat)[0]["params"] == {"why": "history_unavailable"}
+    sunflower = next(s for s in out["species"] if s["species"] == "sunflower")
+    assert _late(sunflower)[0]["params"] == {"why": "no_stage_model"}
+
+
+async def test_late_frost_reason_is_last(monkeypatch):
+    out, _ = await _fit(monkeypatch, "ready", _history(2))
+    for s in out["species"]:
+        assert s["reasons"][-1]["code"].startswith("frost_late_")
+    assert any(len(s["reasons"]) > 1 for s in out["species"])
 
 
 async def test_scheduling_failure_is_unavailable_not_a_500(monkeypatch):

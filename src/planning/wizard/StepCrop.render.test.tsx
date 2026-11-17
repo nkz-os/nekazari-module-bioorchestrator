@@ -57,6 +57,17 @@ describe('StepCrop', () => {
     expect(cardReasons({ ...sp('rice', 'no_fit'), reasons: [r('a'), r('b')] })).toHaveLength(2);
     expect(cardReasons({ ...sp('wheat', 'caveats'), reasons: [r('a'), r('b')] })).toHaveLength(1);
   });
+  it('a late-frost risk is always on the card, after the first reason', () => {
+    const r = (code: string) => ({ code, params: {} }) as never;
+    const codes = cardReasons({ ...sp('wheat', 'caveats'), reasons: [r('soil_unknown'), r('frost_late_risk')] }).map((x) => x.code);
+    expect(codes).toEqual(['soil_unknown', 'frost_late_risk']);
+    expect(cardReasons({ ...sp('wheat', 'caveats'), reasons: [r('frost_late_risk'), r('soil_unknown')] })).toHaveLength(1);
+  });
+  it('an unknown late frost never shows on a card', () => {
+    const r = (code: string) => ({ code, params: {} }) as never;
+    expect(cardReasons({ ...sp('wheat', 'fits'), reasons: [r('frost_late_unknown')] })).toEqual([]);
+    expect(cardReasons({ ...sp('wheat', 'caveats'), reasons: [r('frost_late_unknown'), r('soil_unknown')] }).map((x) => x.code)).toEqual(['soil_unknown']);
+  });
   it('shows the regional line with the index, in the locale format', () => {
     const fit = { ...FIT, species: [{ ...sp('wheat', 'fits'), regional_yield: regional() }] } as FitResponse;
     const html = renderToStaticMarkup(<StepCrop fit={fit} selected={null} onPick={() => {}} />);

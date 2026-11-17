@@ -79,7 +79,7 @@ from app.planning.irrigation import (
     load_stage_table,
     read_allotment,
 )
-from app.planning.late_frost import STAGE_THRESHOLDS, late_frost_reason
+from app.planning.late_frost import STAGE_THRESHOLDS, late_frost_reason, unknown_reason
 from app.planning.reference import EMPTY_REFERENCE, load_reference
 from app.planning.regional_yield import regional_yield
 from app.planning.rotation import rotation_reasons
@@ -293,7 +293,7 @@ def species_irrigation_need(ctx: IrrigationContext, slug: str, eppo: str | None,
 
 
 async def _late_frost_reason(slug, eppo, sowing, centroid, regime_used, history, status, tenant_id, parcel_id) -> dict:
-    """The species' one ``frost_late_*`` reason. Never raises: a failure here is "no stage model"."""
+    """The species' one ``frost_late_*`` reason. Never raises: a failure here is "history unavailable"."""
     try:
         lat, lon = centroid.get("lat"), centroid.get("lon")
         cal, doy = None, None
@@ -308,7 +308,7 @@ async def _late_frost_reason(slug, eppo, sowing, centroid, regime_used, history,
     except Exception:
         logger.exception("planning fit: late-frost reason failed tenant=%s parcel=%s species=%s",
                          tenant_id, parcel_id, slug)
-        return late_frost_reason(slug, cal=None, sowing_doy=None, history=None, status=status)
+        return unknown_reason(slug, "history_unavailable")
 
 
 def _rank_key(s: dict) -> tuple:
@@ -388,8 +388,6 @@ async def parcel_fit(*, dao, source: KnowledgeSource, parcel_id: str, tenant_id:
                                  climate.coldest_month_min_c, tol.frost_damage_c if tol else None)
         season_days = (CROP_REFERENCE.get(catalog_code(eppo)) or {}).get("growing_season_days") if eppo else None
         reasons += water_reasons(regime_used, climate, season_days)
-        reasons.append(await _late_frost_reason(slug, eppo, sowing, centroid, regime_used,
-                                                frost_hist, frost_status, tenant_id, env["parcel_id"]))
         # No history, a partial one (a cycle that cannot be placed) or no rotation rules in the graph
         # at all is "unknown", never "no restriction".
         if history is None or not ref.constraints or not history_complete(cycles):
@@ -410,6 +408,9 @@ async def parcel_fit(*, dao, source: KnowledgeSource, parcel_id: str, tenant_id:
             need, need_reason = species_irrigation_need(irrigation, slug, eppo, sowing)
         if need is not None:
             reasons += allotment_reasons(need["percentiles"]["p50"], need["percentiles"]["p90"], allotment)
+        # Last, so a card's first reason stays the blocking/marginal one.
+        reasons.append(await _late_frost_reason(slug, eppo, sowing, centroid, regime_used,
+                                                frost_hist, frost_status, tenant_id, env["parcel_id"]))
         trials = has_trials(eppo, ref.trial_eppo)
         regional, regional_reason = crop_regional_yield(eppo, nuts, yield_rows, yield_failed)
         species.append({

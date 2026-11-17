@@ -3,7 +3,8 @@
 - no_fit: a blocker. Soil unsuitable, or winter frost risk for a crop that stands
   through winter (autumn-sown or perennial).
 - caveats: anything marginal or unknown, a rotation restriction, a high rainfed water
-  deficit, or an undeclared regime. Missing data never yields ``fits``.
+  deficit, or an undeclared regime. Missing data never yields ``fits`` (except ``frost_late_unknown``,
+  which is informative: the late-frost warning is never a gate).
 - fits: every evaluated gate known and suitable (a rotation benefit is information).
 
 The winter minimum is compared only for crops in the field in winter: a spring or summer

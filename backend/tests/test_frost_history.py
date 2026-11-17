@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from datetime import date, timedelta
 
@@ -59,7 +60,7 @@ async def test_load_ok_builds_days_and_caveat(monkeypatch):
     assert h.days[date(1991, 1, 2)] == (None, None)
     q = calls[0].url.params
     assert (q["resolution"], q["vars"], q["start"]) == ("daily", "tmin_c,tmax_c", "1991-01-01")
-    assert q["end"] == (TODAY - timedelta(days=1)).isoformat()
+    assert q["end"] == (TODAY - timedelta(days=31)).isoformat()
     assert calls[0].url.path == "/api/weather/parcel/p1/history"
     assert "x-auth-signature" in calls[0].headers and calls[0].headers["x-tenant-id"] == "tenant-a"
 
@@ -158,3 +159,32 @@ async def test_retry_after_clamped_or_defaulted(monkeypatch, _clean, raw, expect
     _net(monkeypatch, [httpx.Response(503, headers={"Retry-After": raw}), httpx.Response(200, json=_body())])
     await fh.schedule_frost_history("tenant-a", "p1")
     assert _clean == [expected]
+
+
+async def test_gave_up_retries_sooner_than_other_failures(monkeypatch):
+    _net(monkeypatch, [httpx.Response(503, headers={"Retry-After": "5"})])
+    await fh.schedule_frost_history("tenant-a", "p1")  # gave_up
+    _net(monkeypatch, [httpx.Response(422)])
+    await fh.schedule_frost_history("tenant-a", "p2")  # hard failure
+    t = fh._now() + fh.GAVE_UP_BACKOFF_S + 1
+    monkeypatch.setattr(fh, "_now", lambda: t)
+    assert fh.schedule_frost_history("tenant-a", "p2") is None
+    assert fh.schedule_frost_history("tenant-a", "p1") is not None
+    assert fh.GAVE_UP_BACKOFF_S < fh.RETRY_BACKOFF_S
+
+
+async def test_loads_are_serialised(monkeypatch):
+    active, peak = 0, 0
+
+    async def fake_fetch(tenant_id, parcel_id):
+        nonlocal active, peak
+        active += 1
+        peak = max(peak, active)
+        await asyncio.sleep(0)
+        active -= 1
+        return fh.FrostHistory(days={date(1991, 1, 1): (0.0, 1.0)}, tmin_caveat="warm_bias"), 1
+
+    monkeypatch.setattr(fh, "_fetch", fake_fetch)
+    tasks = [fh.schedule_frost_history("tenant-a", f"p{i}") for i in range(3)]
+    await asyncio.gather(*tasks)
+    assert peak == 1

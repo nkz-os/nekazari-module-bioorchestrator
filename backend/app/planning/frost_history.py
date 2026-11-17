@@ -8,7 +8,7 @@ Retry-After while it prepares the data; both are retried here, up to MAX_ATTEMPT
 
 Unlike climatology (climate, not tenant data) the key is (tenant, parcel): parcel data is tenant-scoped.
 The cache lives in this process: one copy per pod, lost on restart. A failed key is not retried before
-RETRY_BACKOFF_S.
+RETRY_BACKOFF_S (GAVE_UP_BACKOFF_S after a load that gave up).
 """
 from __future__ import annotations
 
@@ -29,7 +29,9 @@ logger = logging.getLogger(__name__)
 
 TTL_S = 30 * 24 * 3600
 RETRY_BACKOFF_S = 15 * 60
-MAX_ENTRIES = 200
+MAX_ENTRIES = 32  # one entry is ~2.4 MB
+END_LAG_DAYS = 31  # the weather API answers 400 past its latest reanalysis day (lags days); 31 skips its latest lookup
+GAVE_UP_BACKOFF_S = 120  # the weather API keeps the finished years: the next try should complete
 MAX_ATTEMPTS = 12
 HISTORY_START = date(1991, 1, 1)
 HTTP_TIMEOUT_S = 30  # the server-side deadline is 20 s
@@ -42,6 +44,16 @@ _Key = tuple[str, str]  # (tenant_id, parcel_id)
 _CACHE: OrderedDict[_Key, tuple[float, FrostHistory]] = OrderedDict()
 _FAILED: dict[_Key, float] = {}  # key -> failed_at, cleared by a success
 _LOADING: dict[_Key, asyncio.Task] = {}
+_FETCH_SLOTS: dict[asyncio.AbstractEventLoop, asyncio.Semaphore] = {}  # one per loop (tests run many)
+
+
+def _fetch_slot() -> asyncio.Semaphore:
+    """One HTTP load at a time: the weather API serves at most 2 concurrent history requests, 503s the rest."""
+    loop = asyncio.get_running_loop()
+    if loop not in _FETCH_SLOTS:
+        _FETCH_SLOTS.clear()  # drop semaphores of closed loops
+        _FETCH_SLOTS[loop] = asyncio.Semaphore(1)
+    return _FETCH_SLOTS[loop]
 
 
 class _LoadFailed(Exception):
@@ -122,7 +134,7 @@ def _parse(body: object) -> FrostHistory:
 
 async def _fetch(tenant_id: str, parcel_id: str) -> tuple[FrostHistory, int]:
     url = f"{_weather_api_url()}/api/weather/parcel/{parcel_id}/history"
-    params = {"start": HISTORY_START.isoformat(), "end": (_today() - timedelta(days=1)).isoformat(),
+    params = {"start": HISTORY_START.isoformat(), "end": (_today() - timedelta(days=END_LAG_DAYS)).isoformat(),
               "resolution": "daily", "vars": "tmin_c,tmax_c"}
     attempts = 0
     async with httpx.AsyncClient(timeout=HTTP_TIMEOUT_S) as client:
@@ -151,7 +163,8 @@ async def _fetch(tenant_id: str, parcel_id: str) -> tuple[FrostHistory, int]:
 async def _load(key: _Key) -> None:
     tenant_id, parcel_id = key
     try:
-        history, attempts = await _fetch(tenant_id, parcel_id)
+        async with _fetch_slot():
+            history, attempts = await _fetch(tenant_id, parcel_id)
         _CACHE[key] = (_now(), history)
         _CACHE.move_to_end(key)
         while len(_CACHE) > MAX_ENTRIES:
@@ -162,7 +175,9 @@ async def _load(key: _Key) -> None:
     except Exception as err:
         status = err.status if isinstance(err, _LoadFailed) else type(err).__name__
         _FAILED.pop(key, None)
-        _FAILED[key] = _now()
+        # a gave_up load shortens its backoff: stamp the failure earlier by the difference
+        gave_up = isinstance(err, _LoadFailed) and err.status == "gave_up"
+        _FAILED[key] = _now() - (RETRY_BACKOFF_S - GAVE_UP_BACKOFF_S if gave_up else 0)
         while len(_FAILED) > MAX_ENTRIES:
             _FAILED.pop(next(iter(_FAILED)))
         logger.warning("frost_history_load_failed tenant=%s parcel=%s status=%s attempts=%s stale_kept=%s",
