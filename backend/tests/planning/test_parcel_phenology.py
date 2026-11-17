@@ -183,7 +183,7 @@ def test_route_answers_the_contract(client, monkeypatch):
         "season": None, "phenology": None}))
     r = client.get(URL)
     assert r.status_code == 200
-    assert r.json() == {"contract_version": "2.8", "provider_id": "aquacrop_calendar", "state": "unavailable",
+    assert r.json() == {"contract_version": "2.9", "provider_id": "aquacrop_calendar", "state": "unavailable",
                         "unavailable": [{"provider_id": "aquacrop_calendar", "reason": "not_sown", "code": None}],
                         "season": None, "phenology": None}
 
