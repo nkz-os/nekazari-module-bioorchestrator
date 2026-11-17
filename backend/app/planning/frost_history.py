@@ -92,7 +92,7 @@ def _retry_after(resp: httpx.Response) -> int | None:
         return None
     try:
         return max(1, min(int(float(raw)), MAX_RETRY_AFTER_S))
-    except ValueError:
+    except (ValueError, OverflowError):  # not numeric, or "inf"
         return DEFAULT_RETRY_AFTER_S
 
 

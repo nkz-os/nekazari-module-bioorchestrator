@@ -135,3 +135,26 @@ async def test_fresh_and_in_flight_not_rescheduled(monkeypatch):
     assert fh.schedule_frost_history("tenant-a", "p1") is None
     await t
     assert fh.schedule_frost_history("tenant-a", "p1") is None
+
+
+@pytest.mark.parametrize("body", [{"days": []}, {"validation": {}}, ["x"]])
+async def test_malformed_or_empty_body_fails(monkeypatch, body):
+    _net(monkeypatch, [httpx.Response(200, json=body)])
+    await fh.schedule_frost_history("tenant-a", "p1")
+    assert fh.frost_history_status("tenant-a", "p1") == "failed"
+
+
+async def test_still_incomplete_after_max_attempts_fails_not_cached(monkeypatch, caplog):
+    calls = _net(monkeypatch, [httpx.Response(200, json=_body(incomplete=[1991]), headers={"Retry-After": "1"})])
+    with caplog.at_level(logging.WARNING):
+        await fh.schedule_frost_history("tenant-a", "p1")
+    assert len(calls) == fh.MAX_ATTEMPTS
+    assert fh.get_frost_history("tenant-a", "p1") is None
+    assert fh.frost_history_status("tenant-a", "p1") == "failed" and "status=gave_up" in caplog.text
+
+
+@pytest.mark.parametrize("raw,expected", [("9999", 300), ("inf", 30), ("abc", 30)])
+async def test_retry_after_clamped_or_defaulted(monkeypatch, _clean, raw, expected):
+    _net(monkeypatch, [httpx.Response(503, headers={"Retry-After": raw}), httpx.Response(200, json=_body())])
+    await fh.schedule_frost_history("tenant-a", "p1")
+    assert _clean == [expected]
