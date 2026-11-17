@@ -31,7 +31,6 @@ from datetime import date, datetime, timezone
 from typing import Any
 from urllib.parse import quote, unquote
 
-from nkz_platform_sdk.agronomy import AgronomicValue, Source
 from nkz_platform_sdk.orion import OrionClient
 
 from app.graph import agroclimatic, zone_match
@@ -2230,32 +2229,6 @@ class GraphDAO:
                 out[crop] = n
         return out
 
-    async def _soil_gate(self, crop: str, parcel_id: str | None, tenant_id: str) -> dict:
-        """Grade a crop against a parcel's REAL soil (C.5 soil-suitability gate).
-
-        crop tolerance ← CropSoilSuitability (graph, keyed by species slug);
-        parcel soil ← Soil module (live, HMAC). `crop` may be an EPPO code →
-        resolve to the canonical slug before reading tolerance. Emits the
-        verdict in the shared AgronomicValue envelope for downstream consumers.
-        """
-        species = resolve_species(crop) or crop
-        crop_tolerance = await self.get_soil_suitability(species)
-        parcel_soil = (
-            await get_parcel_soil_properties(parcel_id, tenant_id) if parcel_id else None
-        )
-        gate = assess_soil_suitability(crop_tolerance, parcel_soil)
-        gate["agronomic"] = AgronomicValue(
-            value=gate["verdict"],
-            source=Source(short=gate["source"]),
-            confidence=gate["confidence"],
-            notes=[gate["reason"]],
-        ).model_dump()
-        if parcel_soil and parcel_soil.get("data_available"):
-            gate["parcel_soil"] = {
-                "ph": parcel_soil.get("ph"), "texture": parcel_soil.get("texture"),
-            }
-        return gate
-
     async def extrapolate_varieties(
         self,
         crop: str,
@@ -2266,9 +2239,6 @@ class GraphDAO:
         rainfall_min: float | None = None,
         rainfall_max: float | None = None,
         top_n: int = 10,
-        filter_soil_suitability: bool = False,
-        parcel_id: str | None = None,
-        tenant_id: str = "",
         exclude_sites: list[str] | None = None,
         target_features: dict[str, float | None] | None = None,
         recency_half_life: float = 8.0,
@@ -2469,24 +2439,6 @@ class GraphDAO:
             async for record in result:
                 ranked.append(_ranked_variety(record, crop))
 
-        # ── Soil-suitability gate (C.5) ────────────────────────────
-        # Gate = crop STANDARD tolerance (CropSoilSuitability, EcoCrop) × the
-        # parcel's REAL soil (read live from the Soil module). `unsuitable`
-        # drops the crop's varieties; `marginal`/`unknown` keep + flag.
-        excluded_by_soil: list = []
-        soil_gate: dict | None = None
-        if filter_soil_suitability:
-            soil_gate = await self._soil_gate(crop, parcel_id, tenant_id)
-            for v in ranked:
-                v["soil_suitability"] = soil_gate["agronomic"]
-            if soil_gate["verdict"] == "unsuitable":
-                excluded_by_soil = [
-                    {"variety": v["variety"], "reason": soil_gate["reason"],
-                     "soil_requirement": soil_gate["ph"]}
-                    for v in ranked
-                ]
-                ranked = []
-
         return {
             "target_environment": target_env,
             "similar_sites": [s["name"] for s in similar_sites_result],
@@ -2494,10 +2446,6 @@ class GraphDAO:
             "ranked_varieties": ranked,
             "purpose": purpose,
             "evidence_tier": tier,
-            "excluded_by_soil": excluded_by_soil,
-            "soil_gate": soil_gate,
-            "soil_filter_applied": bool(soil_gate and soil_gate["verdict"] != "unknown"),
-            "target_soil": (soil_gate or {}).get("parcel_soil") if soil_gate else None,
             "irrigation_filter_applied": irrigation_regime is not None,
             "evidence": _assess_evidence(ranked),
             "data_quality": {

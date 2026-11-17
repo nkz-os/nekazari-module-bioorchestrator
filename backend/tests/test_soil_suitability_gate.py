@@ -13,7 +13,6 @@ from __future__ import annotations
 
 import asyncio
 import shutil
-from unittest.mock import AsyncMock, patch
 
 import pytest
 
@@ -180,7 +179,7 @@ def test_ph_only_verdict_has_lower_confidence_than_two_dimensions():
     assert ph_only["confidence"] == "low"
 
 
-# ── extrapolate_varieties wiring (real graph + mocked Soil module) ───────────
+# ── coverage query (real graph) ──────────────────────────────────────────────
 
 pytestmark_docker = pytest.mark.skipif(
     shutil.which("docker") is None, reason="docker unavailable for testcontainers"
@@ -194,7 +193,7 @@ def _run(coro):
 
 
 @pytestmark_docker
-class TestExtrapolateSoilGate:
+class TestSoilSuitabilityCoverage:
     @pytest.fixture(scope="class")
     def dao(self):
         from testcontainers.neo4j import Neo4jContainer
@@ -228,44 +227,9 @@ class TestExtrapolateSoilGate:
                 """
             )
 
-    def test_unsuitable_crop_varieties_dropped(self, dao):
-        # Parcel is strongly acidic (pH 4.5) → barley (min 6.0) unsuitable → drop all.
-        acid = _soil(4.5, "Sandy loam")
-        with patch(
-            "app.graph.dao.get_parcel_soil_properties",
-            new=AsyncMock(return_value=acid),
-        ):
-            res = _run(dao.extrapolate_varieties(
-                crop="HORVX", climate_class="Csa",
-                rainfall_min=400, rainfall_max=800,
-                filter_soil_suitability=True,
-                parcel_id="urn:ngsi-ld:AgriParcel:test:1", tenant_id="t",
-            ))
-        assert res["ranked_varieties"] == []
-        assert res["soil_gate"]["verdict"] == "unsuitable"
-        assert len(res["excluded_by_soil"]) == 2
-
     def test_soil_suitability_coverage(self, dao):
         # Seed has 1 species (barley) with tolerance → 100% of species covered.
         cov = _run(dao.soil_suitability_coverage())
         assert cov["species_total"] == 1
         assert cov["species_with_tolerance"] == 1
         assert cov["coverage_pct"] == 100.0
-
-    def test_suitable_crop_varieties_kept_and_annotated(self, dao):
-        ok = _soil(7.0, "Loam")
-        with patch(
-            "app.graph.dao.get_parcel_soil_properties",
-            new=AsyncMock(return_value=ok),
-        ):
-            res = _run(dao.extrapolate_varieties(
-                crop="HORVX", climate_class="Csa",
-                rainfall_min=400, rainfall_max=800,
-                filter_soil_suitability=True,
-                parcel_id="urn:ngsi-ld:AgriParcel:test:1", tenant_id="t",
-            ))
-        assert len(res["ranked_varieties"]) == 2
-        assert res["soil_gate"]["verdict"] == "suitable"
-        # AgronomicValue envelope present on the gate result.
-        assert res["soil_gate"]["agronomic"]["value"] == "suitable"
-        assert res["soil_gate"]["agronomic"]["confidence"] in ("high", "medium", "low")
