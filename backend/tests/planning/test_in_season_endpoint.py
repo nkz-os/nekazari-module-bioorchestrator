@@ -101,6 +101,32 @@ async def test_done_job_answers_experimental_estimates_and_the_season():
         "computed_at": finished.isoformat(), "provider_version": "v-test"}
 
 
+async def test_validated_in_season_response_is_unchanged():
+    jobs = FakeJobs()
+    out = await call(jobs)
+    job = jobs.jobs[out["job_id"]]
+    finished = datetime(2026, 3, 15, 6, 0, tzinfo=UTC)
+    job.state, job.result, job.finished_at = "done", RESULT, finished
+    got = await call(jobs)
+    common = {"provider_id": "aquacrop", "provider_version": "v-test", "unit": "t/ha", "n": 14, "n_kind": "years",
+              "moisture": {"basis": "commercial", "pct": 13.0}, "warnings": [], "attributions": [],
+              "graph_id": None}
+    assert got == {
+        "state": "done", "done": 0, "total": None, "job_id": out["job_id"], "phenology": None, "unavailable": [],
+        "estimates": [
+            {**common, "basis": "gap_corrected", "percentiles": None, "range": {"low": 2.4, "high": 3.9},
+             "coverage": 0.8,
+             "validation": {"status": "experimental", "metric": None,
+                            "scope": "in-season forecast; skill by forecast date not yet measured"}},
+            {**common, "basis": "water_limited", "range": None, "coverage": None,
+             "percentiles": {"p10": 3.0, "p50": 4.0, "p90": 5.0}, "validation": {"status": "not_applicable"}}],
+        "season": {"status": "in_season", "as_of": "2026-03-14", "crop": "TRZAX", "regime": "rainfed",
+                   "sowing": {"date": "2025-10-20", "source": "crop_cycle", "provenance": "actual"},
+                   "sowing_method": "conventional", "sowing_method_source": "default",
+                   "harvest_date": "2026-06-28", "n_years": 14, "weather_source": "parcel_daily+archive",
+                   "computed_at": finished.isoformat(), "provider_version": "v-test"}}
+
+
 PHENOLOGY = {"gdd_method": "aquacrop_m3", "milestones": {"maturity": {"gdd": 2400.0, "status": "projected"}}}
 
 
