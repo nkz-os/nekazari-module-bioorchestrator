@@ -21,6 +21,7 @@ only a proxy of that, and the reanalysis Tmin has a warm bias (cold hollows are 
 """
 from __future__ import annotations
 
+import math
 from collections.abc import Mapping
 from dataclasses import dataclass
 from datetime import date, timedelta
@@ -28,6 +29,7 @@ from typing import Literal
 
 from app.services.crop_calendar import CropCalendar, daily_gdd_m3
 
+SEASON_DAYS = 365  # one season, as sim_weather
 RISK_SHARE = 0.2  # 1 year in 5 (owner, 2026-11-17)
 TMIN_SOURCE = "ERA5"
 
@@ -104,9 +106,11 @@ def stage_windows(cal: CropCalendar, sowing_doy: int,
         start: date | None = None
         end: date | None = None
         ok = True
+        last_day = day + timedelta(days=SEASON_DAYS - 1)
         while end is None:
             tt = days.get(day)
-            if tt is None or tt[0] is None or tt[1] is None:
+            if (day > last_day or tt is None or tt[0] is None or tt[1] is None
+                    or not math.isfinite(tt[0]) or not math.isfinite(tt[1])):
                 ok = False
                 break
             cum += daily_gdd_m3(tt[0], tt[1], cal.tbase, cal.tupp)

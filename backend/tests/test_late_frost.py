@@ -70,19 +70,19 @@ def _hist(years_hit_flower, years_hit_grain, n=10, caveat="warm_bias"):
     for y in range(2000, 2000 + n):
         days.update(_days(date(y, 1, 1), 365 if y % 4 else 366))
     for i in range(years_hit_flower):
-        days[date(2000 + i, 1, 12)] = (-1.5, 5.0)
+        days[date(2000 + i, 1, 12)] = (-1.5, 21.5)
     for i in range(years_hit_grain):
-        days[date(2000 + i, 1, 20)] = (-2.5, 5.0)
+        days[date(2000 + i, 1, 20)] = (-2.5, 22.5)
     return lf.FrostHistory(days=days, tmin_caveat=caveat)
 
 
-def test_reason_risk_at_one_in_five():
+def test_reason_info_when_no_year_hit():
     r = lf.late_frost_reason("wheat", cal=_cal(), sowing_doy=1, history=_hist(0, 0), status="ready")
     assert r["code"] == "frost_late_info"
     h = _hist(0, 0)
     d = dict(h.days)
     for y in (2000, 2002):
-        d[date(y, 1, 12)] = (-1.5, 5.0)
+        d[date(y, 1, 12)] = (-1.5, 21.5)
     r = lf.late_frost_reason("barley", cal=_cal(), sowing_doy=1,
                              history=lf.FrostHistory(d, "warm_bias"), status="ready")
     assert r["code"] == "frost_late_risk"  # 2 of 10
@@ -92,14 +92,23 @@ def test_reason_risk_at_one_in_five():
                            "tmin_caveat": "warm_bias"}
 
 
+def test_reason_risk_two_of_ten():
+    d = dict(_hist(0, 0).days)
+    for y in (2000, 2002):
+        d[date(y, 1, 12)] = (-1.5, 21.5)
+    r = lf.late_frost_reason("barley", cal=_cal(), sowing_doy=1,
+                             history=lf.FrostHistory(d, "warm_bias"), status="ready")
+    assert r["code"] == "frost_late_risk"
+
+
 def test_reason_exactly_one_in_five_and_one_in_six():
     d5 = dict(_hist(0, 0, n=5).days)
-    d5[date(2000, 1, 12)] = (-1.5, 5.0)
+    d5[date(2000, 1, 12)] = (-1.5, 21.5)
     r = lf.late_frost_reason("barley", cal=_cal(), sowing_doy=1,
                              history=lf.FrostHistory(d5, "warm_bias"), status="ready")
     assert (r["code"], r["params"]["years_hit"], r["params"]["years_total"]) == ("frost_late_risk", 1, 5)
     d6 = dict(_hist(0, 0, n=6).days)
-    d6[date(2000, 1, 12)] = (-1.5, 5.0)
+    d6[date(2000, 1, 12)] = (-1.5, 21.5)
     r = lf.late_frost_reason("barley", cal=_cal(), sowing_doy=1,
                              history=lf.FrostHistory(d6, "warm_bias"), status="ready")
     assert (r["code"], r["params"]["years_total"]) == ("frost_late_info", 6)
@@ -138,3 +147,23 @@ def test_fao_only_slugs_exist():
     known = set(list_species())
     assert set(lf.FAO_ONLY_THRESHOLDS) <= known
     assert set(lf.STAGE_THRESHOLDS) <= known
+
+
+def test_hit_on_first_day_of_window_is_inclusive():
+    days = _days(date(2000, 1, 1), 60)
+    days[date(2000, 1, 10)] = (-1.0, 21.0)  # 10 GDD, first window day
+    w = lf.stage_windows(_cal(), 1, days, "flowering")
+    tmin = {d: t[0] for d, t in days.items()}
+    assert lf.late_frost_frequency(tmin, w, -1.0).years_hit == 1
+
+
+def test_season_longer_than_365_days_is_excluded():
+    # 100/366 GDD/day: 100 GDD is first reached on day 366, one past the season limit
+    days = _days(date(2000, 1, 1), 400, tmin=0.0, tmax=2 * 100 / 366)
+    assert lf.stage_windows(_cal(), 1, days, "flowering") == {}
+
+
+def test_non_finite_values_exclude_season():
+    days = _days(date(2000, 1, 1), 60)
+    days[date(2000, 1, 5)] = (float("nan"), 15.0)
+    assert lf.stage_windows(_cal(), 1, days, "flowering") == {}
