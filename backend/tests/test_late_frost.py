@@ -1,10 +1,8 @@
 from datetime import date, timedelta
 
-import pytest
-
 from app.planning import late_frost as lf
-from app.species_registry import list_species
 from app.services.crop_calendar import CropCalendar
+from app.species_registry import list_species
 
 
 def _cal():
@@ -126,7 +124,7 @@ def test_reason_unknown_whys():
     h = _hist(0, 0)
 
     def why(slug, **kw):
-        args = dict(cal=_cal(), sowing_doy=1, history=h, status="ready")
+        args = {"cal": _cal(), "sowing_doy": 1, "history": h, "status": "ready"}
         args.update(kw)
         r = lf.late_frost_reason(slug, **args)
         assert r["code"] == "frost_late_unknown" and r["gate"] == "frost"

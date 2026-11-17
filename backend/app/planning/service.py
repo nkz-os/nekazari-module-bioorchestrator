@@ -294,21 +294,21 @@ def species_irrigation_need(ctx: IrrigationContext, slug: str, eppo: str | None,
 
 async def _late_frost_reason(slug, eppo, sowing, centroid, regime_used, history, status, tenant_id, parcel_id) -> dict:
     """The species' one ``frost_late_*`` reason. Never raises: a failure here is "no stage model"."""
-    lat, lon = centroid.get("lat"), centroid.get("lon")
-    cal, doy = None, None
-    if slug in STAGE_THRESHOLDS:
-        try:
+    try:
+        lat, lon = centroid.get("lat"), centroid.get("lon")
+        cal, doy = None, None
+        if slug in STAGE_THRESHOLDS:
             cal = effective_calendar(slug, lat=lat, lon=lon, irrigation=_ENGINE_REGIME.get(regime_used))
             doy = _season_start_doy(sowing, eppo, lat, lon, regime_used)
-        except Exception:
-            logger.exception("planning fit: late-frost calendar failed tenant=%s parcel=%s species=%s",
-                             tenant_id, parcel_id, slug)
-            cal = None
-    if status == "ready" and cal is not None and doy is not None:
-        # ~35 campaigns x 2 stages of pure Python: off the event loop.
-        return await asyncio.to_thread(late_frost_reason, slug, cal=cal, sowing_doy=int(doy),
-                                       history=history, status=status)
-    return late_frost_reason(slug, cal=cal, sowing_doy=doy, history=history, status=status)
+        if status == "ready" and cal is not None and doy is not None:
+            # ~35 campaigns x 2 stages of pure Python: off the event loop.
+            return await asyncio.to_thread(late_frost_reason, slug, cal=cal, sowing_doy=int(doy),
+                                           history=history, status=status)
+        return late_frost_reason(slug, cal=cal, sowing_doy=doy, history=history, status=status)
+    except Exception:
+        logger.exception("planning fit: late-frost reason failed tenant=%s parcel=%s species=%s",
+                         tenant_id, parcel_id, slug)
+        return late_frost_reason(slug, cal=None, sowing_doy=None, history=None, status=status)
 
 
 def _rank_key(s: dict) -> tuple:
@@ -357,11 +357,16 @@ async def parcel_fit(*, dao, source: KnowledgeSource, parcel_id: str, tenant_id:
                              tenant_id, env["parcel_id"])
     irrigation = IrrigationContext(regime_used, centroid.get("lat"), centroid.get("lon"), stages)
     frost_parcel = env.get("parcel_id")
-    frost_hist, frost_status = None, "absent"
+    frost_hist, frost_status = None, "failed"  # no parcel id: the history cannot be asked for
     if frost_parcel:
-        schedule_frost_history(tenant_id, frost_parcel)  # once per request; the fit never waits for it
-        frost_hist = get_frost_history(tenant_id, frost_parcel)
-        frost_status = frost_history_status(tenant_id, frost_parcel)
+        try:
+            schedule_frost_history(tenant_id, frost_parcel)  # once per request; the fit never waits for it
+            frost_hist = get_frost_history(tenant_id, frost_parcel)
+            frost_status = frost_history_status(tenant_id, frost_parcel)
+        except Exception:
+            logger.exception("planning fit: frost history scheduling failed tenant=%s parcel=%s",
+                             tenant_id, frost_parcel)
+            frost_hist, frost_status = None, "failed"
     species = []
     for slug in list_species():
         if is_woody(slug):
