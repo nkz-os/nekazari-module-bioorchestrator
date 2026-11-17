@@ -297,6 +297,12 @@
       "frost_unknown_no_climate": "No parcel climate to assess frost",
       "frost_unknown_no_tolerance": "No frost threshold for this crop",
       "frost_unknown_season_unknown": "No sowing calendar: frost not assessed",
+      "frost_late_risk": "Late frost at {{stage}}: {{years_hit}} of {{years_total}} years since 1991 with a minimum ≤ {{threshold_c}} °C ({{source}}). {{caveat}}",
+      "frost_late_info": "Late frost at {{stage}}: {{years_hit}} of {{years_total}} years since 1991 with a minimum ≤ {{threshold_c}} °C ({{source}}). {{caveat}}",
+      "frost_late_unknown_no_threshold": "Late frost not assessed: no sourced threshold for this crop",
+      "frost_late_unknown_no_stage_model": "Late frost not assessed: no phenology for this crop",
+      "frost_late_unknown_history_pending": "Late frost: preparing the parcel's history",
+      "frost_late_unknown_history_unavailable": "Late frost: parcel history not available",
       "water_deficit_high": "High rainfed water deficit (about {{deficit_mm}} mm)",
       "water_unknown": "No climate to assess rainfed water",
       "irrigation_need_exceeds_allotment": "Irrigation need (~{{need_p50_mm}} mm in an average year) exceeds the allotment ({{allotment_mm}} mm)",
@@ -650,6 +656,18 @@
       "save": "Save",
       "clear": "Remove",
       "saved": "Campaign {{campaign}} updated"
+    },
+    "frostStage": {
+      "flowering": "heading and flowering",
+      "grain_filling": "grain filling"
+    },
+    "frostSource": {
+      "kstate_c646": "K-State C-646",
+      "fao_2005_t45": "FAO 2005"
+    },
+    "frostCaveat": {
+      "warm_bias": "The model tends to give higher minimums than on-farm readings on frost nights; the real frequency may be higher.",
+      "unvalidated_region": "Weather data not validated in this area; the figure is a lower bound."
     }
   }
 }

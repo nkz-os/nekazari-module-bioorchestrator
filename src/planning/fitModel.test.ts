@@ -112,3 +112,34 @@ describe('allotment reasons (backend shape: fit.py allotment_reasons)', () => {
     expect(a + b).not.toContain('{{');
   });
 });
+
+describe('late frost reasons (backend shape: gate frost, frost_late_*)', () => {
+  const risk: Reason = {
+    code: 'frost_late_risk', gate: 'frost',
+    params: { years_hit: 5, years_total: 34, stage: 'flowering', threshold_c: -1, threshold_source: 'kstate_c646', tmin_source: 'ERA5', tmin_caveat: 'warm_bias' },
+  };
+  it('tones: info and unknown are informative, risk is a warning', () => {
+    expect(reasonTone({ ...risk, code: 'frost_late_info' })).toBe('info');
+    expect(reasonTone({ code: 'frost_late_unknown', gate: 'frost', params: { why: 'no_threshold' } })).toBe('info');
+    expect(reasonTone(risk)).toBe('warning');
+  });
+  it('passes stage, source and caveat already translated to t', () => {
+    const seen: Record<string, unknown> = {};
+    const t: TFn = (key, opts = {}) => {
+      if (key === 'planning.frostStage.flowering') return 'STAGE';
+      if (key === 'planning.frostSource.kstate_c646') return 'SOURCE';
+      if (key === 'planning.frostCaveat.warm_bias') return 'CAVEAT';
+      if (key === 'planning.reason.frost_late_risk') Object.assign(seen, opts);
+      return key;
+    };
+    reasonText(risk, {}, 'es', t);
+    expect(seen).toMatchObject({ stage: 'STAGE', source: 'SOURCE', caveat: 'CAVEAT', years_hit: 5, years_total: 34, threshold_c: -1 });
+  });
+  it('renders the real Spanish copy', async () => {
+    const { esT } = await import('./testI18n');
+    const txt = reasonText(risk, {}, 'es', esT);
+    expect(txt).toBe('Helada tardía en espigado y floración: 5 de 34 años desde 1991 con mínima ≤ -1 °C (K-State C-646). El modelo tiende a dar mínimas más altas que las de finca en noches de helada; la frecuencia real puede ser mayor.');
+    const unk = reasonText({ code: 'frost_late_unknown', gate: 'frost', params: { why: 'history_pending' } }, {}, 'es', esT);
+    expect(unk).toBe('Helada tardía: preparando el histórico de la parcela');
+  });
+});

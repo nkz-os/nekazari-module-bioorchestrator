@@ -280,6 +280,12 @@
       "frost_unknown_no_climate": "Ez dago partzelaren klimarik izotzak baloratzeko",
       "frost_unknown_no_tolerance": "Ez dago izotz-atalaserik labore honetarako",
       "frost_unknown_season_unknown": "Ereite-egutegirik gabe: izotza ez da baloratu",
+      "frost_late_risk": "Berandutako izotza {{stage}} garaian: 1991tik {{years_total}} urtetatik {{years_hit}}tan ≤ {{threshold_c}} °C-ko gutxienekoa ({{source}}). {{caveat}}",
+      "frost_late_info": "Berandutako izotza {{stage}} garaian: 1991tik {{years_total}} urtetatik {{years_hit}}tan ≤ {{threshold_c}} °C-ko gutxienekoa ({{source}}). {{caveat}}",
+      "frost_late_unknown_no_threshold": "Berandutako izotza ez da baloratu: laborantza honentzat ez dago iturri duen atalaserik",
+      "frost_late_unknown_no_stage_model": "Berandutako izotza ez da baloratu: laborantza honentzat ez dago fenologiarik",
+      "frost_late_unknown_history_pending": "Berandutako izotza: partzelaren historiala prestatzen",
+      "frost_late_unknown_history_unavailable": "Berandutako izotza: partzelaren historiala ez dago eskuragarri",
       "water_deficit_high": "Ur-defizit handia lehorreko laborantzan (gutxi gorabehera {{deficit_mm}} mm)",
       "water_unknown": "Ez dago klimarik lehorreko uraren egoera baloratzeko",
       "irrigation_need_exceeds_allotment": "Ureztatze-beharra (~{{need_p50_mm}} mm urte arruntean) dotazioa ({{allotment_mm}} mm) baino handiagoa da",
@@ -633,6 +639,18 @@
       "save": "Gorde",
       "clear": "Kendu",
       "saved": "{{campaign}} kanpaina eguneratuta"
+    },
+    "frostStage": {
+      "flowering": "espiga-ateratzea eta loraldia",
+      "grain_filling": "alea betetzea"
+    },
+    "frostSource": {
+      "kstate_c646": "K-State C-646",
+      "fao_2005_t45": "FAO 2005"
+    },
+    "frostCaveat": {
+      "warm_bias": "Ereduak izotz-gauetan baserriko neurketek baino gutxienekoak altuagoak ematen ditu; benetako maiztasuna handiagoa izan daiteke.",
+      "unvalidated_region": "Eremu honetan baliozkotu gabeko eguraldi-datua; zifra gutxieneko bat da."
     }
   }
 }
