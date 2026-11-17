@@ -82,7 +82,7 @@ export function reasonText(r: Reason, names: Record<string, Names>, lang: string
       if (typeof raw === 'string') params[param] = t(`planning.${family}.${raw}`, { defaultValue: raw });
     }
   }
-  return t(reasonKey(r), params);
+  return t(reasonKey(r), params).trim();
 }
 
 export function sowingText(s: Sowing, lang: string, t: TFn): string | null {

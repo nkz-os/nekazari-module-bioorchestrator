@@ -142,4 +142,10 @@ describe('late frost reasons (backend shape: gate frost, frost_late_*)', () => {
     const unk = reasonText({ code: 'frost_late_unknown', gate: 'frost', params: { why: 'history_pending' } }, {}, 'es', esT);
     expect(unk).toBe('Helada tardía: preparando el histórico de la parcela');
   });
+  it('a missing caveat leaves no trailing space', async () => {
+    const { esT } = await import('./testI18n');
+    const { tmin_caveat: _omit, ...params } = risk.params;
+    const txt = reasonText({ ...risk, params }, {}, 'es', esT);
+    expect(txt.endsWith('(K-State C-646).')).toBe(true);
+  });
 });
