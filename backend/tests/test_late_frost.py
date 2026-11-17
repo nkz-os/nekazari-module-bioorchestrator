@@ -260,11 +260,11 @@ def test_not_validated_is_raw_with_old_caveat():
 
 
 def test_mixed_keeps_raw_caveat():
-    h = _with_risk(_hist(0, 0), validated=(True, False))
-    h2 = h
-    h3 = lf.FrostHistory(h2.days, "unvalidated_region", risk=h2.risk, risk_validated=(False, True), risk_labels=(None, "L2"))
-    p3 = lf.late_frost_reason("wheat", cal=_cal(), sowing_doy=1, history=h3, status="ready")["params"]
-    assert (p3["tmin_basis"], p3["tmin_caveat"]) == ("mixed", "unvalidated_region")
+    # flowering (-1 C) needs the 0 C field, not validated -> raw; grain filling (-2 C) uses the validated hard field
+    h = _with_risk(_hist(0, 0), validated=(False, True), labels=(None, "L2"))
+    h = lf.FrostHistory(h.days, "unvalidated_region", risk=h.risk, risk_validated=h.risk_validated, risk_labels=h.risk_labels)
+    p = lf.late_frost_reason("wheat", cal=_cal(), sowing_doy=1, history=h, status="ready")["params"]
+    assert (p["tmin_basis"], p["tmin_caveat"]) == ("mixed", "unvalidated_region")
 
 
 def test_validated_gap_excludes_season():

@@ -16,6 +16,9 @@ Thresholds, transcribed from the primary sources:
   (a range; the warmer end is used), e.g. barley and oat -1 C, pea and lentil -2 C,
   sunflower -2 C, maize -1 C.
 
+On the validated risk-margin path the frequency uses weather-api's declared frost-risk margin
+(validated with stations); the minimum / warm-bias note below applies to the raw-Tmin path.
+
 The frequency is a MINIMUM: the source thresholds refer to 2 h of exposure while the daily Tmin is
 only a proxy of that, and the reanalysis Tmin has a warm bias (cold hollows are not resolved).
 """
@@ -238,10 +241,10 @@ def late_frost_reason(slug: str, *, cal: CropCalendar | None, sowing_doy: int | 
     risky = years_hit / years_total >= RISK_SHARE - 1e-9
     # ParamValue is scalar-only: stages and thresholds travel as "+"- and "/"-joined strings, in stage order.
     params = {"years_hit": years_hit, "years_total": years_total,
-                       "stage": "+".join(st.stage for st in stages),
-                       "thresholds_c": "/".join(f"{st.threshold_c:g}" for st in stages),
-                       "threshold_source": stages[0].source,
-                       "tmin_source": TMIN_SOURCE, "tmin_caveat": history.tmin_caveat}
+              "stage": "+".join(st.stage for st in stages),
+              "thresholds_c": "/".join(f"{st.threshold_c:g}" for st in stages),
+              "threshold_source": stages[0].source,
+              "tmin_source": TMIN_SOURCE, "tmin_caveat": history.tmin_caveat}
     if all(i is not None for i in used):
         params["tmin_basis"] = "risk_margin"
         params["tmin_caveat"] = "risk_margin"
