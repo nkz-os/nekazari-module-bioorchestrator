@@ -53,6 +53,14 @@ def _no_crop_cycles_network(request, monkeypatch):
     monkeypatch.setattr("app.planning.service.fetch_crop_cycles", AsyncMock(return_value=None))
 
 
+@pytest.fixture(autouse=True)
+def _no_frost_history_network(request, monkeypatch):
+    """Tests never load the parcel's daily history; those that need it patch the service functions."""
+    if request.node.get_closest_marker("network"):
+        return
+    monkeypatch.setattr("app.planning.service.schedule_frost_history", MagicMock(return_value=None))
+
+
 @pytest.fixture
 def mock_driver() -> AsyncDriver:
     """Return a mock Neo4j AsyncDriver."""

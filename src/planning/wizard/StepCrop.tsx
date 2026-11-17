@@ -21,8 +21,12 @@ export const matchesCrop = (name: string, query: string): boolean => fold(name).
 
 /** A crop that does not fit says every reason; the others say their first one. */
 export const cardReasons = (s: SpeciesFit, hide: (r: Reason) => boolean = () => false) => {
-  const shown = s.reasons.filter((r) => !hide(r));
-  return s.verdict === 'no_fit' ? shown : shown.slice(0, 1);
+  const shown = s.reasons.filter((r) => r.code !== 'frost_late_unknown' && !hide(r));
+  if (s.verdict === 'no_fit') return shown;
+  const first = shown.slice(0, 1);
+  // The late-frost warning is the one extra badge a card may carry beyond its first reason.
+  const risk = shown.find((r) => r.code === 'frost_late_risk');
+  return risk && !first.includes(risk) ? [...first, risk] : first;
 };
 
 /** A species sown only as a cover is offered in the cover step, never here. */

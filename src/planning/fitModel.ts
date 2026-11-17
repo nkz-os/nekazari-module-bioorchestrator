@@ -2,7 +2,7 @@ import { cropName, monthName, safeLang } from './format';
 import type { Names, ParamValue, Reason, Sowing, SpeciesFit, TFn, Verdict } from './types';
 
 const BLOCKERS = new Set(['soil_unsuitable', 'soil_ph_unsuitable', 'soil_texture_unsuitable', 'soil_drainage_unsuitable', 'frost_risk']);
-const INFORMATIVE = new Set(['rotation_benefit', 'multi_year', 'irrigation_need_tight']);
+const INFORMATIVE = new Set(['rotation_benefit', 'multi_year', 'irrigation_need_tight', 'frost_late_info', 'frost_late_unknown']);
 
 /**
  * Every reason i18n key the backend can produce (contract 1.0). The locale check arrives with Task 10
@@ -12,7 +12,9 @@ export const REASON_KEYS = [
   'soil_unsuitable', 'soil_marginal', 'soil_ph_unsuitable', 'soil_ph_marginal', 'soil_texture_unsuitable', 'soil_texture_marginal',
   'soil_drainage_unsuitable', 'soil_drainage_marginal', 'soil_unknown_no_tolerance', 'soil_unknown_no_parcel_soil',
   'soil_unknown_not_comparable', 'frost_risk', 'frost_unknown_no_climate', 'frost_unknown_no_tolerance',
-  'frost_unknown_season_unknown', 'water_deficit_high', 'water_unknown', 'rotation_restriction', 'rotation_benefit',
+  'frost_unknown_season_unknown',
+  'frost_late_risk', 'frost_late_info', 'frost_late_unknown_no_threshold', 'frost_late_unknown_no_stage_model',
+  'frost_late_unknown_history_pending', 'frost_late_unknown_history_unavailable', 'water_deficit_high', 'water_unknown', 'rotation_restriction', 'rotation_benefit',
   'rotation_unknown', 'regime_missing', 'multi_year', 'climate_unknown',
   'irrigation_need_exceeds_allotment', 'irrigation_need_tight',
 ] as const;
@@ -73,7 +75,14 @@ export function reasonText(r: Reason, names: Record<string, Names>, lang: string
     const raw = params.value;
     params.value = t(`planning.texture.${raw}`, { defaultValue: raw });
   }
-  return t(reasonKey(r), params);
+  // Late-frost reasons carry raw enums: stage, threshold source and temperature caveat are translated here.
+  if (r.code.startsWith('frost_late_')) {
+    for (const [param, family, name] of [['stage', 'frostStage', 'stage'], ['source', 'frostSource', 'threshold_source'], ['caveat', 'frostCaveat', 'tmin_caveat']] as const) {
+      const raw = r.params[name];
+      if (typeof raw === 'string') params[param] = t(`planning.${family}.${raw}`, { defaultValue: raw });
+    }
+  }
+  return t(reasonKey(r), params).trim();
 }
 
 export function sowingText(s: Sowing, lang: string, t: TFn): string | null {

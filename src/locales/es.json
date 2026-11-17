@@ -297,6 +297,12 @@
       "frost_unknown_no_climate": "Sin clima de la parcela para valorar heladas",
       "frost_unknown_no_tolerance": "Sin umbral de helada para este cultivo",
       "frost_unknown_season_unknown": "Sin calendario de siembra: helada no valorada",
+      "frost_late_risk": "Helada tardía en {{stage}}: {{years_hit}} de {{years_total}} años desde 1991 con mínima ≤ {{threshold_c}} °C ({{source}}). {{caveat}}",
+      "frost_late_info": "Helada tardía en {{stage}}: {{years_hit}} de {{years_total}} años desde 1991 con mínima ≤ {{threshold_c}} °C ({{source}}). {{caveat}}",
+      "frost_late_unknown_no_threshold": "Helada tardía no valorada: sin umbral con fuente para este cultivo",
+      "frost_late_unknown_no_stage_model": "Helada tardía no valorada: sin fenología para este cultivo",
+      "frost_late_unknown_history_pending": "Helada tardía: preparando el histórico de la parcela",
+      "frost_late_unknown_history_unavailable": "Helada tardía: histórico de la parcela no disponible",
       "water_deficit_high": "Déficit hídrico alto en secano (unos {{deficit_mm}} mm)",
       "water_unknown": "Sin clima para valorar el agua en secano",
       "irrigation_need_exceeds_allotment": "Necesidad de riego (~{{need_p50_mm}} mm en año medio) mayor que la dotación ({{allotment_mm}} mm)",
@@ -650,6 +656,18 @@
       "save": "Guardar",
       "clear": "Quitar",
       "saved": "Campaña {{campaign}} actualizada"
+    },
+    "frostStage": {
+      "flowering": "espigado y floración",
+      "grain_filling": "llenado del grano"
+    },
+    "frostSource": {
+      "kstate_c646": "K-State C-646",
+      "fao_2005_t45": "FAO 2005"
+    },
+    "frostCaveat": {
+      "warm_bias": "El modelo tiende a dar mínimas más altas que las de finca en noches de helada; la frecuencia real puede ser mayor.",
+      "unvalidated_region": "Dato meteorológico sin validar en esta zona; la cifra es un mínimo."
     }
   }
 }

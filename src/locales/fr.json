@@ -280,6 +280,12 @@
       "frost_unknown_no_climate": "Pas de climat de la parcelle pour évaluer le gel",
       "frost_unknown_no_tolerance": "Pas de seuil de gel pour cette culture",
       "frost_unknown_season_unknown": "Pas de calendrier de semis : gel non évalué",
+      "frost_late_risk": "Gel tardif au stade {{stage}} : {{years_hit}} années sur {{years_total}} depuis 1991 avec une minimale ≤ {{threshold_c}} °C ({{source}}). {{caveat}}",
+      "frost_late_info": "Gel tardif au stade {{stage}} : {{years_hit}} années sur {{years_total}} depuis 1991 avec une minimale ≤ {{threshold_c}} °C ({{source}}). {{caveat}}",
+      "frost_late_unknown_no_threshold": "Gel tardif non évalué : pas de seuil sourcé pour cette culture",
+      "frost_late_unknown_no_stage_model": "Gel tardif non évalué : pas de phénologie pour cette culture",
+      "frost_late_unknown_history_pending": "Gel tardif : préparation de l'historique de la parcelle",
+      "frost_late_unknown_history_unavailable": "Gel tardif : historique de la parcelle indisponible",
       "water_deficit_high": "Déficit hydrique élevé en sec (environ {{deficit_mm}} mm)",
       "water_unknown": "Pas de climat pour évaluer l'eau en sec",
       "irrigation_need_exceeds_allotment": "Besoin d'irrigation (~{{need_p50_mm}} mm en année moyenne) supérieur à la dotation ({{allotment_mm}} mm)",
@@ -633,6 +639,18 @@
       "save": "Enregistrer",
       "clear": "Supprimer",
       "saved": "Campagne {{campaign}} mise à jour"
+    },
+    "frostStage": {
+      "flowering": "épiaison et floraison",
+      "grain_filling": "remplissage du grain"
+    },
+    "frostSource": {
+      "kstate_c646": "K-State C-646",
+      "fao_2005_t45": "FAO 2005"
+    },
+    "frostCaveat": {
+      "warm_bias": "Le modèle tend à donner des minimales plus élevées que celles mesurées sur l'exploitation les nuits de gel ; la fréquence réelle peut être plus élevée.",
+      "unvalidated_region": "Donnée météorologique non validée dans cette zone ; le chiffre est un minimum."
     }
   }
 }
