@@ -651,7 +651,8 @@
     },
     "frostCaveat": {
       "warm_bias": "O modelo tende a dar mínimas mais altas do que as medidas na exploração em noites de geada; a frequência real pode ser maior.",
-      "unvalidated_region": "Dado meteorológico não validado nesta zona; o valor é um mínimo."
+      "unvalidated_region": "Dado meteorológico não validado nesta zona; o valor é um mínimo.",
+      "risk_margin": "Inclui uma margem de segurança para o risco de geada, validada com estações meteorológicas."
     }
   }
 }

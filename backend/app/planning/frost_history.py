@@ -112,16 +112,30 @@ def _num(v: object) -> float | None:
     return float(v) if isinstance(v, (int, float)) and not isinstance(v, bool) else None
 
 
+RISK_FIELDS = ("tmin_frost_risk_c", "tmin_hard_frost_risk_c")
+
+
+def _risk_provenance(body: dict, name: str) -> tuple[bool, str | None]:
+    prov = body.get("provenance")
+    p = prov.get(name) if isinstance(prov, dict) else None
+    if not isinstance(p, dict) or p.get("status") != "validado":
+        return False, None
+    label = p.get("label")
+    return True, label if isinstance(label, str) and label else None
+
+
 def _parse(body: object) -> FrostHistory:
     if not isinstance(body, dict):
         raise _LoadFailed("bad_body")
     days: dict[date, tuple[float | None, float | None]] = {}
+    risk: dict[date, tuple[float | None, float | None]] = {}
     for row in body.get("days") or []:
         try:
             d = date.fromisoformat(str(row["date"])[:10])
         except (KeyError, ValueError, TypeError):
             continue
         days[d] = (_num(row.get("tmin_c")), _num(row.get("tmax_c")))
+        risk[d] = (_num(row.get(RISK_FIELDS[0])), _num(row.get(RISK_FIELDS[1])))
     if not days:
         raise _LoadFailed("no_days")
     validation = body.get("validation")
@@ -129,13 +143,15 @@ def _parse(body: object) -> FrostHistory:
     # A non-empty list = the series was validated against stations (still warm-biased);
     # "unvalidated_region", or anything else / missing, = no station validation.
     caveat = "warm_bias" if isinstance(tmin_val, list) and tmin_val else "unvalidated_region"
-    return FrostHistory(days=days, tmin_caveat=caveat)
+    prov = [_risk_provenance(body, f) for f in RISK_FIELDS]
+    return FrostHistory(days=days, tmin_caveat=caveat, risk=risk,
+                        risk_validated=(prov[0][0], prov[1][0]), risk_labels=(prov[0][1], prov[1][1]))
 
 
 async def _fetch(tenant_id: str, parcel_id: str) -> tuple[FrostHistory, int]:
     url = f"{_weather_api_url()}/api/weather/parcel/{parcel_id}/history"
     params = {"start": HISTORY_START.isoformat(), "end": (_today() - timedelta(days=END_LAG_DAYS)).isoformat(),
-              "resolution": "daily", "vars": "tmin_c,tmax_c"}
+              "resolution": "daily", "vars": "tmin_c,tmax_c," + ",".join(RISK_FIELDS)}
     attempts = 0
     async with httpx.AsyncClient(timeout=HTTP_TIMEOUT_S) as client:
         while attempts < MAX_ATTEMPTS:

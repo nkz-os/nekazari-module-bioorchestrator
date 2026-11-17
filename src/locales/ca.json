@@ -651,7 +651,8 @@
     },
     "frostCaveat": {
       "warm_bias": "El model tendeix a donar mínimes més altes que les de finca en nits de gelada; la freqüència real pot ser més gran.",
-      "unvalidated_region": "Dada meteorològica sense validar en aquesta zona; la xifra és un mínim."
+      "unvalidated_region": "Dada meteorològica sense validar en aquesta zona; la xifra és un mínim.",
+      "risk_margin": "Inclou un marge de seguretat per al risc de gelada, validat amb estacions meteorològiques."
     }
   }
 }

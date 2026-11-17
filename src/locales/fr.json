@@ -651,7 +651,8 @@
     },
     "frostCaveat": {
       "warm_bias": "Le modèle tend à donner des minimales plus élevées que celles mesurées sur l'exploitation les nuits de gel ; la fréquence réelle peut être plus élevée.",
-      "unvalidated_region": "Donnée météorologique non validée dans cette zone ; le chiffre est un minimum."
+      "unvalidated_region": "Donnée météorologique non validée dans cette zone ; le chiffre est un minimum.",
+      "risk_margin": "Inclut une marge de sécurité pour le risque de gel, validée avec des stations météorologiques."
     }
   }
 }

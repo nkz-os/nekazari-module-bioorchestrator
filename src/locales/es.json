@@ -668,7 +668,8 @@
     },
     "frostCaveat": {
       "warm_bias": "El modelo tiende a dar mínimas más altas que las de finca en noches de helada; la frecuencia real puede ser mayor.",
-      "unvalidated_region": "Dato meteorológico sin validar en esta zona; la cifra es un mínimo."
+      "unvalidated_region": "Dato meteorológico sin validar en esta zona; la cifra es un mínimo.",
+      "risk_margin": "Incluye un margen de seguridad para el riesgo de helada, validado con estaciones meteorológicas."
     }
   }
 }

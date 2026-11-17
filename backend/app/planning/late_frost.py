@@ -23,7 +23,7 @@ from __future__ import annotations
 
 import math
 from collections.abc import Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import date, timedelta
 from typing import Literal
 
@@ -52,6 +52,11 @@ class FrostFrequency:
 class FrostHistory:
     days: Mapping[date, tuple[float | None, float | None]]  # day -> (tmin_c, tmax_c)
     tmin_caveat: Literal["warm_bias", "unvalidated_region"]
+    # Validated frost-risk Tmin per day: (0 C field, -2 C field). Empty on histories cached before
+    # these fields existed: those are read as raw Tmin.
+    risk: Mapping[date, tuple[float | None, float | None]] = field(default_factory=dict)
+    risk_validated: tuple[bool, bool] = (False, False)  # per field: the region passed its validation
+    risk_labels: tuple[str | None, str | None] = (None, None)  # provenance label per field
 
 
 STAGE_THRESHOLDS: dict[str, tuple[StageThreshold, ...]] = {
@@ -66,6 +71,10 @@ FAO_ONLY_THRESHOLDS: dict[str, float] = {
 }
 
 _PENDING = {"loading", "absent"}
+
+# The two calibration thresholds of the weather API's frost-risk fields are 0 C and -2 C; a stage
+# threshold at or below their midpoint uses the hard-frost field. No new agronomic constant.
+HARD_FROST_SPLIT_C = -1.5
 
 
 def sowing_date(year: int, doy: int) -> date:
@@ -160,6 +169,25 @@ def late_frost_frequency(tmin_by_day: Mapping[date, float],
     return FrostFrequency(len(hits), len(windows_by_year), tuple(hits))
 
 
+def _span(w: tuple[date, date]):
+    d = w[0]
+    while d <= w[1]:
+        yield d
+        d += timedelta(days=1)
+
+
+def _risk_field(history: FrostHistory, threshold_c: float) -> int | None:
+    """Index into ``history.risk`` (0: 0 C field, 1: -2 C field) of the validated field for a stage threshold,
+    or None for raw Tmin."""
+    if not history.risk:
+        return None
+    if threshold_c <= HARD_FROST_SPLIT_C and history.risk_validated[1]:
+        return 1
+    if history.risk_validated[0]:
+        return 0
+    return None
+
+
 def _unknown(why: str) -> dict:
     return {"code": "frost_late_unknown", "gate": "frost", "params": {"why": why}}
 
@@ -184,12 +212,22 @@ def late_frost_reason(slug: str, *, cal: CropCalendar | None, sowing_doy: int | 
     if status != "ready" or history is None:
         # ASSUMPTION: any status other than ready/loading/absent (incl. failed) is unavailable.
         return _unknown("history_unavailable")
-    tmin = {d: t[0] for d, t in history.days.items() if t[0] is not None}
+    raw_tmin = {d: t[0] for d, t in history.days.items() if t[0] is not None}
     # A season counts only when complete for EVERY evaluated stage; it is hit when ANY stage is hit.
     complete: set[int] | None = None
     hit: set[int] = set()
+    used: list[int | None] = []
     for st in stages:
         windows = stage_windows(cal, sowing_doy, history.days, st.stage)
+        idx = _risk_field(history, st.threshold_c)
+        used.append(idx)
+        if idx is None:
+            tmin = raw_tmin
+        else:
+            tmin = {d: r[idx] for d, r in history.risk.items() if r[idx] is not None}
+            # A validated field null on a window day (gap) leaves that season out.
+            windows = {y: w for y, w in windows.items()
+                       if all(d in tmin for d in _span(w))}
         freq = late_frost_frequency(tmin, windows, st.threshold_c)
         complete = set(windows) if complete is None else complete & set(windows)
         hit.update(freq.hit_years)
@@ -199,9 +237,19 @@ def late_frost_reason(slug: str, *, cal: CropCalendar | None, sowing_doy: int | 
     years_total = len(complete)
     risky = years_hit / years_total >= RISK_SHARE - 1e-9
     # ParamValue is scalar-only: stages and thresholds travel as "+"- and "/"-joined strings, in stage order.
-    return {"code": "frost_late_risk" if risky else "frost_late_info", "gate": "frost",
-            "params": {"years_hit": years_hit, "years_total": years_total,
+    params = {"years_hit": years_hit, "years_total": years_total,
                        "stage": "+".join(st.stage for st in stages),
                        "thresholds_c": "/".join(f"{st.threshold_c:g}" for st in stages),
                        "threshold_source": stages[0].source,
-                       "tmin_source": TMIN_SOURCE, "tmin_caveat": history.tmin_caveat}}
+                       "tmin_source": TMIN_SOURCE, "tmin_caveat": history.tmin_caveat}
+    if all(i is not None for i in used):
+        params["tmin_basis"] = "risk_margin"
+        params["tmin_caveat"] = "risk_margin"
+        labels = {history.risk_labels[i] for i in used if history.risk_labels[i]}
+        # ASSUMPTION: when stages use two fields with different labels, the label is omitted.
+        if len(labels) == 1:
+            params["tmin_label"] = labels.pop()
+    else:
+        # mixed (some stages validated, some raw): the raw caveat stays
+        params["tmin_basis"] = "mixed" if any(i is not None for i in used) else "raw"
+    return {"code": "frost_late_risk" if risky else "frost_late_info", "gate": "frost", "params": params}

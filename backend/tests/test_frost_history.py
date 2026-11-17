@@ -59,10 +59,30 @@ async def test_load_ok_builds_days_and_caveat(monkeypatch):
     assert h.days[date(1991, 1, 1)] == (-1.5, 8.0)
     assert h.days[date(1991, 1, 2)] == (None, None)
     q = calls[0].url.params
-    assert (q["resolution"], q["vars"], q["start"]) == ("daily", "tmin_c,tmax_c", "1991-01-01")
+    assert (q["resolution"], q["vars"], q["start"]) == ("daily", "tmin_c,tmax_c,tmin_frost_risk_c,tmin_hard_frost_risk_c", "1991-01-01")
     assert q["end"] == (TODAY - timedelta(days=31)).isoformat()
     assert calls[0].url.path == "/api/weather/parcel/p1/history"
     assert "x-auth-signature" in calls[0].headers and calls[0].headers["x-tenant-id"] == "tenant-a"
+
+
+async def test_risk_fields_requested_and_parsed(monkeypatch):
+    body = _body()
+    body["days"][0].update({"tmin_frost_risk_c": -2.0, "tmin_hard_frost_risk_c": None})
+    body["provenance"] = {"tmin_frost_risk_c": {"status": "validado", "label": "Ebro"},
+                          "tmin_hard_frost_risk_c": {"status": "sin_validar", "reason": "x"}}
+    calls = _net(monkeypatch, [httpx.Response(200, json=body)])
+    await fh.schedule_frost_history("tenant-a", "p1")
+    h = fh.get_frost_history("tenant-a", "p1")
+    assert calls[0].url.params["vars"] == "tmin_c,tmax_c,tmin_frost_risk_c,tmin_hard_frost_risk_c"
+    assert h.risk[date(1991, 1, 1)] == (-2.0, None)
+    assert h.risk_validated == (True, False) and h.risk_labels == ("Ebro", None)
+    assert h.days[date(1991, 1, 1)] == (-1.5, 8.0)
+
+
+async def test_no_risk_provenance_is_not_validated(monkeypatch):
+    _net(monkeypatch, [httpx.Response(200, json=_body())])
+    await fh.schedule_frost_history("tenant-a", "p1")
+    assert fh.get_frost_history("tenant-a", "p1").risk_validated == (False, False)
 
 
 async def test_unvalidated_region_caveat(monkeypatch):

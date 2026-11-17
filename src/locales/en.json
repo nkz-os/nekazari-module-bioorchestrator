@@ -668,7 +668,8 @@
     },
     "frostCaveat": {
       "warm_bias": "The model tends to give higher minimums than on-farm readings on frost nights; the real frequency may be higher.",
-      "unvalidated_region": "Weather data not validated in this area; the figure is a lower bound."
+      "unvalidated_region": "Weather data not validated in this area; the figure is a lower bound.",
+      "risk_margin": "Includes a safety margin for frost risk, validated against weather stations."
     }
   }
 }
