@@ -74,6 +74,25 @@ def sowing_date(year: int, doy: int) -> date:
     return date(year, 1, 1) + timedelta(days=min(doy, 366 if _leap(year) else 365) - 1)
 
 
+def window_mid_doy(window: Mapping | None) -> int | None:
+    """Sowing day backing up a crop with a curated sowing window but no typical sowing day.
+
+    The middle day of the window (first day of its first month to last day of its last month,
+    wrapping over the year end), as a day of a common year. Not the window start: the thermal
+    model has no vernalisation or photoperiod, so an early sowing heads far too early and
+    inflates the frost count.
+    """
+    # ASSUMPTION: the window is monthly sown-area shares; its middle stands for the typical sowing.
+    w = window or {}
+    first, last = w.get("start_month"), w.get("end_month")
+    if not all(isinstance(m, int) and not isinstance(m, bool) and 1 <= m <= 12 for m in (first, last)):
+        return None
+    start = date(2001, first, 1)
+    end_year = 2001 if last >= first else 2002
+    end = date(end_year + (last == 12), 1 if last == 12 else last + 1, 1) - timedelta(days=1)
+    return (start + (end - start) // 2).timetuple().tm_yday
+
+
 def _leap(y: int) -> bool:
     return y % 4 == 0 and (y % 100 != 0 or y % 400 == 0)
 

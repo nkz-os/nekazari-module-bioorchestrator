@@ -79,7 +79,12 @@ from app.planning.irrigation import (
     load_stage_table,
     read_allotment,
 )
-from app.planning.late_frost import STAGE_THRESHOLDS, late_frost_reason, unknown_reason
+from app.planning.late_frost import (
+    STAGE_THRESHOLDS,
+    late_frost_reason,
+    unknown_reason,
+    window_mid_doy,
+)
 from app.planning.reference import EMPTY_REFERENCE, load_reference
 from app.planning.regional_yield import regional_yield
 from app.planning.rotation import rotation_reasons
@@ -300,6 +305,8 @@ async def _late_frost_reason(slug, eppo, sowing, centroid, regime_used, history,
         if slug in STAGE_THRESHOLDS:
             cal = effective_calendar(slug, lat=lat, lon=lon, irrigation=_ENGINE_REGIME.get(regime_used))
             doy = _season_start_doy(sowing, eppo, lat, lon, regime_used)
+            if doy is None:  # no GGCMI cell: the curated sowing window, when the crop has one
+                doy = window_mid_doy(sowing.get("sowing_window"))
         if status == "ready" and cal is not None and doy is not None:
             # ~35 campaigns x 2 stages of pure Python: off the event loop.
             return await asyncio.to_thread(late_frost_reason, slug, cal=cal, sowing_doy=int(doy),
