@@ -55,6 +55,11 @@ from app.planning.fit import (
     verdict_of,
     water_reasons,
 )
+from app.planning.frost_history import (
+    frost_history_status,
+    get_frost_history,
+    schedule_frost_history,
+)
 from app.planning.history import (
     campaign_of_start,
     cycles_of,
@@ -74,11 +79,13 @@ from app.planning.irrigation import (
     load_stage_table,
     read_allotment,
 )
+from app.planning.late_frost import STAGE_THRESHOLDS, late_frost_reason
 from app.planning.reference import EMPTY_REFERENCE, load_reference
 from app.planning.regional_yield import regional_yield
 from app.planning.rotation import rotation_reasons
 from app.planning.varieties import variety_stats
 from app.services import ggcmi_calendar
+from app.services.crop_calendar import _ENGINE_REGIME, effective_calendar
 from app.services.crop_cycles_client import fetch_crop_cycles
 from app.services.crop_reference import CROP_REFERENCE
 from app.services.nuts_reference import names_or_none, plausible_range, province_table
@@ -285,6 +292,25 @@ def species_irrigation_need(ctx: IrrigationContext, slug: str, eppo: str | None,
     }, None
 
 
+async def _late_frost_reason(slug, eppo, sowing, centroid, regime_used, history, status, tenant_id, parcel_id) -> dict:
+    """The species' one ``frost_late_*`` reason. Never raises: a failure here is "no stage model"."""
+    lat, lon = centroid.get("lat"), centroid.get("lon")
+    cal, doy = None, None
+    if slug in STAGE_THRESHOLDS:
+        try:
+            cal = effective_calendar(slug, lat=lat, lon=lon, irrigation=_ENGINE_REGIME.get(regime_used))
+            doy = _season_start_doy(sowing, eppo, lat, lon, regime_used)
+        except Exception:
+            logger.exception("planning fit: late-frost calendar failed tenant=%s parcel=%s species=%s",
+                             tenant_id, parcel_id, slug)
+            cal = None
+    if status == "ready" and cal is not None and doy is not None:
+        # ~35 campaigns x 2 stages of pure Python: off the event loop.
+        return await asyncio.to_thread(late_frost_reason, slug, cal=cal, sowing_doy=int(doy),
+                                       history=history, status=status)
+    return late_frost_reason(slug, cal=cal, sowing_doy=doy, history=history, status=status)
+
+
 def _rank_key(s: dict) -> tuple:
     ry = s.get("regional_yield")
     index = ry.get("relative_index") if ry else None
@@ -330,6 +356,12 @@ async def parcel_fit(*, dao, source: KnowledgeSource, parcel_id: str, tenant_id:
             logger.exception("planning fit: FAO-56 stage table load failed tenant=%s parcel=%s",
                              tenant_id, env["parcel_id"])
     irrigation = IrrigationContext(regime_used, centroid.get("lat"), centroid.get("lon"), stages)
+    frost_parcel = env.get("parcel_id")
+    frost_hist, frost_status = None, "absent"
+    if frost_parcel:
+        schedule_frost_history(tenant_id, frost_parcel)  # once per request; the fit never waits for it
+        frost_hist = get_frost_history(tenant_id, frost_parcel)
+        frost_status = frost_history_status(tenant_id, frost_parcel)
     species = []
     for slug in list_species():
         if is_woody(slug):
@@ -351,6 +383,8 @@ async def parcel_fit(*, dao, source: KnowledgeSource, parcel_id: str, tenant_id:
                                  climate.coldest_month_min_c, tol.frost_damage_c if tol else None)
         season_days = (CROP_REFERENCE.get(catalog_code(eppo)) or {}).get("growing_season_days") if eppo else None
         reasons += water_reasons(regime_used, climate, season_days)
+        reasons.append(await _late_frost_reason(slug, eppo, sowing, centroid, regime_used,
+                                                frost_hist, frost_status, tenant_id, env["parcel_id"]))
         # No history, a partial one (a cycle that cannot be placed) or no rotation rules in the graph
         # at all is "unknown", never "no restriction".
         if history is None or not ref.constraints or not history_complete(cycles):

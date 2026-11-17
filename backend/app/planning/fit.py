@@ -8,7 +8,10 @@
 
 The winter minimum is compared only for crops in the field in winter: a spring or summer
 crop is not exposed to the coldest month, and testing it there would block maize in
-every climate with frost. Late spring frost is not evaluated in v1.
+every climate with frost. Late spring frost is a warning, never a blocker: how often, since 1991, the
+parcel's daily Tmin reached the sensitive stage's threshold (``frost_late_risk`` from 1 year in 5,
+``frost_late_info`` below it, ``frost_late_unknown`` when it cannot be told). The frequency is a minimum,
+given the reanalysis warm bias in the Tmin.
 """
 from __future__ import annotations
 
@@ -28,7 +31,8 @@ CLIMATE_UNKNOWN = {"code": "climate_unknown", "gate": "data", "params": {}}  # a
 MULTI_YEAR = {"code": "multi_year", "gate": "data", "params": {}}  # a herbaceous perennial occupies several campaigns
 BLOCKERS = frozenset({"soil_unsuitable", "soil_ph_unsuitable", "soil_texture_unsuitable",
                       "soil_drainage_unsuitable", "frost_risk"})
-INFORMATIVE = frozenset({"rotation_benefit", "multi_year", "irrigation_need_tight"})
+INFORMATIVE = frozenset({"rotation_benefit", "multi_year", "irrigation_need_tight",
+                         "frost_late_info", "frost_late_unknown"})
 VERDICT_ORDER = {"fits": 0, "caveats": 1, "no_fit": 2}
 
 
