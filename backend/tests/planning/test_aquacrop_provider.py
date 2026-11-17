@@ -159,3 +159,85 @@ def test_validated_complete_season_output_is_unchanged():
                                 "scope": "ES, 44 provinces, MAPA 2008–2022"})
     ceiling.update(n=1, percentiles={"p10": 4.2, "p50": 4.2, "p90": 4.2})
     assert map_in_season(done, "v-test") == ([gap, ceiling], [])
+
+
+from app.planning.aquacrop_provider import (  # noqa: E402
+    SCOPE_BARLEY, SCOPE_DURUM, SCOPE_DURUM_IRRIGATED, SCOPE_IRRIGATED, UNVALIDATED_IN_SEASON, VALIDATED)
+from app.planning.estimates import estimate_providers  # noqa: E402
+
+OPENED = [("HORVX", "rainfed", "ES"), ("TRZDU", "rainfed", "ES"), ("TRZAX", "irrigated", "ES"),
+          ("TRZDU", "irrigated", "ES"), ("HORVX", "irrigated", "ES")]
+WHEAT_FILE_EXPECTED = {"status": "ok", "range_t_ha": {"low": 2.4, "high": 3.9}, "coverage": 0.8, "gap_factor": 0.7,
+                       "calibration": {"validation": {"rmse_kg_ha": 1650, "anomaly_r_median": 0.48}}}
+
+
+def test_allow_list_is_exactly_the_approved_set_and_disjoint_from_validated():
+    assert set(UNVALIDATED_IN_SEASON) == set(OPENED)
+    assert not set(UNVALIDATED_IN_SEASON) & set(VALIDATED)
+    assert {k[2] for k in UNVALIDATED_IN_SEASON} == {"ES"}
+
+
+def test_scope_texts():
+    s = UNVALIDATED_IN_SEASON
+    assert s[("TRZDU", "rainfed", "ES")] == SCOPE_DURUM and "soft-wheat parameters" in SCOPE_DURUM
+    assert "not an expected harvest" in SCOPE_DURUM and "not an expected harvest" in SCOPE_BARLEY
+    assert s[("HORVX", "rainfed", "ES")] == SCOPE_BARLEY and "not validated" in SCOPE_BARLEY
+    assert s[("TRZAX", "irrigated", "ES")] == s[("HORVX", "irrigated", "ES")] == SCOPE_IRRIGATED
+    assert "full irrigation" in SCOPE_IRRIGATED and "no regional calibration" in SCOPE_IRRIGATED
+    assert s[("TRZDU", "irrigated", "ES")] == SCOPE_DURUM_IRRIGATED and "soft-wheat" in SCOPE_DURUM_IRRIGATED
+
+
+@pytest.mark.parametrize("key", OPENED)
+@pytest.mark.parametrize("expected", [WHEAT_FILE_EXPECTED,
+                                      {"status": "unavailable", "reason": "irrigated"},
+                                      {"status": "unavailable", "reason": "crop_not_calibrated"}])
+def test_opened_combination_returns_only_an_unvalidated_ceiling(key, expected):
+    scope = UNVALIDATED_IN_SEASON[key]
+    est, unav = map_in_season({**IN_SEASON, "expected_yield": expected}, "v", unvalidated_scope=scope)
+    assert [e["basis"] for e in est] == ["water_limited"]
+    e = est[0]
+    Estimate.model_validate(e)
+    assert e["validation"] == {"status": "unvalidated", "metric": None, "scope": scope}
+    assert e["range"] is None and e["coverage"] is None
+    assert e["percentiles"] == {"p10": 3.0, "p50": 4.0, "p90": 5.0} and e["n"] == 14
+    assert e["attributions"] == []
+    assert len(unav) == 1 and unav[0]["provider_id"] == "aquacrop"
+    assert unav[0]["reason"] in {"expected_crop_not_calibrated", "expected_irrigated"}
+
+
+def test_durum_never_carries_soft_wheats_metric_factor_or_range():
+    # the engine answers ok for durum (shared wheat file) with soft wheat's range, gap factor and metric
+    est, unav = map_in_season({**IN_SEASON, "expected_yield": WHEAT_FILE_EXPECTED}, "v",
+                              unvalidated_scope=UNVALIDATED_IN_SEASON[("TRZDU", "rainfed", "ES")])
+    dumped = repr((est, unav))
+    for leaked in ("RMSE", "1.65", "MAPA", "gap_factor", "'low'", "'high'", "gap_corrected"):
+        assert leaked not in dumped
+    assert unav == [{"provider_id": "aquacrop", "reason": "expected_crop_not_calibrated"}]
+
+
+def test_engine_reason_is_kept_and_not_duplicated():
+    _, unav = map_in_season({**IN_SEASON, "expected_yield": {"status": "unavailable", "reason": "irrigated"}},
+                            "v", unvalidated_scope=SCOPE_IRRIGATED)
+    assert unav == [{"provider_id": "aquacrop", "reason": "expected_irrigated"}]
+
+
+def test_opened_complete_season_stays_unvalidated_with_its_single_ceiling():
+    done = {**IN_SEASON, "status": "complete", "yield_t_ha": 4.2, "ensemble": None}
+    est, _ = map_in_season(done, "v", unvalidated_scope=SCOPE_BARLEY)
+    assert len(est) == 1 and est[0]["n"] == 1
+    assert est[0]["percentiles"] == {"p10": 4.2, "p50": 4.2, "p90": 4.2}
+    assert est[0]["validation"]["status"] == "unvalidated"
+
+
+def test_opened_combination_without_a_numeric_yield_returns_no_estimate():
+    est, unav = map_in_season({**IN_SEASON, "yield_t_ha": None}, "v", unvalidated_scope=SCOPE_DURUM)
+    assert est == []
+    assert unav == [{"provider_id": "aquacrop", "reason": "water_limited_missing"},
+                    {"provider_id": "aquacrop", "reason": "expected_crop_not_calibrated"}]
+
+
+@pytest.mark.parametrize("crop, regime", [("HORVX", "rainfed"), ("TRZDU", "rainfed"), ("TRZDU", "irrigated"),
+                                          ("HORVX", "irrigated"), ("TRZAX", "irrigated")])
+def test_planning_gate_and_providers_do_not_open(crop, regime):
+    assert aquacrop_gate(crop, regime, "ES", date(2026, 11, 15), TODAY) == "not_validated"
+    assert "aquacrop" not in estimate_providers(crop, has_trials=False, regime=regime, country="ES")

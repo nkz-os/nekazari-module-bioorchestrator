@@ -22,6 +22,23 @@ VALIDATED: dict[tuple[str, str, str], dict[str, str]] = {
 }
 
 
+# Extra (EPPO, regime, country) combinations opened for the in-season forecast ONLY, each with the
+# scope sentence shown on its estimate. They return a water-limited ceiling labelled `unvalidated`
+# and never an expected harvest. Planning's VALIDATED, its gate and its providers are not affected.
+SCOPE_BARLEY = "Water-limited ceiling; not an expected harvest; not validated."
+SCOPE_DURUM = "Simulated with soft-wheat parameters; water-limited ceiling; not an expected harvest; not validated."
+SCOPE_IRRIGATED = "Potential under full irrigation; no regional calibration; not validated."
+SCOPE_DURUM_IRRIGATED = ("Simulated with soft-wheat parameters; potential under full irrigation; "
+                         "no regional calibration; not validated.")
+UNVALIDATED_IN_SEASON: dict[tuple[str, str, str], str] = {
+    ("HORVX", "rainfed", "ES"): SCOPE_BARLEY,
+    ("TRZDU", "rainfed", "ES"): SCOPE_DURUM,
+    ("TRZAX", "irrigated", "ES"): SCOPE_IRRIGATED,
+    ("TRZDU", "irrigated", "ES"): SCOPE_DURUM_IRRIGATED,
+    ("HORVX", "irrigated", "ES"): SCOPE_IRRIGATED,
+}
+
+
 def aquacrop_gate(crop_eppo: str, regime: str, country: str | None, sowing_date: date | None,
                   today: date) -> str | None:
     """Why AquaCrop must not run for this input (a reason code), or None when it may."""
@@ -102,13 +119,17 @@ def map_result(result: dict, provider_version: str) -> tuple[list[dict], list[di
 IN_SEASON_SCOPE = "in-season forecast; skill by forecast date not yet measured"
 
 
-def map_in_season(result: dict, provider_version: str) -> tuple[list[dict], list[dict]]:
+def map_in_season(result: dict, provider_version: str,
+                  unvalidated_scope: str | None = None) -> tuple[list[dict], list[dict]]:
     """A finished in-season simulation -> (estimates, unavailable).
 
     The expected yield is ``experimental`` while the season runs: it was validated on complete
     seasons, and the skill by forecast date is not measured yet (owner, 2026-10-13). A complete
     season (observed weather only) keeps the validated status; its single water-limited ceiling
     is reported as P10 = P50 = P90 and ``n`` is one season.
+
+    With ``unvalidated_scope`` (an opened combination) the result is a ceiling only: any
+    gap-corrected estimate is dropped and every remaining estimate is labelled ``unvalidated``.
     """
     complete = result.get("status") == "complete"
     ceiling = result.get("yield_t_ha")
@@ -120,4 +141,11 @@ def map_in_season(result: dict, provider_version: str) -> tuple[list[dict], list
             e["n"] = 1
         elif e["basis"] == "gap_corrected":
             e["validation"] = {"status": "experimental", "metric": None, "scope": IN_SEASON_SCOPE}
-    return estimates, unavailable
+    if unvalidated_scope is None:
+        return estimates, unavailable
+    kept = [e for e in estimates if e["basis"] != "gap_corrected"]
+    if len(kept) != len(estimates):
+        unavailable = [*unavailable, {"provider_id": PROVIDER_ID, "reason": "expected_crop_not_calibrated"}]
+    for e in kept:
+        e["validation"] = {"status": "unvalidated", "metric": None, "scope": unvalidated_scope}
+    return kept, unavailable
