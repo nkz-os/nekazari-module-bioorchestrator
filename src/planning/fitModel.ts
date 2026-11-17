@@ -82,8 +82,11 @@ export function reasonText(r: Reason, names: Record<string, Names>, lang: string
     if (typeof r.params.stage === 'string') {
       const stages = r.params.stage.split('+');
       params.stage = stages.map(stageName).join(t('planning.frostStageJoin', { defaultValue: ' / ' }));
-      if (typeof r.params.thresholds_c === 'string') {
-        const limits = r.params.thresholds_c.split('/');
+      // Old backend shape (single `threshold_c` number) until the backend pin moves.
+      const legacy = typeof r.params.threshold_c === 'number' ? String(r.params.threshold_c) : null;
+      const rawLimits = typeof r.params.thresholds_c === 'string' ? r.params.thresholds_c : legacy;
+      if (rawLimits !== null) {
+        const limits = rawLimits.split('/');
         // one stage: the stage is already named in the sentence, so only the limit is shown
         params.thresholds = stages.map((st, i) => `${stages.length > 1 ? `${stageName(st)} ` : ''}≤ ${limits[i] ?? '?'} °C`).join(', ');
       }

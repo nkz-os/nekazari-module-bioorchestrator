@@ -160,6 +160,12 @@ describe('late frost reasons (backend shape: gate frost, frost_late_*)', () => {
     const txt = reasonText({ ...risk, params: { ...risk.params, stage: 'flowering', thresholds_c: '-1' } }, {}, 'es', esT);
     expect(txt).toContain('Helada tardía en espigado y floración: 5 de 34 años desde 1991 con mínima por debajo del umbral (≤ -1 °C; K-State C-646).');
   });
+  it('reads the old backend shape (threshold_c number, no thresholds_c)', async () => {
+    const { esT } = await import('./testI18n');
+    const { thresholds_c: _omit, ...rest } = risk.params;
+    const txt = reasonText({ ...risk, params: { ...rest, stage: 'flowering', threshold_c: -1 } }, {}, 'es', esT);
+    expect(txt).toContain('con mínima por debajo del umbral (≤ -1 °C; K-State C-646).');
+  });
   it('a missing caveat leaves no trailing space', async () => {
     const { esT } = await import('./testI18n');
     const { tmin_caveat: _omit, ...params } = risk.params;
