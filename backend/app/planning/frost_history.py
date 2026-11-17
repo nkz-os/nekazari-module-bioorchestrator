@@ -140,7 +140,8 @@ async def _fetch(tenant_id: str, parcel_id: str) -> tuple[FrostHistory, int]:
     async with httpx.AsyncClient(timeout=HTTP_TIMEOUT_S) as client:
         while attempts < MAX_ATTEMPTS:
             attempts += 1
-            resp = await client.get(url, params=params, headers=soil_module_headers(tenant_id))
+            async with _fetch_slot():  # held for the request only, never while waiting on Retry-After
+                resp = await client.get(url, params=params, headers=soil_module_headers(tenant_id))
             wait = _retry_after(resp)
             if resp.status_code == 503 and wait is not None:
                 await asyncio.sleep(wait)  # busy or preparing
@@ -163,8 +164,7 @@ async def _fetch(tenant_id: str, parcel_id: str) -> tuple[FrostHistory, int]:
 async def _load(key: _Key) -> None:
     tenant_id, parcel_id = key
     try:
-        async with _fetch_slot():
-            history, attempts = await _fetch(tenant_id, parcel_id)
+        history, attempts = await _fetch(tenant_id, parcel_id)
         _CACHE[key] = (_now(), history)
         _CACHE.move_to_end(key)
         while len(_CACHE) > MAX_ENTRIES:

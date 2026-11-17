@@ -173,18 +173,50 @@ async def test_gave_up_retries_sooner_than_other_failures(monkeypatch):
     assert fh.GAVE_UP_BACKOFF_S < fh.RETRY_BACKOFF_S
 
 
-async def test_loads_are_serialised(monkeypatch):
+async def test_requests_are_serialised(monkeypatch):
     active, peak = 0, 0
 
-    async def fake_fetch(tenant_id, parcel_id):
-        nonlocal active, peak
-        active += 1
-        peak = max(peak, active)
-        await asyncio.sleep(0)
-        active -= 1
-        return fh.FrostHistory(days={date(1991, 1, 1): (0.0, 1.0)}, tmin_caveat="warm_bias"), 1
+    def handler(req):
+        return httpx.Response(200, json=_body())
 
-    monkeypatch.setattr(fh, "_fetch", fake_fetch)
+    class Slow(httpx.AsyncClient):
+        async def get(self, *a, **k):
+            nonlocal active, peak
+            active += 1
+            peak = max(peak, active)
+            await asyncio.sleep(0)
+            active -= 1
+            return await super().get(*a, **k)
+
+    monkeypatch.setattr(fh.httpx, "AsyncClient", lambda **kw: Slow(transport=httpx.MockTransport(handler), **kw))
     tasks = [fh.schedule_frost_history("tenant-a", f"p{i}") for i in range(3)]
     await asyncio.gather(*tasks)
     assert peak == 1
+    assert all(fh.frost_history_status("tenant-a", f"p{i}") == "ready" for i in range(3))
+
+
+async def test_retry_after_sleep_does_not_hold_the_slot(monkeypatch):
+    gate = asyncio.Event()
+    served: list[str] = []
+
+    def handler(req):
+        pid = req.url.path.split("/")[4]
+        served.append(pid)
+        if pid == "a" and served.count("a") == 1:
+            return httpx.Response(503, headers={"Retry-After": "30"})
+        return httpx.Response(200, json=_body())
+
+    async def blocking_sleep(s):
+        await gate.wait()  # parcel A "sleeps" until released
+
+    real = httpx.AsyncClient
+    monkeypatch.setattr(fh.httpx, "AsyncClient", lambda **kw: real(transport=httpx.MockTransport(handler), **kw))
+    monkeypatch.setattr(fh.asyncio, "sleep", blocking_sleep)
+    ta = fh.schedule_frost_history("tenant-a", "a")
+    tb = fh.schedule_frost_history("tenant-a", "b")
+    await asyncio.wait_for(tb, 2)  # B completes while A is still asleep
+    assert fh.frost_history_status("tenant-a", "b") == "ready"
+    assert fh.frost_history_status("tenant-a", "a") == "loading"
+    gate.set()
+    await ta
+    assert fh.frost_history_status("tenant-a", "a") == "ready"
