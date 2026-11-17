@@ -75,9 +75,23 @@ export function reasonText(r: Reason, names: Record<string, Names>, lang: string
     const raw = params.value;
     params.value = t(`planning.texture.${raw}`, { defaultValue: raw });
   }
-  // Late-frost reasons carry raw enums: stage, threshold source and temperature caveat are translated here.
+  // Late-frost reasons carry raw enums: stages, thresholds, source and temperature caveat are built here.
+  // `stage` is the evaluated stages joined with "+", `thresholds_c` their thresholds joined with "/", in the same order.
   if (r.code.startsWith('frost_late_')) {
-    for (const [param, family, name] of [['stage', 'frostStage', 'stage'], ['source', 'frostSource', 'threshold_source'], ['caveat', 'frostCaveat', 'tmin_caveat']] as const) {
+    const stageName = (raw: string) => t(`planning.frostStage.${raw}`, { defaultValue: raw });
+    if (typeof r.params.stage === 'string') {
+      const stages = r.params.stage.split('+');
+      params.stage = stages.map(stageName).join(t('planning.frostStageJoin', { defaultValue: ' / ' }));
+      // Old backend shape (single `threshold_c` number) until the backend pin moves.
+      const legacy = typeof r.params.threshold_c === 'number' ? String(r.params.threshold_c) : null;
+      const rawLimits = typeof r.params.thresholds_c === 'string' ? r.params.thresholds_c : legacy;
+      if (rawLimits !== null) {
+        const limits = rawLimits.split('/');
+        // one stage: the stage is already named in the sentence, so only the limit is shown
+        params.thresholds = stages.map((st, i) => `${stages.length > 1 ? `${stageName(st)} ` : ''}≤ ${limits[i] ?? '?'} °C`).join(', ');
+      }
+    }
+    for (const [param, family, name] of [['source', 'frostSource', 'threshold_source'], ['caveat', 'frostCaveat', 'tmin_caveat']] as const) {
       const raw = r.params[name];
       if (typeof raw === 'string') params[param] = t(`planning.${family}.${raw}`, { defaultValue: raw });
     }

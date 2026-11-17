@@ -74,6 +74,18 @@ def _hist(years_hit_flower, years_hit_grain, n=10, caveat="warm_bias"):
     return lf.FrostHistory(days=days, tmin_caveat=caveat)
 
 
+def _hist_disjoint(n):
+    """n full seasons from 2000: flowering hit in 2000-2001, grain filling in 2002-2003."""
+    days = {}
+    for y in range(2000, 2000 + n):
+        days.update(_days(date(y, 1, 1), 365 if y % 4 else 366))
+    for y in (2000, 2001):
+        days[date(y, 1, 12)] = (-1.5, 21.5)
+    for y in (2002, 2003):
+        days[date(y, 1, 20)] = (-2.5, 22.5)
+    return lf.FrostHistory(days=days, tmin_caveat="warm_bias")
+
+
 def test_reason_info_when_no_year_hit():
     r = lf.late_frost_reason("wheat", cal=_cal(), sowing_doy=1, history=_hist(0, 0), status="ready")
     assert r["code"] == "frost_late_info"
@@ -85,7 +97,7 @@ def test_reason_info_when_no_year_hit():
                              history=lf.FrostHistory(d, "warm_bias"), status="ready")
     assert r["code"] == "frost_late_risk"  # 2 of 10
     assert r["gate"] == "frost"
-    assert r["params"] == {"years_hit": 2, "years_total": 10, "stage": "flowering", "threshold_c": -1.0,
+    assert r["params"] == {"years_hit": 2, "years_total": 10, "stage": "flowering", "thresholds_c": "-1",
                            "threshold_source": "fao_2005_t45", "tmin_source": "ERA5",
                            "tmin_caveat": "warm_bias"}
 
@@ -112,12 +124,37 @@ def test_reason_exactly_one_in_five_and_one_in_six():
     assert (r["code"], r["params"]["years_total"]) == ("frost_late_info", 6)
 
 
-def test_reason_picks_worst_stage_tie_earliest():
-    r = lf.late_frost_reason("wheat", cal=_cal(), sowing_doy=1, history=_hist(1, 3), status="ready")
-    assert r["params"]["stage"] == "grain_filling" and r["params"]["threshold_c"] == -2.0
-    assert r["params"]["threshold_source"] == "kstate_c646"
+def test_reason_counts_years_hit_in_any_stage():
+    # flowering hit in 2000-2001, grain filling in 2002-2003: disjoint, 4 of 20 seasons
+    r = lf.late_frost_reason("wheat", cal=_cal(), sowing_doy=1, history=_hist_disjoint(20), status="ready")
+    assert r["code"] == "frost_late_risk"
+    p = r["params"]
+    assert (p["years_hit"], p["years_total"]) == (4, 20)
+    assert p["stage"] == "flowering+grain_filling" and p["thresholds_c"] == "-1/-2"
+    assert p["threshold_source"] == "kstate_c646"
+
+
+def test_reason_a_year_hit_in_both_stages_counts_once():
     r = lf.late_frost_reason("wheat", cal=_cal(), sowing_doy=1, history=_hist(2, 2), status="ready")
-    assert r["params"]["stage"] == "flowering"
+    assert (r["params"]["years_hit"], r["params"]["years_total"]) == (2, 10)
+
+
+def test_reason_below_share_is_info_across_stages():
+    r = lf.late_frost_reason("wheat", cal=_cal(), sowing_doy=1, history=_hist_disjoint(21), status="ready")
+    assert (r["code"], r["params"]["years_hit"], r["params"]["years_total"]) == ("frost_late_info", 4, 21)
+
+
+def test_reason_season_incomplete_for_grain_filling_is_excluded():
+    # the last season stops after flowering ends (day 15) but before grain filling ends (day 30)
+    days = dict(_hist_disjoint(5).days)
+    for d in [d for d in days if d > date(2004, 1, 20)]:
+        del days[d]
+    r = lf.late_frost_reason("wheat", cal=_cal(), sowing_doy=1,
+                             history=lf.FrostHistory(days, "warm_bias"), status="ready")
+    assert r["params"]["years_total"] == 4  # 2004 is complete for flowering only
+    b = lf.late_frost_reason("barley", cal=_cal(), sowing_doy=1,
+                             history=lf.FrostHistory(days, "warm_bias"), status="ready")
+    assert b["params"]["years_total"] == 5  # barley evaluates flowering only
 
 
 def test_reason_unknown_whys():

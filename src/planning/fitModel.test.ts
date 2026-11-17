@@ -116,36 +116,60 @@ describe('allotment reasons (backend shape: fit.py allotment_reasons)', () => {
 describe('late frost reasons (backend shape: gate frost, frost_late_*)', () => {
   const risk: Reason = {
     code: 'frost_late_risk', gate: 'frost',
-    params: { years_hit: 5, years_total: 34, stage: 'flowering', threshold_c: -1, threshold_source: 'kstate_c646', tmin_source: 'ERA5', tmin_caveat: 'warm_bias' },
+    params: { years_hit: 5, years_total: 34, stage: 'flowering+grain_filling', thresholds_c: '-1/-2', threshold_source: 'kstate_c646', tmin_source: 'ERA5', tmin_caveat: 'warm_bias' },
   };
   it('tones: info and unknown are informative, risk is a warning', () => {
     expect(reasonTone({ ...risk, code: 'frost_late_info' })).toBe('info');
     expect(reasonTone({ code: 'frost_late_unknown', gate: 'frost', params: { why: 'no_threshold' } })).toBe('info');
     expect(reasonTone(risk)).toBe('warning');
   });
-  it('passes stage, source and caveat already translated to t', () => {
+  it('passes the joined stages, per-stage thresholds, source and caveat already translated to t', () => {
     const seen: Record<string, unknown> = {};
     const t: TFn = (key, opts = {}) => {
-      if (key === 'planning.frostStage.flowering') return 'STAGE';
+      if (key === 'planning.frostStage.flowering') return 'FLOW';
+      if (key === 'planning.frostStage.grain_filling') return 'GRAIN';
+      if (key === 'planning.frostStageJoin') return ' | ';
       if (key === 'planning.frostSource.kstate_c646') return 'SOURCE';
       if (key === 'planning.frostCaveat.warm_bias') return 'CAVEAT';
       if (key === 'planning.reason.frost_late_risk') Object.assign(seen, opts);
       return key;
     };
     reasonText(risk, {}, 'es', t);
-    expect(seen).toMatchObject({ stage: 'STAGE', source: 'SOURCE', caveat: 'CAVEAT', years_hit: 5, years_total: 34, threshold_c: -1 });
+    expect(seen).toMatchObject({
+      stage: 'FLOW | GRAIN', thresholds: 'FLOW ≤ -1 °C, GRAIN ≤ -2 °C', source: 'SOURCE', caveat: 'CAVEAT', years_hit: 5, years_total: 34,
+    });
+  });
+  it('a single stage (barley) has no conjunction', () => {
+    const seen: Record<string, unknown> = {};
+    const t: TFn = (key, opts = {}) => {
+      if (key === 'planning.reason.frost_late_info') Object.assign(seen, opts);
+      return key.startsWith('planning.frostStage.') ? 'FLOW' : key;
+    };
+    reasonText({ ...risk, code: 'frost_late_info', params: { ...risk.params, stage: 'flowering', thresholds_c: '-1' } }, {}, 'es', t);
+    expect(seen).toMatchObject({ stage: 'FLOW', thresholds: '≤ -1 °C' });
   });
   it('renders the real Spanish copy', async () => {
     const { esT } = await import('./testI18n');
     const txt = reasonText(risk, {}, 'es', esT);
-    expect(txt).toBe('Helada tardía en espigado y floración: 5 de 34 años desde 1991 con mínima ≤ -1 °C (K-State C-646). El modelo tiende a dar mínimas más altas que las de finca en noches de helada; la frecuencia real puede ser mayor.');
+    expect(txt).toBe('Helada tardía en espigado y floración o llenado del grano: 5 de 34 años desde 1991 con mínima por debajo del umbral (espigado y floración ≤ -1 °C, llenado del grano ≤ -2 °C; K-State C-646). El modelo tiende a dar mínimas más altas que las de finca en noches de helada; la frecuencia real puede ser mayor.');
     const unk = reasonText({ code: 'frost_late_unknown', gate: 'frost', params: { why: 'history_pending' } }, {}, 'es', esT);
     expect(unk).toBe('Helada tardía: preparando el histórico de la parcela');
+  });
+  it('renders the real Spanish copy for one stage without repeating it', async () => {
+    const { esT } = await import('./testI18n');
+    const txt = reasonText({ ...risk, params: { ...risk.params, stage: 'flowering', thresholds_c: '-1' } }, {}, 'es', esT);
+    expect(txt).toContain('Helada tardía en espigado y floración: 5 de 34 años desde 1991 con mínima por debajo del umbral (≤ -1 °C; K-State C-646).');
+  });
+  it('reads the old backend shape (threshold_c number, no thresholds_c)', async () => {
+    const { esT } = await import('./testI18n');
+    const { thresholds_c: _omit, ...rest } = risk.params;
+    const txt = reasonText({ ...risk, params: { ...rest, stage: 'flowering', threshold_c: -1 } }, {}, 'es', esT);
+    expect(txt).toContain('con mínima por debajo del umbral (≤ -1 °C; K-State C-646).');
   });
   it('a missing caveat leaves no trailing space', async () => {
     const { esT } = await import('./testI18n');
     const { tmin_caveat: _omit, ...params } = risk.params;
     const txt = reasonText({ ...risk, params }, {}, 'es', esT);
-    expect(txt.endsWith('(K-State C-646).')).toBe(true);
+    expect(txt.endsWith('; K-State C-646).')).toBe(true);
   });
 });
