@@ -79,9 +79,46 @@ def test_no_regime_anywhere_is_never_supposed():
     assert resolve_in_season(parcel, crops, cycles(), TODAY) == "no_regime"
 
 
-def test_barley_is_not_validated():
-    crops = {CROP_ID: {"id": CROP_ID, "species": "HORVX", "irrigationRegime": "rainfed"}}
-    assert resolve_in_season(PARCEL, crops, cycles(species="HORVX"), TODAY) == "not_validated"
+PT_PARCEL = {**PARCEL, "location": {"type": "Polygon", "coordinates": [[[-8.0, 39.5], [-7.9, 39.5], [-7.9, 39.6],
+                                                                       [-8.0, 39.6], [-8.0, 39.5]]]}}
+
+
+def _crops(species, regime="rainfed"):
+    return {CROP_ID: {"id": CROP_ID, "species": species, "irrigationRegime": regime}}
+
+
+@pytest.mark.parametrize("species, eppo, regime", [
+    ("HORVX", "HORVX", "rainfed"), ("TRZDU", "TRZDU", "rainfed"), ("TRZAX", "TRZAX", "irrigated"),
+    ("TRZDU", "TRZDU", "irrigated"), ("HORVX", "HORVX", "irrigated")])
+def test_opened_combinations_resolve_in_spain(species, eppo, regime):
+    got = resolve_in_season(PARCEL, _crops(species, regime), cycles(species=species), TODAY)
+    assert isinstance(got, InSeasonInputs) and (got.eppo, got.regime, got.country) == (eppo, regime, "ES")
+
+
+def test_crop_slugs_reach_the_engine():
+    assert resolve_in_season(PARCEL, _crops("TRZDU"), cycles(species="TRZDU"), TODAY).crop_slug == "durum_wheat"
+    assert resolve_in_season(PARCEL, _crops("HORVX"), cycles(species="HORVX"), TODAY).crop_slug == "barley"
+
+
+@pytest.mark.parametrize("species, regime", [("ZEAMX", "rainfed"), ("ZEAMX", "irrigated")])
+def test_a_crop_outside_the_list_stays_not_validated(species, regime):
+    assert resolve_in_season(PARCEL, _crops(species, regime), cycles(species=species), TODAY) == "not_validated"
+
+
+@pytest.mark.parametrize("species", ["HORVX", "TRZDU"])
+def test_opened_crops_in_another_country_stay_not_validated(species):
+    assert resolve_in_season(PT_PARCEL, _crops(species), cycles(species=species), TODAY) == "not_validated"
+
+
+def test_opened_crop_without_location_stays_not_validated():
+    parcel = {k: v for k, v in PARCEL.items() if k != "location"}
+    assert resolve_in_season(parcel, _crops("HORVX"), cycles(species="HORVX"), TODAY) == "not_validated"
+
+
+def test_unknown_regime_stays_no_regime_for_opened_crops():
+    parcel = {k: v for k, v in PARCEL.items() if k != "irrigationRegime"}
+    crops = {CROP_ID: {"id": CROP_ID, "species": "HORVX"}}
+    assert resolve_in_season(parcel, crops, cycles(species="HORVX"), TODAY) == "no_regime"
 
 
 def test_a_parcel_without_location_is_not_validated():

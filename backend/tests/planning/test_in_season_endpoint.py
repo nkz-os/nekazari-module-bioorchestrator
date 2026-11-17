@@ -127,6 +127,51 @@ async def test_validated_in_season_response_is_unchanged():
                    "computed_at": finished.isoformat(), "provider_version": "v-test"}}
 
 
+def _done(jobs, out, result, finished=datetime(2026, 3, 15, 6, 0, tzinfo=UTC)):
+    job = jobs.jobs[out["job_id"]]
+    job.state, job.result, job.finished_at = "done", result, finished
+
+
+@pytest.mark.parametrize("species, slug, regime, irrigation", [
+    ("HORVX", "barley", "rainfed", "rainfed"), ("TRZDU", "durum_wheat", "rainfed", "rainfed"),
+    ("TRZAX", "wheat", "irrigated", "full"), ("TRZDU", "durum_wheat", "irrigated", "full"),
+    ("HORVX", "barley", "irrigated", "full")])
+async def test_opened_combination_runs_and_answers_an_unvalidated_ceiling(species, slug, regime, irrigation):
+    crops = {CROP_ID: {"id": CROP_ID, "species": species, "irrigationRegime": regime}}
+    cycles = {"current": {**SOWN["current"], "species": species}}
+    jobs = FakeJobs()
+    out = await call(jobs, load=loader(cycles=cycles, crops=crops))
+    assert jobs.started == [{"parcel_id": PARCEL_ID, "crop_slug": slug, "sowing_date": "2025-10-20",
+                             "irrigation": irrigation, "engine": "aquacrop"}]
+    _done(jobs, out, {**RESULT, "expected_yield": {"status": "ok", "range_t_ha": {"low": 2.4, "high": 3.9},
+                                                   "coverage": 0.8}})
+    got = await call(jobs, load=loader(cycles=cycles, crops=crops))
+    assert got["state"] == "done" and got["season"]["crop"] == species and got["season"]["regime"] == regime
+    assert [e["basis"] for e in got["estimates"]] == ["water_limited"]
+    assert all(e["validation"]["status"] == "unvalidated" and e["validation"]["metric"] is None
+               for e in got["estimates"])
+    assert not any(e["basis"] == "gap_corrected" for e in got["estimates"])
+
+
+async def test_opened_complete_season_is_unvalidated():
+    crops = {CROP_ID: {"id": CROP_ID, "species": "HORVX", "irrigationRegime": "rainfed"}}
+    cycles = {"current": {**SOWN["current"], "species": "HORVX"}}
+    jobs = FakeJobs()
+    out = await call(jobs, load=loader(cycles=cycles, crops=crops))
+    _done(jobs, out, {**RESULT, "status": "complete", "yield_t_ha": 4.2, "ensemble": None})
+    got = await call(jobs, load=loader(cycles=cycles, crops=crops))
+    assert got["season"]["status"] == "complete" and got["estimates"][0]["n"] == 1
+    assert got["estimates"][0]["validation"]["status"] == "unvalidated"
+
+
+async def test_a_closed_combination_starts_nothing():
+    crops = {CROP_ID: {"id": CROP_ID, "species": "ZEAMX", "irrigationRegime": "rainfed"}}
+    jobs = FakeJobs()
+    out = await call(jobs, load=loader(cycles={"current": {**SOWN["current"], "species": "ZEAMX"}}, crops=crops))
+    assert out["state"] == "unavailable" and jobs.started == []
+    assert out["unavailable"] == [{"provider_id": "aquacrop", "reason": "not_validated"}]
+
+
 PHENOLOGY = {"gdd_method": "aquacrop_m3", "milestones": {"maturity": {"gdd": 2400.0, "status": "projected"}}}
 
 
