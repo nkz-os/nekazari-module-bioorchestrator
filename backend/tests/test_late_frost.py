@@ -99,7 +99,7 @@ def test_reason_info_when_no_year_hit():
     assert r["gate"] == "frost"
     assert r["params"] == {"years_hit": 2, "years_total": 10, "stage": "flowering", "thresholds_c": "-1",
                            "threshold_source": "fao_2005_t45", "tmin_source": "ERA5",
-                           "tmin_caveat": "warm_bias"}
+                           "tmin_caveat": "warm_bias", "tmin_basis": "raw"}
 
 
 def test_reason_risk_two_of_ten():
@@ -215,3 +215,64 @@ def test_window_mid_doy_without_a_usable_window():
     for window in (None, {}, {"start_month": 10}, {"start_month": 13, "end_month": 1},
                    {"start_month": "10", "end_month": 1}, {"start_month": True, "end_month": 1}):
         assert lf.window_mid_doy(window) is None
+
+
+# --- validated frost-risk Tmin -------------------------------------------------
+
+def _with_risk(h, frost_hits=(), hard_hits=(), validated=(True, True), labels=("L0", "L2"), gap=None):
+    """Risk series = raw Tmin, with -3 C on the given (year, day) cells of each field."""
+    risk = {d: (t[0], t[0]) for d, t in h.days.items()}
+    for y, day in frost_hits:
+        risk[date(y, 1, day)] = (-3.0, risk[date(y, 1, day)][1])
+    for y, day in hard_hits:
+        risk[date(y, 1, day)] = (risk[date(y, 1, day)][0], -3.0)
+    if gap:
+        risk[gap[0]] = gap[1]
+    return lf.FrostHistory(h.days, h.tmin_caveat, risk=risk, risk_validated=validated, risk_labels=labels)
+
+
+def test_risk_field_hits_where_raw_tmin_does_not():
+    h = _with_risk(_hist(0, 0), frost_hits=[(2000, 12)])  # barley -1: 0 C field
+    r = lf.late_frost_reason("barley", cal=_cal(), sowing_doy=1, history=h, status="ready")
+    assert r["params"]["years_hit"] == 1
+    assert (r["params"]["tmin_basis"], r["params"]["tmin_caveat"], r["params"]["tmin_label"]) == ("risk_margin", "risk_margin", "L0")
+
+
+def test_wheat_uses_each_field_and_label_omitted_when_they_differ():
+    h = _with_risk(_hist(0, 0), frost_hits=[(2000, 12)], hard_hits=[(2001, 20)])
+    p = lf.late_frost_reason("wheat", cal=_cal(), sowing_doy=1, history=h, status="ready")["params"]
+    assert p["years_hit"] == 2 and p["tmin_basis"] == "risk_margin" and "tmin_label" not in p
+    # a 0 C field hit in the grain window (-2 C stage) is not a hit: that stage reads the hard field
+    h = _with_risk(_hist(0, 0), frost_hits=[(2000, 20)])
+    assert lf.late_frost_reason("wheat", cal=_cal(), sowing_doy=1, history=h, status="ready")["params"]["years_hit"] == 0
+
+
+def test_hard_stage_falls_back_to_frost_field_when_hard_not_validated():
+    h = _with_risk(_hist(0, 0), frost_hits=[(2000, 20)], validated=(True, False))
+    p = lf.late_frost_reason("wheat", cal=_cal(), sowing_doy=1, history=h, status="ready")["params"]
+    assert p["years_hit"] == 1 and p["tmin_basis"] == "risk_margin" and p["tmin_label"] == "L0"
+
+
+def test_not_validated_is_raw_with_old_caveat():
+    h = _with_risk(_hist(0, 0), frost_hits=[(2000, 12)], validated=(False, False))
+    p = lf.late_frost_reason("barley", cal=_cal(), sowing_doy=1, history=h, status="ready")["params"]
+    assert p["years_hit"] == 0 and p["tmin_basis"] == "raw" and p["tmin_caveat"] == "warm_bias" and "tmin_label" not in p
+
+
+def test_mixed_keeps_raw_caveat():
+    # flowering (-1 C) needs the 0 C field, not validated -> raw; grain filling (-2 C) uses the validated hard field
+    h = _with_risk(_hist(0, 0), validated=(False, True), labels=(None, "L2"))
+    h = lf.FrostHistory(h.days, "unvalidated_region", risk=h.risk, risk_validated=h.risk_validated, risk_labels=h.risk_labels)
+    p = lf.late_frost_reason("wheat", cal=_cal(), sowing_doy=1, history=h, status="ready")["params"]
+    assert (p["tmin_basis"], p["tmin_caveat"]) == ("mixed", "unvalidated_region")
+
+
+def test_validated_gap_excludes_season():
+    h = _with_risk(_hist(0, 0), gap=(date(2003, 1, 12), (None, None)))
+    p = lf.late_frost_reason("barley", cal=_cal(), sowing_doy=1, history=h, status="ready")["params"]
+    assert p["years_total"] == 9
+
+
+def test_history_without_risk_fields_is_raw():
+    p = lf.late_frost_reason("barley", cal=_cal(), sowing_doy=1, history=_hist(0, 0), status="ready")["params"]
+    assert p["tmin_basis"] == "raw" and p["tmin_caveat"] == "warm_bias"

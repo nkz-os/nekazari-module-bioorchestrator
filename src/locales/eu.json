@@ -651,7 +651,8 @@
     },
     "frostCaveat": {
       "warm_bias": "Ereduak izotz-gauetan baserriko neurketek baino gutxienekoak altuagoak ematen ditu; benetako maiztasuna handiagoa izan daiteke.",
-      "unvalidated_region": "Eremu honetan baliozkotu gabeko eguraldi-datua; zifra gutxieneko bat da."
+      "unvalidated_region": "Eremu honetan baliozkotu gabeko eguraldi-datua; zifra gutxieneko bat da.",
+      "risk_margin": "Izotz-arriskurako segurtasun-marjina barne hartzen du, eguraldi-estazioekin baliozkotua."
     }
   }
 }
