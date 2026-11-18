@@ -203,6 +203,9 @@ def vp_block_milestones(sowing_date: date, observed_days: Sequence[Any],
     out: dict[str, dict] = {}
     member_dates: list[dict[str, date | None]] | None = None
     for name in MILESTONES:
+        if name == "maturity" and p.mat_p is None:
+            out[name] = {"status": "unavailable", "reason": "no_maturity_parameter"}
+            continue
         got = reached[name]
         if got is not None and got <= as_of:
             out[name] = _entry(name, emergence_gdd, {"status": "reached", "date": got.isoformat()})

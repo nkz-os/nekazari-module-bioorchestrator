@@ -160,11 +160,10 @@ def test_vp_milestones_horizon_is_330_days():
     assert m["maturity"] is None and m["flowering_start"] is not None
 
 
-def test_vernalisation_delays_floral_initiation():
-    # Warm winter (no vernalisation) is later than a cold one, same GDD.
+def test_cold_winter_accumulates_more_vernalisation():
+    # A cold winter accumulates more V than a warm one.
     cold = [_w(SOWING + timedelta(days=i), 1.0, 9.0) for i in range(330)]
     warm = [_w(SOWING + timedelta(days=i), 9.0, 17.0) for i in range(330)]
-    # same GDD needs a comparable thermal sum: compare vernalised fraction instead
     v_cold = vp.cumulative_v([d.tmin_c for d in cold], [d.tmax_c for d in cold], 1)
     v_warm = vp.cumulative_v([d.tmin_c for d in warm], [d.tmax_c for d in warm], 1)
     assert v_cold[-1] > v_warm[-1]
@@ -222,6 +221,21 @@ def test_unavailable_reasons():
     assert vp.vp_block_milestones(SOWING, observed, cold, **kw)["emergence"]["reason"] == "not_reached"
     mixed = _members(last + timedelta(days=1), cc.MIN_MEMBERS - 1, 300) + [cold[0]]
     assert vp.vp_block_milestones(SOWING, observed, mixed, **kw)["emergence"]["reason"] == "not_reached_by_all_members"
+
+
+def test_no_maturity_parameter_is_reported_as_such():
+    p = vp.VPParams(rp=3.0, rv=1.5, t2=300.0, mat_p=None)
+    observed = _series(SOWING, 5, 0.0, 6.0)
+    last = observed[-1].day
+    kw = {"p": p, "as_of": last, **WHEAT}
+    assert vp.vp_milestones(SOWING, _seasonal(SOWING, 330), p=p, **WHEAT)["maturity"] is None
+    expected = {"status": "unavailable", "reason": "no_maturity_parameter"}
+    many = [_seasonal(SOWING, 330)[5:] for _ in range(cc.MIN_MEMBERS)]
+    block = vp.vp_block_milestones(SOWING, observed, many, **kw)
+    assert block["maturity"] == expected
+    assert block["flowering_start"]["status"] == "projected"
+    assert vp.vp_block_milestones(SOWING, observed, [], **kw)["maturity"] == expected
+    assert vp.vp_block_milestones(SOWING, observed, many[:1], **kw)["maturity"] == expected
 
 
 def test_non_finite_temperature_refused():
