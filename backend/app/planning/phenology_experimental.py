@@ -5,14 +5,21 @@ file raises; the caller decides how to report it.
 """
 from __future__ import annotations
 
+import asyncio
 import functools
 import json
+import logging
 from dataclasses import dataclass
 from typing import Any
 
+from app.planning.cereal_type import CerealType, cereal_group, resolve_cereal_type
+from app.services import crop_calendar as cc
 from app.services import yield_calibration as yc
 from app.services.country_lookup import country_at
-from app.services.phenology_vp import VPParams
+from app.services.engines import aquacrop_engine as aq
+from app.services.phenology_vp import MODEL_VERSION, VPParams, vp_block_milestones
+
+logger = logging.getLogger(__name__)
 
 PARAMS_PATH = yc.DATA_DIR / "phenology_vp_params.json"
 VALIDATION_PATH = yc.DATA_DIR / "phenology_vp_validation.json"
@@ -135,3 +142,74 @@ def experimental_sources() -> list[dict[str, str]]:
         {"short": "Grid-bound parameters",
          "detail": "Parameters at a fitting-grid bound are fitting results, not physiological traits"},
     ]
+
+
+MODEL_ID = "vernalization_photoperiod"
+# The parameters were fitted with grid-cell Tmin; the endpoint's archive series is altitude-corrected.
+NOTE_TMIN = "tmin_differs_from_fit"
+
+
+def builtin_thresholds(slug: str) -> tuple[float, float, float]:
+    """(tbase, tupp, emergence GDD) of the cultivar without provincial calibration, as in the fit."""
+    c = cc.effective_calendar(slug)  # no point: no regional calibration
+    return c.tbase, c.tupp, c.emergence
+
+
+def _cereal_type_block(ct: CerealType | None, variety: str | None) -> dict[str, Any]:
+    if ct is None:
+        return {"value": None, "source": None, "variety": variety}
+    return {"value": ct.value, "source": ct.source, "variety": ct.variety}
+
+
+def _block(state: str, reason: str | None, cereal_type: dict, *, parameters=None, milestones=None,
+           validation=None, notes=None) -> dict[str, Any]:
+    return {
+        "model": {"id": MODEL_ID, "version": f"{MODEL_VERSION}+{_params_file()['version']}",
+                  "role": "experimental", "operative": False},
+        "state": state, "reason": reason, "cereal_type": cereal_type,
+        "parameters": parameters, "milestones": milestones, "validation": validation,
+        "sources": experimental_sources(), "notes": list(notes or []),
+    }
+
+
+async def _no_lookup(eppo: str):
+    raise RuntimeError("no cereal-type source configured")
+
+
+def _compute(sowing_date, observed_days, members, lat, tbase, tupp, emergence, params, as_of) -> dict:
+    out = vp_block_milestones(sowing_date, observed_days, members, lat, tbase, tupp, emergence, params, as_of)
+    out["emergence"] = {**out["emergence"], "shared_with": "aquacrop_calendar"}
+    return out
+
+
+async def experimental_block(*, slug: str, variety: str | None, lat: float, lon: float, sowing_date,
+                             observed, analogs, fetch_classes=None, ctx: str = "") -> dict[str, Any]:
+    """The ``experimental`` block of the parcel phenology answer. Never raises.
+
+    ``observed`` is the endpoint's observed weather (or None when it could not be assembled) and
+    ``analogs`` its analog years: the same series the operative calendar uses. Nothing here feeds an
+    operative consumer. Any error becomes ``unavailable``/``internal_error`` with a log line.
+    """
+    ct: CerealType | None = None
+    try:
+        ct = await resolve_cereal_type(slug, variety, fetch_classes=fetch_classes or _no_lookup)
+        ctype = _cereal_type_block(ct, variety)
+        group = cereal_group(slug, ct.value)
+        if group is None:
+            return _block("unavailable", ct.reason or "no_cereal_type", ctype)
+        sel = select_parameters(group, lat, lon)
+        if isinstance(sel, Unavailable):
+            return _block("unavailable", sel.reason, ctype)
+        parameters = parameters_block(sel)
+        if observed is None:
+            return _block("unavailable", "weather_unavailable", ctype, parameters=parameters)
+        tbase, tupp, emergence = builtin_thresholds(slug)
+        members = [aq.project_weather(observed.weather, analogs[y], sowing_date, y) for y in sorted(analogs)]
+        as_of = observed.weather[-1].day
+        milestones = await asyncio.to_thread(_compute, sowing_date, observed.weather, members, lat, tbase,
+                                             tupp, emergence, sel.params, as_of)
+        return _block("done", None, ctype, parameters=parameters, milestones=milestones,
+                      validation=validation_block(group, sel.zone), notes=[NOTE_TMIN])
+    except Exception:
+        logger.exception("parcel_phenology_experimental_failed %s", ctx)
+        return _block("unavailable", "internal_error", _cereal_type_block(ct, variety))

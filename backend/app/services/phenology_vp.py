@@ -28,6 +28,7 @@ import numpy as np
 from app.services import crop_calendar as cc
 from app.services.engines import aquacrop_engine as aq
 
+MODEL_VERSION = "1"  # code version; the parameter file carries its own
 HSNOW = 0.0  # snow depth (cm); the released APSIM default
 HORIZON_DAYS = 330  # days simulated from sowing
 MILESTONES = ("emergence", "flowering_start", "maturity")

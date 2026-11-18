@@ -12,6 +12,7 @@ from app.api.v1.graph import _require_tenant_id
 from app.common.attribution import attach_attributions
 from app.core.knowledge import KnowledgeSource, get_knowledge_sources
 from app.graph.dao import GraphDAO
+from app.planning.cereal_type import graph_class_fetcher
 from app.planning.cover_reference import SOURCE_ID, load_reference_data, reference_for
 from app.planning.farm import default_target_campaign, farm_payload
 from app.planning.farm_source import load_farm
@@ -159,7 +160,7 @@ async def estimates_in_season(request: Request, parcel_id: str, sources: Sources
 
 
 @router.get("/parcels/{parcel_id:path}/phenology", response_model=ParcelPhenologyResponse)
-async def parcel_phenology_dates(request: Request, parcel_id: str):
+async def parcel_phenology_dates(request: Request, parcel_id: str, sources: SourcesDep):
     """Milestone dates of the parcel's sown cereal (contract 2.8), without the yield forecast.
 
     Same parcel, cycle, crop, sowing and regime resolution as ``/estimates/in-season``, but no
@@ -168,7 +169,8 @@ async def parcel_phenology_dates(request: Request, parcel_id: str):
     tenant = _require_tenant_id(request)
     parcel_id = _checked_parcel_urn(parcel_id)
     try:
-        return await parcel_phenology(tenant_id=tenant, parcel_id=parcel_id)
+        return await parcel_phenology(tenant_id=tenant, parcel_id=parcel_id,
+                                      fetch_classes=graph_class_fetcher(sources[0].driver))
     except ParcelNotFound as e:
         raise HTTPException(status_code=404, detail=str(e)) from e
 

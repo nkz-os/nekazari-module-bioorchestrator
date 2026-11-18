@@ -99,7 +99,8 @@ def test_reason_info_when_no_year_hit():
     assert r["gate"] == "frost"
     assert r["params"] == {"years_hit": 2, "years_total": 10, "stage": "flowering", "thresholds_c": "-1",
                            "threshold_source": "fao_2005_t45", "tmin_source": "ERA5",
-                           "tmin_caveat": "warm_bias", "tmin_basis": "raw"}
+                           "tmin_caveat": "warm_bias", "tmin_basis": "raw",
+                           "phenology_model": "aquacrop_calendar"}
 
 
 def test_reason_risk_two_of_ten():
@@ -276,3 +277,10 @@ def test_validated_gap_excludes_season():
 def test_history_without_risk_fields_is_raw():
     p = lf.late_frost_reason("barley", cal=_cal(), sowing_doy=1, history=_hist(0, 0), status="ready")["params"]
     assert p["tmin_basis"] == "raw" and p["tmin_caveat"] == "warm_bias"
+
+
+def test_late_frost_reports_model():
+    for slug in ("wheat", "barley"):
+        r = lf.late_frost_reason(slug, cal=_cal(), sowing_doy=1, history=_hist(0, 0), status="ready")
+        assert r["code"] in ("frost_late_risk", "frost_late_info")
+        assert r["params"]["phenology_model"] == "aquacrop_calendar"
