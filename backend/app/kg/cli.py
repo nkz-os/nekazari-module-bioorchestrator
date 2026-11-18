@@ -402,7 +402,8 @@ async def _run(cfg: BuildConfig, env: Mapping[str, str], climate_reader: Any) ->
                               "publishable": report.publishable, "error_counts": report.error_counts,
                               "warning_counts": report.warning_counts,
                               "adapter_inputs": [list(i) for i in adapted.inputs],
-                              "content_duplicate_check": report.content_duplicate_check}
+                              "content_duplicate_check": report.content_duplicate_check,
+                              "cross_source_check": report.cross_source_check}
         _write_manifest(out, "03-adapt-gate", stage3)
         refused = [g.source_id for g in gates if g.status != "pass" or (cfg.profile == "production" and not g.publishable)]
         if refused:

@@ -37,8 +37,11 @@ a skipped check is no check); unknown yield basis; a unit with no observed site 
 counted and listed by source, never an error); treatment codes in site names; a field site without
 coordinates; no year; a variety not in the registry (also written to a review-queue file, never
 merged automatically); robust per-study outliers (modified z-score by median absolute deviation,
-> 3.5); identical yields across several varieties of one study; a cumulative-looking source field
-for a yield; a content duplicate of a unit already in an existing graph (optional, read-only); and
+> 3.5 in groups of 8 or more; the yield > 5 in groups of 5 or more); identical yields across several varieties of one study; a cumulative-looking source field
+for a yield; a content duplicate of a unit already in an existing graph (optional, read-only); the population scans of
+:mod:`app.kg.gate_population` (scale of an environment or of a crop-year, cloned and bimodal studies, field
+sites 200 m to 2 km apart, and, with a graph that can list the other sources, the same yield in another
+source); and
 the warnings of the contract engine and of the adapter, passed through.
 
 Decisions that are the gate's and not the engine's: the engine measures (``bundle.report``: range
@@ -65,6 +68,7 @@ from app.graph.site_canonicalization import haversine_km
 
 from . import identity
 from .contracts import YIELD_VARIABLE, Bundle
+from .gate_population import scan_cross_source, scan_population, scan_site_aliases
 from .model import UnitRow
 from .registries import Registries, UnknownEntryError, lookup_key
 
@@ -83,6 +87,12 @@ MAX_GROUPS = 50
 OUTLIER_MIN_GROUP = 8  # a median and a MAD from fewer values than this say nothing
 OUTLIER_Z = 3.5  # Iglewicz and Hoaglin's cut-off for the modified z-score
 OUTLIER_MAD_SCALE = 0.6745  # makes the MAD comparable to a standard deviation for normal data
+# The yield's own cut-off, calibrated by defect injection on the 2026-10-20 graph export (200 repetitions, fixed
+# seed): the most sensitive pair with at most 1 % of units flagged and 50 warnings per source and tier. It flags
+# fewer units than 3.5 / 8 and catches more (x2: 93 % vs 84 %; x10: > 99 % vs 85 %). Other variables keep the
+# general cut-off until they are calibrated.
+YIELD_OUTLIER_MIN_GROUP = 5
+YIELD_OUTLIER_Z = 5.0
 IDENTICAL_MIN_VARIETIES = 3  # two varieties with one yield can be chance; three or more is a copy
 YEAR_EXCLUSIVE_MIN = 1900
 YEAR_MAX = 2100  # a fixed bound: a gate that reads the clock gives different answers on different days
@@ -156,6 +166,16 @@ RULES: dict[str, Rule] = {
     # review
     "unregistered_variety": Rule("warning", "a variety is not in the varieties registry; queued for review, never merged"),
     "content_duplicate_in_graph": Rule("warning", "a unit has the content of a unit already in the graph under another key"),
+    # population scans (gate_population): what only the rows together show
+    "scale_environment": Rule("warning", "an environment's mean yield is about x3 off its crop's (a possible scale or unit error)"),
+    "scale_block": Rule("warning", "a crop's yields in one year are about x2 off its other years (a possible scale "
+                        "error of a whole table)"),
+    "cloned_studies": Rule("warning", "two studies hold the very same list of yields (a possible copied study)"),
+    "bimodal_study": Rule("warning", "a study's yields split into two separate groups (a possible mix of populations)"),
+    "field_sites_within_2km": Rule("warning", "two field sites lie 200 m to 2 km apart (possibly one place under two "
+                                   "names)"),
+    "cross_source_duplicate": Rule("warning", "the same yield of the same variety, crop and year is in another source "
+                                   "(possibly one trial counted twice)"),
     # pass-through
     "engine_warning": Rule("warning", "warnings of the contract engine"),
     "adapter_warning": Rule("warning", "warnings of the adapter that read the raw data"),
@@ -199,6 +219,8 @@ class OutlierSummary(_Out):
 
     min_group_size: int
     z_threshold: float
+    yield_min_group_size: int
+    yield_z_threshold: float
     groups: int
     evaluated: int
     too_small: int
@@ -232,6 +254,7 @@ class GateReport(_Out):
     varieties_by_status: dict[str, int]
     review_queue: tuple[ReviewQueueItem, ...]
     content_duplicate_check: Literal["run", "not_run"]
+    cross_source_check: Literal["run", "not_run"]
 
     def to_dict(self) -> dict[str, Any]:
         return self.model_dump(mode="json")
@@ -255,6 +278,9 @@ class ExistingGraph(Protocol):
     """
 
     def unit_identities(self, source_id: str) -> Iterable[tuple[str, str]]: ...
+
+    # Optional: ``other_source_yields(source_id)`` yields ``(crop_eppo, year, variety_key, yield_kg_ha,
+    # source_id)`` for the units of every OTHER source; when present the gate runs ``cross_source_duplicate``.
 
 
 def unit_content_key(unit: UnitRow) -> str:
@@ -633,7 +659,10 @@ def _check_outliers(comparable: Mapping[tuple[Any, ...], Sequence[tuple[float, s
     evaluated = too_small = mad_zero = flagged = 0
     for group_key in sorted(comparable, key=repr):
         values = comparable[group_key]
-        if len(values) < OUTLIER_MIN_GROUP:
+        is_yield = group_key[1] == YIELD_VARIABLE
+        min_group = YIELD_OUTLIER_MIN_GROUP if is_yield else OUTLIER_MIN_GROUP
+        z_threshold = YIELD_OUTLIER_Z if is_yield else OUTLIER_Z
+        if len(values) < min_group:
             too_small += 1
             continue
         numbers = [value for value, _ in values]
@@ -645,11 +674,12 @@ def _check_outliers(comparable: Mapping[tuple[Any, ...], Sequence[tuple[float, s
         evaluated += 1
         for value, key in values:
             z = OUTLIER_MAD_SCALE * (value - median) / mad
-            if abs(z) > OUTLIER_Z:
+            if abs(z) > z_threshold:
                 flagged += 1
                 c.hit("outlier_in_study", group=str(group_key[1]), example=f"obs:{key} value={value:g} z={z:.1f}")
     return OutlierSummary(
-        min_group_size=OUTLIER_MIN_GROUP, z_threshold=OUTLIER_Z, groups=len(comparable), evaluated=evaluated,
+        min_group_size=OUTLIER_MIN_GROUP, z_threshold=OUTLIER_Z, yield_min_group_size=YIELD_OUTLIER_MIN_GROUP,
+        yield_z_threshold=YIELD_OUTLIER_Z, groups=len(comparable), evaluated=evaluated,
         too_small=too_small, mad_zero=mad_zero, flagged=flagged)
 
 
@@ -718,6 +748,13 @@ def run_gate(
     queue = _review_queue(bundle, c)
     if existing is not None:
         _check_graph(bundle, existing, c)
+    sites = {site.site_id: site for site in bundle.sites}
+    population = [*scan_population(bundle.units, sites), *scan_site_aliases(sites, registries)]
+    cross_source = existing is not None and hasattr(existing, "other_source_yields")
+    if cross_source:
+        population += scan_cross_source(bundle.units, existing)
+    for rule, group, example in population:
+        c.hit(rule, group=group, example=example)
     _pass_through(bundle, adapter_warnings, c)
 
     errors, warnings = c.findings()
@@ -732,7 +769,8 @@ def run_gate(
               "observations": len(bundle.observations)},
         range_checks=range_summary, outliers=outliers, gaps=dict(bundle.report.gaps),
         varieties_by_status=dict(sorted(Counter(v.status for v in bundle.varieties).items())),
-        review_queue=queue, content_duplicate_check="run" if existing is not None else "not_run")
+        review_queue=queue, content_duplicate_check="run" if existing is not None else "not_run",
+        cross_source_check="run" if cross_source else "not_run")
 
 
 # ═════════════════════════════════════════════════════════════════════════════
