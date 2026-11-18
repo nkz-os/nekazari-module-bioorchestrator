@@ -371,3 +371,46 @@ async def test_experimental_runs_off_the_event_loop(monkeypatch):
     monkeypatch.setattr(pe, "vp_block_milestones", spy)
     await call(load=loader(cycles=with_variety()), fetch_classes=fetcher())
     assert seen and not any(seen)
+
+
+@pytest.fixture
+def fresh_caches():
+    pe._params_file.cache_clear()
+    pe._validation_file.cache_clear()
+    yield
+    pe._params_file.cache_clear()
+    pe._validation_file.cache_clear()
+
+
+@pytest.mark.parametrize("target,failure", [
+    ("_params_file", OSError("missing")), ("_params_file", ValueError("malformed json")),
+    ("_params_file", KeyError("version")), ("_validation_file", OSError("missing")),
+    ("_validation_file", json.JSONDecodeError("bad", "x", 0))])
+async def test_data_file_failure_never_escapes(monkeypatch, fresh_caches, target, failure):
+    normal = await call(load=loader(cycles=with_variety()), fetch_classes=fetcher())
+    monkeypatch.setattr(pe, target, MagicMock(side_effect=failure))
+    out = await call(load=loader(cycles=with_variety()), fetch_classes=fetcher())
+    assert out["state"] == "done"
+    assert out["experimental"]["state"] == "unavailable" and out["experimental"]["reason"] == "internal_error"
+    assert json.dumps(out["phenology"], sort_keys=True) == json.dumps(normal["phenology"], sort_keys=True)
+
+
+async def test_experimental_guard_covers_a_raising_builder(monkeypatch):
+    monkeypatch.setattr(pe, "experimental_block", AsyncMock(side_effect=OSError("x")))
+    out = await call(load=loader(cycles=with_variety()), fetch_classes=fetcher())
+    assert out["state"] == "done" and out["experimental"]["reason"] == "internal_error"
+
+
+def test_route_200_when_params_file_missing(client, monkeypatch, fresh_caches):
+    import app.api.v1.planning as planning_api
+    monkeypatch.setattr(pe, "_params_file", MagicMock(side_effect=OSError("missing")))
+    real = phenology_dates.parcel_phenology
+
+    async def run(**kw):
+        return await real(**{**kw, "today": TODAY, "load": loader(cycles=with_variety())})
+    monkeypatch.setattr(planning_api, "parcel_phenology", run)
+    monkeypatch.setattr(planning_api, "graph_class_fetcher", lambda d: fetcher())
+    r = client.get(URL)
+    assert r.status_code == 200
+    assert r.json()["experimental"]["reason"] == "internal_error"
+    assert r.json()["phenology"]["operative"] is True

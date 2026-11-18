@@ -20,7 +20,9 @@ from app.planning.in_season import (
     resolve_sown_crop,
     season_window_reason,
 )
-from app.planning.phenology_experimental import experimental_block
+from app.planning.phenology_experimental import (
+    safe_experimental_block as experimental_block,
+)
 from app.planning.service import ParcelNotFound
 from app.services import crop_calendar as cal
 from app.services.crop_simulation import phenology_for

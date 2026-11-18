@@ -161,10 +161,18 @@ def _cereal_type_block(ct: CerealType | None, variety: str | None) -> dict[str, 
     return {"value": ct.value, "source": ct.source, "variety": ct.variety}
 
 
+def _model_version() -> str:
+    """Code version plus params-file version; the code version alone when the file cannot be read."""
+    try:
+        return f"{MODEL_VERSION}+{_params_file()['version']}"
+    except Exception:  # noqa: BLE001 - the fallback block must not depend on any data file
+        return MODEL_VERSION
+
+
 def _block(state: str, reason: str | None, cereal_type: dict, *, parameters=None, milestones=None,
            validation=None, notes=None) -> dict[str, Any]:
     return {
-        "model": {"id": MODEL_ID, "version": f"{MODEL_VERSION}+{_params_file()['version']}",
+        "model": {"id": MODEL_ID, "version": _model_version(),
                   "role": "experimental", "operative": False},
         "state": state, "reason": reason, "cereal_type": cereal_type,
         "parameters": parameters, "milestones": milestones, "validation": validation,
@@ -213,3 +221,17 @@ async def experimental_block(*, slug: str, variety: str | None, lat: float, lon:
     except Exception:
         logger.exception("parcel_phenology_experimental_failed %s", ctx)
         return _block("unavailable", "internal_error", _cereal_type_block(ct, variety))
+
+
+async def safe_experimental_block(**kwargs) -> dict[str, Any]:
+    """Outermost guard: nothing from the experimental path escapes into the operative answer."""
+    try:
+        return await experimental_block(**kwargs)
+    except Exception:
+        logger.exception("parcel_phenology_experimental_failed %s", kwargs.get("ctx", ""))
+        return {"model": {"id": MODEL_ID, "version": MODEL_VERSION, "role": "experimental",
+                          "operative": False},
+                "state": "unavailable", "reason": "internal_error",
+                "cereal_type": {"value": None, "source": None, "variety": kwargs.get("variety")},
+                "parameters": None, "milestones": None, "validation": None,
+                "sources": experimental_sources(), "notes": []}
