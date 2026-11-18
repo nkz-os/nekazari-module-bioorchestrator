@@ -3,7 +3,7 @@
  "model": "vernalization_photoperiod",
  "seed": 20261118,
  "max_days": 330,
- "note": "Index 0 = sowing day; series start at sowing; tmin/tmax daily, MAX_DAYS long. Expected values are the experiment's out-of-sample predictions (primary partition, per_type, ma); each case carries the params of its own CV fold. MAX_DAYS as an index means not reached. maturity_idx null = no maturity prediction.",
+ "note": "Index 0 = sowing day; series start at sowing; tmin/tmax daily, MAX_DAYS long. Expected values are the experiment's out-of-sample predictions (primary partition, per_type, ma); each case carries the params of its own CV fold. MAX_DAYS as an index means not reached. maturity_idx null = no maturity prediction. Sources: sowing dates and sites from GENVCE (Spain) and from the Deutscher Wetterdienst phenology network (Germany; Source: Deutscher Wetterdienst, CC BY 4.0); daily temperatures from Open-Meteo (CC BY 4.0).",
  "cases": [
   {
    "case_id": "es:13629",
@@ -25,12 +25,6 @@
     "t2": 100.0,
     "mat_p": 515.0,
     "t1_adj": 401
-   },
-   "observed": {
-    "heading_idx": 161,
-    "heading_date": "2023-04-14",
-    "maturity_idx": 187,
-    "maturity_date": "2023-05-10"
    },
    "expected": {
     "heading_idx": 165,
@@ -724,12 +718,6 @@
     "mat_p": null,
     "t1_adj": 401
    },
-   "observed": {
-    "heading_idx": 149,
-    "heading_date": "2023-04-28",
-    "maturity_idx": null,
-    "maturity_date": null
-   },
    "expected": {
     "heading_idx": 149,
     "heading_date": "2023-04-28",
@@ -1421,12 +1409,6 @@
     "t2": 100.0,
     "mat_p": 515.0,
     "t1_adj": 401
-   },
-   "observed": {
-    "heading_idx": 146,
-    "heading_date": "2023-04-20",
-    "maturity_idx": 212,
-    "maturity_date": "2023-06-25"
    },
    "expected": {
     "heading_idx": 153,
@@ -2120,12 +2102,6 @@
     "mat_p": 535.0,
     "t1_adj": 401
    },
-   "observed": {
-    "heading_idx": 153,
-    "heading_date": "2024-04-09",
-    "maturity_idx": 191,
-    "maturity_date": "2024-05-17"
-   },
    "expected": {
     "heading_idx": 160,
     "heading_date": "2024-04-16",
@@ -2817,12 +2793,6 @@
     "t2": 155.0,
     "mat_p": null,
     "t1_adj": 401
-   },
-   "observed": {
-    "heading_idx": 159,
-    "heading_date": "2024-04-22",
-    "maturity_idx": null,
-    "maturity_date": null
    },
    "expected": {
     "heading_idx": 154,
@@ -3516,12 +3486,6 @@
     "mat_p": 660.0,
     "t1_adj": 401
    },
-   "observed": {
-    "heading_idx": 156,
-    "heading_date": "2024-04-26",
-    "maturity_idx": 197,
-    "maturity_date": "2024-06-06"
-   },
    "expected": {
     "heading_idx": 160,
     "heading_date": "2024-04-30",
@@ -4213,12 +4177,6 @@
     "t2": 200.0,
     "mat_p": 620.0,
     "t1_adj": 401
-   },
-   "observed": {
-    "heading_idx": 163,
-    "heading_date": "2026-04-25",
-    "maturity_idx": 200,
-    "maturity_date": "2026-06-01"
    },
    "expected": {
     "heading_idx": 164,
@@ -4912,12 +4870,6 @@
     "mat_p": null,
     "t1_adj": 401
    },
-   "observed": {
-    "heading_idx": 176,
-    "heading_date": "2026-04-30",
-    "maturity_idx": null,
-    "maturity_date": null
-   },
    "expected": {
     "heading_idx": 189,
     "heading_date": "2026-05-13",
@@ -5609,12 +5561,6 @@
     "t2": 115.0,
     "mat_p": 655.0,
     "t1_adj": 401
-   },
-   "observed": {
-    "heading_idx": 172,
-    "heading_date": "2026-04-18",
-    "maturity_idx": 208,
-    "maturity_date": "2026-05-24"
    },
    "expected": {
     "heading_idx": 173,
@@ -6308,12 +6254,6 @@
     "mat_p": 695.0,
     "t1_adj": 401
    },
-   "observed": {
-    "heading_idx": 134,
-    "heading_date": "2026-04-11",
-    "maturity_idx": 178,
-    "maturity_date": "2026-05-25"
-   },
    "expected": {
     "heading_idx": 138,
     "heading_date": "2026-04-15",
@@ -7005,12 +6945,6 @@
     "t2": 100.0,
     "mat_p": 560.0,
     "t1_adj": 401
-   },
-   "observed": {
-    "heading_idx": 248,
-    "heading_date": "1994-05-24",
-    "maturity_idx": 293,
-    "maturity_date": "1994-07-08"
    },
    "expected": {
     "heading_idx": 247,
@@ -7704,12 +7638,6 @@
     "mat_p": null,
     "t1_adj": 401
    },
-   "observed": {
-    "heading_idx": 59,
-    "heading_date": "2018-06-01",
-    "maturity_idx": null,
-    "maturity_date": null
-   },
    "expected": {
     "heading_idx": 51,
     "heading_date": "2018-05-24",
@@ -8401,12 +8329,6 @@
     "t2": 100.0,
     "mat_p": 560.0,
     "t1_adj": 401
-   },
-   "observed": {
-    "heading_idx": 240,
-    "heading_date": "2013-05-15",
-    "maturity_idx": 300,
-    "maturity_date": "2013-07-14"
    },
    "expected": {
     "heading_idx": 253,
@@ -9100,12 +9022,6 @@
     "mat_p": null,
     "t1_adj": 401
    },
-   "observed": {
-    "heading_idx": 210,
-    "heading_date": "2012-05-28",
-    "maturity_idx": null,
-    "maturity_date": null
-   },
    "expected": {
     "heading_idx": 217,
     "heading_date": "2012-06-04",
@@ -9797,12 +9713,6 @@
     "t2": 100.0,
     "mat_p": 565.0,
     "t1_adj": 401
-   },
-   "observed": {
-    "heading_idx": 243,
-    "heading_date": "2005-05-18",
-    "maturity_idx": 278,
-    "maturity_date": "2005-06-22"
    },
    "expected": {
     "heading_idx": 238,
@@ -10496,12 +10406,6 @@
     "mat_p": 570.0,
     "t1_adj": 401
    },
-   "observed": {
-    "heading_idx": 257,
-    "heading_date": "2021-05-17",
-    "maturity_idx": 295,
-    "maturity_date": "2021-06-24"
-   },
    "expected": {
     "heading_idx": 253,
     "heading_date": "2021-05-13",
@@ -11193,12 +11097,6 @@
     "t2": 330.0,
     "mat_p": 795.0,
     "t1_adj": 401
-   },
-   "observed": {
-    "heading_idx": 242,
-    "heading_date": "1996-06-09",
-    "maturity_idx": 293,
-    "maturity_date": "1996-07-30"
    },
    "expected": {
     "heading_idx": 244,
@@ -11892,12 +11790,6 @@
     "mat_p": 570.0,
     "t1_adj": 401
    },
-   "observed": {
-    "heading_idx": 59,
-    "heading_date": "2023-06-20",
-    "maturity_idx": 105,
-    "maturity_date": "2023-08-05"
-   },
    "expected": {
     "heading_idx": 58,
     "heading_date": "2023-06-19",
@@ -12590,12 +12482,6 @@
     "mat_p": null,
     "t1_adj": 401
    },
-   "observed": {
-    "heading_idx": 231,
-    "heading_date": "1997-05-18",
-    "maturity_idx": null,
-    "maturity_date": null
-   },
    "expected": {
     "heading_idx": 242,
     "heading_date": "1997-05-29",
@@ -13287,12 +13173,6 @@
     "t2": 100.0,
     "mat_p": 560.0,
     "t1_adj": 401
-   },
-   "observed": {
-    "heading_idx": 216,
-    "heading_date": "2016-05-10",
-    "maturity_idx": 260,
-    "maturity_date": "2016-06-23"
    },
    "expected": {
     "heading_idx": 215,
