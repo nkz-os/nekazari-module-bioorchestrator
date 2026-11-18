@@ -3,7 +3,12 @@ from datetime import date
 
 import pytest
 
-from app.planning.in_season import MAX_SEASON_DAYS, InSeasonInputs, resolve_in_season
+from app.planning.in_season import (
+    MAX_SEASON_DAYS,
+    InSeasonInputs,
+    resolve_in_season,
+    resolve_sown_crop,
+)
 
 TODAY = date(2026, 3, 15)
 PARCEL = {"id": "urn:ngsi-ld:AgriParcel:t:p1", "irrigationRegime": "rainfed",
@@ -171,3 +176,12 @@ def test_a_due_next_crop_wins_over_the_ended_season():
 @pytest.mark.parametrize("prev", [_previous(end_provenance="planned"), _previous(end="2025-07-01")])
 def test_an_unrecorded_or_old_end_is_no_committed_crop(prev):
     assert resolve_in_season(PARCEL, CROPS, {"current": None, "previous": prev}, date(2026, 8, 15)) == "no_committed_crop"
+
+
+def test_sown_crop_carries_the_recorded_variety():
+    c = cycles()
+    assert resolve_sown_crop(PARCEL, CROPS, c, TODAY).variety is None
+    c["current"]["variety"] = "Synthetic"
+    assert resolve_sown_crop(PARCEL, CROPS, c, TODAY).variety == "Synthetic"
+    c["current"]["variety"] = 7
+    assert resolve_sown_crop(PARCEL, CROPS, c, TODAY).variety is None

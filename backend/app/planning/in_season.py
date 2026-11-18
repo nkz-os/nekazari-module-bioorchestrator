@@ -88,6 +88,7 @@ class SownCrop:
     regime_source: str
     sowing_date: date
     sowing_provenance: str
+    variety: str | None = None
 
 
 def resolve_sown_crop(parcel: dict, crops: dict[str, dict], cycles: dict | None,
@@ -124,8 +125,10 @@ def resolve_sown_crop(parcel: dict, crops: dict[str, dict], cycles: dict | None,
         return "unknown_crop"
     eppo = catalog_code(eppo)
     regime, regime_source = parcel_regime(parcel, [crop] if crop else [])
+    variety = current.get("variety")
     return SownCrop(crop_slug=slug, eppo=eppo, regime=regime, regime_source=regime_source,
-                    sowing_date=sowing, sowing_provenance=start["provenance"])
+                    sowing_date=sowing, sowing_provenance=start["provenance"],
+                    variety=variety if isinstance(variety, str) and variety.strip() else None)
 
 
 def season_window_reason(sowing: date, today: date) -> str | None:
