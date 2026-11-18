@@ -3,7 +3,10 @@ import ast
 from pathlib import Path
 
 APP = Path(__file__).parents[2] / "app"
-FORBIDDEN = ("app.services.phenology_vp", "app.planning.phenology_experimental", "app.planning.cereal_type")
+# phenology_dates re-exports the experimental entry point, so importing it (or the re-exported
+# names) from an operative module would reach the experimental block.
+FORBIDDEN = ("app.services.phenology_vp", "app.planning.phenology_experimental", "app.planning.cereal_type",
+             "app.planning.phenology_dates")
 ALLOWED = {"planning/phenology_dates.py", "planning/phenology_experimental.py", "planning/cereal_type.py"}
 
 
@@ -32,7 +35,11 @@ def test_experimental_not_used_by_operative_consumers():
             continue
         forbidden = FORBIDDEN
         if rel == "api/v1/planning.py":  # the route builds the cereal-type fetcher, nothing else
-            forbidden = tuple(f for f in FORBIDDEN if f != "app.planning.cereal_type")
+            # the route builds the fetcher and calls parcel_phenology, nothing else
+            forbidden = tuple(f for f in FORBIDDEN
+                              if f not in ("app.planning.cereal_type", "app.planning.phenology_dates"))
+            forbidden += ("app.planning.phenology_dates.experimental_block",
+                          "app.planning.phenology_dates.safe_experimental_block")
         hits = {i for i in _imports(path) if i in forbidden or i.startswith(tuple(f + "." for f in forbidden))}
         if hits:
             offenders.append((rel, sorted(hits)))

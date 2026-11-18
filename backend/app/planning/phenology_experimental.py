@@ -25,7 +25,7 @@ PARAMS_PATH = yc.DATA_DIR / "phenology_vp_params.json"
 VALIDATION_PATH = yc.DATA_DIR / "phenology_vp_validation.json"
 
 # The 27 EU member states, ISO 3166-1 alpha-2.
-# Source: European Union, "EU countries", https://european-union.europa.eu/principles-countries-history/eu-countries_en
+# Source: European Union, "EU countries" (official list of member states).
 EU_MEMBERS = frozenset({
     "AT", "BE", "BG", "HR", "CY", "CZ", "DK", "EE", "FI", "FR", "DE", "GR", "HU", "IE",
     "IT", "LV", "LT", "LU", "MT", "NL", "PL", "PT", "RO", "SK", "SI", "ES", "SE",
@@ -98,8 +98,24 @@ def parameters_block(sel: Selection) -> dict[str, Any]:
     }
 
 
+_VERDICT = {"gana": "wins", "no_se_pudo_comprobar": "not_checkable"}
+
+
+def _verdict(raw: Any) -> dict[str, str] | None:
+    """Served verdict: the comparison is against M1 only, in neutral English codes."""
+    if raw is None:
+        return None
+    result = _VERDICT.get(raw) if isinstance(raw, str) else None
+    if result is None:
+        logger.warning("phenology_vp_unknown_verdict value=%r", raw)
+        result = "unknown"
+    return {"vs": "m1", "result": result}
+
+
 def _milestone(entry: dict, zone: str, data: dict) -> dict:
     out = dict(entry)
+    if "verdict" in out:
+        out["verdict"] = _verdict(out["verdict"])
     out["dataset"] = _DATASET[zone]
     out["partition"] = data["partitions"][zone]
     out["report"] = data["report"]

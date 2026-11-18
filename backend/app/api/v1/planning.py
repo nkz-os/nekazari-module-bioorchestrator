@@ -159,8 +159,20 @@ async def estimates_in_season(request: Request, parcel_id: str, sources: Sources
         raise HTTPException(status_code=404, detail=str(e)) from e
 
 
+def _lazy_class_fetcher(request: Request):
+    """Cereal-type fetcher that resolves the graph driver inside the guarded call.
+
+    The phenology answer must not depend on the graph: a missing driver or sources provider
+    surfaces as a lookup failure (``cereal_type_lookup_failed``), never as an HTTP error.
+    """
+    async def fetch(eppo: str):
+        sources = await get_knowledge_sources(request)
+        return await graph_class_fetcher(sources[0].driver)(eppo)
+    return fetch
+
+
 @router.get("/parcels/{parcel_id:path}/phenology", response_model=ParcelPhenologyResponse)
-async def parcel_phenology_dates(request: Request, parcel_id: str, sources: SourcesDep):
+async def parcel_phenology_dates(request: Request, parcel_id: str):
     """Milestone dates of the parcel's sown cereal (contract 2.8), without the yield forecast.
 
     Same parcel, cycle, crop, sowing and regime resolution as ``/estimates/in-season``, but no
@@ -170,7 +182,7 @@ async def parcel_phenology_dates(request: Request, parcel_id: str, sources: Sour
     parcel_id = _checked_parcel_urn(parcel_id)
     try:
         return await parcel_phenology(tenant_id=tenant, parcel_id=parcel_id,
-                                      fetch_classes=graph_class_fetcher(sources[0].driver))
+                                      fetch_classes=_lazy_class_fetcher(request))
     except ParcelNotFound as e:
         raise HTTPException(status_code=404, detail=str(e)) from e
 

@@ -414,3 +414,23 @@ def test_route_200_when_params_file_missing(client, monkeypatch, fresh_caches):
     assert r.status_code == 200
     assert r.json()["experimental"]["reason"] == "internal_error"
     assert r.json()["phenology"]["operative"] is True
+
+
+@pytest.mark.parametrize("species,crop_kind", [("TRZAX", "wheat"), ("HORVX", "barley")])
+def test_route_200_when_the_graph_dependency_fails(client, monkeypatch, species, crop_kind):
+    import app.api.v1.planning as planning_api
+
+    async def boom(request):
+        raise RuntimeError("driver not initialised")
+    monkeypatch.setattr(planning_api, "get_knowledge_sources", boom)
+    real = phenology_dates.parcel_phenology
+
+    async def with_data(**kw):
+        return await real(**kw, today=TODAY, load=loader(cycles=with_variety(species), crops=_crops(species)))
+    monkeypatch.setattr(planning_api, "parcel_phenology", with_data)
+    r = client.get(URL)
+    assert r.status_code == 200, crop_kind
+    body = r.json()
+    assert body["state"] == "done" and body["phenology"]["operative"] is True
+    assert body["experimental"]["state"] == "unavailable"
+    assert body["experimental"]["reason"] == "cereal_type_lookup_failed"

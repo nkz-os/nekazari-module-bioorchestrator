@@ -63,7 +63,7 @@ def test_de_spring_barley_not_tested_descriptive():
 
 def test_validation_has_three_baselines():
     b = pe.validation_block("wheat_winter", "ES")["flowering_start"]
-    assert b["status"] == "measured" and b["verdict"] == "gana"
+    assert b["status"] == "measured" and b["verdict"] == {"vs": "m1", "result": "wins"}
     assert set(b["compared_with"]) == {"m0_mae_days", "m1_mae_days", "calendar_null_mae_days"}
     for k in ("n", "bias_days", "mae_days", "p10_days", "p90_days", "dataset", "partition", "report"):
         assert k in b
@@ -100,3 +100,18 @@ def test_missing_file_raises(monkeypatch, tmp_path):
             pe.select_parameters("wheat_winter", *MADRID)
     finally:
         pe._params_file.cache_clear()
+
+
+def test_es_barley_winter_shows_the_m1_verdict_and_the_fixed_date_baseline():
+    b = pe.validation_block("barley_winter", "ES")["flowering_start"]
+    assert b["verdict"] == {"vs": "m1", "result": "wins"}
+    assert b["compared_with"]["calendar_null_mae_days"] < b["mae_days"]
+
+
+def test_verdict_mapping(caplog):
+    assert pe._verdict(None) is None
+    assert pe._verdict("gana") == {"vs": "m1", "result": "wins"}
+    assert pe._verdict("no_se_pudo_comprobar") == {"vs": "m1", "result": "not_checkable"}
+    with caplog.at_level("WARNING"):
+        assert pe._verdict("pierde") == {"vs": "m1", "result": "unknown"}
+    assert "phenology_vp_unknown_verdict" in caplog.text
