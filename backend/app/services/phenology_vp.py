@@ -37,11 +37,12 @@ MILESTONES = ("emergence", "flowering_start", "maturity")
 class VPParams:
     """Fitted parameters: photoperiod sensitivity ``rp``, vernalisation sensitivity ``rv``,
     heading thermal time after FI ``t2``, maturity thermal time after heading ``mat_p``,
-    and the adjusted thermal time to FI ``t1_adj``."""
+    and the adjusted thermal time to FI ``t1_adj``. ``mat_p`` is None when no maturity
+    parameter was fitted for the group: maturity is then never predicted."""
     rp: float
     rv: float
     t2: float
-    mat_p: float
+    mat_p: float | None
     t1_adj: float = 401.0
 
 
@@ -167,6 +168,8 @@ def _milestone_indices(days: Sequence[Any], lat: float, tbase: float, tupp: floa
     head = _first_at_least(cum, cum[fi] + p.t2, fi)
     out["flowering_start"] = head
     if head is None:
+        return out
+    if p.mat_p is None:
         return out
     out["maturity"] = _first_at_least(cum, cum[head] + p.mat_p, head)
     return out

@@ -232,15 +232,16 @@ def test_non_finite_temperature_refused():
 
 # ------------------------------------------------------------ equivalence with the experiment
 def test_equivalence_fixture():
-    if not FIXTURE.exists():
-        pytest.skip(f"equivalence fixture not present yet: {FIXTURE.name}")
     data = json.loads(FIXTURE.read_text())
-    cases = data["cases"] if isinstance(data, dict) else data
+    cases = data["cases"]
     assert len(cases) == 20
     for c in cases:
-        days = [_w(date.fromisoformat(d), tn, tx) for d, tn, tx in zip(c["days"], c["tmin"], c["tmax"])]
-        p = vp.VPParams(rp=c["rp"], rv=c["rv"], t2=c["t2"], mat_p=c["mat_p"])
-        m = vp.vp_milestones(date.fromisoformat(c["sowing"]), days, c["lat"], c["tbase"], c["tupp"],
-                             c["emergence"], p)
-        assert m["flowering_start"] == date.fromisoformat(c["heading"]), c.get("case_id")
-        assert m["maturity"] == date.fromisoformat(c["maturity"]), c.get("case_id")
+        sow = date.fromisoformat(c["sow"])
+        days = [_w(sow + timedelta(days=i), tn, tx) for i, (tn, tx) in enumerate(zip(c["tmin"], c["tmax"]))]
+        p = vp.VPParams(**c["params"])
+        th = c["thresholds"]
+        m = vp.vp_milestones(sow, days, c["lat"], th["tbase"], th["tupp"], th["emergence"], p)
+        exp = c["expected"]
+        assert m["flowering_start"] == date.fromisoformat(exp["heading_date"]), c["case_id"]
+        want = exp["maturity_date"]
+        assert m["maturity"] == (date.fromisoformat(want) if want else None), c["case_id"]
