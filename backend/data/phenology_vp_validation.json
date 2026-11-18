@@ -1,0 +1,266 @@
+{
+ "version": "2026-11-18.1",
+ "report": "2026-11-18-vernalizacion-INFORME.md",
+ "model": "vernalization_photoperiod",
+ "variant": "per_type",
+ "partitions": {
+  "DE": "de_years",
+  "ES": "es_campaign"
+ },
+ "zones": {
+  "ES": {
+   "wheat_winter": {
+    "flowering_start": {
+     "status": "measured",
+     "n": 69,
+     "bias_days": -1.0,
+     "mae_days": 3.9855072463768115,
+     "p10_days": -5.199999999999999,
+     "p90_days": 5.200000000000003,
+     "compared_with": {
+      "m0_mae_days": 8.666666666666666,
+      "m1_mae_days": 9.043478260869565,
+      "calendar_null_mae_days": 7.956521739130435
+     },
+     "verdict": "gana"
+    },
+    "maturity": {
+     "status": "measured",
+     "n": 18,
+     "bias_days": -0.5,
+     "mae_days": 7.611111111111111,
+     "p10_days": -22.0,
+     "p90_days": 5.300000000000001,
+     "compared_with": {
+      "m0_mae_days": 21.88888888888889,
+      "m1_mae_days": 8.777777777777779,
+      "calendar_null_mae_days": null
+     },
+     "verdict": null
+    }
+   },
+   "wheat_spring": {
+    "flowering_start": {
+     "status": "measured",
+     "n": 54,
+     "bias_days": -1.0,
+     "mae_days": 4.87037037037037,
+     "p10_days": -7.0,
+     "p90_days": 7.0,
+     "compared_with": {
+      "m0_mae_days": 5.925925925925926,
+      "m1_mae_days": 6.388888888888889,
+      "calendar_null_mae_days": 11.592592592592593
+     },
+     "verdict": "gana"
+    },
+    "maturity": {
+     "status": "not_tested",
+     "n": 8,
+     "bias_days": -1.5,
+     "mae_days": 5.375,
+     "p10_days": -11.2,
+     "p90_days": 3.8999999999999995,
+     "compared_with": {
+      "m0_mae_days": 23.375,
+      "m1_mae_days": 5.75,
+      "calendar_null_mae_days": null
+     },
+     "verdict": null,
+     "descriptive": true
+    }
+   },
+   "durum": {
+    "flowering_start": {
+     "status": "measured",
+     "n": 42,
+     "bias_days": 1.0,
+     "mae_days": 5.9523809523809526,
+     "p10_days": -7.799999999999999,
+     "p90_days": 7.0,
+     "compared_with": {
+      "m0_mae_days": 7.880952380952381,
+      "m1_mae_days": 8.785714285714286,
+      "calendar_null_mae_days": 14.80952380952381
+     },
+     "verdict": "gana"
+    },
+    "maturity": {
+     "status": "not_tested",
+     "n": 3,
+     "bias_days": -8.0,
+     "mae_days": 14.666666666666666,
+     "p10_days": -22.4,
+     "p90_days": 6.4,
+     "compared_with": {
+      "m0_mae_days": 15.333333333333334,
+      "m1_mae_days": 3.3333333333333335,
+      "calendar_null_mae_days": null
+     },
+     "verdict": null,
+     "descriptive": true
+    }
+   },
+   "barley_winter": {
+    "flowering_start": {
+     "status": "measured",
+     "n": 67,
+     "bias_days": 1.0,
+     "mae_days": 8.08955223880597,
+     "p10_days": -14.0,
+     "p90_days": 13.0,
+     "compared_with": {
+      "m0_mae_days": 12.761194029850746,
+      "m1_mae_days": 13.149253731343284,
+      "calendar_null_mae_days": 5.7611940298507465
+     },
+     "verdict": "gana"
+    },
+    "maturity": {
+     "status": "measured",
+     "n": 19,
+     "bias_days": -1.0,
+     "mae_days": 9.947368421052632,
+     "p10_days": -20.0,
+     "p90_days": 15.599999999999998,
+     "compared_with": {
+      "m0_mae_days": 20.31578947368421,
+      "m1_mae_days": 11.31578947368421,
+      "calendar_null_mae_days": null
+     },
+     "verdict": null
+    }
+   },
+   "barley_spring": {
+    "flowering_start": {
+     "status": "measured",
+     "n": 54,
+     "bias_days": 0.0,
+     "mae_days": 5.462962962962963,
+     "p10_days": -8.0,
+     "p90_days": 8.0,
+     "compared_with": {
+      "m0_mae_days": 11.425925925925926,
+      "m1_mae_days": 11.296296296296296,
+      "calendar_null_mae_days": 16.77777777777778
+     },
+     "verdict": "gana"
+    },
+    "maturity": {
+     "status": "measured",
+     "n": 10,
+     "bias_days": 3.5,
+     "mae_days": 7.6,
+     "p10_days": -10.4,
+     "p90_days": 10.1,
+     "compared_with": {
+      "m0_mae_days": 12.1,
+      "m1_mae_days": 10.3,
+      "calendar_null_mae_days": null
+     },
+     "verdict": null
+    }
+   }
+  },
+  "DE": {
+   "wheat_winter": {
+    "flowering_start": {
+     "status": "measured",
+     "n": 3799,
+     "bias_days": 0.0,
+     "mae_days": 5.440379047117663,
+     "p10_days": -8.0,
+     "p90_days": 9.0,
+     "compared_with": {
+      "m0_mae_days": 17.02763885232956,
+      "m1_mae_days": 11.65175046064754,
+      "calendar_null_mae_days": 7.894709133982627
+     },
+     "verdict": "gana"
+    },
+    "maturity": {
+     "status": "measured",
+     "n": 3456,
+     "bias_days": 0.0,
+     "mae_days": 6.664641203703703,
+     "p10_days": -11.0,
+     "p90_days": 10.0,
+     "compared_with": {
+      "m0_mae_days": 12.747106481481481,
+      "m1_mae_days": 10.49681712962963,
+      "calendar_null_mae_days": null
+     },
+     "verdict": null
+    }
+   },
+   "barley_winter": {
+    "flowering_start": {
+     "status": "measured",
+     "n": 3862,
+     "bias_days": 1.0,
+     "mae_days": 4.979544277576386,
+     "p10_days": -8.0,
+     "p90_days": 8.0,
+     "compared_with": {
+      "m0_mae_days": 12.963231486276541,
+      "m1_mae_days": 12.33117555670637,
+      "calendar_null_mae_days": 6.795442775763853
+     },
+     "verdict": "gana"
+    },
+    "maturity": {
+     "status": "measured",
+     "n": 3654,
+     "bias_days": 0.0,
+     "mae_days": 6.5859332238642585,
+     "p10_days": -11.0,
+     "p90_days": 10.0,
+     "compared_with": {
+      "m0_mae_days": 23.175697865353037,
+      "m1_mae_days": 9.78872468527641,
+      "calendar_null_mae_days": null
+     },
+     "verdict": null
+    }
+   },
+   "barley_spring": {
+    "flowering_start": {
+     "status": "not_tested",
+     "n": 2079,
+     "bias_days": 1.0,
+     "mae_days": 5.896584896584897,
+     "p10_days": -8.0,
+     "p90_days": 10.0,
+     "compared_with": {
+      "m0_mae_days": 22.962962962962962,
+      "m1_mae_days": 6.11014911014911,
+      "calendar_null_mae_days": 7.554112554112554
+     },
+     "verdict": "no_se_pudo_comprobar",
+     "descriptive": true
+    },
+    "maturity": {
+     "status": "not_tested",
+     "n": 1997,
+     "bias_days": 1.0,
+     "mae_days": 7.989984977466199,
+     "p10_days": -11.0,
+     "p90_days": 15.0,
+     "compared_with": {
+      "m0_mae_days": 45.69554331497246,
+      "m1_mae_days": 8.12919379068603,
+      "calendar_null_mae_days": null
+     },
+     "verdict": null,
+     "descriptive": true
+    }
+   }
+  }
+ },
+ "inputs_sha256": {
+  "scores.json": "5785ab66072dabf18eea01ce511e780d4ea145086ce9f8baa391d6c42d5ea4ee",
+  "decisions.json": "980e9375cceb46c568f007e6869cd053d84f5be8c9df050ecfd6903d8919079d",
+  "posthoc.json": "65fcf9e96df9514c361e5e1575f2b986469927d5c10923f600b156e62b379305",
+  "gate3.final.json": "93407e3a78cdcb98a85f05aff32ccf0fc3601c434b62f5d0d88dd710f53efbcb"
+ }
+}

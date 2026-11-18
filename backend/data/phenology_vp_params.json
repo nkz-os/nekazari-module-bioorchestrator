@@ -1,0 +1,626 @@
+{
+ "version": "2026-11-18.1",
+ "model": "vernalization_photoperiod",
+ "t1_adj": 401,
+ "max_days": 330,
+ "grids": {
+  "rp": {
+   "min": 0.0,
+   "max": 5.0,
+   "step": 0.1
+  },
+  "rv": {
+   "min": 0.0,
+   "max": 5.0,
+   "step": 0.1
+  },
+  "t2": {
+   "min": 100.0,
+   "max": 1500.0,
+   "step": 5.0
+  },
+  "mat_p": {
+   "min": 300.0,
+   "max": 2000.0,
+   "step": 5.0
+  }
+ },
+ "variant": "per_type",
+ "sources": [
+  {
+   "short": "APSIM-Wheat 7.5",
+   "detail": "Zheng et al. 2015, phenology equations"
+  },
+  {
+   "short": "CERES/APSIM daylength",
+   "detail": "APSIM710 day_length (science.f90)"
+  },
+  {
+   "short": "DWD phenology and climate",
+   "detail": "CC BY 4.0"
+  },
+  {
+   "short": "GENVCE",
+   "detail": "Spanish cereal variety trials"
+  },
+  {
+   "short": "Experiment report",
+   "detail": "2026-11-18-vernalizacion-INFORME.md"
+  }
+ ],
+ "sets": {
+  "ES": {
+   "wheat_winter": {
+    "rp": 4.5,
+    "rv": 5.0,
+    "t2": 200.0,
+    "mat_p": 620.0,
+    "n": 69,
+    "n_maturity": 18,
+    "mae_fit_days": 3.5942028985507246,
+    "mae_maturity_fit_days": 6.888888888888889,
+    "at_grid_bound": [
+     "rv"
+    ],
+    "cv_param_spread": {
+     "rp": {
+      "diff_by_fold": {
+       "2023": 0.0,
+       "2024": -0.2,
+       "2025": 0.4,
+       "2026": 0.0
+      },
+      "max_abs_diff": 0.4
+     },
+     "rv": {
+      "diff_by_fold": {
+       "2023": 0.0,
+       "2024": -0.7,
+       "2025": -0.2,
+       "2026": 0.0
+      },
+      "max_abs_diff": 0.7
+     },
+     "t2": {
+      "diff_by_fold": {
+       "2023": 0.0,
+       "2024": 40.0,
+       "2025": -75.0,
+       "2026": 0.0
+      },
+      "max_abs_diff": 75.0
+     },
+     "mat_p": {
+      "diff_by_fold": {
+       "2023": -15.0,
+       "2024": 40.0,
+       "2025": 0.0,
+       "2026": 0.0
+      },
+      "max_abs_diff": 40.0
+     }
+    },
+    "n_matches_gate3": true
+   },
+   "wheat_spring": {
+    "rp": 3.4,
+    "rv": 2.6,
+    "t2": 360.0,
+    "mat_p": 695.0,
+    "n": 54,
+    "n_maturity": 8,
+    "mae_fit_days": 3.7222222222222223,
+    "mae_maturity_fit_days": 4.625,
+    "at_grid_bound": [],
+    "cv_param_spread": {
+     "rp": {
+      "diff_by_fold": {
+       "2023": 0.1,
+       "2024": -3.4,
+       "2025": 0.1,
+       "2026": 0.0
+      },
+      "max_abs_diff": 3.4
+     },
+     "rv": {
+      "diff_by_fold": {
+       "2023": 0.7,
+       "2024": -0.7,
+       "2025": 0.0,
+       "2026": 0.1
+      },
+      "max_abs_diff": 0.7
+     },
+     "t2": {
+      "diff_by_fold": {
+       "2023": -55.0,
+       "2024": 310.0,
+       "2025": -20.0,
+       "2026": 0.0
+      },
+      "max_abs_diff": 310.0
+     },
+     "mat_p": {
+      "diff_by_fold": {
+       "2024": 20.0,
+       "2025": 0.0,
+       "2026": 0.0
+      },
+      "max_abs_diff": 20.0
+     }
+    },
+    "n_matches_gate3": true
+   },
+   "durum": {
+    "rp": 4.1,
+    "rv": 3.0,
+    "t2": 215.0,
+    "mat_p": 970.0,
+    "n": 42,
+    "n_maturity": 3,
+    "mae_fit_days": 5.309523809523809,
+    "mae_maturity_fit_days": 9.333333333333334,
+    "at_grid_bound": [],
+    "cv_param_spread": {
+     "rp": {
+      "diff_by_fold": {
+       "2023": -0.1,
+       "2024": 0.1,
+       "2025": -0.1,
+       "2026": 0.0
+      },
+      "max_abs_diff": 0.1
+     },
+     "rv": {
+      "diff_by_fold": {
+       "2023": 0.0,
+       "2024": -3.0,
+       "2025": 0.2,
+       "2026": 0.0
+      },
+      "max_abs_diff": 3.0
+     },
+     "t2": {
+      "diff_by_fold": {
+       "2023": 40.0,
+       "2024": 5.0,
+       "2025": 15.0,
+       "2026": 0.0
+      },
+      "max_abs_diff": 40.0
+     },
+     "mat_p": {
+      "diff_by_fold": {
+       "2023": -205.0,
+       "2026": 0.0
+      },
+      "max_abs_diff": 205.0
+     }
+    },
+    "n_matches_gate3": true
+   },
+   "barley_winter": {
+    "rp": 3.1,
+    "rv": 5.0,
+    "t2": 100.0,
+    "mat_p": 510.0,
+    "n": 67,
+    "n_maturity": 19,
+    "mae_fit_days": 7.17910447761194,
+    "mae_maturity_fit_days": 9.631578947368421,
+    "at_grid_bound": [
+     "rv",
+     "t2"
+    ],
+    "cv_param_spread": {
+     "rp": {
+      "diff_by_fold": {
+       "2023": 0.2,
+       "2024": -0.3,
+       "2025": 0.2,
+       "2026": 0.0
+      },
+      "max_abs_diff": 0.3
+     },
+     "rv": {
+      "diff_by_fold": {
+       "2023": 0.0,
+       "2024": -0.3,
+       "2025": 0.0,
+       "2026": 0.0
+      },
+      "max_abs_diff": 0.3
+     },
+     "t2": {
+      "diff_by_fold": {
+       "2023": 0.0,
+       "2024": 10.0,
+       "2025": 10.0,
+       "2026": 5.0
+      },
+      "max_abs_diff": 10.0
+     },
+     "mat_p": {
+      "diff_by_fold": {
+       "2023": 5.0,
+       "2024": 25.0,
+       "2025": -45.0,
+       "2026": -30.0
+      },
+      "max_abs_diff": 45.0
+     }
+    },
+    "n_matches_gate3": true
+   },
+   "barley_spring": {
+    "rp": 3.7,
+    "rv": 3.8,
+    "t2": 115.0,
+    "mat_p": 555.0,
+    "n": 54,
+    "n_maturity": 10,
+    "mae_fit_days": 4.574074074074074,
+    "mae_maturity_fit_days": 4.5,
+    "at_grid_bound": [],
+    "cv_param_spread": {
+     "rp": {
+      "diff_by_fold": {
+       "2023": 0.0,
+       "2024": -0.6,
+       "2025": 0.0,
+       "2026": 0.1
+      },
+      "max_abs_diff": 0.6
+     },
+     "rv": {
+      "diff_by_fold": {
+       "2023": 0.4,
+       "2024": 0.5,
+       "2025": 0.0,
+       "2026": -0.5
+      },
+      "max_abs_diff": 0.5
+     },
+     "t2": {
+      "diff_by_fold": {
+       "2023": -10.0,
+       "2024": 40.0,
+       "2025": 0.0,
+       "2026": 0.0
+      },
+      "max_abs_diff": 40.0
+     },
+     "mat_p": {
+      "diff_by_fold": {
+       "2024": 0.0,
+       "2025": 55.0,
+       "2026": 100.0
+      },
+      "max_abs_diff": 100.0
+     }
+    },
+    "n_matches_gate3": true
+   }
+  },
+  "DE": {
+   "wheat_winter": {
+    "rp": 4.2,
+    "rv": 3.8,
+    "t2": 360.0,
+    "mat_p": 800.0,
+    "n": 3799,
+    "n_maturity": 3456,
+    "mae_fit_days": 5.351408265332982,
+    "mae_maturity_fit_days": 6.589409722222222,
+    "at_grid_bound": [],
+    "cv_param_spread": {
+     "rp": {
+      "diff_by_fold": {
+       "1991-1997": 0.2,
+       "1998-2004": 0.0,
+       "2005-2011": 0.1,
+       "2012-2018": 0.0,
+       "2019-2025": 0.2
+      },
+      "max_abs_diff": 0.2
+     },
+     "rv": {
+      "diff_by_fold": {
+       "1991-1997": 0.0,
+       "1998-2004": -0.1,
+       "2005-2011": -0.1,
+       "2012-2018": 0.1,
+       "2019-2025": 0.0
+      },
+      "max_abs_diff": 0.1
+     },
+     "t2": {
+      "diff_by_fold": {
+       "1991-1997": -30.0,
+       "1998-2004": 5.0,
+       "2005-2011": -5.0,
+       "2012-2018": 0.0,
+       "2019-2025": -15.0
+      },
+      "max_abs_diff": 30.0
+     },
+     "mat_p": {
+      "diff_by_fold": {
+       "1991-1997": -5.0,
+       "1998-2004": -5.0,
+       "2005-2011": -5.0,
+       "2012-2018": 5.0,
+       "2019-2025": -5.0
+      },
+      "max_abs_diff": 5.0
+     }
+    },
+    "n_matches_gate3": true
+   },
+   "barley_winter": {
+    "rp": 3.2,
+    "rv": 3.6,
+    "t2": 100.0,
+    "mat_p": 575.0,
+    "n": 3862,
+    "n_maturity": 3654,
+    "mae_fit_days": 4.920507509062662,
+    "mae_maturity_fit_days": 6.565407772304324,
+    "at_grid_bound": [
+     "t2"
+    ],
+    "cv_param_spread": {
+     "rp": {
+      "diff_by_fold": {
+       "1991-1997": 0.0,
+       "1998-2004": 0.0,
+       "2005-2011": 0.2,
+       "2012-2018": 0.0,
+       "2019-2025": 0.2
+      },
+      "max_abs_diff": 0.2
+     },
+     "rv": {
+      "diff_by_fold": {
+       "1991-1997": 0.1,
+       "1998-2004": 0.0,
+       "2005-2011": -0.2,
+       "2012-2018": 0.1,
+       "2019-2025": -0.2
+      },
+      "max_abs_diff": 0.2
+     },
+     "t2": {
+      "diff_by_fold": {
+       "1991-1997": 0.0,
+       "1998-2004": 0.0,
+       "2005-2011": 0.0,
+       "2012-2018": 0.0,
+       "2019-2025": 0.0
+      },
+      "max_abs_diff": 0.0
+     },
+     "mat_p": {
+      "diff_by_fold": {
+       "1991-1997": -15.0,
+       "1998-2004": 0.0,
+       "2005-2011": -10.0,
+       "2012-2018": -15.0,
+       "2019-2025": -5.0
+      },
+      "max_abs_diff": 15.0
+     }
+    },
+    "n_matches_gate3": true
+   },
+   "barley_spring": {
+    "rp": 2.3,
+    "rv": 0.1,
+    "t2": 100.0,
+    "mat_p": 550.0,
+    "n": 2079,
+    "n_maturity": 1997,
+    "mae_fit_days": 5.817219817219817,
+    "mae_maturity_fit_days": 7.687531296945418,
+    "at_grid_bound": [
+     "t2"
+    ],
+    "cv_param_spread": {
+     "rp": {
+      "diff_by_fold": {
+       "2012-2018": -0.2,
+       "2019-2025": 1.1
+      },
+      "max_abs_diff": 1.1
+     },
+     "rv": {
+      "diff_by_fold": {
+       "2012-2018": 0.0,
+       "2019-2025": -0.1
+      },
+      "max_abs_diff": 0.1
+     },
+     "t2": {
+      "diff_by_fold": {
+       "2012-2018": 0.0,
+       "2019-2025": 0.0
+      },
+      "max_abs_diff": 0.0
+     },
+     "mat_p": {
+      "diff_by_fold": {
+       "2012-2018": -15.0,
+       "2019-2025": 20.0
+      },
+      "max_abs_diff": 20.0
+     }
+    },
+    "n_matches_gate3": true
+   }
+  },
+  "EU_joint": {
+   "wheat_winter": {
+    "rp": 4.1,
+    "rv": 3.9,
+    "t2": 370.0,
+    "mat_p": 800.0,
+    "n": 3868,
+    "n_maturity": 3474,
+    "mae_fit_days": 5.380558428128231,
+    "mae_maturity_fit_days": 6.616580310880829,
+    "at_grid_bound": [],
+    "cv_param_spread": {
+     "rp": {
+      "diff_by_fold": {
+       "1991-1997": 0.0,
+       "1998-2004": 0.0,
+       "2005-2011": 0.0,
+       "2012-2018": 0.0,
+       "2019-2025": 0.3
+      },
+      "max_abs_diff": 0.3
+     },
+     "rv": {
+      "diff_by_fold": {
+       "1991-1997": 0.2,
+       "1998-2004": 0.0,
+       "2005-2011": 0.0,
+       "2012-2018": 0.0,
+       "2019-2025": -0.1
+      },
+      "max_abs_diff": 0.2
+     },
+     "t2": {
+      "diff_by_fold": {
+       "1991-1997": -10.0,
+       "1998-2004": 0.0,
+       "2005-2011": 0.0,
+       "2012-2018": 0.0,
+       "2019-2025": -25.0
+      },
+      "max_abs_diff": 25.0
+     },
+     "mat_p": {
+      "diff_by_fold": {
+       "1991-1997": -5.0,
+       "1998-2004": -5.0,
+       "2005-2011": 0.0,
+       "2012-2018": 0.0,
+       "2019-2025": -5.0
+      },
+      "max_abs_diff": 5.0
+     }
+    }
+   },
+   "barley_winter": {
+    "rp": 3.2,
+    "rv": 3.6,
+    "t2": 100.0,
+    "mat_p": 575.0,
+    "n": 3929,
+    "n_maturity": 3673,
+    "mae_fit_days": 4.969966912700433,
+    "mae_maturity_fit_days": 6.5831745167438065,
+    "at_grid_bound": [
+     "t2"
+    ],
+    "cv_param_spread": {
+     "rp": {
+      "diff_by_fold": {
+       "1991-1997": 0.0,
+       "1998-2004": 0.0,
+       "2005-2011": 0.2,
+       "2012-2018": 0.0,
+       "2019-2025": 0.2
+      },
+      "max_abs_diff": 0.2
+     },
+     "rv": {
+      "diff_by_fold": {
+       "1991-1997": 0.1,
+       "1998-2004": 0.0,
+       "2005-2011": -0.2,
+       "2012-2018": 0.1,
+       "2019-2025": -0.2
+      },
+      "max_abs_diff": 0.2
+     },
+     "t2": {
+      "diff_by_fold": {
+       "1991-1997": 0.0,
+       "1998-2004": 0.0,
+       "2005-2011": 0.0,
+       "2012-2018": 0.0,
+       "2019-2025": 0.0
+      },
+      "max_abs_diff": 0.0
+     },
+     "mat_p": {
+      "diff_by_fold": {
+       "1991-1997": -15.0,
+       "1998-2004": 0.0,
+       "2005-2011": -10.0,
+       "2012-2018": -15.0,
+       "2019-2025": -5.0
+      },
+      "max_abs_diff": 15.0
+     }
+    }
+   },
+   "barley_spring": {
+    "rp": 3.6,
+    "rv": 0.0,
+    "t2": 100.0,
+    "mat_p": 535.0,
+    "n": 2133,
+    "n_maturity": 2007,
+    "mae_fit_days": 5.886544772620722,
+    "mae_maturity_fit_days": 7.60388639760837,
+    "at_grid_bound": [
+     "rv",
+     "t2"
+    ],
+    "cv_param_spread": {
+     "rp": {
+      "diff_by_fold": {
+       "2012-2018": 0.2,
+       "2019-2025": -0.2
+      },
+      "max_abs_diff": 0.2
+     },
+     "rv": {
+      "diff_by_fold": {
+       "2012-2018": 0.1,
+       "2019-2025": 0.0
+      },
+      "max_abs_diff": 0.1
+     },
+     "t2": {
+      "diff_by_fold": {
+       "2012-2018": 0.0,
+       "2019-2025": 0.0
+      },
+      "max_abs_diff": 0.0
+     },
+     "mat_p": {
+      "diff_by_fold": {
+       "2012-2018": -15.0,
+       "2019-2025": 35.0
+      },
+      "max_abs_diff": 35.0
+     }
+    }
+   }
+  }
+ },
+ "inputs_sha256": {
+  "cases_es.jsonl": "5aed15670280c5df7f7c5a4487577ac83648c5c88bf96e9c76a35971c08dcdd5",
+  "cases_de.jsonl": "0d0a789edf8ddaa5e57ade8c5634ed6e1bde3f6eea585d701e097b57c3ae9185",
+  "m0_thresholds.json": "091161faca1b2a57071c6ab74bddaa56a013c15a8641b62208054923685de9dd",
+  "weather": {
+   "files": 577,
+   "sha256": "8baf8d509fc3e8b42b9e12656e21d766e71d5e15218af1d4048ffc14d5d6d65a"
+  },
+  "params.jsonl": "93f092f6f82a5a605a56bee3823d8482ffd09ba7a77004f8e78d3067bd271fd9"
+ }
+}
