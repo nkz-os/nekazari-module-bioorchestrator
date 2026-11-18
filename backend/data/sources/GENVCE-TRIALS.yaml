@@ -180,6 +180,6 @@ ignore:
       not a number, ...); recorded in the raw-data repository's extraction, not an observation
 sites: {}
 expected:
-  units: 6593
-  observations: 84873
+  units: 6587
+  observations: 84846
   sites: 79

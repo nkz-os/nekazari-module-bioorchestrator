@@ -303,3 +303,25 @@ def test_zone_label_drives_the_regime_and_the_unit_is_field_tier(bundle):
     assert regimes["Cadreita"] != regimes["Olite"] and None not in regimes.values()
     assert is_field_evidence(None, "Cadreita", "field", source_id="GENVCE-TRIALS") is True
     assert is_field_evidence(None, "Cadreita", "field", source_id="GENVCE") is False
+
+
+def test_dropped_index_and_means_reach_the_graph_as_absent(tmp_path):
+    # the parser drops a productive index and printed means that contradict their own sheet (null, never rebuilt)
+    source = _copy_fixtures(tmp_path)
+    path = source / "data/results_map/extractions/28829.json"
+    data = json.loads(path.read_text(encoding="utf-8"))
+    data["rows"][0]["relative_yield_pct"] = None
+    data["trial_mean_kg_ha"] = None
+    data["check_mean_kg_ha"] = None
+    path.write_text(json.dumps(data), encoding="utf-8")
+
+    rows = genvce_trials.load(source).rows
+    contract = load_contract(CONTRACT_PATH)
+    expected = Expected(units=30, observations=_expected_observations() - 1, sites=2)
+    bundle = run_contract(contract.model_copy(update={"expected": expected}), REGISTRIES, rows)
+
+    p1441 = next(u for u in bundle.units if u.raw_site == "Cadreita" and u.raw_variety == "P1441")
+    assert not any(o.variable_id == "relative_yield_pct" and o.unit_key == identity.unit_key(p1441)
+                   for o in bundle.observations)
+    study = next(s for s in bundle.studies if identity.study_key(s) == p1441.study_key)
+    assert study.trial_mean_yield_kg_ha is None and study.check_mean_yield_kg_ha is None
