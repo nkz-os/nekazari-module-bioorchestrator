@@ -15,7 +15,12 @@ import httpx
 from nkz_platform_sdk.orion import OrionClient
 
 from app.graph.dao import _geometry_centroid
-from app.planning.aquacrop_provider import PROVIDER_ID, VALIDATED, map_in_season
+from app.planning.aquacrop_provider import (
+    PROVIDER_ID,
+    UNVALIDATED_IN_SEASON,
+    VALIDATED,
+    map_in_season,
+)
 from app.planning.farm import parcel_regime
 from app.planning.service import ParcelNotFound
 from app.services.country_lookup import country_at
@@ -141,7 +146,8 @@ def resolve_in_season(parcel: dict, crops: dict[str, dict], cycles: dict | None,
     if sown.regime is None:
         return "no_regime"
     country = _country(parcel)
-    if (sown.eppo, sown.regime, country) not in VALIDATED:
+    key = (sown.eppo, sown.regime, country)
+    if key not in VALIDATED and key not in UNVALIDATED_IN_SEASON:
         return "not_validated"
     reason = season_window_reason(sown.sowing_date, today)
     if reason is not None:
@@ -202,7 +208,9 @@ def _view(job, inputs: InSeasonInputs, version: str) -> dict:
         out["unavailable"] = [{"provider_id": PROVIDER_ID, "reason": "engine_error",
                                "code": (job.error or {}).get("code")}]
     elif job.state == "done":
-        out["estimates"], out["unavailable"] = map_in_season(job.result or {}, version)
+        out["estimates"], out["unavailable"] = map_in_season(
+            job.result or {}, version,
+            unvalidated_scope=UNVALIDATED_IN_SEASON.get((inputs.eppo, inputs.regime, inputs.country)))
         out["season"] = season_info(job.result or {}, inputs, job.finished_at, version)
         out["phenology"] = (job.result or {}).get("phenology")
     return out
