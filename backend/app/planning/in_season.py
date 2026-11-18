@@ -15,7 +15,12 @@ import httpx
 from nkz_platform_sdk.orion import OrionClient
 
 from app.graph.dao import _geometry_centroid
-from app.planning.aquacrop_provider import PROVIDER_ID, UNVALIDATED_IN_SEASON, VALIDATED, map_in_season
+from app.planning.aquacrop_provider import (
+    PROVIDER_ID,
+    UNVALIDATED_IN_SEASON,
+    VALIDATED,
+    map_in_season,
+)
 from app.planning.farm import parcel_regime
 from app.planning.service import ParcelNotFound
 from app.services.country_lookup import country_at

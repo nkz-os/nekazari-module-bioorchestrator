@@ -161,9 +161,15 @@ def test_validated_complete_season_output_is_unchanged():
     assert map_in_season(done, "v-test") == ([gap, ceiling], [])
 
 
-from app.planning.aquacrop_provider import (  # noqa: E402
-    SCOPE_BARLEY, SCOPE_DURUM, SCOPE_DURUM_IRRIGATED, SCOPE_IRRIGATED, UNVALIDATED_IN_SEASON, VALIDATED)
-from app.planning.estimates import estimate_providers  # noqa: E402
+from app.planning.aquacrop_provider import (
+    SCOPE_BARLEY,
+    SCOPE_DURUM,
+    SCOPE_DURUM_IRRIGATED,
+    SCOPE_IRRIGATED,
+    UNVALIDATED_IN_SEASON,
+    VALIDATED,
+)
+from app.planning.estimates import estimate_providers
 
 OPENED = [("HORVX", "rainfed", "ES"), ("TRZDU", "rainfed", "ES"), ("TRZAX", "irrigated", "ES"),
           ("TRZDU", "irrigated", "ES"), ("HORVX", "irrigated", "ES")]
