@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import itertools
 import json
+import math
 import warnings
 from datetime import date, timedelta
 from pathlib import Path
@@ -73,6 +74,17 @@ def test_stage_keys():
     assert eng.STAGE_KEYS == ("establishment", "canopy_growth", "max_canopy", "senescence")
 
 
+def _same(a, b) -> bool:
+    """Equal, floats to 1e-12 relative: pandas 2 vs 3 differ in the last bit of a few values."""
+    if isinstance(a, float) and isinstance(b, float):
+        return math.isclose(a, b, rel_tol=1e-12, abs_tol=1e-15)
+    if isinstance(a, dict) and isinstance(b, dict):
+        return a.keys() == b.keys() and all(_same(a[k], b[k]) for k in a)
+    if isinstance(a, list) and isinstance(b, list):
+        return len(a) == len(b) and all(_same(x, y) for x, y in zip(a, b))
+    return a == b
+
+
 def test_default_output_unchanged():
     ref = json.loads((FIXTURES / "run_aquacrop_main.json").read_text())
     df = _tunis()
@@ -87,7 +99,7 @@ def test_default_output_unchanged():
                                            topsoil_until=p + timedelta(days=5)),
         }
         for k, v in got.items():
-            assert json.loads(json.dumps(v)) == ref[k], k
+            assert _same(json.loads(json.dumps(v)), ref[k]), k
             assert "stages" not in v and "relief_stage" not in v
 
 
