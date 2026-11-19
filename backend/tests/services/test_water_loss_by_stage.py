@@ -282,6 +282,49 @@ async def test_progress(monkeypatch):
     assert seen == [(1, 1)]
 
 
+async def test_empty_observed_goes_to_ensemble_like_simulate(monkeypatch):
+    monkeypatch.setattr(wl, "member_runs", fake_member_runs())
+    with pytest.raises(aq.WeatherEndsBeforeHarvestError):  # no analogs
+        await _compute([])
+    with pytest.raises(aq.EngineInputError, match="observed weather is empty"):
+        await _compute([], _analogs())
+
+
+async def test_broken_pool_is_reset_and_reraised(monkeypatch, caplog):
+    from concurrent.futures.process import BrokenProcessPool
+
+    class Dying(FakePool):
+        shut = False
+
+        def submit(self, fn, *a, **k):
+            f: Future = Future()
+            f.set_exception(BrokenProcessPool("worker died"))
+            return f
+
+        def shutdown(self, wait=True, cancel_futures=False):
+            Dying.shut = True
+
+    monkeypatch.setattr(wl, "_pool", Dying())
+    monkeypatch.setattr(wl, "_get_pool", lambda: wl._pool)
+    with caplog.at_level("ERROR"), pytest.raises(BrokenProcessPool):
+        await _compute(_obs(date(2028, 6, 15)))
+    assert wl._pool is None and Dying.shut
+    assert "water_loss_pool_broken crop=Wheat planting=2027-10-01" in caplog.text
+    monkeypatch.setattr(wl, "_pool", Dying())
+    Dying.shut = False
+    with pytest.raises(BrokenProcessPool):  # ensemble path
+        await _compute(_obs(date(2028, 2, 1)), _analogs())
+    assert wl._pool is None and Dying.shut
+
+
+async def test_malformed_member_stages_raise(monkeypatch):
+    bad = STAGES[:3]
+    monkeypatch.setattr(wl, "member_runs", fake_member_runs(
+        per_call=lambda i: _member(stages=bad if i == 1 else STAGES)))
+    with pytest.raises(wl.StageBoundsMismatch):
+        await _compute(_obs(date(2028, 2, 1)), _analogs())
+
+
 # ------------------------------------------------------------ member_runs
 def test_runs_per_member(monkeypatch):
     calls = []
@@ -363,6 +406,11 @@ async def test_wl_and_pot_equal_simulate_real_engine(monkeypatch):
     assert res["total"]["potential_t_ha"] == ref["potential_yield_t_ha"]
     assert res["total"]["water_gap_pct"] == pytest.approx(ref["water_gap_pct"])
     assert len(members) == 3
+    for m, y in zip(members, sorted(analogs)):  # per member, same weather as simulate's member
+        ref_m = aq.run_aquacrop_with_potential(
+            aq.project_weather(obs, analogs[y], planting, y), layers, "Wheat", planting, start)
+        assert m["wl"] == ref_m["water_limited"]["yield_t_ha"]
+        assert m["pot"] == ref_m["potential"]["yield_t_ha"]
     n_done = sum(1 for s in res["stages"] if s["state"] == "complete")
     assert n_done >= 1  # Wheat sown in October has finished stage 1 by February
     assert all(len(m["relief"]) == n_done for m in members)

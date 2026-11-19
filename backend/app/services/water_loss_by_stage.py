@@ -22,6 +22,7 @@ import os
 import statistics
 from collections.abc import Awaitable, Callable, Mapping
 from concurrent.futures import ProcessPoolExecutor
+from concurrent.futures.process import BrokenProcessPool
 from datetime import date, timedelta
 from multiprocessing import get_context
 from typing import Any
@@ -136,7 +137,9 @@ def _check_bounds(members: list[dict], as_of: date) -> dict[int, str]:
         other = _states(m["stages"], as_of)
         for s in ref:
             k = s["index"]
-            o = next(x for x in m["stages"] if x["index"] == k)
+            o = next((x for x in m["stages"] if x["index"] == k), None)
+            if o is None:
+                raise StageBoundsMismatch(f"member {i} has no stage {k} bounds")
             bad = other[k] != states[k]
             if not bad and states[k] == "complete":
                 bad = (o["start"], o["end"]) != (s["start"], s["end"])
@@ -235,16 +238,13 @@ async def compute(
     aq._validate_crop_irrigation(crop, "rainfed")
     aq._validate_crop_params(crop, crop_params)
     aq._field_management(mulch_pct)
-    if not observed:
-        raise EngineInputError("observed weather is empty")
     loop = asyncio.get_running_loop()
     pool = _get_pool()
-    last = observed[-1].day
+    last = observed[-1].day if observed else None
     args = (soil, crop, planting_date, sim_start, crop_params, mulch_pct)
     # 29 Feb as last observed day: the engine cannot end a run there and says "cannot mature"
     # instead of "weather ends"; below planting + 364 d it is an unfinished season.
-    unfinished = last < planting_date + timedelta(days=364)
-    if last < planting_date:
+    if last is None or last < planting_date:
         if callable(analogs):
             analogs = await analogs()
         if not analogs:
@@ -252,9 +252,10 @@ async def compute(
                 f"weather ends on {last} before the planting date {planting_date} "
                 "and no analog years are available")
     else:
+        unfinished = last < planting_date + timedelta(days=364)
         try:
-            single = await loop.run_in_executor(
-                pool, member_runs, observed, *args, date.max)
+            single = await _run(loop, pool, crop, planting_date, member_runs, observed, *args,
+                                date.max)
         except (aq.WeatherEndsBeforeHarvestError, aq.CropCannotMatureError) as e:
             leap_day = isinstance(e, aq.CropCannotMatureError) and (last.month, last.day) == (2, 29)
             if not unfinished or (isinstance(e, aq.CropCannotMatureError) and not leap_day):
@@ -289,9 +290,31 @@ async def compute(
         progress(0, len(futs))
         for f in futs:
             f.add_done_callback(_tick)
-    members = list(await asyncio.gather(*futs))
+    try:
+        members = list(await asyncio.gather(*futs))
+    except BrokenProcessPool:
+        _pool_broken(crop, planting_date)
+        raise
     out = _combine(members, last, "in_season", years)
     return _finish(out, last, crop, planting_date, len(members))
+
+
+async def _run(loop, pool, crop: str, planting_date: date, fn, *a):
+    try:
+        return await loop.run_in_executor(pool, fn, *a)
+    except BrokenProcessPool:
+        _pool_broken(crop, planting_date)
+        raise
+
+
+def _pool_broken(crop: str, planting_date: date) -> None:
+    """A worker died: the cached pool is unusable; drop it so the next call builds a new one."""
+    global _pool
+    logger.error("water_loss_pool_broken crop=%s planting=%s: resetting the pool", crop,
+                 planting_date.isoformat())
+    broken, _pool = _pool, None
+    if broken is not None:
+        broken.shutdown(wait=False, cancel_futures=True)
 
 
 def _finish(out: dict, as_of: date, crop: str, planting_date: date, n_members: int) -> dict:
