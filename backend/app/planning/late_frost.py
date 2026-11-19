@@ -244,7 +244,9 @@ def late_frost_reason(slug: str, *, cal: CropCalendar | None, sowing_doy: int | 
               "stage": "+".join(st.stage for st in stages),
               "thresholds_c": "/".join(f"{st.threshold_c:g}" for st in stages),
               "threshold_source": stages[0].source,
-              "tmin_source": TMIN_SOURCE, "tmin_caveat": history.tmin_caveat}
+              "tmin_source": TMIN_SOURCE, "tmin_caveat": history.tmin_caveat,
+              # The reason is computed with the operative calendar, never the experimental model.
+              "phenology_model": "aquacrop_calendar"}
     if all(i is not None for i in used):
         params["tmin_basis"] = "risk_margin"
         params["tmin_caveat"] = "risk_margin"

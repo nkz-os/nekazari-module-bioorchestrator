@@ -20,6 +20,9 @@ from app.planning.in_season import (
     resolve_sown_crop,
     season_window_reason,
 )
+from app.planning.phenology_experimental import (
+    safe_experimental_block as experimental_block,
+)
 from app.planning.service import ParcelNotFound
 from app.services import crop_calendar as cal
 from app.services.crop_simulation import phenology_for
@@ -31,16 +34,25 @@ PROVIDER_ID = "aquacrop_calendar"
 REGIME_UNKNOWN = "regime_unknown"
 
 
-def _unavailable(reason: str, code: str | None = None, state: str = "unavailable") -> dict:
+def _unavailable(reason: str, code: str | None = None, state: str = "unavailable",
+                 experimental: dict | None = None) -> dict:
     item = {"provider_id": PROVIDER_ID, "reason": reason}
     if code is not None:
         item["code"] = code
-    return {"state": state, "unavailable": [item], "season": None, "phenology": None}
+    return {"state": state, "unavailable": [item], "season": None, "phenology": None,
+            "experimental": experimental}
 
 
 async def parcel_phenology(*, tenant_id: str, parcel_id: str, today: date | None = None,
-                           load=load_parcel) -> dict:
-    """Milestone dates for the parcel's current cycle, or why there are none. Never a 500."""
+                           load=load_parcel, fetch_classes=None) -> dict:
+    """Milestone dates for the parcel's current cycle, or why there are none. Never a 500.
+
+    ``experimental`` (contract 2.10) is the vernalization-photoperiod model beside the operative
+    calendar: it feeds nothing, never changes ``phenology`` or ``state``, and any error in it is
+    contained in its own block. ``fetch_classes`` looks up the cereal type of the sown variety.
+    Its parameters were fitted with grid-cell Tmin while this endpoint's archive series is
+    altitude-corrected: the block says so in ``notes`` (``tmin_differs_from_fit``).
+    """
     today = today or datetime.now(UTC).date()
     ctx = f"parcel={parcel_id} tenant={tenant_id}"
     try:
@@ -80,7 +92,10 @@ async def parcel_phenology(*, tenant_id: str, parcel_id: str, today: date | None
     except (SimulationError, httpx.HTTPError) as e:
         code = e.code if isinstance(e, SimulationError) else type(e).__name__
         logger.warning("parcel_phenology_weather_unavailable %s code=%s", ctx, code)
-        return _unavailable("weather_unavailable", code)
+        experimental = await experimental_block(
+            slug=sown.crop_slug, variety=sown.variety, lat=lat, lon=lon, sowing_date=sown.sowing_date,
+            observed=None, analogs={}, fetch_classes=fetch_classes, ctx=ctx)
+        return _unavailable("weather_unavailable", code, experimental=experimental)
     except Exception as e:
         logger.exception("parcel_phenology_failed %s", ctx)
         return _unavailable("internal_error", type(e).__name__, "failed")
@@ -90,13 +105,18 @@ async def parcel_phenology(*, tenant_id: str, parcel_id: str, today: date | None
         engine_regime = IRRIGATION[sown.regime or "rainfed"]
         block = await asyncio.to_thread(phenology_for, sown.crop_slug, engine_regime, lat, lon,
                                         sown.sowing_date, observed.weather, analogs)
+        calendar = cal.effective_calendar(sown.crop_slug, lat=lat, lon=lon, irrigation=engine_regime)
+        block = {**block, "sources": [dict(x) for x in calendar.sources], "operative": True}
     except Exception as e:
         logger.exception("parcel_phenology_failed %s", ctx)
         return _unavailable("internal_error", type(e).__name__, "failed")
     if sown.regime is None:
         block = {**block, "notes": [*block["notes"], REGIME_UNKNOWN]}
+    experimental = await experimental_block(
+        slug=sown.crop_slug, variety=sown.variety, lat=lat, lon=lon, sowing_date=sown.sowing_date,
+        observed=observed, analogs=analogs, fetch_classes=fetch_classes, ctx=ctx)
     logger.info("parcel_phenology_done %s crop=%s regime=%s", ctx, sown.crop_slug, sown.regime)
-    return {"state": "done", "unavailable": [], "phenology": block,
+    return {"state": "done", "unavailable": [], "phenology": block, "experimental": experimental,
             "season": {"crop": sown.eppo, "regime": sown.regime,
                        "sowing": {"date": sown.sowing_date.isoformat(), "source": "crop_cycle",
                                   "provenance": sown.sowing_provenance},

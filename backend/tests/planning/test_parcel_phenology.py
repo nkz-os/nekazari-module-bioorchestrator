@@ -183,9 +183,9 @@ def test_route_answers_the_contract(client, monkeypatch):
         "season": None, "phenology": None}))
     r = client.get(URL)
     assert r.status_code == 200
-    assert r.json() == {"contract_version": "2.9", "provider_id": "aquacrop_calendar", "state": "unavailable",
+    assert r.json() == {"contract_version": "2.10", "provider_id": "aquacrop_calendar", "state": "unavailable",
                         "unavailable": [{"provider_id": "aquacrop_calendar", "reason": "not_sown", "code": None}],
-                        "season": None, "phenology": None}
+                        "season": None, "phenology": None, "experimental": None}
 
 
 def test_route_404_for_unknown_parcel(client, monkeypatch):
@@ -215,3 +215,222 @@ async def test_no_observed_segments_means_no_weather_source(monkeypatch):
     monkeypatch.setattr(phenology_dates, "assemble_observed", AsyncMock(return_value=ObservedWeather(
         weather=observed, sim_start=observed[0].day, segments=[])))
     assert (await call())["season"]["weather_source"] is None
+
+
+
+# ---- experimental block (contract 2.10) ----
+import json
+
+from app.planning import models as planning_models
+from app.planning import phenology_experimental as pe
+
+WINTER_VARIETY = "Nogal"
+
+
+def with_variety(species="TRZAX", variety=WINTER_VARIETY, day="2025-10-20"):
+    cur = sown(species, day=day)
+    cur["current"]["variety"] = variety
+    return cur
+
+
+def fetcher(rows=(("NOGAL", "invierno"),)):
+    async def fetch(eppo):
+        return list(rows)
+    return fetch
+
+
+def _crops(species):
+    return {CROP_ID: {"id": CROP_ID, "species": species, "irrigationRegime": "rainfed"}}
+
+
+def test_contract_2_10():
+    assert planning_models.CONTRACT_VERSION == "2.10"
+    assert "experimental" in planning_models.ParcelPhenologyResponse.model_fields
+    ts = (__import__("pathlib").Path(__file__).parents[3] / "src" / "planning" / "types.ts").read_text()
+    assert "CONTRACT_VERSION = '2.10'" in ts
+
+
+async def test_experimental_done_block_shape_and_operative_extras():
+    out = await call(load=loader(cycles=with_variety()), fetch_classes=fetcher())
+    exp = out["experimental"]
+    assert exp["state"] == "done" and exp["reason"] is None
+    assert exp["model"] == {"id": "vernalization_photoperiod",
+                            "version": f"1+{pe._params_file()['version']}",
+                            "role": "experimental", "operative": False}
+    assert exp["cereal_type"] == {"value": "winter", "source": "variety_graph", "variety": WINTER_VARIETY}
+    assert exp["parameters"]["set"] == "ES" and exp["parameters"]["t1_adj"] == 401
+    assert set(exp["milestones"]) == {"emergence", "flowering_start", "maturity"}
+    assert exp["milestones"]["emergence"]["shared_with"] == "aquacrop_calendar"
+    assert exp["milestones"]["emergence"]["status"] == "reached"
+    assert exp["validation"]["emergence"] == {"status": "same_as_operative"}
+    assert exp["sources"] and all(set(x) == {"short", "detail"} for x in exp["sources"])
+    assert "tmin_differs_from_fit" in exp["notes"]
+    assert "senescence_start" not in exp["milestones"]
+    ph = out["phenology"]
+    assert ph["operative"] is True
+    assert ph["sources"] and all(set(x) == {"short", "detail"} for x in ph["sources"])
+    print(json.dumps(exp, indent=1, sort_keys=True))
+
+
+async def test_operative_block_identical_with_and_without_experimental(monkeypatch):
+    on = await call(load=loader(cycles=with_variety()), fetch_classes=fetcher())
+    assert on["experimental"]["state"] == "done"
+    monkeypatch.setattr(phenology_dates, "experimental_block", AsyncMock(return_value=None))
+    off = await call(load=loader(cycles=with_variety()), fetch_classes=fetcher())
+    assert off["experimental"] is None
+    dump = lambda o: json.dumps(o["phenology"], sort_keys=True)
+    assert dump(on) == dump(off)
+    assert on["state"] == off["state"] and on["season"] == off["season"] and on["unavailable"] == off["unavailable"]
+
+
+async def test_experimental_failure_keeps_response(monkeypatch, caplog):
+    on = await call(load=loader(cycles=with_variety()), fetch_classes=fetcher())
+    monkeypatch.setattr(pe, "vp_block_milestones", MagicMock(side_effect=RuntimeError("boom")))
+    out = await call(load=loader(cycles=with_variety()), fetch_classes=fetcher())
+    assert out["state"] == "done"
+    assert out["experimental"]["state"] == "unavailable" and out["experimental"]["reason"] == "internal_error"
+    assert out["experimental"]["milestones"] is None
+    assert out["experimental"]["cereal_type"]["value"] == "winter"
+    assert json.dumps(out["phenology"], sort_keys=True) == json.dumps(on["phenology"], sort_keys=True)
+    assert "parcel_phenology_experimental_failed" in caplog.text and PARCEL_ID in caplog.text
+
+
+async def test_experimental_failure_outside_builder_is_contained(monkeypatch):
+    monkeypatch.setattr(pe, "select_parameters", MagicMock(side_effect=ValueError("x")))
+    out = await call(load=loader(cycles=with_variety()), fetch_classes=fetcher())
+    assert out["state"] == "done" and out["experimental"]["reason"] == "internal_error"
+
+
+async def test_non_cereal_experimental_null():
+    out = await call(load=loader(cycles=sown("ZEAMX")))
+    assert out["experimental"] is None
+
+
+@pytest.mark.parametrize("cycles", [{"current": None}, sown(provenance="planned"), sown(day="2026-04-01"),
+                                    sown(day="2024-01-01")])
+async def test_early_exits_leave_experimental_null(cycles):
+    async def load(tenant, parcel_id):
+        return PARCEL, CROPS, cycles
+    assert (await call(load=load, fetch_classes=fetcher()))["experimental"] is None
+
+
+async def test_no_variety_means_no_cereal_type():
+    out = await call(fetch_classes=fetcher())
+    exp = out["experimental"]
+    assert exp["state"] == "unavailable" and exp["reason"] == "no_cereal_type"
+    assert exp["milestones"] is None and exp["validation"] is None
+    assert out["phenology"]["operative"] is True
+
+
+async def test_without_fetcher_wheat_lookup_failed_but_durum_computes():
+    out = await call(load=loader(cycles=with_variety()))
+    assert out["experimental"]["reason"] == "cereal_type_lookup_failed"
+    durum = await call(load=loader(cycles=with_variety("TRZDU"), crops=_crops("TRZDU")))
+    assert durum["experimental"]["state"] == "done"
+    assert durum["experimental"]["cereal_type"]["value"] is None
+
+
+async def test_facultative_is_not_supported():
+    out = await call(load=loader(cycles=with_variety()), fetch_classes=fetcher((("NOGAL", "facultativo"),)))
+    assert out["experimental"]["reason"] == "cereal_type_not_supported"
+    assert out["experimental"]["cereal_type"]["value"] == "facultative"
+
+
+async def test_outside_eu_is_unavailable():
+    parcel = {**PARCEL, "location": {"type": "Polygon", "coordinates": [[[8.5, 47.3], [8.6, 47.3],
+                                     [8.6, 47.4], [8.5, 47.4], [8.5, 47.3]]]}}
+    out = await call(load=loader(cycles=with_variety(), parcel=parcel), fetch_classes=fetcher())
+    assert out["state"] == "done"
+    assert out["experimental"]["state"] == "unavailable" and out["experimental"]["reason"] == "outside_eu"
+
+
+async def test_weather_unavailable_gives_experimental_reason(monkeypatch):
+    monkeypatch.setattr(phenology_dates, "assemble_observed",
+                        AsyncMock(side_effect=SimulationError("weather_gaps", "m")))
+    out = await call(load=loader(cycles=with_variety()), fetch_classes=fetcher())
+    assert out["state"] == "unavailable" and out["phenology"] is None
+    assert out["experimental"]["state"] == "unavailable"
+    assert out["experimental"]["reason"] == "weather_unavailable"
+    assert out["experimental"]["cereal_type"]["value"] == "winter"
+
+
+@pytest.mark.parametrize("slug,tbase,tupp,emergence", [("wheat", 0, 26, 150), ("durum_wheat", 0, 26, 150),
+                                                        ("barley", 2, 28, 117)])
+def test_thresholds_are_the_builtin_cultivar(slug, tbase, tupp, emergence):
+    assert pe.builtin_thresholds(slug) == (tbase, tupp, emergence)
+
+
+async def test_experimental_runs_off_the_event_loop(monkeypatch):
+    import threading
+    seen = []
+    real = pe.vp_block_milestones
+
+    def spy(*a, **k):
+        seen.append(threading.current_thread() is threading.main_thread())
+        return real(*a, **k)
+    monkeypatch.setattr(pe, "vp_block_milestones", spy)
+    await call(load=loader(cycles=with_variety()), fetch_classes=fetcher())
+    assert seen and not any(seen)
+
+
+@pytest.fixture
+def fresh_caches():
+    pe._params_file.cache_clear()
+    pe._validation_file.cache_clear()
+    yield
+    pe._params_file.cache_clear()
+    pe._validation_file.cache_clear()
+
+
+@pytest.mark.parametrize("target,failure", [
+    ("_params_file", OSError("missing")), ("_params_file", ValueError("malformed json")),
+    ("_params_file", KeyError("version")), ("_validation_file", OSError("missing")),
+    ("_validation_file", json.JSONDecodeError("bad", "x", 0))])
+async def test_data_file_failure_never_escapes(monkeypatch, fresh_caches, target, failure):
+    normal = await call(load=loader(cycles=with_variety()), fetch_classes=fetcher())
+    monkeypatch.setattr(pe, target, MagicMock(side_effect=failure))
+    out = await call(load=loader(cycles=with_variety()), fetch_classes=fetcher())
+    assert out["state"] == "done"
+    assert out["experimental"]["state"] == "unavailable" and out["experimental"]["reason"] == "internal_error"
+    assert json.dumps(out["phenology"], sort_keys=True) == json.dumps(normal["phenology"], sort_keys=True)
+
+
+async def test_experimental_guard_covers_a_raising_builder(monkeypatch):
+    monkeypatch.setattr(pe, "experimental_block", AsyncMock(side_effect=OSError("x")))
+    out = await call(load=loader(cycles=with_variety()), fetch_classes=fetcher())
+    assert out["state"] == "done" and out["experimental"]["reason"] == "internal_error"
+
+
+def test_route_200_when_params_file_missing(client, monkeypatch, fresh_caches):
+    import app.api.v1.planning as planning_api
+    monkeypatch.setattr(pe, "_params_file", MagicMock(side_effect=OSError("missing")))
+    real = phenology_dates.parcel_phenology
+
+    async def run(**kw):
+        return await real(**{**kw, "today": TODAY, "load": loader(cycles=with_variety())})
+    monkeypatch.setattr(planning_api, "parcel_phenology", run)
+    monkeypatch.setattr(planning_api, "graph_class_fetcher", lambda d: fetcher())
+    r = client.get(URL)
+    assert r.status_code == 200
+    assert r.json()["experimental"]["reason"] == "internal_error"
+    assert r.json()["phenology"]["operative"] is True
+
+
+@pytest.mark.parametrize("species,crop_kind", [("TRZAX", "wheat"), ("HORVX", "barley")])
+def test_route_200_when_the_graph_dependency_fails(client, monkeypatch, species, crop_kind):
+    import app.api.v1.planning as planning_api
+
+    async def boom(request):
+        raise RuntimeError("driver not initialised")
+    monkeypatch.setattr(planning_api, "get_knowledge_sources", boom)
+    real = phenology_dates.parcel_phenology
+
+    async def with_data(**kw):
+        return await real(**kw, today=TODAY, load=loader(cycles=with_variety(species), crops=_crops(species)))
+    monkeypatch.setattr(planning_api, "parcel_phenology", with_data)
+    r = client.get(URL)
+    assert r.status_code == 200, crop_kind
+    body = r.json()
+    assert body["state"] == "done" and body["phenology"]["operative"] is True
+    assert body["experimental"]["state"] == "unavailable"
+    assert body["experimental"]["reason"] == "cereal_type_lookup_failed"
