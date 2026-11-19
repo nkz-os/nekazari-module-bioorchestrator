@@ -37,6 +37,17 @@ Daily columns come from ``get_crop_growth()`` (``canopy_cover``, ``biomass``,
 ``biomass_ns``) and ``get_water_flux()`` (``Wr``). ``water_stress`` =
 1 - biomass/biomass_ns clipped to [0, 1] (cumulative biomass deficit; AquaCrop
 has no daily stress column), None while biomass_ns is 0.
+
+Optional keys: ``relief_stage`` (1..4, only when requested: a rainfed run that irrigates
+in that growth stage alone, SMT 100 there and ``_SMT_OFF`` in the other stages) and
+``stages`` (only with ``with_stages=True``): [{index 1..4, start, end}] ISO days of the
+library's ``growth_stage`` (``STAGE_KEYS`` names them), as computed after each day; a
+stage not reached has start/end None; the stage running on the last simulated day ends
+on that day. Irrigation on day d is decided with the stage of day d-1 (one-day lag of
+the library), so a relief irrigation can fall on ``end + 1``. The stage trace is read by
+stepping the model one day at a time and reading the private ``_init_cond.growth_stage``
+and ``_clock_struct`` of aquacrop 3.1.0 (pinned): it has no public output. Results are
+identical to ``run_model(till_termination=True)``.
 """
 from __future__ import annotations
 
@@ -62,6 +73,10 @@ _MIN_ET0 = MIN_ET0
 _COMPARTMENT_M = 0.1
 _PENETRABILITY_PCT = 100  # no root-restricting layer information is available
 _IRRIGATION_MODES = ("rainfed", "full")
+STAGE_KEYS = ("establishment", "canopy_growth", "max_canopy", "senescence")
+# SMT of a stage that must never irrigate. 0 is NOT "off": AquaCrop irrigates when the
+# depletion fraction Dr exceeds 1 - SMT/100 and Dr can exceed 1 under strong drought.
+_SMT_OFF = -1000
 MIN_SPINUP_DAYS = 30  # shorter fallow histories do not say anything about soil water
 # AquaCrop crop_params entries that are templates, not crops
 _NON_CROPS = {"Default", "custom"}
@@ -350,6 +365,9 @@ def run_aquacrop(
     topsoil_until: date | None = None,
     crop_params: Mapping[str, float] | None = None,
     mulch_pct: float | None = None,
+    *,
+    relief_stage: int | None = None,
+    with_stages: bool = False,
 ) -> dict:
     """Simulate one season. See module docstring for the output keys.
 
@@ -359,6 +377,9 @@ def run_aquacrop(
 
     ``crop_params`` (optional) overrides the crop's phenology (``PHENOLOGY_PARAMS``,
     growing degree days; degree-day crops only); the phase order is checked.
+
+    ``relief_stage`` (optional, 1..4, rainfed only) irrigates in that growth stage alone;
+    ``with_stages`` adds the per-stage dates (see the module docstring).
 
     ``sim_start`` (optional, <= planting date, >= first weather day) requests a
     spin-up. Fewer than ``MIN_SPINUP_DAYS`` of history falls back to field
@@ -371,6 +392,13 @@ def run_aquacrop(
     clean, warns = _validate_weather(weather)
     _validate_soil(soil)
     _validate_crop_irrigation(crop, irrigation)
+    if relief_stage is not None:
+        if isinstance(relief_stage, bool) or not isinstance(relief_stage, int) \
+                or not 1 <= relief_stage <= 4:
+            raise EngineInputError(f"relief_stage must be an integer 1..4: {relief_stage!r}")
+        if irrigation != "rainfed":
+            raise EngineInputError(
+                f"relief_stage needs irrigation 'rainfed', got {irrigation!r}")
     params = _validate_crop_params(crop, crop_params)
     field = _field_management(mulch_pct)
     if not isinstance(planting_date, date):
@@ -436,8 +464,15 @@ def run_aquacrop(
     sim_end = min(last, planting_date + timedelta(days=364))  # one season only
     if (sim_end.month, sim_end.day) == (2, 29):  # parsed in the non-leap mock year 1990
         sim_end -= timedelta(days=1)
-    irr = (IrrigationManagement(irrigation_method=0) if irrigation == "rainfed"
-           else IrrigationManagement(irrigation_method=1, SMT=[100] * 4))
+    if relief_stage is not None:
+        irr = IrrigationManagement(
+            irrigation_method=1,
+            SMT=[100 if i == relief_stage - 1 else _SMT_OFF for i in range(4)])
+    elif irrigation == "rainfed":
+        irr = IrrigationManagement(irrigation_method=0)
+    else:
+        irr = IrrigationManagement(irrigation_method=1, SMT=[100] * 4)
+    stage_trace: list[int] = []
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
         soil_model = _build_soil(soil)
@@ -463,7 +498,10 @@ def run_aquacrop(
             field_management=mulch, fallow_field_management=mulch,
             off_season=spinup_days > 0)
         try:
-            model.run_model(till_termination=True)
+            if with_stages:
+                stage_trace = _step_run(model)
+            else:
+                model.run_model(till_termination=True)
         except AssertionError as e:
             # GDD crops: AquaCrop asserts (instead of returning no result) when the
             # weather up to the end of the run has too few degree days to mature.
@@ -500,6 +538,10 @@ def run_aquacrop(
     out = _assemble(row, growth, flux, start, planting_date, crop, irrigation, warns, initial_water,
                     params)
     out["field_management"] = field
+    if relief_stage is not None:
+        out["relief_stage"] = relief_stage
+    if with_stages:
+        out["stages"] = _stage_bounds(stage_trace, start)
     if topsoil_until is not None:
         storage = model.get_water_storage()
         out["topsoil_water"] = {
@@ -507,6 +549,37 @@ def run_aquacrop(
             for i in range(min(len(storage), (topsoil_until - start).days + 1))
         }
     return out
+
+
+def _step_run(model) -> list[int]:
+    """Run ``model`` one day at a time and record the library's ``growth_stage`` after each.
+
+    Entry i is simulation day ``start + i`` (0 = outside the growing season). Same results as
+    ``run_model(till_termination=True)``. Reads private attributes of aquacrop 3.1.0 (pinned
+    in requirements): a library bump must be re-checked by the stage tests.
+    """
+    stages: list[int] = []
+    first = True
+    while True:
+        model.run_model(num_steps=1, initialize_model=first)  # only the first call initialises
+        first = False
+        stages.append(int(model._init_cond.growth_stage))
+        if model._clock_struct.model_is_finished:
+            return stages
+
+
+def _stage_bounds(trace: list[int], start: date) -> list[dict]:
+    """[{index 1..4, start, end}] ISO days from a ``_step_run`` trace; unreached -> None."""
+    first: dict[int, date] = {}
+    last: dict[int, date] = {}
+    for i, s in enumerate(trace):
+        if 1 <= s <= 4:
+            d = start + timedelta(days=i)
+            first.setdefault(s, d)
+            last[s] = d
+    return [{"index": k,
+             "start": first[k].isoformat() if k in first else None,
+             "end": last[k].isoformat() if k in last else None} for k in range(1, 5)]
 
 
 def _assemble(row, growth, flux, start, planting_date, crop, irrigation, warns, initial_water,
