@@ -11,7 +11,7 @@ from typing import Annotated, Any, Literal
 
 from pydantic import BaseModel, BeforeValidator, Field
 
-CONTRACT_VERSION = "2.10"
+CONTRACT_VERSION = "2.11"
 
 Verdict = Literal["fits", "caveats", "no_fit"]
 # Owner decision (2026-10-13): the regime vocabulary is rainfed | irrigated. The Spanish words that
@@ -298,6 +298,82 @@ class InSeasonResponse(BaseModel):
     season: SeasonInfo | None = None
     # 2.7: milestone dates of the engine's cereal calendar (wheat, durum wheat, barley); null otherwise
     phenology: dict[str, Any] | None = None
+
+
+class WaterLossMilestone(BaseModel):
+    key: str
+    date: date
+    basis: Literal["thermal_time_no_stress_delay"] = "thermal_time_no_stress_delay"
+
+
+class WaterLossStage(BaseModel):
+    """One growth stage of the rainfed run (2.11). A figure only once the stage has finished."""
+    index: int
+    key: Literal["establishment", "canopy_growth", "max_canopy", "senescence"]
+    start: date | None = None
+    end: date | None = None  # only when the stage has finished
+    state: Literal["complete", "in_progress", "not_reached"]
+    # Reached milestones of the operative calendar inside the stage; null: no such calendar for the crop.
+    milestones: list[WaterLossMilestone] | None = None
+    milestones_reason: str | None = None
+    # Y(relief in this stage) - Y(rainfed): the model's t/ha on ``yield_basis``; P10/P50/P90 in season.
+    gain_t_ha_model: float | IrrigationPercentiles | None = None
+    gain_pct_of_potential: float | IrrigationPercentiles | None = None
+    end_in_relief_run: date | None = None
+
+
+class WaterLossTotal(BaseModel):
+    """The season total: ``water_gap_pct`` is the in-season forecast's own formula (median ratio)."""
+    water_gap_pct: float | None = None
+    water_gap_band: IrrigationPercentiles | None = None
+    water_limited_t_ha: float | IrrigationPercentiles | None = None
+    potential_t_ha: float | IrrigationPercentiles | None = None
+
+
+class WaterLossValidation(BaseModel):
+    status: Literal["validated_forecast_crop", "unvalidated"]
+    note: str
+
+
+class WaterLossResult(BaseModel):
+    total: WaterLossTotal
+    stages: list[WaterLossStage]
+    stage_bounds_basis: Literal["rainfed_simulation"] = "rainfed_simulation"
+    milestones_basis: Literal["thermal_time_no_stress_delay"] = "thermal_time_no_stress_delay"
+    yield_basis: dict[str, Any]
+    validation: WaterLossValidation
+    label: str
+    notes: list[str]
+    sources: list[dict[str, Any]]
+    engine_version: str
+    warnings: list[str] = Field(default_factory=list)
+
+
+class WaterLossSeason(BaseModel):
+    status: Literal["in_season", "complete"]
+    as_of: date | None
+    crop: str  # EPPO
+    regime: Regime
+    sowing: SeasonSowing
+    n_years: int = 0  # analog years; 0 when complete
+    ensemble: dict[str, Any] | None = None  # {n_years, years} in season; None when complete
+    cycle: Literal["current", "previous"] = "current"  # previous: the last finished campaign
+    harvest_recorded: date | None = None  # recorded harvest of the previous cycle
+    computed_at: datetime | None = None
+    provider_version: str
+
+
+class WaterLossResponse(BaseModel):
+    """Water loss by growth stage of a sown rainfed parcel (2.11); poll until it settles."""
+    contract_version: str = CONTRACT_VERSION
+    provider_id: Literal["aquacrop_water_loss"] = "aquacrop_water_loss"
+    state: Literal["unavailable", "queued", "running", "done", "failed"]
+    done: int = 0
+    total: int | None = None
+    job_id: str | None = None
+    unavailable: list[Unavailable] = Field(default_factory=list)
+    season: WaterLossSeason | None = None
+    result: WaterLossResult | None = None
 
 
 class PhenologySeason(BaseModel):

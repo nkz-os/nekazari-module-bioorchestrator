@@ -7,11 +7,13 @@ what it can do in ``capabilities``. Only AquaCrop is implemented.
 from __future__ import annotations
 
 import logging
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
+from contextlib import contextmanager
 from datetime import date, timedelta
-from typing import Any, Protocol
+from typing import Any, Literal, Protocol
 
 from app.services import crop_calendar as cal
+from app.services import water_loss_by_stage
 from app.services import yield_calibration as yc
 from app.services.engines import aquacrop_engine as aq
 from app.services.region_lookup import es_province_at
@@ -49,6 +51,19 @@ class CropEngine(Protocol):
     ) -> dict[str, Any]: ...
 
 
+@contextmanager
+def engine_errors() -> Iterator[None]:
+    """AquaCrop engine failures as typed ``SimulationError`` (shared by every mode)."""
+    try:
+        yield
+    except aq.WeatherEndsBeforeHarvestError as e:
+        raise SimulationError("season_incomplete", str(e)) from e
+    except aq.CropCannotMatureError as e:
+        raise SimulationError("crop_cannot_mature", str(e)) from e
+    except aq.EngineInputError as e:
+        raise SimulationError("invalid_input", str(e)) from e
+
+
 class AquaCropEngine:
     name = "aquacrop"
     capabilities = aq.CAPABILITIES
@@ -58,15 +73,9 @@ class AquaCropEngine:
 
     async def simulate(self, *, observed, analogs, soil, crop, planting, irrigation, sim_start,
                        crop_params=None, mulch_pct=None, progress=None):
-        try:
+        with engine_errors():
             return await aq.simulate(observed, analogs, soil, crop, planting, irrigation, sim_start,
                                      crop_params=crop_params, mulch_pct=mulch_pct, progress=progress)
-        except aq.WeatherEndsBeforeHarvestError as e:
-            raise SimulationError("season_incomplete", str(e)) from e
-        except aq.CropCannotMatureError as e:
-            raise SimulationError("crop_cannot_mature", str(e)) from e
-        except aq.EngineInputError as e:
-            raise SimulationError("invalid_input", str(e)) from e
 
 
 ENGINES: dict[str, CropEngine] = {"aquacrop": AquaCropEngine()}
@@ -115,6 +124,29 @@ def phenology_for(slug, irrigation, lat, lon, sowing_date, observed_days, analog
     return cal.phenology_block(sowing_date, observed_days, members, calendar)
 
 
+def _water_loss_on_basis(result: dict, basis: dict) -> dict:
+    """The water-loss result with every t/ha field on the yield basis (percentages stay)."""
+    total = dict(result["total"])
+    for key in ("water_limited_t_ha", "potential_t_ha"):
+        total[key] = yc.to_basis(total[key], basis)
+    stages = [{**s, "gain_t_ha_model": yc.to_basis(s["gain_t_ha_model"], basis)}
+              for s in result["stages"]]
+    return {**result, "total": total, "stages": stages}
+
+
+def _water_loss_milestones(slug, lat, lon, sowing_date, observed_days, ctx) -> dict:
+    """Operative-calendar milestones reached on observed weather (cereals only); never fails the job."""
+    if slug not in cal.CEREAL_SLUGS:
+        return {"status": "unavailable", "reason": "no_operative_calendar", "items": {}}
+    try:
+        calendar = cal.effective_calendar(slug, lat=lat, lon=lon, irrigation="rainfed")
+        items = cal.milestone_dates(sowing_date, observed_days, [], calendar)
+    except Exception:
+        logger.exception("water_loss_milestones_failed %s", ctx)
+        return {"status": "unavailable", "reason": "calendar_failed", "items": {}}
+    return {"status": "ok", "items": items}
+
+
 def _phenology(slug, irrigation, lat, lon, sowing_date, observed_days, analog_years, ctx) -> dict | None:
     """The block for the simulation answer. Additive: a failure is logged and the block left out."""
     try:
@@ -141,11 +173,19 @@ async def run_crop_simulation(
     sowing_method_source: str = "default",
     input_warnings: list[str] | None = None,
     progress: Callable[[int, int], None] | None = None,
+    mode: Literal["forecast", "water_loss_by_stage"] = "forecast",
+    allow_ensemble: bool = True,
 ) -> dict[str, Any]:
     """Gather soil and weather, run the engine, build the response.
 
+    ``mode="water_loss_by_stage"`` takes the very same inputs but runs the water-loss service
+    instead of the forecast and answers ``{"water_loss", "milestones", "inputs", "yield_basis",
+    "warnings"}``.
+
     Raises SimulationError (422 inputs, 503 upstream); never substitutes data.
     """
+    if mode not in ("forecast", "water_loss_by_stage"):
+        raise SimulationError("invalid_input", f"Unknown simulation mode '{mode}'.")
     engine = get_engine(engine_name)
     ctx = f"parcel={parcel_id} tenant={tenant_id} engine={engine_name} crop={crop.slug}"
     # Sowing today or later is planning ahead: real weather up to yesterday, then the
@@ -181,18 +221,58 @@ async def run_crop_simulation(
     # Calibrated phenology only where it was validated (crop, regime and region); else built-in.
     region = es_province_at(lat, lon)
     phenology = yc.calibrated_phenology(crop.slug, irrigation, region)
+    water_loss = mode == "water_loss_by_stage"
     try:
-        result = await engine.simulate(
-            observed=observed.weather, analogs=analogs, soil=soil, crop=crop.aquacrop_crop,
-            planting=sowing_date, irrigation=irrigation, sim_start=observed.sim_start,
-            crop_params=phenology, mulch_pct=mulch_for(sowing_method), progress=progress)
+        if water_loss:
+            with engine_errors():
+                result = await water_loss_by_stage.compute(
+                    observed.weather, analogs, soil, crop.aquacrop_crop, sowing_date, observed.sim_start,
+                    phenology, mulch_for(sowing_method), progress,
+                    allow_ensemble=allow_ensemble)
+        else:
+            result = await engine.simulate(
+                observed=observed.weather, analogs=analogs, soil=soil, crop=crop.aquacrop_crop,
+                planting=sowing_date, irrigation=irrigation, sim_start=observed.sim_start,
+                crop_params=phenology, mulch_pct=mulch_for(sowing_method), progress=progress)
     except SimulationError as e:
         logger.warning("crop_simulation_failed %s code=%s", ctx, e.code)
         raise
 
     first, last = observed.weather[0].day, observed.weather[-1].day
-    warnings = [*(input_warnings or []), *observed.warnings, *analog_warnings, *result["warnings"]]
     basis = yc.yield_basis(crop.slug)
+    # The water-loss service validates the mulch and does not echo it: derive the same block.
+    field_management = aq._field_management(mulch_for(sowing_method)) if water_loss \
+        else result["field_management"]
+    inputs = {
+        "weather": {
+            "source": "+".join(dict.fromkeys(s["source"] for s in observed.segments)),
+            "start": first.isoformat(),
+            "end": last.isoformat(),
+            "days": len(observed.weather),
+            "segments": observed.segments,
+        },
+        "soil": {"layers": layers},
+        "sowing": {"source": sowing_source, "provenance": sowing_provenance},
+        "field_management": {
+            "sowing_method": sowing_method, "source": sowing_method_source,
+            "mulch_pct": field_management.get("mulch_pct"),
+            "f_mulch": field_management.get("f_mulch"),
+        },
+        "cultivar": crop.aquacrop_crop,
+        "phenology": {"source": "calibrated" if phenology else "builtin", "region": region,
+                      "params": phenology or {}},
+    }
+    warnings = [*(input_warnings or []), *observed.warnings, *analog_warnings, *result["warnings"]]
+    if water_loss:
+        logger.info("crop_simulation_done %s mode=water_loss_by_stage weather_days=%d",
+                    ctx, len(observed.weather))
+        return {
+            "water_loss": _water_loss_on_basis(result, basis),
+            "milestones": _water_loss_milestones(crop.slug, lat, lon, sowing_date, observed.weather, ctx),
+            "inputs": inputs,
+            "yield_basis": basis,
+            "warnings": warnings,
+        }
     yield_t_ha = yc.to_basis(result["yield_t_ha"], basis)
     out = {
         "engine": engine.name,
@@ -215,25 +295,7 @@ async def run_crop_simulation(
         "biomass_t_ha": result["biomass_t_ha"],
         "last_weather_day": result["last_weather_day"],
         "daily": result["daily"],
-        "inputs": {
-            "weather": {
-                "source": "+".join(dict.fromkeys(s["source"] for s in observed.segments)),
-                "start": first.isoformat(),
-                "end": last.isoformat(),
-                "days": len(observed.weather),
-                "segments": observed.segments,
-            },
-            "soil": {"layers": layers},
-            "sowing": {"source": sowing_source, "provenance": sowing_provenance},
-            "field_management": {
-                "sowing_method": sowing_method, "source": sowing_method_source,
-                "mulch_pct": result["field_management"].get("mulch_pct"),
-                "f_mulch": result["field_management"].get("f_mulch"),
-            },
-            "cultivar": crop.aquacrop_crop,
-            "phenology": {"source": "calibrated" if phenology else "builtin", "region": region,
-                          "params": phenology or {}},
-        },
+        "inputs": inputs,
         "warnings": warnings,
     }
     if crop.note:

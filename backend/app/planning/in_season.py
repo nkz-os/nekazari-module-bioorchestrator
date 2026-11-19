@@ -8,7 +8,7 @@ again here; when the core does not answer the reason is ``cycles_unavailable``.
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import UTC, date, datetime, timedelta
 
 import httpx
@@ -89,6 +89,7 @@ class SownCrop:
     sowing_date: date
     sowing_provenance: str
     variety: str | None = None
+    harvest_date: date | None = None  # recorded harvest of a finished cycle; None for the current one
 
 
 def resolve_sown_crop(parcel: dict, crops: dict[str, dict], cycles: dict | None,
@@ -129,6 +130,40 @@ def resolve_sown_crop(parcel: dict, crops: dict[str, dict], cycles: dict | None,
     return SownCrop(crop_slug=slug, eppo=eppo, regime=regime, regime_source=regime_source,
                     sowing_date=sowing, sowing_provenance=start["provenance"],
                     variety=variety if isinstance(variety, str) and variety.strip() else None)
+
+
+FINISHED_WINDOW_DAYS = 365
+
+
+def resolve_finished_crop(parcel: dict, crops: dict[str, dict], cycles: dict | None,
+                          today: date) -> SownCrop | str:
+    """The last finished campaign (the core's ``previous`` cycle), or the reason code why there is none.
+
+    Finished means a sowing that is a fact and a harvest recorded as ``actual`` no more than
+    ``FINISHED_WINDOW_DAYS`` ago (never in the future). The sowing may be older than the in-season
+    window: the harvest window replaces it. Crop, regime and sowing date resolve exactly as for the
+    current cycle (``resolve_sown_crop``); the result carries the recorded harvest date.
+    """
+    if not isinstance(cycles, dict):
+        return "cycles_unavailable"
+    previous = cycles.get("previous")
+    if previous is None:
+        return "no_finished_season"
+    if not isinstance(previous, dict):
+        return "cycles_unavailable"
+    start, end = previous.get("start"), previous.get("end")
+    if not (isinstance(start, dict) and isinstance(end, dict)):
+        return "no_finished_season"
+    ended = _iso(end.get("date"))
+    if (start.get("provenance") not in FACT or end.get("provenance") != "actual" or ended is None
+            or not today - timedelta(days=FINISHED_WINDOW_DAYS) <= ended <= today):
+        return "no_finished_season"
+    sown = resolve_sown_crop(parcel, crops, {"current": previous}, today)
+    if isinstance(sown, str):
+        return sown
+    if sown.sowing_date > ended:  # a harvest before the sowing is not a finished season
+        return "no_finished_season"
+    return replace(sown, harvest_date=ended)
 
 
 def season_window_reason(sowing: date, today: date) -> str | None:
