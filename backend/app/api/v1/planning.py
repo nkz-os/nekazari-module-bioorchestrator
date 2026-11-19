@@ -31,6 +31,7 @@ from app.planning.models import (
     Regime,
     SowingMethod,
     VarietiesResponse,
+    WaterLossResponse,
 )
 from app.planning.phenology_dates import parcel_phenology
 from app.planning.plan_write import PlanError, write_plan
@@ -48,6 +49,7 @@ from app.planning.service import (
     parcel_urn,
     parcel_varieties,
 )
+from app.planning.water_loss import parcel_water_loss, water_loss_jobs
 from app.services.sim_jobs import shared_sim_jobs
 from app.species_registry import resolve_species
 
@@ -155,6 +157,26 @@ async def estimates_in_season(request: Request, parcel_id: str, sources: Sources
     try:
         return await parcel_in_season(dao=GraphDAO(sources[0].driver), jobs=shared_sim_jobs(),
                                       tenant_id=tenant, parcel_id=parcel_id, retry=retry)
+    except ParcelNotFound as e:
+        raise HTTPException(status_code=404, detail=str(e)) from e
+
+
+@router.get("/parcels/{parcel_id:path}/estimates/water-loss-by-stage", response_model=WaterLossResponse)
+async def estimates_water_loss_by_stage(request: Request, parcel_id: str, sources: SourcesDep,
+                                        retry: bool = Query(False),
+                                        job_id: str | None = Query(None, max_length=64)):
+    """Yield the rainfed season gave up in each finished growth stage (contract 2.11); poll until it settles.
+
+    Crop, sowing (a fact, never a plan) and regime come from the parcel's current cycle; rainfed only.
+    It runs on a queue of its own, apart from the in-season forecast's. ``job_id`` is accepted for
+    symmetry with the other estimates; the job is always found from the resolved inputs.
+    ``retry=true`` relaunches a failed job.
+    """
+    tenant = _require_tenant_id(request)
+    parcel_id = _checked_parcel_urn(parcel_id)
+    try:
+        return await parcel_water_loss(dao=GraphDAO(sources[0].driver), jobs=water_loss_jobs(),
+                                       tenant_id=tenant, parcel_id=parcel_id, retry=retry)
     except ParcelNotFound as e:
         raise HTTPException(status_code=404, detail=str(e)) from e
 
