@@ -112,28 +112,21 @@ def test_relief_irrigates_only_in_stage(x, capture):
     days = _irrigation_days(flux, date.fromisoformat(res["initial_water"]["start"]))
     assert days, "dry site: relief must irrigate"
     lo, hi = _bounds(res)[x]
-    # irrigation on day d uses the stage of day d-1 (stage 1 already on the first day)
+    # Irrigation on day d uses the stage of day d-1, so stages 2-4 irrigate in
+    # [start+1, end+1]. Stage 1 may irrigate from its first day: the library forces stage 1
+    # on DAP 1 (spike: X=1 window is [DAP1, end_1+1]).
+    first = lo if x == 1 else lo + timedelta(days=1)
     for d in days:
-        assert lo <= d <= hi + timedelta(days=1), (x, d, lo, hi)
-
-
-@pytest.mark.parametrize("x", [1, 2, 3, 4])
-def test_off_stages_never_irrigate(x, capture):
-    res = _dry(relief_stage=x, with_stages=True)
-    flux, _ = capture[-1]
-    days = _irrigation_days(flux, date.fromisoformat(res["initial_water"]["start"]))
-    b = _bounds(res)
-    for d in days:
-        for other, (lo, hi) in b.items():
-            if other != x:
-                # a day that belongs to another stage by the d-1 rule, and is not x's tail day
-                assert not (lo + timedelta(days=1) <= d <= hi and not
-                            (b[x][0] <= d <= b[x][1] + timedelta(days=1))), (x, other, d)
+        assert first <= d <= hi + timedelta(days=1), (x, d, lo, hi)
 
 
 @pytest.mark.parametrize("x", [1, 2, 3, 4])
 def test_off_stages_use_smt_minus_1000(x, monkeypatch):
-    """SMT 0 still irrigates when depletion exceeds the TAW under drought: off must be -1000."""
+    """SMT 0 still irrigates when depletion exceeds the TAW under drought: off must be -1000.
+
+    The SMT=0 leak was seen on real dry-year weather in the Task 1 spike (task-1-report.md,
+    section (b)) and could not be reproduced on synthetic weather, so the argument is pinned.
+    """
     import aquacrop
 
     seen = []
@@ -257,3 +250,21 @@ def test_with_stages_error_mapping_weather_ends():
     w = _weather(start=SIM_START, n=100, tmin_c=5.0, tmax_c=15.0, precip_mm=1.0, et0_mm=3.0)
     with pytest.raises(eng.WeatherEndsBeforeHarvestError):
         _dry(weather=w, with_stages=True)
+
+
+def test_calendar_days_crop_steps_and_bounds_match():
+    """Built-in calendar-days crop ("Wheat"): stepping gives the same result and sane bounds."""
+    df = _tunis()
+    weather, layers = _weather_from_df(df), _sandyloam_layers()
+    p = date(1979, 10, 1)
+    a = run_aquacrop(weather, layers, "Wheat", p)
+    b = run_aquacrop(weather, layers, "Wheat", p, with_stages=True)
+    st = b.pop("stages")
+    assert a == b
+    assert st[0]["start"] == p.isoformat()
+    reached = [s for s in st if s["start"]]
+    assert len(reached) >= 2
+    for x, y in itertools.pairwise(reached):
+        assert date.fromisoformat(y["start"]) == date.fromisoformat(x["end"]) + timedelta(days=1)
+    assert date.fromisoformat(reached[-1]["end"]) + timedelta(days=1) == \
+        date.fromisoformat(b["harvest_date"])
