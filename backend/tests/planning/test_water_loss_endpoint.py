@@ -340,6 +340,15 @@ async def test_switch_off_without_a_finished_campaign(monkeypatch, previous):
     assert out["unavailable"] == [{"provider_id": "aquacrop_water_loss", "reason": "no_finished_season"}]
 
 
+async def test_switch_off_sowing_after_the_recorded_harvest_is_not_a_finished_season(monkeypatch):
+    off(monkeypatch)
+    inverted = {**PREVIOUS, "start": {"date": "2025-08-01", "provenance": "actual"}}  # harvest 2025-07-01
+    jobs = FakeJobs()
+    out = await call(jobs, load=cycles_of(previous=inverted))
+    assert jobs.started == []
+    assert out["unavailable"] == [{"provider_id": "aquacrop_water_loss", "reason": "no_finished_season"}]
+
+
 async def test_switch_off_boundaries_and_old_sowing(monkeypatch):
     off(monkeypatch)
     edge = {**PREVIOUS, "end": {"date": "2025-03-15", "provenance": "actual"}}  # exactly 365 days ago

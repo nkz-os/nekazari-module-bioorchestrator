@@ -174,7 +174,8 @@ def _view(job, sown: SownCrop, country: str | None, version: str) -> dict:
 
 async def parcel_water_loss(*, dao, jobs, tenant_id: str, parcel_id: str, today: date | None = None,
                             retry: bool = False, load=load_parcel) -> dict:
-    """State of the water-loss job of the parcel's current cycle, starting or joining it.
+    """State of the water-loss job of the selected cycle (the last finished campaign by default; the current one behind
+    WATER_LOSS_IN_SEASON), starting or joining it.
 
     Idempotent (the caller polls); inputs are resolved from facts on every call. Gaps answer
     ``unavailable`` without a job. Only rainfed: irrigation is not simulated here.

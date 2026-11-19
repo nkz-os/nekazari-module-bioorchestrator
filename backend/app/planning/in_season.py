@@ -159,7 +159,11 @@ def resolve_finished_crop(parcel: dict, crops: dict[str, dict], cycles: dict | N
             or not today - timedelta(days=FINISHED_WINDOW_DAYS) <= ended <= today):
         return "no_finished_season"
     sown = resolve_sown_crop(parcel, crops, {"current": previous}, today)
-    return sown if isinstance(sown, str) else replace(sown, harvest_date=ended)
+    if isinstance(sown, str):
+        return sown
+    if sown.sowing_date > ended:  # a harvest before the sowing is not a finished season
+        return "no_finished_season"
+    return replace(sown, harvest_date=ended)
 
 
 def season_window_reason(sowing: date, today: date) -> str | None:
