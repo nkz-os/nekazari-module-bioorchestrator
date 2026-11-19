@@ -71,7 +71,7 @@ def stubs(monkeypatch):
         return {**FORECAST, "field_management": aq._field_management(mulch_pct)}
 
     async def compute(obs, analog_fn, soil_layers, crop, planting, sim_start, crop_params, mulch_pct,
-                      progress=None):
+                      progress=None, allow_ensemble=True):
         captured["water_loss"] = {"observed": obs, "analogs": dict(await analog_fn()), "soil": soil_layers,
                                   "crop": crop, "planting": planting, "sim_start": sim_start,
                                   "crop_params": crop_params, "mulch_pct": mulch_pct}
@@ -160,3 +160,17 @@ async def test_unknown_mode_is_refused(stubs):
     with pytest.raises(SimulationError) as e:
         await _run(mode="nope")
     assert e.value.code == "invalid_input"
+
+
+async def test_allow_ensemble_is_threaded_to_the_service(stubs, monkeypatch):
+    seen = {}
+
+    async def compute(*a, **k):
+        seen.update(k)
+        return WATER_LOSS
+
+    monkeypatch.setattr(wls, "compute", compute)
+    await _run(mode="water_loss_by_stage")
+    assert seen == {"allow_ensemble": True}
+    await _run(mode="water_loss_by_stage", allow_ensemble=False)
+    assert seen == {"allow_ensemble": False}

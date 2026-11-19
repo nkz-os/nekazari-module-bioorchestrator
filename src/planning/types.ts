@@ -142,6 +142,7 @@ export interface WaterLossResponse {
     status: 'in_season' | 'complete'; as_of: string | null; crop: string; regime: Regime;
     sowing: { date: string; source: 'crop_cycle'; provenance: 'actual' | 'declared' };
     n_years: number; ensemble: { n_years: number; years: number[] } | null;
+    cycle: 'current' | 'previous'; harvest_recorded: string | null;
     computed_at: string | null; provider_version: string;
   } | null;
   result: WaterLossResult | null;

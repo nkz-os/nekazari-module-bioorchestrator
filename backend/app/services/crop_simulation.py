@@ -174,6 +174,7 @@ async def run_crop_simulation(
     input_warnings: list[str] | None = None,
     progress: Callable[[int, int], None] | None = None,
     mode: Literal["forecast", "water_loss_by_stage"] = "forecast",
+    allow_ensemble: bool = True,
 ) -> dict[str, Any]:
     """Gather soil and weather, run the engine, build the response.
 
@@ -226,7 +227,8 @@ async def run_crop_simulation(
             with engine_errors():
                 result = await water_loss_by_stage.compute(
                     observed.weather, analogs, soil, crop.aquacrop_crop, sowing_date, observed.sim_start,
-                    phenology, mulch_for(sowing_method), progress)
+                    phenology, mulch_for(sowing_method), progress,
+                    allow_ensemble=allow_ensemble)
         else:
             result = await engine.simulate(
                 observed=observed.weather, analogs=analogs, soil=soil, crop=crop.aquacrop_crop,

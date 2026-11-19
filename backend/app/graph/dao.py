@@ -3775,6 +3775,7 @@ class GraphDAO:
         progress=None,
         sowing_method: str | None = None,
         mode: str = "forecast",
+        allow_ensemble: bool = True,
     ) -> dict:
         """Simulate the parcel's crop season with every input taken from real data.
 
@@ -3924,7 +3925,7 @@ class GraphDAO:
             sowing_date=sowing_date, sowing_source=sowing_source, irrigation=irrigation,
             lat=lat, lon=lon, today=today, sowing_provenance=sowing_provenance,
             sowing_method=method, sowing_method_source=method_source, input_warnings=method_warnings,
-            progress=progress, mode=mode)
+            progress=progress, mode=mode, allow_ensemble=allow_ensemble)
 
     async def get_organic_inputs(self, eppo: str) -> dict:
         """Get FiBL organic inputs compatible with this crop's pests. Non-blocking."""

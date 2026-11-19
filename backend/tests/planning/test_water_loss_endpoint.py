@@ -45,6 +45,12 @@ RESULT = {"water_loss": WATER_LOSS, "milestones": MILESTONES, "inputs": {}, "yie
           "warnings": ["input warning"]}
 
 
+@pytest.fixture(autouse=True)
+def in_season_switch_on(monkeypatch):
+    """The route answers only finished campaigns unless this switch is on; these tests cover both."""
+    monkeypatch.setenv("WATER_LOSS_IN_SEASON", "true")
+
+
 class FakeJobs:
     version = "v-test|wl1"
     job_id = staticmethod(SimJobs.job_id)
@@ -141,7 +147,8 @@ async def test_a_sown_rainfed_parcel_starts_its_own_job_in_water_loss_mode():
     out = await call(jobs)
     assert out["state"] == "queued" and out["job_id"] and out["result"] is None and out["season"] is None
     assert jobs.started == [{"parcel_id": PARCEL_ID, "crop_slug": "wheat", "sowing_date": "2025-10-20",
-                             "irrigation": "rainfed", "engine": "aquacrop", "kind": "water_loss_by_stage"}]
+                             "irrigation": "rainfed", "engine": "aquacrop", "kind": "water_loss_by_stage",
+                             "cycle": "current"}]
     assert (await call(jobs))["job_id"] == out["job_id"] and len(jobs.started) == 1
     dao = AsyncMock()
     dao.run_crop_simulation.return_value = RESULT
@@ -162,6 +169,7 @@ async def test_done_response_shape_for_a_validated_crop():
                              "sowing": {"date": "2025-10-20", "source": "crop_cycle", "provenance": "actual"},
                              "n_years": 14,
                              "ensemble": {"n_years": 14, "years": list(range(2008, 2022))},
+                             "cycle": "current", "harvest_recorded": None,
                              "computed_at": "2026-03-15T06:00:00+00:00",
                              "provider_version": "v-test|wl1"}
     r = got["result"]
@@ -280,6 +288,149 @@ async def test_in_season_not_busy_while_water_loss_pending():
     assert second["unavailable"] == [{"provider_id": "aquacrop_water_loss", "reason": "busy"}]
     gate.set()
     await pending.task
+
+
+PREVIOUS = {"crop_id": CROP_ID, "species": "TRZAX",
+            "start": {"date": "2024-10-20", "provenance": "actual"},
+            "end": {"date": "2025-07-01", "provenance": "actual"}}
+COMPLETE = {**RESULT, "water_loss": {**WATER_LOSS, "season": "complete", "as_of": "2025-12-31", "ensemble": None}}
+
+
+def cycles_of(current=SOWN["current"], previous=PREVIOUS):
+    return loader(cycles={"current": current, "previous": previous})
+
+
+def off(monkeypatch):
+    monkeypatch.setenv("WATER_LOSS_IN_SEASON", "false")
+
+
+async def test_switch_off_answers_the_finished_previous_campaign(monkeypatch):
+    off(monkeypatch)
+    jobs = FakeJobs()
+    out = await call(jobs, load=cycles_of())
+    assert out["state"] == "queued"
+    assert jobs.started == [{"parcel_id": PARCEL_ID, "crop_slug": "wheat", "sowing_date": "2024-10-20",
+                             "irrigation": "rainfed", "engine": "aquacrop", "kind": "water_loss_by_stage",
+                             "cycle": "previous"}]
+    finish(jobs, out, COMPLETE)
+    got = await call(jobs, load=cycles_of())
+    assert got["season"]["cycle"] == "previous" and got["season"]["harvest_recorded"] == "2025-07-01"
+    assert got["season"]["status"] == "complete" and got["season"]["sowing"]["date"] == "2024-10-20"
+    dao = AsyncMock()
+    dao.run_crop_simulation.return_value = COMPLETE
+    await call(jobs, dao=dao, load=cycles_of())
+    await jobs.runs[-1](lambda done, total: None)
+    kw = dao.run_crop_simulation.call_args.kwargs
+    assert kw["allow_ensemble"] is False and kw["sowing_date_str"] == "2024-10-20"
+
+
+@pytest.mark.parametrize("previous", [
+    None,
+    {**PREVIOUS, "end": {"date": "2025-03-14", "provenance": "actual"}},  # 366 days ago
+    {**PREVIOUS, "end": {"date": "2025-07-01", "provenance": "planned"}},
+    {**PREVIOUS, "end": {"date": "2026-03-16", "provenance": "actual"}},  # in the future
+    {**PREVIOUS, "end": None},
+    {**PREVIOUS, "start": {"date": "2024-10-20", "provenance": "planned"}},
+])
+async def test_switch_off_without_a_finished_campaign(monkeypatch, previous):
+    off(monkeypatch)
+    jobs = FakeJobs()
+    out = await call(jobs, load=cycles_of(previous=previous))
+    assert out["state"] == "unavailable" and jobs.started == []
+    assert out["unavailable"] == [{"provider_id": "aquacrop_water_loss", "reason": "no_finished_season"}]
+
+
+async def test_switch_off_boundaries_and_old_sowing(monkeypatch):
+    off(monkeypatch)
+    edge = {**PREVIOUS, "end": {"date": "2025-03-15", "provenance": "actual"}}  # exactly 365 days ago
+    jobs = FakeJobs()
+    assert (await call(jobs, load=cycles_of(previous=edge)))["state"] == "queued"
+    old = {**PREVIOUS, "start": {"date": "2023-01-01", "provenance": "declared"}}  # sown > 366 d ago
+    assert (await call(FakeJobs(), load=cycles_of(previous=old)))["state"] == "queued"
+
+
+async def test_switch_off_cycles_and_regime_codes(monkeypatch):
+    off(monkeypatch)
+    assert (await call(FakeJobs(), load=loader(cycles=None)))["unavailable"][0]["reason"] == "cycles_unavailable"
+    assert (await call(FakeJobs(), load=loader(cycles={"current": None})))["unavailable"][0]["reason"] == "no_finished_season"
+    no_species = {**PREVIOUS, "species": "NOPE1"}
+    assert (await call(FakeJobs(), load=cycles_of(previous=no_species)))["unavailable"][0]["reason"] == "unknown_crop"
+    no_date = {**PREVIOUS, "start": {"date": None, "provenance": "actual"}}
+    assert (await call(FakeJobs(), load=cycles_of(previous=no_date)))["unavailable"][0]["reason"] == "no_sowing_date"
+    irrigated = loader(cycles={"current": None, "previous": PREVIOUS},
+                       crops={CROP_ID: {"id": CROP_ID, "species": "TRZAX", "irrigationRegime": "irrigated"}})
+    assert (await call(FakeJobs(), load=irrigated))["unavailable"][0]["reason"] == "irrigated_regime"
+    parcel = {k: v for k, v in PARCEL.items() if k != "irrigationRegime"}
+    unknown = loader(cycles={"previous": PREVIOUS}, crops={CROP_ID: {"id": CROP_ID, "species": "TRZAX"}},
+                     parcel=parcel)
+    assert (await call(FakeJobs(), load=unknown))["unavailable"][0]["reason"] == "no_regime"
+
+
+async def test_switch_off_ignores_the_current_in_season_crop(monkeypatch):
+    off(monkeypatch)
+    jobs = FakeJobs()
+    await call(jobs, load=cycles_of())
+    assert [p["cycle"] for p in jobs.started] == ["previous"]
+
+
+async def test_switch_on_current_sown_is_the_current_behaviour():
+    jobs = FakeJobs()
+    out = await call(jobs, load=cycles_of())
+    assert [p["cycle"] for p in jobs.started] == ["current"] and jobs.started[0]["sowing_date"] == "2025-10-20"
+    finish(jobs, out)
+    got = await call(jobs, load=cycles_of())
+    assert got["season"]["cycle"] == "current" and got["season"]["harvest_recorded"] is None
+    dao = AsyncMock()
+    dao.run_crop_simulation.return_value = RESULT
+    await call(jobs, dao=dao, load=cycles_of())
+    await jobs.runs[-1](lambda done, total: None)
+    assert dao.run_crop_simulation.call_args.kwargs["allow_ensemble"] is True
+
+
+async def test_switch_on_without_current_uses_the_finished_previous():
+    jobs = FakeJobs()
+    out = await call(jobs, load=cycles_of(current=None))
+    assert out["state"] == "queued" and jobs.started[0]["cycle"] == "previous"
+    # nothing finished either: the current cycle's own reason stays
+    gap = await call(FakeJobs(), load=loader(cycles={"current": None}))
+    assert gap["unavailable"][0]["reason"] == "no_committed_crop"
+
+
+async def test_current_and_previous_jobs_never_share_an_id(monkeypatch):
+    jobs = FakeJobs()
+    cur = await call(jobs, load=cycles_of())
+    off(monkeypatch)
+    prev = await call(jobs, load=cycles_of())
+    assert cur["job_id"] != prev["job_id"]
+
+
+async def test_a_season_not_finished_job_is_unavailable_not_failed(monkeypatch):
+    off(monkeypatch)
+    jobs = FakeJobs()
+    out = await call(jobs, load=cycles_of())
+    job = jobs.jobs[out["job_id"]]
+    job.state, job.error = "failed", {"code": "season_not_finished"}
+    got = await call(jobs, load=cycles_of())
+    assert got["state"] == "unavailable" and got["result"] is None
+    assert got["unavailable"] == [{"provider_id": "aquacrop_water_loss", "reason": "season_not_finished"}]
+
+
+@pytest.mark.parametrize("raw, expected", [
+    (None, False), ("", False), ("false", False), ("true", True), ("TRUE", True), ("1", False), ("yes", False)])
+def test_the_switch_reads_the_environment_at_call_time(monkeypatch, raw, expected):
+    if raw is None:
+        monkeypatch.delenv("WATER_LOSS_IN_SEASON", raising=False)
+    else:
+        monkeypatch.setenv("WATER_LOSS_IN_SEASON", raw)
+    assert water_loss.in_season_enabled() is expected
+
+
+def test_an_invalid_switch_value_warns_once(monkeypatch, caplog):
+    monkeypatch.setattr(water_loss, "_WARNED", False)
+    monkeypatch.setenv("WATER_LOSS_IN_SEASON", "maybe")
+    with caplog.at_level("WARNING"):
+        assert water_loss.in_season_enabled() is False and water_loss.in_season_enabled() is False
+    assert len([r for r in caplog.records if "WATER_LOSS_IN_SEASON" in r.getMessage()]) == 1
 
 
 def test_the_singleton_is_its_own_queue_with_tight_caps():

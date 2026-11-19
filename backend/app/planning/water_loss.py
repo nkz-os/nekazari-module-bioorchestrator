@@ -1,13 +1,15 @@
 """Water loss by growth stage of a sown rainfed parcel (contract 2.11): the job and its answer.
 
-Same parcel, cycle, crop and sowing resolution as the in-season forecast (``resolve_sown_crop``),
-but a queue of its own (never the shared one, so it cannot make the in-season route answer
+By default it answers only for the last finished campaign (the ``previous`` cycle); the current,
+in-season cycle is served only while ``WATER_LOSS_IN_SEASON`` is true. Crop, sowing and regime resolve
+as for the in-season forecast (``resolve_sown_crop``), but with a queue of its own (never the shared one, so it cannot make the in-season route answer
 ``busy``), rainfed only, no validation gate: the answer says whether the crop, regime and region
 are inside the validated forecast, and always that no observed data arbitrates the figures.
 """
 from __future__ import annotations
 
 import logging
+import os
 from datetime import UTC, date, datetime
 
 import httpx
@@ -18,6 +20,7 @@ from app.planning.in_season import (
     SownCrop,
     load_parcel,
     parcel_point,
+    resolve_finished_crop,
     resolve_sown_crop,
     season_window_reason,
 )
@@ -56,6 +59,23 @@ VALIDATED_NOTE = ("crop, regime and region of the validated forecast; the stage 
 UNVALIDATED_NOTE = "crop, regime or region outside the validated forecast; figures are model output only"
 
 _JOBS: SimJobs | None = None
+_WARNED = False
+
+
+def in_season_enabled() -> bool:
+    """``WATER_LOSS_IN_SEASON`` ("true"/"false", default off), read at call time.
+
+    Off: the route answers only for the last finished campaign. Any other value counts as off
+    and is logged once.
+    """
+    global _WARNED
+    raw = os.environ.get("WATER_LOSS_IN_SEASON", "").strip().lower()
+    if raw == "true":
+        return True
+    if raw not in ("", "false") and not _WARNED:
+        _WARNED = True
+        logger.warning("WATER_LOSS_IN_SEASON=%r is not 'true' or 'false': treated as false", raw)
+    return False
 
 
 def water_loss_jobs() -> SimJobs:
@@ -133,12 +153,16 @@ def _season(job_result: dict, sown: SownCrop, finished_at: datetime | None, vers
                        "provenance": sown.sowing_provenance},
             "n_years": (wl.get("ensemble") or {}).get("n_years") or 0,
             "ensemble": wl.get("ensemble"),
+            "cycle": "previous" if sown.harvest_date else "current",
+            "harvest_recorded": sown.harvest_date.isoformat() if sown.harvest_date else None,
             "computed_at": finished_at.isoformat() if finished_at else None, "provider_version": version}
 
 
 def _view(job, sown: SownCrop, country: str | None, version: str) -> dict:
     out = {"state": job.state, "done": job.done, "total": job.total, "unavailable": [], "job_id": job.id,
            "season": None, "result": None}
+    if job.state == "failed" and (job.error or {}).get("code") == "season_not_finished":
+        return _unavailable("season_not_finished")
     if job.state == "failed":
         out["unavailable"] = [{"provider_id": PROVIDER_ID, "reason": "engine_error",
                                "code": (job.error or {}).get("code")}]
@@ -168,29 +192,36 @@ async def parcel_water_loss(*, dao, jobs, tenant_id: str, parcel_id: str, today:
         code = type(e).__name__
         logger.warning("water_loss_parcel_unavailable tenant=%s parcel=%s code=%s", tenant_id, parcel_id, code)
         return _failed("parcel_unavailable", code)
-    sown = resolve_sown_crop(parcel, crops, cycles, today)
-    if isinstance(sown, str):
-        return _unavailable(sown)
+    sown = resolve_sown_crop(parcel, crops, cycles, today) if in_season_enabled() else None
+    if isinstance(sown, SownCrop):
+        reason = season_window_reason(sown.sowing_date, today)
+        if reason is not None:
+            return _unavailable(reason)
+    else:
+        # The last finished campaign; its harvest window replaces the in-season sowing window.
+        current_reason = sown
+        sown = resolve_finished_crop(parcel, crops, cycles, today)
+        if isinstance(sown, str):
+            return _unavailable(current_reason if current_reason and sown == "no_finished_season" else sown)
     if sown.regime is None:
         return _unavailable("no_regime")
     if sown.regime != "rainfed":
         return _unavailable("irrigated_regime")
-    reason = season_window_reason(sown.sowing_date, today)
-    if reason is not None:
-        return _unavailable(reason)
     try:
         resolve_aquacrop_crop(sown.crop_slug)
     except SimulationError:
         return _unavailable("unsupported_crop")
     params = {"parcel_id": parcel_id, "crop_slug": sown.crop_slug,
               "sowing_date": sown.sowing_date.isoformat(), "irrigation": IRRIGATION[sown.regime],
-              "engine": "aquacrop", "kind": JOB_KIND}
+              "engine": "aquacrop", "kind": JOB_KIND,
+              "cycle": "previous" if sown.harvest_date else "current"}
 
     async def run(progress):
         return await dao.run_crop_simulation(
             parcel_id=parcel_id, tenant_id=tenant_id, crop_slug=params["crop_slug"],
             sowing_date_str=params["sowing_date"], irrigation=params["irrigation"], engine="aquacrop",
-            progress=progress, mode=JOB_KIND)
+            progress=progress, mode=JOB_KIND,
+            allow_ensemble=params["cycle"] == "current")
 
     version = jobs.version_for(params["crop_slug"])
     country = _country(parcel)

@@ -236,9 +236,13 @@ async def compute(
     crop_params: Mapping[str, float] | None,
     mulch_pct: float | None,
     progress: Callable[[int, int], None] | None = None,
+    allow_ensemble: bool = True,
 ) -> dict:
     """Water loss by stage: one member with observed weather if the season is finished,
-    else one per analog year (as ``aquacrop_engine.simulate``). Rainfed only."""
+    else one per analog year (as ``aquacrop_engine.simulate``). Rainfed only.
+
+    ``allow_ensemble=False`` is for a campaign that must be finished: when the single run cannot
+    finish on the observed weather it raises ``season_not_finished`` and never loads analog years."""
     aq._validate_crop_irrigation(crop, "rainfed")
     aq._validate_crop_params(crop, crop_params)
     aq._field_management(mulch_pct)
@@ -249,6 +253,8 @@ async def compute(
     # 29 Feb as last observed day: the engine cannot end a run there and says "cannot mature"
     # instead of "weather ends"; below planting + 364 d it is an unfinished season.
     if last is None or last < planting_date:
+        if not allow_ensemble:
+            raise SimulationError("season_not_finished", "the season has no observed weather to harvest")
         if callable(analogs):
             analogs = await analogs()
         if not analogs:
@@ -262,6 +268,10 @@ async def compute(
                                 date.max)
         except (aq.WeatherEndsBeforeHarvestError, aq.CropCannotMatureError) as e:
             leap_day = isinstance(e, aq.CropCannotMatureError) and (last.month, last.day) == (2, 29)
+            if not allow_ensemble and (leap_day or isinstance(e, aq.WeatherEndsBeforeHarvestError)):
+                raise SimulationError(
+                    "season_not_finished",
+                    f"the crop did not finish on the observed weather (last day {last.isoformat()})") from e
             if not unfinished or (isinstance(e, aq.CropCannotMatureError) and not leap_day):
                 raise
             if callable(analogs):

@@ -449,3 +449,46 @@ def test_shutdown_pool_no_wait_cancels_futures():
     wl._pool = pool
     wl.shutdown_pool(wait=False)
     assert pool.calls == [(False, True)] and wl._pool is None
+
+
+# ------------------------------------------------------------ allow_ensemble
+async def test_no_ensemble_when_weather_ends_before_harvest(monkeypatch):
+    run = fake_member_runs()
+    loaded = []
+
+    async def analogs():
+        loaded.append(1)
+        return _analogs()
+
+    monkeypatch.setattr(wl, "member_runs", run)
+    with pytest.raises(wl.SimulationError) as e:
+        await _compute(_obs(date(2028, 2, 1)), analogs, allow_ensemble=False)
+    assert e.value.code == "season_not_finished" and loaded == []
+    def short(*a):
+        raise aq.WeatherEndsBeforeHarvestError("short")
+
+    monkeypatch.setattr(wl, "member_runs", short)
+    with pytest.raises(wl.SimulationError) as e:  # past planting + 364 d too
+        await _compute(_obs(PLANTING + timedelta(days=364)), analogs, allow_ensemble=False)
+    assert e.value.code == "season_not_finished" and loaded == []
+
+
+async def test_no_ensemble_on_the_leap_day_case(monkeypatch):
+    def member(*a):
+        raise aq.CropCannotMatureError("29 Feb")
+
+    monkeypatch.setattr(wl, "member_runs", member)
+    with pytest.raises(wl.SimulationError) as e:
+        await _compute(_obs(date(2028, 2, 29)), _analogs, allow_ensemble=False)
+    assert e.value.code == "season_not_finished"
+    with pytest.raises(aq.CropCannotMatureError):  # any other cannot-mature is not swallowed
+        await _compute(_obs(date(2028, 2, 28)), _analogs, allow_ensemble=False)
+
+
+async def test_no_ensemble_before_planting_and_finished_season_unchanged(monkeypatch):
+    monkeypatch.setattr(wl, "member_runs", fake_member_runs())
+    with pytest.raises(wl.SimulationError) as e:
+        await _compute(_obs(date(2027, 9, 20)), _analogs, allow_ensemble=False)
+    assert e.value.code == "season_not_finished"
+    res = await _compute(_obs(date(2028, 6, 15)), _analogs, allow_ensemble=False)
+    assert res["season"] == "complete"

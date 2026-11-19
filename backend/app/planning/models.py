@@ -357,6 +357,8 @@ class WaterLossSeason(BaseModel):
     sowing: SeasonSowing
     n_years: int = 0  # analog years; 0 when complete
     ensemble: dict[str, Any] | None = None  # {n_years, years} in season; None when complete
+    cycle: Literal["current", "previous"] = "current"  # previous: the last finished campaign
+    harvest_recorded: date | None = None  # recorded harvest of the previous cycle
     computed_at: datetime | None = None
     provider_version: str
 
