@@ -37,17 +37,19 @@ MILESTONES_BASIS = "thermal_time_no_stress_delay"
 LABEL = "model estimate; no observed data arbitrates it"
 NOTES = [
     "stage gains do not add up: keeping the soil wet in one stage leaves it full for the next",
-    ("in season: observed weather up to as_of, rest of season from N reference years; both runs share "
-     "that future, so the difference is firmer than the level"),
+    ("in season: observed weather up to as_of, rest of season from N reference years; a finished "
+     "stage's figure still depends on the weather after it and changes until harvest"),
     "stages follow canopy development; flowering and grain fill fall across max_canopy and senescence",
 ]
 SOURCES = [
     {"short": "AquaCrop-OSPy",
-     "detail": "Foster T. et al. (2017) AquaCrop-OSPy: bridging the gap between research and practice in "
-               "crop-water modeling. Agricultural Water Management 181:18-22"},
-    {"short": "FAO AquaCrop",
-     "detail": "Raes D. et al., AquaCrop reference manual (FAO): irrigation by soil-moisture threshold "
-               "per growth stage"},
+     "detail": ("Kelly T.D., Foster T. (2021). AquaCrop-OSPy: Bridging the gap between research and practice "
+                "in crop-water modelling. Agricultural Water Management 254:106976. "
+                "doi:10.1016/j.agwat.2021.106976. Per-stage irrigation by soil-moisture threshold: "
+                "IrrigationManagement(irrigation_method=1, SMT).")},
+    {"short": "AquaCrop-OS",
+     "detail": ("Foster T. et al. (2017). AquaCrop-OS: An open source version of FAO's crop water model. "
+                "Agricultural Water Management 181:18-22. doi:10.1016/j.agwat.2016.11.015.")},
 ]
 VALIDATED_NOTE = ("crop, regime and region of the validated forecast; the stage figures themselves "
                   "are not validated")
@@ -118,6 +120,7 @@ def _result(job_result: dict, sown: SownCrop, country: str | None) -> dict:
         "yield_basis": job_result["yield_basis"],
         "validation": {"status": "validated_forecast_crop" if validated else "unvalidated",
                        "note": VALIDATED_NOTE if validated else UNVALIDATED_NOTE},
+        "engine_version": wl["engine_version"],
         "label": LABEL, "notes": list(NOTES), "sources": [dict(s) for s in SOURCES],
         "warnings": list(job_result.get("warnings") or []),
     }
@@ -129,6 +132,7 @@ def _season(job_result: dict, sown: SownCrop, finished_at: datetime | None, vers
             "sowing": {"date": sown.sowing_date.isoformat(), "source": "crop_cycle",
                        "provenance": sown.sowing_provenance},
             "n_years": (wl.get("ensemble") or {}).get("n_years") or 0,
+            "ensemble": wl.get("ensemble"),
             "computed_at": finished_at.isoformat() if finished_at else None, "provider_version": version}
 
 

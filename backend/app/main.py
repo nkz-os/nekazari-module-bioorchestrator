@@ -324,7 +324,7 @@ async def lifespan(app: FastAPI):
     print("[bioorchestrator] Neo4j connection closed")
     try:
         from app.services import water_loss_by_stage
-        water_loss_by_stage.shutdown_pool()
+        water_loss_by_stage.shutdown_pool(wait=False)
     except Exception:
         logger.exception("water_loss_pool_shutdown_failed")
 

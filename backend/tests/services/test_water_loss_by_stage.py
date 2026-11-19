@@ -435,3 +435,17 @@ async def test_real_pool_round_trip():
     finally:
         wl.shutdown_pool()
     assert res["season"] == "complete" and res["total"]["potential_t_ha"] > 0
+
+
+def test_shutdown_pool_no_wait_cancels_futures():
+    class Pool:
+        def __init__(self):
+            self.calls = []
+
+        def shutdown(self, wait=True, cancel_futures=False):
+            self.calls.append((wait, cancel_futures))
+
+    pool = Pool()
+    wl._pool = pool
+    wl.shutdown_pool(wait=False)
+    assert pool.calls == [(False, True)] and wl._pool is None

@@ -345,6 +345,7 @@ class WaterLossResult(BaseModel):
     label: str
     notes: list[str]
     sources: list[dict[str, Any]]
+    engine_version: str
     warnings: list[str] = Field(default_factory=list)
 
 
@@ -355,6 +356,7 @@ class WaterLossSeason(BaseModel):
     regime: Regime
     sowing: SeasonSowing
     n_years: int = 0  # analog years; 0 when complete
+    ensemble: dict[str, Any] | None = None  # {n_years, years} in season; None when complete
     computed_at: datetime | None = None
     provider_version: str
 

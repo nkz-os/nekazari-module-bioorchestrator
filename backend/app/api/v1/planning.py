@@ -165,7 +165,7 @@ async def estimates_in_season(request: Request, parcel_id: str, sources: Sources
 async def estimates_water_loss_by_stage(request: Request, parcel_id: str, sources: SourcesDep,
                                         retry: bool = Query(False),
                                         job_id: str | None = Query(None, max_length=64)):
-    """Yield the rainfed season gave up in each finished growth stage (contract 2.11); poll until it settles.
+    """Yield gained if water had not been short in that growth stage alone (the gain includes water left in the soil for later stages). Contract 2.11; poll until it settles.
 
     Crop, sowing (a fact, never a plan) and regime come from the parcel's current cycle; rainfed only.
     It runs on a queue of its own, apart from the in-season forecast's. ``job_id`` is accepted for

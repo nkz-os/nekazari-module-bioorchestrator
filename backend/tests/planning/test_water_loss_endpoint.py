@@ -160,18 +160,23 @@ async def test_done_response_shape_for_a_validated_crop():
     assert got["state"] == "done"
     assert got["season"] == {"status": "in_season", "as_of": "2026-03-14", "crop": "TRZAX", "regime": "rainfed",
                              "sowing": {"date": "2025-10-20", "source": "crop_cycle", "provenance": "actual"},
-                             "n_years": 14, "computed_at": "2026-03-15T06:00:00+00:00",
+                             "n_years": 14,
+                             "ensemble": {"n_years": 14, "years": list(range(2008, 2022))},
+                             "computed_at": "2026-03-15T06:00:00+00:00",
                              "provider_version": "v-test|wl1"}
     r = got["result"]
     assert r["validation"]["status"] == "validated_forecast_crop" and r["validation"]["note"]
     assert r["label"] == "model estimate; no observed data arbitrates it"
     assert r["notes"] == [
         "stage gains do not add up: keeping the soil wet in one stage leaves it full for the next",
-        ("in season: observed weather up to as_of, rest of season from N reference years; both runs share "
-         "that future, so the difference is firmer than the level"),
+        ("in season: observed weather up to as_of, rest of season from N reference years; a finished "
+         "stage's figure still depends on the weather after it and changes until harvest"),
         "stages follow canopy development; flowering and grain fill fall across max_canopy and senescence"]
     assert r["sources"] and all({"short", "detail"} <= set(s) for s in r["sources"])
-    assert "AquaCrop-OSPy" in r["sources"][0]["detail"] and "Foster" in r["sources"][0]["detail"]
+    assert [x["short"] for x in r["sources"]] == ["AquaCrop-OSPy", "AquaCrop-OS"]
+    assert "doi:10.1016/j.agwat.2021.106976" in r["sources"][0]["detail"]
+    assert "doi:10.1016/j.agwat.2016.11.015" in r["sources"][1]["detail"]
+    assert r["engine_version"] == "3.1.0"
     assert r["stage_bounds_basis"] == "rainfed_simulation"
     assert r["milestones_basis"] == "thermal_time_no_stress_delay"
     assert r["yield_basis"] == BASIS and r["warnings"] == ["input warning"]

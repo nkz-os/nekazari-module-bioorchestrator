@@ -132,7 +132,7 @@ export interface WaterLossResult {
   stage_bounds_basis: 'rainfed_simulation'; milestones_basis: 'thermal_time_no_stress_delay';
   yield_basis: { moisture: string; grain_moisture_pct?: number | null; [key: string]: unknown };
   validation: { status: 'validated_forecast_crop' | 'unvalidated'; note: string };
-  label: string; notes: string[]; sources: { short: string; detail: string }[]; warnings: string[];
+  label: string; notes: string[]; sources: { short: string; detail: string }[]; engine_version: string; warnings: string[];
 }
 export interface WaterLossResponse {
   contract_version: string; provider_id: 'aquacrop_water_loss';
@@ -141,7 +141,8 @@ export interface WaterLossResponse {
   season: {
     status: 'in_season' | 'complete'; as_of: string | null; crop: string; regime: Regime;
     sowing: { date: string; source: 'crop_cycle'; provenance: 'actual' | 'declared' };
-    n_years: number; computed_at: string | null; provider_version: string;
+    n_years: number; ensemble: { n_years: number; years: number[] } | null;
+    computed_at: string | null; provider_version: string;
   } | null;
   result: WaterLossResult | null;
 }

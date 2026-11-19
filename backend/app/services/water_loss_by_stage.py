@@ -1,4 +1,7 @@
-"""Water loss by growth stage: how much yield a rainfed season gave up in each finished stage.
+"""Water loss by growth stage.
+
+Yield gained if water had not been short in that growth stage alone (the gain includes water
+left in the soil for later stages).
 
 For every member (one with observed weather for a finished season, one per analog year for a
 season in progress) the model runs rainfed, at full irrigation (the potential) and, for each
@@ -66,10 +69,11 @@ def _get_pool() -> ProcessPoolExecutor:
     return _pool
 
 
-def shutdown_pool() -> None:
+def shutdown_pool(wait: bool = True) -> None:
+    """Close the pool; the lifespan path passes ``wait=False`` so shutdown never blocks."""
     global _pool
     if _pool is not None:
-        _pool.shutdown(wait=True)
+        _pool.shutdown(wait=wait, cancel_futures=not wait)
         _pool = None
 
 
