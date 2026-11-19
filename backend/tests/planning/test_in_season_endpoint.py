@@ -116,8 +116,12 @@ async def test_validated_in_season_response_is_unchanged():
         "estimates": [
             {**common, "basis": "gap_corrected", "percentiles": None, "range": {"low": 2.4, "high": 3.9},
              "coverage": 0.8,
-             "validation": {"status": "experimental", "metric": None,
-                            "scope": "in-season forecast; skill by forecast date not yet measured"}},
+             "validation": {"status": "experimental",
+                            "metric": ("year-to-year r by issue date: 0.14 (1 Apr), 0.34 (1 May), "
+                                       "0.45 (1 Jun), 0.49 (complete season); RMSE 1.6 t/ha at every date"),
+                            "scope": ("in-season forecast; before May it reflects the normal of the area, "
+                                      "not this season (provincial statistics, rainfed soft wheat, "
+                                      "ES 2008-2022)")}},
             {**common, "basis": "water_limited", "range": None, "coverage": None,
              "percentiles": {"p10": 3.0, "p50": 4.0, "p90": 5.0}, "validation": {"status": "not_applicable"}}],
         "season": {"status": "in_season", "as_of": "2026-03-14", "crop": "TRZAX", "regime": "rainfed",

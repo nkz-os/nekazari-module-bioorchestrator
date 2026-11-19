@@ -104,7 +104,11 @@ def test_range_only_estimates_do_not_take_part_in_disagreement():
     assert disagreement([rng, rng, _e("gap_corrected", 5.0, C13)]) is False
 
 
-from app.planning.aquacrop_provider import IN_SEASON_SCOPE, map_in_season
+from app.planning.aquacrop_provider import (
+    IN_SEASON_METRIC,
+    IN_SEASON_SCOPE,
+    map_in_season,
+)
 
 IN_SEASON = {"status": "in_season", "yield_basis": {"moisture": "commercial", "grain_moisture_pct": 13.0},
              "yield_t_ha": {"p10": 3.0, "p50": 4.0, "p90": 5.0}, "ensemble": {"n_years": 14},
@@ -114,7 +118,8 @@ IN_SEASON = {"status": "in_season", "yield_basis": {"moisture": "commercial", "g
 def test_in_season_expected_yield_is_experimental():
     est, unav = map_in_season(IN_SEASON, "v")
     gap = next(e for e in est if e["basis"] == "gap_corrected")
-    assert gap["validation"] == {"status": "experimental", "metric": None, "scope": IN_SEASON_SCOPE}
+    assert gap["validation"] == {"status": "experimental", "metric": IN_SEASON_METRIC, "scope": IN_SEASON_SCOPE}
+    assert "0.14 (1 Apr)" in IN_SEASON_METRIC and "before May" in IN_SEASON_SCOPE
     assert gap["n"] == 14 and unav == []
     ceiling = next(e for e in est if e["basis"] == "water_limited")
     assert ceiling["validation"] == {"status": "not_applicable"}
@@ -140,8 +145,11 @@ VALIDATED_RUNNING = (
     [{"provider_id": "aquacrop", "provider_version": "v-test", "unit": "t/ha", "n": 14, "n_kind": "years",
       "moisture": {"basis": "commercial", "pct": 13.0}, "warnings": [], "attributions": [], "graph_id": None,
       "basis": "gap_corrected", "percentiles": None, "range": {"low": 2.4, "high": 3.9}, "coverage": 0.8,
-      "validation": {"status": "experimental", "metric": None,
-                     "scope": "in-season forecast; skill by forecast date not yet measured"}},
+      "validation": {"status": "experimental",
+                     "metric": ("year-to-year r by issue date: 0.14 (1 Apr), 0.34 (1 May), 0.45 (1 Jun), "
+                                "0.49 (complete season); RMSE 1.6 t/ha at every date"),
+                     "scope": ("in-season forecast; before May it reflects the normal of the area, not this "
+                               "season (provincial statistics, rainfed soft wheat, ES 2008-2022)")}},
      {"provider_id": "aquacrop", "provider_version": "v-test", "unit": "t/ha", "n": 14, "n_kind": "years",
       "moisture": {"basis": "commercial", "pct": 13.0}, "warnings": [], "attributions": [], "graph_id": None,
       "basis": "water_limited", "range": None, "coverage": None,
