@@ -540,6 +540,18 @@ def test_the_graph_reader_returns_the_gates_own_identities_in_pages(db, sync_dri
 
 
 @needs_docker
+@pytest.mark.parametrize("page_size", [1000, 5])
+def test_the_graph_reader_lists_the_yields_of_the_other_sources_only(db, sync_driver, genvce_bundle, page_size):
+    _run(loader.load(genvce_bundle, db, registries=REGISTRIES))
+    reader = Neo4jExistingGraph(sync_driver, page_size=page_size)
+    with_yield = [u for u in genvce_bundle.units if u.yield_kg_ha is not None]
+    got = list(reader.other_source_yields("CREA"))
+    assert len(got) == len(with_yield) and {row[4] for row in got} == {"GENVCE"}
+    assert {(row[0], row[1], row[2], row[3]) for row in got} == {
+        (u.crop_eppo, u.year, u.variety_key, u.yield_kg_ha) for u in with_yield}
+    assert list(reader.other_source_yields("GENVCE")) == []
+
+@needs_docker
 def test_the_gate_flags_a_content_duplicate_against_the_real_graph_and_the_reader_writes_nothing(
         db, sync_driver, genvce_bundle):
     _run(loader.load(genvce_bundle, db, registries=REGISTRIES))

@@ -201,6 +201,18 @@ def variants(tmp_path_factory):
     }
 
 
+class FakeGraphWithOthers(FakeGraph):
+    """A read-only existing graph that can also list the yields of the other sources."""
+
+    def __init__(self, pairs, others):
+        super().__init__(pairs)
+        self.others = list(others)
+
+    def other_source_yields(self, source_id):
+        self.calls.append(("other_source_yields", source_id))
+        return list(self.others)
+
+
 # ═════════════════════════════════════════════════════════════════════════════
 # one case per rule
 # ═════════════════════════════════════════════════════════════════════════════
@@ -208,6 +220,41 @@ def variants(tmp_path_factory):
 def _outlier_rows():
     yields = [6000, 6050, 6100, 6150, 6200, 6250, 6300, 6350, 6400, 9000]
     return [row(variety=f"V{i}", **{"yield": y}) for i, y in enumerate(yields)]
+
+
+def _scale_environment_rows():
+    yields = {2015: 6000, 2016: 6100, 2017: 5900, 2018: 6050, 2019: 5950, 2020: 24000}
+    return [row(year=year, **{"yield": y}) for year, y in yields.items()]
+
+
+def _scale_block_rows():
+    return [row(variety=f"V{year}-{i}", year=year, **{"yield": base + 10 * i})
+            for year, base in ((2019, 6000), (2020, 6100), (2021, 15000)) for i in range(5)]
+
+
+def _cloned_rows():
+    values = [5000, 5200, 5400, 5600, 5800]
+    return ([row(variety=f"V{i}", network="red-a", **{"yield": v}) for i, v in enumerate(values)]
+            + [row(variety=f"W{i}", network="red-b", **{"yield": v}) for i, v in enumerate(values)])
+
+
+def _bimodal_rows():
+    values = [3000, 3010, 3020, 3030, 3040, 3050, 3060, 9000, 9010, 9020, 9030, 9040]
+    return [row(variety=f"V{i}", **{"yield": v}) for i, v in enumerate(values)]
+
+
+def _case_sites_within_2km(v):
+    bundle = build([row(zone=FIELD)])
+    base = bundle.sites[0].model_copy(update={"latitude": 41.65, "longitude": -4.72, "coordinate_source": "test"})
+    near = base.model_copy(update={"site_id": "ES-TEST-NEAR", "latitude": 41.659})  # about 1 km north
+    return gate(bundle.model_copy(update={"sites": (base, near)}))
+
+
+def _case_cross_source(v):
+    bundle = build([row()])
+    unit = bundle.units[0]
+    return gate(bundle, existing=FakeGraphWithOthers(
+        [], [(unit.crop_eppo, unit.year, unit.variety_key, unit.yield_kg_ha, "CREA")]))
 
 
 def _case_site_kind(kind):
@@ -278,6 +325,12 @@ CASES: dict[str, Callable[[dict], GateReport]] = {
     "unregistered_variety": lambda v: gate(build([row(variety="Brand New")])),
     "content_duplicate_in_graph": lambda v: (b := build([row()])) and gate(b, existing=FakeGraph(
         [("an-older-key", unit_content_key(b.units[0]))])),
+    "scale_environment": lambda v: gate(build(_scale_environment_rows())),
+    "scale_block": lambda v: gate(build(_scale_block_rows())),
+    "cloned_studies": lambda v: gate(build(_cloned_rows())),
+    "bimodal_study": lambda v: gate(build(_bimodal_rows())),
+    "field_sites_within_2km": _case_sites_within_2km,
+    "cross_source_duplicate": _case_cross_source,
     "engine_warning": lambda v: gate(swap_report(build([row()]), warnings=("a contract warning",))),
     "adapter_warning": lambda v: gate(build([row()]), adapter_warnings=(
         AdapterWarning(code="disease_scale_resolved", message="scale resolved by campaign", count=7),)),
@@ -546,7 +599,7 @@ def test_a_robust_outlier_is_a_warning_and_the_report_says_how_many_groups_could
 
 
 def test_a_small_study_is_counted_as_not_judged_and_a_constant_group_as_zero_mad():
-    small = gate(build(_outlier_rows()[:5]))
+    small = gate(build(_outlier_rows()[:4]))
     assert finding(small, "outlier_in_study") is None
     assert (small.outliers.too_small, small.outliers.evaluated) == (2, 0)
     constant = gate(build([row(variety=f"V{i}") for i in range(10)]))
@@ -653,3 +706,33 @@ def test_the_real_bundles_pass_the_gate_for_production_with_zero_errors(source_i
     if source_id == "GENVCE":
         assert sum(1 for u in bundle.units if u.raw_site is None and u.site_key == "ES-GENVCE-UNLABELLED") == 1758
     print(f"\n{source_id} warnings per rule: {json.dumps(report.warning_counts, sort_keys=True)}")
+
+
+def test_the_yield_has_its_own_calibrated_outlier_cut_off_and_the_report_states_both():
+    # five yields are judged (the yield's minimum group), five protein values are not (the general minimum)
+    five = gate(build(_outlier_rows()[:5]))
+    assert (five.outliers.too_small, five.outliers.evaluated) == (1, 1)
+    assert (five.outliers.yield_min_group_size, five.outliers.yield_z_threshold) == (5, 5.0)
+    assert (five.outliers.min_group_size, five.outliers.z_threshold) == (8, 3.5)
+    # median 6250 and MAD 150: z = 0.6745 * (y - 6250) / 150, so 7250 is z 4.5 and 7600 is z 6.1
+    mild = [row(variety=f"V{i}", **{"yield": y}) for i, y in enumerate([6000, 6100, 6200, 6250, 6300, 6400, 7250])]
+    strong = [row(variety=f"V{i}", **{"yield": y}) for i, y in enumerate([6000, 6100, 6200, 6250, 6300, 6400, 7600])]
+    assert finding(gate(build(mild)), "outlier_in_study") is None
+    assert finding(gate(build(strong)), "outlier_in_study") is not None
+
+
+def test_the_cross_source_scan_runs_only_with_a_graph_that_lists_other_sources():
+    bundle = build([row()])
+    assert gate(bundle).cross_source_check == "not_run"
+    plain = FakeGraph([])
+    assert gate(bundle, existing=plain).cross_source_check == "not_run"
+    others = FakeGraphWithOthers([], [])
+    report = gate(bundle, existing=others)
+    assert report.cross_source_check == "run" and ("other_source_yields", "GENVCE") in others.calls
+    assert finding(report, "cross_source_duplicate") is None
+
+
+def test_population_scans_never_make_an_error_or_change_publishability():
+    for rows in (_scale_environment_rows(), _scale_block_rows(), _cloned_rows(), _bimodal_rows()):
+        report = gate(build(rows))
+        assert report.errors == () and report.status == "pass" and report.publishable

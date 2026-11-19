@@ -1,6 +1,7 @@
 """Read-only Neo4j view of the units a graph already holds, for the gate's content-duplicate check.
 
-Implements :class:`app.kg.gate.ExistingGraph` over a (synchronous) Neo4j driver. It opens sessions in
+Implements :class:`app.kg.gate.ExistingGraph` (and its optional ``other_source_yields``, for the
+cross-source copy scan) over a (synchronous) Neo4j driver. It opens sessions in
 ``READ_ACCESS`` mode and runs only ``MATCH ... RETURN``, in keyset pages ordered by ``unitKey`` so no
 query holds the whole source in memory (the production heap is small). Units are rebuilt from the
 properties the loader wrote (:func:`app.kg.loader.unit_properties`), then keyed with the gate's own
@@ -29,6 +30,15 @@ RETURN u.unitKey AS unitKey, u.documentKey AS documentKey, u.cropEppo AS cropEpp
        u.rawProductionSystem AS rawProductionSystem, u.factorLevels AS factorLevels,
        u.rootstock AS rootstock, u.clone AS clone, u.plantingYear AS plantingYear,
        u.yieldKgHa AS yieldKgHa
+ORDER BY u.unitKey
+LIMIT $limit
+"""
+
+_OTHERS_PAGE = """
+MATCH (u:ObservationUnit)-[:OF_VARIETY]->(v:Variety)
+WHERE u.source_id <> $source_id AND u.yieldKgHa IS NOT NULL AND u.unitKey > $after
+RETURN u.unitKey AS unitKey, u.cropEppo AS cropEppo, u.year AS year, v.varietyKey AS varietyKey,
+       u.yieldKgHa AS yieldKgHa, u.source_id AS sourceId
 ORDER BY u.unitKey
 LIMIT $limit
 """
@@ -69,6 +79,19 @@ class Neo4jExistingGraph:
                 records = list(session.run(_PAGE, source_id=source_id, after=after, limit=self._page_size))
             for record in records:
                 yield record["unitKey"], unit_content_key(_unit_from_record(source_id, record))
+            if len(records) < self._page_size:
+                return
+            after = records[-1]["unitKey"]
+
+    def other_source_yields(self, source_id: str) -> Iterator[tuple[str, int | None, str, float, str]]:
+        """``(crop_eppo, year, variety_key, yield_kg_ha, source_id)`` of the units of every OTHER source."""
+        after = ""
+        while True:
+            with self._driver.session(database=self._database, default_access_mode=READ_ACCESS) as session:
+                records = list(session.run(_OTHERS_PAGE, source_id=source_id, after=after, limit=self._page_size))
+            for record in records:
+                yield (record["cropEppo"], record["year"], record["varietyKey"], float(record["yieldKgHa"]),
+                       record["sourceId"])
             if len(records) < self._page_size:
                 return
             after = records[-1]["unitKey"]
