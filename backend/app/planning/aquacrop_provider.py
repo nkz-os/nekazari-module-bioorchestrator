@@ -116,7 +116,15 @@ def map_result(result: dict, provider_version: str) -> tuple[list[dict], list[di
     return estimates, unavailable
 
 
-IN_SEASON_SCOPE = "in-season forecast; skill by forecast date not yet measured"
+# Skill of the in-season forecast by issue date, measured offline against official provincial yields
+# (rainfed soft wheat, ES, 44 provinces, campaigns 2008-2022). The forecast ranks areas correctly from
+# sowing, but the year-to-year signal is close to zero before April and only reaches the complete-season
+# value in June; the error of the level does not shrink during the season. Provincial statistics are not
+# parcels, so the estimate stays experimental while the season runs.
+IN_SEASON_SCOPE = ("in-season forecast; before May it reflects the normal of the area, not this season "
+                   "(provincial statistics, rainfed soft wheat, ES 2008-2022)")
+IN_SEASON_METRIC = ("year-to-year r by issue date: 0.14 (1 Apr), 0.34 (1 May), 0.45 (1 Jun), "
+                    "0.49 (complete season); RMSE 1.6 t/ha at every date")
 
 
 def map_in_season(result: dict, provider_version: str,
@@ -140,7 +148,7 @@ def map_in_season(result: dict, provider_version: str,
         if complete:
             e["n"] = 1
         elif e["basis"] == "gap_corrected":
-            e["validation"] = {"status": "experimental", "metric": None, "scope": IN_SEASON_SCOPE}
+            e["validation"] = {"status": "experimental", "metric": IN_SEASON_METRIC, "scope": IN_SEASON_SCOPE}
     if unvalidated_scope is None:
         return estimates, unavailable
     kept = [e for e in estimates if e["basis"] != "gap_corrected"]
