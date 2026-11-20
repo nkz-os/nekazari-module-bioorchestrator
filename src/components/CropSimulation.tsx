@@ -76,8 +76,12 @@ function Metric({ label, main, range, unit, prominent }: {
   );
 }
 
-/** Out-of-sample RMSE of the provincial normal (t/ha); mirrors `validation.rmse_t_ha` in backend/data/wheat_es_province_normal.json. */
-const NORMAL_RMSE_T_HA = 0.76;
+/** Out-of-sample RMSE of the provincial normal (t/ha) by crop; mirrors `validation.rmse_t_ha` in backend/data/wheat_es_province_normal.json and barley_es_province_normal.json. */
+const NORMAL_RMSE_T_HA: Record<string, number> = {
+  wheat: 0.76,
+  durum_wheat: 0.76,
+  barley: 0.78,
+};
 
 const NORMAL_NOTE_KEYS: Record<string, string> = {
   wheat: 'cropSimulation.normal.note',
@@ -93,6 +97,7 @@ function ProvincialNormalCard({ result, t }: { result: CropSimulationResult; t: 
   const region = result.expected_yield.status === 'ok' ? result.expected_yield.region.name : null;
   // The note names the crop the normal is for; a crop without a known note gets none.
   const noteKey = NORMAL_NOTE_KEYS[result.crop_slug];
+  const rmse = NORMAL_RMSE_T_HA[result.crop_slug];
   return (
     <Card padding="md">
       <p className="text-nkz-xs text-nkz-text-secondary">
@@ -103,9 +108,11 @@ function ProvincialNormalCard({ result, t }: { result: CropSimulationResult; t: 
       {n.validation.status === 'validated' && n.coverage != null && (
         <>
           <Badge intent={validationTone(n.validation.status)}>{t('cropSimulation.normal.validatedBadge')}</Badge>
-          <p className="text-nkz-xs text-nkz-text-muted">
-            {t('cropSimulation.normal.validation', { rmse: NORMAL_RMSE_T_HA, pct: Math.round(n.coverage * 100) })}
-          </p>
+          {rmse != null && (
+            <p className="text-nkz-xs text-nkz-text-muted">
+              {t('cropSimulation.normal.validation', { rmse, pct: Math.round(n.coverage * 100) })}
+            </p>
+          )}
         </>
       )}
     </Card>

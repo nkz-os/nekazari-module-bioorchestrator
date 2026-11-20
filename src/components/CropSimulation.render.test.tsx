@@ -146,6 +146,17 @@ describe('CropSimulationResultView (es)', () => {
     expect(t).not.toContain('cebada');
   });
 
+  it('the validation line carries each crop\'s own measured error', () => {
+    const line = (slug: string) => textOf(renderToStaticMarkup(
+      <CropSimulationResultView result={{ ...base, crop_slug: slug, provincial_normal: normalOf() }} />));
+    expect(line('barley')).toContain('error medio 0.78 t/ha');
+    expect(line('wheat')).toContain('error medio 0.76 t/ha');
+    expect(line('durum_wheat')).toContain('error medio 0.76 t/ha');
+    const unknown = line('maize');
+    expect(unknown).not.toContain('en años no usados para calcularla');
+    expect(unknown).toContain('Validada');
+  });
+
   it('an unknown crop shows the normal without any crop note', () => {
     const r: CropSimulationResult = { ...base, crop_slug: 'maize', provincial_normal: normalOf() };
     const t = textOf(renderToStaticMarkup(<CropSimulationResultView result={r} />));
