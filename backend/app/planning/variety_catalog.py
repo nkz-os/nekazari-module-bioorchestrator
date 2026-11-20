@@ -6,6 +6,8 @@ nothing here is tenant data. The cereal type is the one ``resolve_cereal_type`` 
 """
 from __future__ import annotations
 
+import asyncio
+import logging
 import re
 import time
 from collections import defaultdict
@@ -14,7 +16,10 @@ from collections.abc import Callable
 from app.graph.dao import _CROP_MATCH_PREDICATE
 from app.planning.cereal_type import _CLASS, graph_class_fetcher, normalise_name
 
+logger = logging.getLogger(__name__)
+
 CACHE_TTL_S = 3600.0
+CLASS_TIMEOUT_S = 2.0  # same bound as resolve_cereal_type
 _TYPED_CROPS = ("TRZAX", "HORVX")  # the crops with a winter/spring model group
 _TAG = re.compile(r"\([^)]*\)\s*$")
 
@@ -70,7 +75,14 @@ async def crop_variety_catalog(driver, *, eppo: str, graph_id: str,
         result = await session.run(VARIETY_NAMES_CYPHER, crop=eppo)
         rows = await result.data()
     names = [(r.get("name"), r.get("n") or 0) for r in rows]
-    class_rows = await graph_class_fetcher(driver)(eppo) if eppo in _TYPED_CROPS else None
+    class_rows, complete = None, True
+    if eppo in _TYPED_CROPS:
+        try:
+            class_rows = await asyncio.wait_for(graph_class_fetcher(driver)(eppo), timeout=CLASS_TIMEOUT_S)
+        except Exception as exc:  # noqa: BLE001 - the names still serve the form; only the types are missing
+            logger.warning("variety_catalog_class_lookup_failed crop=%s code=%s", eppo, type(exc).__name__)
+            complete = False
     entries = build_catalog(names, class_rows)
-    _cache[(graph_id, eppo)] = (now() + CACHE_TTL_S, entries)
+    if complete:  # a degraded answer is served but not cached
+        _cache[(graph_id, eppo)] = (now() + CACHE_TTL_S, entries)
     return entries

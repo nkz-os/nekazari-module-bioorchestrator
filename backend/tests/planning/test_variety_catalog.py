@@ -130,3 +130,36 @@ async def test_graph_error_is_not_cached():
     d.fail = False
     out = await crop_variety_catalog(d, eppo="ZEAMX", graph_id="g")
     assert [e["key"] for e in out] == ["FILON", "KIKO"] and len(d.queries) == 2
+
+
+class _ClassFailDriver(_Driver):
+    def session(self):
+        driver = self
+
+        class _S(_Session):
+            async def run(self, query, **params):
+                if "cycle_class" in query:
+                    driver.queries.append((query, params))
+                    raise RuntimeError("class lookup down")
+                return await super().run(query, **params)
+        return _S(self)
+
+
+async def test_class_lookup_failure_keeps_the_names_and_is_not_cached():
+    d = _ClassFailDriver()
+    out = await crop_variety_catalog(d, eppo="TRZAX", graph_id="g")
+    assert [e["key"] for e in out] == ["FILON", "KIKO"] and all(e["cereal_type"] is None for e in out)
+    await crop_variety_catalog(d, eppo="TRZAX", graph_id="g")
+    assert len(d.queries) == 4  # names + classes, twice: a degraded answer is not cached
+
+
+async def test_class_lookup_timeout_keeps_the_names(monkeypatch):
+    import asyncio
+
+    async def slow(eppo):
+        await asyncio.sleep(1)
+        return [("FILON", "invierno")]
+    monkeypatch.setattr(vc, "graph_class_fetcher", lambda driver: slow)
+    monkeypatch.setattr(vc, "CLASS_TIMEOUT_S", 0.01)
+    out = await crop_variety_catalog(_Driver(), eppo="TRZAX", graph_id="g")
+    assert [e["cereal_type"] for e in out] == [None, None]
