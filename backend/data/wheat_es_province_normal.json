@@ -7,8 +7,8 @@
  "grain_moisture_pct": 13.0,
  "min_years": 5,
  "band_t_ha": {
-  "p10": -0.777,
-  "p90": 1.038
+  "p10": -0.811,
+  "p90": 1.056
  },
  "coverage": 0.78,
  "validation": {
@@ -120,13 +120,6 @@
    "first_year": 2005,
    "last_year": 2022
   },
-  "15": {
-   "name": "A Coruña",
-   "mean_t_ha": 3.503,
-   "n_years": 17,
-   "first_year": 2005,
-   "last_year": 2022
-  },
   "16": {
    "name": "Cuenca",
    "mean_t_ha": 2.485,
@@ -197,13 +190,6 @@
    "first_year": 2005,
    "last_year": 2022
   },
-  "27": {
-   "name": "Lugo",
-   "mean_t_ha": 2.717,
-   "n_years": 17,
-   "first_year": 2005,
-   "last_year": 2022
-  },
   "28": {
    "name": "MADRID",
    "mean_t_ha": 2.609,
@@ -232,13 +218,6 @@
    "first_year": 2005,
    "last_year": 2022
   },
-  "32": {
-   "name": "Ourense",
-   "mean_t_ha": 3.004,
-   "n_years": 17,
-   "first_year": 2005,
-   "last_year": 2022
-  },
   "33": {
    "name": "P. DE ASTURIAS",
    "mean_t_ha": 1.537,
@@ -258,13 +237,6 @@
    "mean_t_ha": 1.234,
    "n_years": 13,
    "first_year": 2006,
-   "last_year": 2022
-  },
-  "36": {
-   "name": "Pontevedra",
-   "mean_t_ha": 2.787,
-   "n_years": 17,
-   "first_year": 2005,
    "last_year": 2022
   },
   "37": {
