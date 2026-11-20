@@ -12,9 +12,11 @@ from contextlib import contextmanager
 from datetime import date, timedelta
 from typing import Any, Literal, Protocol
 
+from app.planning.provincial_normal import normal_estimate
 from app.services import crop_calendar as cal
 from app.services import water_loss_by_stage
 from app.services import yield_calibration as yc
+from app.services.country_lookup import country_at
 from app.services.engines import aquacrop_engine as aq
 from app.services.region_lookup import es_province_at
 from app.services.sim_crops import CropChoice, resolve_aquacrop_crop
@@ -26,6 +28,7 @@ from app.services.sim_inputs import (
 )
 from app.services.sim_weather import assemble_analogs, assemble_observed
 from app.services.soil_client import SoilSummaryError, get_parcel_soil_summary
+from app.species_registry import catalog_code, get_species_info
 
 logger = logging.getLogger(__name__)
 
@@ -154,6 +157,18 @@ def _phenology(slug, irrigation, lat, lon, sowing_date, observed_days, analog_ye
     except Exception:
         logger.exception("crop_simulation_phenology_failed %s", ctx)
         return None
+
+
+REGIME_OF_IRRIGATION = {"rainfed": "rainfed", "full": "irrigated"}
+
+
+def _provincial_normal(slug: str, irrigation: str, lat: float, lon: float, region: dict | None) -> dict | None:
+    """The provincial normal for the simulated crop and point, or None when out of its scope."""
+    eppo = (get_species_info(slug) or {}).get("eppo_code")
+    regime = REGIME_OF_IRRIGATION.get(irrigation)
+    if not eppo or regime is None:
+        return None
+    return normal_estimate(catalog_code(eppo), regime, country_at(lat, lon), region)
 
 
 async def run_crop_simulation(
@@ -289,6 +304,7 @@ async def run_crop_simulation(
         "yield_t_ha": yield_t_ha,
         "potential_yield_t_ha": yc.to_basis(result["potential_yield_t_ha"], basis),
         "expected_yield": yc.expected_yield(crop.slug, irrigation, region, yield_t_ha),
+        "provincial_normal": _provincial_normal(crop.slug, irrigation, lat, lon, region),
         "water_gap_pct": result["water_gap_pct"],
         "harvest_date": result["harvest_date"],
         "ensemble": result["ensemble"],

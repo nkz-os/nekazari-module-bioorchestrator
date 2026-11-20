@@ -6,6 +6,7 @@ import httpx
 import pytest
 
 from app.planning import in_season
+from app.planning.aquacrop_provider import MODEL_SCOPE
 from app.planning.service import ParcelNotFound
 from app.services.sim_errors import SimulationError
 from app.services.sim_jobs import Job, SimJobs
@@ -111,6 +112,8 @@ async def test_validated_in_season_response_is_unchanged():
     common = {"provider_id": "aquacrop", "provider_version": "v-test", "unit": "t/ha", "n": 14, "n_kind": "years",
               "moisture": {"basis": "commercial", "pct": 13.0}, "warnings": [], "attributions": [],
               "graph_id": None}
+    assert got["estimates"][0]["basis"] == "provincial_normal"
+    got = {**got, "estimates": got["estimates"][1:]}
     assert got == {
         "state": "done", "done": 0, "total": None, "job_id": out["job_id"], "phenology": None, "unavailable": [],
         "estimates": [
@@ -119,9 +122,7 @@ async def test_validated_in_season_response_is_unchanged():
              "validation": {"status": "experimental",
                             "metric": ("year-to-year r by issue date: 0.14 (1 Apr), 0.34 (1 May), "
                                        "0.45 (1 Jun), 0.49 (complete season); RMSE 1.6 t/ha at every date"),
-                            "scope": ("in-season forecast; before May it reflects the normal of the area, "
-                                      "not this season (provincial statistics, rainfed soft wheat, "
-                                      "ES 2008-2022)")}},
+                            "scope": MODEL_SCOPE}},
             {**common, "basis": "water_limited", "range": None, "coverage": None,
              "percentiles": {"p10": 3.0, "p50": 4.0, "p90": 5.0}, "validation": {"status": "not_applicable"}}],
         "season": {"status": "in_season", "as_of": "2026-03-14", "crop": "TRZAX", "regime": "rainfed",
@@ -310,3 +311,42 @@ def test_no_regime_is_answered_before_the_country_is_looked_up(monkeypatch):
     parcel = {k: v for k, v in PARCEL.items() if k != "irrigationRegime"}
     crops = {CROP_ID: {"id": CROP_ID, "species": "TRZAX"}}
     assert in_season.resolve_in_season(parcel, crops, SOWN, TODAY) == "no_regime"
+
+
+def _bases(out):
+    return [e["basis"] for e in out["estimates"]]
+
+
+async def test_normal_first_in_every_job_state():
+    jobs = FakeJobs()
+    out = await call(jobs)
+    assert out["state"] == "queued" and _bases(out) == ["provincial_normal"]
+    job = jobs.jobs[out["job_id"]]
+    job.state = "running"
+    assert _bases(await call(jobs)) == ["provincial_normal"]
+    job.state, job.result, job.finished_at = "done", RESULT, datetime(2026, 3, 15, 6, 0, tzinfo=UTC)
+    assert _bases(await call(jobs)) == ["provincial_normal", "gap_corrected", "water_limited"]
+    job.state, job.error = "failed", {"code": "weather_unavailable"}
+    failed = await call(jobs)
+    assert failed["state"] == "failed" and _bases(failed) == ["provincial_normal"]
+
+
+async def test_normal_first_when_the_tenant_is_busy():
+    out = await call(FakeJobs(full=True))
+    assert out["unavailable"] == [{"provider_id": "aquacrop", "reason": "busy"}]
+    assert _bases(out) == ["provincial_normal"]
+
+
+async def test_resolve_reasons_and_parcel_failures_carry_no_normal():
+    no_regime = {**PARCEL}
+    no_regime.pop("irrigationRegime")
+    crops = {CROP_ID: {"id": CROP_ID, "species": "TRZAX"}}
+    out = await call(FakeJobs(), load=loader(parcel=no_regime, crops=crops))
+    assert out["unavailable"][0]["reason"] == "no_regime" and out["estimates"] == []
+    out = await call(FakeJobs(), load=loader(cycles={"current": None}))
+    assert out["estimates"] == []
+
+
+async def test_a_parcel_without_geometry_has_no_normal_and_no_error():
+    out = await call(FakeJobs(), load=loader(parcel={"id": PARCEL_ID, "irrigationRegime": "rainfed"}))
+    assert out["estimates"] == [] and out["state"] in ("queued", "unavailable")

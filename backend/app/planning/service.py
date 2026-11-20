@@ -85,6 +85,7 @@ from app.planning.late_frost import (
     unknown_reason,
     window_mid_doy,
 )
+from app.planning.provincial_normal import normal_estimate
 from app.planning.reference import EMPTY_REFERENCE, load_reference
 from app.planning.regional_yield import regional_yield
 from app.planning.rotation import rotation_reasons
@@ -486,11 +487,15 @@ async def parcel_estimates(*, dao, source: KnowledgeSource, parcel_id: str, tena
               "climate_source": (env.get("climate_detail") or {}).get("source") or "unavailable"}
     base = {"parcel_id": env["parcel_id"], "crop": eppo, "variety": variety, "inputs": inputs,
             "unavailable": [aquacrop_status(gate)]}
+    centroid = env.get("centroid") or {}
+    region = es_province_at(centroid.get("lat"), centroid.get("lon"))
+    # The provincial normal goes first: it is the figure with a measured error.
+    normal = [n] if (n := normal_estimate(eppo, regime, env.get("country"), region)) is not None else []
     ev = await load_crop_evidence(dao, env, crop_eppo=eppo, regime=regime, management=management)
     if ev["status"] != "ok":
         # needs_climate is already the status; for no_trials the trial provider also states its reason.
         reasons = [_no_trials_reason(variety, [])] if ev["status"] == "no_trials" else []
-        shown = visible([own_est] if own_est is not None else [])
+        shown = visible([*normal, *([own_est] if own_est is not None else [])])
         return {**base, "status": "ok" if shown else ev["status"], "unavailable": base["unavailable"] + reasons,
                 "estimates": shown, "disagreement": False}
     gaps = list(ev["data_gaps"])
@@ -501,7 +506,7 @@ async def parcel_estimates(*, dao, source: KnowledgeSource, parcel_id: str, tena
               for e in (trial_estimate(ev["rows"], variety, attributions, source.graph_id, ev["policy_version"]),)
               if e is not None]
     unavailable = base["unavailable"] + ([] if trials else [_no_trials_reason(variety, gaps)])
-    found = ([own_est] if own_est is not None else []) + trials
+    found = normal + ([own_est] if own_est is not None else []) + trials
     shown = visible(found)
     return {**base, "status": "ok", "unavailable": unavailable, "estimates": shown,
             "disagreement": disagreement(shown)}

@@ -2,7 +2,12 @@ from datetime import date
 
 import pytest
 
-from app.planning.aquacrop_provider import aquacrop_gate, map_result
+from app.planning.aquacrop_provider import (
+    MODEL_METRIC,
+    MODEL_SCOPE,
+    aquacrop_gate,
+    map_result,
+)
 from app.planning.estimates import disagreement
 from app.planning.models import Estimate, Unavailable
 
@@ -49,20 +54,20 @@ def test_map_result_ok_gives_expected_range_then_ceiling():
     assert exp["basis"] == "gap_corrected" and exp["percentiles"] is None
     assert exp["range"] == {"low": 2.4, "high": 5.12} and exp["coverage"] == 0.78
     assert exp["n"] == 14 and exp["n_kind"] == "years" and exp["provider_version"] == "aq-1"
-    assert exp["validation"]["status"] == "validated"
-    assert exp["validation"]["metric"] == "RMSE 1.68 t/ha, anomaly r 0.50"
-    assert "MAPA" in exp["validation"]["scope"]
+    assert exp["validation"] == {"status": "experimental", "metric": MODEL_METRIC, "scope": MODEL_SCOPE}
+    assert MODEL_SCOPE == ("what the model sees this season; today it does not improve on the provincial normal")
     assert exp["moisture"] == {"basis": "commercial", "pct": 13.0}
     assert ceil["basis"] == "water_limited" and ceil["percentiles"] == {"p10": 2.1, "p50": 3.46, "p90": 4.9}
     assert ceil["range"] is None and ceil["validation"]["status"] == "not_applicable"
     assert ceil["moisture"] == {"basis": "commercial", "pct": 13.0}
 
 
-def test_static_metric_when_the_result_carries_no_validation():
+def test_model_metric_does_not_depend_on_the_engine_validation():
     r = _result()
     r["expected_yield"]["calibration"] = {}
     ests, _ = map_result(r, "v")
-    assert ests[0]["validation"]["metric"] == "RMSE 1.65 t/ha, anomaly r 0.48"
+    assert ests[0]["validation"]["metric"] == MODEL_METRIC
+    assert "the provincial normal: 0.76 t/ha" in MODEL_METRIC
 
 
 def test_expected_unavailable_keeps_the_ceiling_and_says_why():
@@ -106,7 +111,6 @@ def test_range_only_estimates_do_not_take_part_in_disagreement():
 
 from app.planning.aquacrop_provider import (
     IN_SEASON_METRIC,
-    IN_SEASON_SCOPE,
     map_in_season,
 )
 
@@ -118,18 +122,19 @@ IN_SEASON = {"status": "in_season", "yield_basis": {"moisture": "commercial", "g
 def test_in_season_expected_yield_is_experimental():
     est, unav = map_in_season(IN_SEASON, "v")
     gap = next(e for e in est if e["basis"] == "gap_corrected")
-    assert gap["validation"] == {"status": "experimental", "metric": IN_SEASON_METRIC, "scope": IN_SEASON_SCOPE}
-    assert "0.14 (1 Apr)" in IN_SEASON_METRIC and "before May" in IN_SEASON_SCOPE
+    assert gap["validation"] == {"status": "experimental", "metric": IN_SEASON_METRIC, "scope": MODEL_SCOPE}
+    assert "0.14 (1 Apr)" in IN_SEASON_METRIC
     assert gap["n"] == 14 and unav == []
     ceiling = next(e for e in est if e["basis"] == "water_limited")
     assert ceiling["validation"] == {"status": "not_applicable"}
 
 
-def test_a_complete_season_is_validated_with_its_single_ceiling():
+def test_a_complete_season_is_experimental_with_its_single_ceiling():
     done = {**IN_SEASON, "status": "complete", "yield_t_ha": 4.2, "ensemble": None}
     est, unav = map_in_season(done, "v")
     gap = next(e for e in est if e["basis"] == "gap_corrected")
-    assert gap["validation"]["status"] == "validated" and gap["n"] == 1
+    assert gap["validation"] == {"status": "experimental", "metric": MODEL_METRIC, "scope": MODEL_SCOPE}
+    assert gap["n"] == 1
     ceiling = next(e for e in est if e["basis"] == "water_limited")
     assert ceiling["percentiles"] == {"p10": 4.2, "p50": 4.2, "p90": 4.2} and unav == []
 
@@ -148,23 +153,21 @@ VALIDATED_RUNNING = (
       "validation": {"status": "experimental",
                      "metric": ("year-to-year r by issue date: 0.14 (1 Apr), 0.34 (1 May), 0.45 (1 Jun), "
                                 "0.49 (complete season); RMSE 1.6 t/ha at every date"),
-                     "scope": ("in-season forecast; before May it reflects the normal of the area, not this "
-                               "season (provincial statistics, rainfed soft wheat, ES 2008-2022)")}},
+                     "scope": MODEL_SCOPE}},
      {"provider_id": "aquacrop", "provider_version": "v-test", "unit": "t/ha", "n": 14, "n_kind": "years",
       "moisture": {"basis": "commercial", "pct": 13.0}, "warnings": [], "attributions": [], "graph_id": None,
       "basis": "water_limited", "range": None, "coverage": None,
       "percentiles": {"p10": 3.0, "p50": 4.0, "p90": 5.0}, "validation": {"status": "not_applicable"}}], [])
 
 
-def test_validated_running_season_output_is_unchanged():
+def test_running_season_output_is_unchanged():
     assert map_in_season(IN_SEASON, "v-test") == VALIDATED_RUNNING
 
 
-def test_validated_complete_season_output_is_unchanged():
+def test_complete_season_output_is_unchanged():
     done = {**IN_SEASON, "status": "complete", "yield_t_ha": 4.2, "ensemble": None}
     gap, ceiling = (dict(e) for e in VALIDATED_RUNNING[0])
-    gap.update(n=1, validation={"status": "validated", "metric": "RMSE 1.65 t/ha, anomaly r 0.48",
-                                "scope": "ES, 44 provinces, MAPA 2008–2022"})
+    gap.update(n=1, validation={"status": "experimental", "metric": MODEL_METRIC, "scope": MODEL_SCOPE})
     ceiling.update(n=1, percentiles={"p10": 4.2, "p50": 4.2, "p90": 4.2})
     assert map_in_season(done, "v-test") == ([gap, ceiling], [])
 
