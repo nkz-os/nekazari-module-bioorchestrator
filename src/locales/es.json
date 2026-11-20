@@ -151,7 +151,7 @@
     "normal": {
       "title": "Normal de la provincia ({{region}})",
       "titleNoRegion": "Normal de la provincia",
-      "note": "Media real de la provincia en los años publicados; no es la previsión de esta campaña.",
+      "note": "Media real del trigo de secano de la provincia (blando y duro juntos) en los años publicados; no es la previsión de esta campaña.",
       "validatedBadge": "Validada",
       "validation": "Validada: error medio {{rmse}} t/ha en años no usados para calcularla; la banda cubre el {{pct}} % de los años."
     }

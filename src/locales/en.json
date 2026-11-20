@@ -151,7 +151,7 @@
     "normal": {
       "title": "Provincial normal ({{region}})",
       "titleNoRegion": "Provincial normal",
-      "note": "Actual province average over the published years; not a forecast for this season.",
+      "note": "Actual province average of rainfed wheat (soft and durum together) over the published years; not a forecast for this season.",
       "validatedBadge": "Validated",
       "validation": "Validated: mean error {{rmse}} t/ha on years not used to compute it; the band covers {{pct}} % of the years."
     }

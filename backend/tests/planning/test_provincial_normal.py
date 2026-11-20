@@ -43,7 +43,7 @@ def test_valid_province_gives_validated_estimate():
     assert est.moisture.basis == "commercial" and est.moisture.pct == 13.0
     assert est.n == data["provinces"]["02"]["n_years"] and est.n_kind == "years"
     assert est.validation.status == "validated"
-    assert est.validation.scope == "normal of the province, not a forecast of this season"
+    assert est.validation.scope == "normal of the province for rainfed wheat, soft and durum together; not a forecast of this season"
     assert "RMSE 0.76 t/ha" in est.validation.metric
     assert est.graph_id is None
     assert [a["source_id"] for a in est.attributions] == ["mapa_anuario_estadistica"]

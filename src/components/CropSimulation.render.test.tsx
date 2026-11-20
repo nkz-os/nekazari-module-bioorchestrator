@@ -116,7 +116,7 @@ describe('CropSimulationResultView (es)', () => {
     const t = textOf(renderToStaticMarkup(<CropSimulationResultView result={r} />));
     expect(t).toContain('Normal de la provincia (Navarra)');
     expect(t).toContain('3.1 – 7.2 t/ha');
-    expect(t).toContain('Media real de la provincia en los años publicados; no es la previsión de esta campaña.');
+    expect(t).toContain('Media real del trigo de secano de la provincia (blando y duro juntos) en los años publicados; no es la previsión de esta campaña.');
     expect(t).toContain('Lo que ve el modelo este año; hoy no mejora a la normal de la provincia.');
     expect(t).toContain('Validada');
     expect(t).toContain('Validada: error medio 0.76 t/ha en años no usados para calcularla; la banda cubre el 78 % de los años.');
