@@ -7,7 +7,9 @@ APP = Path(__file__).parents[2] / "app"
 # names) from an operative module would reach the experimental block.
 FORBIDDEN = ("app.services.phenology_vp", "app.planning.phenology_experimental", "app.planning.cereal_type",
              "app.planning.phenology_dates")
-ALLOWED = {"planning/phenology_dates.py", "planning/phenology_experimental.py", "planning/cereal_type.py"}
+# variety_catalog only lists names (and their cereal type) for variety fields of forms: it feeds no model.
+ALLOWED = {"planning/phenology_dates.py", "planning/phenology_experimental.py", "planning/cereal_type.py",
+           "planning/variety_catalog.py"}
 
 
 def _imports(path: Path, root: Path = APP) -> set[str]:
