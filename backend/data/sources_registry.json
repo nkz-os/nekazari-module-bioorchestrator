@@ -1247,6 +1247,52 @@
     ]
   },
   {
+    "source_id": "mapa_anuario_estadistica",
+    "name": "Anuario de Estad\u00edstica \u2014 Superficies y producciones de cultivos",
+    "institution": "Ministerio de Agricultura, Pesca y Alimentaci\u00f3n",
+    "institution_short": "MAPA",
+    "country": "ES",
+    "country_name": {
+      "en": "Spain",
+      "es": "Espa\u00f1a",
+      "eu": "Espainia",
+      "fr": "Espagne",
+      "pt": "Espanha"
+    },
+    "url": "https://www.mapa.gob.es/estadistica/pags/anuario/",
+    "document_url_template": null,
+    "license_class": "public-sector-psi",
+    "use_type": "reference-statistics",
+    "official_status": true,
+    "data_format": "table-extracted",
+    "extraction_method": "manual",
+    "confidence_default": "high",
+    "attribution": {
+      "en": "Provincial crop yield statistics from the Spanish Ministry's Statistical Yearbook (2006-2023 editions), converted by NKZ.",
+      "es": "Estad\u00edsticas provinciales de rendimiento del Anuario de Estad\u00edstica del Ministerio (ediciones 2006-2023), convertidas por NKZ."
+    },
+    "disclaimer": {
+      "en": "Reference statistics; the yield of a given parcel and season differs from the provincial normal.",
+      "es": "Estad\u00edsticas de referencia; el rendimiento de una parcela y campa\u00f1a concretas difiere de la normal provincial."
+    },
+    "attribution_text": "Fuente: Ministerio de Agricultura, Pesca y Alimentaci\u00f3n. Anuario de Estad\u00edstica (ediciones 2006\u20132023), cap\u00edtulo Superficies y producciones de cultivos. Url: https://www.mapa.gob.es/estadistica/pags/anuario/ (Descarga: 09/10/2026). Datos convertidos por Nekazari.",
+    "attribution_url": "https://www.mapa.gob.es/estadistica/pags/anuario/",
+    "licence_id": "es-reuse-notice-ley-37-2007",
+    "licence_url": "https://www.mapa.gob.es/es/atencion-al-ciudadano/aviso-legal",
+    "download_date": "2026-10-09",
+    "processing_note": {
+      "en": "Estimates and averages are Nekazari calculations based on these data; they are not data published by the sources.",
+      "es": "Las estimaciones y medias son c\u00e1lculos de Nekazari a partir de estos datos; no son datos publicados por las fuentes."
+    },
+    "site_urls": [
+      "https://www.mapa.gob.es"
+    ],
+    "tags": [
+      "yield-statistics",
+      "spain"
+    ]
+  },
+  {
     "source_id": "panagos_2022",
     "name": "Panagos et al. 2022, Phosphorus plant removal from European agricultural land",
     "institution": "European Commission, Joint Research Centre",

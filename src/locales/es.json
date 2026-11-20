@@ -141,11 +141,19 @@
         "outside_calibrated_regions": "la calibración solo cubre provincias españolas",
         "region_not_calibrated": "no hay datos suficientes para esta provincia",
         "unknown": "no hay calibración aplicable"
-      }
+      },
+      "modelNote": "Lo que ve el modelo este año; hoy no mejora a la normal de la provincia."
     },
     "phenology": {
       "calibrated": "Fenología: calibrada para {{region}}.",
       "builtin": "Fenología: la de serie de AquaCrop."
+    },
+    "normal": {
+      "title": "Normal de la provincia ({{region}})",
+      "titleNoRegion": "Normal de la provincia",
+      "note": "Media real de la provincia en los años publicados; no es la previsión de esta campaña.",
+      "validatedBadge": "Validada",
+      "validation": "Validada: error medio {{rmse}} t/ha en años no usados para calcularla; la banda cubre el {{pct}} % de los años."
     }
   },
   "planning": {
@@ -398,12 +406,14 @@
         "water_limited": "potencial limitado por agua",
         "gap_corrected": "con la brecha de la zona",
         "potential": "potencial sin limitación de agua",
-        "parcel_history": "cosechas de esta parcela"
+        "parcel_history": "cosechas de esta parcela",
+        "provincial_normal": "normal de la provincia"
       },
       "provider": {
         "trial_evidence": "Ensayos de la zona",
         "aquacrop": "AquaCrop",
-        "parcel_history": "Histórico en esta parcela"
+        "parcel_history": "Histórico en esta parcela",
+        "provincial_normal": "Normal de la provincia"
       },
       "experimental": "experimental",
       "directSowing": "Siembra directa sobre el rastrojo",

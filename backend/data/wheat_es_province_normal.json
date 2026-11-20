@@ -1,0 +1,334 @@
+{
+ "version": "2026-11-20",
+ "crop": "TRZAX",
+ "regime": "rainfed",
+ "country": "ES",
+ "region_scheme": "es_province",
+ "grain_moisture_pct": 13.0,
+ "min_years": 5,
+ "band_t_ha": {
+  "p10": -0.811,
+  "p90": 1.056
+ },
+ "coverage": 0.78,
+ "validation": {
+  "rmse_t_ha": 0.76,
+  "rmse_past_only_t_ha": 0.82,
+  "n": 657,
+  "years": "2008-2022"
+ },
+ "source": {
+  "name": "MAPA, Anuario de Estadística, superficies y producciones de cultivos (provincial rainfed wheat yields)",
+  "licence": "Reuse of public sector information, with attribution to MAPA"
+ },
+ "provinces": {
+  "01": {
+   "name": "Alava",
+   "mean_t_ha": 5.671,
+   "n_years": 17,
+   "first_year": 2005,
+   "last_year": 2022
+  },
+  "02": {
+   "name": "Albacete",
+   "mean_t_ha": 1.649,
+   "n_years": 17,
+   "first_year": 2005,
+   "last_year": 2022
+  },
+  "03": {
+   "name": "Alicante",
+   "mean_t_ha": 1.13,
+   "n_years": 17,
+   "first_year": 2005,
+   "last_year": 2022
+  },
+  "04": {
+   "name": "Almería",
+   "mean_t_ha": 1.115,
+   "n_years": 17,
+   "first_year": 2005,
+   "last_year": 2022
+  },
+  "05": {
+   "name": "Avila",
+   "mean_t_ha": 2.317,
+   "n_years": 17,
+   "first_year": 2005,
+   "last_year": 2022
+  },
+  "06": {
+   "name": "Badajoz",
+   "mean_t_ha": 2.424,
+   "n_years": 17,
+   "first_year": 2005,
+   "last_year": 2022
+  },
+  "07": {
+   "name": "BALEARES",
+   "mean_t_ha": 2.285,
+   "n_years": 17,
+   "first_year": 2005,
+   "last_year": 2022
+  },
+  "08": {
+   "name": "Barcelona",
+   "mean_t_ha": 3.675,
+   "n_years": 17,
+   "first_year": 2005,
+   "last_year": 2022
+  },
+  "09": {
+   "name": "Burgos",
+   "mean_t_ha": 4.071,
+   "n_years": 17,
+   "first_year": 2005,
+   "last_year": 2022
+  },
+  "10": {
+   "name": "Cáceres",
+   "mean_t_ha": 1.987,
+   "n_years": 17,
+   "first_year": 2005,
+   "last_year": 2022
+  },
+  "11": {
+   "name": "Cádiz",
+   "mean_t_ha": 2.554,
+   "n_years": 17,
+   "first_year": 2005,
+   "last_year": 2022
+  },
+  "12": {
+   "name": "Castellón",
+   "mean_t_ha": 2.041,
+   "n_years": 17,
+   "first_year": 2005,
+   "last_year": 2022
+  },
+  "13": {
+   "name": "Ciudad Real",
+   "mean_t_ha": 1.768,
+   "n_years": 17,
+   "first_year": 2005,
+   "last_year": 2022
+  },
+  "14": {
+   "name": "Córdoba",
+   "mean_t_ha": 2.491,
+   "n_years": 17,
+   "first_year": 2005,
+   "last_year": 2022
+  },
+  "16": {
+   "name": "Cuenca",
+   "mean_t_ha": 2.485,
+   "n_years": 17,
+   "first_year": 2005,
+   "last_year": 2022
+  },
+  "17": {
+   "name": "Girona",
+   "mean_t_ha": 3.4,
+   "n_years": 17,
+   "first_year": 2005,
+   "last_year": 2022
+  },
+  "18": {
+   "name": "Granada",
+   "mean_t_ha": 1.452,
+   "n_years": 17,
+   "first_year": 2005,
+   "last_year": 2022
+  },
+  "19": {
+   "name": "Guadalajara",
+   "mean_t_ha": 2.667,
+   "n_years": 17,
+   "first_year": 2005,
+   "last_year": 2022
+  },
+  "21": {
+   "name": "Huelva",
+   "mean_t_ha": 3.015,
+   "n_years": 17,
+   "first_year": 2005,
+   "last_year": 2022
+  },
+  "22": {
+   "name": "Huesca",
+   "mean_t_ha": 3.288,
+   "n_years": 17,
+   "first_year": 2005,
+   "last_year": 2022
+  },
+  "23": {
+   "name": "Jaén",
+   "mean_t_ha": 2.207,
+   "n_years": 17,
+   "first_year": 2005,
+   "last_year": 2022
+  },
+  "24": {
+   "name": "León",
+   "mean_t_ha": 2.653,
+   "n_years": 17,
+   "first_year": 2005,
+   "last_year": 2022
+  },
+  "25": {
+   "name": "Lleida",
+   "mean_t_ha": 3.019,
+   "n_years": 17,
+   "first_year": 2005,
+   "last_year": 2022
+  },
+  "26": {
+   "name": "LA RIOJA",
+   "mean_t_ha": 4.423,
+   "n_years": 17,
+   "first_year": 2005,
+   "last_year": 2022
+  },
+  "28": {
+   "name": "MADRID",
+   "mean_t_ha": 2.609,
+   "n_years": 17,
+   "first_year": 2005,
+   "last_year": 2022
+  },
+  "29": {
+   "name": "Málaga",
+   "mean_t_ha": 2.302,
+   "n_years": 17,
+   "first_year": 2005,
+   "last_year": 2022
+  },
+  "30": {
+   "name": "R. DE MURCIA",
+   "mean_t_ha": 1.264,
+   "n_years": 17,
+   "first_year": 2005,
+   "last_year": 2022
+  },
+  "31": {
+   "name": "NAVARRA",
+   "mean_t_ha": 4.385,
+   "n_years": 17,
+   "first_year": 2005,
+   "last_year": 2022
+  },
+  "33": {
+   "name": "P. DE ASTURIAS",
+   "mean_t_ha": 1.537,
+   "n_years": 17,
+   "first_year": 2005,
+   "last_year": 2022
+  },
+  "34": {
+   "name": "Palencia",
+   "mean_t_ha": 3.166,
+   "n_years": 17,
+   "first_year": 2005,
+   "last_year": 2022
+  },
+  "35": {
+   "name": "Las Palmas",
+   "mean_t_ha": 1.234,
+   "n_years": 13,
+   "first_year": 2006,
+   "last_year": 2022
+  },
+  "37": {
+   "name": "Salamanca",
+   "mean_t_ha": 2.817,
+   "n_years": 17,
+   "first_year": 2005,
+   "last_year": 2022
+  },
+  "38": {
+   "name": "S.C. de Tenerife",
+   "mean_t_ha": 0.943,
+   "n_years": 17,
+   "first_year": 2005,
+   "last_year": 2022
+  },
+  "39": {
+   "name": "CANTABRIA",
+   "mean_t_ha": 2.394,
+   "n_years": 17,
+   "first_year": 2005,
+   "last_year": 2022
+  },
+  "40": {
+   "name": "Segovia",
+   "mean_t_ha": 2.682,
+   "n_years": 17,
+   "first_year": 2005,
+   "last_year": 2022
+  },
+  "41": {
+   "name": "Sevilla",
+   "mean_t_ha": 2.687,
+   "n_years": 17,
+   "first_year": 2005,
+   "last_year": 2022
+  },
+  "42": {
+   "name": "Soria",
+   "mean_t_ha": 2.95,
+   "n_years": 17,
+   "first_year": 2005,
+   "last_year": 2022
+  },
+  "43": {
+   "name": "Tarragona",
+   "mean_t_ha": 3.172,
+   "n_years": 17,
+   "first_year": 2005,
+   "last_year": 2022
+  },
+  "44": {
+   "name": "Teruel",
+   "mean_t_ha": 1.983,
+   "n_years": 17,
+   "first_year": 2005,
+   "last_year": 2022
+  },
+  "45": {
+   "name": "Toledo",
+   "mean_t_ha": 1.794,
+   "n_years": 17,
+   "first_year": 2005,
+   "last_year": 2022
+  },
+  "46": {
+   "name": "Valencia",
+   "mean_t_ha": 1.732,
+   "n_years": 17,
+   "first_year": 2005,
+   "last_year": 2022
+  },
+  "47": {
+   "name": "Valladolid",
+   "mean_t_ha": 2.874,
+   "n_years": 17,
+   "first_year": 2005,
+   "last_year": 2022
+  },
+  "49": {
+   "name": "Zamora",
+   "mean_t_ha": 2.663,
+   "n_years": 17,
+   "first_year": 2005,
+   "last_year": 2022
+  },
+  "50": {
+   "name": "Zaragoza",
+   "mean_t_ha": 1.663,
+   "n_years": 17,
+   "first_year": 2005,
+   "last_year": 2022
+  }
+ }
+}

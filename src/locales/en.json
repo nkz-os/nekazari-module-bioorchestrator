@@ -141,11 +141,19 @@
         "outside_calibrated_regions": "the calibration only covers Spanish provinces",
         "region_not_calibrated": "not enough data for this province",
         "unknown": "no calibration applies"
-      }
+      },
+      "modelNote": "What the model sees this year; today it does not improve on the provincial normal."
     },
     "phenology": {
       "calibrated": "Phenology: calibrated for {{region}}.",
       "builtin": "Phenology: AquaCrop's default."
+    },
+    "normal": {
+      "title": "Provincial normal ({{region}})",
+      "titleNoRegion": "Provincial normal",
+      "note": "Actual province average over the published years; not a forecast for this season.",
+      "validatedBadge": "Validated",
+      "validation": "Validated: mean error {{rmse}} t/ha on years not used to compute it; the band covers {{pct}} % of the years."
     }
   },
   "planning": {
@@ -398,12 +406,14 @@
         "water_limited": "water-limited potential",
         "gap_corrected": "with the area's yield gap",
         "potential": "potential without water limitation",
-        "parcel_history": "harvests on this parcel"
+        "parcel_history": "harvests on this parcel",
+        "provincial_normal": "provincial normal"
       },
       "provider": {
         "trial_evidence": "Trials in the area",
         "aquacrop": "AquaCrop",
-        "parcel_history": "History on this parcel"
+        "parcel_history": "History on this parcel",
+        "provincial_normal": "Provincial normal"
       },
       "experimental": "experimental",
       "directSowing": "Direct sowing on the stubble",

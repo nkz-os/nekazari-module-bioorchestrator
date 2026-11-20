@@ -190,3 +190,56 @@ async def test_parcel_estimates_includes_parcel_history_row_even_without_trials(
     assert [e["provider_id"] for e in out["estimates"]] == ["parcel_history"]
     assert out["estimates"][0]["percentiles"]["p50"] == 4.2
     assert {"provider_id": "trial_evidence", "reason": "no_trials"} in out["unavailable"]
+
+
+NAVARRA = {"lat": 42.85, "lon": -1.55}
+
+
+def _env_at(point, country="ES"):
+    return {**ENV, "centroid": point, "country": country}
+
+
+async def _estimates(env, *, regime="rainfed", rows=(), recommendations=None, crop="TRZAX"):
+    dao = _dao(list(rows), recommendations=recommendations)
+    dao.get_parcel_environment.return_value = env
+    return await service.parcel_estimates(dao=dao, source=KnowledgeSource("global", None), parcel_id="p1",
+                                          tenant_id="t", crop=crop, variety=None, regime=regime,
+                                          management="conventional", sowing_date=None)
+
+
+async def test_normal_comes_first_for_rainfed_wheat_in_spain():
+    rows = [{"variety": "A", "site": "Zona X", "year": 2024, "source_id": "GENVCE", "yield_kg_ha": 6000}]
+    out = await _estimates(_env_at(NAVARRA), rows=rows)
+    EstimatesResponse.model_validate(out)
+    assert out["estimates"][0]["basis"] == "provincial_normal"
+    assert out["estimates"][0]["validation"]["status"] == "validated"
+    assert [e["basis"] for e in out["estimates"][1:]] == ["trial_evidence"]
+
+
+async def test_normal_does_not_change_the_status_when_there_is_no_climate_or_no_trials():
+    out = await _estimates(_env_at(NAVARRA), recommendations=[])
+    assert out["status"] == "no_trials" and [e["basis"] for e in out["estimates"]] == ["provincial_normal"]
+    assert {"provider_id": "trial_evidence", "reason": "no_trials"} in out["unavailable"]
+    dao = _dao([])
+    dao.get_parcel_environment.return_value = {**_env_at(NAVARRA), "climate_class": None}
+    out = await service.parcel_estimates(dao=dao, source=KnowledgeSource("global", None), parcel_id="p1",
+                                         tenant_id="t", crop="TRZAX", variety=None, regime="rainfed",
+                                         management="conventional", sowing_date=None)
+    assert out["status"] == "needs_climate" and [e["basis"] for e in out["estimates"]] == ["provincial_normal"]
+
+
+@pytest.mark.parametrize("regime,point,country", [
+    ("irrigated", NAVARRA, "ES"),
+    ("rainfed", {"lat": None, "lon": None}, "ES"),
+    ("rainfed", {}, "ES"),
+    ("rainfed", {"lat": 48.85, "lon": 2.35}, "FR"),
+    ("rainfed", NAVARRA, "FR"),
+])
+async def test_no_normal_out_of_scope_and_no_exception(regime, point, country):
+    out = await _estimates(_env_at(point, country), regime=regime, recommendations=[])
+    assert all(e["basis"] != "provincial_normal" for e in out["estimates"])
+
+
+async def test_no_normal_for_another_crop():
+    out = await _estimates(_env_at(NAVARRA), crop="HORVX", recommendations=[])
+    assert all(e["basis"] != "provincial_normal" for e in out["estimates"])

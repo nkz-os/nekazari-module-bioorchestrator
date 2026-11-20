@@ -124,11 +124,19 @@
         "outside_calibrated_regions": "la calibration ne couvre que les provinces espagnoles",
         "region_not_calibrated": "pas assez de données pour cette province",
         "unknown": "aucune calibration applicable"
-      }
+      },
+      "modelNote": "Ce que voit le modèle cette année ; aujourd'hui il n'améliore pas la normale de la province."
     },
     "phenology": {
       "calibrated": "Phénologie : calibrée pour {{region}}.",
       "builtin": "Phénologie : celle d'AquaCrop par défaut."
+    },
+    "normal": {
+      "title": "Normale de la province ({{region}})",
+      "titleNoRegion": "Normale de la province",
+      "note": "Moyenne réelle de la province sur les années publiées ; ce n'est pas la prévision de cette campagne.",
+      "validatedBadge": "Validée",
+      "validation": "Validée : erreur moyenne {{rmse}} t/ha sur des années non utilisées pour la calculer ; la bande couvre {{pct}} % des années."
     }
   },
   "planning": {
@@ -381,12 +389,14 @@
         "water_limited": "potentiel limité par l'eau",
         "gap_corrected": "avec l'écart de rendement de la zone",
         "potential": "potentiel sans limitation en eau",
-        "parcel_history": "récoltes de cette parcelle"
+        "parcel_history": "récoltes de cette parcelle",
+        "provincial_normal": "normale de la province"
       },
       "provider": {
         "trial_evidence": "Essais de la zone",
         "aquacrop": "AquaCrop",
-        "parcel_history": "Historique sur cette parcelle"
+        "parcel_history": "Historique sur cette parcelle",
+        "provincial_normal": "Normale de la province"
       },
       "experimental": "expérimental",
       "directSowing": "Semis direct sur les chaumes",

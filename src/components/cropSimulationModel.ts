@@ -4,6 +4,8 @@ export type Irrigation = 'rainfed' | 'full';
 export const ENGINES = ['aquacrop'] as const;
 export type Engine = (typeof ENGINES)[number];
 
+import type { Estimate } from '../planning/types';
+
 export interface Percentiles { p10: number; p50: number; p90: number }
 export interface DailyPoint {
   day: string;
@@ -44,6 +46,8 @@ export interface CropSimulationResult {
   water_gap_pct: number | null;
   /** Water-limited yield x the region's calibrated gap factor, with its validated range. */
   expected_yield: ExpectedYield;
+  /** Provincial normal (additive; results cached before it existed omit the key). */
+  provincial_normal?: Estimate | null;
   harvest_date: string;
   ensemble: { n_years: number; method: string; years: number[] } | null;
   daily: DailyPoint[];

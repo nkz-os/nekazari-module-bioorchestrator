@@ -1,8 +1,8 @@
-/** Mirror of backend/app/planning/models.py — contract version 2.11. Change both together. */
+/** Mirror of backend/app/planning/models.py — contract version 2.12. Change both together. */
 import type { SourceAttributionItem } from '../types/attribution';
 import type { Fortnight } from './fortnight';
 
-export const CONTRACT_VERSION = '2.11';
+export const CONTRACT_VERSION = '2.12';
 export type Verdict = 'fits' | 'caveats' | 'no_fit';
 /** Owner decision (2026-10-13): one vocabulary everywhere; the words shown are translated. */
 export type Regime = 'rainfed' | 'irrigated';
@@ -72,7 +72,7 @@ export interface VarietiesResponse {
   /** Depth of the trial evidence behind the table (additive; older answers omit it). */
   evidence_depth?: EvidenceDepth | null;
 }
-export type Basis = 'parcel_history' | 'trial_evidence' | 'water_limited' | 'gap_corrected' | 'potential';
+export type Basis = 'provincial_normal' | 'parcel_history' | 'trial_evidence' | 'water_limited' | 'gap_corrected' | 'potential';
 export interface Moisture { basis: 'commercial' | 'dry_matter' | 'as_reported'; pct: number | null }
 export interface Estimate {
   provider_id: string; provider_version: string; basis: Basis; unit: 't/ha';

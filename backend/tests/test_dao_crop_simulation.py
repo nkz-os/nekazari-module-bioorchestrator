@@ -320,6 +320,7 @@ def test_full_irrigation_headline_is_potential(mock_driver, tunis):
     assert res["irrigation"] == "full"
     assert res["yield_t_ha"] == res["potential_yield_t_ha"]
     assert res["expected_yield"] == {"status": "unavailable", "reason": "irrigated"}
+    assert res["provincial_normal"] is None
     assert res["inputs"]["phenology"] == {"source": "builtin", "region": res["inputs"]["phenology"]["region"],
                                           "params": {}}
 
@@ -328,6 +329,7 @@ def test_parcel_outside_the_calibrated_regions_keeps_the_builtin_crop(mock_drive
     _Orion.parcel = _parcel(location={"type": "Point", "coordinates": [2.35, 48.85]})  # Paris
     res = _run(GraphDAO(mock_driver), net=_Net(tunis))
     assert res["expected_yield"] == {"status": "unavailable", "reason": "outside_calibrated_regions"}
+    assert res["provincial_normal"] is None
     assert res["inputs"]["phenology"] == {"source": "builtin", "region": None, "params": {}}
     assert res["yield_basis"]["moisture"] == "commercial"
 
@@ -446,3 +448,24 @@ def test_non_finite_weather_drops_the_phenology_block_but_not_the_result(mock_dr
         res = _run(GraphDAO(mock_driver), net=_Net(tunis))
     assert "phenology" not in res and res["yield_t_ha"]["p50"] > 0
     assert "crop_simulation_phenology_failed" in caplog.text
+
+
+def test_provincial_normal_of_the_simulated_point():
+    from app.services import crop_simulation as cs
+    from app.services.region_lookup import es_province_at
+    lat, lon = 42.85, -1.55  # a point in Spain
+    normal = cs._provincial_normal("wheat", "rainfed", lat, lon, es_province_at(lat, lon))
+    assert normal["basis"] == "provincial_normal" and normal["n_kind"] == "years"
+    # irrigated, another crop and a point outside Spain carry none
+    assert cs._provincial_normal("wheat", "full", lat, lon, es_province_at(lat, lon)) is None
+    assert cs._provincial_normal("sunflower", "rainfed", lat, lon, es_province_at(lat, lon)) is None
+    assert cs._provincial_normal("wheat", "rainfed", 48.85, 2.35, None) is None
+
+
+def test_a_failing_provincial_normal_never_fails_the_simulation(mock_driver, tunis, monkeypatch, caplog):
+    def boom(*args, **kwargs):
+        raise KeyError("version")
+    monkeypatch.setattr("app.services.crop_simulation.normal_estimate", boom)
+    res = _run(GraphDAO(mock_driver), net=_Net(tunis))
+    assert res["provincial_normal"] is None and res["yield_t_ha"]
+    assert sum("crop_simulation_provincial_normal_failed" in r.message for r in caplog.records) == 1

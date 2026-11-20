@@ -11,6 +11,7 @@ import {
   type Engine, type Irrigation, type SimulationPrefill,
 } from './cropSimulationModel';
 import { runSimulationJob } from './simulationJob';
+import { validationTone } from '../planning/estimatesModel';
 
 type T = (key: string, opts?: Record<string, unknown>) => string;
 
@@ -75,6 +76,34 @@ function Metric({ label, main, range, unit, prominent }: {
   );
 }
 
+/** Out-of-sample RMSE of the provincial normal (t/ha); mirrors `validation.rmse_t_ha` in backend/data/wheat_es_province_normal.json. */
+const NORMAL_RMSE_T_HA = 0.76;
+
+/** The province's normal (published statistics), shown above the model's figure. */
+function ProvincialNormalCard({ result, t }: { result: CropSimulationResult; t: T }) {
+  const n = result.provincial_normal;
+  if (!n?.range) return null;
+  // The region name comes from the calibrated expected yield when it has one; otherwise the title has no region.
+  const region = result.expected_yield.status === 'ok' ? result.expected_yield.region.name : null;
+  return (
+    <Card padding="md">
+      <p className="text-nkz-xs text-nkz-text-secondary">
+        {region ? t('cropSimulation.normal.title', { region }) : t('cropSimulation.normal.titleNoRegion')}
+      </p>
+      <p className="text-nkz-xl font-bold text-nkz-text-primary">{formatRange(n.range)} t/ha</p>
+      <p className="text-nkz-xs text-nkz-text-muted">{t('cropSimulation.normal.note')}</p>
+      {n.validation.status === 'validated' && n.coverage != null && (
+        <>
+          <Badge intent={validationTone(n.validation.status)}>{t('cropSimulation.normal.validatedBadge')}</Badge>
+          <p className="text-nkz-xs text-nkz-text-muted">
+            {t('cropSimulation.normal.validation', { rmse: NORMAL_RMSE_T_HA, pct: Math.round(n.coverage * 100) })}
+          </p>
+        </>
+      )}
+    </Card>
+  );
+}
+
 /** Expected yield in the parcel's region: the calibrated range, or why there is none. */
 function ExpectedYieldCard({ result, t }: { result: CropSimulationResult; t: T }) {
   const e = result.expected_yield;
@@ -97,6 +126,9 @@ function ExpectedYieldCard({ result, t }: { result: CropSimulationResult; t: T }
           source: e.calibration.source, rmse: (e.calibration.validation.rmse_kg_ha / 1000).toFixed(1),
         })}
       </p>
+      {result.provincial_normal?.range && (
+        <p className="text-nkz-xs text-nkz-text-muted">{t('cropSimulation.expected.modelNote')}</p>
+      )}
     </Card>
   );
 }
@@ -143,6 +175,7 @@ export function CropSimulationResultView({ result }: { result: CropSimulationRes
           : t('cropSimulation.basis.dry_matter')}
       </p>
 
+      <ProvincialNormalCard result={result} t={t} />
       <ExpectedYieldCard result={result} t={t} />
 
       {ensembleMode && result.ensemble && (

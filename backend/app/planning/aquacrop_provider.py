@@ -39,6 +39,13 @@ UNVALIDATED_IN_SEASON: dict[tuple[str, str, str], str] = {
 }
 
 
+# What the model figure is worth today (measured offline against official provincial yields):
+# it does not improve on the provincial normal, so it is never shown as validated.
+MODEL_SCOPE = "what the model sees this season; today it does not improve on the provincial normal"
+MODEL_METRIC = ("RMSE 1.6 t/ha; year-to-year r 0.14 (1 Apr), 0.34 (1 May), 0.49 (complete season); "
+                "the provincial normal: 0.76 t/ha")
+
+
 def aquacrop_gate(crop_eppo: str, regime: str, country: str | None, sowing_date: date | None,
                   today: date) -> str | None:
     """Why AquaCrop must not run for this input (a reason code), or None when it may."""
@@ -70,18 +77,8 @@ def _moisture(basis: Any) -> dict:
     return {"basis": "as_reported", "pct": None}  # an unknown basis is never presented as a known one
 
 
-def _metric(validation: Any, static: str) -> str:
-    """The engine's own out-of-sample metrics when it sends them, else the static text."""
-    if isinstance(validation, dict):
-        rmse, r = validation.get("rmse_kg_ha"), validation.get("anomaly_r_median")
-        if isinstance(rmse, (int, float)) and isinstance(r, (int, float)):
-            return f"RMSE {rmse / 1000:.2f} t/ha, anomaly r {r:.2f}"
-    return static
-
-
 def map_result(result: dict, provider_version: str) -> tuple[list[dict], list[dict]]:
     """A finished simulation -> (estimates, unavailable): expected yield first, then the ceiling."""
-    static = VALIDATED[("TRZAX", "rainfed", "ES")]
     moisture = _moisture(result.get("yield_basis"))
     n = (result.get("ensemble") or {}).get("n_years") or 0
     base = {"provider_id": PROVIDER_ID, "provider_version": provider_version, "unit": "t/ha", "n": n,
@@ -93,13 +90,11 @@ def map_result(result: dict, provider_version: str) -> tuple[list[dict], list[di
     rng = expected.get("range_t_ha") if isinstance(expected, dict) else None
     if isinstance(expected, dict) and expected.get("status") == "ok" and isinstance(rng, dict) \
             and rng.get("low") is not None and rng.get("high") is not None:
-        validation = (expected.get("calibration") or {}).get("validation")
         estimates.append({
             **base, "basis": "gap_corrected", "percentiles": None,
             "range": {"low": round(rng["low"], 2), "high": round(rng["high"], 2)},
             "coverage": expected.get("coverage"),
-            "validation": {"status": "validated", "metric": _metric(validation, static["metric"]),
-                           "scope": static["scope"]}})
+            "validation": {"status": "experimental", "metric": MODEL_METRIC, "scope": MODEL_SCOPE}})
     elif isinstance(expected, dict) and expected.get("status") == "unavailable":
         unavailable.append({"provider_id": PROVIDER_ID, "reason": f"expected_{expected.get('reason') or 'unknown'}"})
     else:
@@ -121,8 +116,6 @@ def map_result(result: dict, provider_version: str) -> tuple[list[dict], list[di
 # sowing, but the year-to-year signal is close to zero before April and only reaches the complete-season
 # value in June; the error of the level does not shrink during the season. Provincial statistics are not
 # parcels, so the estimate stays experimental while the season runs.
-IN_SEASON_SCOPE = ("in-season forecast; before May it reflects the normal of the area, not this season "
-                   "(provincial statistics, rainfed soft wheat, ES 2008-2022)")
 IN_SEASON_METRIC = ("year-to-year r by issue date: 0.14 (1 Apr), 0.34 (1 May), 0.45 (1 Jun), "
                     "0.49 (complete season); RMSE 1.6 t/ha at every date")
 
@@ -148,7 +141,7 @@ def map_in_season(result: dict, provider_version: str,
         if complete:
             e["n"] = 1
         elif e["basis"] == "gap_corrected":
-            e["validation"] = {"status": "experimental", "metric": IN_SEASON_METRIC, "scope": IN_SEASON_SCOPE}
+            e["validation"] = {"status": "experimental", "metric": IN_SEASON_METRIC, "scope": MODEL_SCOPE}
     if unvalidated_scope is None:
         return estimates, unavailable
     kept = [e for e in estimates if e["basis"] != "gap_corrected"]

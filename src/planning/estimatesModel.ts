@@ -1,7 +1,7 @@
 import type { SourceAttributionItem } from '../types/attribution';
 import type { AquacropResponse, AquacropState, Basis, Estimate, EstimatesResponse, Moisture } from './types';
 
-export const BASIS_ORDER: Basis[] = ['parcel_history', 'trial_evidence', 'gap_corrected', 'water_limited', 'potential'];
+export const BASIS_ORDER: Basis[] = ['provincial_normal', 'parcel_history', 'trial_evidence', 'gap_corrected', 'water_limited', 'potential'];
 
 /** Rank of a basis; an unknown basis ranks after every known one. */
 const rank = (basis: Basis): number => {
@@ -126,10 +126,13 @@ export function unavailableKey(reason: string): string {
 }
 
 /**
- * The one-line expected yield (W3): the gap-corrected range when its model is validated, then trial
- * evidence P10–P90 (observed, not a model); never a ceiling, never an unvalidated model's figure.
+ * The one-line expected yield (W3): the validated provincial normal range, then a validated
+ * gap-corrected range, then trial evidence P10–P90 (observed, not a model); never a ceiling, never an
+ * unvalidated model's figure.
  */
 export function yieldSummary(estimates: Estimate[]): { low: number; high: number } | null {
+  const normal = estimates.find((e) => e.basis === 'provincial_normal' && e.range && e.validation.status === 'validated');
+  if (normal?.range) return { low: normal.range.low, high: normal.range.high };
   const gap = estimates.find((e) => e.basis === 'gap_corrected' && e.range && e.validation.status === 'validated');
   if (gap?.range) return { low: gap.range.low, high: gap.range.high };
   const trial = estimates.find((e) => e.basis === 'trial_evidence' && e.percentiles);

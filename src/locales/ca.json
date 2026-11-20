@@ -124,11 +124,19 @@
         "outside_calibrated_regions": "la calibració només cobreix províncies espanyoles",
         "region_not_calibrated": "no hi ha prou dades per a aquesta província",
         "unknown": "no hi ha cap calibració aplicable"
-      }
+      },
+      "modelNote": "Allò que veu el model enguany; avui no millora la normal de la província."
     },
     "phenology": {
       "calibrated": "Fenologia: calibrada per a {{region}}.",
       "builtin": "Fenologia: la d'origen d'AquaCrop."
+    },
+    "normal": {
+      "title": "Normal de la província ({{region}})",
+      "titleNoRegion": "Normal de la província",
+      "note": "Mitjana real de la província en els anys publicats; no és la previsió d'aquesta campanya.",
+      "validatedBadge": "Validada",
+      "validation": "Validada: error mitjà {{rmse}} t/ha en anys no usats per calcular-la; la banda cobreix el {{pct}} % dels anys."
     }
   },
   "planning": {
@@ -381,12 +389,14 @@
         "water_limited": "potencial limitat per l'aigua",
         "gap_corrected": "amb la bretxa de rendiment de la zona",
         "potential": "potencial sense limitació d'aigua",
-        "parcel_history": "collites d'aquesta parcel·la"
+        "parcel_history": "collites d'aquesta parcel·la",
+        "provincial_normal": "normal de la província"
       },
       "provider": {
         "trial_evidence": "Assaigs de la zona",
         "aquacrop": "AquaCrop",
-        "parcel_history": "Històric en aquesta parcel·la"
+        "parcel_history": "Històric en aquesta parcel·la",
+        "provincial_normal": "Normal de la província"
       },
       "experimental": "experimental",
       "directSowing": "Sembra directa sobre el rostoll",

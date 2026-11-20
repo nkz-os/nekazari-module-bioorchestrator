@@ -281,6 +281,32 @@ sources:
         en: Estimates and averages are Nekazari calculations based on these data; they are not data published by the sources.
         es: Las estimaciones y medias son cálculos de Nekazari a partir de estos datos; no son datos publicados por las fuentes.
       notes: Guide edited by the Ministry (copyright holder) with ANFFE and ACEFER; numeric tables only.
+  - source_id: mapa_anuario_estadistica
+    name: Anuario de Estadística — Superficies y producciones de cultivos
+    institution: Ministerio de Agricultura, Pesca y Alimentación
+    country: ES
+    url: https://www.mapa.gob.es/estadistica/pags/anuario/
+    licence:
+      licence_id: es-reuse-notice-ley-37-2007
+      terms_url: https://www.mapa.gob.es/es/atencion-al-ciudadano/aviso-legal
+      quote: 'La información contenida en el portal puede ser utilizada sin necesidad de autorización expresa, siempre que
+        se cite la fuente de los documentos objeto de reutilización, con excepción de los contenidos sobre los que existan
+        derechos de propiedad intelectual o industrial por parte de terceros.'
+      quote_language: es
+      checked_at: '2026-10-11'
+      commercial_use: allowed
+      tdm_reserved: null
+      attribution_text: 'Fuente: Ministerio de Agricultura, Pesca y Alimentación. Anuario de Estadística (ediciones 2006–2023), capítulo Superficies y producciones de cultivos. Url: https://www.mapa.gob.es/estadistica/pags/anuario/ (Descarga: 09/10/2026). Datos convertidos por Nekazari.'
+      attribution_url: https://www.mapa.gob.es/estadistica/pags/anuario/
+      download_date: '2026-10-09'
+      conditions:
+      - the source is cited
+      - third-party content (photographs) excluded
+      - conversions made by Nekazari are indicated
+      processing_note:
+        en: Estimates and averages are Nekazari calculations based on these data; they are not data published by the sources.
+        es: Las estimaciones y medias son cálculos de Nekazari a partir de estos datos; no son datos publicados por las fuentes.
+      notes: Provincial yield tables only.
   - source_id: panagos_2022
     name: Panagos et al. 2022, Phosphorus plant removal from European agricultural land
     institution: European Commission, Joint Research Centre

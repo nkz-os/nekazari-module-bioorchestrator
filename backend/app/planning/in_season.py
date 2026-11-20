@@ -22,9 +22,11 @@ from app.planning.aquacrop_provider import (
     map_in_season,
 )
 from app.planning.farm import parcel_regime
+from app.planning.provincial_normal import normal_estimate
 from app.planning.service import ParcelNotFound
 from app.services.country_lookup import country_at
 from app.services.crop_cycles_client import fetch_crop_cycles
+from app.services.region_lookup import es_province_at
 from app.services.sim_errors import SimulationError
 from app.species_registry import catalog_code, get_species_info, resolve_species
 
@@ -239,16 +241,26 @@ def _failed(reason: str, code: str) -> dict:
     return {**_unavailable(reason, code), "state": "failed"}
 
 
-def _view(job, inputs: InSeasonInputs, version: str) -> dict:
-    out = {"state": job.state, "done": job.done, "total": job.total, "estimates": [], "unavailable": [],
+def _normal_of(parcel: dict, inputs: InSeasonInputs) -> list[dict]:
+    """The provincial normal of the parcel as a one-item list; empty without a location or out of scope."""
+    point = parcel_point(parcel)
+    region = es_province_at(*point) if point else None
+    normal = normal_estimate(inputs.eppo, inputs.regime, inputs.country, region)
+    return [normal] if normal is not None else []
+
+
+def _view(job, inputs: InSeasonInputs, version: str, normal: list[dict] | None = None) -> dict:
+    out = {"state": job.state, "done": job.done, "total": job.total, "estimates": list(normal or []),
+           "unavailable": [],
            "job_id": job.id, "season": None, "phenology": None}
     if job.state == "failed":
         out["unavailable"] = [{"provider_id": PROVIDER_ID, "reason": "engine_error",
                                "code": (job.error or {}).get("code")}]
     elif job.state == "done":
-        out["estimates"], out["unavailable"] = map_in_season(
+        model, out["unavailable"] = map_in_season(
             job.result or {}, version,
             unvalidated_scope=UNVALIDATED_IN_SEASON.get((inputs.eppo, inputs.regime, inputs.country)))
+        out["estimates"] = [*out["estimates"], *model]
         out["season"] = season_info(job.result or {}, inputs, job.finished_at, version)
         out["phenology"] = (job.result or {}).get("phenology")
     return out
@@ -277,6 +289,7 @@ async def parcel_in_season(*, dao, jobs, tenant_id: str, parcel_id: str, today: 
     inputs = resolve_in_season(parcel, crops, cycles, today)
     if isinstance(inputs, str):
         return _unavailable(inputs)
+    normal = _normal_of(parcel, inputs)
     # The parameters of POST /agriculture/crop-simulation/jobs: identical inputs share the job.
     params = {"parcel_id": parcel_id, "crop_slug": inputs.crop_slug,
               "sowing_date": inputs.sowing_date.isoformat(), "irrigation": IRRIGATION[inputs.regime],
@@ -291,11 +304,11 @@ async def parcel_in_season(*, dao, jobs, tenant_id: str, parcel_id: str, today: 
     version = jobs.version_for(params["crop_slug"])
     known = jobs.get(jobs.job_id(tenant_id, params, today, version), tenant_id)
     if known is not None and known.state == "failed" and not retry:
-        return _view(known, inputs, version)
+        return _view(known, inputs, version, normal)
     try:
         job = await jobs.start(tenant_id, params, run, today)
     except SimulationError as e:
         if e.code != "too_many_jobs":
             raise
-        return _unavailable("busy")
-    return _view(job, inputs, version)
+        return {**_unavailable("busy"), "estimates": normal}
+    return _view(job, inputs, version, normal)
