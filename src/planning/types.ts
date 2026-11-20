@@ -1,8 +1,8 @@
-/** Mirror of backend/app/planning/models.py — contract version 2.12. Change both together. */
+/** Mirror of backend/app/planning/models.py — contract version 2.13. Change both together. */
 import type { SourceAttributionItem } from '../types/attribution';
 import type { Fortnight } from './fortnight';
 
-export const CONTRACT_VERSION = '2.12';
+export const CONTRACT_VERSION = '2.13';
 export type Verdict = 'fits' | 'caveats' | 'no_fit';
 /** Owner decision (2026-10-13): one vocabulary everywhere; the words shown are translated. */
 export type Regime = 'rainfed' | 'irrigated';
@@ -64,6 +64,10 @@ export interface EvidenceDepth {
   first_year: number | null; last_year: number | null;
 }
 
+export interface VarietyCatalogEntry { name: string; key: string; cereal_type: 'winter' | 'spring' | null; }
+export interface VarietyCatalogResponse {
+  contract_version: string; crop: string; graph_id: string; varieties: VarietyCatalogEntry[];
+}
 export interface VarietiesResponse {
   contract_version: string; parcel_id: string; crop: string; regime: Regime; management: Management;
   status: 'ok' | 'no_trials' | 'needs_climate'; tier: 'field' | 'regional' | null;

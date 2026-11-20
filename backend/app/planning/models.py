@@ -11,7 +11,7 @@ from typing import Annotated, Any, Literal
 
 from pydantic import BaseModel, BeforeValidator, Field
 
-CONTRACT_VERSION = "2.12"
+CONTRACT_VERSION = "2.13"
 
 Verdict = Literal["fits", "caveats", "no_fit"]
 # Owner decision (2026-10-13): the regime vocabulary is rainfed | irrigated. The Spanish words that
@@ -157,6 +157,20 @@ class VarietiesResponse(BaseModel):
     attributions: list[dict[str, Any]] = Field(default_factory=list)
     graph_id: str
     evidence_depth: EvidenceDepth | None = None
+
+
+class VarietyCatalogEntry(BaseModel):
+    name: str  # the graph's spelling, what a form stores
+    key: str  # normalise_name(name), unique in the list
+    cereal_type: Literal["winter", "spring"] | None = None
+
+
+class VarietyCatalogResponse(BaseModel):
+    """Variety names of a crop for forms (global catalog, no parcel): 2.13."""
+    contract_version: str = CONTRACT_VERSION
+    crop: str
+    graph_id: str
+    varieties: list[VarietyCatalogEntry] = Field(default_factory=list)
 
 
 class Percentiles(BaseModel):

@@ -24,7 +24,7 @@ def client(monkeypatch):
 def test_fit_route_validates_the_contract(client, monkeypatch):
     monkeypatch.setattr(planning_api, "parcel_fit", AsyncMock(return_value=FIT))
     r = client.get("/api/graph/planning/parcels/urn:ngsi-ld:AgriParcel:t:p1/fit", params={"campaign": 2027})
-    assert r.status_code == 200 and r.json()["contract_version"] == "2.12"
+    assert r.status_code == 200 and r.json()["contract_version"] == "2.13"
 
 
 def test_fit_route_passes_the_soil_refresh_flag_only_when_asked(client, monkeypatch):
@@ -77,7 +77,7 @@ def test_varieties_route_validates_the_contract(client, monkeypatch):
     monkeypatch.setattr(planning_api, "parcel_varieties", AsyncMock(return_value=VARIETIES))
     r = client.get(VARIETIES_URL, params=VARIETIES_PARAMS)
     body = r.json()
-    assert r.status_code == 200 and body["contract_version"] == "2.12"
+    assert r.status_code == 200 and body["contract_version"] == "2.13"
     assert body["varieties"][0]["variety"] == "A" and body["attributions"] == []
 
 
@@ -91,6 +91,50 @@ def test_varieties_route_does_not_turn_other_value_errors_into_422(client, monke
     monkeypatch.setattr(planning_api, "parcel_varieties", AsyncMock(side_effect=ValueError("bug")))
     crashing = TestClient(app, raise_server_exceptions=False)
     assert crashing.get(VARIETIES_URL, params=VARIETIES_PARAMS).status_code == 500
+
+
+CATALOG_URL = "/api/graph/planning/varieties"
+CATALOG = [{"name": "FILON", "key": "FILON", "cereal_type": "winter"},
+           {"name": "Kiko", "key": "KIKO", "cereal_type": None}]
+
+
+def test_variety_catalog_route_validates_the_contract(client, monkeypatch):
+    fake = AsyncMock(return_value=CATALOG)
+    monkeypatch.setattr(planning_api, "crop_variety_catalog", fake)
+    r = client.get(CATALOG_URL, params={"crop": "wheat"})
+    body = r.json()
+    assert r.status_code == 200 and body["contract_version"] == "2.13"
+    assert body["crop"] == "TRZAX" and body["varieties"] == CATALOG and isinstance(body["graph_id"], str)
+    assert fake.await_args.kwargs["eppo"] == "TRZAX"
+
+
+def test_variety_catalog_route_rejects_unknown_crop(client, monkeypatch):
+    fake = AsyncMock(return_value=CATALOG)
+    monkeypatch.setattr(planning_api, "crop_variety_catalog", fake)
+    assert client.get(CATALOG_URL, params={"crop": "zzz"}).status_code == 422
+    fake.assert_not_called()
+
+
+def test_variety_catalog_route_503_on_graph_error(client, monkeypatch):
+    from neo4j.exceptions import ServiceUnavailable
+    monkeypatch.setattr(planning_api, "crop_variety_catalog", AsyncMock(side_effect=ServiceUnavailable("down")))
+    assert client.get(CATALOG_URL, params={"crop": "wheat"}).status_code == 503
+
+
+def test_variety_catalog_route_requires_a_verified_tenant(client, monkeypatch):
+    monkeypatch.setenv("AUTH_DISABLED", "false")
+    fake = AsyncMock(return_value=CATALOG)
+    monkeypatch.setattr(planning_api, "crop_variety_catalog", fake)
+    assert client.get(CATALOG_URL, params={"crop": "wheat"}).status_code == 401
+    fake.assert_not_called()
+
+
+def test_parcel_varieties_route_still_matches(client, monkeypatch):
+    monkeypatch.setattr(planning_api, "crop_variety_catalog", AsyncMock(return_value=CATALOG))
+    parcel = AsyncMock(return_value=VARIETIES)
+    monkeypatch.setattr(planning_api, "parcel_varieties", parcel)
+    assert client.get(VARIETIES_URL, params=VARIETIES_PARAMS).status_code == 200
+    parcel.assert_awaited_once()
 
 
 ESTIMATES_URL = "/api/graph/planning/parcels/urn:ngsi-ld:AgriParcel:t:p1/estimates"
@@ -272,7 +316,7 @@ def test_put_plan_route_validates_the_contract_and_hands_over_the_normalized_urn
     called = AsyncMock(return_value=PLAN_WRITTEN)
     monkeypatch.setattr(planning_api, "write_plan", called)
     r = client.put("/api/graph/planning/parcels/p1/plan", json=PLAN_BODY)
-    assert r.status_code == 200 and r.json()["contract_version"] == "2.12"
+    assert r.status_code == 200 and r.json()["contract_version"] == "2.13"
     assert called.await_args.kwargs["parcel_urn"] == "urn:ngsi-ld:AgriParcel:p1"
     assert called.await_args.kwargs["plan"].campaign == 2027
 

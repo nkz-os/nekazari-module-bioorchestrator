@@ -484,7 +484,7 @@ def test_route_answers_the_2_11_contract_for_a_done_job(client, monkeypatch):
     r = client.get(URL)
     assert r.status_code == 200
     body = r.json()
-    assert body["contract_version"] == "2.12" and body["provider_id"] == "aquacrop_water_loss"
+    assert body["contract_version"] == "2.13" and body["provider_id"] == "aquacrop_water_loss"
     assert body["result"]["stages"][0]["gain_t_ha_model"] == BAND
     assert body["result"]["stages"][1]["gain_t_ha_model"] == 0.2
 
@@ -503,11 +503,11 @@ def test_route_unavailable_and_404(client, monkeypatch):
 
 def test_contract_version_2_11(client, monkeypatch):
     import app.api.v1.planning as planning_api
-    assert planning_models.CONTRACT_VERSION == "2.12"
+    assert planning_models.CONTRACT_VERSION == "2.13"
     ts = Path("../src/planning/types.ts").read_text(encoding="utf-8")
-    assert "CONTRACT_VERSION = '2.12'" in ts
+    assert "CONTRACT_VERSION = '2.13'" in ts
     monkeypatch.setattr(planning_api, "parcel_in_season", AsyncMock(return_value={
         "state": "unavailable", "done": 0, "total": None, "estimates": [], "job_id": None, "season": None,
         "unavailable": [{"provider_id": "aquacrop", "reason": "not_sown"}]}))
     r = client.get(f"/api/graph/planning/parcels/{PARCEL_ID}/estimates/in-season")
-    assert r.json()["contract_version"] == "2.12"
+    assert r.json()["contract_version"] == "2.13"
