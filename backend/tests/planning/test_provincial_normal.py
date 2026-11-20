@@ -23,7 +23,7 @@ def _patched(monkeypatch, mutate):
 
 
 def test_contract_version():
-    assert CONTRACT_VERSION == "2.12"
+    assert CONTRACT_VERSION == "2.13"
 
 
 def test_valid_province_gives_validated_estimate():

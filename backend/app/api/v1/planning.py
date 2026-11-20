@@ -31,6 +31,7 @@ from app.planning.models import (
     Regime,
     SowingMethod,
     VarietiesResponse,
+    VarietyCatalogResponse,
     WaterLossResponse,
 )
 from app.planning.phenology_dates import parcel_phenology
@@ -42,6 +43,7 @@ from app.planning.service import (
     InvalidParcelId,
     ParcelNotFound,
     UnknownCrop,
+    crop_code,
     parcel_aquacrop,
     parcel_calendar,
     parcel_estimates,
@@ -49,6 +51,7 @@ from app.planning.service import (
     parcel_urn,
     parcel_varieties,
 )
+from app.planning.variety_catalog import crop_variety_catalog
 from app.planning.water_loss import parcel_water_loss, water_loss_jobs
 from app.services.sim_jobs import shared_sim_jobs
 from app.species_registry import resolve_species
@@ -83,6 +86,24 @@ async def fit(request: Request, parcel_id: str, sources: SourcesDep,
     schedule_evidence_prefetch(dao, parcel_id=result["parcel_id"], tenant_id=tenant,
                                regime=result["facts"]["regime"], species=result["species"])
     return result
+
+
+@router.get("/varieties", response_model=VarietyCatalogResponse)
+async def variety_catalog(request: Request, sources: SourcesDep,
+                          crop: str = Query(..., min_length=2, max_length=64)):
+    """Variety names of a crop as the graph writes them (for variety fields). Not tenant data."""
+    _require_tenant_id(request)
+    try:
+        eppo = crop_code(crop)
+    except UnknownCrop as e:
+        raise HTTPException(status_code=422, detail=str(e)) from e
+    source = sources[0]
+    try:
+        entries = await crop_variety_catalog(source.driver, eppo=eppo, graph_id=source.graph_id)
+    except Exception as e:  # any graph failure: the form falls back to free text
+        logger.warning("variety_catalog_failed crop=%s code=%s", eppo, type(e).__name__)
+        raise HTTPException(status_code=503, detail="variety catalog unavailable") from e
+    return {"crop": eppo, "graph_id": source.graph_id, "varieties": entries}
 
 
 @router.get("/parcels/{parcel_id:path}/varieties", response_model=VarietiesResponse)
