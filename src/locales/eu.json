@@ -124,11 +124,17 @@
         "outside_calibrated_regions": "kalibrazioak Espainiako probintziak bakarrik hartzen ditu",
         "region_not_calibrated": "ez dago datu nahikorik probintzia honetarako",
         "unknown": "ez dago kalibrazio aplikagarririk"
-      }
+      },
+      "modelNote": "Ereduak aurten ikusten duena; gaur egun ez du probintziako normala hobetzen."
     },
     "phenology": {
       "calibrated": "Fenologia: {{region}}rako kalibratua.",
       "builtin": "Fenologia: AquaCrop-en lehenetsia."
+    },
+    "normal": {
+      "title": "Probintziako normala ({{region}})",
+      "titleNoRegion": "Probintziako normala",
+      "note": "Probintziaren benetako batez bestekoa argitaratutako urteetan; ez da kanpaina honen aurreikuspena."
     }
   },
   "planning": {
@@ -381,12 +387,14 @@
         "water_limited": "urak mugatutako potentziala",
         "gap_corrected": "eremuko etekin-hutsunearekin",
         "potential": "uraren mugarik gabeko potentziala",
-        "parcel_history": "lursail honetako uztak"
+        "parcel_history": "lursail honetako uztak",
+        "provincial_normal": "probintziako normala"
       },
       "provider": {
         "trial_evidence": "Eremuko saiakuntzak",
         "aquacrop": "AquaCrop",
-        "parcel_history": "Lursail honetako historikoa"
+        "parcel_history": "Lursail honetako historikoa",
+        "provincial_normal": "Probintziako normala"
       },
       "experimental": "esperimentala",
       "directSowing": "Zuzeneko ereitea anizpearen gainean",

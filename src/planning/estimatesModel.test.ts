@@ -14,6 +14,10 @@ const est = (basis: Estimate['basis'], source = 'GENVCE'): Estimate => ({
 });
 
 describe('estimates model', () => {
+  it('puts the provincial normal before everything else', () => {
+    expect(sortEstimates([est('parcel_history'), est('gap_corrected'), est('provincial_normal'), est('trial_evidence')]).map((e) => e.basis))
+      .toEqual(['provincial_normal', 'parcel_history', 'trial_evidence', 'gap_corrected']);
+  });
   it('orders parcel history first, then trials, then gap-corrected (the expected yield), then the water-limited ceiling', () => {
     expect(sortEstimates([est('water_limited'), est('trial_evidence'), est('parcel_history'), est('gap_corrected')]).map((e) => e.basis))
       .toEqual(['parcel_history', 'trial_evidence', 'gap_corrected', 'water_limited']);
@@ -201,6 +205,13 @@ describe('yieldSummary', () => {
       .toEqual({ low: 0.6, high: 5 });
     expect(yieldSummary([e('trial_evidence', { percentiles: { p10: 5.1, p50: 6.8, p90: 8.2 } })])).toEqual({ low: 5.1, high: 8.2 });
     expect(yieldSummary([e('water_limited', { percentiles: { p10: 3, p50: 6, p90: 10 } })])).toBeNull();
+  });
+  it('the validated provincial normal range comes first; an unvalidated one is skipped', () => {
+    const trial = e('trial_evidence', { percentiles: { p10: 5.1, p50: 6.8, p90: 8.2 } });
+    expect(yieldSummary([trial, e('provincial_normal', { range: { low: 3.1, high: 7.2 }, percentiles: { p10: 3.1, p50: 5.2, p90: 7.2 } })]))
+      .toEqual({ low: 3.1, high: 7.2 });
+    expect(yieldSummary([trial, e('provincial_normal', { range: { low: 3.1, high: 7.2 }, validation: { status: 'experimental' } })]))
+      .toEqual({ low: 5.1, high: 8.2 });
   });
   it('a model range shows only when validated; trial evidence is shown as it is (not a model)', () => {
     expect(yieldSummary([e('gap_corrected', { range: { low: 2, high: 5 }, validation: { status: 'experimental' } }),
