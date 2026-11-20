@@ -24,8 +24,6 @@ DATA_FILE = "wheat_es_province_normal.json"
 # backend/data locally; /app/data in the image.
 DATA_DIR = Path(__file__).resolve().parents[2] / "data"
 
-VALIDATION_METRIC = ("RMSE 0.76 t/ha out of sample (provincial statistics, 657 province-years 2008-2022); "
-                     "band covers 78 %")
 VALIDATION_SCOPE = "normal of the province, not a forecast of this season"
 
 
@@ -37,6 +35,13 @@ def _normal_data() -> dict | None:
         # Safe state: no normal is offered.
         logger.exception("provincial_normal_unavailable file=%s", DATA_FILE)
         return None
+
+
+def _validation_metric(data: dict) -> str:
+    """Metric line from the file's measured ``validation`` block and ``coverage``."""
+    v = data["validation"]
+    return (f"RMSE {v['rmse_t_ha']:.2f} t/ha out of sample (provincial statistics, "
+            f"{v['n']} province-years {v['years']}); band covers {round(data['coverage'] * 100)} %")
 
 
 def normal_estimate(crop_eppo: str, regime: str | None, country: str | None,
@@ -62,6 +67,6 @@ def normal_estimate(crop_eppo: str, regime: str | None, country: str | None,
         "coverage": data["coverage"],
         "moisture": {"basis": "commercial", "pct": data["grain_moisture_pct"]},
         "n": prov["n_years"], "n_kind": "years",
-        "validation": {"status": "validated", "metric": VALIDATION_METRIC, "scope": VALIDATION_SCOPE},
+        "validation": {"status": "validated", "metric": _validation_metric(data), "scope": VALIDATION_SCOPE},
         "warnings": [], "attributions": get_attributions([SOURCE_ID]), "graph_id": None,
     }

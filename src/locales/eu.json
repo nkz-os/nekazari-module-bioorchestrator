@@ -134,7 +134,9 @@
     "normal": {
       "title": "Probintziako normala ({{region}})",
       "titleNoRegion": "Probintziako normala",
-      "note": "Probintziaren benetako batez bestekoa argitaratutako urteetan; ez da kanpaina honen aurreikuspena."
+      "note": "Probintziaren benetako batez bestekoa argitaratutako urteetan; ez da kanpaina honen aurreikuspena.",
+      "validatedBadge": "Balioztatua",
+      "validation": "Balioztatua: batez besteko errorea {{rmse}} t/ha kalkulatzeko erabili ez diren urteetan; bandak urteen % {{pct}} hartzen du."
     }
   },
   "planning": {

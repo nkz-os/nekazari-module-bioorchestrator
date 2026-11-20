@@ -118,7 +118,21 @@ describe('CropSimulationResultView (es)', () => {
     expect(t).toContain('3.1 – 7.2 t/ha');
     expect(t).toContain('Media real de la provincia en los años publicados; no es la previsión de esta campaña.');
     expect(t).toContain('Lo que ve el modelo este año; hoy no mejora a la normal de la provincia.');
+    expect(t).toContain('Validada');
+    expect(t).toContain('Validada: error medio 0.76 t/ha en años no usados para calcularla; la banda cubre el 78 % de los años.');
     expect(t.indexOf('Normal de la provincia')).toBeLessThan(t.indexOf('Esperado en tu zona'));
+  });
+
+  it('a normal that is not validated shows no validation badge or line', () => {
+    const r: CropSimulationResult = { ...base, provincial_normal: {
+      provider_id: 'provincial_normal', provider_version: 'v1', basis: 'provincial_normal', unit: 't/ha',
+      percentiles: { p10: 3.1, p50: 5.2, p90: 7.2 }, range: { low: 3.1, high: 7.2 }, coverage: 0.78,
+      moisture: { basis: 'commercial', pct: 13 }, n: 18, n_kind: 'years',
+      validation: { status: 'unvalidated', metric: 'm', scope: 's' }, warnings: [], attributions: [], graph_id: null,
+    } };
+    const t = textOf(renderToStaticMarkup(<CropSimulationResultView result={r} />));
+    expect(t).toContain('Normal de la provincia (Navarra)');
+    expect(t).not.toContain('Validada');
   });
 
   it('an old result without the field renders as before: no normal card, no model note', () => {

@@ -1,4 +1,4 @@
-/** Mirror of backend/app/planning/models.py — contract version 2.11. Change both together. */
+/** Mirror of backend/app/planning/models.py — contract version 2.12. Change both together. */
 import type { SourceAttributionItem } from '../types/attribution';
 import type { Fortnight } from './fortnight';
 

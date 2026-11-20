@@ -134,7 +134,9 @@
     "normal": {
       "title": "Normale de la province ({{region}})",
       "titleNoRegion": "Normale de la province",
-      "note": "Moyenne réelle de la province sur les années publiées ; ce n'est pas la prévision de cette campagne."
+      "note": "Moyenne réelle de la province sur les années publiées ; ce n'est pas la prévision de cette campagne.",
+      "validatedBadge": "Validée",
+      "validation": "Validée : erreur moyenne {{rmse}} t/ha sur des années non utilisées pour la calculer ; la bande couvre {{pct}} % des années."
     }
   },
   "planning": {

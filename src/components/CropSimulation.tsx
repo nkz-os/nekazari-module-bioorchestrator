@@ -11,6 +11,7 @@ import {
   type Engine, type Irrigation, type SimulationPrefill,
 } from './cropSimulationModel';
 import { runSimulationJob } from './simulationJob';
+import { validationTone } from '../planning/estimatesModel';
 
 type T = (key: string, opts?: Record<string, unknown>) => string;
 
@@ -75,6 +76,9 @@ function Metric({ label, main, range, unit, prominent }: {
   );
 }
 
+/** Out-of-sample RMSE of the provincial normal (t/ha); mirrors `validation.rmse_t_ha` in backend/data/wheat_es_province_normal.json. */
+const NORMAL_RMSE_T_HA = 0.76;
+
 /** The province's normal (published statistics), shown above the model's figure. */
 function ProvincialNormalCard({ result, t }: { result: CropSimulationResult; t: T }) {
   const n = result.provincial_normal;
@@ -88,6 +92,14 @@ function ProvincialNormalCard({ result, t }: { result: CropSimulationResult; t: 
       </p>
       <p className="text-nkz-xl font-bold text-nkz-text-primary">{formatRange(n.range)} t/ha</p>
       <p className="text-nkz-xs text-nkz-text-muted">{t('cropSimulation.normal.note')}</p>
+      {n.validation.status === 'validated' && n.coverage != null && (
+        <>
+          <Badge intent={validationTone(n.validation.status)}>{t('cropSimulation.normal.validatedBadge')}</Badge>
+          <p className="text-nkz-xs text-nkz-text-muted">
+            {t('cropSimulation.normal.validation', { rmse: NORMAL_RMSE_T_HA, pct: Math.round(n.coverage * 100) })}
+          </p>
+        </>
+      )}
     </Card>
   );
 }

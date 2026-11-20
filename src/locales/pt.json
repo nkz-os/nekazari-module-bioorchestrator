@@ -134,7 +134,9 @@
     "normal": {
       "title": "Normal da província ({{region}})",
       "titleNoRegion": "Normal da província",
-      "note": "Média real da província nos anos publicados; não é a previsão desta campanha."
+      "note": "Média real da província nos anos publicados; não é a previsão desta campanha.",
+      "validatedBadge": "Validada",
+      "validation": "Validada: erro médio {{rmse}} t/ha em anos não usados para a calcular; a banda cobre {{pct}} % dos anos."
     }
   },
   "planning": {

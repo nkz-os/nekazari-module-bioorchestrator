@@ -79,3 +79,17 @@ def test_lower_bound_never_negative(monkeypatch):
 def test_missing_file_gives_none(monkeypatch, tmp_path):
     monkeypatch.setattr(pn, "DATA_DIR", tmp_path)
     assert pn.normal_estimate("TRZAX", "rainfed", "ES", REGION) is None
+
+
+def test_validation_metric_derived_from_file(monkeypatch):
+    out = pn.normal_estimate("TRZAX", "rainfed", "ES", REGION)
+    assert out["validation"]["metric"] == (
+        "RMSE 0.76 t/ha out of sample (provincial statistics, 657 province-years 2008-2022); band covers 78 %")
+
+    def mutate(d):
+        d["validation"].update(rmse_t_ha=1.234, n=10, years="2010-2012")
+        d["coverage"] = 0.5
+    _patched(monkeypatch, mutate)
+    out = pn.normal_estimate("TRZAX", "rainfed", "ES", REGION)
+    assert out["validation"]["metric"] == (
+        "RMSE 1.23 t/ha out of sample (provincial statistics, 10 province-years 2010-2012); band covers 50 %")
