@@ -243,3 +243,12 @@ async def test_no_normal_out_of_scope_and_no_exception(regime, point, country):
 async def test_no_normal_for_another_crop():
     out = await _estimates(_env_at(NAVARRA), crop="TRZDU", recommendations=[])
     assert all(e["basis"] != "provincial_normal" for e in out["estimates"])
+
+
+async def test_normal_for_rainfed_barley_in_spain():
+    out = await _estimates(_env_at(NAVARRA), crop="HORVX", recommendations=[])
+    EstimatesResponse.model_validate(out)
+    first = out["estimates"][0]
+    assert first["basis"] == "provincial_normal"
+    assert first["validation"]["status"] == "validated"
+    assert first["validation"]["scope"] == "normal of the province for rainfed barley; not a forecast of this season"
