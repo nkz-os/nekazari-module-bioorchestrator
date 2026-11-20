@@ -183,7 +183,7 @@ def test_route_answers_the_contract(client, monkeypatch):
         "season": None, "phenology": None}))
     r = client.get(URL)
     assert r.status_code == 200
-    assert r.json() == {"contract_version": "2.11", "provider_id": "aquacrop_calendar", "state": "unavailable",
+    assert r.json() == {"contract_version": "2.12", "provider_id": "aquacrop_calendar", "state": "unavailable",
                         "unavailable": [{"provider_id": "aquacrop_calendar", "reason": "not_sown", "code": None}],
                         "season": None, "phenology": None, "experimental": None}
 
@@ -244,10 +244,10 @@ def _crops(species):
 
 
 def test_contract_2_10():
-    assert planning_models.CONTRACT_VERSION == "2.11"
+    assert planning_models.CONTRACT_VERSION == "2.12"
     assert "experimental" in planning_models.ParcelPhenologyResponse.model_fields
     ts = (__import__("pathlib").Path(__file__).parents[3] / "src" / "planning" / "types.ts").read_text()
-    assert "CONTRACT_VERSION = '2.11'" in ts
+    assert "CONTRACT_VERSION = '2.12'" in ts
 
 
 async def test_experimental_done_block_shape_and_operative_extras():

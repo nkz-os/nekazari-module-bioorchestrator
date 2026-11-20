@@ -11,7 +11,7 @@ from typing import Annotated, Any, Literal
 
 from pydantic import BaseModel, BeforeValidator, Field
 
-CONTRACT_VERSION = "2.11"
+CONTRACT_VERSION = "2.12"
 
 Verdict = Literal["fits", "caveats", "no_fit"]
 # Owner decision (2026-10-13): the regime vocabulary is rainfed | irrigated. The Spanish words that
@@ -207,7 +207,8 @@ class RegionalYield(BaseModel):
 class Estimate(BaseModel):
     provider_id: str
     provider_version: str
-    basis: Literal["parcel_history", "trial_evidence", "water_limited", "gap_corrected", "potential"]
+    basis: Literal["parcel_history", "trial_evidence", "water_limited", "gap_corrected", "potential",
+                   "provincial_normal"]
     unit: Literal["t/ha"] = "t/ha"
     percentiles: Percentiles | None = None  # null for range-only figures (1.1)
     range: Range | None = None  # 1.1: low-high without a median
