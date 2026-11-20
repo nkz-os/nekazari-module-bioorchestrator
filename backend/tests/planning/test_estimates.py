@@ -241,5 +241,5 @@ async def test_no_normal_out_of_scope_and_no_exception(regime, point, country):
 
 
 async def test_no_normal_for_another_crop():
-    out = await _estimates(_env_at(NAVARRA), crop="HORVX", recommendations=[])
+    out = await _estimates(_env_at(NAVARRA), crop="TRZDU", recommendations=[])
     assert all(e["basis"] != "provincial_normal" for e in out["estimates"])
