@@ -42,6 +42,7 @@ const dynamicKeys = (): string[] => [
   ...WEATHER_SOURCES.map((c) => `cropSimulation.weatherSource.${c}`),
   ...SOWING_SOURCES.map((c) => `cropSimulation.sowingSource.${c}`),
   ...['complete', 'in_season'].map((c) => `cropSimulation.status.${c}`),
+  ...['note', 'noteBarley'].map((c) => `cropSimulation.normal.${c}`),
   ...['spinup', 'assumed_fc'].map((c) => `cropSimulation.initialWater.${c}`),
 ];
 
@@ -66,5 +67,11 @@ describe.each([['ca', ca], ['eu', eu], ['fr', fr], ['pt', pt], ['es', es], ['en'
         ? Object.entries(n as object).flatMap(([k, v]) => flat(v, p ? `${p}.${k}` : k))
         : [p];
     expect(flat(lookup(dict, 'cropSimulation')).sort()).toEqual(flat(lookup(en, 'cropSimulation')).sort());
+  });
+});
+
+describe.each([['ca', ca], ['eu', eu], ['fr', fr], ['pt', pt]])('locale %s normal notes', (_name, dict) => {
+  it('has both crop notes of the provincial normal', () => {
+    expect(['note', 'noteBarley'].filter((c) => !exists(dict, `cropSimulation.normal.${c}`))).toEqual([]);
   });
 });
