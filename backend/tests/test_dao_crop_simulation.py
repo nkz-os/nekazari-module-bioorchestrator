@@ -460,3 +460,12 @@ def test_provincial_normal_of_the_simulated_point():
     assert cs._provincial_normal("wheat", "full", lat, lon, es_province_at(lat, lon)) is None
     assert cs._provincial_normal("sunflower", "rainfed", lat, lon, es_province_at(lat, lon)) is None
     assert cs._provincial_normal("wheat", "rainfed", 48.85, 2.35, None) is None
+
+
+def test_a_failing_provincial_normal_never_fails_the_simulation(mock_driver, tunis, monkeypatch, caplog):
+    def boom(*args, **kwargs):
+        raise KeyError("version")
+    monkeypatch.setattr("app.services.crop_simulation.normal_estimate", boom)
+    res = _run(GraphDAO(mock_driver), net=_Net(tunis))
+    assert res["provincial_normal"] is None and res["yield_t_ha"]
+    assert sum("crop_simulation_provincial_normal_failed" in r.message for r in caplog.records) == 1

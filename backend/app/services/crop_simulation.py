@@ -162,8 +162,20 @@ def _phenology(slug, irrigation, lat, lon, sowing_date, observed_days, analog_ye
 REGIME_OF_IRRIGATION = {"rainfed": "rainfed", "full": "irrigated"}
 
 
-def _provincial_normal(slug: str, irrigation: str, lat: float, lon: float, region: dict | None) -> dict | None:
-    """The provincial normal for the simulated crop and point, or None when out of its scope."""
+def _provincial_normal(slug: str, irrigation: str, lat: float, lon: float, region: dict | None,
+                       ctx: str = "") -> dict | None:
+    """The provincial normal for the simulated crop and point, or None when out of its scope.
+
+    Additive: a failure is logged and the block left out, never the simulation.
+    """
+    try:
+        return _provincial_normal_of(slug, irrigation, lat, lon, region)
+    except Exception:
+        logger.exception("crop_simulation_provincial_normal_failed %s", ctx)
+        return None
+
+
+def _provincial_normal_of(slug: str, irrigation: str, lat: float, lon: float, region: dict | None) -> dict | None:
     eppo = (get_species_info(slug) or {}).get("eppo_code")
     regime = REGIME_OF_IRRIGATION.get(irrigation)
     if not eppo or regime is None:
@@ -304,7 +316,7 @@ async def run_crop_simulation(
         "yield_t_ha": yield_t_ha,
         "potential_yield_t_ha": yc.to_basis(result["potential_yield_t_ha"], basis),
         "expected_yield": yc.expected_yield(crop.slug, irrigation, region, yield_t_ha),
-        "provincial_normal": _provincial_normal(crop.slug, irrigation, lat, lon, region),
+        "provincial_normal": _provincial_normal(crop.slug, irrigation, lat, lon, region, ctx),
         "water_gap_pct": result["water_gap_pct"],
         "harvest_date": result["harvest_date"],
         "ensemble": result["ensemble"],

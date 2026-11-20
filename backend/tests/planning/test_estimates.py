@@ -216,17 +216,16 @@ async def test_normal_comes_first_for_rainfed_wheat_in_spain():
     assert [e["basis"] for e in out["estimates"][1:]] == ["trial_evidence"]
 
 
-async def test_normal_alone_makes_the_status_ok_when_there_is_no_climate_or_no_trials():
+async def test_normal_does_not_change_the_status_when_there_is_no_climate_or_no_trials():
     out = await _estimates(_env_at(NAVARRA), recommendations=[])
-    assert out["status"] == "ok" and [e["basis"] for e in out["estimates"]] == ["provincial_normal"]
+    assert out["status"] == "no_trials" and [e["basis"] for e in out["estimates"]] == ["provincial_normal"]
     assert {"provider_id": "trial_evidence", "reason": "no_trials"} in out["unavailable"]
     dao = _dao([])
-    dao.get_parcel_environment.return_value = _env_at(NAVARRA)
-    dao.recommend_for_conditions.return_value = {"status": "needs_climate"}
+    dao.get_parcel_environment.return_value = {**_env_at(NAVARRA), "climate_class": None}
     out = await service.parcel_estimates(dao=dao, source=KnowledgeSource("global", None), parcel_id="p1",
                                          tenant_id="t", crop="TRZAX", variety=None, regime="rainfed",
                                          management="conventional", sowing_date=None)
-    assert out["status"] == "ok" and [e["basis"] for e in out["estimates"]] == ["provincial_normal"]
+    assert out["status"] == "needs_climate" and [e["basis"] for e in out["estimates"]] == ["provincial_normal"]
 
 
 @pytest.mark.parametrize("regime,point,country", [

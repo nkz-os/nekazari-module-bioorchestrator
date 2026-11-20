@@ -495,9 +495,10 @@ async def parcel_estimates(*, dao, source: KnowledgeSource, parcel_id: str, tena
     if ev["status"] != "ok":
         # needs_climate is already the status; for no_trials the trial provider also states its reason.
         reasons = [_no_trials_reason(variety, [])] if ev["status"] == "no_trials" else []
-        shown = visible([*normal, *([own_est] if own_est is not None else [])])
+        # The normal never changes the status: only a shown parcel-history row turns it "ok".
+        shown = visible([own_est] if own_est is not None else [])
         return {**base, "status": "ok" if shown else ev["status"], "unavailable": base["unavailable"] + reasons,
-                "estimates": shown, "disagreement": False}
+                "estimates": [*normal, *shown], "disagreement": False}
     gaps = list(ev["data_gaps"])
     # Credit only the sources of the rows that feed the number (same filter as trial_estimate).
     attributions = attach_attributions({}, rows_source_ids(usable_rows(ev["rows"], variety)))["attributions"]
