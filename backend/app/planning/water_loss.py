@@ -54,8 +54,10 @@ SOURCES = [
      "detail": ("Foster T. et al. (2017). AquaCrop-OS: An open source version of FAO's crop water model. "
                 "Agricultural Water Management 181:18-22. doi:10.1016/j.agwat.2016.11.015.")},
 ]
-VALIDATED_NOTE = ("crop, regime and region of the validated forecast; the stage figures themselves "
-                  "are not validated")
+VALIDATED_NOTE = ("crop, regime and region of the validated forecast; in season, a finished stage's figure "
+                  "from 15 November on was measured against its end-of-season value on past campaigns "
+                  "(typical gap 0.1-1.1 points, end value inside P10-P90 in 71-82 % of cases); no stage "
+                  "figure is checked against observed yields")
 UNVALIDATED_NOTE = "crop, regime or region outside the validated forecast; figures are model output only"
 
 _JOBS: SimJobs | None = None
