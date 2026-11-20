@@ -55,8 +55,8 @@ SOURCES = [
                 "Agricultural Water Management 181:18-22. doi:10.1016/j.agwat.2016.11.015.")},
 ]
 VALIDATED_NOTE = ("crop, regime and region of the validated forecast; in season, a finished stage's figure "
-                  "from 1 December on was measured against its end-of-season value on past campaigns "
-                  "(typical gap 0.1-1.1 points, end value inside P10-P90 in 72-82 % of cases); no stage "
+                  "from 15 November on was measured against its end-of-season value on past campaigns "
+                  "(typical gap 0.1-1.1 points, end value inside P10-P90 in 71-82 % of cases); no stage "
                   "figure is checked against observed yields")
 UNVALIDATED_NOTE = "crop, regime or region outside the validated forecast; figures are model output only"
 
