@@ -134,7 +134,7 @@
     "normal": {
       "title": "Normal de la província ({{region}})",
       "titleNoRegion": "Normal de la província",
-      "note": "Mitjana real de la província en els anys publicats; no és la previsió d'aquesta campanya.",
+      "note": "Mitjana real del blat de secà de la província (tou i dur junts) en els anys publicats; no és la previsió d'aquesta campanya.",
       "validatedBadge": "Validada",
       "validation": "Validada: error mitjà {{rmse}} t/ha en anys no usats per calcular-la; la banda cobreix el {{pct}} % dels anys."
     }

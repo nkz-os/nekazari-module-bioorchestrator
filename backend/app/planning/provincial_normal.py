@@ -2,7 +2,8 @@
 
 Only for rainfed bread wheat in Spain with a resolved province that has enough years of
 official statistics. The band is the measured spread of the errors of that mean (method and
-figures: the data file's ``validation``). It is the normal of the province, not a forecast
+figures: the data file's ``validation``). It is the normal of the province for
+rainfed wheat, soft and durum together (the yearbook does not split them for rainfed land), not a forecast
 of the season. Pure: the only I/O is the cached data file; anything out of scope gives None.
 """
 
@@ -24,7 +25,7 @@ DATA_FILE = "wheat_es_province_normal.json"
 # backend/data locally; /app/data in the image.
 DATA_DIR = Path(__file__).resolve().parents[2] / "data"
 
-VALIDATION_SCOPE = "normal of the province, not a forecast of this season"
+VALIDATION_SCOPE = "normal of the province for rainfed wheat, soft and durum together; not a forecast of this season"
 
 
 @functools.cache
