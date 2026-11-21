@@ -139,6 +139,24 @@ describe('CropSimulationResultView (es)', () => {
     expect(t).not.toContain(WHEAT_NOTE);
   });
 
+  it('barley without a calibrated expected yield still names the province of its normal', () => {
+    const BURGOS = { scheme: 'es_province', code: '09', name: 'Burgos' };
+    const r: CropSimulationResult = { ...base, crop_slug: 'barley', provincial_normal: normalOf(),
+      expected_yield: { status: 'unavailable', reason: 'no_calibration' },
+      inputs: { ...base.inputs, phenology: { source: 'builtin', region: BURGOS, params: {} } } };
+    const t = textOf(renderToStaticMarkup(<CropSimulationResultView result={r} />));
+    expect(t).toContain('Normal de la provincia (Burgos)');
+  });
+
+  it('a point with no province keeps the title without a region', () => {
+    const r: CropSimulationResult = { ...base, crop_slug: 'barley', provincial_normal: normalOf(),
+      expected_yield: { status: 'unavailable', reason: 'no_calibration' },
+      inputs: { ...base.inputs, phenology: { source: 'builtin', region: null, params: {} } } };
+    const t = textOf(renderToStaticMarkup(<CropSimulationResultView result={r} />));
+    expect(t).toContain('Normal de la provincia');
+    expect(t).not.toContain('Normal de la provincia (');
+  });
+
   it('durum wheat keeps the wheat note', () => {
     const r: CropSimulationResult = { ...base, crop_slug: 'durum_wheat', provincial_normal: normalOf() };
     const t = textOf(renderToStaticMarkup(<CropSimulationResultView result={r} />));
