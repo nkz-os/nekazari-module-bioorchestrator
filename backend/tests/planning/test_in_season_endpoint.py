@@ -152,10 +152,30 @@ async def test_opened_combination_runs_and_answers_an_unvalidated_ceiling(specie
                                                    "coverage": 0.8}})
     got = await call(jobs, load=loader(cycles=cycles, crops=crops))
     assert got["state"] == "done" and got["season"]["crop"] == species and got["season"]["regime"] == regime
-    assert [e["basis"] for e in got["estimates"]] == ["water_limited"]
-    assert all(e["validation"]["status"] == "unvalidated" and e["validation"]["metric"] is None
+    normal = [e for e in got["estimates"] if e["basis"] == "provincial_normal"]
+    assert [e["basis"] for e in got["estimates"] if e["basis"] != "provincial_normal"] == ["water_limited"]
+    # Only rainfed barley has a normal, and it comes first and stays validated.
+    assert bool(normal) == (species == "HORVX" and regime == "rainfed")
+    assert all(e["basis"] == "provincial_normal" or
+               (e["validation"]["status"] == "unvalidated" and e["validation"]["metric"] is None)
                for e in got["estimates"])
+    assert all(e["validation"]["status"] == "validated" for e in normal)
     assert not any(e["basis"] == "gap_corrected" for e in got["estimates"])
+
+
+async def test_barley_normal_first_and_model_rows_stay_unvalidated():
+    crops = {CROP_ID: {"id": CROP_ID, "species": "HORVX", "irrigationRegime": "rainfed"}}
+    cycles = {"current": {**SOWN["current"], "species": "HORVX"}}
+    jobs = FakeJobs()
+    out = await call(jobs, load=loader(cycles=cycles, crops=crops))
+    assert _bases(out) == ["provincial_normal"]
+    assert out["estimates"][0]["validation"]["scope"] == (
+        "normal of the province for rainfed barley; not a forecast of this season")
+    _done(jobs, out, RESULT)
+    got = await call(jobs, load=loader(cycles=cycles, crops=crops))
+    assert _bases(got) == ["provincial_normal", "water_limited"]
+    assert got["estimates"][0]["validation"]["status"] == "validated"
+    assert got["estimates"][1]["validation"]["status"] == "unvalidated"
 
 
 async def test_opened_complete_season_is_unvalidated():
@@ -165,8 +185,9 @@ async def test_opened_complete_season_is_unvalidated():
     out = await call(jobs, load=loader(cycles=cycles, crops=crops))
     _done(jobs, out, {**RESULT, "status": "complete", "yield_t_ha": 4.2, "ensemble": None})
     got = await call(jobs, load=loader(cycles=cycles, crops=crops))
-    assert got["season"]["status"] == "complete" and got["estimates"][0]["n"] == 1
-    assert got["estimates"][0]["validation"]["status"] == "unvalidated"
+    assert got["season"]["status"] == "complete"
+    model = [e for e in got["estimates"] if e["basis"] != "provincial_normal"]
+    assert model[0]["n"] == 1 and model[0]["validation"]["status"] == "unvalidated"
 
 
 async def test_a_closed_combination_starts_nothing():

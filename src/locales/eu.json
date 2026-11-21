@@ -135,6 +135,7 @@
       "title": "Probintziako normala ({{region}})",
       "titleNoRegion": "Probintziako normala",
       "note": "Probintziako lehorreko gariaren benetako batez bestekoa (gari biguna eta gogorra batera) argitaratutako urteetan; ez da kanpaina honen aurreikuspena.",
+      "noteBarley": "Probintziako lehorreko garagarraren benetako batez bestekoa argitaratutako urteetan; ez da kanpaina honen aurreikuspena.",
       "validatedBadge": "Balioztatua",
       "validation": "Balioztatua: batez besteko errorea {{rmse}} t/ha kalkulatzeko erabili ez diren urteetan; bandak urteen % {{pct}} hartzen du."
     }

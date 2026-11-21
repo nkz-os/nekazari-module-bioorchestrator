@@ -462,6 +462,18 @@ def test_provincial_normal_of_the_simulated_point():
     assert cs._provincial_normal("wheat", "rainfed", 48.85, 2.35, None) is None
 
 
+def test_provincial_normal_of_barley_and_unlisted_crops():
+    from app.services import crop_simulation as cs
+    from app.services.region_lookup import es_province_at
+    lat, lon = 42.85, -1.55
+    region = es_province_at(lat, lon)
+    barley = cs._provincial_normal("barley", "rainfed", lat, lon, region)
+    assert barley["validation"]["scope"] == "normal of the province for rainfed barley; not a forecast of this season"
+    assert cs._provincial_normal("barley", "full", lat, lon, region) is None
+    assert cs._provincial_normal("durum_wheat", "rainfed", lat, lon, region) is None
+    assert cs._provincial_normal("no_such_crop", "rainfed", lat, lon, region) is None
+
+
 def test_a_failing_provincial_normal_never_fails_the_simulation(mock_driver, tunis, monkeypatch, caplog):
     def boom(*args, **kwargs):
         raise KeyError("version")

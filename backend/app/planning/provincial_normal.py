@@ -1,10 +1,11 @@
 """Provincial normal: the mean official yield of a province, as an estimate (contract 2.12).
 
-Only for rainfed bread wheat in Spain with a resolved province that has enough years of
-official statistics. The band is the measured spread of the errors of that mean (method and
-figures: the data file's ``validation``). It is the normal of the province for
-rainfed wheat, soft and durum together (the yearbook does not split them for rainfed land), not a forecast
-of the season. Pure: the only I/O is the cached data file; anything out of scope gives None.
+Only for rainfed wheat (soft and durum together: the yearbook does not split them for rainfed
+land) and rainfed barley in Spain, with a resolved province that has enough years of official
+statistics. The band is the measured spread of the errors of that mean (method and figures:
+the data file's ``validation``). Each crop has its own file, with its own ``scope``; it is the
+normal of the province, not a forecast of the season. Pure: the only I/O is the cached data
+files; anything out of scope gives None.
 """
 
 from __future__ import annotations
@@ -21,20 +22,22 @@ logger = logging.getLogger(__name__)
 
 PROVIDER_ID = "provincial_normal"
 SOURCE_ID = "mapa_anuario_estadistica"
-DATA_FILE = "wheat_es_province_normal.json"
+# One data file per crop (EPPO code); each is loaded, cached and fails on its own.
+DATA_FILES = {"TRZAX": "wheat_es_province_normal.json", "HORVX": "barley_es_province_normal.json"}
 # backend/data locally; /app/data in the image.
 DATA_DIR = Path(__file__).resolve().parents[2] / "data"
 
-VALIDATION_SCOPE = "normal of the province for rainfed wheat, soft and durum together; not a forecast of this season"
-
 
 @functools.cache
-def _normal_data() -> dict | None:
+def _normal_data(crop_eppo: str) -> dict | None:
+    name = DATA_FILES.get(crop_eppo)
+    if name is None:
+        return None
     try:
-        return json.loads((DATA_DIR / DATA_FILE).read_text(encoding="utf-8"))
+        return json.loads((DATA_DIR / name).read_text(encoding="utf-8"))
     except (OSError, ValueError):
-        # Safe state: no normal is offered.
-        logger.exception("provincial_normal_unavailable file=%s", DATA_FILE)
+        # Safe state: no normal is offered for this crop (logged once: the result is cached).
+        logger.exception("provincial_normal_unavailable file=%s", name)
         return None
 
 
@@ -48,7 +51,7 @@ def _validation_metric(data: dict) -> str:
 def normal_estimate(crop_eppo: str, regime: str | None, country: str | None,
                     region: dict | None) -> dict[str, Any] | None:
     """``Estimate``-shaped dict for the province of the parcel, or None when out of scope."""
-    data = _normal_data()
+    data = _normal_data(crop_eppo)
     if data is None or region is None:
         return None
     if (crop_eppo != data["crop"] or regime != data["regime"] or country != data["country"]
@@ -68,6 +71,6 @@ def normal_estimate(crop_eppo: str, regime: str | None, country: str | None,
         "coverage": data["coverage"],
         "moisture": {"basis": "commercial", "pct": data["grain_moisture_pct"]},
         "n": prov["n_years"], "n_kind": "years",
-        "validation": {"status": "validated", "metric": _validation_metric(data), "scope": VALIDATION_SCOPE},
+        "validation": {"status": "validated", "metric": _validation_metric(data), "scope": data["scope"]},
         "warnings": [], "attributions": get_attributions([SOURCE_ID]), "graph_id": None,
     }

@@ -123,6 +123,49 @@ describe('CropSimulationResultView (es)', () => {
     expect(t.indexOf('Normal de la provincia')).toBeLessThan(t.indexOf('Esperado en tu zona'));
   });
 
+  const normalOf = (): NonNullable<CropSimulationResult['provincial_normal']> => ({
+    provider_id: 'provincial_normal', provider_version: 'v1', basis: 'provincial_normal', unit: 't/ha',
+    percentiles: { p10: 3.1, p50: 5.2, p90: 7.2 }, range: { low: 3.1, high: 7.2 }, coverage: 0.78,
+    moisture: { basis: 'commercial', pct: 13 }, n: 18, n_kind: 'years',
+    validation: { status: 'validated', metric: 'm', scope: 's' }, warnings: [], attributions: [], graph_id: null,
+  });
+  const WHEAT_NOTE = 'Media real del trigo de secano';
+  const BARLEY_NOTE = 'Media real de la cebada de secano de la provincia en los años publicados; no es la previsión de esta campaña.';
+
+  it('barley shows the barley note, not the wheat one', () => {
+    const r: CropSimulationResult = { ...base, crop_slug: 'barley', provincial_normal: normalOf() };
+    const t = textOf(renderToStaticMarkup(<CropSimulationResultView result={r} />));
+    expect(t).toContain(BARLEY_NOTE);
+    expect(t).not.toContain(WHEAT_NOTE);
+  });
+
+  it('durum wheat keeps the wheat note', () => {
+    const r: CropSimulationResult = { ...base, crop_slug: 'durum_wheat', provincial_normal: normalOf() };
+    const t = textOf(renderToStaticMarkup(<CropSimulationResultView result={r} />));
+    expect(t).toContain(WHEAT_NOTE);
+    expect(t).not.toContain('cebada');
+  });
+
+  it('the validation line carries each crop\'s own measured error', () => {
+    const line = (slug: string) => textOf(renderToStaticMarkup(
+      <CropSimulationResultView result={{ ...base, crop_slug: slug, provincial_normal: normalOf() }} />));
+    expect(line('barley')).toContain('error medio 0.78 t/ha');
+    expect(line('wheat')).toContain('error medio 0.76 t/ha');
+    expect(line('durum_wheat')).toContain('error medio 0.76 t/ha');
+    const unknown = line('maize');
+    expect(unknown).not.toContain('en años no usados para calcularla');
+    expect(unknown).toContain('Validada');
+  });
+
+  it('an unknown crop shows the normal without any crop note', () => {
+    const r: CropSimulationResult = { ...base, crop_slug: 'maize', provincial_normal: normalOf() };
+    const t = textOf(renderToStaticMarkup(<CropSimulationResultView result={r} />));
+    expect(t).toContain('3.1 – 7.2 t/ha');
+    expect(t).not.toContain(WHEAT_NOTE);
+    expect(t).not.toContain('cebada');
+    expect(t).not.toContain('cropSimulation.normal');
+  });
+
   it('a normal that is not validated shows no validation badge or line', () => {
     const r: CropSimulationResult = { ...base, provincial_normal: {
       provider_id: 'provincial_normal', provider_version: 'v1', basis: 'provincial_normal', unit: 't/ha',

@@ -135,6 +135,7 @@
       "title": "Normale de la province ({{region}})",
       "titleNoRegion": "Normale de la province",
       "note": "Moyenne réelle du blé pluvial de la province (tendre et dur confondus) sur les années publiées ; ce n'est pas la prévision de cette campagne.",
+      "noteBarley": "Moyenne réelle de l'orge pluviale de la province sur les années publiées ; ce n'est pas la prévision de cette campagne.",
       "validatedBadge": "Validée",
       "validation": "Validée : erreur moyenne {{rmse}} t/ha sur des années non utilisées pour la calculer ; la bande couvre {{pct}} % des années."
     }
