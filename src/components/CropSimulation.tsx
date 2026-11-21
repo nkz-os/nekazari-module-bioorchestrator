@@ -93,8 +93,10 @@ const NORMAL_NOTE_KEYS: Record<string, string> = {
 function ProvincialNormalCard({ result, t }: { result: CropSimulationResult; t: T }) {
   const n = result.provincial_normal;
   if (!n?.range) return null;
-  // The region name comes from the calibrated expected yield when it has one; otherwise the title has no region.
-  const region = result.expected_yield.status === 'ok' ? result.expected_yield.region.name : null;
+  // The province the backend resolved for this point, the one the normal is for (also when the crop
+  // has no calibrated expected yield); results without it fall back to the expected yield's region.
+  const region = result.inputs.phenology?.region?.name
+    ?? (result.expected_yield.status === 'ok' ? result.expected_yield.region.name : null);
   // The note names the crop the normal is for; a crop without a known note gets none.
   const noteKey = NORMAL_NOTE_KEYS[result.crop_slug];
   const rmse = NORMAL_RMSE_T_HA[result.crop_slug];
