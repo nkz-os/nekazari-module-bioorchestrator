@@ -74,6 +74,30 @@ async def test_unsown_parcel_never_starts_a_job():
     assert jobs.started == []
 
 
+@pytest.mark.parametrize("cycles", [None, ["x"], {"current": "x"},
+                                    {"current": {**SOWN["current"], "start": "2025-10-20"}}])
+async def test_an_unreadable_cycle_is_a_failure_so_a_stored_forecast_survives(cycles):
+    jobs = FakeJobs()
+    out = await call(jobs, load=loader(cycles=cycles))
+    assert out["state"] == "failed" and out["estimates"] == [] and out["job_id"] is None
+    assert out["unavailable"] == [{"provider_id": "aquacrop", "reason": "cycles_unavailable",
+                                   "code": "cycles_unavailable"}]
+    assert jobs.started == []
+
+
+@pytest.mark.parametrize("cycles,reason", [
+    ({"current": None}, "no_committed_crop"),
+    ({"current": None, "pending": SOWN["current"]}, "not_sown"),
+    ({"current": None, "previous": {**SOWN["current"], "end": {"date": "2026-03-01", "provenance": "actual"}}},
+     "season_ended"),
+    ({"current": {**SOWN["current"], "crop_id": None, "species": "BRSNN"}}, "not_validated"),
+])
+async def test_what_the_cycle_really_says_stays_unavailable(cycles, reason):
+    out = await call(FakeJobs(), load=loader(cycles=cycles))
+    assert out["state"] == "unavailable"
+    assert out["unavailable"] == [{"provider_id": "aquacrop", "reason": reason}]
+
+
 async def test_a_sown_parcel_starts_the_shared_simulation_job():
     jobs = FakeJobs()
     out = await call(jobs)

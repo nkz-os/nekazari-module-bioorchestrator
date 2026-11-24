@@ -271,7 +271,8 @@ async def parcel_in_season(*, dao, jobs, tenant_id: str, parcel_id: str, today: 
     """State of the in-season forecast, starting or joining its day-keyed simulation job.
 
     Idempotent (the caller polls). Inputs are resolved from facts on every call (no light poll):
-    a stale job id never answers for other inputs. Gaps answer ``unavailable`` without a job.
+    a stale job id never answers for other inputs. Gaps answer ``unavailable`` without a job; a
+    parcel or a crop cycle that cannot be read answers ``failed``.
     """
     today = today or datetime.now(UTC).date()
     try:
@@ -287,6 +288,10 @@ async def parcel_in_season(*, dao, jobs, tenant_id: str, parcel_id: str, today: 
         logger.warning("in_season_parcel_unavailable tenant=%s parcel=%s code=%s", tenant_id, parcel_id, code)
         return _failed("parcel_unavailable", code)
     inputs = resolve_in_season(parcel, crops, cycles, today)
+    if inputs == "cycles_unavailable":
+        # A read failure, like the parcel's: not the state of the crop, so the caller keeps what it has.
+        logger.warning("in_season_cycles_unavailable tenant=%s parcel=%s", tenant_id, parcel_id)
+        return _failed(inputs, inputs)
     if isinstance(inputs, str):
         return _unavailable(inputs)
     normal = _normal_of(parcel, inputs)
