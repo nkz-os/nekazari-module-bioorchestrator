@@ -3646,6 +3646,8 @@ class GraphDAO:
         import httpx
         from fastapi import HTTPException
 
+        from app.planning.late_frost import frost_by_stage
+
         parcel_id = _to_parcel_urn(parcel_id)
         orion = OrionClient(tenant_id)
         try:
@@ -3702,7 +3704,8 @@ class GraphDAO:
             phenology = await self.get_phenology_params(
                 species=species_query, cultivar=variety_name, management=management, gdd=gdd,
             )
-            thermal = await self.get_heat_tolerance(species_query)
+            # The graph names its species by the registry slug.
+            thermal = await self.get_heat_tolerance(species_slug) or {}
             soil_req = await self.get_soil_suitability(species_slug)
 
             soil_actual = await get_parcel_soil_properties(parcel_id, tenant_id)
@@ -3755,7 +3758,7 @@ class GraphDAO:
             "management": management,
             "season": {"start": season_start, "start_provenance": start_provenance, "end": season_end, "gdd_accumulated": gdd, "current_stage": phenology.get("stage") if phenology else None},
             "phenology": {"stage": phenology.get("stage"), "kc": phenology.get("kc"), "ky": phenology.get("ky"), "d1": phenology.get("d1"), "d2": phenology.get("d2"), "mds_ref": phenology.get("mds_ref"), "base_temp": phenology.get("stage_base_temp"), "stage_gdd_min": phenology.get("stage_gdd_min"), "stage_gdd_max": phenology.get("stage_gdd_max")} if phenology else None,
-            "thermal_limits": {"heat_damage_c": thermal.get("heat_damage_c"), "frost_damage_c": thermal.get("frost_damage_c"), "heat_accum_hours": thermal.get("heat_accum_hours")} if thermal else None,
+            "thermal_limits": {"heat_damage_c": thermal.get("heat_damage_c"), "frost_damage_c": thermal.get("frost_damage_c"), "heat_accum_hours": thermal.get("heat_accum_hours"), "frost_by_stage": frost_by_stage(species_slug)},
             "soil": {"requirements": {"ph_min": soil_req.get("ph_min") if soil_req else None, "ph_max": soil_req.get("ph_max") if soil_req else None, "textures": soil_req.get("textures", []) if soil_req else [], "drainage": soil_req.get("drainage") if soil_req else None, "depth_min_cm": soil_req.get("depth_min_cm") if soil_req else None, "salinity_max_ds_m": soil_req.get("salinity_max_ds_m") if soil_req else None}, "actual": soil_actual, "suitability": soil_suitability},
             "soil_sensors": soil_sensors,
             "phenology_source": phenology_source,
