@@ -26,8 +26,11 @@ ALFALFA = {"cycles": [{"role": "main_crop", "crop": "alfalfa", "sowing_start": "
                        "expected_termination": "2030-06-30"}]}
 
 
-def _orion(monkeypatch, crops, parcel=True):
-    """An OrionClient stand-in: one parcel read, then one AgriCrop listing."""
+NO_CYCLES = {"cycles": []}
+
+
+def _orion(monkeypatch, crops, parcel=True, timeline=NO_CYCLES):
+    """An OrionClient stand-in: one parcel read, then one AgriCrop listing; plus the crop-cycle timeline."""
     client = AsyncMock()
     if not parcel:
         request = httpx.Request("GET", "http://orion.invalid/entities")
@@ -35,6 +38,8 @@ def _orion(monkeypatch, crops, parcel=True):
             "orion", request=request, response=httpx.Response(404, request=request))
     client.query_entities.return_value = crops
     monkeypatch.setattr(plan_write, "OrionClient", lambda tenant_id: client)
+    client.timeline = AsyncMock(return_value=timeline)
+    monkeypatch.setattr(plan_write, "fetch_crop_cycles", client.timeline, raising=False)
     return client
 
 
@@ -511,3 +516,73 @@ async def test_an_undated_wheat_still_occupies_its_own_campaign(monkeypatch):
                      {"role": "main_crop", "crop": "barley", "sowing_start": "2027-10-25"}], campaign=2028)
     with pytest.raises(plan_write.PlanError, match="cycles_overlap"):
         await plan_write.write_plan(tenant_id="t", parcel_urn=URN, plan=plan, today=TODAY)
+
+
+# --- a crop already in the field is never rewritten: registering the sowing leaves the entity `planned` --------
+
+SOWN = {"id": "urn:ngsi-ld:AgriCrop:t:p1:2027:0", "status": "planned", "cropSeason": "2027", "species": "TRZAX",
+        "sowingWindowStart": "2026-11-01"}
+
+
+def _timeline(provenance, crop_id=SOWN["id"], status="planned"):
+    return {"cycles": [{"crop_id": crop_id, "status": status, "species": "TRZAX",
+                        "start": {"date": "2026-11-05", "provenance": provenance}}]}
+
+
+@pytest.mark.parametrize("provenance", ["actual", "declared"])
+async def test_a_sown_cycle_refuses_the_plan_and_nothing_is_deleted(monkeypatch, provenance):
+    client = _orion(monkeypatch, [SOWN], timeline=_timeline(provenance))
+    with pytest.raises(plan_write.PlanError) as e:
+        await plan_write.write_plan(tenant_id="t", parcel_urn=URN, plan=_wheat_plan(), today=TODAY)
+    assert (e.value.code, e.value.status) == ("campaign_started", 409)
+    client.delete_entity.assert_not_awaited()
+    client.create_entity.assert_not_awaited()
+    client.timeline.assert_awaited_once_with(URN, "t")
+
+
+async def test_a_sown_cover_protects_the_planned_main_crop_of_its_campaign(monkeypatch):
+    cover = {**SOWN, "id": "urn:ngsi-ld:AgriCrop:t:p1:2027:1", "species": "VICSA"}
+    client = _orion(monkeypatch, [SOWN, cover], timeline=_timeline("actual", cover["id"]))
+    with pytest.raises(plan_write.PlanError) as e:
+        await plan_write.write_plan(tenant_id="t", parcel_urn=URN, plan=_wheat_plan(), today=TODAY)
+    assert e.value.code == "campaign_started"
+    client.delete_entity.assert_not_awaited()
+
+
+@pytest.mark.parametrize("provenance", ["planned", None])
+async def test_a_cycle_that_is_only_a_plan_is_rewritten(monkeypatch, provenance):
+    client = _orion(monkeypatch, [SOWN], timeline=_timeline(provenance))
+    await plan_write.write_plan(tenant_id="t", parcel_urn=URN, plan=_wheat_plan(), today=TODAY)
+    client.delete_entity.assert_awaited_once_with(SOWN["id"])
+    assert client.create_entity.await_count == 1
+
+
+async def test_a_sown_cycle_of_another_campaign_does_not_refuse_the_plan(monkeypatch):
+    client = _orion(monkeypatch, [SOWN], timeline=_timeline("actual", "urn:ngsi-ld:AgriCrop:t:p1:2026:0"))
+    await plan_write.write_plan(tenant_id="t", parcel_urn=URN, plan=_wheat_plan(), today=TODAY)
+    assert client.create_entity.await_count == 1
+
+
+@pytest.mark.parametrize("timeline", [None, {}, {"cycles": None}, {"cycles": ["x"]}, ["x"],
+                                      {"cycles": [{"crop_id": SOWN["id"], "start": "2026-11-05"}]}])
+async def test_an_unreadable_timeline_refuses_to_rewrite(monkeypatch, timeline):
+    # Without the timeline nobody knows what is sown: nothing is deleted.
+    client = _orion(monkeypatch, [SOWN], timeline=timeline)
+    with pytest.raises(plan_write.PlanError) as e:
+        await plan_write.write_plan(tenant_id="t", parcel_urn=URN, plan=_wheat_plan(), today=TODAY)
+    assert (e.value.code, e.value.status) == ("cycles_unavailable", 503)
+    client.delete_entity.assert_not_awaited()
+    client.create_entity.assert_not_awaited()
+
+
+async def test_a_first_plan_needs_no_timeline(monkeypatch):
+    client = _orion(monkeypatch, [], timeline=None)
+    await plan_write.write_plan(tenant_id="t", parcel_urn=URN, plan=_wheat_plan(), today=TODAY)
+    assert client.create_entity.await_count == 1
+    client.timeline.assert_not_awaited()
+
+
+async def test_a_cancelled_cycle_with_a_recorded_sowing_can_be_planned_over(monkeypatch):
+    client = _orion(monkeypatch, [{**SOWN, "status": "cancelled"}], timeline=_timeline("actual", status="cancelled"))
+    await plan_write.write_plan(tenant_id="t", parcel_urn=URN, plan=_wheat_plan(), today=TODAY)
+    assert client.create_entity.await_count == 1

@@ -4,10 +4,11 @@ Only planned cycles are written. ``hasAgriCrop`` on the parcel is left to the pl
 reconciler, which sets it when a sowing happens. An annual must end in the campaign; a
 herbaceous perennial (alfalfa) must start in it and may end up to MAX_PERENNIAL_YEARS later,
 and while it lasts no other campaign can plan over it (nor can it be planned over later ones).
-A campaign with a started cycle (anything other than planned or cancelled) is refused: what
-happened in the field is changed from field operations, not from the plan. Rewriting a plan
-deletes and recreates its planned cycles (same deterministic ids) and deletes the planned
-cycles the new plan no longer has: they were intentions that never started.
+A campaign with a started cycle (anything other than planned or cancelled, or sown or declared
+according to the crop-cycle timeline) is refused: what happened in the field is changed from field
+operations, not from the plan. If the timeline cannot be read, an existing plan is not rewritten.
+Rewriting a plan deletes and recreates its planned cycles (same deterministic ids) and deletes the
+planned cycles the new plan no longer has: they were intentions that never started.
 
 Every cycle of the parcel is read once. A cycle of another season (or of none: the legacy
 assign-crop flow writes no season) conflicts with the plan only if its DATE INTERVAL overlaps one
@@ -17,6 +18,7 @@ at the close of the campaign it started in, unless it is a perennial that is not
 """
 from __future__ import annotations
 
+import logging
 import re
 from datetime import date, timedelta
 from itertools import pairwise
@@ -25,12 +27,22 @@ import httpx
 from nkz_platform_sdk.orion import OrionClient
 
 from app.graph.crop_plan import build_segment_entity
-from app.planning.history import AUTUMN_FROM_MONTH, campaign_of_start, iso_date, plain
+from app.planning.history import (
+    AUTUMN_FROM_MONTH,
+    campaign_of_start,
+    cycles_of,
+    iso_date,
+    plain,
+)
 from app.planning.models import PlanIn
 from app.planning.service import PARCEL_URN_RE, InvalidParcelId, UnknownCrop, crop_code
+from app.services.crop_cycles_client import fetch_crop_cycles
 from app.species_registry import get_lifecycle, is_cover_only, is_woody, resolve_species
 
+logger = logging.getLogger(__name__)
+
 _REWRITABLE = {"planned", "cancelled"}
+_SOWN = {"actual", "declared"}
 _CLOSED = {"harvested", "terminated"}
 _START_KEYS = ("actualPlantingDate", "plantingDate", "sowingWindowStart")
 _END_KEYS = ("actualTerminationDate", "harvestDate", "terminationDate", "expectedTerminationDate")
@@ -243,6 +255,23 @@ def _check_conflicts(cycles: list[dict], plan: PlanIn) -> list[dict]:
     return mine
 
 
+async def _refuse_sown(tenant_id: str, parcel_urn: str, existing: list[dict]) -> None:
+    """Refuse to rewrite cycles when one of them is already in the field.
+
+    Registering a sowing leaves the entity ``planned``: only the crop-cycle timeline knows it was sown.
+    A timeline that cannot be read refuses too, because rewriting deletes.
+    """
+    payload = await fetch_crop_cycles(parcel_urn, tenant_id)
+    cycles = payload.get("cycles") if isinstance(payload, dict) else None
+    if not isinstance(cycles, list) or not all(
+            isinstance(c, dict) and isinstance(c.get("start") or {}, dict) for c in cycles):
+        logger.warning("plan_write_cycles_unavailable tenant=%s parcel=%s", tenant_id, parcel_urn)
+        raise PlanError("cycles_unavailable", 503)
+    sown = {c.get("crop_id") for c in cycles_of(payload) if (c.get("start") or {}).get("provenance") in _SOWN}
+    if any(e["id"] in sown for e in existing):
+        raise PlanError("campaign_started", 409)
+
+
 async def write_plan(*, tenant_id: str, parcel_urn: str, plan: PlanIn, today: date) -> dict:
     # The id goes into an Orion path and a ``q`` filter: never trust the caller to have checked it.
     if not isinstance(parcel_urn, str) or not PARCEL_URN_RE.fullmatch(parcel_urn):
@@ -254,6 +283,8 @@ async def write_plan(*, tenant_id: str, parcel_urn: str, plan: PlanIn, today: da
     try:
         await _require_parcel(client, parcel_urn)
         existing = _check_conflicts(await _parcel_cycles(client, parcel_urn), plan)
+        if existing:
+            await _refuse_sown(tenant_id, parcel_urn, existing)
         existing_ids = {e["id"] for e in existing}
         written = []
         for seq, segment in enumerate(segments):
