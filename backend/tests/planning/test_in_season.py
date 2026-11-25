@@ -6,6 +6,7 @@ import pytest
 from app.planning.in_season import (
     MAX_SEASON_DAYS,
     InSeasonInputs,
+    resolve_finished_crop,
     resolve_in_season,
     resolve_sown_crop,
 )
@@ -185,3 +186,25 @@ def test_sown_crop_carries_the_recorded_variety():
     assert resolve_sown_crop(PARCEL, CROPS, c, TODAY).variety == "Synthetic"
     c["current"]["variety"] = 7
     assert resolve_sown_crop(PARCEL, CROPS, c, TODAY).variety is None
+
+
+# ---- a plan stores no end date for an annual: its harvest still ends the season (platform SDK 0.23)
+def _timeline_with_harvest(*extra_ops, at):
+    from nkz_platform_sdk.crop_cycles import resolve_crop_cycles
+    parcel = PARCEL["id"]
+    planned = {"id": CROP_ID, "hasAgriParcel": parcel, "status": "planned", "cropRole": "main_crop",
+               "species": "TRZAX", "cropLifecycle": "annual", "sowingWindowStart": "2025-10-15"}
+    ops = [{"id": "s", "hasAgriParcel": parcel, "operationType": "sowing", "status": "completed",
+            "endedAt": "2025-10-20"}, *extra_ops]
+    return resolve_crop_cycles(parcel, [planned], ops, at).to_dict()
+
+
+def test_the_harvest_of_an_annual_planned_without_an_end_ends_its_season():
+    harvest = {"id": "h", "hasAgriParcel": PARCEL["id"], "operationType": "harvesting", "status": "completed",
+               "endedAt": "2026-07-10"}
+    after = date(2026, 8, 15)
+    assert resolve_in_season(PARCEL, CROPS, _timeline_with_harvest(at=date(2026, 3, 15)), TODAY).eppo == "TRZAX"
+    cycles = _timeline_with_harvest(harvest, at=after)
+    assert resolve_in_season(PARCEL, CROPS, cycles, after) == "season_ended"
+    finished = resolve_finished_crop(PARCEL, CROPS, cycles, after)
+    assert (finished.eppo, finished.harvest_date) == ("TRZAX", date(2026, 7, 10))
