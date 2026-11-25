@@ -42,6 +42,7 @@ class StageThreshold:
     stage: str
     threshold_c: float
     source: str
+    exposure_h: float | None = None  # hours at that temperature the source refers to; None: it does not say
 
 
 @dataclass(frozen=True)
@@ -63,8 +64,8 @@ class FrostHistory:
 
 
 STAGE_THRESHOLDS: dict[str, tuple[StageThreshold, ...]] = {
-    "wheat": (StageThreshold("flowering", -1.0, "kstate_c646"),
-              StageThreshold("grain_filling", -2.0, "kstate_c646")),
+    "wheat": (StageThreshold("flowering", -1.0, "kstate_c646", 2.0),
+              StageThreshold("grain_filling", -2.0, "kstate_c646", 2.0)),
     "barley": (StageThreshold("flowering", -1.0, "fao_2005_t45"),),
 }
 
@@ -72,6 +73,13 @@ STAGE_THRESHOLDS: dict[str, tuple[StageThreshold, ...]] = {
 FAO_ONLY_THRESHOLDS: dict[str, float] = {
     "oat": -1.0, "pea": -2.0, "lentil": -2.0, "sunflower": -2.0, "maize": -1.0,
 }
+
+
+def frost_by_stage(crop_slug: str | None) -> list[dict]:
+    """Sourced frost limits per phenological stage (crop-context contract); empty when the crop has none."""
+    return [{"stage": t.stage, "threshold_c": t.threshold_c, "exposure_h": t.exposure_h, "source": t.source}
+            for t in STAGE_THRESHOLDS.get(crop_slug or "", ())]
+
 
 _PENDING = {"loading", "absent"}
 
