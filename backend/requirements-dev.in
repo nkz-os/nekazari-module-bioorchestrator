@@ -1,0 +1,5 @@
+# Test tools; compiled into requirements-dev.txt on top of requirements.txt.
+testcontainers[neo4j]>=4.0
+pytest>=8.0
+respx>=0.21
+openpyxl>=3.1

@@ -15,8 +15,10 @@ RUN apt-get update && \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Python deps
-COPY backend/requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+COPY backend/requirements.txt backend/requirements-vcs.txt ./
+RUN pip install --no-cache-dir --require-hashes -r requirements.txt \
+    && pip install --no-cache-dir --no-deps -r requirements-vcs.txt \
+    && pip check
 
 # Copy application code (context is repo root)
 COPY backend/app/ app/

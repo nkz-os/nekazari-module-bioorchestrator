@@ -307,9 +307,13 @@ Full i18n support in **6 languages**: English, Spanish, Basque, French, Portugue
 
 ### Backend
 
+Versions are exact: edit `backend/requirements.in` (or `requirements-dev.in`) and run
+`backend/compile-requirements.sh`; add `--upgrade` or `--upgrade-package <name>` to move versions.
+
 ```bash
 cd backend
-pip install -r requirements.txt
+pip install --require-hashes -r requirements.txt
+pip install --no-deps -r requirements-vcs.txt
 
 # Set environment
 export NEO4J_URI=bolt://localhost:7687
