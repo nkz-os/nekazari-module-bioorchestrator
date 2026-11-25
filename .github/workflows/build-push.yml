@@ -30,13 +30,21 @@ jobs:
         with:
           python-version: "3.12"
           cache: "pip"
-          cache-dependency-path: backend/requirements.txt
+          cache-dependency-path: backend/requirements*.txt
+
+      - name: Check compiled requirements
+        working-directory: backend
+        run: |
+          pip install uv==0.13.10
+          ./compile-requirements.sh --check
 
       - name: Install backend dependencies
         working-directory: backend
         run: |
-          pip install -r requirements.txt
-          pip install -r requirements-dev.txt
+          pip install --require-hashes -r requirements.txt
+          pip install --require-hashes -r requirements-dev.txt
+          pip install --no-deps -r requirements-vcs.txt
+          pip check
 
       - name: Lint (ruff)
         working-directory: backend
